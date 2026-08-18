@@ -53,6 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/apply_professions_2_rework.py
+          python scripts/apply_professions_2_hardening.py
           git diff --exit-code
           python scripts/check_professions_2_reports.py
           python scripts/test_professions_2_economy.py
