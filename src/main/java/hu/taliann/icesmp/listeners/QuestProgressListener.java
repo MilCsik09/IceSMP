@@ -6,6 +6,7 @@ import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.QuestPhysicalRewardDeliveryService;
 import hu.taliann.icesmp.managers.WorldBossManager;
+import hu.taliann.icesmp.progression.BlockRewardOriginTracker;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import org.bukkit.Location;
 import org.bukkit.entity.Item;
@@ -95,11 +96,6 @@ public final class QuestProgressListener implements Listener {
         questManager.clearPlayerState(event.getPlayer().getUniqueId());
     }
 
-    /**
-     * A stamped physical reward is the crash-recovery witness between materialization and the
-     * durable DELIVERED CAS. Until the stamp is cleared it may not leave PlayerInventory or be
-     * consumed/placed; death keeps it in inventory instead of turning it into a world drop.
-     */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPendingRewardClick(final InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
@@ -191,6 +187,7 @@ public final class QuestProgressListener implements Listener {
     public void onBlockBreak(final BlockBreakEvent event) {
         final org.bukkit.GameMode mode = event.getPlayer().getGameMode();
         if (mode != org.bukkit.GameMode.SURVIVAL && mode != org.bukkit.GameMode.ADVENTURE) return;
+        if (!BlockRewardOriginTracker.isRewardEligible(event.getBlock())) return;
         questManager.handleBlockBreak(event.getPlayer(), event.getBlock().getType());
         communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS",
                 event.getBlock().getType().name(), 1);
@@ -261,8 +258,7 @@ public final class QuestProgressListener implements Listener {
                 + event.getBlock().getX() + '|' + event.getBlock().getY() + '|'
                 + event.getBlock().getZ() + '|' + event.getItemType().name() + '|'
                 + event.getItemAmount() + '|' + System.identityHashCode(event);
-        final UUID contributionId = UUID.nameUUIDFromBytes(
-                identity.getBytes(StandardCharsets.UTF_8));
+        final UUID contributionId = UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));
         if (communityGoalManager.contributeOnce(event.getPlayer(), "COLLECT_ITEMS",
                 event.getItemType().name(), event.getItemAmount(), contributionId)) {
             questManager.handleCollect(event.getPlayer(), event.getItemType(), event.getItemAmount());
