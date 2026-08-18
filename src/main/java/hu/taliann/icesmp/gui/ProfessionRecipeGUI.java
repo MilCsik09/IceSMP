@@ -68,7 +68,7 @@ public final class ProfessionRecipeGUI {
         final int start = shownPage * PAGE_SIZE;
         for (int i = 0; i < PAGE_SIZE && start + i < recipes.size(); i++) {
             final ProfessionRecipeCatalog.Recipe recipe = recipes.get(start + i);
-            inv.setItem(i, buildTile(player, professionManager, recipe, uniqueMaterials));
+            inv.setItem(i, buildTile(player, professionManager, catalog, recipe, uniqueMaterials));
             holder.map(i, recipe.id());
         }
 
@@ -90,6 +90,7 @@ public final class ProfessionRecipeGUI {
     }
 
     private static org.bukkit.inventory.ItemStack buildTile(final Player player, final ProfessionManager professionManager,
+                                                            final ProfessionRecipeCatalog catalog,
                                                             final ProfessionRecipeCatalog.Recipe recipe,
                                                             final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
         final int level = professionManager.getLevel(player, recipe.profession());
@@ -101,6 +102,20 @@ public final class ProfessionRecipeGUI {
         final List<Component> lore = new ArrayList<>();
         lore.add(grey("Szakma: ").append(recipe.profession().getDisplayName()));
         lore.add(grey("Kategória: " + recipe.category()));
+        final ProfessionRecipeCatalog.EconomyMetadata economy = catalog.economy(recipe.id());
+        lore.add(grey("Gazdasági szerep: " + economy.category() + " • " + economy.tier()));
+        if (!economy.dependencies().isEmpty()) {
+            lore.add(Component.text("↔ Feldolgozási lánc: " + String.join(", ", economy.dependencies()),
+                    NamedTextColor.DARK_AQUA).decoration(TextDecoration.ITALIC, false));
+        }
+        if (recipe.templateId() != null) {
+            lore.add(Component.text("◆ Canonical template: " + recipe.templateId(), NamedTextColor.AQUA)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
+        if (recipe.masterwork()) {
+            lore.add(Component.text("✦ Mestermű-esély: ritka, skill-függő; nem garantált", NamedTextColor.LIGHT_PURPLE)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         // A gyakorlórecept szándékosan vanilla-értékű: azért van, hogy a szakma elején
         // legyen mit csinálni. Ha ezt a felület NEM mondja ki, rossz üzletnek látszik.
         if ("gyakorlo".equals(recipe.kind())) {
@@ -145,6 +160,10 @@ public final class ProfessionRecipeGUI {
                     .decoration(TextDecoration.ITALIC, false));
         }
         lore.add(Component.empty());
+        if (economy.batchable()) {
+            lore.add(Component.text("⇧ Shift+katt: 5-ös batch (max " + economy.batchLimit() + ")", NamedTextColor.GOLD)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         lore.add(craftable
                 ? Component.text("» Kattints a craftoláshoz", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false)
                 : Component.text("Zárolva", NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, false));

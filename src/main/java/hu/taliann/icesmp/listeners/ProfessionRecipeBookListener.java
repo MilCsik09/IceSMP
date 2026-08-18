@@ -76,6 +76,7 @@ public final class ProfessionRecipeBookListener implements Listener {
     private final NamespacedKey craftedByKey;
     private final NamespacedKey craftedAtKey;
     private volatile hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
+    private final hu.taliann.icesmp.professions.ProfessionCraftTransaction craftTransaction;
 
     public void setItemIdentityService(
             final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService) {
@@ -99,6 +100,7 @@ public final class ProfessionRecipeBookListener implements Listener {
         this.signatureKey = new NamespacedKey(plugin, "signature_item");
         this.craftedByKey = new NamespacedKey(plugin, "crafted_by");
         this.craftedAtKey = new NamespacedKey(plugin, "crafted_at");
+        this.craftTransaction = new hu.taliann.icesmp.professions.ProfessionCraftTransaction(uniqueMaterials);
     }
 
     /** Opens the recipe book for a player at the first page. */
@@ -126,11 +128,11 @@ public final class ProfessionRecipeBookListener implements Listener {
             case "CLOSE" -> player.closeInventory();
             case "PREV" -> ProfessionRecipeGUI.open(player, holder.getPage() - 1, professionManager, catalog, uniqueMaterials);
             case "NEXT" -> ProfessionRecipeGUI.open(player, holder.getPage() + 1, professionManager, catalog, uniqueMaterials);
-            default -> craft(player, action, holder.getPage());
+            default -> craft(player, action, holder.getPage(), event.isShiftClick());
         }
     }
 
-    private void craft(final Player player, final String recipeId, final int page) {
+    private void craft(final Player player, final String recipeId, final int page, final boolean batchRequested) {
         final ProfessionRecipeCatalog.Recipe recipe = catalog.get(recipeId);
         if (recipe == null) {
             return;
@@ -169,30 +171,38 @@ public final class ProfessionRecipeBookListener implements Listener {
                 return;
             }
         }
+        final ProfessionRecipeCatalog.EconomyMetadata economy = catalog.economy(recipe.id());
+        final int batches = batchRequested && economy.batchable() && recipe.templateId() == null
+                && recipe.affixTier() == null ? Math.min(5, economy.batchLimit()) : 1;
         if (!hasIngredients(player, recipe)) {
             player.sendMessage(messageManager.get("profession-recipe-missing", "&cNincs meg minden hozzávaló ehhez a recepthez."));
             return;
         }
-
-        // ELŐBB épül az eredmény, és csak sikeres build UTÁN fogy a hozzávaló —
-        // hibás recept-config (feloldhatatlan unique eredmény) nem nyelheti el az anyagot.
-        final ItemStack result = buildResult(player, recipe);
-        if (result == null) {
-            return;
-        }
-        for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            if (!hu.taliann.icesmp.utils.PlainIngredients.consume(
-                    player, entry.getKey(), entry.getValue(), uniqueMaterials)) {
-                // A hasIngredients UGYANEZT a predikátumot használta ugyanezen a szálon,
-                // ezért ide nem szabad eljutni: ha mégis, a hozzávaló ingyen maradna.
-                plugin.getLogger().severe("Craft-hozzávaló nem fogyott el: "
-                        + recipe.id() + " / " + entry.getKey() + " x" + entry.getValue());
-                return;
+        final java.util.UUID rootOperationId = java.util.UUID.randomUUID();
+        final java.util.List<ItemStack> outputs = new java.util.ArrayList<>();
+        int masterworkCount = 0;
+        for (int index = 0; index < batches; index++) {
+            final java.util.UUID operationId = derivedOperationId(rootOperationId, index);
+            final ItemStack result = buildResult(player, recipe, true, operationId);
+            if (result == null) return;
+            outputs.add(result);
+            final hu.taliann.icesmp.itemization.ItemIdentityService identity = itemIdentityService;
+            if (identity != null) {
+                final var inspection = identity.inspect(result);
+                if (inspection.readable() && inspection.instance() != null
+                        && inspection.instance().origin().masterwork()) masterworkCount++;
             }
         }
-        consumeUnique(player, recipe);
-        for (final ItemStack overflow : player.getInventory().addItem(result).values()) {
-            player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+        final var transaction = craftTransaction.apply(player, recipe, batches, outputs);
+        if (!transaction.applied()) {
+            if (transaction.status() == hu.taliann.icesmp.professions.ProfessionCraftTransaction.Status.INVENTORY_FULL) {
+                player.sendMessage(messageManager.get("profession-recipe-inventory-full",
+                        "&cNincs elég hely a hátizsákodban; semmi nem fogyott el."));
+            } else {
+                player.sendMessage(messageManager.get("profession-recipe-missing",
+                        "&cNincs meg minden hozzávaló ehhez az adaghoz; semmi nem fogyott el."));
+            }
+            return;
         }
         EquippedCombatPowerService.refreshAfterMutation(player);
         // WoW-stílusú skill-up: a craft szakma-XP-t ad — a szintedhez közeli recept a teljes
@@ -209,7 +219,8 @@ public final class ProfessionRecipeBookListener implements Listener {
             craftXp /= 2;
         }
         if (craftXp > 0) {
-            final int durableCraftXp = craftXp;
+            final int bulkCap = Math.max(1, configManager.getInt("professions.xp.bulk-event-cap", 16));
+            final int durableCraftXp = Math.multiplyExact(craftXp, Math.min(batches, bulkCap));
             professionManager.addXpFor(player, recipe.profession(), durableCraftXp)
                     .whenComplete((change, failure) -> {
                         // A heti céh-cél CSAK valódi, tartósan jóváírt XP-re tölthet — a
@@ -239,8 +250,11 @@ public final class ProfessionRecipeBookListener implements Listener {
         if (bestiaryRef != null) {
             bestiaryRef.record(player, hu.taliann.icesmp.managers.BestiaryManager.Category.RECIPES, recipe.id());
         }
+        hu.taliann.icesmp.professions.ProfessionEconomyTelemetry.global().recordCraft(
+                recipe, batches, masterworkCount, recipe.level() >= 40 || recipe.blueprint());
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.6F, 1.2F);
-        player.sendMessage(messageManager.get("profession-recipe-crafted", "&aElkészítetted: &e%s", recipe.displayName()));
+        player.sendMessage(messageManager.get("profession-recipe-crafted", "&aElkészítetted: &e%s",
+                recipe.displayName() + (batches > 1 ? " ×" + batches : "")));
         // Refresh so the ingredient counts / craftable states update.
         ProfessionRecipeGUI.open(player, page, professionManager, catalog, uniqueMaterials);
     }
@@ -303,17 +317,17 @@ public final class ProfessionRecipeBookListener implements Listener {
      * @return a kész tárgy, vagy null (ismeretlen unique-eredmény / hibás presentation-config)
      */
     public ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {
-        return buildResult(player, recipe, true);
+        return buildResult(player, recipe, true, java.util.UUID.randomUUID());
     }
 
     /** Builds a crate reward without firing an advancement before the world reveal finishes. */
     public ItemStack buildDeferredReward(final Player player,
                                          final ProfessionRecipeCatalog.Recipe recipe) {
-        return buildResult(player, recipe, false);
+        return buildResult(player, recipe, false, java.util.UUID.randomUUID());
     }
 
     private ItemStack buildResult(final Player player, final ProfessionRecipeCatalog.Recipe recipe,
-                                  final boolean awardMasterwork) {
+                                  final boolean professionCraft, final java.util.UUID operationId) {
         if (recipe.templateId() != null) {
             final hu.taliann.icesmp.itemization.ItemIdentityService identity = itemIdentityService;
             if (identity == null) {
@@ -325,30 +339,25 @@ public final class ProfessionRecipeBookListener implements Listener {
                         identity.template(recipe.templateId());
                 final long now = System.currentTimeMillis();
                 final hu.taliann.icesmp.itemization.ItemInstance instance;
-                if (awardMasterwork) {
-                    final double baseFloor = clamp01(configManager.getDouble(
-                            "itemization.crafting.base-minimum-quality", 0.10D));
-                    final double levelContribution = Math.min(clamp01(configManager.getDouble(
-                                    "itemization.crafting.maximum-level-contribution", 0.20D)),
-                            professionManager.getLevel(player, recipe.profession())
-                                    * Math.max(0.0D, configManager.getDouble(
-                                    "itemization.crafting.quality-per-profession-level", 0.003D)));
-                    final double blueprintBonus = recipe.blueprint() ? Math.max(0.0D,
-                            configManager.getDouble("itemization.crafting.blueprint-quality-bonus", 0.05D)) : 0.0D;
-                    final double masterworkBonus = recipe.masterwork() ? Math.max(0.0D,
-                            configManager.getDouble("itemization.crafting.masterwork-quality-bonus", 0.15D)) : 0.0D;
-                    final double minimumQuality = clamp01(baseFloor + levelContribution
-                            + blueprintBonus + masterworkBonus);
-                    instance = identity.rollCraftedInstance(template, java.util.UUID.randomUUID(),
+                if (professionCraft) {
+                    final var decision = hu.taliann.icesmp.professions.ProfessionCraftQualityPolicy.decide(
+                            operationId, professionManager.getLevel(player, recipe.profession()),
+                            recipe.blueprint(), recipe.masterwork(),
+                            hu.taliann.icesmp.professions.ProfessionCraftQualityPolicy.from(configManager));
+                    instance = identity.rollCraftedInstance(template, operationId,
                             player.getUniqueId(), player.getName(), recipe.profession().getId(),
-                            locationSnapshot(player), recipe.masterwork(), now, minimumQuality,
-                            () -> java.util.concurrent.ThreadLocalRandom.current().nextDouble());
+                            locationSnapshot(player), decision.masterwork(), now, decision.minimumQuality(),
+                            decision.qualitySource());
                 } else {
-                    instance = identity.rollInstance(template, java.util.UUID.randomUUID(),
+                    instance = identity.rollInstance(template, operationId,
                             "crate:authored", recipe.id(), null, "", now,
                             () -> java.util.concurrent.ThreadLocalRandom.current().nextDouble());
                 }
-                return identity.render(template, instance);
+                final ItemStack rendered = identity.render(template, instance);
+                if (professionCraft && instance.origin().masterwork()) {
+                    hu.taliann.icesmp.managers.AdvancementService.award(player, "masterwork");
+                }
+                return rendered;
             } catch (final RuntimeException invalid) {
                 plugin.getLogger().severe("Canonical profession result failed for " + recipe.id()
                         + ": " + invalid.getMessage());
@@ -545,7 +554,7 @@ public final class ProfessionRecipeBookListener implements Listener {
         }
 
         // Mestermű-mérföldkő: ha az affix-roll a létra felső fokát adta, az elismerést érdemel.
-        if (awardMasterwork) {
+        if (professionCraft) {
             awardMasterworkIfEligible(player, result);
         }
         // result.rarity: a saját létra egy foka (ocska…ereklye) — tervezett itemnek, amely nem
@@ -587,6 +596,12 @@ public final class ProfessionRecipeBookListener implements Listener {
                     (float) cooldownSection.getDouble("seconds", 1.0D));
         }
         return result;
+    }
+
+    private static java.util.UUID derivedOperationId(final java.util.UUID root, final int index) {
+        if (index == 0) return root;
+        final String source = root + ":" + index;
+        return java.util.UUID.nameUUIDFromBytes(source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     private static double clamp01(final double value) {
