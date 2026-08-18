@@ -22,6 +22,7 @@ public final class PlayerProfileTransactionRegressionSuite {
         crossSectionCommitAndIdempotency();
         invalidPlansAndStaleRevision();
         parallelSectionCas();
+        preparedLedgerSaturationFailsBeforeMutation();
         crashBeforeManifestRollsBack();
         crashAfterManifestFinalizes();
         System.out.println("PlayerProfile transaction regression suite passed. assertions=" + assertions);
@@ -130,6 +131,71 @@ public final class PlayerProfileTransactionRegressionSuite {
                     "one same-section writer commits");
             check(statuses.contains(PlayerProfileRepository.SectionSaveResult.Status.STALE_REVISION),
                     "one same-section writer is stale");
+        } finally {
+            shutdown(repo);
+        }
+    }
+
+    private static void preparedLedgerSaturationFailsBeforeMutation() throws Exception {
+        Path root = Files.createTempDirectory("pp-tx-ledger-saturated-");
+        YamlPlayerProfileRepository repo = repository(root, YamlPlayerProfileRepository.FaultInjector.none());
+        try {
+            PlayerProfileSnapshot initial = join(repo.load(PLAYER));
+            Map<String, PlayerProfileOperation> receipts = new LinkedHashMap<>();
+            for (int i = 0; i < 512; i++) {
+                String id = "prepared-" + i;
+                receipts.put(id, new PlayerProfileOperation(id, "regression",
+                        PlayerProfileOperation.Status.PREPARED, "fp-" + i,
+                        NOW, NOW, Map.of()));
+            }
+            OperationSection saturated = new OperationSection(receipts,
+                    initial.operations().value().extensions());
+            ProfileSectionSnapshot<OperationSection> saturatedSnapshot = new ProfileSectionSnapshot<>(
+                    ProfileSectionId.OPERATIONS, initial.operations().schema(),
+                    initial.operations().revision() + 1, NOW, saturated,
+                    SectionHealth.healthy(), initial.operations().extensions());
+            check(join(repo.saveSection(PLAYER, ProfileSectionId.OPERATIONS,
+                            initial.operations().revision(), saturatedSnapshot)).status()
+                            == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED,
+                    "512 PREPARED receipts form a valid bounded profile");
+
+            YamlPlayerProfileTransactionManager tx = new YamlPlayerProfileTransactionManager(repo, CLOCK);
+            PlayerProfileSnapshot beforeRejected = join(repo.load(PLAYER));
+            expectStage(PlayerProfileTransactionManager.LedgerSaturated.class,
+                    tx.execute(PLAYER, p -> rewardPlan(p, "operation-513", "operation-513-fp", 25)));
+            PlayerProfileSnapshot afterRejected = join(repo.load(PLAYER));
+            check(afterRejected.profileRevision() == beforeRejected.profileRevision(),
+                    "saturated rejection is fail-before-mutation");
+            check(afterRejected.economy().value().wallets().isEmpty(),
+                    "saturated rejection cannot write an effect without a receipt");
+            check(afterRejected.operations().value().operations().size() == 512,
+                    "existing saturated profile remains loadable and intact");
+
+            Map<String, PlayerProfileOperation> recoveredReceipts = new LinkedHashMap<>(
+                    afterRejected.operations().value().operations());
+            PlayerProfileOperation first = recoveredReceipts.get("prepared-0");
+            recoveredReceipts.put("prepared-0", new PlayerProfileOperation(first.operationId(),
+                    first.type(), PlayerProfileOperation.Status.COMMITTED, first.fingerprint(),
+                    first.createdAt(), NOW.plusSeconds(1), first.metadata()));
+            OperationSection recovered = new OperationSection(recoveredReceipts,
+                    afterRejected.operations().value().extensions());
+            ProfileSectionSnapshot<OperationSection> recoveredSnapshot = new ProfileSectionSnapshot<>(
+                    ProfileSectionId.OPERATIONS, afterRejected.operations().schema(),
+                    afterRejected.operations().revision() + 1, NOW.plusSeconds(1), recovered,
+                    SectionHealth.healthy(), afterRejected.operations().extensions());
+            check(join(repo.saveSection(PLAYER, ProfileSectionId.OPERATIONS,
+                            afterRejected.operations().revision(), recoveredSnapshot)).status()
+                            == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED,
+                    "recovery can make one bounded receipt evictable");
+            check(join(tx.execute(PLAYER,
+                            p -> rewardPlan(p, "operation-after-recovery", "after-recovery-fp", 25)))
+                            .equals("credited"),
+                    "new transaction succeeds after recovery frees an evictable ledger slot");
+            PlayerProfileSnapshot finalProfile = join(repo.load(PLAYER));
+            check(finalProfile.economy().value().wallets().get("coins") == 25L,
+                    "post-recovery write applies exactly once");
+            check(finalProfile.operations().value().operations().size() == 512,
+                    "ledger remains at its hard bound after post-recovery commit");
         } finally {
             shutdown(repo);
         }
