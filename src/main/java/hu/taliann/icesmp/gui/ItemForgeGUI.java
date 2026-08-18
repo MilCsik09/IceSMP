@@ -71,12 +71,9 @@ public final class ItemForgeGUI implements Listener {
                 ItemMutationCoordinator.Operation.ASCEND, options);
         final ItemMutationCoordinator.Preview salvage = coordinator.preview(player,
                 ItemMutationCoordinator.Operation.SALVAGE, options);
-        inventory.setItem(SLOT_REROLL, operationButton(Material.ANVIL, "Újrakovácsolás",
-                reroll, true));
-        inventory.setItem(SLOT_ASCEND, operationButton(Material.NETHER_STAR, "Felemelkedés",
-                ascend, true));
-        inventory.setItem(SLOT_SALVAGE, operationButton(Material.BLAST_FURNACE, "Bontás",
-                salvage, true));
+        inventory.setItem(SLOT_REROLL, operationButton(Material.ANVIL, "Újrakovácsolás", reroll, true));
+        inventory.setItem(SLOT_ASCEND, operationButton(Material.NETHER_STAR, "Felemelkedés", ascend, true));
+        inventory.setItem(SLOT_SALVAGE, operationButton(Material.BLAST_FURNACE, "Bontás", salvage, true));
         inventory.setItem(SLOT_AMPLIFIER, button(amplifier ? Material.LIME_DYE : Material.GRAY_DYE,
                 "Quality Amplifier: " + (amplifier ? "BE" : "KI"),
                 List.of("A következő reroll minimum qualityjét emeli.")));
@@ -97,17 +94,15 @@ public final class ItemForgeGUI implements Listener {
                             (socket + 1) + ". rúnafoglalat: " + rune,
                             List.of(socket == runeSocket ? "KIJELÖLVE" : "Katt: foglalat kijelölése")));
         }
-        inventory.setItem(SLOT_RUNE_REMOVE, runeButton(Material.SHEARS,
-                "Rúna eltávolítása", remove));
-        inventory.setItem(SLOT_RUNE_REPLACE, runeButton(Material.SMITHING_TABLE,
-                "Rúna cseréje", replace));
+        inventory.setItem(SLOT_RUNE_REMOVE, runeButton(Material.SHEARS, "Rúna eltávolítása", remove));
+        inventory.setItem(SLOT_RUNE_REPLACE, runeButton(Material.SMITHING_TABLE, "Rúna cseréje", replace));
 
         if (reroll.instance() != null && reroll.template() != null) {
             int statIndex = 0;
             for (final Map.Entry<String, ItemInstance.Roll> roll : reroll.instance().rolls().entrySet()) {
                 if (statIndex >= STAT_SLOTS.size()) break;
-                inventory.setItem(STAT_SLOTS.get(statIndex++), button(roll.getKey().equals(lockedStat)
-                                ? Material.LAPIS_LAZULI : Material.PAPER,
+                inventory.setItem(STAT_SLOTS.get(statIndex++), button(
+                        roll.getKey().equals(lockedStat) ? Material.LAPIS_LAZULI : Material.PAPER,
                         ItemStatCatalog.require(roll.getKey()).displayName(),
                         List.of("Aktuális quality: " + Math.round(roll.getValue().quality() * 100.0D) + "%",
                                 roll.getKey().equals(lockedStat) ? "LOCKOLVA" : "Katt: Stat Lock")));
@@ -151,8 +146,7 @@ public final class ItemForgeGUI implements Listener {
                     if (statIndex < stats.size()) {
                         final String stat = stats.get(statIndex);
                         open(player, stat.equals(holder.lockedStat()) ? "" : stat,
-                                holder.amplifier(), holder.stability(), holder.targetSlot(),
-                                holder.runeSocket());
+                                holder.amplifier(), holder.stability(), holder.targetSlot(), holder.runeSocket());
                     }
                 }
             }
@@ -189,6 +183,11 @@ public final class ItemForgeGUI implements Listener {
         }
         player.closeInventory();
         coordinator.execute(player, operation, options, outcome -> {
+            if (outcome.success() && operation == ItemMutationCoordinator.Operation.SALVAGE
+                    && preview.template() != null) {
+                hu.taliann.icesmp.professions.ProfessionEconomyTelemetry.global()
+                        .recordSalvage(preview.template().armorFamily());
+            }
             player.sendMessage(messages.get(outcome.messageKey(), outcome.success()
                     ? "&aA tárgyművelet tartósan lezárult."
                     : "&cA tárgyművelet biztonságosan meghiúsult."));
@@ -243,8 +242,7 @@ public final class ItemForgeGUI implements Listener {
     private static ItemStack runeButton(final Material material, final String name,
                                         final ItemMutationCoordinator.RunePreview preview) {
         final ArrayList<String> lore = new ArrayList<>();
-        lore.add(preview.allowed() ? preview.resultSummary()
-                : "Nem elérhető: " + preview.errorKey());
+        lore.add(preview.allowed() ? preview.resultSummary() : "Nem elérhető: " + preview.errorKey());
         if (!preview.costs().isEmpty()) {
             lore.add("Költség:");
             preview.costs().forEach((id, amount) -> lore.add("• " + id + " ×" + amount));
@@ -260,9 +258,8 @@ public final class ItemForgeGUI implements Listener {
         final ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text(name, NamedTextColor.AQUA)
                 .decoration(TextDecoration.ITALIC, false));
-        final List<Component> lore = loreLines.stream().<Component>map(line -> Component.text(line,
-                NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)).toList();
-        meta.lore(lore);
+        meta.lore(loreLines.stream().<Component>map(line -> Component.text(line,
+                NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)).toList());
         item.setItemMeta(meta);
         return item;
     }

@@ -51,6 +51,7 @@ jobs:
           python scripts/apply_professions_2_specialization_closure.py
           git diff --exit-code
           python scripts/check_professions_2_reports.py
+          python scripts/check_professions_2_runtime_closure.py
           python scripts/test_professions_2_economy.py
 
       - name: Validate PlayerProfile authority
@@ -102,7 +103,9 @@ jobs:
           python3 scripts/check_markdown_links.py
           BASE=$(git merge-base HEAD refs/remotes/origin/feature/equipment-2)
           git diff --check "${BASE}...HEAD"
-          test -z "$(git status --porcelain)"
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
 
       - name: Upload plugin JAR
         if: github.event_name == 'workflow_dispatch'
