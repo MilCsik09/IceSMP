@@ -7,6 +7,11 @@ import java.util.concurrent.CompletionStage;
 public interface PlayerProfileTransactionManager {
     <T> CompletionStage<T> execute(UUID playerId, ProfileTransactionWork<T> transaction);
 
+    /** Clean fail-before-mutation signal when every bounded operation-ledger slot is still PREPARED. */
+    final class LedgerSaturated extends IllegalStateException {
+        public LedgerSaturated() { super("player profile operation ledger saturated by PREPARED receipts"); }
+    }
+
     @FunctionalInterface interface ProfileTransactionWork<T>{TransactionPlan<T> prepare(PlayerProfileSnapshot snapshot);}
     record SectionUpdate(ProfileSectionId section,long expectedRevision,ProfileSectionData next){
         public SectionUpdate{Objects.requireNonNull(section);Objects.requireNonNull(next);if(next.sectionId()!=section)throw new IllegalArgumentException("section mismatch");if(expectedRevision<0)throw new IllegalArgumentException("expected revision must be non-negative");}
