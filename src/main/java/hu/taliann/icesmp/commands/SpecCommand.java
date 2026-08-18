@@ -226,7 +226,17 @@ public final class SpecCommand implements BasicCommand {
                             player.getUniqueId(), "Respec completion scheduler rejected")));
             return;
         }
-        sendRespecOutcome(sender, player, respecService.respec(player, false));
+        final String operationId = "profession-respec:" + player.getUniqueId()
+                + ":attempt:" + java.util.UUID.randomUUID();
+        respecService.respecProfessionV2(player, operationId)
+                .whenComplete((outcome, failure) -> player.getScheduler().run(plugin, task -> {
+                    if (failure != null || outcome == null) {
+                        player.sendMessage(messageManager.required("spec-respec-persistence-failed"));
+                    } else {
+                        sendRespecOutcome(player, player, outcome);
+                    }
+                }, () -> plugin.getLogger().warning(
+                        "Profession respec completion scheduler retired for " + player.getUniqueId())));
     }
 
     private void sendRespecOutcome(final CommandSender sender, final Player player,
