@@ -94,6 +94,14 @@ public final class MarketManager implements PersistentStore {
         boolean partial() { return taggedAmount > 0 && taggedAmount < expectedAmount && !invalid; }
     }
 
+    private record PendingDeliveryPartition(List<ItemStack> deliverable,
+                                            List<ItemStack> quarantined) {
+        private PendingDeliveryPartition {
+            deliverable = deliverable.stream().map(ItemStack::clone).toList();
+            quarantined = quarantined.stream().map(ItemStack::clone).toList();
+        }
+    }
+
     private static final int TRANSACTION_LOG_CAP = 50;
     private static final String TYPE_LIST = "LIST";
     private static final String TYPE_BUY = "BUY";
@@ -673,40 +681,28 @@ public final class MarketManager implements PersistentStore {
     public synchronized int deliverPending(final Player player) {
         resolvePlayerRecoveries(player);
         cleanupOrphanMarkers(player);
-        final List<ItemStack> items = pendingDeliveries.get(player.getUniqueId());
-        if (items == null || items.isEmpty()) {
-            pendingDeliveries.remove(player.getUniqueId());
-            return 0;
-        }
-        for (final ItemStack item : items) {
-            final String transferError = validateCanonicalTransfer(item, null, false);
-            if (transferError != null) {
-                player.sendMessage(messageManager.getMessage(transferError,
-                        "<red>A piaci tárgy identitása vagy egyedisége nem ellenőrizhető; az átvétel függőben maradt.</red>"));
-                return 0;
-            }
-        }
-        final ArrayList<ItemStack> combined = new ArrayList<>(
-                java.util.Arrays.asList(player.getInventory().getContents()));
-        combined.addAll(items);
-        for (final ItemStack item : combined) {
-            final ItemIdentityService.Inspection inspection = itemIdentity.inspect(item);
-            if (inspection.status() != ItemIdentityService.Status.NOT_MANAGED
-                    && inspection.status() != ItemIdentityService.Status.VALID) {
-                player.sendMessage(messageManager.getMessage("market-item-identity-invalid",
-                        "<red>Hibás canonical item identity miatt a piaci átvétel függőben maradt.</red>"));
-                return 0;
-            }
-        }
-        if (!itemIdentity.inspectDuplicates(combined).clean()) {
-            player.sendMessage(messageManager.getMessage("market-item-duplicate",
-                    "<red>Duplikált item UUID miatt a piaci átvétel függőben maradt.</red>"));
+        final UUID playerId = player.getUniqueId();
+        final List<ItemStack> original = pendingDeliveries.get(playerId);
+        if (original == null || original.isEmpty()) {
+            pendingDeliveries.remove(playerId);
             return 0;
         }
         if (!storageHealthy() || !playerSaveSupported) return 0;
 
+        final PendingDeliveryPartition partition = partitionPending(player, original);
+        final List<ItemStack> items = partition.deliverable();
+        final List<ItemStack> quarantined = partition.quarantined();
+        if (!quarantined.isEmpty()) {
+            plugin.getLogger().warning("Market pending delivery quarantine: player=" + playerId
+                    + " quarantined=" + quarantined.size() + " deliverable=" + items.size()
+                    + ". Invalid/stale records stay durable for explicit support resolution.");
+            player.sendMessage(messageManager.getMessage("market-delivery-quarantined",
+                    "<yellow>Egy hibás vagy elavult piaci tétel karanténban maradt; a többi átvehető tételt ettől még kézbesítjük.</yellow>"));
+        }
+        if (items.isEmpty()) return 0;
+
         final TransactionJournal.Entry entry = journal.create(TYPE_DELIVER);
-        entry.data().set("owner", player.getUniqueId().toString());
+        entry.data().set("owner", playerId.toString());
         entry.data().set("items", items.stream().map(ItemStack::clone).toList());
         if (!journal.prepare(entry)) return 0;
         final List<ItemStack> tagged = items.stream()
@@ -719,9 +715,11 @@ public final class MarketManager implements PersistentStore {
             return 0;
         }
 
-        pendingDeliveries.remove(player.getUniqueId());
+        if (quarantined.isEmpty()) pendingDeliveries.remove(playerId);
+        else pendingDeliveries.put(playerId, new ArrayList<>(quarantined));
         if (!commitState(entry, false)) {
-            pendingDeliveries.put(player.getUniqueId(), items);
+            pendingDeliveries.put(playerId, original.stream().map(ItemStack::clone)
+                    .collect(Collectors.toCollection(ArrayList::new)));
             committedTxns.remove(entry.id().toString());
             journal.complete(entry);
             return 0;
@@ -733,7 +731,7 @@ public final class MarketManager implements PersistentStore {
             if (!leftovers.isEmpty()) {
                 player.getInventory().setStorageContents(before);
                 plugin.getLogger().severe("Market delivery fit preflight diverged for "
-                        + player.getUniqueId() + "; journal remains open.");
+                        + playerId + "; journal remains open and only its deliverable batch is recoverable.");
                 return 0;
             }
         }
@@ -748,6 +746,41 @@ public final class MarketManager implements PersistentStore {
             persistPlayer(player);
         }
         return items.size();
+    }
+
+    private PendingDeliveryPartition partitionPending(final Player player,
+                                                       final List<ItemStack> pending) {
+        final ArrayList<ItemStack> deliverable = new ArrayList<>();
+        final ArrayList<ItemStack> quarantined = new ArrayList<>();
+        final ArrayList<ItemStack> accepted = new ArrayList<>(
+                java.util.Arrays.asList(player.getInventory().getContents()));
+        for (final ItemStack item : pending) {
+            final String transferError = validateCanonicalTransfer(item, null, false);
+            if (transferError != null) {
+                quarantined.add(item.clone());
+                continue;
+            }
+            final ItemIdentityService.Inspection candidate = itemIdentity.inspect(item);
+            boolean duplicate = false;
+            if (candidate.status() == ItemIdentityService.Status.VALID) {
+                final UUID itemId = candidate.instance().itemId();
+                for (final ItemStack existing : accepted) {
+                    final var existingInstance = itemIdentity.instanceOf(existing);
+                    if (existingInstance.isPresent()
+                            && existingInstance.orElseThrow().itemId().equals(itemId)) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+            }
+            if (duplicate) {
+                quarantined.add(item.clone());
+                continue;
+            }
+            deliverable.add(item.clone());
+            accepted.add(item.clone());
+        }
+        return new PendingDeliveryPartition(deliverable, quarantined);
     }
 
     private String validateCanonicalTransfer(final ItemStack item, final Player recipient,
@@ -817,8 +850,7 @@ public final class MarketManager implements PersistentStore {
                 .collect(Collectors.groupingBy(
                         listing -> listing.item().getType(), Collectors.counting()));
         final List<Map.Entry<Material, Long>> topItemTypes = counts.entrySet().stream()
-                .sorted(Map.Entry.<Material, Long>comparingByValue().reversed())
-                .limit(3).toList();
+                .sorted(Map.Entry.<Material, Long>comparingByValue().reversed()).limit(3).toList();
         final List<Transaction> transactionSnapshot = List.copyOf(recentTransactions);
         final Map<CurrencyType, double[]> sumAndCount = new EnumMap<>(CurrencyType.class);
         Transaction biggest = null;
