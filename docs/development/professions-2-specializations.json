@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "authority": "PlayerProfile ProfessionSection specializations.active",
+  "policy": {
+    "deterministic": true,
+    "random_conservation_proc": false,
+    "efficiency_percent": 0.1,
+    "yield_percent": 0.1,
+    "maximum_configured_effect": 0.25,
+    "crafting_expertise_is_not_equipment_proficiency": true
+  },
+  "specializations": [
+    {"id":"prospector","profession":"miner","role":"PROCESSING_EFFICIENCY","target":"processing inputs"},
+    {"id":"excavator","profession":"miner","role":"PROCESSING_YIELD","target":"stackable processing outputs"},
+    {"id":"botanist","profession":"herbalist","role":"PROCESSING_YIELD","target":"stackable processing outputs"},
+    {"id":"naturalist","profession":"herbalist","role":"PROCESSING_EFFICIENCY","target":"processing inputs"},
+    {"id":"forester","profession":"lumberjack","role":"PROCESSING_EFFICIENCY","target":"processing inputs"},
+    {"id":"carpenter","profession":"lumberjack","role":"PROCESSING_YIELD","target":"stackable processing outputs"},
+    {"id":"weaponsmith","profession":"armorer","role":"EQUIPMENT_EXPERTISE","target":"non-armor canonical equipment inputs"},
+    {"id":"armorsmith","profession":"armorer","role":"EQUIPMENT_EXPERTISE","target":"canonical armor inputs"},
+    {"id":"potion_master","profession":"alchemist","role":"CONSUMABLE_YIELD","target":"stackable potion/consumable outputs"},
+    {"id":"transmuter","profession":"alchemist","role":"PROCESSING_EFFICIENCY","target":"processing inputs"},
+    {"id":"runekeeper","profession":"enchanter","role":"SERVICE_EXPERTISE","target":"rune/service inputs"},
+    {"id":"arcanist","profession":"enchanter","role":"EQUIPMENT_EXPERTISE","target":"canonical enchanter equipment inputs"},
+    {"id":"angler","profession":"fisherman","role":"PROCESSING_YIELD","target":"stackable processing outputs"},
+    {"id":"treasure_hunter","profession":"fisherman","role":"BLUEPRINT_EFFICIENCY","target":"blueprint recipe inputs"},
+    {"id":"chef","profession":"cook","role":"CONSUMABLE_YIELD","target":"stackable food outputs"},
+    {"id":"butcher","profession":"cook","role":"CONSUMABLE_EFFICIENCY","target":"food recipe inputs"}
+  ]
+}

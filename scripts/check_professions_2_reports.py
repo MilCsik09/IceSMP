@@ -42,6 +42,7 @@ transaction = (ROOT / 'src/main/java/hu/taliann/icesmp/professions/ProfessionCra
 assert 'player.saveData();' in transaction
 assert 'PERSISTENCE_FAILED' in transaction
 assert 'inventory.setStorageContents(cloneContents(before));' in transaction
+assert 'ProfessionSpecializationEconomyPolicy.effectFor(player, recipe)' in transaction
 assert 'dropItemNaturally' not in transaction
 
 salvage = (ROOT / 'src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java').read_text(encoding='utf-8')
@@ -52,5 +53,15 @@ root_config = yaml.safe_load((ROOT / 'src/main/resources/config.yml').read_text(
 delivery = (((root_config.get('itemization') or {}).get('salvage') or {}).get('output-map') or {})
 for scrap in expected_scraps:
     assert delivery.get(scrap) == scrap, (scrap, delivery.get(scrap))
+
+specializations = json.loads((ROOT / 'docs/development/professions-2-specializations.json').read_text(encoding='utf-8'))
+assert specializations['schema'] == 1
+assert specializations['authority'].startswith('PlayerProfile')
+assert len(specializations['specializations']) == 16
+assert len({row['role'] for row in specializations['specializations']}) >= 6
+assert not specializations['policy']['random_conservation_proc']
+policy_source = (ROOT / 'src/main/java/hu/taliann/icesmp/professions/ProfessionSpecializationEconomyPolicy.java').read_text(encoding='utf-8')
+assert 'PlayerProfileSpecializationProgressStore' in policy_source
+assert 'roleOf' in policy_source
 
 print('Professions 2.0 reports/hardening: OK')

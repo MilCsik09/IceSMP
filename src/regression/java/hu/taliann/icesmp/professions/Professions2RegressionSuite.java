@@ -1,8 +1,10 @@
 package hu.taliann.icesmp.professions;
 
+import hu.taliann.icesmp.data.ProfessionSpecializationType;
 import hu.taliann.icesmp.itemization.ArmorFamily;
 import hu.taliann.icesmp.itemization.ItemSalvageService;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
@@ -12,6 +14,7 @@ public final class Professions2RegressionSuite {
         masterworkRetryIsDeterministicAndBounded();
         masterworkEligibilityDoesNotChangeTemplateIdentity();
         familySalvageMaterialIdsAreStableAndDistinct();
+        professionSpecializationRolesAreCompleteAndDiverse();
         System.out.println("Professions2RegressionSuite: OK");
     }
 
@@ -56,6 +59,29 @@ public final class Professions2RegressionSuite {
                 "wrong family salvage material for " + family));
         require(expected.values().stream().distinct().count() == ArmorFamily.values().length,
                 "each ArmorFamily must keep a distinct salvage material identity");
+    }
+
+    private static void professionSpecializationRolesAreCompleteAndDiverse() {
+        require(ProfessionSpecializationType.values().length == 16,
+                "unexpected profession specialization roster drift");
+        for (final ProfessionSpecializationType specialization
+                : ProfessionSpecializationType.values()) {
+            require(ProfessionSpecializationEconomyPolicy.roleOf(specialization)
+                            != ProfessionSpecializationEconomyPolicy.Role.NONE,
+                    "profession specialization has no economic role: " + specialization);
+        }
+        final long roles = Arrays.stream(ProfessionSpecializationType.values())
+                .map(ProfessionSpecializationEconomyPolicy::roleOf).distinct().count();
+        require(roles >= 6, "profession specializations collapsed into one mandatory role");
+        require(ProfessionSpecializationEconomyPolicy.roleOf(ProfessionSpecializationType.PROSPECTOR)
+                        != ProfessionSpecializationEconomyPolicy.roleOf(ProfessionSpecializationType.EXCAVATOR),
+                "miner specializations must offer different economic roles");
+        require(ProfessionSpecializationEconomyPolicy.roleOf(ProfessionSpecializationType.POTION_MASTER)
+                        != ProfessionSpecializationEconomyPolicy.roleOf(ProfessionSpecializationType.TRANSMUTER),
+                "alchemist specializations must offer different economic roles");
+        require(ProfessionSpecializationEconomyPolicy.roleOf(ProfessionSpecializationType.RUNEKEEPER)
+                        != ProfessionSpecializationEconomyPolicy.roleOf(ProfessionSpecializationType.ARCANIST),
+                "enchanter specializations must offer different economic roles");
     }
 
     private static void require(final boolean condition, final String message) {

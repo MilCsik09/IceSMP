@@ -49,22 +49,24 @@ public final class ProfessionCraftTransaction {
         final PlayerInventory inventory = player.getInventory();
         final ItemStack[] before = cloneContents(inventory.getStorageContents());
         final ItemStack[] working = cloneContents(before);
+        final ProfessionSpecializationEconomyPolicy.Effect specialization =
+                ProfessionSpecializationEconomyPolicy.effectFor(player, recipe);
 
         for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            final long requested = (long) entry.getValue() * batches;
+            final long requested = specialization.adjustInput((long) entry.getValue() * batches);
             if (requested > Integer.MAX_VALUE
                     || !consumePlain(working, entry.getKey(), (int) requested)) {
                 return new Result(Status.MISSING_INGREDIENTS, 0);
             }
         }
         for (final Map.Entry<String, Integer> entry : recipe.uniqueIngredients().entrySet()) {
-            final long requested = (long) entry.getValue() * batches;
+            final long requested = specialization.adjustInput((long) entry.getValue() * batches);
             if (requested > Integer.MAX_VALUE
                     || !consumeUnique(working, entry.getKey(), (int) requested)) {
                 return new Result(Status.MISSING_INGREDIENTS, 0);
             }
         }
-        for (final ItemStack raw : outputs) {
+        for (final ItemStack raw : specialization.adjustOutputs(recipe, outputs)) {
             if (raw == null || raw.getType().isAir() || raw.getAmount() <= 0) {
                 return new Result(Status.INVALID_BATCH, 0);
             }
