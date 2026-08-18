@@ -1,0 +1,48 @@
+name: Paper Probe Contract Fix
+
+on:
+  push:
+    branches: [feature/equipment-2]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-probe:
+    if: ${{ github.event.head_commit.message == 'ci(runtime): align Paper attribute control probe' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align runtime assertion with Paper 1.21.11 component semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/main/java/hu/taliann/icesmp/itemization/PaperSourceIntegrityRuntimeProbe.java')
+          s=p.read_text()
+          a='''        check(!vanilla.hasData(DataComponentTypes.ATTRIBUTE_MODIFIERS),
+                "fresh vanilla sword must use implicit material defaults");
+        final var defaults = vanilla.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+'''
+          b='''        final var defaults = vanilla.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+'''
+          if s.count(a)!=1: raise SystemExit('vanilla control anchor mismatch')
+          s=s.replace(a,b)
+          a='''        check(!basic.hasData(DataComponentTypes.ATTRIBUTE_MODIFIERS),
+                "BASIC vanilla control must retain implicit Material attribute ownership");
+        final var basicDefaults = basic.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+'''
+          b='''        final var basicDefaults = basic.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+'''
+          if s.count(a)!=1: raise SystemExit('basic control anchor mismatch')
+          s=s.replace(a,b)
+          p.write_text(s)
+          PY
+          rm .github/workflows/paper-probe-contract-fix.yml
+          git config user.name "Csik Milán"
+          git config user.email "81396861+MilCsik09@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "test(runtime): align Paper attribute control semantics"
+          git push origin HEAD:feature/equipment-2
