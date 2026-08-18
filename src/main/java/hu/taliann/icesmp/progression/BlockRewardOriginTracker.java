@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.progression;
 
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -46,8 +47,9 @@ public final class BlockRewardOriginTracker {
         final int y = block.getY();
         final int z = block.getZ();
         final JavaPlugin plugin = JavaPlugin.getProvidingPlugin(BlockRewardOriginTracker.class);
-        block.getWorld().getRegionScheduler().runDelayed(plugin, block.getLocation(), task -> {
-            final Block current = block.getWorld().getBlockAt(x, y, z);
+        final org.bukkit.Location location = block.getLocation();
+        Bukkit.getRegionScheduler().runDelayed(plugin, location, task -> {
+            final Block current = location.getWorld().getBlockAt(x, y, z);
             remove(current, PLACED);
             remove(current, SYNTHETIC);
         }, 1L);
