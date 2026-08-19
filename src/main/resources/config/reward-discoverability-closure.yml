@@ -1,5 +1,22 @@
 # PvE reward and discoverability closure. This extends the existing loot and mob-template
 # authorities; it does not introduce a second loot framework.
+
+# Legacy reusable hunting material brought under the same economy metadata contract as the new
+# vocabulary. The canonical item id stays unchanged and existing recipes remain authoritative.
+profession-materials:
+  vad_esszencia:
+    tier: SPECIAL
+    processing-state: RAW
+    source-types:
+    - combat:wilderness
+    - combat:veteran
+    sink-types:
+    - leather-equipment
+    - cordage-processing
+    - alchemy-service
+    - market
+    economy-managed: true
+
 loot:
   rank-rewards:
     normal:
