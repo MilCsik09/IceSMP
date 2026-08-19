@@ -15,6 +15,7 @@ on:
       - staging
       - feature/itemization-progression-2
       - feature/vanilla-crafting-boundary
+      - feature/equipment-2
     paths-ignore:
       - "**/*.md"
   workflow_dispatch:

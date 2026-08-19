@@ -71,8 +71,8 @@ public final class HardeningClosureRegressionSuite {
                         && remove >= 0 && add > remove,
                 "stable NamespacedKeys remove the old transient modifier before adding a refresh");
         check(service.contains("counts.getOrDefault(candidate.itemId(), 0) == 1")
-                        && service.contains("fits(template.slot(), equippedSlot)"),
-                "duplicate UUID and invalid-slot equipment fail closed before set projection");
+                        && service.contains("proficiency.isActive(player, item, equippedSlot)"),
+                "duplicate UUID and slot/proficiency-invalid equipment fail closed before set projection through the shared authority");
     }
 
     private static void rewardAndContributionPoliciesRemainFailClosed() {

@@ -96,10 +96,12 @@ public final class ItemIdentityService {
     private final NamespacedKey abilityPowerKey;
     private final NamespacedKey signatureProjectionKey;
     private final NamespacedKey signatureTierProjectionKey;
+    private final NamespacedKey equipmentSuppressedKey;
     private final NamespacedKey legacyRarityKey;
     private final NamespacedKey legacyRuneKey;
     private final NamespacedKey relicKey;
     private volatile Function<ItemStack, String> canonicalStateValidator = item -> "";
+    private volatile EquipmentProficiencyService equipmentProficiencyService;
 
     public ItemIdentityService(final JavaPlugin plugin, final ItemTemplateRegistry templates) {
         this.templates = java.util.Objects.requireNonNull(templates, "templates");
@@ -112,6 +114,7 @@ public final class ItemIdentityService {
         this.abilityPowerKey = new NamespacedKey(plugin, "ability_power");
         this.signatureProjectionKey = new NamespacedKey(plugin, "signature_item");
         this.signatureTierProjectionKey = new NamespacedKey(plugin, "signature_tier");
+        this.equipmentSuppressedKey = new NamespacedKey(plugin, "equipment_suppressed");
         this.legacyRarityKey = new NamespacedKey(plugin, "masterwork_quality");
         this.legacyRuneKey = new NamespacedKey(plugin, "rune_effect");
         this.relicKey = new NamespacedKey(plugin, "relic_id");
@@ -196,6 +199,10 @@ public final class ItemIdentityService {
         final ArrayList<Component> lore = new ArrayList<>();
         lore.add(Component.text(template.rarity().displayName() + " • Tárgyszint " + instance.itemLevel(),
                 color(template.rarity())).decoration(TextDecoration.ITALIC, false));
+        if (template.isArmorFamilyEquipment()) {
+            lore.add(Component.text("Páncéltípus: " + template.armorFamily().displayName(),
+                    NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+        }
         final String stageId = instance.ascension().stageId();
         if (template.levelRequirementAt(stageId) > 0) {
             lore.add(Component.text("Követelmény: " + template.levelRequirementAt(stageId) + ". szint",
@@ -261,8 +268,8 @@ public final class ItemIdentityService {
         }
         meta.lore(lore);
         item.setItemMeta(meta);
-        applyStats(item, template, instance);
         writeIdentity(item, template, instance);
+        applyStats(item, template, instance);
         refreshPresentation(item, template, instance);
         return item;
     }
@@ -282,6 +289,10 @@ public final class ItemIdentityService {
 
     public void setCanonicalStateValidator(final Function<ItemStack, String> validator) {
         canonicalStateValidator = java.util.Objects.requireNonNull(validator, "validator");
+    }
+
+    public void setEquipmentProficiencyService(final EquipmentProficiencyService service) {
+        equipmentProficiencyService = java.util.Objects.requireNonNull(service, "service");
     }
 
     public Inspection inspect(final ItemStack item) {
@@ -429,6 +440,7 @@ public final class ItemIdentityService {
         meta.getPersistentDataContainer().set(legacyRuneKey, PersistentDataType.STRING,
                 updated.runes().get(0));
         item.setItemMeta(meta);
+        applyStats(item, template, updated);
         return new RuneMutation(RuneMutationStatus.APPLIED, updated, template);
     }
 
@@ -483,17 +495,19 @@ public final class ItemIdentityService {
 
     /**
      * Canonical equipped ability power is slot-aware and duplicate-safe. A copied UUID, stale
-     * revision, invalid checksum or wrong-slot item contributes neither direct power nor a set piece.
+     * revision, invalid checksum, suppression or wrong-slot/family item contributes neither direct
+     * power nor a set piece. Activity is delegated to EquipmentProficiencyService, the shared
+     * active-equipment authority used by every runtime consumer.
      */
     public double equippedAbilityPower(final Player player) {
         if (player == null) return 0.0D;
         final ArrayList<EquippedAbilityCandidate> candidates = new ArrayList<>(6);
-        addAbilityCandidate(candidates, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
-        addAbilityCandidate(candidates, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
-        addAbilityCandidate(candidates, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
-        addAbilityCandidate(candidates, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
-        addAbilityCandidate(candidates, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
-        addAbilityCandidate(candidates, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
+        addAbilityCandidate(candidates, player, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
+        addAbilityCandidate(candidates, player, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
+        addAbilityCandidate(candidates, player, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
+        addAbilityCandidate(candidates, player, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
+        addAbilityCandidate(candidates, player, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
+        addAbilityCandidate(candidates, player, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
         final LinkedHashMap<UUID, Integer> counts = new LinkedHashMap<>();
         for (final EquippedAbilityCandidate candidate : candidates) {
             counts.merge(candidate.itemId(), 1, Integer::sum);
@@ -517,14 +531,12 @@ public final class ItemIdentityService {
         return total;
     }
 
-    private void addAbilityCandidate(final List<EquippedAbilityCandidate> result, final ItemStack item,
-                                     final ItemTemplate.Slot equippedSlot) {
+    private void addAbilityCandidate(final List<EquippedAbilityCandidate> result, final Player player,
+                                     final ItemStack item, final ItemTemplate.Slot equippedSlot) {
+        final EquipmentProficiencyService proficiency = equipmentProficiencyService;
+        if (proficiency == null || !proficiency.isActive(player, item, equippedSlot)) return;
         final Inspection inspection = inspect(item);
         if (inspection.status() != Status.VALID) return;
-        final ItemTemplate.Slot authored = inspection.template().slot();
-        final boolean fits = authored == equippedSlot || (equippedSlot == ItemTemplate.Slot.MAIN_HAND
-                && authored == ItemTemplate.Slot.TWO_HAND);
-        if (!fits) return;
         result.add(new EquippedAbilityCandidate(inspection.instance().itemId(),
                 inspection.instance(), inspection.template()));
     }
@@ -541,12 +553,50 @@ public final class ItemIdentityService {
             if ("ability_power".equals(entry.getKey())) abilityPower += entry.getValue();
             else attributes.add(entry.getKey() + ':' + entry.getValue());
         }
-        ItemDataFactory.applyAttributeModifiers(item, attributes, false);
+        final ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(abilityPowerKey);
         if (abilityPower != 0.0D) {
-            final ItemMeta meta = item.getItemMeta();
             meta.getPersistentDataContainer().set(abilityPowerKey, PersistentDataType.DOUBLE, abilityPower);
-            item.setItemMeta(meta);
         }
+        item.setItemMeta(meta);
+        ItemDataFactory.applyCanonicalAttributeModifiers(item, attributes, false);
+    }
+
+    /**
+     * Managed-but-invalid equipment is gameplay-inert even when its backing Material would normally
+     * provide vanilla combat attributes. This does not rewrite identity/version/checksum state; a
+     * later successful migration or template reload can therefore reconcile and reactivate it.
+     */
+    public void suppressManagedInvalid(final ItemStack item) {
+        if (item == null || item.getType().isAir()) return;
+        final ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        meta.getPersistentDataContainer().remove(abilityPowerKey);
+        meta.getPersistentDataContainer().set(equipmentSuppressedKey,
+                PersistentDataType.BYTE, (byte) 1);
+        item.setItemMeta(meta);
+        ItemDataFactory.applyCanonicalAttributeModifiers(item, List.of(), false);
+        ItemDataFactory.hideAttributeTooltip(item);
+    }
+
+    public void setEquipmentSuppressed(final ItemStack item, final ItemTemplate template,
+                                       final ItemInstance instance, final boolean suppressed) {
+        if (item == null || template == null || instance == null) return;
+        if (suppressed) {
+            suppressManagedInvalid(item);
+            return;
+        }
+        final ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(equipmentSuppressedKey);
+        item.setItemMeta(meta);
+        applyStats(item, template, instance);
+        refreshPresentation(item, template, instance);
+    }
+
+    public boolean isEquipmentSuppressed(final ItemStack item) {
+        return item != null && item.hasItemMeta()
+                && item.getItemMeta().getPersistentDataContainer().has(
+                equipmentSuppressedKey, PersistentDataType.BYTE);
     }
 
     private void writeIdentity(final ItemStack item, final ItemTemplate template,

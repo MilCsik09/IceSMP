@@ -233,6 +233,7 @@ public final class IceSMPCore {
     private final ItemRarityService itemRarityService;
     private final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplateRegistry;
     private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
+    private final hu.taliann.icesmp.itemization.EquipmentProficiencyService equipmentProficiencyService;
     private final hu.taliann.icesmp.itemization.ItemTransformationPolicy itemTransformationPolicy;
     private final hu.taliann.icesmp.itemization.ItemMutationCoordinator itemMutationCoordinator;
     private final hu.taliann.icesmp.gui.ItemForgeGUI itemForgeGUI;
@@ -426,6 +427,10 @@ public final class IceSMPCore {
         this.itemRarityService = new ItemRarityService(plugin, configManager);
         this.itemTemplateRegistry = new hu.taliann.icesmp.itemization.ItemTemplateRegistry(plugin, configManager);
         this.itemIdentityService = new hu.taliann.icesmp.itemization.ItemIdentityService(plugin, itemTemplateRegistry);
+        this.equipmentProficiencyService =
+                new hu.taliann.icesmp.itemization.EquipmentProficiencyService(
+                        plugin, jobManager, itemIdentityService, messageManager);
+        this.itemIdentityService.setEquipmentProficiencyService(equipmentProficiencyService);
         this.itemTransformationPolicy = new hu.taliann.icesmp.itemization.ItemTransformationPolicy(
                 plugin, configManager, itemIdentityService);
         this.professionRecipeCatalog = new hu.taliann.icesmp.managers.ProfessionRecipeCatalog(plugin, configManager);
@@ -436,7 +441,7 @@ public final class IceSMPCore {
         this.encounterRewardDelivery = new hu.taliann.icesmp.pve.EncounterRewardDeliveryService(
                 plugin, uniqueMaterialFactory, messageManager);
         this.equippedCombatPowerService = new hu.taliann.icesmp.pve.EquippedCombatPowerService(
-                plugin, itemIdentityService, jobManager);
+                plugin, itemIdentityService, jobManager, equipmentProficiencyService);
         worldBossManager.setPveRuntime(mobScalingManager, mobAbilityRuntime,
                 encounterRewardDelivery, equippedCombatPowerService);
         this.itemMutationCoordinator = new hu.taliann.icesmp.itemization.ItemMutationCoordinator(
@@ -599,6 +604,7 @@ public final class IceSMPCore {
         this.shopManager.setCaravanStockSeed(caravanManager::getStockSeed);
         this.specializationManager = new SpecializationManager(plugin, configManager, messageManager,
                 jobManager, professionManager, factionManager, sinManager, questManager);
+        this.equipmentProficiencyService.setSpecializationManager(specializationManager);
         this.specializationManager.setWorldBossManager(worldBossManager);
         questManager.setSpecializationManager(specializationManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager);
@@ -1708,6 +1714,9 @@ public final class IceSMPCore {
             mobScalingManager.load();
             craftingRestrictionManager.load();
             itemTemplateRegistry.load();
+            for (final Player online : Bukkit.getOnlinePlayers()) {
+                equipmentProficiencyService.reconcileNextTick(online);
+            }
             professionRecipeCatalog.load();
             professionRecipeManager.registerRecipes();
             crateManager.reloadConfig();
@@ -1887,7 +1896,7 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.commands.ItemGiveCommand(plugin, uniqueMaterialFactory, professionRecipeCatalog,
                         professionRecipeBookListener, relicManager, blueprintItemFactory, messageManager,
                         moneyPouchItemFactory, devItemManager, itemIdentityService, itemTemplateRegistry,
-                        itemTransformationPolicy));
+                        itemTransformationPolicy, equipmentProficiencyService));
         plugin.registerCommand("souls", "Lélekszilánk parancsok", List.of("soul", "lelek"), new SoulCommand(soulShardManager, messageManager));
         plugin.registerCommand("spell", "Spell-mesterség (cooldown + erő valutáért)", List.of("spells", "mastery", "mesterseg"), new SpellCommand(jobManager, spellRegistry, spellMasteryManager, messageManager));
         plugin.registerCommand("spellbook", "Varázskönyv: spellek böngészése és kiválasztása", List.of("varazskonyv", "konyv", "sb"), new SpellbookCommand(abilityCatalystListener, messageManager));
@@ -1926,7 +1935,9 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener, spellFavoritesManager), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CatalystProtectionListener(plugin, catalystItemFactory, messageManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SignatureItemListener(plugin, configManager, messageManager, gatheringBuffManager, currencyManager, territoryManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SignatureItemListener(
+                plugin, configManager, messageManager, gatheringBuffManager, currencyManager,
+                territoryManager, equipmentProficiencyService, itemIdentityService), plugin);
         pluginManager.registerEvents(new SpellProjectileListener(plugin), plugin);
         pluginManager.registerEvents(new SpellStateListener(plugin), plugin);
         pluginManager.registerEvents(playerSessionCleanupListener, plugin);
@@ -1936,6 +1947,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(totemManager, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(mobAbilityRuntime, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EquipmentProficiencyListener(
+                plugin, equipmentProficiencyService, itemIdentityService), plugin);
         pluginManager.registerEvents(equippedCombatPowerService, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.VanillaCraftingBoundaryListener(
                 itemTransformationPolicy, messageManager), plugin);
@@ -1983,7 +1996,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.RuneApplyListener(
                 uniqueMaterialFactory, configManager, messageManager, itemIdentityService), plugin);
         final hu.taliann.icesmp.listeners.RuneEffectListener runeEffectListener =
-                new hu.taliann.icesmp.listeners.RuneEffectListener(configManager, itemIdentityService);
+                new hu.taliann.icesmp.listeners.RuneEffectListener(
+                        configManager, itemIdentityService, equipmentProficiencyService);
         runeEffectListener.setJobManager(jobManager); // Varázsló rúna-affinitás
         pluginManager.registerEvents(runeEffectListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BestiaryListener(bestiaryManager, worldBossManager, statsManager, professionRecipeCatalog, territoryManager), plugin);

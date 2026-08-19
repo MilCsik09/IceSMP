@@ -1065,6 +1065,8 @@ public final class SpecializationManager {
     }
 
     private void scheduleClassProfileRefresh(final Player player) {
+        hu.taliann.icesmp.itemization.EquipmentProficiencyService
+                .reconcileAfterClassChange(player);
         if (player == null) return;
         player.getScheduler().run(plugin, task -> refreshClassProfile(player), null);
     }

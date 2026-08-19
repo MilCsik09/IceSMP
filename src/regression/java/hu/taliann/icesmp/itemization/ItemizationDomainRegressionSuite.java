@@ -455,7 +455,7 @@ public final class ItemizationDomainRegressionSuite {
                 2, 2, "", "", List.of("Awakened"));
         return new ItemTemplate("mutation_template", ItemTemplate.CURRENT_SCHEMA, 1,
                 "Mutation", List.of(), ItemRarity.LEGENDARY, 30, ItemTemplate.Family.WEAPON,
-                ItemTemplate.Slot.MAIN_HAND, "NETHERITE_AXE", "", "", 20,
+                null, "", ItemTemplate.Slot.MAIN_HAND, "NETHERITE_AXE", "", "", 20,
                 Set.of(), Set.of(), Set.of(), 0.0D, 0.0D,
                 Map.of("ability_power", 2.0D), baseRolls, 1,
                 "glatziendorfi_jegtoro", "", ItemTemplate.BindPolicy.NONE,
@@ -504,12 +504,22 @@ public final class ItemizationDomainRegressionSuite {
                                              final Set<String> classes,
                                              final Set<String> specializations,
                                              final Map<String, Double> fixed) {
+        final ArmorFamily armorFamily;
+        if (family == ItemTemplate.Family.ARMOR && ItemTemplate.isArmorSlot(slot)) {
+            armorFamily = classes.stream().map(hu.taliann.icesmp.data.JobType::fromId)
+                    .filter(java.util.Objects::nonNull)
+                    .map(EquipmentProficiencyPolicy::familyOf).findFirst()
+                    .orElse(ArmorFamily.PLATE);
+        } else {
+            armorFamily = null;
+        }
         return new ItemTemplate(id, ItemTemplate.CURRENT_SCHEMA, 1,
-                id, List.of(), rarity, 20, family, slot, "IRON_SWORD", "", "", 0,
+                id, List.of(), rarity, 20, family, armorFamily, "", slot,
+                "IRON_SWORD", "", "", 0,
                 classes, specializations, Set.of(), 0.0D, 0.0D, fixed, Map.of(), 0,
                 "", "", ItemTemplate.BindPolicy.NONE, ItemTemplate.TradePolicy.TRADEABLE,
                 ItemTemplate.SalvagePolicy.MATERIALS, Set.of("combat:wilderness"), Set.of(),
-                Set.of("hunting:test"), Set.of("salvage:test"), Map.of(), List.of());
+                Set.of("hunting:test"), Set.of("salvage:test"), Map.of(), List.of(), Map.of());
     }
 
     private static void expectFailure(final Runnable action, final String message) {

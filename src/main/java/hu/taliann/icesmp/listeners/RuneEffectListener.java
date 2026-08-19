@@ -34,15 +34,18 @@ public final class RuneEffectListener implements Listener {
 
     private final ConfigManager configManager;
     private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
+    private final hu.taliann.icesmp.itemization.EquipmentProficiencyService proficiency;
     private static final org.bukkit.NamespacedKey RUNE_LIST_PDC_KEY =
             org.bukkit.NamespacedKey.fromString("icesmp:rune_effects");
     /** E7 — setter-injektált: Varázsló rúnaíró affinitás (dupla rúna-hatás). */
     private volatile hu.taliann.icesmp.managers.JobManager jobManager;
 
     public RuneEffectListener(final ConfigManager configManager,
-                              final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService) {
+                              final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService,
+                              final hu.taliann.icesmp.itemization.EquipmentProficiencyService proficiency) {
         this.configManager = configManager;
         this.itemIdentityService = itemIdentityService;
+        this.proficiency = proficiency;
     }
 
     public void setJobManager(final hu.taliann.icesmp.managers.JobManager jobManager) {
@@ -63,10 +66,22 @@ public final class RuneEffectListener implements Listener {
         return itemIdentityService.runesOf(item);
     }
 
+    private List<String> activeRunes(final Player player, final ItemStack item,
+                                     final hu.taliann.icesmp.itemization.ItemTemplate.Slot slot) {
+        final var inspection = itemIdentityService.inspect(item);
+        if (inspection.status()
+                == hu.taliann.icesmp.itemization.ItemIdentityService.Status.NOT_MANAGED) {
+            return runesOf(item);
+        }
+        return proficiency.isActive(player, item, slot) ? runesOf(item) : List.of();
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onMelee(final EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player attacker) {
-            final List<String> runes = runesOf(attacker.getInventory().getItemInMainHand());
+            final List<String> runes = activeRunes(attacker,
+                    attacker.getInventory().getItemInMainHand(),
+                    hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND);
             if (!runes.isEmpty() && event.getEntity() instanceof LivingEntity victim) {
                 for (final String rune : runes) applyWeaponRune(rune, event, victim, affinity(attacker));
             }
@@ -86,11 +101,14 @@ public final class RuneEffectListener implements Listener {
         }
         // runa_bastya: a sértett játékos mellvértje csillapít
         if (event.getEntity() instanceof Player victim) {
-            if (runesOf(victim.getInventory().getChestplate()).contains("runa_bastya")) {
+            final List<String> chestRunes = activeRunes(victim,
+                    victim.getInventory().getChestplate(),
+                    hu.taliann.icesmp.itemization.ItemTemplate.Slot.CHEST);
+            if (chestRunes.contains("runa_bastya")) {
                 final double reduction = pct("runes.runa_bastya.damage-reduction-percent", 4.0D) * affinity(victim);
                 event.setDamage(Math.max(0.0D, event.getDamage() * (1.0D - reduction / 100.0D)));
             }
-            if (runesOf(victim.getInventory().getChestplate()).contains("runa_oltalom")
+            if (chestRunes.contains("runa_oltalom")
                     && victim.getHealth() <= victim.getMaxHealth() * 0.35D) {
                 final double reduction = pct(
                         "runes.runa_oltalom.low-health-reduction-percent", 6.0D) * affinity(victim);
@@ -143,10 +161,11 @@ public final class RuneEffectListener implements Listener {
     /** Lövéskor a nyíl örökli az íj rúnáját — a sebzés-event a nyílból olvas. */
     @EventHandler(ignoreCancelled = true)
     public void onShoot(final EntityShootBowEvent event) {
-        if (!(event.getEntity() instanceof Player)) {
+        if (!(event.getEntity() instanceof Player player)) {
             return;
         }
-        final List<String> runes = runesOf(event.getBow());
+        final List<String> runes = activeRunes(player, event.getBow(),
+                hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND);
         if (!runes.isEmpty() && event.getProjectile() instanceof Projectile projectile) {
             projectile.getPersistentDataContainer().set(
                     RUNE_LIST_PDC_KEY, PersistentDataType.STRING, String.join(",", runes));

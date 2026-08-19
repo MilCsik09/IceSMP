@@ -19,6 +19,8 @@ public record ItemTemplate(
         ItemRarity rarity,
         int itemLevel,
         Family family,
+        ArmorFamily armorFamily,
+        String familyExceptionReason,
         Slot slot,
         String material,
         String itemModel,
@@ -46,7 +48,7 @@ public record ItemTemplate(
         Map<String, AscensionStage> ascensionStages
 ) {
 
-    public static final int CURRENT_SCHEMA = 1;
+    public static final int CURRENT_SCHEMA = 2;
 
     public enum Family { WEAPON, ARMOR, TOOL, ACCESSORY, CONSUMABLE, MATERIAL, OTHER }
     public enum Slot { HEAD, CHEST, LEGS, FEET, MAIN_HAND, OFF_HAND, TWO_HAND, ACCESSORY, BODY, NONE }
@@ -117,7 +119,7 @@ public record ItemTemplate(
                         final Set<String> gatheringTags, final Set<String> craftingTags,
                         final Map<String, String> encounterMetadata, final List<String> ascensionPath) {
         this(templateId, schemaVersion, templateVersion, displayName, lore, rarity, itemLevel,
-                family, slot, material, itemModel, equipmentAsset, levelRequirement,
+                family, null, "", slot, material, itemModel, equipmentAsset, levelRequirement,
                 classRestrictions, specializationRestrictions, professionRestrictions,
                 baseDamage, baseArmor, fixedStats, rolledStats, runeSocketCount,
                 signatureEffectId, setId, bindPolicy, tradePolicy, salvagePolicy, sourceTags,
@@ -139,7 +141,18 @@ public record ItemTemplate(
             throw new IllegalArgumentException("item level is outside the supported range");
         }
         Objects.requireNonNull(family, "family");
+        familyExceptionReason = optionalText(familyExceptionReason, 240);
         Objects.requireNonNull(slot, "slot");
+        final boolean armorSlot = isArmorSlot(slot);
+        if (family == Family.ARMOR && armorSlot && armorFamily == null) {
+            throw new IllegalArgumentException("canonical armor slot requires armor-family");
+        }
+        if (armorFamily != null && (family != Family.ARMOR || !armorSlot)) {
+            throw new IllegalArgumentException("armor-family is only valid on canonical armor slots");
+        }
+        if (family != Family.ARMOR && armorSlot) {
+            throw new IllegalArgumentException("armor slot requires the ARMOR item family");
+        }
         material = requireText(material, "material", 96).toUpperCase(Locale.ROOT);
         itemModel = optionalNamespacedId(itemModel);
         equipmentAsset = optionalNamespacedId(equipmentAsset);
@@ -202,6 +215,14 @@ public record ItemTemplate(
     public AscensionStage stage(final String stageId) {
         if (stageId == null || stageId.isBlank() || "base".equalsIgnoreCase(stageId)) return null;
         return ascensionStages.get(ItemStatCatalog.normalizeId(stageId));
+    }
+
+    public boolean isArmorFamilyEquipment() {
+        return family == Family.ARMOR && isArmorSlot(slot) && armorFamily != null;
+    }
+
+    public static boolean isArmorSlot(final Slot slot) {
+        return slot == Slot.HEAD || slot == Slot.CHEST || slot == Slot.LEGS || slot == Slot.FEET;
     }
 
     public boolean matchesAscensionState(final String stageId, final int stageIndex) {
@@ -332,6 +353,13 @@ public record ItemTemplate(
 
     private static String optionalId(final String raw) {
         return raw == null || raw.isBlank() ? "" : ItemStatCatalog.normalizeId(raw);
+    }
+
+    private static String optionalText(final String raw, final int maxLength) {
+        if (raw == null || raw.isBlank()) return "";
+        final String value = raw.trim();
+        if (value.length() > maxLength) throw new IllegalArgumentException("optional text is too long");
+        return value;
     }
 
     private static String optionalNamespacedId(final String raw) {

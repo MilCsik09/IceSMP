@@ -41,8 +41,31 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
   felkerült, whitelistán kívüli enchantot; market és CombatPower nem fogadja csendben.
 - Vanilla/basic gear nem canonical salvage vagy profession conversion input. Villager
   és vanilla loot basic marad, Netherite survival material, nem MMORPG BiS authority.
-- Equipment 2.0, Profession 2.0, CLOTH/LEATHER/MAIL/PLATE és a hozzájuk tartozó resource
-  pack külön jövőbeli scope; `Material` nem `ArmorFamily`.
+- Ez a foundation rögzítette a `Material != ArmorFamily` határt; az Equipment 2.0 a
+  következő stacked szakaszban valósítja meg, míg a Profession 2.0 és a teljes family
+  resource pack továbbra is külön jövőbeli scope.
+
+### Equipment 2.0 — stacked PR #128 fölött
+
+- Bevezetésre került a Materialtól független CLOTH/LEATHER/MAIL/PLATE domain és a 13
+  kaszt egyetlen proficiency authorityja. A 35 specialization a szülő kaszt familyjét tartja.
+- A 48 authored template schema 2-re migrált; 18 armor darab explicit familyt kapott
+  (3/2/5/8), a fegyverek, utilityk és két pajzs nem kaptak fake familyt. A három set
+  armor piece-e konzisztens, mind a hét ascension path family-stable.
+- Click, shift/hotbar, drag, right-click/plugin equipment event, dispenser, join, respawn,
+  class change és reload út fail-closed. Wrong-family gear birtokolható és kereskedhető,
+  de stat/set/Signature/rune/CombatPower hatása nincs; az item nem vész el.
+- A négy validált family profil ugyanazt az item-level budgetet más arányban osztja el.
+  A CombatPower normalizálja az armor family coefficientet; a flat Armor továbbra is flat,
+  nincs family cap vagy publikus gear score.
+- A build-aware loot saját familyt erősebben preferál, de megtartja az 1.5× plafont,
+  más family pozitív trade-súlyát és a 32 elemű soft-diversityt. A market metadata és
+  structured/string filter family-aware, vétel/listázás nem proficiency-zárt.
+- A determinisztikus `equipment-2-handoff.json` 48 template-es migration mapet,
+  balance reportot, 15 canonical recipe Profession 2.0 leltárt és az Equipment Resource
+  Pack 2.0 vizuális backlogját tartja. A következő stacked scope a Professions 2.0;
+  a teljes family crafting ownership, feldolgozási lánc, salvage és 392 recept auditja
+  szándékosan nincs ebben a PR-ben.
 
 ### PR #127 final source closure
 

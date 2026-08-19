@@ -5,6 +5,8 @@ import hu.taliann.icesmp.itemization.ItemInstance;
 import hu.taliann.icesmp.itemization.ItemSetDefinition;
 import hu.taliann.icesmp.itemization.ItemTemplate;
 import hu.taliann.icesmp.itemization.ItemTemplateRegistry;
+import hu.taliann.icesmp.itemization.EquipmentBudgetModel;
+import hu.taliann.icesmp.itemization.EquipmentProficiencyService;
 import hu.taliann.icesmp.managers.JobManager;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -45,15 +47,18 @@ public final class EquippedCombatPowerService implements Listener {
     private final JavaPlugin plugin;
     private final ItemIdentityService identities;
     private final JobManager jobs;
+    private final EquipmentProficiencyService proficiency;
     private final Map<UUID, Double> cache = new ConcurrentHashMap<>();
     private final Map<String, NamespacedKey> setModifierKeys;
 
     public EquippedCombatPowerService(final JavaPlugin plugin,
                                       final ItemIdentityService identities,
-                                      final JobManager jobs) {
+                                      final JobManager jobs,
+                                      final EquipmentProficiencyService proficiency) {
         this.plugin = plugin;
         this.identities = identities;
         this.jobs = jobs;
+        this.proficiency = proficiency;
         this.setModifierKeys = Map.of(
                 "max_health", new NamespacedKey(plugin, "item_set_max_health"),
                 "armor", new NamespacedKey(plugin, "item_set_armor"),
@@ -73,12 +78,12 @@ public final class EquippedCombatPowerService implements Listener {
     public void refresh(final Player player) {
         if (player == null || !player.isOnline()) return;
         final ArrayList<Candidate> candidates = new ArrayList<>(6);
-        add(candidates, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
-        add(candidates, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
-        add(candidates, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
-        add(candidates, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
-        add(candidates, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
-        add(candidates, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
+        add(candidates, player, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND);
+        add(candidates, player, player.getInventory().getItemInOffHand(), ItemTemplate.Slot.OFF_HAND);
+        add(candidates, player, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD);
+        add(candidates, player, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST);
+        add(candidates, player, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS);
+        add(candidates, player, player.getInventory().getBoots(), ItemTemplate.Slot.FEET);
         final HashMap<UUID, Integer> counts = new HashMap<>();
         for (final Candidate candidate : candidates) counts.merge(candidate.itemId(), 1, Integer::sum);
         final List<Candidate> uniqueCandidates = candidates.stream()
@@ -90,26 +95,39 @@ public final class EquippedCombatPowerService implements Listener {
                 jobs.getPrimaryLevel(player), unique));
     }
 
-    private void add(final List<Candidate> result, final ItemStack item,
+    /** Candidate admission is delegated to the shared active-equipment authority. */
+    private void add(final List<Candidate> result, final Player player, final ItemStack item,
                      final ItemTemplate.Slot equippedSlot) {
+        if (!proficiency.isActive(player, item, equippedSlot)) return;
         final ItemIdentityService.Inspection inspection = identities.inspect(item);
         if (inspection.status() != ItemIdentityService.Status.VALID) return;
         final ItemTemplate template = inspection.template();
-        if (!fits(template.slot(), equippedSlot)) return;
         final ItemInstance instance = inspection.instance();
         final String stage = instance.ascension().stageId();
         final HashMap<String, Double> rolls = new HashMap<>();
         instance.rolls().forEach((id, roll) -> rolls.put(id, roll.value()));
+        double armorCoefficient = 1.0D;
+        double normalizedBudget = 0.0D;
+        final ItemTemplateRegistry registry = ItemTemplateRegistry.current();
+        if (template.isArmorFamilyEquipment() && registry != null) {
+            final var profile = registry.requireFamilyProfile(template.armorFamily());
+            final EquipmentBudgetModel.Budget budget = EquipmentBudgetModel.rolled(
+                    template, profile, stage, rolls);
+            armorCoefficient = profile.baseArmorCoefficient();
+            normalizedBudget = budget.expectedTierBudget() <= 0.0D ? 0.0D
+                    : budget.normalizedTotal() / budget.expectedTierBudget();
+        }
         result.add(new Candidate(instance.itemId(), template.setId(),
                 new EquippedCombatPowerModel.GearSignal(
                         template.slot(), instance.itemLevel(), template.rarity(), template.baseDamage(),
                         template.baseArmor(), template.fixedStatsAt(stage), rolls,
-                        instance.runes().size(), template.signatureTierAt(stage), template.setId())));
+                        instance.runes().size(), template.signatureTierAt(stage), template.setId(),
+                        armorCoefficient, normalizedBudget)));
     }
 
     /**
      * Applies only the Bukkit-attribute set stats. ability_power remains a cast-time canonical
-     * stat consumer; both projections count the same valid, slot-correct, non-duplicate identities.
+     * stat consumer; both projections count the same ACTIVE, non-duplicate identities.
      */
     private void applySetAttributes(final Player player, final List<Candidate> unique) {
         final ItemTemplateRegistry registry = ItemTemplateRegistry.current();
@@ -146,8 +164,6 @@ public final class EquippedCombatPowerService implements Listener {
         final AttributeModifier existing = instance.getModifier(key);
         if (existing != null) instance.removeModifier(existing);
         if (!Double.isFinite(rawAmount) || rawAmount == 0.0D) return;
-        // Authored ItemSetDefinition already validates finite non-zero values; this is a second
-        // runtime bound so a bad hot-reload cannot produce absurd vanilla attributes.
         final double amount = switch (statId) {
             case "max_health" -> Math.max(-1000.0D, Math.min(1000.0D, rawAmount));
             case "armor", "armor_toughness" -> Math.max(-100.0D, Math.min(100.0D, rawAmount));
@@ -155,8 +171,7 @@ public final class EquippedCombatPowerService implements Listener {
             default -> 0.0D;
         };
         if (amount == 0.0D) return;
-        instance.addTransientModifier(new AttributeModifier(
-                key, amount, AttributeModifier.Operation.ADD_NUMBER));
+        instance.addTransientModifier(new AttributeModifier(key, amount, AttributeModifier.Operation.ADD_NUMBER));
     }
 
     private void clearSetAttributes(final Player player) {
@@ -177,11 +192,6 @@ public final class EquippedCombatPowerService implements Listener {
         }
     }
 
-    private static boolean fits(final ItemTemplate.Slot authored, final ItemTemplate.Slot equipped) {
-        return authored == equipped || (equipped == ItemTemplate.Slot.MAIN_HAND
-                && authored == ItemTemplate.Slot.TWO_HAND);
-    }
-
     private void refreshNextTick(final Player player) {
         try {
             player.getScheduler().runDelayed(plugin, task -> refresh(player),
@@ -198,14 +208,10 @@ public final class EquippedCombatPowerService implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onJoin(final PlayerJoinEvent event) {
-        refreshNextTick(event.getPlayer());
-    }
+    public void onJoin(final PlayerJoinEvent event) { refreshNextTick(event.getPlayer()); }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onRespawn(final PlayerRespawnEvent event) {
-        refreshNextTick(event.getPlayer());
-    }
+    public void onRespawn(final PlayerRespawnEvent event) { refreshNextTick(event.getPlayer()); }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onClick(final InventoryClickEvent event) {

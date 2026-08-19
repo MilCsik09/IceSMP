@@ -8,6 +8,15 @@ import java.util.Objects;
 public final class RuneMutationPolicy {
     public enum Action { INSERT, REMOVE, REPLACE }
 
+    /** Optional extension seam; bundled runes currently use {@link #unrestrictedFamilies()}. */
+    public interface FamilyCompatibility {
+        boolean allowed(String runeId, ArmorFamily family);
+
+        default double weight(final String runeId, final ArmorFamily family) {
+            return 1.0D;
+        }
+    }
+
     public record Result(List<String> runes, String removedRune) {
         public Result {
             runes = List.copyOf(runes);
@@ -17,11 +26,24 @@ public final class RuneMutationPolicy {
 
     private RuneMutationPolicy() { }
 
+    public static FamilyCompatibility unrestrictedFamilies() {
+        return (runeId, family) -> true;
+    }
+
     public static Result apply(final List<String> currentRunes, final int capacity,
                                final Action action, final int socketIndex,
                                final String rawNewRune) {
+        return apply(currentRunes, capacity, action, socketIndex, rawNewRune,
+                null, unrestrictedFamilies());
+    }
+
+    public static Result apply(final List<String> currentRunes, final int capacity,
+                               final Action action, final int socketIndex,
+                               final String rawNewRune, final ArmorFamily family,
+                               final FamilyCompatibility compatibility) {
         Objects.requireNonNull(currentRunes, "currentRunes");
         Objects.requireNonNull(action, "action");
+        Objects.requireNonNull(compatibility, "compatibility");
         if (capacity < 0 || capacity > 2 || currentRunes.size() > capacity) {
             throw new IllegalArgumentException("invalid rune capacity");
         }
@@ -34,6 +56,7 @@ public final class RuneMutationPolicy {
         return switch (action) {
             case INSERT -> {
                 final String newRune = requireNewRune(rawNewRune);
+                requireCompatible(newRune, family, compatibility);
                 if (next.size() >= capacity) throw new IllegalArgumentException("rune sockets full");
                 if (next.contains(newRune)) throw new IllegalArgumentException("duplicate rune");
                 next.add(newRune);
@@ -47,6 +70,7 @@ public final class RuneMutationPolicy {
             case REPLACE -> {
                 requireOccupiedSocket(socketIndex, next.size());
                 final String newRune = requireNewRune(rawNewRune);
+                requireCompatible(newRune, family, compatibility);
                 if (next.get(socketIndex).equals(newRune)) {
                     throw new IllegalArgumentException("replacement rune is unchanged");
                 }
@@ -55,6 +79,17 @@ public final class RuneMutationPolicy {
                 yield new Result(next, removed);
             }
         };
+    }
+
+    private static void requireCompatible(final String rune, final ArmorFamily family,
+                                          final FamilyCompatibility compatibility) {
+        if (!compatibility.allowed(rune, family)) {
+            throw new IllegalArgumentException("rune is incompatible with armor family");
+        }
+        final double weight = compatibility.weight(rune, family);
+        if (!Double.isFinite(weight) || weight < 0.0D) {
+            throw new IllegalArgumentException("invalid rune family weight");
+        }
     }
 
     private static String requireNewRune(final String raw) {

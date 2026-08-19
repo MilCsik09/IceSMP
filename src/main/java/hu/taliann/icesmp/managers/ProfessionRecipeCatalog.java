@@ -189,6 +189,16 @@ public final class ProfessionRecipeCatalog {
                     throw new IllegalStateException("profession-recipes." + id
                             + ": a canonical gear result nem egyezik a template material/stack szabályával");
                 }
+                if (hu.taliann.icesmp.itemization.ItemTemplate.isArmorSlot(template.slot())
+                        && !template.isArmorFamilyEquipment()) {
+                    throw new IllegalStateException("profession-recipes." + id
+                            + ": a canonical armor outputból hiányzik az Equipment 2.0 ArmorFamily");
+                }
+                if (template.armorFamily() != null
+                        && !hu.taliann.icesmp.itemization.ItemTemplate.isArmorSlot(template.slot())) {
+                    throw new IllegalStateException("profession-recipes." + id
+                            + ": armor-family csak HEAD/CHEST/LEGS/FEET outputon engedélyezett");
+                }
             }
         }
         final hu.taliann.icesmp.data.FactionType faction =

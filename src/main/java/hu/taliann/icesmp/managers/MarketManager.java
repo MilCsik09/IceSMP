@@ -8,6 +8,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.itemization.ItemIdentityService;
 import hu.taliann.icesmp.itemization.ItemInstance;
 import hu.taliann.icesmp.itemization.ItemTemplate;
+import hu.taliann.icesmp.itemization.ArmorFamily;
 import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -74,14 +75,15 @@ public final class MarketManager implements PersistentStore {
                               Transaction biggestRecentSale, int recentSaleCount) { }
 
     public record ItemMetadata(String templateId, hu.taliann.icesmp.itemization.ItemRarity rarity,
-                               int itemLevel, ItemTemplate.Slot slot, Set<String> classRestrictions,
+                               int itemLevel, ItemTemplate.Slot slot, ArmorFamily armorFamily,
+                               Set<String> classRestrictions,
                                String signatureEffectId, int socketCount, String ascensionState,
                                double averageRollQuality, String setId, Set<String> statIds) { }
 
     public record ItemFilter(String templateId,
                              hu.taliann.icesmp.itemization.ItemRarity rarity,
                              Integer minimumItemLevel, Integer maximumItemLevel,
-                             ItemTemplate.Slot slot, String classId,
+                             ItemTemplate.Slot slot, ArmorFamily armorFamily, String classId,
                              String signatureEffectId, Integer minimumSocketCount,
                              String ascensionState, Double minimumRollQuality,
                              String setId, String requiredStatId) { }
@@ -329,7 +331,8 @@ public final class MarketManager implements PersistentStore {
                 instance.ascension().stageId()).keySet());
         stats.addAll(instance.rolls().keySet());
         return new ItemMetadata(template.templateId(), template.rarity(), instance.itemLevel(),
-                template.slot(), template.classRestrictions(), template.signatureEffectId(),
+                template.slot(), template.armorFamily(), template.classRestrictions(),
+                template.signatureEffectId(),
                 template.runeSocketCountAt(instance.ascension().stageId()),
                 instance.ascension().stageId(), averageQuality, template.setId(), Set.copyOf(stats));
     }
@@ -345,9 +348,9 @@ public final class MarketManager implements PersistentStore {
                     && (filter.minimumItemLevel() == null || item.itemLevel() >= filter.minimumItemLevel())
                     && (filter.maximumItemLevel() == null || item.itemLevel() <= filter.maximumItemLevel())
                     && (filter.slot() == null || item.slot() == filter.slot())
+                    && (filter.armorFamily() == null || item.armorFamily() == filter.armorFamily())
                     && (filter.classId() == null || filter.classId().isBlank()
-                    || item.classRestrictions().isEmpty()
-                    || item.classRestrictions().contains(filter.classId().toLowerCase(java.util.Locale.ROOT)))
+                    || matchesClassFilter(item, filter.classId()))
                     && (filter.signatureEffectId() == null || filter.signatureEffectId().isBlank()
                     || item.signatureEffectId().equalsIgnoreCase(filter.signatureEffectId()))
                     && (filter.minimumSocketCount() == null
@@ -363,6 +366,17 @@ public final class MarketManager implements PersistentStore {
                     || item.statIds().contains(filter.requiredStatId()
                     .toLowerCase(java.util.Locale.ROOT).replace('-', '_')));
         }).toList();
+    }
+
+    private static boolean matchesClassFilter(final ItemMetadata item, final String rawClassId) {
+        final String classId = rawClassId.toLowerCase(java.util.Locale.ROOT);
+        if (!item.classRestrictions().isEmpty()) {
+            return item.classRestrictions().contains(classId);
+        }
+        if (item.armorFamily() == null) return true;
+        final hu.taliann.icesmp.data.JobType job = hu.taliann.icesmp.data.JobType.fromId(classId);
+        return job != null && hu.taliann.icesmp.itemization.EquipmentProficiencyPolicy.familyOf(job)
+                == item.armorFamily();
     }
 
     public long countListingsOf(final UUID seller) {
