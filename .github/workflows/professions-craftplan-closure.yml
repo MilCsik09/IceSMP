@@ -1,0 +1,431 @@
+name: Professions CraftPlan Closure
+
+on:
+  pull_request:
+    branches:
+      - feature/equipment-2
+
+permissions:
+  contents: write
+
+jobs:
+  apply-closure:
+    if: ${{ github.event.pull_request.head.ref == 'feature/professions-2' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/professions-2
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Apply end-to-end CraftPlan and blueprint integration closure
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          # --- Click handler: plan owns precheck and transaction admission. ---
+          p = Path('src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java')
+          s = p.read_text()
+          old = '''        final ProfessionRecipeCatalog.EconomyMetadata economy = catalog.economy(recipe.id());
+        final int batches = batchRequested && economy.batchable() && recipe.templateId() == null
+                && recipe.affixTier() == null ? Math.min(5, economy.batchLimit()) : 1;
+        if (!hasIngredients(player, recipe)) {
+            player.sendMessage(messageManager.get("profession-recipe-missing", "&cNincs meg minden hozzávaló ehhez a recepthez."));
+            return;
+        }
+'''
+          new = '''        final ProfessionRecipeCatalog.EconomyMetadata economy = catalog.economy(recipe.id());
+        final int batches = batchRequested && economy.batchable() && recipe.templateId() == null
+                && recipe.affixTier() == null ? Math.min(5, economy.batchLimit()) : 1;
+        final hu.taliann.icesmp.professions.ProfessionSpecializationEconomyPolicy.Effect specialization =
+                hu.taliann.icesmp.professions.ProfessionSpecializationEconomyPolicy.effectFor(player, recipe);
+        final hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan plan =
+                hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan.of(recipe, specialization, batches);
+        if (!hasIngredients(player, plan)) {
+            player.sendMessage(messageManager.get("profession-recipe-missing", "&cNincs meg minden effektív hozzávaló ehhez az adaghoz."));
+            return;
+        }
+'''
+          if s.count(old) != 1: raise SystemExit('listener plan anchor mismatch')
+          s = s.replace(old, new)
+          old = '''        final var transaction = craftTransaction.apply(player, recipe, batches, outputs);
+        if (!transaction.applied()) {'''
+          new = '''        final var preflight = craftTransaction.preflight(player, plan, outputs);
+        if (!preflight.applied()) {
+            if (preflight.status() == hu.taliann.icesmp.professions.ProfessionCraftTransaction.Status.INVENTORY_FULL) {
+                player.sendMessage(messageManager.get("profession-recipe-inventory-full",
+                        "&cNincs elég hely a hátizsákodban; semmi nem fogyott el."));
+            } else {
+                player.sendMessage(messageManager.get("profession-recipe-missing",
+                        "&cAz effektív CraftPlan már nem teljesíthető; semmi nem fogyott el."));
+            }
+            return;
+        }
+        final var transaction = craftTransaction.apply(player, plan, outputs);
+        if (!transaction.applied()) {'''
+          if s.count(old) != 1: raise SystemExit('listener transaction anchor mismatch')
+          s = s.replace(old, new)
+          start = s.index('    private boolean hasIngredients(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {')
+          end = s.index('    private int countUnique(', start)
+          replacement = '''    private boolean hasIngredients(
+            final Player player,
+            final hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan plan) {
+        for (final Map.Entry<Material, Integer> entry : plan.materialInputs().entrySet()) {
+            if (hu.taliann.icesmp.utils.PlainIngredients.count(
+                    player, entry.getKey(), uniqueMaterials) < entry.getValue()) return false;
+        }
+        for (final Map.Entry<String, Integer> entry : plan.uniqueInputs().entrySet()) {
+            if (countUnique(player, entry.getKey()) < entry.getValue()) return false;
+        }
+        return true;
+    }
+
+'''
+          s = s[:start] + replacement + s[end:]
+          dead_start = s.find('    private void consumeUnique(final Player player, final ProfessionRecipeCatalog.Recipe recipe) {')
+          if dead_start >= 0:
+              dead_end = s.index('    @EventHandler\n    public void onDrag', dead_start)
+              s = s[:dead_start] + s[dead_end:]
+          p.write_text(s)
+
+          # --- GUI: exact plan amounts + same transaction preflight + capacity-aware max batch. ---
+          p = Path('src/main/java/hu/taliann/icesmp/gui/ProfessionRecipeGUI.java')
+          s = p.read_text()
+          old = '''        final boolean learned = !recipe.blueprint()
+                || professionManager.hasLearnedRecipe(player, recipe.id());
+        final boolean hasMats = hasIngredients(player, recipe, uniqueMaterials);
+        final boolean craftable = levelOk && learned && hasMats;
+        final ProfessionRecipeCatalog.EconomyMetadata economy = catalog.economy(recipe.id());
+        final ProfessionSpecializationEconomyPolicy.Effect specialization =
+                ProfessionSpecializationEconomyPolicy.effectFor(player, recipe);
+'''
+          new = '''        final boolean learned = !recipe.blueprint()
+                || professionManager.hasLearnedRecipe(player, recipe.id());
+        final ProfessionRecipeCatalog.EconomyMetadata economy = catalog.economy(recipe.id());
+        final ProfessionSpecializationEconomyPolicy.Effect specialization =
+                ProfessionSpecializationEconomyPolicy.effectFor(player, recipe);
+        final hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan plan =
+                hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan.of(recipe, specialization, 1);
+        final hu.taliann.icesmp.professions.ProfessionCraftTransaction transaction =
+                new hu.taliann.icesmp.professions.ProfessionCraftTransaction(uniqueMaterials);
+        final java.util.List<org.bukkit.inventory.ItemStack> previewOutputs =
+                rawPreviewOutputs(recipe, 1, uniqueMaterials);
+        final var inventoryPreflight = transaction.preflight(player, plan, previewOutputs);
+        final boolean craftable = levelOk && learned && inventoryPreflight.applied();
+'''
+          if s.count(old) != 1: raise SystemExit('gui plan anchor mismatch')
+          s = s.replace(old, new)
+          s = s.replace('for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {\n            final int have = countMaterial',
+                        'for (final Map.Entry<Material, Integer> entry : plan.materialInputs().entrySet()) {\n            final int have = countMaterial', 1)
+          s = s.replace('for (final Map.Entry<String, Integer> entry : recipe.uniqueIngredients().entrySet()) {\n            final int have = countUnique',
+                        'for (final Map.Entry<String, Integer> entry : plan.uniqueInputs().entrySet()) {\n            final int have = countUnique', 1)
+          old = '''        if (economy.batchable()) {
+            lore.add(Component.text("⇧ Shift+katt: 5-ös batch (max " + economy.batchLimit() + ")",
+                    NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+        }
+'''
+          new = '''        if (economy.batchable()) {
+            final int maxCraftable = maxCraftableBatches(player, recipe, specialization,
+                    economy.batchLimit(), uniqueMaterials, transaction);
+            lore.add(Component.text("⇧ Shift+katt: 5-ös batch • effektív max: " + maxCraftable,
+                    NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+        }
+'''
+          if s.count(old) != 1: raise SystemExit('gui batch anchor mismatch')
+          s = s.replace(old, new)
+          old = '''        final Component name = Component.text(
+                (recipe.resultAmount() > 1 ? recipe.resultAmount() + "× " : "")
+                        + recipe.displayName(), nameColor)'''
+          new = '''        final int effectiveOutput = plan.effectiveOutputAmount(recipe.resultAmount());
+        final Component name = Component.text(
+                (effectiveOutput > 1 ? effectiveOutput + "× " : "")
+                        + recipe.displayName(), nameColor)'''
+          if s.count(old) != 1: raise SystemExit('gui output preview anchor mismatch')
+          s = s.replace(old, new)
+          start = s.index('    private static boolean hasIngredients(final Player player,')
+          end = s.index('    public static int countUnique(', start)
+          replacement = '''    private static java.util.List<org.bukkit.inventory.ItemStack> rawPreviewOutputs(
+            final ProfessionRecipeCatalog.Recipe recipe, final int batches,
+            final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
+        final java.util.ArrayList<org.bukkit.inventory.ItemStack> result = new java.util.ArrayList<>(batches);
+        for (int index = 0; index < batches; index++) {
+            final org.bukkit.inventory.ItemStack stack = recipe.uniqueResult() == null
+                    ? new org.bukkit.inventory.ItemStack(recipe.result(), recipe.resultAmount())
+                    : uniqueMaterials.create(recipe.uniqueResult(), recipe.resultAmount());
+            if (stack == null || stack.getType().isAir()) return java.util.List.of();
+            result.add(stack);
+        }
+        return java.util.List.copyOf(result);
+    }
+
+    private static int maxCraftableBatches(
+            final Player player, final ProfessionRecipeCatalog.Recipe recipe,
+            final ProfessionSpecializationEconomyPolicy.Effect specialization, final int limit,
+            final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials,
+            final hu.taliann.icesmp.professions.ProfessionCraftTransaction transaction) {
+        int result = 0;
+        final int bounded = Math.max(1, Math.min(64, limit));
+        for (int candidate = 1; candidate <= bounded; candidate++) {
+            final var plan = hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan.of(
+                    recipe, specialization, candidate);
+            final var outputs = rawPreviewOutputs(recipe, candidate, uniqueMaterials);
+            if (!transaction.preflight(player, plan, outputs).applied()) break;
+            result = candidate;
+        }
+        return result;
+    }
+
+'''
+          s = s[:start] + replacement + s[end:]
+          p.write_text(s)
+
+          # --- Blueprint listener constructor wiring in core. ---
+          p = Path('src/main/java/hu/taliann/icesmp/core/IceSMPCore.java')
+          s = p.read_text()
+          old = 'new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager)'
+          new = 'new hu.taliann.icesmp.listeners.BlueprintUseListener(plugin, blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager)'
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif new not in s:
+              raise SystemExit('BlueprintUseListener core wiring anchor missing')
+          p.write_text(s)
+
+          # --- Pure behavioral regression: input/yield rounding and blueprint recovery matrix. ---
+          Path('src/regression/java/hu/taliann/icesmp/professions/Professions2RegressionSuite.java').write_text(r'''package hu.taliann.icesmp.professions;
+
+import hu.taliann.icesmp.data.ProfessionSpecializationType;
+import hu.taliann.icesmp.data.ProfessionType;
+import hu.taliann.icesmp.itemization.ArmorFamily;
+import hu.taliann.icesmp.itemization.ItemSalvageService;
+import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
+import org.bukkit.Material;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.UUID;
+
+/** Deterministic Professions 2.0 contracts that need no live Bukkit server. */
+public final class Professions2RegressionSuite {
+    public static void main(final String[] args) {
+        masterworkRetryIsDeterministicAndBounded();
+        masterworkEligibilityDoesNotChangeTemplateIdentity();
+        familySalvageMaterialIdsAreStableAndDistinct();
+        professionSpecializationRolesAreCompleteAndDiverse();
+        effectiveCraftPlanHasNoBatchRoundingArbitrage();
+        specializationPlanExamplesMatchPreviewContract();
+        blueprintRecoveryMatrixIsExact();
+        System.out.println("Professions2RegressionSuite: OK");
+    }
+
+    private static void masterworkRetryIsDeterministicAndBounded() {
+        final UUID operation = UUID.fromString("4df076f4-529c-4b3c-a1ad-242c55d9988e");
+        final var tuning = new ProfessionCraftQualityPolicy.Tuning(
+                0.10D, 0.003D, 0.20D, 0.05D, 0.08D, 0.02D, 0.003D, 0.18D);
+        final var first = ProfessionCraftQualityPolicy.decide(operation, 50, true, true, tuning);
+        final var retry = ProfessionCraftQualityPolicy.decide(operation, 50, true, true, tuning);
+        require(first.equals(retry), "same operation must preserve Masterwork decision");
+        require(first.masterworkChance() <= 0.18D, "Masterwork cannot become guaranteed");
+        require(Double.compare(first.qualitySource().getAsDouble(), retry.qualitySource().getAsDouble()) == 0,
+                "retry quality source must be deterministic");
+        require(first.minimumQuality() < 1.0D, "profession skill must not guarantee perfect quality");
+    }
+
+    private static void masterworkEligibilityDoesNotChangeTemplateIdentity() {
+        final UUID operation = UUID.fromString("3d46e53f-644d-409e-83d4-054d9479919d");
+        final var tuning = new ProfessionCraftQualityPolicy.Tuning(
+                0.10D, 0.003D, 0.20D, 0.05D, 0.08D, 0.02D, 0.003D, 0.18D);
+        final var decision = ProfessionCraftQualityPolicy.decide(operation, 30, false, true, tuning);
+        require(decision.operationId().equals(operation),
+                "Masterwork is instance metadata on the same operation/item identity");
+    }
+
+    private static void familySalvageMaterialIdsAreStableAndDistinct() {
+        final Map<ArmorFamily, String> expected = Map.of(
+                ArmorFamily.CLOTH, "szovet_foszlany", ArmorFamily.LEATHER, "bor_hulladek",
+                ArmorFamily.MAIL, "lanc_toredek", ArmorFamily.PLATE, "femhulladek");
+        expected.forEach((family, id) -> require(id.equals(ItemSalvageService.familyScrapId(family)),
+                "wrong family salvage material for " + family));
+        require(expected.values().stream().distinct().count() == ArmorFamily.values().length,
+                "each ArmorFamily must keep a distinct salvage material identity");
+    }
+
+    private static void professionSpecializationRolesAreCompleteAndDiverse() {
+        require(ProfessionSpecializationType.values().length == 16, "unexpected profession specialization roster drift");
+        for (final ProfessionSpecializationType specialization : ProfessionSpecializationType.values()) {
+            require(ProfessionSpecializationEconomyPolicy.roleOf(specialization)
+                            != ProfessionSpecializationEconomyPolicy.Role.NONE,
+                    "profession specialization has no economic role: " + specialization);
+        }
+        require(Arrays.stream(ProfessionSpecializationType.values())
+                        .map(ProfessionSpecializationEconomyPolicy::roleOf).distinct().count() >= 6,
+                "profession specializations collapsed into one mandatory role");
+    }
+
+    private static void effectiveCraftPlanHasNoBatchRoundingArbitrage() {
+        final var efficiency = effect(ProfessionSpecializationEconomyPolicy.Role.PROCESSING_EFFICIENCY, 0.90D, 1.0D);
+        final var recipe = recipe(16, Map.of(Material.IRON_INGOT, 16), Map.of());
+        require(ProfessionEffectiveCraftPlan.of(recipe, efficiency, 1).materialInputs().get(Material.IRON_INGOT) == 15,
+                "16 base input at 10% efficiency must preview/consume 15");
+        require(ProfessionEffectiveCraftPlan.of(recipe, efficiency, 2).materialInputs().get(Material.IRON_INGOT) == 30,
+                "2x batch must equal two 1x crafts");
+        require(ProfessionEffectiveCraftPlan.of(recipe, efficiency, 5).materialInputs().get(Material.IRON_INGOT) == 75,
+                "5x batch must equal five 1x crafts");
+        require(ProfessionEffectiveCraftPlan.of(recipe, efficiency, 10).materialInputs().get(Material.IRON_INGOT) == 150,
+                "maximum regression batch has no bulk rounding discount");
+        final var one = ProfessionEffectiveCraftPlan.of(recipe, efficiency, 1);
+        require(one.hasIngredients(Map.of(Material.IRON_INGOT, 15), Map.of()), "15 must be craftable");
+        require(!one.hasIngredients(Map.of(Material.IRON_INGOT, 14), Map.of()), "14 must not be craftable");
+    }
+
+    private static void specializationPlanExamplesMatchPreviewContract() {
+        for (final var role : new ProfessionSpecializationEconomyPolicy.Role[] {
+                ProfessionSpecializationEconomyPolicy.Role.PROCESSING_EFFICIENCY,
+                ProfessionSpecializationEconomyPolicy.Role.CONSUMABLE_EFFICIENCY,
+                ProfessionSpecializationEconomyPolicy.Role.BLUEPRINT_EFFICIENCY,
+                ProfessionSpecializationEconomyPolicy.Role.EQUIPMENT_EXPERTISE,
+                ProfessionSpecializationEconomyPolicy.Role.SERVICE_EXPERTISE}) {
+            final var plan = ProfessionEffectiveCraftPlan.of(
+                    recipe(1, Map.of(Material.IRON_INGOT, 16), Map.of("regression_unique", 16)),
+                    effect(role, 0.90D, 1.0D), 5);
+            require(plan.materialInputs().get(Material.IRON_INGOT) == 75,
+                    role + " must use the same per-craft input rounding");
+            require(plan.uniqueInputs().get("regression_unique") == 75,
+                    role + " must treat plain and unique input identically");
+        }
+        for (final var role : new ProfessionSpecializationEconomyPolicy.Role[] {
+                ProfessionSpecializationEconomyPolicy.Role.PROCESSING_YIELD,
+                ProfessionSpecializationEconomyPolicy.Role.CONSUMABLE_YIELD}) {
+            final var plan = ProfessionEffectiveCraftPlan.of(
+                    recipe(16, Map.of(Material.IRON_INGOT, 1), Map.of()), effect(role, 1.0D, 1.10D), 5);
+            require(plan.effectiveOutputAmount(16) == 85,
+                    role + " 5x yield must equal five independently rounded 17-output crafts");
+        }
+    }
+
+    private static void blueprintRecoveryMatrixIsExact() {
+        require(BlueprintRecoveryPolicy.decide(false, false) == BlueprintRecoveryPolicy.Decision.ROLLBACK_UNTOUCHED,
+                "PREPARED before reservation rolls back untouched");
+        require(BlueprintRecoveryPolicy.decide(false, true) == BlueprintRecoveryPolicy.Decision.RELEASE_AND_ROLLBACK,
+                "reserved but not learned releases the exact blueprint");
+        require(BlueprintRecoveryPolicy.decide(true, true) == BlueprintRecoveryPolicy.Decision.CONSUME_AND_COMMIT,
+                "learned plus reservation consumes exactly one and commits");
+        require(BlueprintRecoveryPolicy.decide(true, false) == BlueprintRecoveryPolicy.Decision.COMMIT_CONSUMED,
+                "learned without reservation means consumption already crossed durability boundary");
+    }
+
+    private static ProfessionSpecializationEconomyPolicy.Effect effect(
+            final ProfessionSpecializationEconomyPolicy.Role role, final double input, final double output) {
+        return new ProfessionSpecializationEconomyPolicy.Effect(role, "regression", input, output);
+    }
+
+    private static ProfessionRecipeCatalog.Recipe recipe(
+            final int resultAmount, final Map<Material, Integer> materials, final Map<String, Integer> unique) {
+        return new ProfessionRecipeCatalog.Recipe("regression", ProfessionType.ARMORER, 1, false,
+                "Regression", "processing", Material.IRON_INGOT, resultAmount, null, null,
+                materials, unique, java.util.List.of(), null, null, false, null, "processing", null, false);
+    }
+
+    private static void require(final boolean condition, final String message) {
+        if (!condition) throw new AssertionError(message);
+    }
+}
+''')
+
+          # --- Closure scripts become fail-closed authority verifiers instead of rewriting the plan. ---
+          Path('scripts/apply_professions_2_closure.py').write_text(r'''#!/usr/bin/env python3
+"""Fail-closed idempotent Professions 2.0 closure authority verifier."""
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+
+def source(path): return (ROOT / path).read_text(encoding='utf-8')
+def require(path, *tokens):
+    text = source(path)
+    for token in tokens:
+        if token not in text: raise RuntimeError(f'{path}: missing closure token: {token}')
+    return text
+
+def main():
+    tx = require('src/main/java/hu/taliann/icesmp/professions/ProfessionCraftTransaction.java',
+        'ProfessionEffectiveCraftPlan plan', 'preflight(final Player player', 'preflightStorage',
+        'plan.materialInputs()', 'plan.uniqueInputs()', 'PERSISTENCE_FAILED',
+        'inventory.setStorageContents(cloneContents(before));')
+    if 'ProfessionSpecializationEconomyPolicy.effectFor(player, recipe)' in tx:
+        raise RuntimeError('transaction must not recompute specialization outside CraftPlan')
+    require('src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java',
+        'familyScrapId', 'szovet_foszlany', 'bor_hulladek', 'lanc_toredek', 'femhulladek')
+    listener = require('src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java',
+        'ProfessionEffectiveCraftPlan.of(recipe, specialization, batches)',
+        'craftTransaction.preflight(player, plan, outputs)', 'craftTransaction.apply(player, plan, outputs)')
+    if 'craftTransaction.apply(player, recipe, batches, outputs)' in listener:
+        raise RuntimeError('legacy transaction admission still present')
+    require('src/main/java/hu/taliann/icesmp/gui/ProfessionRecipeGUI.java',
+        'ProfessionEffectiveCraftPlan.of(recipe, specialization, 1)', 'transaction.preflight(player, plan, previewOutputs)',
+        'plan.materialInputs()', 'plan.uniqueInputs()', 'maxCraftableBatches')
+    require('src/regression/java/hu/taliann/icesmp/professions/Professions2RegressionSuite.java',
+        'effectiveCraftPlanHasNoBatchRoundingArbitrage', 'blueprintRecoveryMatrixIsExact')
+    print('Professions 2.0 final closure authority: OK')
+
+if __name__ == '__main__': main()
+''')
+
+          Path('scripts/apply_professions_2_specialization_closure.py').write_text(r'''#!/usr/bin/env python3
+"""Fail-closed specialization economy closure verifier; CraftPlan is the sole arithmetic owner."""
+from pathlib import Path
+import json
+ROOT = Path(__file__).resolve().parents[1]
+
+def main():
+    policy = (ROOT / 'src/main/java/hu/taliann/icesmp/professions/ProfessionSpecializationEconomyPolicy.java').read_text()
+    for token in ('PlayerProfileSpecializationProgressStore', 'roleOf', 'PROCESSING_EFFICIENCY', 'BLUEPRINT_EFFICIENCY'):
+        if token not in policy: raise RuntimeError('specialization policy incomplete: ' + token)
+    tx = (ROOT / 'src/main/java/hu/taliann/icesmp/professions/ProfessionCraftTransaction.java').read_text()
+    if 'ProfessionEffectiveCraftPlan plan' not in tx or 'effectFor(player, recipe)' in tx:
+        raise RuntimeError('specialization arithmetic escaped CraftPlan authority')
+    cfg = (ROOT / 'src/main/resources/config.yml').read_text()
+    for token in ('economy-efficiency-percent: 0.10', 'economy-yield-percent: 0.10'):
+        if token not in cfg: raise RuntimeError('specialization config missing: ' + token)
+    report = json.loads((ROOT / 'docs/development/professions-2-specializations.json').read_text())
+    if report.get('schema') != 1 or len(report.get('specializations', [])) != 16:
+        raise RuntimeError('specialization handoff drift')
+    if len({row['role'] for row in report['specializations']}) < 6:
+        raise RuntimeError('specialization role diversity drift')
+    print('Professions 2.0 specialization economy authority: OK')
+
+if __name__ == '__main__': main()
+''')
+
+          Path('scripts/check_professions_2_reports.py').write_text(r'''#!/usr/bin/env python3
+from pathlib import Path
+import json, yaml
+ROOT = Path(__file__).resolve().parents[1]
+paths = [ROOT/'docs/development/professions-2-recipe-migration.json', ROOT/'docs/development/professions-2-economy-graph.json', ROOT/'docs/development/professions-2-rp-handoff.json']
+for path in paths: assert json.loads(path.read_text()).get('schema') == 2, path
+migration=json.loads(paths[0].read_text()); assert migration['baseline_recipe_count']==392; assert migration['effective_recipe_count']==407; assert migration['canonical_recipe_count']==18; assert len(migration['recipes'])==407
+graph=json.loads(paths[1].read_text()); assert not graph['dead_managed_materials'] and not graph['cycles']; assert graph['mail_mixed_dependency_verified']
+expected={'szovet_foszlany','bor_hulladek','lanc_toredek','femhulladek'}; assert set(graph['salvage_reclamation_sinks_verified'])==expected
+listener=(ROOT/'src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java').read_text(); gui=(ROOT/'src/main/java/hu/taliann/icesmp/gui/ProfessionRecipeGUI.java').read_text(); tx=(ROOT/'src/main/java/hu/taliann/icesmp/professions/ProfessionCraftTransaction.java').read_text()
+assert 'craftTransaction.apply(player, plan, outputs)' in listener; assert 'craftTransaction.preflight(player, plan, outputs)' in listener
+assert 'ProfessionEffectiveCraftPlan.of(recipe, specialization, 1)' in gui; assert 'transaction.preflight(player, plan, previewOutputs)' in gui
+assert 'ProfessionEffectiveCraftPlan plan' in tx and 'preflightStorage' in tx and 'PERSISTENCE_FAILED' in tx; assert 'effectFor(player, recipe)' not in tx; assert 'dropItemNaturally' not in tx
+salvage=(ROOT/'src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java').read_text(); assert 'familyScrapId' in salvage and 'recordSalvage' not in salvage
+cfg=yaml.safe_load((ROOT/'src/main/resources/config.yml').read_text()) or {}; delivery=(((cfg.get('itemization') or {}).get('salvage') or {}).get('output-map') or {}); [(_ for _ in ()).throw(AssertionError((x,delivery.get(x)))) for x in expected if delivery.get(x)!=x]
+spec=json.loads((ROOT/'docs/development/professions-2-specializations.json').read_text()); assert len(spec['specializations'])==16 and len({r['role'] for r in spec['specializations']})>=6
+print('Professions 2.0 reports/hardening: OK')
+''')
+
+          # Remove obsolete/self-modifying tooling from final tree.
+          for dead in (Path('.github/workflows/professions-plan-wiring.yml'), Path('.github/workflows/professions-craftplan-closure.yml')):
+              if dead.exists(): dead.unlink()
+          PY
+          git config user.name "Csik Milán"
+          git config user.email "81396861+MilCsik09@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(professions): wire effective CraftPlan end to end"
+          git push origin HEAD:feature/professions-2
