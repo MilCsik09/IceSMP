@@ -268,17 +268,9 @@ mob-loot-profiles:
     rewards: null
   undead-common:
     profile-id: undead-common
-    sources: null
-    rewards: null
   undead-elite:
     profile-id: undead-elite
-    sources: null
-    rewards: null
   construct-elite:
     profile-id: construct-elite
-    sources: null
-    rewards: null
   glacial-boss:
     profile-id: glacial-boss
-    sources: null
-    rewards: null
