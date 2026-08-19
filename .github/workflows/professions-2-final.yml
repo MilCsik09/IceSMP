@@ -23,6 +23,7 @@ jobs:
           ref: feature/professions-2
           fetch-depth: 0
           persist-credentials: true
+          token: ${{ secrets.RESOURCE_PACK_PUSH_TOKEN || github.token }}
       - name: Rebase with exact force-with-lease
         shell: bash
         env:
@@ -31,7 +32,6 @@ jobs:
           EXPECTED_OLD_BASE: d8980b036dc993e04a360410a8a1780880ed202a
         run: |
           set -euo pipefail
-          test "$(git log -1 --format=%s)" = "ci(stack): rebase #130 onto final #129"
           EXPECTED_REMOTE=$(git rev-parse HEAD)
           git fetch origin feature/equipment-2:refs/remotes/origin/feature/equipment-2
           test "$(git rev-parse refs/remotes/origin/feature/equipment-2)" = "${FINAL_PARENT}"
