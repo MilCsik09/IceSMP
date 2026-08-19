@@ -141,16 +141,24 @@ public final class MobTemplateRegistry {
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
+    /**
+     * `profile-id` is the migration/deprecation marker for the old mob-loot-profiles authoring
+     * layer. Bukkit's YAML loader does not preserve null tombstones, so packaged legacy
+     * sources/rewards leaves may still be visible after the overlay merge. Once a profile carries
+     * the explicit marker those leaves are intentionally ignored and can no longer influence any
+     * reward decision; BuildAware loot + rank policy remain the only runtime reward authority.
+     * Unmigrated profiles fail closed instead of silently keeping the old duplicate truth source.
+     */
     private static Set<String> parseLootProfileReferences(final ConfigurationSection root) {
         final LinkedHashSet<String> ids = new LinkedHashSet<>();
         for (final String rawId : root.getKeys(false)) {
             final String id = normalize(rawId);
             final ConfigurationSection profile = root.getConfigurationSection(rawId);
             if (profile == null) throw new IllegalStateException("invalid mob loot profile reference: " + id);
-            if (profile.contains("sources") || profile.contains("rewards")) {
-                throw new IllegalStateException("mob-loot-profiles is reference-only; dead rewards/sources authoring remains: " + id);
+            if (!profile.isSet("profile-id")) {
+                throw new IllegalStateException("mob-loot-profiles entry is not migrated to reference-only authority: " + id);
             }
-            final String marker = normalize(profile.getString("profile-id", id));
+            final String marker = normalize(profile.getString("profile-id", ""));
             if (!id.equals(marker)) {
                 throw new IllegalStateException("mob loot profile marker mismatch: " + id + '/' + marker);
             }
