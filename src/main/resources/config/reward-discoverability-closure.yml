@@ -17,6 +17,14 @@ profession-materials:
     - market
     economy-managed: true
 
+# Reward-only source reconciliation for one pre-existing prestige anchor. Item identity and stats
+# are unchanged; this only makes the canonical Champion eligibility match its catalog acquisition.
+item-templates:
+  aranyfust_kopeny:
+    source-tags:
+    - combat:champion
+    - rank:champion
+
 loot:
   rank-rewards:
     normal:
