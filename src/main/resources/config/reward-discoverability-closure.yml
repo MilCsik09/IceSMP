@@ -50,22 +50,59 @@ loot:
       special-material: ''
       special-material-chance: 0.0
 
-# Reference IDs only. The old sources/rewards leaves were a runtime-dead duplicate authoring
-# layer; null removes those leaves from ConfigManager's effective tree while preserving IDs.
+# MobTemplate keeps a stable authored profile id for encounter/source identity, but rewards and
+# sources are no longer duplicated here. ConfigManager nulls the legacy leaves from the effective
+# tree; MobTemplateRegistry fail-closes if a rewards/sources leaf survives.
 mob-loot-profiles:
-  undead-common:
-    profile-id: undead-common
+  frozen_wilderness:
+    profile-id: frozen_wilderness
     sources: null
     rewards: null
-  undead-elite:
-    profile-id: undead-elite
+  deep_mine:
+    profile-id: deep_mine
     sources: null
     rewards: null
-  construct-elite:
-    profile-id: construct-elite
+  cultist:
+    profile-id: cultist
     sources: null
     rewards: null
-  glacial-boss:
-    profile-id: glacial-boss
+  champion:
+    profile-id: champion
     sources: null
     rewards: null
+  world_boss:
+    profile-id: world_boss
+    sources: null
+    rewards: null
+  surface_survival:
+    profile-id: surface_survival
+    sources: null
+    rewards: null
+  night_hunt:
+    profile-id: night_hunt
+    sources: null
+    rewards: null
+  swamp_survival:
+    profile-id: swamp_survival
+    sources: null
+    rewards: null
+  nether_survival:
+    profile-id: nether_survival
+    sources: null
+    rewards: null
+  end_survival:
+    profile-id: end_survival
+    sources: null
+    rewards: null
+  storm_survival:
+    profile-id: storm_survival
+    sources: null
+    rewards: null
+  wild_hunt:
+    profile-id: wild_hunt
+    sources: null
+    rewards: null
+  undead-common: null
+  undead-elite: null
+  construct-elite: null
+  glacial-boss: null
