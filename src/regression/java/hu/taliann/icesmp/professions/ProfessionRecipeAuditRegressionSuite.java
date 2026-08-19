@@ -69,9 +69,6 @@ public final class ProfessionRecipeAuditRegressionSuite {
             final String fingerprint = ProfessionRecipeCatalog.semanticFingerprint(recipe);
             check(fingerprints.add(fingerprint), "semantic duplicate: " + id + " -> " + fingerprint);
 
-            // Recept-fajta szerződés: minden recept KIMONDJA, mire való, és a fajta megszabja,
-            // milyen kart húzhat meg. Enélkül a katalógus visszacsúszik oda, hogy a vanilla
-            // duplikátumnak és az üres ígéret-itemnek nincs mihez képest nemet mondani.
             final String kind = section.getString("kind", "");
             check(KINDS.contains(kind), "recipe declares a valid kind: " + id + " -> '" + kind + "'");
             if ("egyedi".equals(kind)) {
@@ -104,8 +101,6 @@ public final class ProfessionRecipeAuditRegressionSuite {
                 check(parsed.uniqueMaterials().isEmpty(),
                         "kind=gyakorlo costs nothing beyond plain materials: " + id);
             }
-            // Üres ígéret-item: a főzet, ami nem hat, és az enchantkönyv, ami üllőn nem ad
-            // semmit. Mindkettő a nevével ígér, és a felület nem árulja el, hogy nem teljesít.
             if (material != null && material.name().endsWith("POTION")) {
                 check(!result.getStringList("potion-effects").isEmpty(),
                         "potion result carries real effects: " + id);
@@ -115,8 +110,6 @@ public final class ProfessionRecipeAuditRegressionSuite {
                 check(enchant != null && !enchant.isBlank(),
                         "enchanted book result carries a real enchantment: " + id);
             }
-            // Önmagát sokszorozó recept: a kimenet ugyanaz az anyag, mint a bemenet, többször.
-            // Ez korlátlanul ismételhető nyersanyag-forrás, a gazdaság csendes szivárgása.
             if (unique == null && material != null) {
                 final Integer sameMaterialInput = parsed.materials().get(material);
                 check(sameMaterialInput == null
@@ -189,9 +182,12 @@ public final class ProfessionRecipeAuditRegressionSuite {
                 "legacy masterwork profession and level gates remain enforced");
         final String bookListener = Files.readString(
                 Path.of("src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java"));
-        check(bookListener.contains("recipe.uniqueIngredients().entrySet()")
-                        && bookListener.contains("uniqueMaterials.idOf(item)"),
-                "catalog custom ingredients require canonical unique-item identity");
+        final String transaction = Files.readString(
+                Path.of("src/main/java/hu/taliann/icesmp/professions/ProfessionCraftTransaction.java"));
+        check(bookListener.contains("plan.uniqueInputs().entrySet()")
+                        && transaction.contains("plan.uniqueInputs().entrySet()")
+                        && transaction.contains("uniqueMaterials.idOf(item)"),
+                "effective CraftPlan unique inputs preserve canonical unique-item identity through execution");
         final String boundary = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/listeners/VanillaCraftingBoundaryListener.java"));
         check(boundary.contains("Transformation.VANILLA_RECIPE_OUTPUT")

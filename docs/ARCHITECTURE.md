@@ -1767,3 +1767,11 @@ registry-életciklust, a sequence-monotonitást és a rate limitert. A kliensold
 szimulált szerveres kézfogás-suite-okkal (lásd az AGENTS.md kliensprotokoll-DoD szabályát);
 az élő Paper↔Fabric roundtrip-bizonyítás (CLIENT-02) staging-teszt. A protokoll-tartomány
 szándékosan 1..1, és a feature-kapuk alapból zárva maradnak.
+
+## Professions 2.0 authority
+`PlayerProfile` remains the only durable profession progression authority. `ProfessionRecipeCatalog` publishes one immutable indexed recipe generation after validating stable material IDs, semantic duplicates, aliases and managed processing cycles. `ProfessionMaterialRegistry` is configuration identity for stackable economy materials; it deliberately does not assign ItemInstance UUIDs to ordinary stacks.
+
+The execution boundary is owner-thread inventory state: `ProfessionCraftTransaction` plans removal plus output placement against cloned storage and commits only after the whole batch fits. Canonical equipment is still `ItemTemplate -> ItemInstance`; deterministic operation-seeded quality decisions prevent retry from becoming a free Masterwork reroll. Vanilla Crafting Boundary and Equipment 2.0 active-equipment authority remain upstream contracts.
+
+### Professions 2.0 family closure
+A végső canonical páncél-összeállítás az Armorer gazdasági szerepe. CLOTH-hoz az Enchanter textil-feldolgozása, LEATHER-höz az Alchemist bőrkezelése kell; MAIL explicit bőr + könnyű fém dependency. Ez crafting expertise, nem class proficiency. A family scrap csak veszteséges reclamation útvonalon kerül vissza köztes anyagba.

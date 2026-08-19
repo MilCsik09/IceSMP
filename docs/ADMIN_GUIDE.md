@@ -2234,3 +2234,16 @@ Kézi elfogadási minimum:
 - külső HUD plugin nélküli indulás, két Folia-régió és több GUI scale/képernyőfelbontás;
 - a pack sikeres betöltéséig natív compact/class és vanilla survival fallback, utána pontosan egy
   class HUD és egy Player/Target/Party kompozíció ugyanabban a per-player bossbar-carrierben.
+
+## Professions 2.0 admin / economy
+- Effective recipe authority: `config/profession-recipes.yml` + később merge-elt `config/professions-2.yml` overlay; player progression továbbra is PlayerProfile v2.
+- Machine-readable migration: `docs/development/professions-2-recipe-migration.json`.
+- Producer/consumer, faucet/sink és dependency graph: `docs/development/professions-2-economy-graph.json`.
+- `./gradlew professions2ReportRegressionTest professions2EconomyRegressionTest professions2RegressionTest` futtatja a célzott source gate-eket.
+- `ProfessionEconomyTelemetry.global().snapshot()` bounded aggregátumot ad crafted/processed/Masterwork/high-tier/salvage számlálókról; nem tart végtelen operation historyt.
+- Material/recipe reload fail-closed: hiányzó unique ID, rossz level/amount, semantic duplicate vagy managed processing cycle esetén az új generáció nem publikálható.
+
+Balance-változtatást a seedelt harness után is stagingen kell igazolni. Ne állíts be NPC buy/sell hurkot, amely crafttal profitot termel; high-value komponens korlátlan vendorforrása tiltott policy.
+
+### Professions 2.0 hardening gate
+A `scripts/check_professions_2_reports.py` ellenőrzi a 392 baseline recept teljes kategorizálását, a 18 canonical recipe-t, a négy ArmorFamily craft-végpontot, a MAIL mixed dependencyt, a salvage scrap valódi sinkeket és a post-commit Masterwork advancement sorrendet.

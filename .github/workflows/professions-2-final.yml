@@ -1,41 +1,47 @@
-name: Build IceSMP Plugin
+name: Professions 2.0 Exact Head
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - feature/professions-2
+  pull_request:
+    branches:
+      - feature/equipment-2
 
 permissions:
   contents: read
 
 jobs:
-  build:
-    name: Exact-head plugin build
+  exact-head:
+    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, '[professions-2-final]')
     runs-on: ubuntu-latest
     timeout-minutes: 50
-
     steps:
-      - name: Checkout exact pushed commit
+      - name: Checkout exact child head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Prove exact head
+      - name: Verify exact child and parent heads
         shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          SYNTHETIC_MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha || '' }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
           git fetch origin feature/equipment-2:refs/remotes/origin/feature/equipment-2
-          echo "PROFESSIONS_2_HEAD=${GITHUB_SHA}"
+          test "$(git merge-base HEAD refs/remotes/origin/feature/equipment-2)" = "$(git rev-parse refs/remotes/origin/feature/equipment-2)"
+          echo "PROFESSIONS_2_HEAD=${EXPECTED_HEAD}"
           echo "EQUIPMENT_2_PARENT=$(git rev-parse refs/remotes/origin/feature/equipment-2)"
+          echo "SYNTHETIC_MERGE_SHA=${SYNTHETIC_MERGE_SHA}"
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Install repository build dependencies
         run: >-
@@ -43,7 +49,7 @@ jobs:
           'PyYAML>=6.0,<7.0'
           'Pillow==11.3.0'
 
-      - name: Verify committed Professions 2.0 authority
+      - name: Verify committed Professions 2.0 authority and idempotent closures
         shell: bash
         run: |
           set -euo pipefail
@@ -54,7 +60,7 @@ jobs:
           python scripts/check_professions_2_runtime_closure.py
           python scripts/test_professions_2_economy.py
 
-      - name: Validate PlayerProfile authority
+      - name: Validate PlayerProfile authority contract
         shell: bash
         run: |
           set -euo pipefail
@@ -70,29 +76,31 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '21'
 
-      - name: Set up Gradle
+      - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Java 21 clean build and complete check
+      - name: Java 21 clean build and complete Gradle check
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew clean build --no-daemon --console=plain --stacktrace | tee gradle-build.log
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee gradle-build.log
+
+      - name: Verify Professions and stacked regression evidence
+        shell: bash
+        run: |
+          set -euo pipefail
           grep -F "Professions2RegressionSuite: OK" gradle-build.log
           grep -F "Itemization domain regression suite passed." gradle-build.log
           grep -F "Mob/Encounter behavioral domain regression suite passed." gradle-build.log
+          ./gradlew professions2RegressionTest professionRecipeAuditRegressionTest \
+            itemizationDomainRegressionTest vanillaCraftingBoundaryRegressionTest \
+            equipmentDomainRegressionTest runeLifecycleRegressionTest \
+            playerProfileFullAuthorityRegressionTest configStartupRegressionTest \
+            --no-daemon --console=plain
 
-      - name: Re-run stacked critical regressions
-        run: >-
-          ./gradlew professions2RegressionTest professionRecipeAuditRegressionTest
-          itemizationDomainRegressionTest vanillaCraftingBoundaryRegressionTest
-          equipmentDomainRegressionTest runeLifecycleRegressionTest
-          playerProfileFullAuthorityRegressionTest configStartupRegressionTest
-          --no-daemon --console=plain
-
-      - name: Validate repository and resource-pack contracts
+      - name: Validate resource pack and repository consistency
         shell: bash
         run: |
           set -euo pipefail
@@ -101,17 +109,13 @@ jobs:
           python3 scripts/check_consistency.py
           python3 scripts/check_documentation_coverage.py
           python3 scripts/check_markdown_links.py
+
+      - name: Check complete child diff whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
           BASE=$(git merge-base HEAD refs/remotes/origin/feature/equipment-2)
           git diff --check "${BASE}...HEAD"
           git diff --exit-code
           git diff --cached --exit-code
           test -z "$(git status --porcelain --untracked-files=no)"
-
-      - name: Upload plugin JAR
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
-        with:
-          name: IceSMP-plugin-${{ github.run_number }}
-          path: build/libs/*.jar
-          if-no-files-found: error
-          retention-days: 30

@@ -655,3 +655,12 @@ A repository szándékosan nem talál ki ezekhez koordinátát; a végleges stag
 világon kell őket biztonságos helyre kötni és bejárni. A productionközeli Folia
 pause/restart/finale és world-hook acceptance ettől továbbra is kézi staging
 kapu, nem CI-állítás.
+
+## 2026-08-18 — Professions 2.0
+- A 392 meglévő profession recipe teljes gépi migrációs inventoryt kapott; a recipe ID-k és blueprint unlockok stabilak maradtak.
+- Bevezetésre került a processing/material economy authority, a négy Equipment 2.0 family termelési lánca, mixed MAIL dependency és bounded Masterwork.
+- Craft inventory commit all-or-nothing, batch-aware és full-inventory esetben nem dob tárgyat a világba.
+- Salvage family-aware, veszteséges és nem állítja elő újra az eredeti boss komponenst.
+- Új economy graph, migration report, RP handoff és seedelt sanity harness készült. Runtime/player-market végleges balansz staging-required.
+
+- Professions 2.0 adversarial closure: meglévő Equipment 2.0 template-ekkel létrejött CLOTH/LEATHER/MAIL craft-végpont, family-salvage reclamation sink, és a Masterwork achievement csak sikeres inventory commit után jár.

@@ -7,7 +7,7 @@ import hu.taliann.icesmp.classspec.domain.ProfileOperationType;
 import hu.taliann.icesmp.classspec.transaction.RespecRecoveryProtocol;
 import hu.taliann.icesmp.classspec.transaction.RespecTransactionJournal;
 import hu.taliann.icesmp.data.CurrencyType;
-import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileSpecializationProgressStore;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Restart-recoverable cross-store respec transaction coordinator. */
 public final class RespecService {
+    private static final String PROFESSION_PREFIX = "profession-respec:";
+
     public record Outcome(Status status, double cost, CurrencyType currency, int refundedTalentPoints) {
         public enum Status { OK, NOTHING_TO_RESPEC, INSUFFICIENT_FUNDS, PERSISTENCE_FAILED,
             RUNTIME_FAILED, REFUND_FAILED }
@@ -39,6 +41,8 @@ public final class RespecService {
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
     private final RespecTransactionJournal journal;
+    private final PlayerProfileSpecializationProgressStore professionProgressStore =
+            new PlayerProfileSpecializationProgressStore();
     private final ExecutorService executor = Executors.newSingleThreadExecutor(task -> {
         final Thread thread = new Thread(task, "IceSMP-profile-v2-respec");
         thread.setDaemon(true); return thread;
@@ -46,6 +50,7 @@ public final class RespecService {
     private final AtomicBoolean accepting = new AtomicBoolean(true);
     private final Map<UUID, LinkedHashMap<String, CompletableFuture<Outcome>>> inFlight =
             new ConcurrentHashMap<>();
+    private final Map<UUID, CompletableFuture<Outcome>> professionInFlight = new ConcurrentHashMap<>();
     private final java.util.Set<UUID> closingPlayers = ConcurrentHashMap.newKeySet();
 
     public RespecService(final JavaPlugin plugin, final SpecializationManager specializationManager,
@@ -60,20 +65,167 @@ public final class RespecService {
                 "class-profiles/respec-journal").toPath());
     }
 
-    /** Profession respec remains outside the class Profile v2 aggregate. */
+    /**
+     * Legacy synchronous profession-respec path is intentionally fail-closed. Calling code must use
+     * {@link #respecProfessionV2(Player, String)} so wallet debit and Profile persistence cannot be
+     * separated by a fire-and-forget reset.
+     */
+    @Deprecated
     public Outcome respec(final Player player, final boolean classPool) {
-        if (classPool) return failureOutcome(player, Outcome.Status.PERSISTENCE_FAILED);
+        return failureOutcome(player, Outcome.Status.PERSISTENCE_FAILED);
+    }
+
+    public CompletionStage<Outcome> respecProfessionV2(final Player player,
+                                                        final String requestedOperationId) {
+        Objects.requireNonNull(player, "player");
+        final UUID playerId = player.getUniqueId();
+        final CompletableFuture<Outcome> created = new CompletableFuture<>();
+        final CompletableFuture<Outcome> existing = professionInFlight.putIfAbsent(playerId, created);
+        if (existing != null) return existing;
+        created.whenComplete((ignored, failure) -> professionInFlight.remove(playerId, created));
+        if (!accepting.get() || closingPlayers.contains(playerId)) {
+            created.complete(failureOutcome(player, Outcome.Status.PERSISTENCE_FAILED));
+            return created;
+        }
+        try {
+            executor.execute(() -> executeProfession(player, requestedOperationId, created));
+        } catch (final RejectedExecutionException rejected) {
+            created.complete(failureOutcome(player, Outcome.Status.PERSISTENCE_FAILED));
+        }
+        return created;
+    }
+
+    private void executeProfession(final Player player, final String requestedOperationId,
+                                   final CompletableFuture<Outcome> completion) {
+        final UUID playerId = player.getUniqueId();
         final double cost = specializationManager.getRespecCost();
         final CurrencyType currency = CurrencyType.fromFactionType(
-                factionManager.getEconomyFaction(player.getUniqueId()));
-        if (specializationManager.getProfessionSpecialization(player) == null) {
-            return new Outcome(Outcome.Status.NOTHING_TO_RESPEC, cost, currency, 0);
+                factionManager.getEconomyFaction(playerId));
+        String operationId = null;
+        try {
+            operationId = pendingProfessionOperation(playerId, requestedOperationId);
+            RespecTransactionJournal.Entry entry = journal.load(operationId);
+            if (entry == null) {
+                if (professionProgressStore.professionSpecialization(playerId).isEmpty()) {
+                    completion.complete(new Outcome(Outcome.Status.NOTHING_TO_RESPEC,
+                            cost, currency, 0));
+                    return;
+                }
+                entry = new RespecTransactionJournal.Entry(operationId, playerId,
+                        RespecTransactionJournal.Stage.INTENT, currency.name(), cost,
+                        System.currentTimeMillis(), 0L, false, false, Map.of(), Map.of(),
+                        "profession respec intent persisted");
+                journal.save(entry);
+            } else if (!entry.playerId().equals(playerId) || entry.amount() != cost
+                    || !entry.currencyId().equals(currency.name()) || !isProfession(entry)) {
+                completion.complete(new Outcome(Outcome.Status.PERSISTENCE_FAILED,
+                        cost, currency, 0));
+                return;
+            }
+
+            CurrencyManager.DurableWalletOperation wallet =
+                    currencyManager.durableOperation(operationId).orElse(null);
+            if (cost > 0.0D) {
+                if (wallet == null) {
+                    wallet = currencyManager.debitOperation(playerId, currency, cost, operationId);
+                    if (wallet == null) {
+                        journal.delete(operationId);
+                        completion.complete(new Outcome(Outcome.Status.INSUFFICIENT_FUNDS,
+                                cost, currency, 0));
+                        return;
+                    }
+                } else {
+                    requireWalletIdentity(wallet, playerId, currency, cost);
+                    if (wallet.status() == CurrencyManager.DurableWalletOperationStatus.ROLLED_BACK) {
+                        journal.delete(operationId);
+                        completion.complete(new Outcome(Outcome.Status.PERSISTENCE_FAILED,
+                                cost, currency, 0));
+                        return;
+                    }
+                }
+                if (!entry.walletTokenPresent()) {
+                    entry = entry.withWallet(wallet.previousPresent(), stringify(wallet.previous()),
+                            stringify(wallet.expected()));
+                    journal.save(entry);
+                }
+            }
+
+            boolean profileCommitted = professionProgressStore.professionSpecialization(playerId).isEmpty();
+            if (!profileCommitted) {
+                final boolean reset = professionProgressStore.resetProfessionSpecialization(playerId)
+                        .toCompletableFuture().join();
+                profileCommitted = reset
+                        || professionProgressStore.professionSpecialization(playerId).isEmpty();
+                if (!profileCommitted) {
+                    throw new IllegalStateException("profession specialization reset was not persisted");
+                }
+            }
+            journal.save(entry.withStage(RespecTransactionJournal.Stage.PROFILE_COMMITTED,
+                    "PlayerProfile profession specialization reset committed"));
+
+            if (wallet != null) {
+                if (wallet.status() == CurrencyManager.DurableWalletOperationStatus.DEBITED) {
+                    currencyManager.commitOperation(operationId);
+                } else if (wallet.status() != CurrencyManager.DurableWalletOperationStatus.COMMITTED) {
+                    throw new IllegalStateException("profession respec wallet is not committable");
+                }
+            }
+            // The durable Profile authority already says there is no active profession spec. This
+            // compatibility call only clears the manager projection; its duplicate durable reset is a no-op.
+            specializationManager.resetProfessionSpecialization(player);
+            journal.delete(operationId);
+            completion.complete(new Outcome(Outcome.Status.OK, cost, currency, 0));
+        } catch (final Throwable failure) {
+            final String resolvedOperationId = operationId;
+            if (resolvedOperationId != null) {
+                try {
+                    final boolean profileCommitted = professionProgressStore
+                            .professionSpecialization(playerId).isEmpty();
+                    final CurrencyManager.DurableWalletOperation wallet = currencyManager
+                            .durableOperation(resolvedOperationId).orElse(null);
+                    if (!profileCommitted && wallet != null
+                            && wallet.status() == CurrencyManager.DurableWalletOperationStatus.DEBITED) {
+                        currencyManager.rollbackOperation(resolvedOperationId);
+                        journal.delete(resolvedOperationId);
+                    }
+                    // If the Profile reset is already durable, do NOT refund here. The open journal
+                    // is the recovery witness that will commit the exact debit after restart/retry.
+                } catch (final Throwable recoveryFailure) {
+                    failure.addSuppressed(recoveryFailure);
+                }
+            }
+            plugin.getLogger().severe("Profession respec transaction failed for " + playerId
+                    + ": " + safeMessage(failure));
+            completion.complete(new Outcome(Outcome.Status.PERSISTENCE_FAILED, cost, currency, 0));
         }
-        if (cost > 0 && !currencyManager.deductFromBalance(player.getUniqueId(), currency, cost)) {
-            return new Outcome(Outcome.Status.INSUFFICIENT_FUNDS, cost, currency, 0);
+    }
+
+    private String pendingProfessionOperation(final UUID playerId, final String requestedOperationId) {
+        for (final RespecTransactionJournal.Entry pending : journal.findByPlayer(playerId)) {
+            if (isProfession(pending)) return pending.operationId();
         }
-        specializationManager.resetProfessionSpecialization(player);
-        return new Outcome(Outcome.Status.OK, cost, currency, 0);
+        if (requestedOperationId == null || requestedOperationId.isBlank()) {
+            throw new IllegalArgumentException("profession respec operationId required");
+        }
+        final String operationId = requestedOperationId.trim();
+        final String expectedPrefix = PROFESSION_PREFIX + playerId + ':';
+        if (!operationId.startsWith(expectedPrefix)) {
+            throw new IllegalArgumentException("profession respec operationId is not player-bound");
+        }
+        return operationId;
+    }
+
+    private static boolean isProfession(final RespecTransactionJournal.Entry entry) {
+        return entry != null && entry.operationId().startsWith(PROFESSION_PREFIX);
+    }
+
+    private static void requireWalletIdentity(final CurrencyManager.DurableWalletOperation wallet,
+                                              final UUID playerId, final CurrencyType currency,
+                                              final double amount) {
+        if (!wallet.playerId().equals(playerId) || wallet.currency() != currency
+                || Double.compare(wallet.amount(), amount) != 0) {
+            throw new IllegalStateException("profession respec wallet operation identity mismatch");
+        }
     }
 
     public CompletionStage<Outcome> respecV2(final Player player, final String requestedOperationId) {
@@ -99,13 +251,6 @@ public final class RespecService {
         }
     }
 
-    /**
-     * The old command derived a user attempt ID from the Profile revision. A rolled-back attempt
-     * leaves that revision unchanged, so a later user click could collide with the old terminal
-     * wallet receipt. Treat that legacy request shape only as a CAS witness and mint a fresh nonce.
-     * Callers that already supply an explicit attempt ID keep it unchanged, which preserves exact
-     * replay/recovery identity for one attempt.
-     */
     static String attemptOperationId(final UUID playerId, final String requestedOperationId) {
         Objects.requireNonNull(playerId, "playerId");
         if (requestedOperationId == null || requestedOperationId.isBlank()) {
@@ -210,13 +355,43 @@ public final class RespecService {
             executor.execute(() -> {
                 try {
                     for (final RespecTransactionJournal.Entry entry : journal.findByPlayer(player.getUniqueId())) {
-                        recoverEntry(player, entry);
+                        if (isProfession(entry)) recoverProfessionEntry(player, entry);
+                        else recoverEntry(player, entry);
                     }
                     completion.complete(null);
                 } catch (final Throwable failure) { completion.completeExceptionally(failure); }
             });
         } catch (final RejectedExecutionException rejected) { completion.completeExceptionally(rejected); }
         return completion;
+    }
+
+    private void recoverProfessionEntry(final Player player, final RespecTransactionJournal.Entry entry) {
+        final UUID playerId = player.getUniqueId();
+        final boolean profileCommitted = professionProgressStore
+                .professionSpecialization(playerId).isEmpty();
+        final CurrencyManager.DurableWalletOperation wallet = currencyManager
+                .durableOperation(entry.operationId()).orElse(null);
+        final RespecRecoveryProtocol.WalletWitness witness = walletWitness(entry.amount(), wallet);
+        final RespecRecoveryProtocol.Decision decision = RespecRecoveryProtocol.decide(
+                profileCommitted, entry.amount(), witness);
+        switch (decision.action()) {
+            case COMPLETE -> {
+                if (profileCommitted) specializationManager.resetProfessionSpecialization(player);
+                journal.delete(entry.operationId());
+            }
+            case COMMIT_WALLET_AND_COMPLETE -> {
+                currencyManager.commitOperation(entry.operationId());
+                specializationManager.resetProfessionSpecialization(player);
+                journal.delete(entry.operationId());
+            }
+            case ROLLBACK_WALLET_AND_ABORT -> {
+                currencyManager.rollbackOperation(entry.operationId());
+                journal.delete(entry.operationId());
+            }
+            case DELETE_INTENT_AND_ABORT -> journal.delete(entry.operationId());
+            case BLOCK_INCONSISTENT -> throw new IllegalStateException(
+                    "Profession respec recovery inconsistent: " + decision.reason());
+        }
     }
 
     private void recoverEntry(final Player player, final RespecTransactionJournal.Entry entry) {
@@ -226,14 +401,7 @@ public final class RespecService {
                         && operation.status() == ProfileOperationStatus.COMMITTED).isPresent();
         final CurrencyManager.DurableWalletOperation wallet = currencyManager
                 .durableOperation(entry.operationId()).orElse(null);
-        final RespecRecoveryProtocol.WalletWitness witness;
-        if (entry.amount() == 0.0D) witness = RespecRecoveryProtocol.WalletWitness.NOT_REQUIRED;
-        else if (wallet == null) witness = RespecRecoveryProtocol.WalletWitness.MISSING;
-        else witness = switch (wallet.status()) {
-            case DEBITED -> RespecRecoveryProtocol.WalletWitness.DEBITED;
-            case COMMITTED -> RespecRecoveryProtocol.WalletWitness.COMMITTED;
-            case ROLLED_BACK -> RespecRecoveryProtocol.WalletWitness.ROLLED_BACK;
-        };
+        final RespecRecoveryProtocol.WalletWitness witness = walletWitness(entry.amount(), wallet);
         final RespecRecoveryProtocol.Decision decision = RespecRecoveryProtocol.decide(
                 profileCommitted, entry.amount(), witness);
         switch (decision.action()) {
@@ -258,6 +426,17 @@ public final class RespecService {
                 throw new IllegalStateException(decision.reason());
             }
         }
+    }
+
+    private static RespecRecoveryProtocol.WalletWitness walletWitness(
+            final double amount, final CurrencyManager.DurableWalletOperation wallet) {
+        if (amount == 0.0D) return RespecRecoveryProtocol.WalletWitness.NOT_REQUIRED;
+        if (wallet == null) return RespecRecoveryProtocol.WalletWitness.MISSING;
+        return switch (wallet.status()) {
+            case DEBITED -> RespecRecoveryProtocol.WalletWitness.DEBITED;
+            case COMMITTED -> RespecRecoveryProtocol.WalletWitness.COMMITTED;
+            case ROLLED_BACK -> RespecRecoveryProtocol.WalletWitness.ROLLED_BACK;
+        };
     }
 
     private CompletionStage<Integer> completePlayerEffects(final Player player, final UUID sessionToken) {
@@ -300,25 +479,36 @@ public final class RespecService {
 
     public void clearSession(final UUID playerId) {
         final LinkedHashMap<String, CompletableFuture<Outcome>> operations = inFlight.get(playerId);
-        if (operations == null) return;
-        synchronized (operations) {
-            operations.entrySet().removeIf(entry -> entry.getValue().isDone());
-            if (operations.isEmpty()) inFlight.remove(playerId, operations);
+        if (operations != null) {
+            synchronized (operations) {
+                operations.entrySet().removeIf(entry -> entry.getValue().isDone());
+                if (operations.isEmpty()) inFlight.remove(playerId, operations);
+            }
         }
+        final CompletableFuture<Outcome> profession = professionInFlight.get(playerId);
+        if (profession != null && profession.isDone()) professionInFlight.remove(playerId, profession);
     }
+
     public void closeSession(final UUID playerId) { if (playerId != null) closingPlayers.add(playerId); }
     public void openSession(final UUID playerId) { if (playerId != null && accepting.get()) closingPlayers.remove(playerId); }
 
     public CompletionStage<Void> awaitPlayerTransactions(final UUID playerId) {
+        final java.util.ArrayList<CompletableFuture<?>> pending = new java.util.ArrayList<>();
         final LinkedHashMap<String, CompletableFuture<Outcome>> operations = inFlight.get(playerId);
-        if (operations == null) return CompletableFuture.completedFuture(null);
-        synchronized (operations) {
-            return CompletableFuture.allOf(operations.values().toArray(CompletableFuture[]::new));
+        if (operations != null) {
+            synchronized (operations) { pending.addAll(operations.values()); }
         }
+        final CompletableFuture<Outcome> profession = professionInFlight.get(playerId);
+        if (profession != null) pending.add(profession);
+        return pending.isEmpty() ? CompletableFuture.completedFuture(null)
+                : CompletableFuture.allOf(pending.toArray(CompletableFuture[]::new));
     }
 
     public boolean prepareShutdown(final long timeoutMillis) {
-        accepting.set(false); closingPlayers.addAll(inFlight.keySet()); executor.shutdown();
+        accepting.set(false);
+        closingPlayers.addAll(inFlight.keySet());
+        closingPlayers.addAll(professionInFlight.keySet());
+        executor.shutdown();
         try { return executor.awaitTermination(Math.max(1L, timeoutMillis), TimeUnit.MILLISECONDS); }
         catch (final InterruptedException interrupted) { Thread.currentThread().interrupt(); return false; }
     }
