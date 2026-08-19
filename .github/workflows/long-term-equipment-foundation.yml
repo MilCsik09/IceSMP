@@ -108,17 +108,21 @@ jobs:
           grep -F "Itemization domain regression suite passed." gradle-build.log
           grep -F "Mob/Encounter behavioral domain regression suite passed." gradle-build.log
 
-      - name: Paper 1.21.11 startup probe
+      - name: Paper 1.21.11 cumulative runtime probes
         if: ${{ (github.head_ref || github.ref_name) == 'feature/reward-discoverability-closure' }}
         shell: bash
-        timeout-minutes: 5
+        timeout-minutes: 12
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.source-integrity-runtime=true
         run: |
           set -euo pipefail
           rm -rf run
           mkdir -p run
           printf 'eula=true\n' > run/eula.txt
           set +e
-          timeout --signal=INT --kill-after=20s 180s ./gradlew runServer --console=plain --no-daemon 2>&1 | tee paper-runtime.log
+          timeout --signal=INT --kill-after=20s 420s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            2>&1 | tee paper-runtime.log
           status=${PIPESTATUS[0]}
           set -e
           if [[ ${status} -ne 0 && ${status} -ne 124 && ${status} -ne 130 ]]; then
@@ -126,7 +130,10 @@ jobs:
             exit "${status}"
           fi
           grep -E "Running the server|Starting minecraft server version 1\.21\.11|Done \(" paper-runtime.log
-          grep -E "IceSMP|icesmp" paper-runtime.log
+          grep -F 'ICESMP_PROFESSIONS_RUNTIME_PROBE_PASS' paper-runtime.log
+          ! grep -F 'ICESMP_PROFESSIONS_RUNTIME_PROBE_FAIL' paper-runtime.log
+          grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS' paper-runtime.log
+          ! grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL' paper-runtime.log
           if grep -E "Could not load.*IceSMP|Error occurred while enabling IceSMP|Exception.*IceSMP" paper-runtime.log; then
             echo "IceSMP Paper runtime startup failed" >&2
             exit 1
