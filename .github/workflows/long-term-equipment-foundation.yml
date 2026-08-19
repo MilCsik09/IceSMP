@@ -40,7 +40,6 @@ jobs:
             feature/equipment-catalog-expansion) PARENT=feature/material-economy-expansion ;;
             feature/reward-discoverability-closure) PARENT=feature/equipment-catalog-expansion ;;
             *)
-              # Pull requests expose the child branch through github.head_ref.
               echo "Unsupported stacked branch: ${REF_NAME}" >&2
               exit 1
               ;;
@@ -63,12 +62,22 @@ jobs:
           'PyYAML>=6.0,<7.0'
           'Pillow==11.3.0'
 
-      - name: Audit sustainable material economy
+      - name: Audit sustainable material economy and production catalog
         shell: bash
+        env:
+          REF_NAME: ${{ github.head_ref || github.ref_name }}
         run: |
           set -euo pipefail
           python3 scripts/audit_long_term_equipment_economy.py
           python3 scripts/test_professions_2_economy.py
+          if [[ -f scripts/generate_long_term_equipment_catalog.py ]]; then
+            python3 scripts/generate_long_term_equipment_catalog.py --check
+            if [[ "${REF_NAME}" == "feature/reward-discoverability-closure" ]]; then
+              python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets
+            else
+              python3 scripts/audit_long_term_equipment_catalog.py
+            fi
+          fi
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
@@ -114,3 +123,12 @@ jobs:
           git diff --exit-code
           git diff --cached --exit-code
           test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Upload long-term economy evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: long-term-equipment-foundation-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/reports/long-term-equipment
+          if-no-files-found: warn
+          retention-days: 30
