@@ -86,7 +86,6 @@ def main() -> None:
         if isinstance(value, dict) and bool(value.get("economy-managed", False))
     }
 
-    # Rank = bounded eligibility/chance shift, never a loot quantity multiplier.
     rank_root = ((config.get("loot") or {}).get("rank-rewards") or {})
     assert set(rank_root) == set(RANKS), f"rank reward bands drifted: {sorted(rank_root)}"
     rank_matrix: dict[str, dict[str, Any]] = {}
@@ -116,8 +115,6 @@ def main() -> None:
             "special_material_chance": special_chance,
         }
 
-    # mob-loot-profiles is now an ID/deprecation registry. Bukkit may retain inherited legacy
-    # sources/rewards leaves, but a matching explicit profile-id marker makes them non-authoritative.
     profiles: dict[str, dict[str, Any]] = config.get("mob-loot-profiles", {}) or {}
     assert profiles, "mob-loot-profiles reference registry missing"
     deprecated_legacy_leaves = 0
@@ -136,13 +133,11 @@ def main() -> None:
     assert referenced.issubset(profile_ids), f"unknown mob loot profile refs: {referenced - profile_ids}"
 
     registry_source = (ROOT / "src/main/java/hu/taliann/icesmp/pve/MobTemplateRegistry.java").read_text(encoding="utf-8")
-    assert "parseLootProfileReferences" in registry_source and '"profile-id"' in registry_source,
-    assert_text = "mob-loot-profiles runtime must require explicit profile-id markers"
-    assert "profile-id" in registry_source, assert_text
+    assert "parseLootProfileReferences" in registry_source and '"profile-id"' in registry_source, \
+        "mob-loot-profiles runtime must require explicit profile-id markers"
     assert "getStringList(\"sources\")" not in registry_source and "getStringList(\"rewards\")" not in registry_source, \
         "runtime MobTemplate registry must not consume deprecated reward/source leaves"
 
-    # Final production armor source coverage.
     armor = {
         str(tid): value for tid, value in templates.items()
         if isinstance(value, dict)
@@ -174,7 +169,6 @@ def main() -> None:
     for tag in ("combat:wilderness", "combat:veteran", "combat:elite", "combat:champion", "combat:boss"):
         assert source_counts[tag] > 0, f"rank source has no authored armor eligibility: {tag}"
 
-    # Producer -> consumer graph and dependency-depth gate.
     consumers: dict[str, set[str]] = defaultdict(set)
     producers: dict[str, set[str]] = defaultdict(set)
     profession_edges: Counter[tuple[str, str]] = Counter()
@@ -206,7 +200,6 @@ def main() -> None:
                 craft_depth_violations.append({"recipe": recipe_id, "foreign_professions": sorted(foreign)})
     assert not craft_depth_violations, f"anti-fun profession dependency depth: {craft_depth_violations}"
 
-    # Selected Ascension remains a high-value material sink.
     ascension = ((config.get("itemization") or {}).get("ascension") or {})
     for template_id, stages in ascension.items():
         if not isinstance(stages, dict):
@@ -251,7 +244,6 @@ def main() -> None:
         })
     assert not dead_materials, f"unintended dead managed materials: {dead_materials}"
 
-    # Runtime/discoverability/performance source contracts.
     mob_loot_source = (ROOT / "src/main/java/hu/taliann/icesmp/listeners/MobLootListener.java").read_text(encoding="utf-8")
     assert "ItemTemplateCatalogIndex" in mob_loot_source, "mob loot does not use the catalog index"
     assert "itemTemplates.snapshot().values().stream()" not in mob_loot_source, "mob death still full-scans the catalog"
