@@ -61,7 +61,8 @@ public final class ConfigManager {
             "general", "economy", "factions", "block-regen", "classes", "class-gameplay", "spells", "spells-balance",
             "professions", "quests", "world", "event-spawn-safety", "relics", "pets", "crafting", "crates",
             "afk", "moderation", "item-rarity", "item-templates", "mob-templates", "loot", "motd", "profession-materials",
-            "profession-recipes", "professions-2", "sit", "tablist", "dev-items", "client"
+            "profession-recipes", "professions-2", "material-economy-expansion", "equipment-catalog-expansion",
+            "reward-discoverability-closure", "sit", "tablist", "dev-items", "client"
     };
     private static final List<String> MANAGED_FAMILY_SALVAGE_OUTPUTS = List.of(
             "szovet_foszlany", "bor_hulladek", "lanc_toredek", "femhulladek");
