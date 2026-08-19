@@ -300,7 +300,9 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final int count = catalog.allIds().size();
         final boolean longTerm = catalog.get("lte_fonixszovet_sisak") != null;
         final boolean professions2 = catalog.get("p2_fonixpihe_kopeny") != null;
-        final int expectedCanonical = longTerm ? 82 : professions2 ? 18 : 15;
+        // The long-term 64-crafted target is total armor ownership. Six preserved crafted anchors
+        // already belong to the previous 18 canonical recipes, so the cumulative authority is 76.
+        final int expectedCanonical = longTerm ? 76 : professions2 ? 18 : 15;
         if (longTerm) {
             check(count >= 471, "long-term production catalog unexpectedly small: " + count);
         } else {
