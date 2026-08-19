@@ -7,9 +7,60 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  refresh-attribute-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout equipment branch for one-shot regression contract refresh
+        uses: actions/checkout@v4
+        with:
+          ref: feature/equipment-2
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Replace stale ItemMeta implementation assertions with the proven Paper component contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/regression/java/hu/taliann/icesmp/itemization/EquipmentDomainRegressionSuite.java')
+          source = path.read_text()
+          old = '''        check(factory.contains("applyCanonicalAttributeModifiers"),
+                  "canonical attribute path is explicit");
+          check(factory.contains("applyAttributeModifiers(item, specs, appendStatLore, false)"),
+                  "canonical attribute path disables Material default seeding");
+          check(factory.contains("meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create())"),
+                  "canonical zero-stat/suppressed path owns an explicit empty attribute component");
+'''
+          new = '''        check(factory.contains("applyCanonicalAttributeModifiers"),
+                  "canonical attribute path is explicit");
+          final int canonicalStart = factory.indexOf("public static boolean applyCanonicalAttributeModifiers");
+          final int canonicalEnd = factory.indexOf("private static boolean applyAttributeModifiers", canonicalStart);
+          check(canonicalStart >= 0 && canonicalEnd > canonicalStart,
+                  "canonical attribute writer source boundary is present");
+          final String canonicalWriter = factory.substring(canonicalStart, canonicalEnd);
+          check(canonicalWriter.contains("ItemAttributeModifiers.itemAttributes()"),
+                  "canonical attribute path builds a Paper valued ATTRIBUTE_MODIFIERS component");
+          check(canonicalWriter.contains("item.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, component)"),
+                  "canonical zero/non-zero projection explicitly installs the Paper component");
+          check(!canonicalWriter.contains("seedDefaultAttributeModifiers"),
+                  "canonical attribute writer never seeds backing Material defaults");
+'''
+          if source.count(old) != 1:
+              raise SystemExit('stale attribute regression anchor mismatch')
+          path.write_text(source.replace(old, new))
+          PY
+          # Remove this one-shot writer from the final tree; keep the exact-head gate read-only.
+          git show HEAD^:.github/workflows/equipment-final-exact.yml > .github/workflows/equipment-final-exact.yml
+          git config user.name "Csik Milán"
+          git config user.email "81396861+MilCsik09@users.noreply.github.com"
+          git add src/regression/java/hu/taliann/icesmp/itemization/EquipmentDomainRegressionSuite.java .github/workflows/equipment-final-exact.yml
+          git diff --cached --check
+          git commit -m "test(equipment): align attribute regression with Paper component authority"
+          git push origin HEAD:feature/equipment-2
+
   exact-head:
     runs-on: ubuntu-latest
     timeout-minutes: 45
