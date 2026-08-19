@@ -88,9 +88,8 @@ item-templates:
     - profession:armorer
 
 # The HIGH Runic MAIL line keeps one foreign processed dependency (Armorer chain links).
-# Holdlen thread and rune dust are Enchanter-owned; the aquatic shell was removed from this line
-# so a normal high-tier craft does not require two foreign professions. Fisherman remains a
-# meaningful supplier to aquatic/resistance and other MAIL lines.
+# The aquatic shell moves to the HIGH Vízbőr line, where it shares the already-required Fisherman
+# ecosystem with fish oil/pearl/aquatic hide instead of adding a second foreign profession.
 profession-recipes:
   lte_runalanc_sisak:
     ingredients:
@@ -128,6 +127,58 @@ profession-recipes:
     - sodrott_lancszem
     - holdlen_fonal
     - runapor
+  lte_vizbor_sisak:
+    ingredients:
+    - unique:erositett_bor:2
+    - unique:vizbor:1
+    - unique:halolaj:1
+    - unique:bokic_gyongy:1
+    - unique:gyongyhaz_hej:1
+    processing-dependencies:
+    - erositett_bor
+    - vizbor
+    - halolaj
+    - bokic_gyongy
+    - gyongyhaz_hej
+  lte_vizbor_mellvert:
+    ingredients:
+    - unique:erositett_bor:4
+    - unique:vizbor:1
+    - unique:halolaj:1
+    - unique:bokic_gyongy:1
+    - unique:gyongyhaz_hej:1
+    processing-dependencies:
+    - erositett_bor
+    - vizbor
+    - halolaj
+    - bokic_gyongy
+    - gyongyhaz_hej
+  lte_vizbor_labvert:
+    ingredients:
+    - unique:erositett_bor:3
+    - unique:vizbor:1
+    - unique:halolaj:1
+    - unique:bokic_gyongy:1
+    - unique:gyongyhaz_hej:1
+    processing-dependencies:
+    - erositett_bor
+    - vizbor
+    - halolaj
+    - bokic_gyongy
+    - gyongyhaz_hej
+  lte_vizbor_csizma:
+    ingredients:
+    - unique:erositett_bor:2
+    - unique:vizbor:1
+    - unique:halolaj:1
+    - unique:bokic_gyongy:1
+    - unique:gyongyhaz_hej:1
+    processing-dependencies:
+    - erositett_bor
+    - vizbor
+    - halolaj
+    - bokic_gyongy
+    - gyongyhaz_hej
 
 loot:
   rank-rewards:
