@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Immutable authority shared by profession preview and execution.
+ * Immutable authority shared by profession preview, admission and execution.
  *
- * <p>Specialization rounding is intentionally performed per crafted batch and only then scaled by
- * the requested batch count. This makes batching an ergonomic operation, not an economic bonus:
- * crafting N items separately and crafting the same N items as one batch has the same input and
- * yield arithmetic.</p>
+ * <p>Input and output specialization rounding is intentionally performed for one craft first and
+ * only then multiplied by the requested batch count. Therefore N individual crafts and one N-size
+ * batch have identical economic arithmetic; batching is an ergonomic operation, never a rounding
+ * arbitrage source.</p>
  */
 public record ProfessionEffectiveCraftPlan(
         ProfessionRecipeCatalog.Recipe recipe,
@@ -29,14 +29,15 @@ public record ProfessionEffectiveCraftPlan(
         specialization = specialization == null
                 ? ProfessionSpecializationEconomyPolicy.Effect.none() : specialization;
         if (batches < 1 || batches > 64) throw new IllegalArgumentException("batches must be 1..64");
-        materialInputs = Map.copyOf(materialInputs);
-        uniqueInputs = Map.copyOf(uniqueInputs);
+        materialInputs = Map.copyOf(materialInputs == null ? Map.of() : materialInputs);
+        uniqueInputs = Map.copyOf(uniqueInputs == null ? Map.of() : uniqueInputs);
     }
 
     public static ProfessionEffectiveCraftPlan of(
             final ProfessionRecipeCatalog.Recipe recipe,
             final ProfessionSpecializationEconomyPolicy.Effect specialization,
             final int batches) {
+        java.util.Objects.requireNonNull(recipe, "recipe");
         final ProfessionSpecializationEconomyPolicy.Effect effect = specialization == null
                 ? ProfessionSpecializationEconomyPolicy.Effect.none() : specialization;
         final LinkedHashMap<Material, Integer> materials = new LinkedHashMap<>();
@@ -49,52 +50,55 @@ public record ProfessionEffectiveCraftPlan(
     }
 
     public static int effectiveInput(
-            final int perBatch,
+            final int perCraft,
             final ProfessionSpecializationEconomyPolicy.Effect specialization,
             final int batches) {
-        if (perBatch < 1 || batches < 1 || batches > 64) {
+        if (perCraft < 1 || batches < 1 || batches > 64) {
             throw new IllegalArgumentException("invalid craft-plan amount/batch");
         }
-        final long oneBatch = specialization.adjustInput(perBatch);
-        final long total = Math.multiplyExact(oneBatch, batches);
+        final ProfessionSpecializationEconomyPolicy.Effect effect = specialization == null
+                ? ProfessionSpecializationEconomyPolicy.Effect.none() : specialization;
+        final long oneCraft = effect.adjustInput(perCraft);
+        final long total = Math.multiplyExact(oneCraft, batches);
         if (total > Integer.MAX_VALUE) throw new IllegalArgumentException("craft-plan input overflow");
+        return (int) total;
+    }
+
+    /** Effective amount shown by preview and produced by execution for one result stack per craft. */
+    public int effectiveOutputAmount(final int rawPerCraft) {
+        if (rawPerCraft < 1) throw new IllegalArgumentException("invalid craft output amount");
+        long oneCraft = rawPerCraft;
+        if (specialization.outputMultiplier() > 1.0D
+                && recipe.templateId() == null && recipe.affixTier() == null) {
+            final long bonus = (long) Math.floor(rawPerCraft * (specialization.outputMultiplier() - 1.0D));
+            oneCraft = Math.addExact(oneCraft, Math.max(0L, bonus));
+        }
+        final long total = Math.multiplyExact(oneCraft, batches);
+        if (total > Integer.MAX_VALUE) throw new IllegalArgumentException("craft-plan output overflow");
         return (int) total;
     }
 
     public boolean hasIngredients(final Map<Material, Integer> materialAvailable,
                                   final Map<String, Integer> uniqueAvailable) {
+        final Map<Material, Integer> materials = materialAvailable == null ? Map.of() : materialAvailable;
+        final Map<String, Integer> unique = uniqueAvailable == null ? Map.of() : uniqueAvailable;
         for (final Map.Entry<Material, Integer> entry : materialInputs.entrySet()) {
-            if (materialAvailable.getOrDefault(entry.getKey(), 0) < entry.getValue()) return false;
+            if (materials.getOrDefault(entry.getKey(), 0) < entry.getValue()) return false;
         }
         for (final Map.Entry<String, Integer> entry : uniqueInputs.entrySet()) {
-            if (uniqueAvailable.getOrDefault(entry.getKey(), 0) < entry.getValue()) return false;
+            if (unique.getOrDefault(entry.getKey(), 0) < entry.getValue()) return false;
         }
         return true;
     }
 
-    public static int maxCraftableBatches(
-            final ProfessionRecipeCatalog.Recipe recipe,
-            final ProfessionSpecializationEconomyPolicy.Effect specialization,
-            final int limit,
-            final Map<Material, Integer> materialAvailable,
-            final Map<String, Integer> uniqueAvailable) {
-        final int bounded = Math.max(1, Math.min(64, limit));
-        int result = 0;
-        for (int candidate = 1; candidate <= bounded; candidate++) {
-            if (!of(recipe, specialization, candidate).hasIngredients(materialAvailable, uniqueAvailable)) break;
-            result = candidate;
-        }
-        return result;
-    }
-
     /**
-     * Apply yield independently to every raw per-batch output. Pooling all outputs before floor()
-     * would make larger batches economically better than repeated single crafts.
+     * Apply yield independently to every raw per-craft output. Pooling all outputs before floor()
+     * would make larger batches economically different from repeated single crafts.
      */
-    public List<ItemStack> effectiveOutputs(final List<ItemStack> rawPerBatchOutputs) {
-        if (rawPerBatchOutputs == null || rawPerBatchOutputs.size() != batches) return List.of();
-        final ArrayList<ItemStack> result = new ArrayList<>(rawPerBatchOutputs.size());
-        for (final ItemStack raw : rawPerBatchOutputs) {
+    public List<ItemStack> effectiveOutputs(final List<ItemStack> rawPerCraftOutputs) {
+        if (rawPerCraftOutputs == null || rawPerCraftOutputs.size() != batches) return List.of();
+        final ArrayList<ItemStack> result = new ArrayList<>(rawPerCraftOutputs.size());
+        for (final ItemStack raw : rawPerCraftOutputs) {
             if (raw == null || raw.getType().isAir() || raw.getAmount() <= 0) return List.of();
             final List<ItemStack> adjusted = specialization.adjustOutputs(recipe, List.of(raw));
             if (adjusted == null || adjusted.size() != 1 || adjusted.getFirst() == null
