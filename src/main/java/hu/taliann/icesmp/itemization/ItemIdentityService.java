@@ -268,8 +268,8 @@ public final class ItemIdentityService {
         }
         meta.lore(lore);
         item.setItemMeta(meta);
-        applyStats(item, template, instance);
         writeIdentity(item, template, instance);
+        applyStats(item, template, instance);
         refreshPresentation(item, template, instance);
         return item;
     }
@@ -440,6 +440,7 @@ public final class ItemIdentityService {
         meta.getPersistentDataContainer().set(legacyRuneKey, PersistentDataType.STRING,
                 updated.runes().get(0));
         item.setItemMeta(meta);
+        applyStats(item, template, updated);
         return new RuneMutation(RuneMutationStatus.APPLIED, updated, template);
     }
 
@@ -552,13 +553,13 @@ public final class ItemIdentityService {
             if ("ability_power".equals(entry.getKey())) abilityPower += entry.getValue();
             else attributes.add(entry.getKey() + ':' + entry.getValue());
         }
-        ItemDataFactory.applyCanonicalAttributeModifiers(item, attributes, false);
         final ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().remove(abilityPowerKey);
         if (abilityPower != 0.0D) {
             meta.getPersistentDataContainer().set(abilityPowerKey, PersistentDataType.DOUBLE, abilityPower);
         }
         item.setItemMeta(meta);
+        ItemDataFactory.applyCanonicalAttributeModifiers(item, attributes, false);
     }
 
     /**
@@ -570,11 +571,11 @@ public final class ItemIdentityService {
         if (item == null || item.getType().isAir()) return;
         final ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
-        meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create());
         meta.getPersistentDataContainer().remove(abilityPowerKey);
         meta.getPersistentDataContainer().set(equipmentSuppressedKey,
                 PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);
+        ItemDataFactory.applyCanonicalAttributeModifiers(item, List.of(), false);
         ItemDataFactory.hideAttributeTooltip(item);
     }
 
@@ -585,10 +586,10 @@ public final class ItemIdentityService {
             suppressManagedInvalid(item);
             return;
         }
-        applyStats(item, template, instance);
         final ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().remove(equipmentSuppressedKey);
         item.setItemMeta(meta);
+        applyStats(item, template, instance);
         refreshPresentation(item, template, instance);
     }
 
