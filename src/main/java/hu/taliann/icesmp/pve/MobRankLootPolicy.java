@@ -40,8 +40,8 @@ public final class MobRankLootPolicy {
             case NORMAL -> "normal";
             case VETERAN -> "veteran";
             case ELITE -> "elite";
-            case CHAMPION -> "champion";
-            case MINIBOSS, BOSS, WORLD_BOSS -> "boss";
+            case CHAMPION, MINIBOSS -> "champion";
+            case BOSS, WORLD_BOSS -> "boss";
         };
         final String root = "loot.rank-rewards." + band;
         final List<String> authored = config == null ? List.of() : config.getStringList(root + ".source-tags");
