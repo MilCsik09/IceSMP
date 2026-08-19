@@ -9,9 +9,83 @@ on:
       - feature/professions-2
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  stacked-replay:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feature/professions-2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout child rewrite authority
+        uses: actions/checkout@v4
+        with:
+          ref: feature/professions-2
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.RESOURCE_PACK_PUSH_TOKEN || github.token }}
+      - name: Detect explicit replay request
+        id: request
+        shell: bash
+        run: |
+          if [[ -f .stack-rebase-request ]]; then
+            echo 'requested=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'requested=false' >> "$GITHUB_OUTPUT"
+            echo 'No stacked replay request on this head.'
+          fi
+      - name: Rebase, squash replay and push with exact lease
+        if: steps.request.outputs.requested == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          source .stack-rebase-request
+          : "${SOURCE_HEAD:?missing SOURCE_HEAD}"
+          : "${EXPECTED_OLD_BASE:?missing EXPECTED_OLD_BASE}"
+          EXPECTED_REMOTE=$(git rev-parse HEAD)
+          git fetch origin feature/equipment-2:refs/remotes/origin/feature/equipment-2
+          FINAL_PARENT=$(git rev-parse refs/remotes/origin/feature/equipment-2)
+          git cat-file -e "${SOURCE_HEAD}^{commit}"
+          OLD_BASE=$(git merge-base "${SOURCE_HEAD}" "${FINAL_PARENT}")
+          test "${OLD_BASE}" = "${EXPECTED_OLD_BASE}"
+          echo "REPLAY_SOURCE=${SOURCE_HEAD}"
+          echo "REPLAY_OLD_BASE=${OLD_BASE}"
+          echo "REPLAY_FINAL_PARENT=${FINAL_PARENT}"
+          echo "REPLAY_EXPECTED_REMOTE=${EXPECTED_REMOTE}"
+          git config user.name "Csik Milán"
+          git config user.email "81396861+MilCsik09@users.noreply.github.com"
+          git switch -C stacked-replay "${SOURCE_HEAD}"
+          set +e
+          git rebase --onto "${FINAL_PARENT}" "${OLD_BASE}"
+          RC=$?
+          set -e
+          if [[ "${RC}" -ne 0 ]]; then
+            echo 'STACK_REPLAY_CONFLICTS_BEGIN'
+            git status --short
+            git diff --name-only --diff-filter=U
+            git diff || true
+            echo 'STACK_REPLAY_CONFLICTS_END'
+            git rebase --abort || true
+            exit "${RC}"
+          fi
+          test "$(git merge-base HEAD "${FINAL_PARENT}")" = "${FINAL_PARENT}"
+          test -z "$(git rev-list --merges "${FINAL_PARENT}..HEAD")"
+          # Collapse the already conflict-free replay so the pushed commit itself changes no workflow.
+          git reset --soft "${FINAL_PARENT}"
+          git restore --source="${FINAL_PARENT}" --staged --worktree .github/workflows
+          rm -f .stack-rebase-request
+          git add -A
+          git diff --cached --check
+          test -z "$(git diff --cached --name-only | grep '^.github/workflows/' || true)"
+          git commit -m "[professions-2-final] replay Professions closure onto final Equipment parent"
+          RESULT=$(git rev-parse HEAD)
+          test "$(git merge-base "${RESULT}" "${FINAL_PARENT}")" = "${FINAL_PARENT}"
+          test -z "$(git rev-list --merges "${FINAL_PARENT}..${RESULT}")"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          echo "REPLAY_RESULT=${RESULT}"
+          git push --force-with-lease=refs/heads/feature/professions-2:${EXPECTED_REMOTE} \
+            origin HEAD:refs/heads/feature/professions-2
+
   exact-head:
     if: github.event_name == 'push' || github.event.pull_request.head.ref == 'feature/professions-2'
     runs-on: ubuntu-latest
