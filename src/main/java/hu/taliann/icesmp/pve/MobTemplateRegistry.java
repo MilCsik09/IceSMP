@@ -37,8 +37,7 @@ public final class MobTemplateRegistry {
         final ConfigurationSection lootRoot = config.getConfiguration()
                 .getConfigurationSection("mob-loot-profiles");
         if (lootRoot == null) throw new IllegalStateException("mob-loot-profiles section missing");
-        final Set<String> lootProfiles = lootRoot.getKeys(false).stream()
-                .map(MobTemplateRegistry::normalize).collect(java.util.stream.Collectors.toSet());
+        final Set<String> lootProfiles = parseLootProfileReferences(lootRoot);
         final LinkedHashMap<String, MobTemplate> parsed = new LinkedHashMap<>();
         final LinkedHashMap<EntityType, List<MobTemplate>> entityIndex = new LinkedHashMap<>();
         final LinkedHashSet<String> bestiaryIds = new LinkedHashSet<>();
@@ -140,6 +139,32 @@ public final class MobTemplateRegistry {
                 || tag.startsWith("dimension:") || tag.startsWith("depth:")
                 || tag.startsWith("time:") || tag.startsWith("weather:"))
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * `profile-id` is the migration/deprecation marker for the old mob-loot-profiles authoring
+     * layer. Bukkit's YAML loader does not preserve null tombstones, so packaged legacy
+     * sources/rewards leaves may still be visible after the overlay merge. Once a profile carries
+     * the explicit marker those leaves are intentionally ignored and can no longer influence any
+     * reward decision; BuildAware loot + rank policy remain the only runtime reward authority.
+     * Unmigrated profiles fail closed instead of silently keeping the old duplicate truth source.
+     */
+    private static Set<String> parseLootProfileReferences(final ConfigurationSection root) {
+        final LinkedHashSet<String> ids = new LinkedHashSet<>();
+        for (final String rawId : root.getKeys(false)) {
+            final String id = normalize(rawId);
+            final ConfigurationSection profile = root.getConfigurationSection(rawId);
+            if (profile == null) throw new IllegalStateException("invalid mob loot profile reference: " + id);
+            if (!profile.isSet("profile-id")) {
+                throw new IllegalStateException("mob-loot-profiles entry is not migrated to reference-only authority: " + id);
+            }
+            final String marker = normalize(profile.getString("profile-id", ""));
+            if (!id.equals(marker)) {
+                throw new IllegalStateException("mob loot profile marker mismatch: " + id + '/' + marker);
+            }
+            if (!ids.add(id)) throw new IllegalStateException("duplicate mob loot profile reference: " + id);
+        }
+        return Set.copyOf(ids);
     }
 
     private static Set<String> normalizedSet(final List<String> values) {
