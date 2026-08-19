@@ -52,11 +52,13 @@ Crafted gear előnye a targetálhatóság, deterministic recipe, Masterwork, pro
 
 Mechanical setből az első katalógusban pontosan nyolc 4-piece armor set van. A set build enabler; nyers, kötelező `+25% damage` jellegű stat-tax nem megengedett. Signature ritka marad. Ascension csak kiválasztott high-value/endgame target, nem 160-item checklist. Masterwork crafted identity, nem rarity.
 
+A set-bónusz ugyanazt az **ACTIVE canonical equipment authorityt** használja, mint a CombatPower: wrong-family, managed-invalid, suppressed vagy duplikált physical identity nem számít set-piece-nek. A set-stat csak akkor authorolható, ha konkrét consumerje van. `ability_power` cast-time consumer; HP/armor/toughness/movement/attack-damage/attack-speed owner-threaden bounded transient player attribútumként vetül ki, és reconcile/death/quit során takarítódik. Ezek nem ItemStack backing attribute-ok, és nem nyithatnak kerülőutat a canonical item-modifier ownership körül.
+
 ## PvE reward contract
 
 A rank nem loot quantity multiplier. NORMAL → VETERAN → ELITE → CHAMPION világ-rankok növekvő, egymást tartalmazó eligibility poolt, kis bounded additív gear-esélyt, blueprint weightet és esetenként reusable special-material eligibilityt kapnak. BOSS külön boss/set source pool és a meglévő boss-component authority. BuildAware personalization cap továbbra is legfeljebb 1.5× és csak ACTIVE canonical equipment formálhatja.
 
-A `mob-loot-profiles` csak referencianév-registry. `sources` vagy `rewards` blokk ott runtime-halott duplicate truth lenne, ezért a production parser fail-closed elutasítja. A reward truth az existing `loot.*` + canonical ItemTemplate source tags.
+A `mob-loot-profiles` csak referencianév-registry. A `profile-id` explicit deprecation/migration marker; a korábbi `sources`/`rewards` levelek még akkor sem reward authorityk, ha a Bukkit YAML merge egy régi telepített configból fizikailag megtartja őket. A production parser a marker nélküli profilt fail-closed elutasítja, és runtime reward döntéshez ezeket a legacy leveleket nem olvassa. A reward truth az existing `loot.*`, a canonical ItemTemplate source tags és a bounded rank policy.
 
 ## Performance contract
 
