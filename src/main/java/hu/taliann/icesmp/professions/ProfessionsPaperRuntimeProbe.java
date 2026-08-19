@@ -121,13 +121,21 @@ public final class ProfessionsPaperRuntimeProbe {
 
     private static void verifyCanonicalCatalog(final ProfessionRecipeCatalog catalog,
                                                final ItemIdentityService identity) {
-        check(catalog.allIds().size() == 407, "production Professions 2.0 catalog must load 407 recipes");
+        final boolean longTerm = catalog.get("lte_fonixszovet_sisak") != null;
+        if (longTerm) {
+            check(catalog.allIds().size() >= 471,
+                    "long-term production catalog unexpectedly small: " + catalog.allIds().size());
+        } else {
+            check(catalog.allIds().size() == 407,
+                    "production Professions 2.0 catalog must load 407 recipes");
+        }
         int canonical = 0;
         for (final String id : catalog.allIds()) {
             final ProfessionRecipeCatalog.Recipe recipe = catalog.get(id);
             if (recipe.templateId() != null) canonical++;
         }
-        check(canonical == 18, "production catalog must load 18 canonical equipment recipes");
+        check(canonical == (longTerm ? 82 : 18),
+                "production catalog canonical equipment recipe count mismatch: " + canonical);
         final ProfessionRecipeCatalog.Recipe equipment = catalog.get("p2_fonixpihe_kopeny");
         check(equipment != null && equipment.templateId() != null,
                 "Professions 2.0 canonical runtime recipe must resolve a template");
@@ -135,6 +143,15 @@ public final class ProfessionsPaperRuntimeProbe {
                 "runtime:profession-craft", "paper", null);
         check(identity.inspect(item).status() == ItemIdentityService.Status.VALID,
                 "canonical profession result must produce a VALID ItemInstance on Paper");
+        if (longTerm) {
+            final ProfessionRecipeCatalog.Recipe expanded = catalog.get("lte_fonixszovet_sisak");
+            check(expanded != null && "fonixszovet_sisak".equals(expanded.templateId()),
+                    "long-term canonical profession output must resolve through the production catalog");
+            final ItemStack expandedItem = identity.create(expanded.templateId(),
+                    "runtime:long-term-profession-craft", "paper", null);
+            check(identity.inspect(expandedItem).status() == ItemIdentityService.Status.VALID,
+                    "long-term canonical profession output must produce a VALID ItemInstance on Paper");
+        }
     }
 
     private static void verifyBlueprintRecovery() {
