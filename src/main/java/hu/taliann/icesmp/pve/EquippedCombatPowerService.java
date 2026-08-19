@@ -63,7 +63,9 @@ public final class EquippedCombatPowerService implements Listener {
                 "max_health", new NamespacedKey(plugin, "item_set_max_health"),
                 "armor", new NamespacedKey(plugin, "item_set_armor"),
                 "armor_toughness", new NamespacedKey(plugin, "item_set_armor_toughness"),
-                "movement_speed", new NamespacedKey(plugin, "item_set_movement_speed"));
+                "movement_speed", new NamespacedKey(plugin, "item_set_movement_speed"),
+                "attack_damage", new NamespacedKey(plugin, "item_set_attack_damage"),
+                "attack_speed", new NamespacedKey(plugin, "item_set_attack_speed"));
         activeInstance = this;
     }
 
@@ -126,8 +128,9 @@ public final class EquippedCombatPowerService implements Listener {
     }
 
     /**
-     * Applies only the Bukkit-attribute set stats. ability_power remains a cast-time canonical
-     * stat consumer; both projections count the same ACTIVE, non-duplicate identities.
+     * Applies the Bukkit-attribute set stats. ability_power remains a cast-time canonical stat
+     * consumer; both projections count the same ACTIVE, non-duplicate identities. Offensive set
+     * attributes use bounded transient player modifiers, never backing ItemStack attributes.
      */
     private void applySetAttributes(final Player player, final List<Candidate> unique) {
         final ItemTemplateRegistry registry = ItemTemplateRegistry.current();
@@ -150,6 +153,10 @@ public final class EquippedCombatPowerService implements Listener {
                 active.getOrDefault("armor_toughness", 0.0D));
         applyTransient(player, Attribute.MOVEMENT_SPEED, "movement_speed",
                 active.getOrDefault("movement_speed", 0.0D));
+        applyTransient(player, Attribute.ATTACK_DAMAGE, "attack_damage",
+                active.getOrDefault("attack_damage", 0.0D));
+        applyTransient(player, Attribute.ATTACK_SPEED, "attack_speed",
+                active.getOrDefault("attack_speed", 0.0D));
         final AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null && player.getHealth() > maxHealth.getValue()) {
             player.setHealth(Math.max(0.01D, maxHealth.getValue()));
@@ -168,6 +175,8 @@ public final class EquippedCombatPowerService implements Listener {
             case "max_health" -> Math.max(-1000.0D, Math.min(1000.0D, rawAmount));
             case "armor", "armor_toughness" -> Math.max(-100.0D, Math.min(100.0D, rawAmount));
             case "movement_speed" -> Math.max(-0.08D, Math.min(0.50D, rawAmount));
+            case "attack_damage" -> Math.max(-20.0D, Math.min(20.0D, rawAmount));
+            case "attack_speed" -> Math.max(-1.0D, Math.min(1.0D, rawAmount));
             default -> 0.0D;
         };
         if (amount == 0.0D) return;
@@ -182,6 +191,8 @@ public final class EquippedCombatPowerService implements Listener {
                 case "armor" -> Attribute.ARMOR;
                 case "armor_toughness" -> Attribute.ARMOR_TOUGHNESS;
                 case "movement_speed" -> Attribute.MOVEMENT_SPEED;
+                case "attack_damage" -> Attribute.ATTACK_DAMAGE;
+                case "attack_speed" -> Attribute.ATTACK_SPEED;
                 default -> null;
             };
             if (attribute == null) continue;
