@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** Paged Professions 2.0 recipe book and deterministic craft preview. Rendering only. */
+/** Paged Professions 2.0 recipe book and deterministic effective CraftPlan preview. */
 public final class ProfessionRecipeGUI {
 
     private static final int PAGE_SIZE = 45;
@@ -101,11 +101,17 @@ public final class ProfessionRecipeGUI {
         final boolean levelOk = level >= recipe.level();
         final boolean learned = !recipe.blueprint()
                 || professionManager.hasLearnedRecipe(player, recipe.id());
-        final boolean hasMats = hasIngredients(player, recipe, uniqueMaterials);
-        final boolean craftable = levelOk && learned && hasMats;
         final ProfessionRecipeCatalog.EconomyMetadata economy = catalog.economy(recipe.id());
         final ProfessionSpecializationEconomyPolicy.Effect specialization =
                 ProfessionSpecializationEconomyPolicy.effectFor(player, recipe);
+        final hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan plan =
+                hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan.of(recipe, specialization, 1);
+        final hu.taliann.icesmp.professions.ProfessionCraftTransaction transaction =
+                new hu.taliann.icesmp.professions.ProfessionCraftTransaction(uniqueMaterials);
+        final List<org.bukkit.inventory.ItemStack> previewOutputs =
+                rawPreviewOutputs(recipe, 1, uniqueMaterials);
+        final var inventoryPreflight = transaction.preflight(player, plan, previewOutputs);
+        final boolean craftable = levelOk && learned && inventoryPreflight.applied();
 
         final List<Component> lore = new ArrayList<>();
         lore.add(grey("Szakma: ").append(recipe.profession().getDisplayName()));
@@ -149,7 +155,7 @@ public final class ProfessionRecipeGUI {
 
         lore.add(Component.empty());
         lore.add(grey("Hozzávalók:"));
-        for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
+        for (final Map.Entry<Material, Integer> entry : plan.materialInputs().entrySet()) {
             final int have = countMaterial(player, entry.getKey(), uniqueMaterials);
             final boolean enough = have >= entry.getValue();
             lore.add(Component.text("  " + (enough ? "✔ " : "✘ ") + have + "/"
@@ -157,7 +163,7 @@ public final class ProfessionRecipeGUI {
                     enough ? NamedTextColor.GRAY : NamedTextColor.RED)
                     .decoration(TextDecoration.ITALIC, false));
         }
-        for (final Map.Entry<String, Integer> entry : recipe.uniqueIngredients().entrySet()) {
+        for (final Map.Entry<String, Integer> entry : plan.uniqueInputs().entrySet()) {
             final int have = countUnique(player, entry.getKey(), uniqueMaterials);
             final boolean enough = have >= entry.getValue();
             lore.add(Component.text("  " + (enough ? "✔ " : "✘ ") + have + "/"
@@ -165,6 +171,9 @@ public final class ProfessionRecipeGUI {
                     enough ? NamedTextColor.AQUA : NamedTextColor.RED)
                     .decoration(TextDecoration.ITALIC, false));
         }
+        final int effectiveOutput = plan.effectiveOutputAmount(recipe.resultAmount());
+        lore.add(Component.text("Eredmény: " + effectiveOutput + "× " + recipe.displayName(),
+                NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         if (recipe.affixTier() != null) {
             lore.add(Component.empty());
             lore.add(Component.text("✦ Sorsolt minőség + toldat-bónuszok",
@@ -172,8 +181,15 @@ public final class ProfessionRecipeGUI {
         }
         lore.add(Component.empty());
         if (economy.batchable()) {
-            lore.add(Component.text("⇧ Shift+katt: 5-ös batch (max " + economy.batchLimit() + ")",
+            final int maxCraftable = maxCraftableBatches(player, recipe, specialization,
+                    economy.batchLimit(), uniqueMaterials, transaction);
+            lore.add(Component.text("⇧ Shift+katt: 5-ös batch • effektív max: " + maxCraftable,
                     NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+        }
+        if (inventoryPreflight.status()
+                == hu.taliann.icesmp.professions.ProfessionCraftTransaction.Status.INVENTORY_FULL) {
+            lore.add(Component.text("✘ Nincs hely az effektív outputnak", NamedTextColor.RED)
+                    .decoration(TextDecoration.ITALIC, false));
         }
         lore.add(craftable
                 ? Component.text("» Kattints a craftoláshoz", NamedTextColor.YELLOW)
@@ -184,7 +200,7 @@ public final class ProfessionRecipeGUI {
         final NamedTextColor nameColor = craftable ? NamedTextColor.GREEN
                 : (levelOk && learned ? NamedTextColor.YELLOW : NamedTextColor.GRAY);
         final Component name = Component.text(
-                (recipe.resultAmount() > 1 ? recipe.resultAmount() + "× " : "")
+                (effectiveOutput > 1 ? effectiveOutput + "× " : "")
                         + recipe.displayName(), nameColor)
                 .decoration(TextDecoration.ITALIC, false);
         return icon(recipe.result(), name, lore, recipe.affixTier() != null);
@@ -252,16 +268,35 @@ public final class ProfessionRecipeGUI {
         return (int) Math.round(value * 100.0D);
     }
 
-    private static boolean hasIngredients(final Player player,
-                                          final ProfessionRecipeCatalog.Recipe recipe,
-                                          final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
-        for (final Map.Entry<Material, Integer> entry : recipe.ingredients().entrySet()) {
-            if (countMaterial(player, entry.getKey(), uniqueMaterials) < entry.getValue()) return false;
+    private static List<org.bukkit.inventory.ItemStack> rawPreviewOutputs(
+            final ProfessionRecipeCatalog.Recipe recipe, final int batches,
+            final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials) {
+        final ArrayList<org.bukkit.inventory.ItemStack> result = new ArrayList<>(batches);
+        for (int index = 0; index < batches; index++) {
+            final org.bukkit.inventory.ItemStack stack = recipe.uniqueResult() == null
+                    ? new org.bukkit.inventory.ItemStack(recipe.result(), recipe.resultAmount())
+                    : uniqueMaterials.create(recipe.uniqueResult(), recipe.resultAmount());
+            if (stack == null || stack.getType().isAir()) return List.of();
+            result.add(stack);
         }
-        for (final Map.Entry<String, Integer> entry : recipe.uniqueIngredients().entrySet()) {
-            if (countUnique(player, entry.getKey(), uniqueMaterials) < entry.getValue()) return false;
+        return List.copyOf(result);
+    }
+
+    private static int maxCraftableBatches(
+            final Player player, final ProfessionRecipeCatalog.Recipe recipe,
+            final ProfessionSpecializationEconomyPolicy.Effect specialization, final int limit,
+            final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials,
+            final hu.taliann.icesmp.professions.ProfessionCraftTransaction transaction) {
+        int result = 0;
+        final int bounded = Math.max(1, Math.min(64, limit));
+        for (int candidate = 1; candidate <= bounded; candidate++) {
+            final var plan = hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan.of(
+                    recipe, specialization, candidate);
+            final var outputs = rawPreviewOutputs(recipe, candidate, uniqueMaterials);
+            if (!transaction.preflight(player, plan, outputs).applied()) break;
+            result = candidate;
         }
-        return true;
+        return result;
     }
 
     public static int countUnique(final Player player, final String uniqueId,
