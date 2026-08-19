@@ -87,6 +87,48 @@ item-templates:
     - rank:boss
     - profession:armorer
 
+# The HIGH Runic MAIL line keeps one foreign processed dependency (Armorer chain links).
+# Holdlen thread and rune dust are Enchanter-owned; the aquatic shell was removed from this line
+# so a normal high-tier craft does not require two foreign professions. Fisherman remains a
+# meaningful supplier to aquatic/resistance and other MAIL lines.
+profession-recipes:
+  lte_runalanc_sisak:
+    ingredients:
+    - unique:sodrott_lancszem:2
+    - unique:holdlen_fonal:1
+    - unique:runapor:1
+    processing-dependencies:
+    - sodrott_lancszem
+    - holdlen_fonal
+    - runapor
+  lte_runalanc_mellvert:
+    ingredients:
+    - unique:sodrott_lancszem:4
+    - unique:holdlen_fonal:1
+    - unique:runapor:1
+    processing-dependencies:
+    - sodrott_lancszem
+    - holdlen_fonal
+    - runapor
+  lte_runalanc_labvert:
+    ingredients:
+    - unique:sodrott_lancszem:3
+    - unique:holdlen_fonal:1
+    - unique:runapor:1
+    processing-dependencies:
+    - sodrott_lancszem
+    - holdlen_fonal
+    - runapor
+  lte_runalanc_csizma:
+    ingredients:
+    - unique:sodrott_lancszem:2
+    - unique:holdlen_fonal:1
+    - unique:runapor:1
+    processing-dependencies:
+    - sodrott_lancszem
+    - holdlen_fonal
+    - runapor
+
 loot:
   rank-rewards:
     normal:
