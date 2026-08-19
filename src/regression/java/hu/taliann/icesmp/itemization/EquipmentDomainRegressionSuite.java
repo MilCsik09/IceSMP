@@ -276,10 +276,12 @@ public final class EquipmentDomainRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/managers/ItemRarityService.java"));
         check(factory.contains("applyCanonicalAttributeModifiers"),
                 "canonical attribute path is explicit");
-        check(factory.contains("applyAttributeModifiers(item, specs, appendStatLore, false)"),
-                "canonical attribute path disables Material default seeding");
-        check(factory.contains("meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create())"),
-                "canonical zero-stat/suppressed path owns an explicit empty attribute component");
+        check(factory.contains("ItemAttributeModifiers.itemAttributes()"),
+                "canonical attribute path builds the Paper valued component directly");
+        check(factory.contains("item.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, component)"),
+                "canonical zero-stat/suppressed path writes an explicit valued component");
+        check(!factory.contains("meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create())"),
+                "canonical ownership no longer relies on the non-durable empty ItemMeta map");
         check(identity.contains("ItemDataFactory.applyCanonicalAttributeModifiers"),
                 "ItemIdentity render uses canonical attribute ownership");
         check(rarity.contains("isCanonicalManaged(base)"),
