@@ -1,5 +1,5 @@
 // IceSMP Folia 1.21.11 development launcher.
-// Final stacked validation host marker; no launcher behavior change.
+// Final stacked validation host marker v2; no launcher behavior change.
 // Usage: ./gradlew -I gradle/run-folia.init.gradle runFolia
 // The class-spec dependency lock remains the only version/provisioning authority.
 
@@ -75,7 +75,6 @@ allprojects { project ->
             inputs.property('externalPackUrl', externalPackUrl)
             inputs.property('externalPackSha1', externalPackSha1)
             outputs.file(externalPackFile)
-            // Always verify the file hash. A stale/corrupt ZIP can still exist at the expected path.
             outputs.upToDateWhen { false }
             doLast {
                 def digest = java.security.MessageDigest.getInstance('SHA-1')
