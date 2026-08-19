@@ -3,8 +3,11 @@ package hu.taliann.icesmp.itemization;
 import hu.taliann.icesmp.items.ItemDataFactory;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -63,9 +66,9 @@ public final class PaperSourceIntegrityRuntimeProbe {
     }
 
     /**
-     * Paper 1.21.11 exposes vanilla backing modifiers through getData even when ownership details
-     * differ from older assumptions. The contract we actually need is behavioral: a vanilla/BASIC
-     * item has non-empty backing modifiers, while an explicit empty canonical projection has none.
+     * Paper exposes the backing Material modifier value from getData when the valued component is
+     * absent. The canonical writer must therefore install an explicit empty component for a zero
+     * projection instead of relying on an empty ItemMeta modifier map.
      */
     private static void verifyAttributeComponentSemantics() {
         final ItemStack vanilla = new ItemStack(Material.IRON_SWORD);
@@ -94,6 +97,28 @@ public final class PaperSourceIntegrityRuntimeProbe {
         check(activeData != null && !activeData.modifiers().isEmpty(),
                 "authored armor probe must expose canonical modifiers before suppression");
         final var activeModifiers = List.copyOf(activeData.modifiers());
+
+        check(activeModifiers.stream().allMatch(entry ->
+                        "icesmp".equals(entry.modifier().getKey().getNamespace())),
+                "canonical component must contain only IceSMP-authored modifier keys");
+        final double expectedArmor = projectedStat(inspection, "armor") + inspection.template().baseArmor();
+        final double expectedToughness = projectedStat(inspection, "armor_toughness");
+        check(close(sumAdditive(activeData, Attribute.ARMOR), expectedArmor),
+                "canonical armor must equal authored projection exactly, without backing Material armor");
+        check(close(sumAdditive(activeData, Attribute.ARMOR_TOUGHNESS), expectedToughness),
+                "canonical toughness must equal authored projection exactly, without backing Material toughness");
+
+        final ItemStack managedZeroProjection = identity.create("glatziendorfi_jegvert",
+                "runtime:zero-projection", "paper", null);
+        check(identity.inspect(managedZeroProjection).status() == ItemIdentityService.Status.VALID,
+                "managed zero-projection control must start with valid canonical identity");
+        ItemDataFactory.applyCanonicalAttributeModifiers(managedZeroProjection, List.of(), false);
+        check(identity.inspect(managedZeroProjection).status() == ItemIdentityService.Status.VALID,
+                "zeroing the gameplay projection must not rewrite canonical identity");
+        final var zeroData = managedZeroProjection.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        check(managedZeroProjection.hasData(DataComponentTypes.ATTRIBUTE_MODIFIERS)
+                        && zeroData != null && zeroData.modifiers().isEmpty(),
+                "managed canonical zero projection must not inherit NETHERITE_CHESTPLATE defaults");
 
         check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.VALID,
                         true, false, true, false, false)
@@ -143,6 +168,28 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final var basicDefaults = basic.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
         check(basicDefaults != null && !basicDefaults.modifiers().isEmpty(),
                 "BASIC vanilla control must retain backing Material attribute behavior");
+    }
+
+    private static double projectedStat(final ItemIdentityService.Inspection inspection,
+                                        final String statId) {
+        double value = inspection.template().fixedStatsAt(inspection.instance().ascension().stageId())
+                .getOrDefault(statId, 0.0D);
+        final ItemInstance.Roll roll = inspection.instance().rolls().get(statId);
+        if (roll != null) value += roll.value();
+        return value;
+    }
+
+    private static double sumAdditive(final ItemAttributeModifiers data, final Attribute attribute) {
+        return data.modifiers().stream()
+                .filter(entry -> attribute.equals(entry.attribute()))
+                .map(ItemAttributeModifiers.Entry::modifier)
+                .filter(modifier -> modifier.getOperation() == AttributeModifier.Operation.ADD_NUMBER)
+                .mapToDouble(AttributeModifier::getAmount)
+                .sum();
+    }
+
+    private static boolean close(final double actual, final double expected) {
+        return Math.abs(actual - expected) <= 0.000_001D;
     }
 
     private static void verifyActualInventoryAtomicity() {
