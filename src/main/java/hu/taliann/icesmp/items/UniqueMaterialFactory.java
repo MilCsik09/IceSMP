@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.items;
 
+import hu.taliann.icesmp.gui.MaterialSourceHints;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import net.kyori.adventure.text.Component;
@@ -62,6 +63,10 @@ public final class UniqueMaterialFactory {
         final List<Component> lore = new ArrayList<>();
         for (final String line : section.getStringList("lore")) {
             lore.add(legacy(line).colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+        }
+        for (final String hint : MaterialSourceHints.forManagedMaterial(uniqueId)) {
+            lore.add(Component.text(hint, NamedTextColor.DARK_GRAY)
+                    .decoration(TextDecoration.ITALIC, false));
         }
         meta.lore(lore);
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
