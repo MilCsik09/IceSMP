@@ -1,1 +1,54 @@
-# Populated by the stacked feature/reward-discoverability-closure branch.
+# PvE reward and discoverability closure. This extends the existing loot and mob-template
+# authorities; it does not introduce a second loot framework.
+loot:
+  rank-rewards:
+    normal:
+      source-tags: [combat:wilderness]
+      gear-chance-additive: 0.0
+      blueprint-chance: 0.002
+      special-material: ''
+      special-material-chance: 0.0
+    veteran:
+      source-tags: [combat:veteran, combat:wilderness]
+      gear-chance-additive: 0.02
+      blueprint-chance: 0.0035
+      special-material: vad_esszencia
+      special-material-chance: 0.01
+    elite:
+      source-tags: [combat:elite, combat:veteran, combat:wilderness]
+      gear-chance-additive: 0.04
+      blueprint-chance: 0.006
+      special-material: szorny_szerv
+      special-material-chance: 0.015
+    champion:
+      source-tags: [combat:champion, combat:elite, combat:veteran, combat:wilderness]
+      gear-chance-additive: 0.06
+      blueprint-chance: 0.01
+      special-material: melyvizi_esszencia
+      special-material-chance: 0.01
+    boss:
+      source-tags: [combat:boss]
+      gear-chance-additive: 0.0
+      blueprint-chance: 0.05
+      special-material: ''
+      special-material-chance: 0.0
+
+# Reference IDs only. The old sources/rewards leaves were a runtime-dead duplicate authoring
+# layer; null removes those leaves from ConfigManager's effective tree while preserving IDs.
+mob-loot-profiles:
+  undead-common:
+    profile-id: undead-common
+    sources: null
+    rewards: null
+  undead-elite:
+    profile-id: undead-elite
+    sources: null
+    rewards: null
+  construct-elite:
+    profile-id: construct-elite
+    sources: null
+    rewards: null
+  glacial-boss:
+    profile-id: glacial-boss
+    sources: null
+    rewards: null
