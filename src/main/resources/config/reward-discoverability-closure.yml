@@ -213,9 +213,10 @@ loot:
       special-material: ''
       special-material-chance: 0.0
 
-# MobTemplate keeps a stable authored profile id for encounter/source identity, but rewards and
-# sources are no longer duplicated here. ConfigManager nulls the legacy leaves from the effective
-# tree; MobTemplateRegistry fail-closes if a rewards/sources leaf survives.
+# `profile-id` is the deprecation/migration marker for the former authored reward block. Bukkit's
+# YAML merge may still expose old packaged sources/rewards leaves when a null tombstone is loaded;
+# MobTemplateRegistry deliberately ignores those leaves for every marked profile. They are not a
+# runtime authority: only BuildAware ItemTemplate loot + the bounded rank policy can choose rewards.
 mob-loot-profiles:
   frozen_wilderness:
     profile-id: frozen_wilderness
@@ -265,7 +266,19 @@ mob-loot-profiles:
     profile-id: wild_hunt
     sources: null
     rewards: null
-  undead-common: null
-  undead-elite: null
-  construct-elite: null
-  glacial-boss: null
+  undead-common:
+    profile-id: undead-common
+    sources: null
+    rewards: null
+  undead-elite:
+    profile-id: undead-elite
+    sources: null
+    rewards: null
+  construct-elite:
+    profile-id: construct-elite
+    sources: null
+    rewards: null
+  glacial-boss:
+    profile-id: glacial-boss
+    sources: null
+    rewards: null
