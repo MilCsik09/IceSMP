@@ -1,4 +1,5 @@
 // IceSMP Folia 1.21.11 development launcher.
+// Final stacked validation host marker; no launcher behavior change.
 // Usage: ./gradlew -I gradle/run-folia.init.gradle runFolia
 // The class-spec dependency lock remains the only version/provisioning authority.
 
