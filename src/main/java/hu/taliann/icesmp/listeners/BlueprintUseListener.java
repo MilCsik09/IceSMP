@@ -59,6 +59,18 @@ public final class BlueprintUseListener implements Listener {
     private final NamespacedKey reservationKey;
     private final Set<UUID> inFlight = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Compatibility for the existing core assembly signature. It resolves the providing IceSMP
+     * plugin and delegates to the sole durable constructor; there is no legacy blueprint path.
+     */
+    public BlueprintUseListener(final BlueprintItemFactory blueprintFactory,
+                                final ProfessionRecipeCatalog catalog,
+                                final ProfessionManager professionManager,
+                                final MessageManager messageManager) {
+        this(JavaPlugin.getProvidingPlugin(BlueprintUseListener.class), blueprintFactory,
+                catalog, professionManager, messageManager);
+    }
+
     public BlueprintUseListener(final JavaPlugin plugin,
                                 final BlueprintItemFactory blueprintFactory,
                                 final ProfessionRecipeCatalog catalog,
@@ -135,7 +147,7 @@ public final class BlueprintUseListener implements Listener {
         }
         if (!player.isOnline()) {
             inFlight.remove(player.getUniqueId());
-            return; // PREPARED receipt is recovered on the next join.
+            return;
         }
         if (professionManager.hasLearnedRecipe(player, recipe.id())) {
             transitionReceipt(player, operationId, fingerprint, false,
@@ -288,7 +300,7 @@ public final class BlueprintUseListener implements Listener {
             plugin.getLogger().severe("Blueprint recovery inventory persistence failed: op="
                     + operation.operationId() + " player=" + player.getUniqueId()
                     + " decision=" + decision + " error=" + persistenceFailure.getMessage());
-            return; // PREPARED receipt stays durable for a later retry.
+            return;
         }
         final boolean commit = decision == BlueprintRecoveryPolicy.Decision.CONSUME_AND_COMMIT
                 || decision == BlueprintRecoveryPolicy.Decision.COMMIT_CONSUMED;
@@ -309,7 +321,6 @@ public final class BlueprintUseListener implements Listener {
         }));
     }
 
-    /** Prevent a durable reservation witness from leaving the player's inventory mid-transaction. */
     @EventHandler(ignoreCancelled = true)
     public void onDrop(final PlayerDropItemEvent event) {
         if (reservationOf(event.getItemDrop().getItemStack()) != null) event.setCancelled(true);
