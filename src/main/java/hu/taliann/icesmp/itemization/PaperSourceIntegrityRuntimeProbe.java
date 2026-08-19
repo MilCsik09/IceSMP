@@ -36,6 +36,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
         if (!Boolean.getBoolean(PROPERTY)) return;
         final ItemIdentityService identity = readField(assembledCore,
                 "itemIdentityService", ItemIdentityService.class);
+        final ItemTemplateRegistry templates = readField(assembledCore,
+                "itemTemplateRegistry", ItemTemplateRegistry.class);
         final ProfessionRecipeCatalog catalog = readField(assembledCore,
                 "professionRecipeCatalog", ProfessionRecipeCatalog.class);
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
@@ -44,7 +46,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 verifyEquipmentRuntimeStates(identity);
                 verifyActualInventoryAtomicity();
                 verifyMutationPhysicalState(identity);
-                verifyCatalogPositiveLoad(catalog);
+                verifyCatalogPositiveLoad(catalog, templates);
                 plugin.getLogger().info(PASS_MARKER);
             } catch (final Throwable failure) {
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -293,12 +295,18 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 "mutation physical-state preservation must leave canonical checksum VALID");
     }
 
-    private static void verifyCatalogPositiveLoad(final ProfessionRecipeCatalog catalog) {
+    private static void verifyCatalogPositiveLoad(final ProfessionRecipeCatalog catalog,
+                                                  final ItemTemplateRegistry templates) {
         final int count = catalog.allIds().size();
+        final boolean longTerm = catalog.get("lte_fonixszovet_sisak") != null;
         final boolean professions2 = catalog.get("p2_fonixpihe_kopeny") != null;
-        final int expected = professions2 ? 407 : 392;
-        final int expectedCanonical = professions2 ? 18 : 15;
-        check(count == expected, "production catalog effective recipe count mismatch: " + count);
+        final int expectedCanonical = longTerm ? 82 : professions2 ? 18 : 15;
+        if (longTerm) {
+            check(count >= 471, "long-term production catalog unexpectedly small: " + count);
+        } else {
+            final int expected = professions2 ? 407 : 392;
+            check(count == expected, "production catalog effective recipe count mismatch: " + count);
+        }
         int canonical = 0;
         for (final String id : catalog.allIds()) {
             final ProfessionRecipeCatalog.Recipe recipe = catalog.get(id);
@@ -314,6 +322,25 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 check(recipe != null && recipe.templateId() != null && !recipe.result().isAir(),
                         "Professions 2.0 canonical recipe failed production load: " + id);
             }
+        }
+        if (longTerm) {
+            final List<ItemTemplate> armor = templates.snapshot().values().stream()
+                    .filter(ItemTemplate::isArmorFamilyEquipment).toList();
+            check(armor.size() == 160,
+                    "long-term production ItemTemplate parser must load exactly 160 armor: " + armor.size());
+            for (final ArmorFamily family : ArmorFamily.values()) {
+                check(armor.stream().filter(template -> template.armorFamily() == family).count() == 40L,
+                        "long-term family must load exactly 40 armor: " + family);
+                for (final ItemTemplate.Slot slot : List.of(ItemTemplate.Slot.HEAD, ItemTemplate.Slot.CHEST,
+                        ItemTemplate.Slot.LEGS, ItemTemplate.Slot.FEET)) {
+                    check(armor.stream().filter(template -> template.armorFamily() == family
+                                    && template.slot() == slot).count() == 10L,
+                            "long-term family/slot must load exactly 10 armor: " + family + '/' + slot);
+                }
+            }
+            final ProfessionRecipeCatalog.Recipe newOutput = catalog.get("lte_fonixszovet_sisak");
+            check(newOutput != null && "fonixszovet_sisak".equals(newOutput.templateId()),
+                    "new long-term canonical output must survive the production recipe parser");
         }
     }
 
