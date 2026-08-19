@@ -7,6 +7,7 @@ import hu.taliann.icesmp.itemization.EquipmentProficiencyService;
 import hu.taliann.icesmp.itemization.ItemIdentityService;
 import hu.taliann.icesmp.itemization.ItemInstance;
 import hu.taliann.icesmp.itemization.ItemTemplate;
+import hu.taliann.icesmp.itemization.ItemTemplateCatalogIndex;
 import hu.taliann.icesmp.itemization.ItemTemplateRegistry;
 import hu.taliann.icesmp.itemization.LootDiversityState;
 import hu.taliann.icesmp.managers.ConfigManager;
@@ -17,7 +18,10 @@ import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.WildHuntManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileLootDiversityStore;
+import hu.taliann.icesmp.pve.MobRank;
+import hu.taliann.icesmp.pve.MobRankLootPolicy;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,6 +29,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -47,6 +52,8 @@ public final class MobLootListener implements Listener {
     private static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY =
             net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand();
     private static final Logger LOGGER = Logger.getLogger(MobLootListener.class.getName());
+    private static final NamespacedKey MOB_RANK_KEY = java.util.Objects.requireNonNull(
+            NamespacedKey.fromString("icesmp:mob_rank"));
 
     private final ConfigManager configManager;
     private final ItemRarityService affixService;
@@ -58,6 +65,7 @@ public final class MobLootListener implements Listener {
     private final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials;
     private final JavaPlugin plugin;
     private final ItemTemplateRegistry itemTemplates;
+    private final ItemTemplateCatalogIndex itemTemplateIndex;
     private final ItemIdentityService itemIdentity;
     private final JobManager jobManager;
     private final SpecializationManager specializationManager;
@@ -85,6 +93,7 @@ public final class MobLootListener implements Listener {
         this.recipeCatalog = recipeCatalog;
         this.uniqueMaterials = uniqueMaterials;
         this.itemTemplates = java.util.Objects.requireNonNull(itemTemplates, "itemTemplates");
+        this.itemTemplateIndex = new ItemTemplateCatalogIndex(this.itemTemplates);
         this.itemIdentity = java.util.Objects.requireNonNull(itemIdentity, "itemIdentity");
         this.jobManager = java.util.Objects.requireNonNull(jobManager, "jobManager");
         this.specializationManager = java.util.Objects.requireNonNull(specializationManager, "specializationManager");
@@ -130,13 +139,18 @@ public final class MobLootListener implements Listener {
                         hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET,
                         configManager, afkManager) == null) return;
 
-        rollBlueprintDrop(event, bossTier);
-        final String path = bossTier ? "loot.boss-drop" : "loot.mob-drop";
-        final String tier = bossTier ? ItemRarityService.TIER_BOSS : ItemRarityService.TIER_DROP;
-        final double chance = configManager.getDouble(path + ".chance", bossTier ? 1.0D : 0.15D);
+        final MobRankLootPolicy.RewardBand rewardBand = MobRankLootPolicy.resolve(
+                rankOf(entity, bossTier), configManager);
+        rollBlueprintDrop(event, rewardBand);
+        rollRankSpecialMaterial(event, rewardBand);
+        final boolean canonicalBossBand = bossTier || rewardBand.bossLike();
+        final String path = canonicalBossBand ? "loot.boss-drop" : "loot.mob-drop";
+        final String tier = canonicalBossBand ? ItemRarityService.TIER_BOSS : ItemRarityService.TIER_DROP;
+        final double baseChance = configManager.getDouble(path + ".chance", canonicalBossBand ? 1.0D : 0.15D);
+        final double chance = bounded(baseChance + rewardBand.gearChanceAdditive(), 0.0D, 1.0D);
         if (ThreadLocalRandom.current().nextDouble() >= chance) return;
         final ItemStack drop = rollTable(path, tier, entity);
-        if (drop != null) event.getDrops().add(bossTier && cursedGearService != null
+        if (drop != null) event.getDrops().add(canonicalBossBand && cursedGearService != null
                 ? cursedGearService.maybeCurse(drop) : drop);
     }
 
@@ -252,12 +266,15 @@ public final class MobLootListener implements Listener {
         if (!configManager.getBoolean("itemization.loot.enabled", true)) return false;
         final Player killer = source.getKiller();
         if (killer == null) return false;
-        final String sourceTag = path.contains("boss") ? "combat:boss"
-                : path.contains("cultist") ? "combat:event" : "combat:wilderness";
-        final List<ItemTemplate> candidates = itemTemplates.snapshot().values().stream()
-                .filter(template -> isGear(template)
-                        && (template.sourceTags().contains(sourceTag)
-                        || template.sourceTags().contains("combat:any")))
+        final MobRankLootPolicy.RewardBand rewardBand = MobRankLootPolicy.resolve(
+                rankOf(source, path.contains("boss")), configManager);
+        final String sourceTag = path.contains("cultist") ? "combat:event"
+                : rewardBand.primarySourceTag();
+        final LinkedHashSet<String> eligibleSources = new LinkedHashSet<>(rewardBand.sourceTags());
+        eligibleSources.add("combat:any");
+        if (path.contains("cultist")) eligibleSources.add("combat:event");
+        final List<ItemTemplate> candidates = itemTemplateIndex.byAnySource(eligibleSources).stream()
+                .filter(MobLootListener::isGear)
                 .toList();
         if (candidates.isEmpty()) return false;
         final UUID playerId = killer.getUniqueId();
@@ -266,7 +283,9 @@ public final class MobLootListener implements Listener {
         } catch (final RuntimeException profileUnavailable) {
             return false;
         }
-        final String sourceId = source.getType().name().toLowerCase(Locale.ROOT);
+        final String authoredMobId = hu.taliann.icesmp.managers.MobScalingManager.templateIdOf(source);
+        final String sourceId = authoredMobId == null || authoredMobId.isBlank()
+                ? source.getType().name().toLowerCase(Locale.ROOT) : authoredMobId;
         return killer.getScheduler().run(plugin, task -> {
             if (!killer.isOnline()) return;
             final LootDiversityState history;
@@ -281,7 +300,7 @@ public final class MobLootListener implements Listener {
                     Math.max(0, jobManager.getPrimaryLevel(killer)),
                     job == null ? "" : job.getId(),
                     specialization == null ? "" : specialization.getId(),
-                    currentBuildTags(killer), preferredEmptySlot(killer), Set.of(sourceTag));
+                    currentBuildTags(killer), preferredEmptySlot(killer), rewardBand.sourceTags());
             final BuildAwareLootService.Selection selection = authoredLoot.select(
                     candidates, context, history, liveLootTuning(),
                     ThreadLocalRandom.current().nextDouble()).orElse(null);
@@ -371,15 +390,36 @@ public final class MobLootListener implements Listener {
         }
     }
 
-    private void rollBlueprintDrop(final EntityDeathEvent event, final boolean bossTier) {
-        final double chance = configManager.getDouble(
-                bossTier ? "loot.blueprint-drop.boss-chance" : "loot.blueprint-drop.chance",
-                bossTier ? 0.05D : 0.002D);
+    private void rollBlueprintDrop(final EntityDeathEvent event,
+                                   final MobRankLootPolicy.RewardBand rewardBand) {
+        final double chance = rewardBand.blueprintChance();
         if (chance <= 0.0D || ThreadLocalRandom.current().nextDouble() >= chance) return;
-        final List<String> ids = recipeCatalog.blueprintDropPool(bossTier);
+        final List<String> ids = recipeCatalog.blueprintDropPool(rewardBand.bossLike());
         if (ids.isEmpty()) return;
         final ItemStack blueprint = blueprintFactory.create(ids.get(ThreadLocalRandom.current().nextInt(ids.size())));
         if (blueprint != null) event.getDrops().add(blueprint);
+    }
+
+    private void rollRankSpecialMaterial(final EntityDeathEvent event,
+                                         final MobRankLootPolicy.RewardBand rewardBand) {
+        if (rewardBand.specialMaterial().isBlank() || rewardBand.specialMaterialChance() <= 0.0D
+                || ThreadLocalRandom.current().nextDouble() >= rewardBand.specialMaterialChance()) return;
+        final ItemStack material = uniqueMaterials.create(rewardBand.specialMaterial(), 1);
+        if (material == null || material.getType().isAir()) return;
+        event.getDrops().add(material);
+        hu.taliann.icesmp.professions.ProfessionEconomyTelemetry.global().recordFaucet(
+                "combat:" + rewardBand.id(), rewardBand.specialMaterial(), 1);
+    }
+
+    private static MobRank rankOf(final LivingEntity entity, final boolean forcedBoss) {
+        if (forcedBoss) return MobRank.BOSS;
+        final String raw = entity.getPersistentDataContainer().get(MOB_RANK_KEY, PersistentDataType.STRING);
+        if (raw == null || raw.isBlank()) return MobRank.NORMAL;
+        try {
+            return MobRank.parse(raw);
+        } catch (final IllegalArgumentException ignored) {
+            return MobRank.NORMAL;
+        }
     }
 
     private Material pickGear(final List<String> pool) {
