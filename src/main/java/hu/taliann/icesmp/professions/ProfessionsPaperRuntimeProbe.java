@@ -134,7 +134,10 @@ public final class ProfessionsPaperRuntimeProbe {
             final ProfessionRecipeCatalog.Recipe recipe = catalog.get(id);
             if (recipe.templateId() != null) canonical++;
         }
-        check(canonical == (longTerm ? 82 : 18),
+        // The 64 crafted armor target is total production armor, not 64 additions: six of those
+        // pieces are preserved pre-existing canonical crafted anchors already counted in the
+        // Professions 2.0 baseline. Therefore the cumulative recipe authority has 18 + 58 = 76.
+        check(canonical == (longTerm ? 76 : 18),
                 "production catalog canonical equipment recipe count mismatch: " + canonical);
         final ProfessionRecipeCatalog.Recipe equipment = catalog.get("p2_fonixpihe_kopeny");
         check(equipment != null && equipment.templateId() != null,
