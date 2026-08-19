@@ -1,0 +1,136 @@
+name: Professions Final Stacked
+
+on:
+  pull_request:
+    branches:
+      - feature/equipment-2
+  push:
+    branches:
+      - feature/professions-2
+
+permissions:
+  contents: read
+
+jobs:
+  exact-head:
+    if: github.event_name == 'push' || github.event.pull_request.head.ref == 'feature/professions-2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Checkout exact child head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact stacked parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feature/equipment-2:refs/remotes/origin/feature/equipment-2
+          PARENT=$(git rev-parse refs/remotes/origin/feature/equipment-2)
+          test "$(git merge-base HEAD "${PARENT}")" = "${PARENT}"
+          test -z "$(git rev-list --merges "${PARENT}..HEAD")"
+          git diff --check "${PARENT}...HEAD"
+          echo "PROFESSIONS_FINAL_HEAD=$(git rev-parse HEAD)"
+          echo "PROFESSIONS_FINAL_PARENT=${PARENT}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install audit dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
+      - name: Verify Professions authority and reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/apply_professions_2_closure.py
+          python scripts/apply_professions_2_specialization_closure.py
+          git diff --exit-code
+          python scripts/check_professions_2_reports.py
+          python scripts/check_professions_2_runtime_closure.py
+          python scripts/test_professions_2_economy.py
+      - name: Validate PlayerProfile authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/tests/test_player_profile_transition_gate.py
+          python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority-professions-final.json
+          python3 scripts/check_player_profile_transitions.py --root . --json-output build/player-profile-transition-professions-final.json
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Java 21 clean build and complete check
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee gradle-build.log
+      - name: Run stacked behavioral gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'Professions2RegressionSuite: OK' gradle-build.log
+          grep -F 'Itemization domain regression suite passed.' gradle-build.log
+          grep -F 'Mob/Encounter behavioral domain regression suite passed.' gradle-build.log
+          ./gradlew professions2RegressionTest professionRecipeAuditRegressionTest \
+            itemizationDomainRegressionTest vanillaCraftingBoundaryRegressionTest \
+            equipmentDomainRegressionTest runeLifecycleRegressionTest \
+            playerProfileFullAuthorityRegressionTest configStartupRegressionTest \
+            --no-daemon --console=plain
+      - name: Repository, docs and resource-pack gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_resource_pack.py
+          python3 scripts/audit_equipment_assets.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_documentation_coverage.py
+          python3 scripts/check_markdown_links.py
+      - name: Require clean tested worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARENT=$(git rev-parse refs/remotes/origin/feature/equipment-2)
+          git diff --check "${PARENT}...HEAD"
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+  integrated-paper-runtime:
+    if: github.event_name == 'push' || github.event.pull_request.head.ref == 'feature/professions-2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact child head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare isolated Paper runtime
+        run: |
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+      - name: Run Paper 1.21.11 integrated probes
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.source-integrity-runtime=true
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 420s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            | tee paper-source-integrity.log
+      - name: Require both runtime proof markers
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_PROFESSIONS_RUNTIME_PROBE_PASS' paper-source-integrity.log
+          ! grep -F 'ICESMP_PROFESSIONS_RUNTIME_PROBE_FAIL' paper-source-integrity.log
+          grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS' paper-source-integrity.log
+          ! grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL' paper-source-integrity.log
