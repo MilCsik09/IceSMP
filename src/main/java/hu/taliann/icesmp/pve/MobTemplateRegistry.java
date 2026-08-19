@@ -37,8 +37,7 @@ public final class MobTemplateRegistry {
         final ConfigurationSection lootRoot = config.getConfiguration()
                 .getConfigurationSection("mob-loot-profiles");
         if (lootRoot == null) throw new IllegalStateException("mob-loot-profiles section missing");
-        final Set<String> lootProfiles = lootRoot.getKeys(false).stream()
-                .map(MobTemplateRegistry::normalize).collect(java.util.stream.Collectors.toSet());
+        final Set<String> lootProfiles = parseLootProfileReferences(lootRoot);
         final LinkedHashMap<String, MobTemplate> parsed = new LinkedHashMap<>();
         final LinkedHashMap<EntityType, List<MobTemplate>> entityIndex = new LinkedHashMap<>();
         final LinkedHashSet<String> bestiaryIds = new LinkedHashSet<>();
@@ -140,6 +139,24 @@ public final class MobTemplateRegistry {
                 || tag.startsWith("dimension:") || tag.startsWith("depth:")
                 || tag.startsWith("time:") || tag.startsWith("weather:"))
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    private static Set<String> parseLootProfileReferences(final ConfigurationSection root) {
+        final LinkedHashSet<String> ids = new LinkedHashSet<>();
+        for (final String rawId : root.getKeys(false)) {
+            final String id = normalize(rawId);
+            final ConfigurationSection profile = root.getConfigurationSection(rawId);
+            if (profile == null) throw new IllegalStateException("invalid mob loot profile reference: " + id);
+            if (profile.contains("sources") || profile.contains("rewards")) {
+                throw new IllegalStateException("mob-loot-profiles is reference-only; dead rewards/sources authoring remains: " + id);
+            }
+            final String marker = normalize(profile.getString("profile-id", id));
+            if (!id.equals(marker)) {
+                throw new IllegalStateException("mob loot profile marker mismatch: " + id + '/' + marker);
+            }
+            if (!ids.add(id)) throw new IllegalStateException("duplicate mob loot profile reference: " + id);
+        }
+        return Set.copyOf(ids);
     }
 
     private static Set<String> normalizedSet(final List<String> values) {
