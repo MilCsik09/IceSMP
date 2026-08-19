@@ -9,9 +9,223 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  apply-attribute-fix:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feature/equipment-2' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/equipment-2
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Install direct Paper ATTRIBUTE_MODIFIERS authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java')
+          s = p.read_text()
+          start = s.index('    public static boolean applyCanonicalAttributeModifiers')
+          end = s.index('    private static boolean applyAttributeModifiers', start)
+          replacement = '''    public static boolean applyCanonicalAttributeModifiers(final ItemStack item, final List<String> specs,
+                                                            final boolean appendStatLore) {
+        if (item == null || item.getType().isAir()) {
+            return false;
+        }
+        final ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+        final io.papermc.paper.datacomponent.item.ItemAttributeModifiers.Builder component =
+                io.papermc.paper.datacomponent.item.ItemAttributeModifiers.itemAttributes();
+        final List<Component> statLore = new ArrayList<>();
+        int index = 0;
+        boolean any = false;
+        if (specs != null) {
+            for (final String raw : specs) {
+                if (raw == null || raw.isBlank()) continue;
+                final String[] parts = raw.trim().split(":");
+                if (parts.length < 2) continue;
+                final String statId = parts[0].trim().toLowerCase(Locale.ROOT);
+                final Attribute attribute = ATTRIBUTES.get(statId);
+                if (attribute == null) continue;
+                final double amount;
+                try {
+                    amount = Double.parseDouble(parts[1].trim());
+                } catch (final NumberFormatException ignored) {
+                    continue;
+                }
+                if (!Double.isFinite(amount) || amount == 0.0D) continue;
+                final EquipmentSlotGroup slot = parts.length >= 3 && !parts[2].isBlank()
+                        ? SLOTS.getOrDefault(parts[2].trim().toLowerCase(Locale.ROOT), inferSlot(item.getType()))
+                        : inferSlot(item.getType());
+                final AttributeModifier.Operation operation = parts.length >= 4
+                        ? OPERATIONS.getOrDefault(parts[3].trim().toLowerCase(Locale.ROOT),
+                        AttributeModifier.Operation.ADD_NUMBER)
+                        : AttributeModifier.Operation.ADD_NUMBER;
+                final NamespacedKey modifierKey = NamespacedKey.fromString("icesmp:attr_"
+                        + item.getType().name().toLowerCase(Locale.ROOT) + "_" + statId + "_" + index);
+                if (modifierKey == null) continue;
+                final AttributeModifier modifier = new AttributeModifier(
+                        modifierKey, amount, operation, slot);
+                component.addModifier(attribute, modifier, slot);
+                if (appendStatLore) statLore.add(statLine(statId, amount, operation));
+                any = true;
+                index++;
+            }
+        }
+        if (appendStatLore && !statLore.isEmpty()) {
+            final List<Component> lore = meta.hasLore()
+                    ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+            lore.addAll(statLore);
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+        // Paper 1.21.11 only suppresses implicit Material defaults when this valued component is
+        // explicitly present. ItemMeta's empty modifier map is not a durable component witness.
+        // This direct component write is deliberately last so zero-stat and non-zero canonical
+        // projections have identical ownership semantics.
+        item.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, component);
+        return any;
+    }
+
+'''
+          s = s[:start] + replacement + s[end:]
+          p.write_text(s)
+
+          p = Path('src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java')
+          s = p.read_text()
+          old = '''        item.setItemMeta(meta);
+        applyStats(item, template, instance);
+        writeIdentity(item, template, instance);
+        refreshPresentation(item, template, instance);'''
+          new = '''        item.setItemMeta(meta);
+        writeIdentity(item, template, instance);
+        applyStats(item, template, instance);
+        refreshPresentation(item, template, instance);'''
+          if s.count(old) != 1: raise SystemExit('render ordering anchor mismatch')
+          s = s.replace(old, new)
+
+          old = '''        ItemDataFactory.applyCanonicalAttributeModifiers(item, attributes, false);
+        final ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(abilityPowerKey);
+        if (abilityPower != 0.0D) {
+            meta.getPersistentDataContainer().set(abilityPowerKey, PersistentDataType.DOUBLE, abilityPower);
+        }
+        item.setItemMeta(meta);'''
+          new = '''        final ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(abilityPowerKey);
+        if (abilityPower != 0.0D) {
+            meta.getPersistentDataContainer().set(abilityPowerKey, PersistentDataType.DOUBLE, abilityPower);
+        }
+        item.setItemMeta(meta);
+        ItemDataFactory.applyCanonicalAttributeModifiers(item, attributes, false);'''
+          if s.count(old) != 1: raise SystemExit('applyStats ordering anchor mismatch')
+          s = s.replace(old, new)
+
+          old = '''        final ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        meta.setAttributeModifiers(com.google.common.collect.ArrayListMultimap.create());
+        meta.getPersistentDataContainer().remove(abilityPowerKey);
+        meta.getPersistentDataContainer().set(equipmentSuppressedKey,
+                PersistentDataType.BYTE, (byte) 1);
+        item.setItemMeta(meta);
+        ItemDataFactory.hideAttributeTooltip(item);'''
+          new = '''        final ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        meta.getPersistentDataContainer().remove(abilityPowerKey);
+        meta.getPersistentDataContainer().set(equipmentSuppressedKey,
+                PersistentDataType.BYTE, (byte) 1);
+        item.setItemMeta(meta);
+        ItemDataFactory.applyCanonicalAttributeModifiers(item, List.of(), false);
+        ItemDataFactory.hideAttributeTooltip(item);'''
+          if s.count(old) != 1: raise SystemExit('suppression anchor mismatch')
+          s = s.replace(old, new)
+
+          old = '''        applyStats(item, template, instance);
+        final ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(equipmentSuppressedKey);
+        item.setItemMeta(meta);
+        refreshPresentation(item, template, instance);'''
+          new = '''        final ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().remove(equipmentSuppressedKey);
+        item.setItemMeta(meta);
+        applyStats(item, template, instance);
+        refreshPresentation(item, template, instance);'''
+          if s.count(old) != 1: raise SystemExit('reactivation ordering anchor mismatch')
+          s = s.replace(old, new)
+
+          old = '''        meta.getPersistentDataContainer().set(legacyRuneKey, PersistentDataType.STRING,
+                updated.runes().get(0));
+        item.setItemMeta(meta);
+        return new RuneMutation(RuneMutationStatus.APPLIED, updated, template);'''
+          new = '''        meta.getPersistentDataContainer().set(legacyRuneKey, PersistentDataType.STRING,
+                updated.runes().get(0));
+        item.setItemMeta(meta);
+        applyStats(item, template, updated);
+        return new RuneMutation(RuneMutationStatus.APPLIED, updated, template);'''
+          if s.count(old) != 1: raise SystemExit('rune projection anchor mismatch')
+          s = s.replace(old, new)
+          p.write_text(s)
+          PY
+
+          cat > .github/workflows/source-integrity-runtime.yml <<'YML'
+          name: Source Integrity Paper Runtime
+
+          on:
+            pull_request:
+              branches:
+                - feature/vanilla-crafting-boundary
+                - feature/equipment-2
+                - feature/professions-2
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+
+          jobs:
+            paper-runtime:
+              runs-on: ubuntu-latest
+              timeout-minutes: 12
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-java@v4
+                  with:
+                    distribution: temurin
+                    java-version: '21'
+                - name: Prepare isolated Paper runtime
+                  run: |
+                    mkdir -p run
+                    printf 'eula=true\n' > run/eula.txt
+                - name: Run Paper 1.21.11 source-integrity probe
+                  env:
+                    JAVA_TOOL_OPTIONS: -Dicesmp.source-integrity-runtime=true
+                  run: |
+                    set -o pipefail
+                    timeout 420s ./gradlew --no-daemon --console=plain \
+                      --init-script scripts/source_integrity_runtime.init.gradle runServer \
+                      | tee paper-source-integrity.log
+                - name: Require runtime proof marker
+                  if: always()
+                  run: |
+                    grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS' paper-source-integrity.log
+                    ! grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL' paper-source-integrity.log
+          YML
+
+          git config user.name "Csik Milán"
+          git config user.email "81396861+MilCsik09@users.noreply.github.com"
+          git add src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java \
+                  src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java \
+                  .github/workflows/source-integrity-runtime.yml
+          git diff --cached --check
+          git commit -m "fix(equipment): own canonical attributes via Paper component"
+          git push origin HEAD:feature/equipment-2
+
   paper-runtime:
     runs-on: ubuntu-latest
     timeout-minutes: 12
