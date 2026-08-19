@@ -9,7 +9,8 @@ public record ItemSetDefinition(String setId, String displayName,
 
     /** Only stats with a concrete runtime consumer may appear in authored set tiers. */
     private static final java.util.Set<String> SET_STAT_CONSUMERS = java.util.Set.of(
-            "ability_power", "max_health", "armor", "armor_toughness", "movement_speed");
+            "ability_power", "max_health", "armor", "armor_toughness", "movement_speed",
+            "attack_damage", "attack_speed");
 
     public ItemSetDefinition {
         setId = ItemStatCatalog.normalizeId(setId);
