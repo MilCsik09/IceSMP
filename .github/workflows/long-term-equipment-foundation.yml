@@ -24,7 +24,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
+          # The stack is <96 commits deep. A bounded depth fetch keeps enough ancestry for the
+          # exact merge-base proof without pulling every historical refs/heads/* branch.
+          fetch-depth: 96
           persist-credentials: false
 
       - name: Verify exact head and stacked parent
@@ -44,7 +46,7 @@ jobs:
               exit 1
               ;;
           esac
-          git fetch origin "${PARENT}:refs/remotes/origin/${PARENT}"
+          git fetch --no-tags --depth=96 origin "${PARENT}:refs/remotes/origin/${PARENT}"
           PARENT_SHA=$(git rev-parse "refs/remotes/origin/${PARENT}")
           test "$(git merge-base HEAD "refs/remotes/origin/${PARENT}")" = "${PARENT_SHA}"
           echo "LONG_TERM_EQUIPMENT_HEAD=${EXPECTED_HEAD}"
