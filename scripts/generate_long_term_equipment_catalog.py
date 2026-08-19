@@ -189,6 +189,8 @@ def render() -> str:
                         patch["source-tags"] = ["combat:event", "profession:enchanter", "catalog:crafted"]
                     elif ident == "vadorzo_csizma":
                         patch["source-tags"] = ["profession:alchemist", "combat:wilderness", "catalog:crafted"]
+                    if line.get("set"):
+                        patch["set-id"] = line["set"]
                     templates[ident] = patch
                 else:
                     new_count += 1

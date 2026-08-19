@@ -3065,6 +3065,7 @@ item-templates:
       catalog-archetype: Tempest
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: viharjaro
   viharjaro_mellvert:
     encounter-metadata:
       catalog-line: viharjaro
@@ -3072,6 +3073,7 @@ item-templates:
       catalog-archetype: Tempest
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: viharjaro
   viharjaro_labvert:
     encounter-metadata:
       catalog-line: viharjaro
@@ -3079,6 +3081,7 @@ item-templates:
       catalog-archetype: Tempest
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: viharjaro
   viharjaro_bakancs:
     encounter-metadata:
       catalog-line: viharjaro
@@ -3086,6 +3089,7 @@ item-templates:
       catalog-archetype: Tempest
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: viharjaro
   runapajzs_sisak:
     schema: 2
     version: 1
@@ -4086,6 +4090,7 @@ item-templates:
       catalog-archetype: Bulwark
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: melyseg_orseg
   melyseg_orseg_mellvert:
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4093,6 +4098,7 @@ item-templates:
       catalog-archetype: Bulwark
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: melyseg_orseg
   melyseg_orseg_labvert:
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4100,6 +4106,7 @@ item-templates:
       catalog-archetype: Bulwark
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: melyseg_orseg
   melyseg_orseg_bakancs:
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4107,6 +4114,7 @@ item-templates:
       catalog-archetype: Bulwark
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: melyseg_orseg
   ostromtoro_sisak:
     schema: 2
     version: 1
@@ -4143,6 +4151,7 @@ item-templates:
       catalog-archetype: Dread
       progression-band: endgame
       rank-eligibility: BOSS
+    set-id: ostromtoro_ostromfal
   ostromtoro_labvert:
     schema: 2
     version: 1
