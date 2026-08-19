@@ -17,13 +17,75 @@ profession-materials:
     - market
     economy-managed: true
 
-# Reward-only source reconciliation for one pre-existing prestige anchor. Item identity and stats
-# are unchanged; this only makes the canonical Champion eligibility match its catalog acquisition.
+# Reward-source reconciliation for pre-existing catalog anchors. Their template ids, stats,
+# set/signature identity and legacy thematic source tags remain intact; these additions make the
+# line's canonical rank eligibility reachable by the BuildAware source index.
 item-templates:
+  csontvarro_kopeny:
+    source-tags:
+    - combat:wilderness
+    - rank:normal
+  utjaro_csizma:
+    source-tags:
+    - combat:wilderness
+    - rank:normal
   aranyfust_kopeny:
     source-tags:
     - combat:champion
     - rank:champion
+  viharjaro_sisak:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+  viharjaro_mellvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+  viharjaro_labvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+  viharjaro_bakancs:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+  melyseg_orseg_sisak:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+  melyseg_orseg_mellvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+  melyseg_orseg_labvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+  melyseg_orseg_bakancs:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+  ostromtoro_mellvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - profession:armorer
 
 loot:
   rank-rewards:
