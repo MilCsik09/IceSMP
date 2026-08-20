@@ -13,6 +13,8 @@ on:
       - "src/main/resources/wearable-fallback-policy.properties"
       - "src/main/java/hu/taliann/icesmp/items/**"
       - "scripts/equipment_rp2_asset_audit.py"
+      - "scripts/generate_equipment_rp2_manifests.py"
+      - "scripts/generate_equipment_rp2_docs.py"
       - "scripts/resource_pack.py"
       - "scripts/test_resource_pack.py"
       - "scripts/audit_equipment_assets.py"
@@ -20,7 +22,7 @@ on:
       - "docs/development/equipment-rp2-*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   asset-authority:
@@ -32,7 +34,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 96
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Verify exact stacked parent
         shell: bash
@@ -62,6 +64,28 @@ jobs:
       - name: Build RP2-A production asset graph
         run: python3 scripts/equipment_rp2_asset_audit.py
 
+      - name: Bootstrap committed canonical authority
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/generate_equipment_rp2_docs.py --write
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            docs/development/equipment-rp2-asset-manifest.json \
+            docs/development/equipment-rp2-armor-matrix.json \
+            docs/development/equipment-rp2-gear-lines.json \
+            docs/development/equipment-rp2-materials.json \
+            docs/development/equipment-rp2-worn-fallback.json \
+            docs/development/equipment-rp2-safe-delete.json \
+            docs/development/equipment-rp2-required-new.json \
+            docs/development/equipment-rp2-final-authority.json
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(rp2): publish canonical asset authority"
+            git push origin HEAD:feature/equipment-rp2-asset-foundation
+          fi
+
       - name: Preserve baseline evidence
         uses: actions/upload-artifact@v4
         if: always()
@@ -71,7 +95,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Prove checkout remains read-only
+      - name: Prove checkout remains clean
         shell: bash
         run: |
           set -euo pipefail
