@@ -9,6 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REPORT = ROOT / "build/reports/equipment-rp2/asset-audit.json"
 FINAL = ROOT / "build/reports/equipment-rp2/final/equipment-rp2-final-authority.json"
+POLICY = ROOT / "src/main/resources/wearable-fallback-policy.properties"
+WEARABLE = ROOT / "src/main/java/hu/taliann/icesmp/items/WearablePresentation.java"
 
 
 class EquipmentRp2AssetAuditTest(unittest.TestCase):
@@ -51,6 +53,31 @@ class EquipmentRp2AssetAuditTest(unittest.TestCase):
         self.assertEqual(40, summary["rp2_worn_line_sets_required"])
         self.assertEqual(27, summary["managed_materials"])
         print(completed.stdout.strip())
+
+    def test_vanilla_worn_reset_repairs_serialized_asset_id_without_rebuilding_equipment(self) -> None:
+        source = WEARABLE.read_text(encoding="utf-8")
+        compact = "".join(source.split())
+        self.assertIn("forcesVanillaWornMaterial(item.getType().name())", compact)
+        self.assertIn("newItemStack(item.getType()).getData(DataComponentTypes.EQUIPPABLE)", compact)
+        self.assertIn("current.toBuilder().assetId(vanilla.assetId()).build()", compact)
+        self.assertNotIn("Equippable.equippable(", source)
+        self.assertNotIn(".slot(", source)
+        self.assertIn("VANILLA_FALLBACK_APPLIED", source)
+
+        properties: dict[str, str] = {}
+        for raw in POLICY.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            properties[key.strip()] = value.strip()
+        worn_rules = {part.strip() for part in properties["vanilla-worn-suffix"].split(",") if part.strip()}
+        self.assertIn("ELYTRA", worn_rules, "fonixpihe_kopeny is an ELYTRA-backed canonical chest anchor")
+        self.assertTrue({"_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS"}.issubset(worn_rules))
+        fallback_models = {
+            part.strip() for part in properties["vanilla-item-model"].split(",") if part.strip()
+        }
+        self.assertEqual(84, len(fallback_models))
 
 
 if __name__ == "__main__":
