@@ -21,6 +21,7 @@ public final class ResourcePackRegressionSuite {
         wearablePresentationSeparatesInventoryAndEquippedRendering();
         wearablePresentationPreservesVanillaEquippableState();
         wearableFallbackPolicyIsSharedAndVersioned();
+        rp2PilotManifestDrivesExactCustomBindings();
         wearableCreationPathsUseTheCentralBoundary();
         relicWingEquipmentAssetsStayBundled();
         horseArmorEquipmentAssetsStayBundled();
@@ -175,6 +176,38 @@ public final class ResourcePackRegressionSuite {
         check(relic.contains("WearablePresentation.applyWearablePresentation")
                         && relic.contains("\"icesmp:relic_\" + relicId"),
                 "relic create/refresh paths no longer route wearable wings through the central boundary");
+    }
+
+    private static void rp2PilotManifestDrivesExactCustomBindings() throws Exception {
+        final Properties pilot = new Properties();
+        try (var reader = Files.newBufferedReader(
+                Path.of("src/main/resources/equipment-rp2-pilot.properties"))) {
+            pilot.load(reader);
+        }
+        check("1".equals(pilot.getProperty("schema")), "unexpected RP2 pilot runtime schema");
+        check("1.21.11".equals(pilot.getProperty("minecraft-version")),
+                "RP2 pilot runtime index must stay pinned to the server target");
+        check("16".equals(pilot.getProperty("binding.count")),
+                "RP2 pilot runtime index must contain exactly 16 piece bindings");
+        final java.util.Set<String> models = new java.util.HashSet<>();
+        final java.util.Set<String> assets = new java.util.HashSet<>();
+        for (int index = 0; index < 16; index++) {
+            models.add(pilot.getProperty("binding." + index + ".item-model", ""));
+            assets.add(pilot.getProperty("binding." + index + ".equipment-asset", ""));
+        }
+        check(models.size() == 16 && !models.contains(""),
+                "every RP2 pilot piece needs one unique inventory model");
+        check(assets.size() == 4 && !assets.contains(""),
+                "the 16 RP2 pilot pieces must resolve to exactly four coherent worn sets");
+
+        final String runtime = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/WearablePresentation.java"));
+        check(runtime.contains("RP2_PILOT.matches(requestedModel, requestedEquipment)")
+                        && runtime.indexOf("RP2_PILOT.matches(requestedModel, requestedEquipment)")
+                        < runtime.indexOf("forcesVanillaWornMaterial(item.getType().name())"),
+                "exact manifest-backed pilot bindings must win before the nonpilot vanilla fallback");
+        check(runtime.contains("Map.copyOf(bindings)") && !runtime.contains("Set.of(\"holdlen"),
+                "RP2 pilot availability must use an immutable generated index, not a Java shadow list");
     }
 
     private static void relicWingEquipmentAssetsStayBundled() {

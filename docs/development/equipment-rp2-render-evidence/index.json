@@ -1,0 +1,56 @@
+{
+  "comparison": "docs/development/equipment-rp2-render-evidence/family-comparison.png",
+  "concept_reference": "docs/development/equipment-rp2-render-evidence/concept-reference.png",
+  "concept_reference_sha256": "f503f61869282fd114d6379cb7784b6a618faeb51a5f7c3078332d34c8decb32",
+  "human_client_staging_required": true,
+  "lines": [
+    {
+      "family": "CLOTH",
+      "files": [
+        "docs/development/equipment-rp2-render-evidence/holdlen-inventory.png",
+        "docs/development/equipment-rp2-render-evidence/holdlen-front.png",
+        "docs/development/equipment-rp2-render-evidence/holdlen-back.png",
+        "docs/development/equipment-rp2-render-evidence/holdlen-side.png"
+      ],
+      "line_id": "holdlen",
+      "proof_mode": "OFFLINE_DETERMINISTIC_RENDER"
+    },
+    {
+      "family": "LEATHER",
+      "files": [
+        "docs/development/equipment-rp2-render-evidence/vadbor-inventory.png",
+        "docs/development/equipment-rp2-render-evidence/vadbor-front.png",
+        "docs/development/equipment-rp2-render-evidence/vadbor-back.png",
+        "docs/development/equipment-rp2-render-evidence/vadbor-side.png"
+      ],
+      "line_id": "vadbor",
+      "proof_mode": "OFFLINE_DETERMINISTIC_RENDER"
+    },
+    {
+      "family": "MAIL",
+      "files": [
+        "docs/development/equipment-rp2-render-evidence/konnyu_otvozet-inventory.png",
+        "docs/development/equipment-rp2-render-evidence/konnyu_otvozet-front.png",
+        "docs/development/equipment-rp2-render-evidence/konnyu_otvozet-back.png",
+        "docs/development/equipment-rp2-render-evidence/konnyu_otvozet-side.png"
+      ],
+      "line_id": "konnyu_otvozet",
+      "proof_mode": "OFFLINE_DETERMINISTIC_RENDER"
+    },
+    {
+      "family": "PLATE",
+      "files": [
+        "docs/development/equipment-rp2-render-evidence/borostyan_tarna-inventory.png",
+        "docs/development/equipment-rp2-render-evidence/borostyan_tarna-front.png",
+        "docs/development/equipment-rp2-render-evidence/borostyan_tarna-back.png",
+        "docs/development/equipment-rp2-render-evidence/borostyan_tarna-side.png"
+      ],
+      "line_id": "borostyan_tarna",
+      "proof_mode": "OFFLINE_DETERMINISTIC_RENDER"
+    }
+  ],
+  "proof_mode": "OFFLINE_DETERMINISTIC_RENDER",
+  "scale_readability": "docs/development/equipment-rp2-render-evidence/scale-readability.png",
+  "schema": 1,
+  "skin_compatibility": "docs/development/equipment-rp2-render-evidence/skin-compatibility.png"
+}

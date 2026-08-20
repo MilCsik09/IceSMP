@@ -186,6 +186,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:holdlen_sisak
+    equipment-asset: icesmp:rp2/holdlen
   holdlen_mellvert:
     schema: 2
     version: 1
@@ -215,6 +217,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:holdlen_mellvert
+    equipment-asset: icesmp:rp2/holdlen
   holdlen_labvert:
     schema: 2
     version: 1
@@ -244,6 +248,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:holdlen_labvert
+    equipment-asset: icesmp:rp2/holdlen
   holdlen_csizma:
     schema: 2
     version: 1
@@ -273,6 +279,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:holdlen_csizma
+    equipment-asset: icesmp:rp2/holdlen
   nemakristaly_sisak:
     schema: 2
     version: 1
@@ -1286,6 +1294,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vadbor_sisak
+    equipment-asset: icesmp:rp2/vadbor
   vadbor_mellvert:
     schema: 2
     version: 1
@@ -1315,6 +1325,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vadbor_mellvert
+    equipment-asset: icesmp:rp2/vadbor
   vadbor_labvert:
     schema: 2
     version: 1
@@ -1344,6 +1356,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vadbor_labvert
+    equipment-asset: icesmp:rp2/vadbor
   vadbor_csizma:
     schema: 2
     version: 1
@@ -1373,6 +1387,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vadbor_csizma
+    equipment-asset: icesmp:rp2/vadbor
   vizbor_sisak:
     schema: 2
     version: 1
@@ -2403,6 +2419,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:konnyu_otvozet_sisak
+    equipment-asset: icesmp:rp2/konnyu_otvozet
   konnyu_otvozet_mellvert:
     schema: 2
     version: 1
@@ -2432,6 +2450,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:konnyu_otvozet_mellvert
+    equipment-asset: icesmp:rp2/konnyu_otvozet
   konnyu_otvozet_labvert:
     schema: 2
     version: 1
@@ -2461,6 +2481,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:konnyu_otvozet_labvert
+    equipment-asset: icesmp:rp2/konnyu_otvozet
   konnyu_otvozet_csizma:
     schema: 2
     version: 1
@@ -2490,6 +2512,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:konnyu_otvozet_csizma
+    equipment-asset: icesmp:rp2/konnyu_otvozet
   runalanc_sisak:
     schema: 2
     version: 1
@@ -3457,6 +3481,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:borostyan_tarna_sisak
+    equipment-asset: icesmp:rp2/borostyan_tarna
   melysegi_borostyan_mellvert:
     encounter-metadata:
       catalog-line: borostyan_tarna
@@ -3465,6 +3491,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:melysegi_borostyan_mellvert
+    equipment-asset: icesmp:rp2/borostyan_tarna
   borostyan_tarna_labvert:
     schema: 2
     version: 1
@@ -3494,6 +3522,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:borostyan_tarna_labvert
+    equipment-asset: icesmp:rp2/borostyan_tarna
   borostyan_tarna_csizma:
     schema: 2
     version: 1
@@ -3523,6 +3553,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:borostyan_tarna_csizma
+    equipment-asset: icesmp:rp2/borostyan_tarna
   sarkfeny_sisak:
     encounter-metadata:
       catalog-line: sarkfeny
