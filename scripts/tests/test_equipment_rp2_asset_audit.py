@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORT = ROOT / "build/reports/equipment-rp2/asset-audit.json"
+FINAL = ROOT / "build/reports/equipment-rp2/final/equipment-rp2-final-authority.json"
 
 
 class EquipmentRp2AssetAuditTest(unittest.TestCase):
@@ -28,10 +29,28 @@ class EquipmentRp2AssetAuditTest(unittest.TestCase):
         self.assertFalse(report["shape_errors"])
         print(completed.stdout.strip())
         print("RP2_BASELINE_STATUS_COUNTS=" + json.dumps(report["asset_counts"], sort_keys=True))
-        print("RP2_BASELINE_SAFE_DELETE=" + json.dumps([row["path"] for row in report["safe_to_delete"]], sort_keys=True))
-        print("RP2_BASELINE_CUSTOM_WORN=" + json.dumps([
-            row["template_id"] for row in report["armor"] if row["current_worn_asset"]
-        ], sort_keys=True))
+
+    def test_final_authority_closes_runtime_broken_references(self) -> None:
+        completed = subprocess.run(
+            [sys.executable, "scripts/generate_equipment_rp2_manifests.py", "--enforce"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(0, completed.returncode, completed.stdout + completed.stderr)
+        authority = json.loads(FINAL.read_text(encoding="utf-8"))
+        summary = authority["summary"]
+        self.assertEqual("READY FOR ART BIBLE", authority["readiness"])
+        self.assertEqual(0, summary["broken_production_reference"])
+        self.assertEqual(0, summary["missing_mandatory_active_asset"])
+        self.assertEqual(0, summary["safe_delete_asset_referenced"])
+        self.assertEqual(0, summary["stale_active_reference"])
+        self.assertEqual(160, summary["armor_pieces_temporarily_vanilla_worn"])
+        self.assertEqual(84, summary["intentional_recipe_inventory_fallbacks"])
+        self.assertEqual(40, summary["rp2_worn_line_sets_required"])
+        self.assertEqual(27, summary["managed_materials"])
+        print(completed.stdout.strip())
 
 
 if __name__ == "__main__":
