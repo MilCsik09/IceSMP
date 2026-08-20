@@ -138,6 +138,13 @@ jobs:
           grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS' paper-rp2-pilot.log
           ! grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL' paper-rp2-pilot.log
           ! grep -E "Could not load.*IceSMP|Error occurred while enabling IceSMP|Exception.*IceSMP" paper-rp2-pilot.log
+          # `clean build` deliberately removes earlier build/reports output. Recreate the
+          # machine-readable closure only after the successful Paper probe so the bundle
+          # records the exact cumulative head and the proved runtime state.
+          python3 scripts/generate_equipment_rp2_art_bible.py --check \
+            --collision-output build/reports/equipment-rp2-b/collision-audit.json
+          python3 scripts/equipment_rp2_asset_audit.py
+          python3 scripts/validate_equipment_rp2_pilot.py --enforce
           python3 - <<'PY'
           import json
           from pathlib import Path
