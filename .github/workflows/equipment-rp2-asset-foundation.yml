@@ -1,0 +1,80 @@
+name: Equipment RP2 Asset Foundation
+
+on:
+  push:
+    branches:
+      - feature/equipment-rp2-asset-foundation
+  pull_request:
+    branches:
+      - feature/reward-discoverability-closure
+    paths:
+      - "resource-pack/**"
+      - "src/main/resources/config/**"
+      - "src/main/resources/wearable-fallback-policy.properties"
+      - "src/main/java/hu/taliann/icesmp/items/**"
+      - "scripts/equipment_rp2_asset_audit.py"
+      - "scripts/resource_pack.py"
+      - "scripts/test_resource_pack.py"
+      - "scripts/audit_equipment_assets.py"
+      - ".github/workflows/equipment-rp2-asset-foundation.yml"
+      - "docs/development/equipment-rp2-*"
+
+permissions:
+  contents: read
+
+jobs:
+  asset-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 96
+          persist-credentials: false
+
+      - name: Verify exact stacked parent
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
+          git fetch --no-tags --depth=96 origin \
+            feature/reward-discoverability-closure:refs/remotes/origin/feature/reward-discoverability-closure
+          parent_sha=$(git rev-parse refs/remotes/origin/feature/reward-discoverability-closure)
+          test "$(git merge-base HEAD refs/remotes/origin/feature/reward-discoverability-closure)" = "${parent_sha}"
+          echo "EQUIPMENT_RP2_HEAD=${EXPECTED_HEAD}"
+          echo "STACK_PARENT_SHA=${parent_sha}"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install audit dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
+
+      - name: Prove generated catalog authority
+        run: python3 scripts/generate_long_term_equipment_catalog.py --check
+
+      - name: Build RP2-A production asset graph
+        run: python3 scripts/equipment_rp2_asset_audit.py
+
+      - name: Preserve baseline evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: equipment-rp2-asset-audit-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/reports/equipment-rp2
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Prove checkout remains read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
