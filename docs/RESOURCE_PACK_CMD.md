@@ -50,6 +50,10 @@ A `WearablePresentation` a központi bővítési pont. A stabil `<render-id>` le
 
 Az RP2-B Art Bible machine-readable authorityja a `docs/development/equipment-rp2-art-bible.json`; a kiválasztott négy line és 16 piece egyetlen asset-state authorityja az `equipment-rp2-pilot-manifest.json`. A generált `equipment-rp2-pilot.properties` csak immutable runtime index, kézzel nem szerkeszthető. Exact manifest-pár esetén custom item/equipment asset aktiválódik; minden más canonical armor fail-closed vanilla worn fallback marad.
 
+A pilot végleges vizuális source-of-truthja line-onként két committed, built-in OpenAI imagegennel authored lap az `equipment-rp2-authored-sources/` könyvtárban: egy négy-slot inventory sheet és egy front/back/side worn turnaround. A generátor ezeket pixel-cleanup, bináris alfa, palettakorlátozás és vanilla 64×32 UV-adaptáció után fordítja runtime PNG-vé. Az imagegen nem runtime dependency; a committed source és a belőle determinisztikusan előálló PNG-k az authorityk.
+
+Az alkalmazott promptkészlet és a family-specifikus negatív korlátok az `equipment-rp2-imagegen-prompts.md` authoring recordban találhatók.
+
 Kötelező ellenőrzési sorrend:
 
 1. `python3 scripts/generate_equipment_rp2_art_bible.py --check`

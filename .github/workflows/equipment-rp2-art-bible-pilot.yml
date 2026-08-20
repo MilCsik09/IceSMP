@@ -159,12 +159,14 @@ jobs:
         run: |
           set -euo pipefail
           bundle=build/reports/equipment-rp2-b/bundle
-          mkdir -p "${bundle}/render-evidence"
+          mkdir -p "${bundle}/render-evidence" "${bundle}/authored-sources"
           cp docs/development/equipment-rp2-art-bible.json "${bundle}/"
           cp docs/development/equipment-rp2-pilot-manifest.json "${bundle}/"
           cp docs/development/equipment-rp2-final-authority.json "${bundle}/"
           cp docs/development/equipment-rp2-render-evidence/index.json "${bundle}/render-evidence/"
           cp docs/development/equipment-rp2-render-evidence/*.png "${bundle}/render-evidence/"
+          cp docs/development/equipment-rp2-authored-sources/*.png "${bundle}/authored-sources/"
+          cp docs/development/equipment-rp2-imagegen-prompts.md "${bundle}/"
           cp build/reports/equipment-rp2/asset-audit.json "${bundle}/"
           cp build/reports/equipment-rp2-b/validation-summary.json "${bundle}/"
           cp build/reports/equipment-rp2-b/asset-graph-delta.json "${bundle}/"

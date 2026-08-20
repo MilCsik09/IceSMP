@@ -10,6 +10,8 @@ The audit starts from production configuration and runtime presentation consumer
 
 The deterministic full-pack graph contains **1851 physical resource-pack files**. The 60-file delta is exactly 16 item definitions + 16 models + 16 inventory textures + four equipment definitions + eight worn textures. The committed focus manifest pins the complete graph with SHA-256 `571e1ef5bd96a299ebbc2243a5da1fe0074c45639de40584fb44ef9597942060`; unrelated files stay present in the generated full audit and are never deletion candidates by omission.
 
+The pilot art is no longer a code-drawn placeholder. Each selected line has a committed built-in OpenAI imagegen inventory source sheet and worn turnaround under `docs/development/equipment-rp2-authored-sources/`. The runtime generator performs only deterministic extraction, pixel cleanup, palette reduction and vanilla 1.21.11 UV adaptation; it cannot invent a replacement design when an authored source is absent. Source paths and SHA-256 hashes are part of the canonical pilot manifest and validation gate.
+
 Physical primary states at RP2-A closure:
 
 - ACTIVE: 879

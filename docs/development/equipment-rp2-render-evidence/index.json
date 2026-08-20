@@ -1,4 +1,62 @@
 {
+  "authored_sources": [
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "inventory",
+      "line_id": "holdlen",
+      "path": "docs/development/equipment-rp2-authored-sources/holdlen-inventory-source.png",
+      "sha256": "0f07b6652b2acf5192dcc28fe237f4abab519912be39e3fa83019d1d81f0acff"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "worn",
+      "line_id": "holdlen",
+      "path": "docs/development/equipment-rp2-authored-sources/holdlen-worn-source.png",
+      "sha256": "52b17685a56ba665bfffc9fd624ec73d70a55e8e2ad8b86922469bf2c3291aa7"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "inventory",
+      "line_id": "vadbor",
+      "path": "docs/development/equipment-rp2-authored-sources/vadbor-inventory-source.png",
+      "sha256": "eaf17529183829d55e66c5fb73852e47eb314f12d2bdf9993b491eb180fab230"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "worn",
+      "line_id": "vadbor",
+      "path": "docs/development/equipment-rp2-authored-sources/vadbor-worn-source.png",
+      "sha256": "c8fd282c4deb5e771cb5dbda55e3722d83b025b6ce5494b5cc2cdf68c82d9dcd"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "inventory",
+      "line_id": "konnyu_otvozet",
+      "path": "docs/development/equipment-rp2-authored-sources/konnyu_otvozet-inventory-source.png",
+      "sha256": "cfe96ccc0d4cf943edb01685b34b12c5a410ae86f7147582d79e22fe5aba64eb"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "worn",
+      "line_id": "konnyu_otvozet",
+      "path": "docs/development/equipment-rp2-authored-sources/konnyu_otvozet-worn-source.png",
+      "sha256": "18e1dac3eefc1db5be8a477228efcc76ee102a1bfa36e18ab4bc8b5976c3a8d2"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "inventory",
+      "line_id": "borostyan_tarna",
+      "path": "docs/development/equipment-rp2-authored-sources/borostyan_tarna-inventory-source.png",
+      "sha256": "fef3a7a045107fc9e4246c0a8de35165639cc100c5378baf47847ef1121bba0b"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "worn",
+      "line_id": "borostyan_tarna",
+      "path": "docs/development/equipment-rp2-authored-sources/borostyan_tarna-worn-source.png",
+      "sha256": "96e20c02b873b85363e135ef62e38fceadb0841046f9a468308b2f5d24916d00"
+    }
+  ],
   "comparison": "docs/development/equipment-rp2-render-evidence/family-comparison.png",
   "concept_reference": "docs/development/equipment-rp2-render-evidence/concept-reference.png",
   "concept_reference_sha256": "f503f61869282fd114d6379cb7784b6a618faeb51a5f7c3078332d34c8decb32",

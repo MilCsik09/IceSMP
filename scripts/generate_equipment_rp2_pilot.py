@@ -7,8 +7,10 @@ import argparse
 import hashlib
 import io
 import json
+from collections import deque
+from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from PIL import Image, ImageDraw
 
@@ -17,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ART_BIBLE = ROOT / "docs/development/equipment-rp2-art-bible.json"
 MANIFEST = ROOT / "docs/development/equipment-rp2-pilot-manifest.json"
 EVIDENCE = Path("docs/development/equipment-rp2-render-evidence")
+AUTHORED_SOURCES = Path("docs/development/equipment-rp2-authored-sources")
 SLOT_ORDER = {"HEAD": 0, "CHEST": 1, "LEGS": 2, "FEET": 3}
 
 
@@ -48,123 +51,103 @@ def line_palette(line: dict[str, Any]) -> list[tuple[int, int, int, int]]:
     return [shade(primary[0], .75), primary[0], primary[len(primary) // 2], primary[-1], secondary[-1], accent]
 
 
-def logical_canvas() -> tuple[Image.Image, ImageDraw.ImageDraw]:
-    image = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
-    return image, ImageDraw.Draw(image)
+@lru_cache(maxsize=8)
+def authored_source(line_id: str, kind: str) -> Image.Image:
+    path = ROOT / AUTHORED_SOURCES / f"{line_id}-{kind}-source.png"
+    if not path.is_file():
+        raise SystemExit(f"Missing imagegen-authored RP2 source: {path.relative_to(ROOT)}")
+    return Image.open(path).convert("RGBA")
 
 
-def polygon(draw: ImageDraw.ImageDraw, points: list[tuple[int, int]], fill: tuple[int, ...],
-            outline: tuple[int, ...] | None = None) -> None:
-    draw.polygon(points, fill=fill)
-    if outline:
-        draw.line(points + [points[0]], fill=outline, width=1)
+def _background_alpha(crop: Image.Image) -> Image.Image:
+    """Remove only edge-connected generated checkerboard/background pixels."""
+    alpha = crop.getchannel("A")
+    if alpha.getextrema()[0] == 0:
+        return alpha.point(lambda value: 255 if value >= 128 else 0)
+    rgb = crop.convert("RGB")
+    width, height = crop.size
+    candidate = Image.new("1", crop.size, 0)
+    candidate_pixels = candidate.load()
+    source_pixels = rgb.load()
+    for y in range(height):
+        for x in range(width):
+            red, green, blue = source_pixels[x, y]
+            if min(red, green, blue) >= 218 and max(red, green, blue) - min(red, green, blue) <= 18:
+                candidate_pixels[x, y] = 1
+    background = Image.new("1", crop.size, 0)
+    background_pixels = background.load()
+    queue: deque[tuple[int, int]] = deque()
+    for x in range(width):
+        queue.extend(((x, 0), (x, height - 1)))
+    for y in range(height):
+        queue.extend(((0, y), (width - 1, y)))
+    while queue:
+        x, y = queue.popleft()
+        if not (0 <= x < width and 0 <= y < height):
+            continue
+        if background_pixels[x, y] or not candidate_pixels[x, y]:
+            continue
+        background_pixels[x, y] = 1
+        queue.extend(((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)))
+    return background.point(lambda value: 0 if value else 255)
 
 
-def add_icon_material(draw: ImageDraw.ImageDraw, family: str, slot: str,
-                      palette: list[tuple[int, int, int, int]]) -> None:
-    dark, base, mid, light, secondary, accent = palette
-    if family == "CLOTH":
-        if slot == "HEAD":
-            polygon(draw, [(8, 23), (7, 10), (11, 4), (16, 2), (21, 4), (25, 10), (24, 23), (20, 27), (12, 27)], base, dark)
-            polygon(draw, [(11, 20), (11, 11), (14, 7), (18, 7), (21, 11), (21, 20), (18, 22), (14, 22)], (0, 0, 0, 0))
-            draw.line((9, 23, 16, 28, 23, 23), fill=secondary)
-        elif slot == "CHEST":
-            polygon(draw, [(10, 4), (22, 4), (27, 10), (24, 15), (22, 12), (23, 29), (17, 27), (16, 30), (15, 27), (9, 29), (10, 12), (8, 15), (5, 10)], base, dark)
-            draw.line((15, 5, 15, 27), fill=mid)
-            draw.line((18, 5, 18, 27), fill=light)
-        elif slot == "LEGS":
-            polygon(draw, [(9, 3), (23, 3), (24, 11), (21, 29), (16, 26), (11, 29), (8, 11)], base, dark)
-            draw.line((16, 4, 16, 27), fill=light)
-            draw.line((11, 9, 21, 9), fill=secondary)
-        else:
-            polygon(draw, [(7, 11), (15, 9), (16, 18), (13, 25), (5, 25), (4, 21)], base, dark)
-            polygon(draw, [(17, 9), (25, 11), (28, 21), (27, 25), (19, 25), (16, 18)], base, dark)
-            draw.line((6, 20, 14, 20), fill=light)
-            draw.line((18, 20, 26, 20), fill=light)
-    elif family == "LEATHER":
-        if slot == "HEAD":
-            polygon(draw, [(7, 22), (8, 9), (12, 4), (20, 4), (24, 9), (25, 22), (20, 26), (12, 26)], base, dark)
-            polygon(draw, [(11, 18), (11, 10), (14, 7), (20, 9), (21, 18), (18, 21), (14, 21)], (0, 0, 0, 0))
-            draw.line((8, 10, 24, 20), fill=secondary)
-        elif slot == "CHEST":
-            polygon(draw, [(10, 5), (22, 5), (27, 10), (24, 14), (22, 12), (22, 27), (17, 29), (10, 26), (10, 12), (8, 14), (5, 10)], base, dark)
-            polygon(draw, [(10, 7), (14, 5), (22, 16), (22, 21), (19, 21)], mid, dark)
-            draw.line((8, 21, 23, 9), fill=secondary)
-        elif slot == "LEGS":
-            polygon(draw, [(9, 4), (23, 4), (24, 10), (21, 29), (16, 27), (11, 29), (8, 10)], base, dark)
-            draw.line((9, 9, 22, 18), fill=secondary)
-            draw.line((11, 20, 20, 13), fill=light)
-        else:
-            polygon(draw, [(6, 10), (15, 8), (16, 18), (13, 27), (5, 27), (3, 22)], base, dark)
-            polygon(draw, [(17, 8), (26, 10), (29, 22), (27, 27), (19, 27), (16, 18)], base, dark)
-            draw.line((5, 17, 14, 13), fill=secondary)
-            draw.line((18, 13, 27, 17), fill=secondary)
-    elif family == "MAIL":
-        if slot == "HEAD":
-            polygon(draw, [(7, 23), (7, 8), (11, 3), (21, 3), (25, 8), (25, 23), (21, 27), (11, 27)], base, dark)
-            polygon(draw, [(11, 19), (11, 9), (14, 7), (20, 7), (21, 19), (18, 22), (14, 22)], (0, 0, 0, 0))
-        elif slot == "CHEST":
-            polygon(draw, [(9, 4), (23, 4), (28, 9), (25, 14), (23, 12), (23, 27), (19, 29), (13, 29), (9, 27), (9, 12), (7, 14), (4, 9)], base, dark)
-            draw.rectangle((11, 5, 21, 10), fill=mid)
-        elif slot == "LEGS":
-            polygon(draw, [(8, 3), (24, 3), (25, 11), (22, 29), (17, 28), (15, 28), (10, 29), (7, 11)], base, dark)
-            draw.rectangle((9, 4, 23, 9), fill=mid)
-        else:
-            polygon(draw, [(5, 10), (15, 8), (16, 18), (13, 27), (4, 27), (3, 20)], base, dark)
-            polygon(draw, [(17, 8), (27, 10), (29, 20), (28, 27), (19, 27), (16, 18)], base, dark)
-        for y in range(6, 27, 3):
-            for x in range(6 + (y // 3) % 2, 28, 4):
-                if draw._image.getpixel((x, y))[3]:
-                    draw.point((x, y), fill=light)
-                    if x + 1 < 32 and draw._image.getpixel((x + 1, y))[3]:
-                        draw.point((x + 1, y), fill=dark)
-        draw.rectangle((15, 11, 16, 12), fill=secondary)
-    else:
-        if slot == "HEAD":
-            polygon(draw, [(6, 23), (7, 6), (11, 2), (21, 2), (25, 6), (26, 23), (21, 28), (11, 28)], base, dark)
-            draw.rectangle((9, 11, 23, 15), fill=dark)
-            draw.line((10, 12, 22, 12), fill=light)
-        elif slot == "CHEST":
-            polygon(draw, [(8, 3), (24, 3), (30, 9), (27, 15), (24, 13), (25, 28), (18, 30), (14, 30), (7, 28), (8, 13), (5, 15), (2, 9)], base, dark)
-            draw.rectangle((9, 6, 23, 23), outline=light, width=1)
-            draw.rectangle((12, 9, 20, 19), fill=mid, outline=dark)
-        elif slot == "LEGS":
-            polygon(draw, [(7, 3), (25, 3), (27, 11), (23, 30), (17, 28), (15, 28), (9, 30), (5, 11)], base, dark)
-            draw.rectangle((8, 5, 24, 11), outline=light)
-            draw.line((16, 11, 16, 28), fill=dark)
-        else:
-            polygon(draw, [(4, 9), (15, 7), (16, 17), (14, 29), (3, 29), (1, 21)], base, dark)
-            polygon(draw, [(17, 7), (28, 9), (31, 21), (29, 29), (18, 29), (16, 17)], base, dark)
-            draw.rectangle((4, 18, 14, 26), outline=light)
-            draw.rectangle((18, 18, 28, 26), outline=light)
-        for x, y in ((9, 7), (22, 7), (8, 23), (23, 23)):
-            draw.point((x, y), fill=secondary)
-        draw.rectangle((15, 15, 17, 18), fill=accent)
+@lru_cache(maxsize=4)
+def imagegen_material_tones(line_id: str, family: str) -> tuple[tuple[int, int, int, int], ...]:
+    source = authored_source(line_id, "inventory")
+    mask = _background_alpha(source)
+    sampled: list[tuple[int, int, int]] = []
+    rgb = source.convert("RGB")
+    for y in range(0, source.height, 4):
+        for x in range(0, source.width, 4):
+            if mask.getpixel((x, y)) < 128:
+                continue
+            value = rgb.getpixel((x, y))
+            luminance = round(.2126 * value[0] + .7152 * value[1] + .0722 * value[2])
+            metal_tone = max(value) - min(value) <= max(value) * .28
+            if family in {"MAIL", "PLATE"} and not metal_tone:
+                continue
+            if 16 <= luminance <= 238:
+                sampled.append(value)
+    if len(sampled) < 64:
+        raise SystemExit(f"Imagegen source palette collapsed: {line_id}")
+    sampled.sort(key=lambda value: .2126 * value[0] + .7152 * value[1] + .0722 * value[2])
+    indices = (.08, .28, .58, .88)
+    return tuple(sampled[min(len(sampled) - 1, round((len(sampled) - 1) * index))] + (255,) for index in indices)
+
+
+def imagegen_worn_palette(line: dict[str, Any]) -> list[tuple[int, int, int, int]]:
+    """Derive the material tones from the committed imagegen source itself."""
+    tones = imagegen_material_tones(line["canonical_line_id"], line["family"])
+    authored = line_palette(line)
+    return [*tones, authored[4], authored[5]]
 
 
 def generate_icon(line: dict[str, Any], slot: str) -> Image.Image:
-    image, draw = logical_canvas()
-    palette = line_palette(line)
-    add_icon_material(draw, line["family"], slot, palette)
-    _, _, _, light, secondary, accent = palette
-    if line["canonical_line_id"] == "holdlen":
-        draw.arc((12, 12, 20, 20), 45, 305, fill=light)
-        draw.point((18, 15), fill=accent)
-    elif line["canonical_line_id"] == "vadbor":
-        draw.line((9, 22, 22, 9), fill=secondary, width=1)
-        for offset in (0, 4, 8):
-            draw.point((11 + offset, 20 - offset), fill=light)
-    elif line["canonical_line_id"] == "konnyu_otvozet":
-        draw.rectangle((15, 14, 17, 16), fill=secondary)
-        draw.point((16, 15), fill=accent)
-    elif line["canonical_line_id"] == "borostyan_tarna":
-        draw.rectangle((13, 12, 19, 19), fill=secondary, outline=light)
-        draw.rectangle((15, 14, 17, 17), fill=accent)
-    opaque = [(x, y) for y in range(32) for x in range(32) if image.getpixel((x, y))[3]]
-    for index, value in enumerate(palette):
-        if index < len(opaque):
-            draw.point(opaque[index * max(1, len(opaque) // len(palette))], fill=value)
-    return image.resize((64, 64), Image.Resampling.NEAREST)
+    """Pixel-clean a committed imagegen source quadrant into one runtime icon."""
+    source = authored_source(line["canonical_line_id"], "inventory")
+    width, height = source.size
+    quadrants = {
+        "HEAD": (0, 0, width // 2, height // 2),
+        "CHEST": (width // 2, 0, width, height // 2),
+        "LEGS": (0, height // 2, width // 2, height),
+        "FEET": (width // 2, height // 2, width, height),
+    }
+    crop = source.crop(quadrants[slot])
+    crop.putalpha(_background_alpha(crop))
+    bbox = crop.getbbox()
+    if bbox is None:
+        raise SystemExit(f"Imagegen source quadrant is empty: {line['canonical_line_id']} {slot}")
+    crop = crop.crop(bbox)
+    ratio = min(27 / crop.width, 27 / crop.height)
+    logical_size = (max(1, round(crop.width * ratio)), max(1, round(crop.height * ratio)))
+    logical = crop.resize(logical_size, Image.Resampling.NEAREST)
+    quantized = logical.convert("RGB").quantize(colors=24, method=Image.Quantize.MEDIANCUT,
+                                                        dither=Image.Dither.NONE).convert("RGBA")
+    quantized.putalpha(logical.getchannel("A").point(lambda value: 255 if value >= 128 else 0))
+    logical_canvas_image = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    logical_canvas_image.alpha_composite(quantized, ((32 - logical.width) // 2, (32 - logical.height) // 2))
+    return logical_canvas_image.resize((64, 64), Image.Resampling.NEAREST)
 
 
 def rect(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], fill: tuple[int, ...]) -> None:
@@ -175,11 +158,75 @@ def fill_uv_faces(draw: ImageDraw.ImageDraw, boxes: list[tuple[int, int, int, in
                   palette: list[tuple[int, int, int, int]]) -> None:
     dark, base, mid, light, _, _ = palette
     for index, box in enumerate(boxes):
-        rect(draw, box, (light, dark, base, mid)[index % 4])
+        face_base = (base, mid, base, shade(base, .9))[index % 4]
+        rect(draw, box, face_base)
+        x1, y1, x2, y2 = box
+        if x2 - x1 >= 3 and y2 - y1 >= 3:
+            draw.line((x1, y1, x2 - 1, y1), fill=light)
+            draw.line((x1, y1, x1, y2 - 1), fill=shade(light, .88))
+            draw.line((x1, y2 - 1, x2 - 1, y2 - 1), fill=dark)
+            draw.line((x2 - 1, y1, x2 - 1, y2 - 1), fill=shade(dark, .82))
+        for y in range(y1 + 2, y2 - 1, 3):
+            for x in range(x1 + 2 + ((y - y1) % 2), x2 - 1, 4):
+                draw.point((x, y), fill=shade(face_base, 1.08 if (x + y) % 3 else .88))
+
+
+@lru_cache(maxsize=12)
+def authored_worn_view(line_id: str, view_index: int) -> Image.Image:
+    source = authored_source(line_id, "worn")
+    left = round(source.width * view_index / 3)
+    right = round(source.width * (view_index + 1) / 3)
+    view = source.crop((left, 0, right, source.height))
+    view.putalpha(_background_alpha(view))
+    bbox = view.getbbox()
+    if bbox is None:
+        raise SystemExit(f"Imagegen worn source view is empty: {line_id} view={view_index}")
+    return view.crop(bbox)
+
+
+def projected_part(source: Image.Image, normalized: tuple[float, float, float, float],
+                   size: tuple[int, int], palette: list[tuple[int, int, int, int]]) -> Image.Image:
+    x1, y1, x2, y2 = normalized
+    crop = source.crop((round(source.width * x1), round(source.height * y1),
+                        round(source.width * x2), round(source.height * y2)))
+    alpha = crop.getchannel("A").resize(size, Image.Resampling.BOX).point(
+        lambda value: 255 if value >= 96 else 0)
+    reduced = crop.convert("RGB").resize(size, Image.Resampling.BOX)
+    palette_image = Image.new("P", (1, 1))
+    raw_palette: list[int] = []
+    for value in palette:
+        raw_palette.extend(value[:3])
+    raw_palette.extend([0] * (768 - len(raw_palette)))
+    palette_image.putpalette(raw_palette)
+    reduced = reduced.quantize(palette=palette_image, dither=Image.Dither.NONE).convert("RGBA")
+    reduced.putalpha(alpha)
+    return reduced
+
+
+def project_imagegen_worn(line: dict[str, Any], main: Image.Image, leggings: Image.Image,
+                          palette: list[tuple[int, int, int, int]]) -> None:
+    regions = {
+        "front": {"head": (.23, .00, .77, .31), "body": (.24, .27, .76, .60),
+                  "arm": (.03, .28, .29, .61), "leg": (.24, .57, .50, .99)},
+        "back": {"head": (.23, .00, .77, .31), "body": (.24, .27, .76, .60),
+                 "arm": (.03, .28, .29, .61), "leg": (.24, .57, .50, .99)},
+        "side": {"head": (.18, .00, .82, .31), "body": (.27, .27, .73, .60),
+                 "arm": (.22, .28, .58, .61), "leg": (.28, .57, .65, .99)},
+    }
+    view_names = ("front", "back", "side")
+    for view_index, view_name in enumerate(view_names):
+        source = authored_worn_view(line["canonical_line_id"], view_index)
+        for part in ("head", "body", "arm", "leg"):
+            box = FACE_UV[view_name][part]
+            size = (box[2] - box[0], box[3] - box[1])
+            texture = projected_part(source, regions[view_name][part], size, palette)
+            main.alpha_composite(texture, (box[0], box[1]))
+            if part in {"body", "leg"}:
+                leggings.alpha_composite(texture, (box[0], box[1]))
 
 
 def worn_textures(line: dict[str, Any]) -> tuple[Image.Image, Image.Image]:
-    palette = line_palette(line)
+    palette = imagegen_worn_palette(line)
     dark, base, mid, light, secondary, accent = palette
     main = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     legs = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
@@ -195,8 +242,50 @@ def worn_textures(line: dict[str, Any]) -> tuple[Image.Image, Image.Image]:
     fill_uv_faces(dm, leg, palette)
     fill_uv_faces(dl, body, palette)
     fill_uv_faces(dl, leg, palette)
+    project_imagegen_worn(line, main, legs, palette)
 
     family = line["family"]
+    main_boxes = head + body + arm + leg
+    leggings_boxes = body + leg
+    if family == "CLOTH":
+        for target, boxes in ((dm, main_boxes), (dl, leggings_boxes)):
+            for x1, y1, x2, y2 in boxes:
+                if x2 - x1 >= 4:
+                    target.line((x1 + 1, y1 + 1, x1 + 1, y2 - 2), fill=mid)
+                    target.line((x2 - 2, y1 + 1, x2 - 2, y2 - 2), fill=secondary)
+                if y2 - y1 >= 7:
+                    target.line((x1 + 1, y2 - 3, x2 - 2, y2 - 3), fill=light)
+    elif family == "LEATHER":
+        for target, boxes in ((dm, main_boxes), (dl, leggings_boxes)):
+            for x1, y1, x2, y2 in boxes:
+                span = min(x2 - x1, y2 - y1)
+                if span >= 4:
+                    target.line((x1 + 1, y1 + 1, x2 - 2, min(y2 - 2, y1 + span - 1)), fill=secondary)
+                    for offset in range(2, span - 1, 3):
+                        target.point((x1 + offset, min(y2 - 2, y1 + offset)), fill=light)
+                if y2 - y1 >= 6:
+                    target.point((x2 - 2, y2 - 2), fill=accent)
+    elif family == "MAIL":
+        for target, boxes in ((dm, main_boxes), (dl, leggings_boxes)):
+            for x1, y1, x2, y2 in boxes:
+                rect(target, (x1, y1, x2, y2), dark)
+                for y in range(y1 + 1, y2 - 1, 3):
+                    start = x1 + 1 + (1 if ((y - y1) // 3) % 2 else 0)
+                    for x in range(start, x2 - 1, 3):
+                        target.point((x, y), fill=light)
+                        if x + 1 < x2:
+                            target.point((x + 1, y), fill=mid)
+                        if y + 1 < y2:
+                            target.point((x, y + 1), fill=base)
+                target.line((x1, y2 - 1, x2 - 1, y2 - 1), fill=secondary)
+    else:
+        for target, boxes in ((dm, main_boxes), (dl, leggings_boxes)):
+            for x1, y1, x2, y2 in boxes:
+                if x2 - x1 >= 4 and y2 - y1 >= 4:
+                    target.rectangle((x1 + 1, y1 + 1, x2 - 2, y2 - 2), outline=light)
+                    target.line((x1 + 2, y2 - 2, x2 - 2, y2 - 2), fill=dark)
+                    target.point((x1 + 1, y1 + 1), fill=secondary)
+                    target.point((x2 - 2, y2 - 2), fill=secondary)
     if family in {"CLOTH", "LEATHER", "MAIL"}:
         rect(dm, (10, 10, 14, 15), (0, 0, 0, 0))
     if family == "CLOTH":
@@ -309,6 +398,17 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
     concept_reference = EVIDENCE / "concept-reference.png"
     if not (ROOT / concept_reference).is_file():
         raise SystemExit("Missing authored AI concept reference: " + str(concept_reference))
+    authored_source_records: list[dict[str, str]] = []
+    for selected_line in sorted(selected, key=lambda value: value["family"]):
+        for kind in ("inventory", "worn"):
+            path = AUTHORED_SOURCES / f"{selected_line['line_id']}-{kind}-source.png"
+            if not (ROOT / path).is_file():
+                raise SystemExit("Missing imagegen-authored pilot source: " + str(path))
+            authored_source_records.append({
+                "line_id": selected_line["line_id"], "kind": kind, "path": str(path),
+                "sha256": hashlib.sha256((ROOT / path).read_bytes()).hexdigest(),
+                "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+            })
 
     for selected_line in sorted(selected, key=lambda value: value["family"]):
         line_id = selected_line["line_id"]
@@ -342,6 +442,8 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
                 "template_id": template_id, "family": line["family"], "line_id": line_id, "slot": slot,
                 "item_model": f"icesmp:{template_id}", "item_definition": str(item_definition),
                 "model": str(item_model), "inventory_texture": str(item_texture),
+                "inventory_authored_source": str(AUTHORED_SOURCES / f"{line_id}-inventory-source.png"),
+                "worn_authored_source": str(AUTHORED_SOURCES / f"{line_id}-worn-source.png"),
                 "equipment_asset": equipment_asset, "equipment_definition": str(equipment_path),
                 "worn_textures": [str(humanoid_path), str(leggings_path)],
                 "fallback_status": "RP2_CUSTOM", "validation_status": "GENERATOR_STRUCTURAL_PASS",
@@ -399,6 +501,7 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
         "scale_readability": str(EVIDENCE / "scale-readability.png"),
         "concept_reference": str(concept_reference),
         "concept_reference_sha256": hashlib.sha256((ROOT / concept_reference).read_bytes()).hexdigest(),
+        "authored_sources": authored_source_records,
     })
 
     for record in piece_records:
@@ -407,6 +510,7 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
     complete_manifest = {
         "schema": 1, "minecraft_version": "1.21.11", "art_bible": selection["art_bible"],
         "selection_policy": selection["selection_policy"], "selected_lines": selection["selected_lines"],
+        "authored_sources": authored_source_records,
         "pieces": sorted(piece_records, key=lambda value: (value["family"], SLOT_ORDER[value["slot"]])),
         "runtime_index": "src/main/resources/equipment-rp2-pilot.properties",
         "render_evidence": str(EVIDENCE / "index.json"),

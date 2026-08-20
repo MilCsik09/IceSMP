@@ -68,6 +68,7 @@ def main() -> None:
 
     selected = manifest.get("selected_lines", [])
     pieces = manifest.get("pieces", [])
+    authored_sources = manifest.get("authored_sources", [])
     selected_ids = {row["line_id"] for row in selected}
     piece_ids = {row["template_id"] for row in pieces}
     families = Counter(row["family"] for row in selected)
@@ -75,6 +76,21 @@ def main() -> None:
         errors.append(f"pilot family coverage drift: {families}")
     if len(pieces) != 16 or len(piece_ids) != 16:
         errors.append(f"pilot piece coverage drift: total={len(pieces)} unique={len(piece_ids)}")
+    if len(authored_sources) != 8 or Counter(row.get("kind") for row in authored_sources) != Counter({"inventory": 4, "worn": 4}):
+        errors.append(f"imagegen authored-source coverage drift: {len(authored_sources)}")
+    for source in authored_sources:
+        path = ROOT / source.get("path", "")
+        if source.get("authoring") != "OPENAI_IMAGEGEN_BUILT_IN" or not path.is_file():
+            errors.append(f"invalid imagegen authored source: {source}")
+            continue
+        if sha(path) != source.get("sha256"):
+            errors.append(f"imagegen authored-source checksum drift: {source['path']}")
+        try:
+            image = Image.open(path)
+            if min(image.size) < 768:
+                errors.append(f"imagegen source resolution too small: {source['path']} {image.size}")
+        except OSError as exception:
+            errors.append(f"unreadable imagegen source {source['path']}: {exception}")
 
     art_lines = art.get("gear_lines", [])
     if len(art_lines) != 40 or Counter(row["family"] for row in art_lines) != Counter({"CLOTH": 10, "LEATHER": 10, "MAIL": 10, "PLATE": 10}):
@@ -95,6 +111,9 @@ def main() -> None:
             errors.append(f"piece references nonselected line: {piece['template_id']}")
         if piece.get("fallback_status") != "RP2_CUSTOM":
             errors.append(f"pilot piece is not custom: {piece['template_id']}")
+        for field in ("inventory_authored_source", "worn_authored_source"):
+            if not (ROOT / piece.get(field, "")).is_file():
+                errors.append(f"pilot piece lacks committed imagegen source: {piece['template_id']} {field}")
         expected_assets.add(piece["equipment_asset"])
         expected_models.add(piece["item_model"])
         for field in ("item_definition", "model", "inventory_texture", "equipment_definition"):
@@ -194,8 +213,8 @@ def main() -> None:
         "status": "PASS" if not errors else "FAIL",
         "errors": errors,
         "warnings": warnings,
-        "counts": {"art_bible_lines": len(art_lines), "pilot_lines": len(selected), "pilot_pieces": len(pieces), "inventory_custom": len(expected_models), "worn_custom": len(custom), "nonpilot_fallback": len(fallback)},
-        "proof": {"server_runtime": "PENDING_PAPER_PROBE", "resource_pack_schema": "STATIC_PASS" if not errors else "FAIL", "offline_render": "PASS" if not errors else "FAIL", "human_client": "HUMAN_CLIENT_STAGING_REQUIRED"},
+        "counts": {"art_bible_lines": len(art_lines), "pilot_lines": len(selected), "pilot_pieces": len(pieces), "imagegen_authored_sources": len(authored_sources), "inventory_custom": len(expected_models), "worn_custom": len(custom), "nonpilot_fallback": len(fallback)},
+        "proof": {"imagegen_authoring": "8_SOURCE_SHEETS_CHECKSUM_PROVED" if not errors else "FAIL", "server_runtime": "PENDING_PAPER_PROBE", "resource_pack_schema": "STATIC_PASS" if not errors else "FAIL", "offline_render": "PASS" if not errors else "FAIL", "human_client": "HUMAN_CLIENT_STAGING_REQUIRED"},
     }
     (REPORT_DIR / "validation-summary.json").write_text(json.dumps(validation, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     closure = {
