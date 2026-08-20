@@ -6,7 +6,7 @@ Generated from production-derived gear-line and armor-matrix authority. The JSON
 
 - Style: Minecraft-native MMORPG.
 - Inventory: 64×64 physical texture, authored on a 32×32 logical pixel grid.
-- Worn: Minecraft 1.21.11 fixed 64×32 humanoid equipment UV.
+- Worn: Minecraft 1.21.11 fixed 64×32 humanoid equipment UV coordinate grid, sampled at 2× as 128×64 runtime textures.
 - Material/construction and silhouette must communicate family before palette.
 - Emissive levels are 0–3 and are reserved; the pilot introduces no emissive/shader dependency.
 - Higher progression means more sophisticated construction and motif integration, not automatic gold, glow or visual noise.

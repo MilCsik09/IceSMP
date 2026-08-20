@@ -1191,6 +1191,12 @@ backing Material default, set, Signature, rune és CombatPower mind maradjon OFF
 ne essen a földre és ne duplikálódjon. A forrás-regresszió nem helyettesíti ezt a Folia
 acceptance-et.
 
+Külön kötelező eset: class nélküli karakter authored sisakot, mellvértet, lábvértet és
+csizmát jobb kattintással próbál felvenni. A felszerelés maradjon tiltott, az eredeti UUID-jú
+item a vanilla equip-tranzakció lezárása után pontosan egyszer kerüljön vissza az inventoryba.
+Teljes inventorynál maradjon fizikailag felszerelve, de suppression miatt minden canonical
+hatása legyen inaktív; sem eltűnés, sem klónozott példány, sem world drop nem elfogadható.
+
 Staging acceptance — ezeket CI alapján ne pipáld ki:
 
 - **Process-kill:** külön reroll, rune insert/remove/replace és ascension közben állítsd le

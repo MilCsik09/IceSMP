@@ -58,7 +58,7 @@ same-render-id fallbackeket. Hiányzó asset vagy texture publikálási hibát o
 CI-ellenőrzésre; a `vas_lopancel` equipment JSON törlése nem tud csendben átcsúszni.
 
 A viselt textúrák nem inventory-sprite-ok: a vanilla modell rögzített UV-kiosztását követik.
-A humanoid, leggings és wings rétegek 64×32-esek, a horse body/saddle rétegek 64×64-esek. Egy
+A humanoid, leggings és wings rétegek 64×32-es alap-UV-t használnak; azonos oldalarányú egész mintavételezés megengedett, az RP2 pilot 128×64-es. A horse body/saddle rétegek 64×64-esek. Egy
 slot textúrája csak a hozzá tartozó UV-szigeteket festheti, különben a minta más testrészeken is
 megjelenik vagy elfordul. A repositoryban lévő determinisztikus generátor és audit használata:
 

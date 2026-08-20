@@ -21,6 +21,7 @@ MANIFEST = ROOT / "docs/development/equipment-rp2-pilot-manifest.json"
 EVIDENCE = Path("docs/development/equipment-rp2-render-evidence")
 AUTHORED_SOURCES = Path("docs/development/equipment-rp2-authored-sources")
 SLOT_ORDER = {"HEAD": 0, "CHEST": 1, "LEGS": 2, "FEET": 3}
+WORN_TEXTURE_SCALE = 2
 
 
 def json_bytes(value: Any, pretty: bool = True) -> bytes:
@@ -59,7 +60,7 @@ def authored_source(line_id: str, kind: str) -> Image.Image:
     return Image.open(path).convert("RGBA")
 
 
-def _background_alpha(crop: Image.Image) -> Image.Image:
+def _background_alpha(crop: Image.Image, minimum_neutral: int = 218) -> Image.Image:
     """Remove only edge-connected generated checkerboard/background pixels."""
     alpha = crop.getchannel("A")
     if alpha.getextrema()[0] == 0:
@@ -72,7 +73,8 @@ def _background_alpha(crop: Image.Image) -> Image.Image:
     for y in range(height):
         for x in range(width):
             red, green, blue = source_pixels[x, y]
-            if min(red, green, blue) >= 218 and max(red, green, blue) - min(red, green, blue) <= 18:
+            if min(red, green, blue) >= minimum_neutral \
+                    and max(red, green, blue) - min(red, green, blue) <= 28:
                 candidate_pixels[x, y] = 1
     background = Image.new("1", crop.size, 0)
     background_pixels = background.load()
@@ -177,7 +179,7 @@ def authored_worn_view(line_id: str, view_index: int) -> Image.Image:
     left = round(source.width * view_index / 3)
     right = round(source.width * (view_index + 1) / 3)
     view = source.crop((left, 0, right, source.height))
-    view.putalpha(_background_alpha(view))
+    view.putalpha(_background_alpha(view, minimum_neutral=160))
     bbox = view.getbbox()
     if bbox is None:
         raise SystemExit(f"Imagegen worn source view is empty: {line_id} view={view_index}")
@@ -204,7 +206,7 @@ def projected_part(source: Image.Image, normalized: tuple[float, float, float, f
 
 
 def project_imagegen_worn(line: dict[str, Any], main: Image.Image, leggings: Image.Image,
-                          palette: list[tuple[int, int, int, int]]) -> None:
+                          palette: list[tuple[int, int, int, int]], uv_scale: int = 1) -> None:
     regions = {
         "front": {"head": (.23, .00, .77, .31), "body": (.24, .27, .76, .60),
                   "arm": (.03, .28, .29, .61), "leg": (.24, .57, .50, .99)},
@@ -217,7 +219,7 @@ def project_imagegen_worn(line: dict[str, Any], main: Image.Image, leggings: Ima
     for view_index, view_name in enumerate(view_names):
         source = authored_worn_view(line["canonical_line_id"], view_index)
         for part in ("head", "body", "arm", "leg"):
-            box = FACE_UV[view_name][part]
+            box = tuple(value * uv_scale for value in FACE_UV[view_name][part])
             size = (box[2] - box[0], box[3] - box[1])
             texture = projected_part(source, regions[view_name][part], size, palette)
             main.alpha_composite(texture, (box[0], box[1]))
@@ -233,7 +235,7 @@ def paint_face_pattern(image: Image.Image, box: tuple[int, int, int, int], patte
     if len(pattern) != height or any(len(row) != width for row in pattern):
         raise SystemExit(f"Invalid worn UV pattern {width}x{height}: {pattern}")
     values = {
-        ".": (0, 0, 0, 0),
+        ".": shade(palette[0], .72),
         "d": palette[0], "b": palette[1], "m": palette[2], "l": palette[3],
         "s": palette[4], "a": palette[5],
     }
@@ -360,7 +362,8 @@ def worn_textures(line: dict[str, Any]) -> tuple[Image.Image, Image.Image]:
     fill_uv_faces(dm, leg, palette)
     fill_uv_faces(dl, body, palette)
     fill_uv_faces(dl, leg, palette)
-    project_imagegen_worn(line, main, legs, palette)
+    if WORN_TEXTURE_SCALE == 1:
+        project_imagegen_worn(line, main, legs, palette)
 
     family = line["family"]
     main_boxes = head + body + arm + leg
@@ -405,7 +408,8 @@ def worn_textures(line: dict[str, Any]) -> tuple[Image.Image, Image.Image]:
                     target.point((x1 + 1, y1 + 1), fill=secondary)
                     target.point((x2 - 2, y2 - 2), fill=secondary)
     if family in {"CLOTH", "LEATHER", "MAIL"}:
-        rect(dm, (10, 10, 14, 15), (0, 0, 0, 0))
+        # A front-facing hood/coif opening is a dark inset, not missing atlas coverage.
+        rect(dm, (10, 10, 14, 15), shade(dark, .52))
     if family == "CLOTH":
         for x in (21, 24, 27):
             dm.line((x, 21, x, 31), fill=light if x == 24 else mid)
@@ -446,8 +450,44 @@ def worn_textures(line: dict[str, Any]) -> tuple[Image.Image, Image.Image]:
             dm.point((x, y), fill=secondary)
         dm.rectangle((4, 23, 7, 29), outline=light)
         dm.rectangle((8, 23, 11, 29), outline=light)
-    paint_imagegen_identity(line, main, legs, palette)
+    apply_worn_slot_masks(main, legs, head, body, arm, leg)
+    if WORN_TEXTURE_SCALE > 1:
+        target_size = (64 * WORN_TEXTURE_SCALE, 32 * WORN_TEXTURE_SCALE)
+        main = main.resize(target_size, Image.Resampling.NEAREST)
+        legs = legs.resize(target_size, Image.Resampling.NEAREST)
+        project_imagegen_worn(line, main, legs, palette, WORN_TEXTURE_SCALE)
+        scaled = lambda boxes: [tuple(value * WORN_TEXTURE_SCALE for value in box)
+                                for box in boxes]
+        apply_worn_slot_masks(main, legs, scaled(head), scaled(body), scaled(arm), scaled(leg))
     return main, legs
+
+
+def apply_worn_slot_masks(main: Image.Image, leggings: Image.Image,
+                          head: list[tuple[int, int, int, int]],
+                          body: list[tuple[int, int, int, int]],
+                          arm: list[tuple[int, int, int, int]],
+                          leg: list[tuple[int, int, int, int]]) -> None:
+    """Keep each equipment layer inside the physical region owned by its armor slot."""
+    transparent = (0, 0, 0, 0)
+    scale = main.width // 64
+    main_draw = ImageDraw.Draw(main)
+    leggings_draw = ImageDraw.Draw(leggings)
+
+    # Boots use the outer leg model but own only its lower five vertical pixels. Keeping the
+    # physical leg-top face would create a floating plate at thigh height.
+    rect(main_draw, leg[0], transparent)
+    for x1, y1, x2, y2 in leg[2:]:
+        rect(main_draw, (x1, y1, x2, y2 - 5 * scale), transparent)
+
+    # Leggings may provide a narrow lower-torso waistband, never a second chest texture.
+    rect(leggings_draw, body[0], transparent)
+    for x1, y1, x2, y2 in body[2:]:
+        rect(leggings_draw, (x1, y1, x2, y2 - 4 * scale), transparent)
+
+    # These atlases are slot-specific. Head/arm pixels in the leggings layer and unrelated
+    # pixels outside the canonical UV islands must remain transparent.
+    for box in head + arm:
+        rect(leggings_draw, box, transparent)
 
 
 FACE_UV = {
@@ -458,7 +498,9 @@ FACE_UV = {
 
 
 def face(texture: Image.Image, box: tuple[int, int, int, int], size: tuple[int, int]) -> Image.Image:
-    return texture.crop(box).resize(size, Image.Resampling.NEAREST)
+    scale = texture.width // 64
+    scaled_box = tuple(value * scale for value in box)
+    return texture.crop(scaled_box).resize(size, Image.Resampling.NEAREST)
 
 
 def mannequin(main: Image.Image, leggings: Image.Image, view: str, skin: tuple[int, int, int, int]) -> Image.Image:
@@ -483,6 +525,32 @@ def mannequin(main: Image.Image, leggings: Image.Image, view: str, skin: tuple[i
         canvas.alpha_composite(face(base_texture, uv[kind], size), position)
         if kind in {"body", "leg"}:
             canvas.alpha_composite(face(main, uv[kind], size), position)
+    return canvas
+
+
+def mannequin_slot(main: Image.Image, leggings: Image.Image, slot: str,
+                    skin: tuple[int, int, int, int]) -> Image.Image:
+    canvas = Image.new("RGBA", (180, 280), (26, 29, 31, 255))
+    uv = FACE_UV["front"]
+    parts = [
+        ("head", (66, 18), (48, 48)), ("body", (66, 66), (48, 72)),
+        ("arm", (42, 66), (24, 72)), ("arm", (114, 66), (24, 72)),
+        ("leg", (66, 138), (24, 108)), ("leg", (90, 138), (24, 108)),
+    ]
+    visible = {
+        "HEAD": {"head"},
+        "CHEST": {"body", "arm"},
+        "LEGS": {"body", "leg"},
+        "FEET": {"leg"},
+    }[slot]
+    draw = ImageDraw.Draw(canvas)
+    for kind, position, size in parts:
+        draw.rectangle((position[0], position[1], position[0] + size[0] - 1,
+                        position[1] + size[1] - 1), fill=skin)
+        if kind not in visible:
+            continue
+        texture = leggings if slot == "LEGS" else main
+        canvas.alpha_composite(face(texture, uv[kind], size), position)
     return canvas
 
 
@@ -516,6 +584,17 @@ def worn_fidelity_sheet(references: dict[str, Image.Image], renders: dict[str, I
     return sheet
 
 
+def slot_separation_sheet(textures: dict[str, tuple[Image.Image, Image.Image]]) -> Image.Image:
+    sheet = Image.new("RGBA", (360, 560), (22, 24, 26, 255))
+    for column, family in enumerate(("CLOTH", "LEATHER", "MAIL", "PLATE")):
+        main, leggings = textures[family]
+        for row, slot in enumerate(("HEAD", "CHEST", "LEGS", "FEET")):
+            render = mannequin_slot(main, leggings, slot, (177, 132, 104, 255))
+            sheet.alpha_composite(render.resize((90, 140), Image.Resampling.NEAREST),
+                                  (column * 90, row * 140))
+    return sheet
+
+
 def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Path, bytes], dict[str, Any]]:
     by_id = {line["canonical_line_id"]: line for line in art["gear_lines"]}
     selected = selection["selected_lines"]
@@ -525,6 +604,7 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
     piece_records: list[dict[str, Any]] = []
     family_front: dict[str, Image.Image] = {}
     family_reference: dict[str, Image.Image] = {}
+    family_textures: dict[str, tuple[Image.Image, Image.Image]] = {}
     evidence_index: list[dict[str, Any]] = []
     custom_assets: list[str] = []
     custom_models: list[str] = []
@@ -585,6 +665,7 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
         views = {view: mannequin(main, leggings, view, (177, 132, 104, 255)) for view in ("front", "back", "side")}
         family_front[line["family"]] = views["front"]
         family_reference[line["family"]] = authored_worn_view(line_id, 0)
+        family_textures[line["family"]] = (main, leggings)
         inventory = inventory_sheet(line, icons)
         line_evidence = []
         for name, image in {"inventory": inventory, **views}.items():
@@ -596,6 +677,8 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
     files[EVIDENCE / "family-comparison.png"] = png_bytes(comparison_sheet(family_front))
     files[EVIDENCE / "worn-reference-comparison.png"] = png_bytes(
         worn_fidelity_sheet(family_reference, family_front))
+    files[EVIDENCE / "slot-layer-separation.png"] = png_bytes(
+        slot_separation_sheet(family_textures))
     skin_sheet = Image.new("RGBA", (720, 840), (22, 24, 26, 255))
     skin_values = [(78, 52, 43, 255), (177, 132, 104, 255), (224, 184, 151, 255)]
     for row, skin in enumerate(skin_values):
@@ -634,6 +717,7 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
         "lines": evidence_index,
         "comparison": str(EVIDENCE / "family-comparison.png"),
         "worn_reference_comparison": str(EVIDENCE / "worn-reference-comparison.png"),
+        "slot_layer_separation": str(EVIDENCE / "slot-layer-separation.png"),
         "skin_compatibility": str(EVIDENCE / "skin-compatibility.png"),
         "scale_readability": str(EVIDENCE / "scale-readability.png"),
         "concept_reference": str(concept_reference),

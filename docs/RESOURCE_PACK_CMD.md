@@ -50,7 +50,7 @@ A `WearablePresentation` a központi bővítési pont. A stabil `<render-id>` le
 
 Az RP2-B Art Bible machine-readable authorityja a `docs/development/equipment-rp2-art-bible.json`; a kiválasztott négy line és 16 piece egyetlen asset-state authorityja az `equipment-rp2-pilot-manifest.json`. A generált `equipment-rp2-pilot.properties` csak immutable runtime index, kézzel nem szerkeszthető. Exact manifest-pár esetén custom item/equipment asset aktiválódik; minden más canonical armor fail-closed vanilla worn fallback marad.
 
-A pilot végleges vizuális source-of-truthja line-onként két committed, built-in OpenAI imagegennel authored lap az `equipment-rp2-authored-sources/` könyvtárban: egy négy-slot inventory sheet és egy front/back/side worn turnaround. A generátor ezeket pixel-cleanup, bináris alfa, palettakorlátozás és vanilla 64×32 UV-adaptáció után fordítja runtime PNG-vé. Az imagegen nem runtime dependency; a committed source és a belőle determinisztikusan előálló PNG-k az authorityk.
+A pilot végleges vizuális source-of-truthja line-onként két committed, built-in OpenAI imagegennel authored lap az `equipment-rp2-authored-sources/` könyvtárban: egy négy-slot inventory sheet és egy front/back/side worn turnaround. A generátor ezeket pixel-cleanup, bináris alfa, palettakorlátozás és a vanilla 64×32 UV-koordinátarács 2× mintavételezése után 128×64-es runtime PNG-vé alakítja. Az imagegen nem runtime dependency; a committed source és a belőle determinisztikusan előálló PNG-k az authorityk.
 
 Az alkalmazott promptkészlet és a family-specifikus negatív korlátok az `equipment-rp2-imagegen-prompts.md` authoring recordban találhatók.
 
@@ -155,7 +155,7 @@ keresztül kerül a klienshez.
 ## Technikai tudnivalók
 
 - **Inventory-item mérete:** 64×64 px, átlátszó háttérrel (PNG). Ez a pack egységes item-sprite felbontása.
-- **Viselt equipment mérete:** humanoid, leggings és wings layer 64×32 px; horse body és saddle layer 64×64 px. Ezek rögzített vanilla UV-lapok, nem szabad őket inventory-ikonként elforgatni vagy átméretezni.
+- **Viselt equipment UV:** a humanoid, leggings és wings alap-koordinátarácsa 64×32; egész számú, azonos oldalarányú mintavételezés megengedett. Az RP2 pilot humanoid/leggings layerje 128×64 px. Horse body és saddle layer 64×64 px. Ezek rögzített vanilla UV-lapok, nem szabad őket inventory-ikonként elforgatni vagy eltolni.
 - **Fájlnév és hely:** a kész PNG az `assets/icesmp/textures/item/<modell-id>.png` útvonalra kerül; a JSON-bekötés kész, csak a PNG-t kell szállítani.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik — a vanilla textúrája jó kiindulás a sziluetthez/érzethez.
 - **Frakció-színvilág:** RED = Perinfernicitas (láng, vörös-arany), BLUE = Cryghaliris (jég, kék-ezüst), NEUTRAL = Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK = Kitaszítottak (csont, éjfekete-lila, és a jellegzetes **hideg türkiz derengés** — a lich-szem: a Néma Királyné élőhalott-fénye a szemekben, rúnákban, élek mentén).

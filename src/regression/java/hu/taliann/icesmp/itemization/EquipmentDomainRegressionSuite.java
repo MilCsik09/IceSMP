@@ -25,6 +25,7 @@ public final class EquipmentDomainRegressionSuite {
         schemaAndRestrictionPrecedenceFailClosed();
         vanillaBasicArmorRemainsClassAgnostic();
         activeEquipmentStateMachineFailsClosed();
+        deniedEquipmentRehomeIsLossless();
         invalidIdentityMatrixIsGameplayInert();
         classSpecAndReconnectTransitionsReevaluate();
         combinedConsumerMatrixUsesOneAuthority();
@@ -120,6 +121,42 @@ public final class EquipmentDomainRegressionSuite {
         check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true)
                         == EquipmentProficiencyService.ActivityStatus.SUPPRESSED,
                 "suppression marker is authoritative at runtime");
+    }
+
+    private static void deniedEquipmentRehomeIsLossless() {
+        final int[] equipped = {1};
+        final int[] stored = {0};
+        check(EquipmentRehomeTransaction.executeAtomic(new EquipmentRehomeTransaction.AtomicStep() {
+            @Override public boolean preflight() { return true; }
+            @Override public void clearEquipped() { equipped[0] = 0; }
+            @Override public boolean storeAll() { stored[0] = 1; return true; }
+            @Override public void rollback() { equipped[0] = 1; stored[0] = 0; }
+        }), "settled denied equip is moved to storage");
+        check(equipped[0] + stored[0] == 1,
+                "successful denied-equip rehome conserves exactly one item");
+
+        equipped[0] = 1;
+        stored[0] = 0;
+        check(!EquipmentRehomeTransaction.executeAtomic(new EquipmentRehomeTransaction.AtomicStep() {
+            @Override public boolean preflight() { return true; }
+            @Override public void clearEquipped() { equipped[0] = 0; }
+            @Override public boolean storeAll() { stored[0] = 1; return false; }
+            @Override public void rollback() { equipped[0] = 1; stored[0] = 0; }
+        }), "partial denied-equip storage mutation rolls back");
+        check(equipped[0] + stored[0] == 1 && equipped[0] == 1,
+                "failed denied-equip rehome restores the equipped item without duplication");
+
+        try {
+            final String lifecycle = Files.readString(Path.of(
+                    "src/main/java/hu/taliann/icesmp/listeners/EquipmentProficiencyListener.java"));
+            check(lifecycle.contains("scheduleEquipmentReconcile(player)")
+                            && lifecycle.contains("runDelayed(plugin, task ->"),
+                    "equipment-change denial waits for the vanilla equip transaction to settle");
+            check(!lifecycle.contains("rehome(player, entry.getKey(), equipped)"),
+                    "equipment event callback never mutates the slot in-flight");
+        } catch (final java.io.IOException failure) {
+            throw new AssertionError("cannot inspect equipment lifecycle source", failure);
+        }
     }
 
     private static void invalidIdentityMatrixIsGameplayInert() {

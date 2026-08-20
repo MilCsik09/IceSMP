@@ -59,7 +59,7 @@
   ],
   "comparison": "docs/development/equipment-rp2-render-evidence/family-comparison.png",
   "concept_reference": "docs/development/equipment-rp2-render-evidence/concept-reference.png",
-  "concept_reference_sha256": "f503f61869282fd114d6379cb7784b6a618faeb51a5f7c3078332d34c8decb32",
+  "concept_reference_sha256": "6f1b55a0c632d2dc2c1b18afe131a52d324ef4ae891cdcce8e5d2f7d55ff84a8",
   "human_client_staging_required": true,
   "lines": [
     {
@@ -111,5 +111,6 @@
   "scale_readability": "docs/development/equipment-rp2-render-evidence/scale-readability.png",
   "schema": 1,
   "skin_compatibility": "docs/development/equipment-rp2-render-evidence/skin-compatibility.png",
+  "slot_layer_separation": "docs/development/equipment-rp2-render-evidence/slot-layer-separation.png",
   "worn_reference_comparison": "docs/development/equipment-rp2-render-evidence/worn-reference-comparison.png"
 }

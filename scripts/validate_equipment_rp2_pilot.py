@@ -53,6 +53,53 @@ def validate_png(path: Path, size: tuple[int, int], errors: list[str]) -> None:
         errors.append(f"PNG palette collapsed {path.relative_to(ROOT)}: {len(opaque)} colours")
 
 
+def alpha_values(image: Image.Image, box: tuple[int, int, int, int]) -> list[int]:
+    return [image.getpixel((x, y))[3]
+            for y in range(box[1], box[3]) for x in range(box[0], box[2])]
+
+
+def validate_worn_uv_layout(path: Path, leggings: bool, errors: list[str]) -> None:
+    image = Image.open(path).convert("RGBA")
+    scale = image.width // 64
+    head = [(8, 0, 16, 8), (16, 0, 24, 8), (0, 8, 8, 16),
+            (8, 8, 16, 16), (16, 8, 24, 16), (24, 8, 32, 16)]
+    body = [(20, 16, 28, 20), (28, 16, 36, 20), (16, 20, 20, 32),
+            (20, 20, 28, 32), (28, 20, 32, 32), (32, 20, 40, 32)]
+    arm = [(44, 16, 48, 20), (48, 16, 52, 20), (40, 20, 44, 32),
+           (44, 20, 48, 32), (48, 20, 52, 32), (52, 20, 56, 32)]
+    leg = [(4, 16, 8, 20), (8, 16, 12, 20), (0, 20, 4, 32),
+           (4, 20, 8, 32), (8, 20, 12, 32), (12, 20, 16, 32)]
+    head, body, arm, leg = ([tuple(value * scale for value in box) for box in boxes]
+                            for boxes in (head, body, arm, leg))
+
+    if not leggings:
+        for index, box in enumerate(head):
+            if any(value != 255 for value in alpha_values(image, box)):
+                errors.append(f"helmet UV face {index} has a hole: {path.relative_to(ROOT)}")
+        if any(alpha_values(image, leg[0])):
+            errors.append(f"boot texture reaches the physical thigh cap: {path.relative_to(ROOT)}")
+        for box in leg[2:]:
+            upper = (box[0], box[1], box[2], box[3] - 5 * scale)
+            lower = (box[0], box[3] - 5 * scale, box[2], box[3])
+            if any(alpha_values(image, upper)) or not all(alpha_values(image, lower)):
+                errors.append(f"boot vertical slot mask drift: {path.relative_to(ROOT)}")
+        return
+
+    for box in head + arm:
+        if any(alpha_values(image, box)):
+            errors.append(f"leggings atlas leaks into head/arm UV: {path.relative_to(ROOT)}")
+    if any(alpha_values(image, body[0])):
+        errors.append(f"leggings atlas reaches the physical torso cap: {path.relative_to(ROOT)}")
+    for box in body[2:]:
+        upper = (box[0], box[1], box[2], box[3] - 4 * scale)
+        waistband = (box[0], box[3] - 4 * scale, box[2], box[3])
+        if any(alpha_values(image, upper)) or not all(alpha_values(image, waistband)):
+            errors.append(f"leggings torso mask exceeds the lower waistband: {path.relative_to(ROOT)}")
+    for box in leg:
+        if not all(alpha_values(image, box)):
+            errors.append(f"leggings leg face is incomplete: {path.relative_to(ROOT)}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--enforce", action="store_true")
@@ -106,6 +153,7 @@ def main() -> None:
 
     expected_assets: set[str] = set()
     expected_models: set[str] = set()
+    validated_worn: set[str] = set()
     for piece in pieces:
         if piece["line_id"] not in selected_ids:
             errors.append(f"piece references nonselected line: {piece['template_id']}")
@@ -125,7 +173,11 @@ def main() -> None:
                 errors.append(f"missing pilot worn texture: {path_name}")
         validate_png(ROOT / piece["inventory_texture"], (64, 64), errors)
         for path_name in piece["worn_textures"]:
-            validate_png(ROOT / path_name, (64, 32), errors)
+            validate_png(ROOT / path_name, (128, 64), errors)
+            if path_name not in validated_worn:
+                validate_worn_uv_layout(ROOT / path_name,
+                                        "/humanoid_leggings/" in path_name, errors)
+                validated_worn.add(path_name)
         for path_name, expected in piece.get("checksums", {}).items():
             path = ROOT / path_name
             if path.is_file() and sha(path) != expected:
@@ -174,6 +226,7 @@ def main() -> None:
         render_paths.extend(entry.get("files", []))
     render_paths.extend([
         render_index.get("comparison"), render_index.get("worn_reference_comparison"),
+        render_index.get("slot_layer_separation"),
         render_index.get("skin_compatibility"), render_index.get("scale_readability"),
         render_index.get("concept_reference"),
     ])
