@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "src/main/resources/config/equipment-catalog-expansion.yml"
+PILOT_MANIFEST = ROOT / "docs/development/equipment-rp2-pilot-manifest.json"
 SLOTS = ("head", "chest", "legs", "feet")
 SUFFIX = {"head": "sisak", "chest": "mellvert", "legs": "labvert", "feet": "csizma"}
 
@@ -157,6 +159,23 @@ def template_id(line: dict[str, Any], slot: str) -> str:
     return line.get("anchors", {}).get(slot, f"{line['id']}_{SUFFIX[slot]}")
 
 
+def pilot_presentations() -> dict[str, dict[str, str]]:
+    if not PILOT_MANIFEST.is_file():
+        return {}
+    manifest = json.loads(PILOT_MANIFEST.read_text(encoding="utf-8"))
+    pieces = manifest.get("pieces", [])
+    presentations = {
+        piece["template_id"]: {
+            "item-model": piece["item_model"],
+            "equipment-asset": piece["equipment_asset"],
+        }
+        for piece in pieces
+    }
+    if pieces and (len(presentations) != 16 or manifest.get("summary", {}).get("pilot_lines") != 4):
+        raise AssertionError("RP2 pilot manifest must expose exactly 16 pieces / 4 lines")
+    return presentations
+
+
 def render() -> str:
     templates: dict[str, dict[str, Any]] = {}
     recipes: dict[str, dict[str, Any]] = {}
@@ -164,6 +183,7 @@ def render() -> str:
     professions = Counter()
     armor_ids: list[str] = []
     new_count = 0
+    pilot = pilot_presentations()
 
     for family, family_lines in LINES.items():
         if len(family_lines) != 10:
@@ -191,6 +211,7 @@ def render() -> str:
                         patch["source-tags"] = ["profession:alchemist", "combat:wilderness", "catalog:crafted"]
                     if line.get("set"):
                         patch["set-id"] = line["set"]
+                    patch.update(pilot.get(ident, {}))
                     templates[ident] = patch
                 else:
                     new_count += 1
@@ -216,6 +237,7 @@ def render() -> str:
                     }
                     if line.get("set"):
                         entry["set-id"] = line["set"]
+                    entry.update(pilot.get(ident, {}))
                     templates[ident] = entry
 
                 if line["acq"] != "crafted":
@@ -259,6 +281,8 @@ def render() -> str:
         raise AssertionError(f"profession ownership drift: {professions}")
     if len(recipes) != 64:
         raise AssertionError(f"crafted recipe output count drift: {len(recipes)}")
+    if pilot and len(pilot) != 16:
+        raise AssertionError(f"RP2 pilot presentation count drift: {len(pilot)}")
 
     for ident, costs in ASCENSION_COSTS.items():
         template = templates[ident]

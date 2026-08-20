@@ -46,6 +46,88 @@ A jelenlegi Java resource-pack equipment rendszer a rögzített equipment layer-
 
 A `WearablePresentation` a központi bővítési pont. A stabil `<render-id>` legyen a jövőbeli renderer identitása is; egy későbbi kliensoldali/modded vagy külön entity/display-alapú 3D wearable réteg így ugyanarra a tartalom-azonosítóra épülhet, a jelenlegi vanilla equipment assetek újraírása nélkül.
 
+### Equipment RP2-B pilot authority
+
+Az RP2-B Art Bible machine-readable authorityja a `docs/development/equipment-rp2-art-bible.json`; a kiválasztott négy line és 16 piece egyetlen asset-state authorityja az `equipment-rp2-pilot-manifest.json`. A generált `equipment-rp2-pilot.properties` csak immutable runtime index, kézzel nem szerkeszthető. Exact manifest-pár esetén custom item/equipment asset aktiválódik; minden más canonical armor fail-closed vanilla worn fallback marad.
+
+A pilot végleges vizuális source-of-truthja line-onként két committed, built-in OpenAI imagegennel authored lap az `equipment-rp2-authored-sources/` könyvtárban: egy négy-slot inventory sheet és egy front/back/side worn turnaround. A generátor ezeket pixel-cleanup, bináris alfa, palettakorlátozás és a vanilla 64×32 UV-koordinátarács inventoryval egyező 4× mintavételezése után 256×128-as runtime PNG-vé alakítja. Az imagegen nem runtime dependency; a committed source és a belőle determinisztikusan előálló PNG-k az authorityk.
+
+Az alkalmazott promptkészlet és a family-specifikus negatív korlátok az `equipment-rp2-imagegen-prompts.md` authoring recordban találhatók.
+
+Kötelező ellenőrzési sorrend:
+
+1. `python3 scripts/generate_equipment_rp2_art_bible.py --check`
+2. `python3 scripts/generate_equipment_rp2_pilot.py --check`
+3. `python3 scripts/validate_equipment_rp2_pilot.py --enforce`
+4. `python3 scripts/resource_pack.py validate --source resource-pack`
+5. `./gradlew resourcePackRegressionTest`
+
+A determinisztikus render `OFFLINE_RENDER_PROVED`, nem valódi kliens-screenshot. Tömeggyártás előtt ezért `HUMAN_CLIENT_STAGING_REQUIRED` marad.
+
+### `holdlen_sisak` — Holdlen csuklya
+- **Fájl:** `holdlen_sisak.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_HELMET`
+- Rétegzett indigó textil, keskeny ezüst holdív és puha, lefelé futó forma.
+
+### `holdlen_mellvert` — Holdlen köntös
+- **Fájl:** `holdlen_mellvert.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_CHESTPLATE`
+- Függőleges köntöspanelek, varrott szegély és visszafogott holdfény-akcent.
+
+### `holdlen_labvert` — Holdlen nadrág
+- **Fájl:** `holdlen_labvert.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_LEGGINGS`
+- Hosszú, keskeny textilcsíkok és egymásra fekvő alsó rétegek.
+
+### `holdlen_csizma` — Holdlen csizma
+- **Fájl:** `holdlen_csizma.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_BOOTS`
+- Könnyű szövetcsizma tekert bokaszalagokkal, merev lemez nélkül.
+
+### `vadbor_sisak` — Vadőr csuklya
+- **Fájl:** `vadbor_sisak.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_HELMET`
+- Cserzett barna bőrpanelek ferde varrattal és tompa mohazöld akcenttel.
+
+### `vadbor_mellvert` — Vadőr mellény
+- **Fájl:** `vadbor_mellvert.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_CHESTPLATE`
+- Mobil, átlapolt bőrmellény keresztpánttal és kis organikus erősítésekkel.
+
+### `vadbor_labvert` — Vadőr lábvért
+- **Fájl:** `vadbor_labvert.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_LEGGINGS`
+- Szegmentált bőrpanelek, térd körüli pántok és szabálytalan természetes élek.
+
+### `vadbor_csizma` — Vadőr csizma
+- **Fájl:** `vadbor_csizma.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_BOOTS`
+- Rugalmas, pántolt vadászbőr csizma könnyű orr-erősítéssel.
+
+### `konnyu_otvozet_sisak` — Könnyűötvözet sisak
+- **Fájl:** `konnyu_otvozet_sisak.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_HELMET`
+- Ezüst sodronyperem, ismétlődő gyűrűritmus és réz rögzítési pontok.
+
+### `konnyu_otvozet_mellvert` — Könnyűötvözet ing
+- **Fájl:** `konnyu_otvozet_mellvert.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_CHESTPLATE`
+- Textil backing fölötti könnyű láncing, közepes kemény élekkel, lemeztest nélkül.
+
+### `konnyu_otvozet_labvert` — Könnyűötvözet lábvért
+- **Fájl:** `konnyu_otvozet_labvert.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_LEGGINGS`
+- Függő láncpanelek és külön olvasható apró sodronyminta.
+
+### `konnyu_otvozet_csizma` — Könnyűötvözet csizma
+- **Fájl:** `konnyu_otvozet_csizma.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_BOOTS`
+- Bőr alapú lábbeli láncos felsőrésszel és finom rézkapcsokkal.
+
+### `borostyan_tarna_sisak` — Borostyántárna sisak
+- **Fájl:** `borostyan_tarna_sisak.png` | **Család:** PLATE | **Alap-item:** `IRON_HELMET`
+- Széles, keretezett sötétacél lemez, központi borostyán bányászjelzéssel.
+
+### `melysegi_borostyan_mellvert` — Borostyántárna mellvért
+- **Fájl:** `melysegi_borostyan_mellvert.png` | **Család:** PLATE | **Alap-item:** `IRON_CHESTPLATE`
+- Nagy geometrikus kovácsolt tömeg, szegecselt perem és zárt mellkasi keret.
+
+### `borostyan_tarna_labvert` — Borostyántárna lábvért
+- **Fájl:** `borostyan_tarna_labvert.png` | **Család:** PLATE | **Alap-item:** `IRON_LEGGINGS`
+- Nehéz, egymásba záródó comb- és térdlemezek, széles hard edge-ekkel.
+
+### `borostyan_tarna_csizma` — Borostyántárna csizma
+- **Fájl:** `borostyan_tarna_csizma.png` | **Család:** PLATE | **Alap-item:** `IRON_BOOTS`
+- Masszív, keretezett sabatonforma tompa borostyán akcenttel.
+
 ## Kiadási és kliens-cache szerződés
 
 Az IceSMP a Paper/Folia additív `Player#addResourcePack(...)` API-ját használja.
@@ -73,7 +155,7 @@ keresztül kerül a klienshez.
 ## Technikai tudnivalók
 
 - **Inventory-item mérete:** 64×64 px, átlátszó háttérrel (PNG). Ez a pack egységes item-sprite felbontása.
-- **Viselt equipment mérete:** humanoid, leggings és wings layer 64×32 px; horse body és saddle layer 64×64 px. Ezek rögzített vanilla UV-lapok, nem szabad őket inventory-ikonként elforgatni vagy átméretezni.
+- **Viselt equipment UV:** a humanoid, leggings és wings alap-koordinátarácsa 64×32; egész számú, azonos oldalarányú mintavételezés megengedett. Az RP2 pilot humanoid/leggings layerje 256×128 px, vagyis ugyanazt a 4× pixelsűrűséget használja, mint a vanilla 16×16-ról 64×64-re növelt inventory art. Horse body és saddle layer 64×64 px. Ezek rögzített vanilla UV-lapok, nem szabad őket inventory-ikonként elforgatni vagy eltolni.
 - **Fájlnév és hely:** a kész PNG az `assets/icesmp/textures/item/<modell-id>.png` útvonalra kerül; a JSON-bekötés kész, csak a PNG-t kell szállítani.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik — a vanilla textúrája jó kiindulás a sziluetthez/érzethez.
 - **Frakció-színvilág:** RED = Perinfernicitas (láng, vörös-arany), BLUE = Cryghaliris (jég, kék-ezüst), NEUTRAL = Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK = Kitaszítottak (csont, éjfekete-lila, és a jellegzetes **hideg türkiz derengés** — a lich-szem: a Néma Királyné élőhalott-fénye a szemekben, rúnákban, élek mentén).

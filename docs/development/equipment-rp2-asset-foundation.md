@@ -1,19 +1,21 @@
-# Equipment Resource Pack 2.0-A — Asset Foundation
+# Equipment Resource Pack 2.0-A/B — Asset Foundation and Four-Family Pilot
 
 ## Scope
 
-RP 2.0-A is the production-asset authority and temporary presentation-reset phase. It does **not** define art direction and does not generate final textures, icons, palettes, Blockbench models, or worn sets.
+RP 2.0-A established the production-asset authority and temporary presentation reset. RP2-B adds the canonical Art Bible plus one production-ready four-piece pilot for each ArmorFamily. It does not roll out the remaining 36 lines.
 
 The audit starts from production configuration and runtime presentation consumers, then follows Minecraft item-definition, model-parent, texture, equipment-layer, font and atlas references. A direct filename grep is never sufficient proof that an asset is unused.
 
 ## Current asset truth
 
-The deterministic full-pack graph contains **1791 physical resource-pack files**. The committed focus manifest records every equipment/material/armor-linked physical asset and pins the complete graph with SHA-256 `06ebf08227d752280418569b92f7077bc8a772385f01954a91ed95f43a8c985f`; unrelated files stay present in the generated full audit and are never deletion candidates by omission.
+The deterministic full-pack graph contains **1851 physical resource-pack files**. The 60-file delta is exactly 16 item definitions + 16 models + 16 inventory textures + four equipment definitions + eight worn textures. The committed focus manifest pins the complete graph with SHA-256 `571e1ef5bd96a299ebbc2243a5da1fe0074c45639de40584fb44ef9597942060`; unrelated files stay present in the generated full audit and are never deletion candidates by omission.
+
+The pilot art is no longer a code-drawn placeholder. Each selected line has a committed built-in OpenAI imagegen inventory source sheet and worn turnaround under `docs/development/equipment-rp2-authored-sources/`. The runtime generator performs only deterministic extraction, pixel cleanup, palette reduction and vanilla 1.21.11 UV adaptation; it cannot invent a replacement design when an authored source is absent. Source paths and SHA-256 hashes are part of the canonical pilot manifest and validation gate.
 
 Physical primary states at RP2-A closure:
 
-- ACTIVE: 839
-- ACTIVE_SHARED: 247
+- ACTIVE: 879
+- ACTIVE_SHARED: 267
 - STALE: 2
 - DUPLICATE: 41
 - FUTURE_HANDOFF: 1
@@ -28,17 +30,17 @@ The full-pack graph covers equipment, weapon/profession item chains, materials, 
 
 Production resolves to exactly **160 canonical armor pieces**, **40 CLOTH**, **40 LEATHER**, **40 MAIL**, and **40 PLATE**, grouped into exactly **40 four-piece gear lines**. The machine-readable per-piece matrix is `equipment-rp2-armor-matrix.json`; the later art-phase input is `equipment-rp2-gear-lines.json`.
 
-All 160 pieces retain a valid inventory representation. One current line (`glatziendorfi`) still has one line-local custom inventory item model; the other current representations are vanilla/shared and therefore **159 pieces are explicit RP2 inventory-replacement requirements**. This is a derived work count, not an assumption that every production item must get a new PNG.
+All 160 pieces retain a valid inventory representation. The 16 pilot pieces now use RP2 inventory representations; the previous valid Glatziendorf representation remains retained outside the pilot. The current derived remaining inventory-production count is **143**, not a guessed 144.
 
-## Temporary vanilla worn reset
+## Pilot custom worn boundary and temporary fallback
 
-Every one of the 160 canonical armor pieces now resolves to the backing Material's vanilla worn presentation at the central `WearablePresentation` boundary. This includes the ELYTRA-backed `fonixpihe_kopeny` chest anchor as well as conventional helmet/chestplate/leggings/boots backings.
+Exactly 16 canonical pilot pieces resolve through four RP2 custom equipment assets at the central `WearablePresentation` boundary. The other 144 pieces still resolve to their backing Material's vanilla worn presentation, including the ELYTRA-backed `fonixpihe_kopeny` anchor.
 
 The reset changes presentation only. ItemTemplate identity, ItemInstance/checksum semantics, attributes, ArmorFamily/proficiency, set behavior, Rune, Signature, Ascension, profession crafting and market/gameplay authority are not redesigned by RP2-A.
 
-For migration safety, the boundary actively restores the backing Material's vanilla `EQUIPPABLE.assetId` when an item is refreshed through normal presentation creation paths. It does not merely stop writing a new custom id, so a serialized legacy item cannot keep the old worn asset solely because it predates RP2-A.
+The canonical pilot manifest generates a 16-entry immutable runtime index. Only an exact manifest-backed `item-model` + `equipment-asset` pair may bypass the vanilla reset; every nonpilot path still actively restores the backing Material's vanilla `EQUIPPABLE.assetId`. No filesystem, JSON parse or 160-item scan occurs on the equip hot path.
 
-Developer/staging note: **custom worn visuals intentionally reset to vanilla pending Equipment RP 2.0 worn-model production.**
+Developer/staging note: **the automated pilot pipeline is complete, but human Minecraft-client visual staging remains required before mass production.**
 
 ## Legacy worn assets and cleanup policy
 
@@ -74,12 +76,12 @@ Committed authority:
 - `equipment-rp2-armor-matrix.json` — 160 production-derived armor records
 - `equipment-rp2-gear-lines.json` — exactly 40 art-handoff line records
 - `equipment-rp2-materials.json` — managed material visual authority
-- `equipment-rp2-worn-fallback.json` — all 160 temporary worn fallbacks + retained legacy files
+- `equipment-rp2-worn-fallback.json` — 144 temporary worn fallbacks + 16 RP2 custom records + retained legacy files
 - `equipment-rp2-safe-delete.json` — explicit deletion authority
 - `equipment-rp2-required-new.json` — future inventory/worn requirements
 - `equipment-rp2-final-authority.json` — acceptance counts and readiness verdict
 
-The full 1791-file reference graph is generated in CI by `scripts/equipment_rp2_asset_audit.py`; `scripts/generate_equipment_rp2_docs.py --check` proves the committed compact handoff is deterministic and current.
+The full 1851-file reference graph is generated in CI by `scripts/equipment_rp2_asset_audit.py`; `scripts/generate_equipment_rp2_docs.py --check` proves the committed compact handoff is deterministic and current. `equipment-rp2-art-bible.json` specifies all 40 lines, while `equipment-rp2-pilot-manifest.json` is the single selected-asset authority for the 4/16 pilot.
 
 ## Future RP 2.0 roadmap
 
@@ -87,17 +89,17 @@ The full 1791-file reference graph is generated in CI by `scripts/equipment_rp2_
 
 This document's scope. Production authority, fallbacks, safe cleanup proof and handoff only.
 
-### RP 2.0-B — Family Art Bible + 40 Gear-Line Concept Design
+### RP 2.0-B — Family Art Bible + Four-Family Pilot
 
-Consumes the four families and exactly 40 records from `equipment-rp2-gear-lines.json`. One gear line is one coherent worn visual set. RP2-A makes no palette, silhouette, ornament, boss-language or concept recommendation.
+Current scope: a deterministic 40-line Art Bible plus `holdlen`, `vadbor`, `konnyu_otvozet` and `borostyan_tarna` as four complete inventory/worn pilot lines. The pilot uses mid-level crafted lines so family construction can be compared without consuming boss/prestige headroom.
 
-### RP 2.0-C — Final Inventory Item Texture Production
+### RP 2.0-C — Remaining Inventory Item Texture Production
 
-Produces only inventory work declared by the RP2 authority.
+Produces only the remaining 143 inventory items declared by the RP2 authority after human pilot acceptance.
 
-### RP 2.0-D — Worn Equipment Model Production
+### RP 2.0-D — Remaining Worn Equipment Production
 
-Replaces the temporary vanilla worn state with coherent line-level worn sets.
+Replaces the remaining 144 temporary vanilla worn pieces with 36 coherent line-level worn sets.
 
 ### RP 2.0-E — Integration + Visual QA + Staging
 
@@ -109,4 +111,4 @@ Final CI runs the generated catalog check, full asset graph, final RP2 authority
 
 ## RP2-B readiness
 
-**READY FOR ART BIBLE** means the next agent has one production-derived 40-line list, complete per-piece armor matrix, explicit inventory work list, explicit 40-line worn requirement, managed material decision set, and no effective broken production reference. It does not mean RP2-B art direction has begun.
+`AUTOMATED_VISUAL_PIPELINE_COMPLETE` means the Art Bible, 4/16 pilot, runtime binding, schema validation, checksums and deterministic offline render evidence are complete. The mass-production verdict is `TECHNICAL_GO_HUMAN_VISUAL_ACCEPTANCE_REQUIRED`: a real 1.21.11 client must still inspect front/back/side, skin compatibility and multiplayer-distance readability before the remaining 36 lines begin.

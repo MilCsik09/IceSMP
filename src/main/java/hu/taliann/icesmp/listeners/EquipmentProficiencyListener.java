@@ -2,6 +2,7 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.itemization.EquipmentProficiencyPolicy;
 import hu.taliann.icesmp.itemization.EquipmentProficiencyService;
+import hu.taliann.icesmp.itemization.EquipmentRehomeTransaction;
 import hu.taliann.icesmp.itemization.ItemIdentityService;
 import hu.taliann.icesmp.itemization.ItemTemplate;
 import org.bukkit.entity.Player;
@@ -32,6 +33,7 @@ public final class EquipmentProficiencyListener implements Listener {
     private final ItemIdentityService identities;
     private final Map<UUID, Long> lastHint = new ConcurrentHashMap<>();
     private final java.util.Set<UUID> reconciling = ConcurrentHashMap.newKeySet();
+    private final java.util.Set<UUID> pendingEquipmentReconcile = ConcurrentHashMap.newKeySet();
 
     public EquipmentProficiencyListener(final JavaPlugin plugin,
                                         final EquipmentProficiencyService proficiency,
@@ -93,14 +95,15 @@ public final class EquipmentProficiencyListener implements Listener {
     /**
      * Paper's equipment event is the common catch-all for right click, dispenser, hotbar/main-hand
      * and off-hand changes. Every represented slot schedules the same reconciliation; only armor
-     * family denials are physically rehomed. Weapons/offhands may remain physically present but are
-     * attribute/effect-suppressed by the central authority when inactive.
+     * family denials are physically rehomed after the vanilla mutation settles. Weapons/offhands may
+     * remain physically present but are attribute/effect-suppressed by the central authority.
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEquipmentChanged(
             final io.papermc.paper.event.entity.EntityEquipmentChangedEvent event) {
         if (!(event.getEntity() instanceof Player player)
                 || reconciling.contains(player.getUniqueId())) return;
+        boolean deniedArmor = false;
         for (final Map.Entry<org.bukkit.inventory.EquipmentSlot,
                 io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange> entry
                 : event.getEquipmentChanges().entrySet()) {
@@ -109,13 +112,16 @@ public final class EquipmentProficiencyListener implements Listener {
             final ItemStack equipped = entry.getValue().newItem();
             final Denial denial = denial(player, equipped, slot);
             if (denial == null) {
-                proficiency.reconcileNextTick(player);
                 continue;
             }
-            identities.setEquipmentSuppressed(equipped, denial.inspection().template(),
-                    denial.inspection().instance(), true);
-            rehome(player, entry.getKey(), equipped);
+            if (!isArmorSlot(entry.getKey())) continue;
+            deniedArmor = true;
             notify(player, denial.decision());
+        }
+        if (deniedArmor) {
+            scheduleEquipmentReconcile(player);
+        } else {
+            proficiency.reconcileNextTick(player);
         }
     }
 
@@ -149,17 +155,59 @@ public final class EquipmentProficiencyListener implements Listener {
         return proficiency.profileReady(player) && decision.allowed() ? null : new Denial(inspection, decision);
     }
 
-    private void rehome(final Player player, final org.bukkit.inventory.EquipmentSlot slot,
-                        final ItemStack equipped) {
+    private void scheduleEquipmentReconcile(final Player player) {
         final UUID playerId = player.getUniqueId();
-        if (!reconciling.add(playerId)) return;
+        if (!pendingEquipmentReconcile.add(playerId)) return;
         try {
-            setArmor(player, slot, null);
-            final Map<Integer, ItemStack> leftovers = player.getInventory().addItem(equipped.clone());
-            if (!leftovers.isEmpty()) {
-                setArmor(player, slot, equipped);
-                player.sendActionBar(proficiency.denialMessage(new EquipmentProficiencyPolicy.Decision(
-                        EquipmentProficiencyPolicy.Status.INVALID_TEMPLATE, null, null)));
+            final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled =
+                    player.getScheduler().runDelayed(plugin, task -> {
+                        pendingEquipmentReconcile.remove(playerId);
+                        reconcileEquipmentChange(player);
+                    }, () -> pendingEquipmentReconcile.remove(playerId), 1L);
+            if (scheduled == null) pendingEquipmentReconcile.remove(playerId);
+        } catch (final RuntimeException rejected) {
+            pendingEquipmentReconcile.remove(playerId);
+        }
+    }
+
+    private void reconcileEquipmentChange(final Player player) {
+        final UUID playerId = player.getUniqueId();
+        if (!player.isOnline() || !reconciling.add(playerId)) return;
+        try {
+            for (final org.bukkit.inventory.EquipmentSlot slot : java.util.List.of(
+                    org.bukkit.inventory.EquipmentSlot.HEAD,
+                    org.bukkit.inventory.EquipmentSlot.CHEST,
+                    org.bukkit.inventory.EquipmentSlot.LEGS,
+                    org.bukkit.inventory.EquipmentSlot.FEET)) {
+                final ItemStack equipped = getArmor(player, slot);
+                final Denial denial = denial(player, equipped, slot(slot));
+                if (denial == null) continue;
+                identities.setEquipmentSuppressed(equipped, denial.inspection().template(),
+                        denial.inspection().instance(), true);
+                final boolean rehomed = EquipmentRehomeTransaction.rehome(
+                        new EquipmentRehomeTransaction.Adapter() {
+                            @Override public ItemStack equipped() { return getArmor(player, slot); }
+                            @Override public ItemStack[] storageContents() {
+                                return player.getInventory().getStorageContents();
+                            }
+                            @Override public void setEquipped(final ItemStack item) {
+                                setArmor(player, slot, item);
+                            }
+                            @Override public Map<Integer, ItemStack> addToStorage(final ItemStack item) {
+                                return player.getInventory().addItem(item);
+                            }
+                            @Override public void restoreStorage(final ItemStack[] snapshot) {
+                                player.getInventory().setStorageContents(snapshot);
+                            }
+                        });
+                if (!rehomed) {
+                    player.sendActionBar(proficiency.denialMessage(
+                            new EquipmentProficiencyPolicy.Decision(
+                                    EquipmentProficiencyPolicy.Status.INVALID_TEMPLATE,
+                                    denial.inspection().template().armorFamily(),
+                                    denial.decision().classFamily())));
+                }
+                notify(player, denial.decision());
             }
         } finally {
             reconciling.remove(playerId);
@@ -190,6 +238,7 @@ public final class EquipmentProficiencyListener implements Listener {
     private void clear(final Player player) {
         lastHint.remove(player.getUniqueId());
         reconciling.remove(player.getUniqueId());
+        pendingEquipmentReconcile.remove(player.getUniqueId());
     }
 
     private static ItemTemplate.Slot armorSlot(final int rawSlot) {
@@ -224,6 +273,24 @@ public final class EquipmentProficiencyListener implements Listener {
             case FEET -> player.getInventory().setBoots(item);
             default -> { }
         }
+    }
+
+    private static ItemStack getArmor(final Player player,
+                                      final org.bukkit.inventory.EquipmentSlot slot) {
+        return switch (slot) {
+            case HEAD -> player.getInventory().getHelmet();
+            case CHEST -> player.getInventory().getChestplate();
+            case LEGS -> player.getInventory().getLeggings();
+            case FEET -> player.getInventory().getBoots();
+            default -> null;
+        };
+    }
+
+    private static boolean isArmorSlot(final org.bukkit.inventory.EquipmentSlot slot) {
+        return slot == org.bukkit.inventory.EquipmentSlot.HEAD
+                || slot == org.bukkit.inventory.EquipmentSlot.CHEST
+                || slot == org.bukkit.inventory.EquipmentSlot.LEGS
+                || slot == org.bukkit.inventory.EquipmentSlot.FEET;
     }
 
     private record Denial(ItemIdentityService.Inspection inspection,

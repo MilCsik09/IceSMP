@@ -308,8 +308,9 @@ a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.
 - ⬜ Profession 2.0 feldolgozási láncok (fiber→cloth, hide→leather,
   leather+metal→mail, ore/alloy→plate), a 392 recept ownership/migration auditja,
   family salvage, Masterwork és profession-specializáció.
-- ⬜ Equipment Resource Pack 2.0: a family vizuális katalógus, hiányzó equipment
-  assetek, slot-fit/orientation és a handoff inventoryban jelölt redesignok.
+- 🟨 Equipment Resource Pack 2.0: RP2-A asset authority kész; RP2-B 40-line Art Bible és
+  4-line/16-piece pilot automatizált pipeline kész. Hátra van human 1.21.11 client staging,
+  majd jóváhagyás esetén 36 worn line és 143 inventory representation tömeggyártása.
 
 **Kapunyitás E felé:** a tárgyazonosság másolás, újraindítás és
 inventoryhiba után is bizonyítható; nincs új pénzforrás.
