@@ -1,0 +1,183 @@
+name: Equipment RP2 Art Bible Pilot
+
+on:
+  push:
+    branches:
+      - feature/equipment-rp2-art-bible-pilot
+  pull_request:
+    branches:
+      - feature/equipment-rp2-asset-foundation
+    paths:
+      - "resource-pack/**"
+      - "src/main/resources/config/equipment-catalog-expansion.yml"
+      - "src/main/resources/equipment-rp2-pilot.properties"
+      - "src/main/java/hu/taliann/icesmp/items/WearablePresentation.java"
+      - "src/main/java/hu/taliann/icesmp/itemization/PaperSourceIntegrityRuntimeProbe.java"
+      - "src/regression/java/hu/taliann/icesmp/resourcepack/**"
+      - "scripts/generate_equipment_rp2_*"
+      - "scripts/generate_long_term_equipment_catalog.py"
+      - "scripts/validate_equipment_rp2_pilot.py"
+      - "scripts/equipment_rp2_asset_audit.py"
+      - "scripts/generate_equipment_rp2_manifests.py"
+      - "scripts/generate_equipment_rp2_docs.py"
+      - "scripts/tests/test_equipment_rp2_asset_audit.py"
+      - "docs/development/equipment-rp2-*"
+      - "docs/RESOURCE_PACK_CMD.md"
+      - "ROADMAP.md"
+      - ".github/workflows/equipment-rp2-art-bible-pilot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  exact-head-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Checkout exact child head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 128
+          persist-credentials: false
+
+      - name: Verify exact stacked parent and merge-base
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
+          git fetch --no-tags --depth=128 origin \
+            feature/equipment-rp2-asset-foundation:refs/remotes/origin/feature/equipment-rp2-asset-foundation
+          parent_sha=$(git rev-parse refs/remotes/origin/feature/equipment-rp2-asset-foundation)
+          merge_base=$(git merge-base HEAD refs/remotes/origin/feature/equipment-rp2-asset-foundation)
+          test "${merge_base}" = "${parent_sha}"
+          read behind ahead < <(git rev-list --left-right --count \
+            refs/remotes/origin/feature/equipment-rp2-asset-foundation...HEAD)
+          test "${behind}" = "0"
+          test "${ahead}" -gt "0"
+          echo "EQUIPMENT_RP2_B_HEAD=${EXPECTED_HEAD}"
+          echo "EQUIPMENT_RP2_A_PARENT=${parent_sha}"
+          echo "EQUIPMENT_RP2_B_MERGE_BASE=${merge_base}"
+          echo "EQUIPMENT_RP2_B_AHEAD=${ahead}"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install asset validation dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
+
+      - name: Validate Art Bible, pilot and production authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/generate_long_term_equipment_catalog.py --check
+          python3 scripts/generate_equipment_rp2_art_bible.py --check \
+            --collision-output build/reports/equipment-rp2-b/collision-audit.json
+          python3 scripts/generate_equipment_rp2_pilot.py --check
+          python3 scripts/equipment_rp2_asset_audit.py
+          python3 scripts/generate_equipment_rp2_manifests.py --enforce
+          python3 scripts/generate_equipment_rp2_docs.py --check
+          python3 scripts/validate_equipment_rp2_pilot.py --enforce
+
+      - name: Validate complete resource pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_resource_pack.py
+          python3 scripts/resource_pack.py validate --source resource-pack
+          python3 scripts/audit_equipment_assets.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_documentation_coverage.py
+          python3 scripts/check_markdown_links.py
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Java build and gameplay/resource-pack regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew clean build resourcePackRegressionTest \
+            itemizationDomainRegressionTest vanillaCraftingBoundaryRegressionTest \
+            equipmentDomainRegressionTest professions2RegressionTest \
+            --no-daemon --console=plain
+
+      - name: Paper 1.21.11 runtime proof
+        shell: bash
+        timeout-minutes: 12
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.source-integrity-runtime=true
+        run: |
+          set -euo pipefail
+          rm -rf run
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+          set +e
+          timeout --signal=INT --kill-after=20s 420s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            2>&1 | tee paper-rp2-pilot.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [[ ${status} -ne 0 && ${status} -ne 124 && ${status} -ne 130 ]]; then
+            exit "${status}"
+          fi
+          grep -E "Running the server|Starting minecraft server version 1\.21\.11|Done \(" paper-rp2-pilot.log
+          grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS' paper-rp2-pilot.log
+          ! grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL' paper-rp2-pilot.log
+          ! grep -E "Could not load.*IceSMP|Error occurred while enabling IceSMP|Exception.*IceSMP" paper-rp2-pilot.log
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('build/reports/equipment-rp2-b/validation-summary.json')
+          data = json.loads(path.read_text())
+          data['proof']['server_runtime'] = 'SERVER_RUNTIME_PROVED'
+          path.write_text(json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + '\n')
+          PY
+
+      - name: Assemble exact-head evidence bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle=build/reports/equipment-rp2-b/bundle
+          mkdir -p "${bundle}/render-evidence"
+          cp docs/development/equipment-rp2-art-bible.json "${bundle}/"
+          cp docs/development/equipment-rp2-pilot-manifest.json "${bundle}/"
+          cp docs/development/equipment-rp2-final-authority.json "${bundle}/"
+          cp docs/development/equipment-rp2-render-evidence/index.json "${bundle}/render-evidence/"
+          cp docs/development/equipment-rp2-render-evidence/*.png "${bundle}/render-evidence/"
+          cp build/reports/equipment-rp2/asset-audit.json "${bundle}/"
+          cp build/reports/equipment-rp2-b/validation-summary.json "${bundle}/"
+          cp build/reports/equipment-rp2-b/asset-graph-delta.json "${bundle}/"
+          cp build/reports/equipment-rp2-b/collision-audit.json "${bundle}/"
+          cp build/reports/equipment-rp2-b/final-authority.json "${bundle}/"
+          find "${bundle}" -type f -print0 | sort -z | xargs -0 sha256sum > "${bundle}/SHA256SUMS"
+
+      - name: Upload RP2-B evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: equipment-rp2-b-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/reports/equipment-rp2-b/bundle
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Prove tracked checkout remains clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"

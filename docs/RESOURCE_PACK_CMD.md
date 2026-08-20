@@ -46,6 +46,84 @@ A jelenlegi Java resource-pack equipment rendszer a rögzített equipment layer-
 
 A `WearablePresentation` a központi bővítési pont. A stabil `<render-id>` legyen a jövőbeli renderer identitása is; egy későbbi kliensoldali/modded vagy külön entity/display-alapú 3D wearable réteg így ugyanarra a tartalom-azonosítóra épülhet, a jelenlegi vanilla equipment assetek újraírása nélkül.
 
+### Equipment RP2-B pilot authority
+
+Az RP2-B Art Bible machine-readable authorityja a `docs/development/equipment-rp2-art-bible.json`; a kiválasztott négy line és 16 piece egyetlen asset-state authorityja az `equipment-rp2-pilot-manifest.json`. A generált `equipment-rp2-pilot.properties` csak immutable runtime index, kézzel nem szerkeszthető. Exact manifest-pár esetén custom item/equipment asset aktiválódik; minden más canonical armor fail-closed vanilla worn fallback marad.
+
+Kötelező ellenőrzési sorrend:
+
+1. `python3 scripts/generate_equipment_rp2_art_bible.py --check`
+2. `python3 scripts/generate_equipment_rp2_pilot.py --check`
+3. `python3 scripts/validate_equipment_rp2_pilot.py --enforce`
+4. `python3 scripts/resource_pack.py validate --source resource-pack`
+5. `./gradlew resourcePackRegressionTest`
+
+A determinisztikus render `OFFLINE_RENDER_PROVED`, nem valódi kliens-screenshot. Tömeggyártás előtt ezért `HUMAN_CLIENT_STAGING_REQUIRED` marad.
+
+### `holdlen_sisak` — Holdlen csuklya
+- **Fájl:** `holdlen_sisak.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_HELMET`
+- Rétegzett indigó textil, keskeny ezüst holdív és puha, lefelé futó forma.
+
+### `holdlen_mellvert` — Holdlen köntös
+- **Fájl:** `holdlen_mellvert.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_CHESTPLATE`
+- Függőleges köntöspanelek, varrott szegély és visszafogott holdfény-akcent.
+
+### `holdlen_labvert` — Holdlen nadrág
+- **Fájl:** `holdlen_labvert.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_LEGGINGS`
+- Hosszú, keskeny textilcsíkok és egymásra fekvő alsó rétegek.
+
+### `holdlen_csizma` — Holdlen csizma
+- **Fájl:** `holdlen_csizma.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_BOOTS`
+- Könnyű szövetcsizma tekert bokaszalagokkal, merev lemez nélkül.
+
+### `vadbor_sisak` — Vadőr csuklya
+- **Fájl:** `vadbor_sisak.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_HELMET`
+- Cserzett barna bőrpanelek ferde varrattal és tompa mohazöld akcenttel.
+
+### `vadbor_mellvert` — Vadőr mellény
+- **Fájl:** `vadbor_mellvert.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_CHESTPLATE`
+- Mobil, átlapolt bőrmellény keresztpánttal és kis organikus erősítésekkel.
+
+### `vadbor_labvert` — Vadőr lábvért
+- **Fájl:** `vadbor_labvert.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_LEGGINGS`
+- Szegmentált bőrpanelek, térd körüli pántok és szabálytalan természetes élek.
+
+### `vadbor_csizma` — Vadőr csizma
+- **Fájl:** `vadbor_csizma.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_BOOTS`
+- Rugalmas, pántolt vadászbőr csizma könnyű orr-erősítéssel.
+
+### `konnyu_otvozet_sisak` — Könnyűötvözet sisak
+- **Fájl:** `konnyu_otvozet_sisak.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_HELMET`
+- Ezüst sodronyperem, ismétlődő gyűrűritmus és réz rögzítési pontok.
+
+### `konnyu_otvozet_mellvert` — Könnyűötvözet ing
+- **Fájl:** `konnyu_otvozet_mellvert.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_CHESTPLATE`
+- Textil backing fölötti könnyű láncing, közepes kemény élekkel, lemeztest nélkül.
+
+### `konnyu_otvozet_labvert` — Könnyűötvözet lábvért
+- **Fájl:** `konnyu_otvozet_labvert.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_LEGGINGS`
+- Függő láncpanelek és külön olvasható apró sodronyminta.
+
+### `konnyu_otvozet_csizma` — Könnyűötvözet csizma
+- **Fájl:** `konnyu_otvozet_csizma.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_BOOTS`
+- Bőr alapú lábbeli láncos felsőrésszel és finom rézkapcsokkal.
+
+### `borostyan_tarna_sisak` — Borostyántárna sisak
+- **Fájl:** `borostyan_tarna_sisak.png` | **Család:** PLATE | **Alap-item:** `IRON_HELMET`
+- Széles, keretezett sötétacél lemez, központi borostyán bányászjelzéssel.
+
+### `melysegi_borostyan_mellvert` — Borostyántárna mellvért
+- **Fájl:** `melysegi_borostyan_mellvert.png` | **Család:** PLATE | **Alap-item:** `IRON_CHESTPLATE`
+- Nagy geometrikus kovácsolt tömeg, szegecselt perem és zárt mellkasi keret.
+
+### `borostyan_tarna_labvert` — Borostyántárna lábvért
+- **Fájl:** `borostyan_tarna_labvert.png` | **Család:** PLATE | **Alap-item:** `IRON_LEGGINGS`
+- Nehéz, egymásba záródó comb- és térdlemezek, széles hard edge-ekkel.
+
+### `borostyan_tarna_csizma` — Borostyántárna csizma
+- **Fájl:** `borostyan_tarna_csizma.png` | **Család:** PLATE | **Alap-item:** `IRON_BOOTS`
+- Masszív, keretezett sabatonforma tompa borostyán akcenttel.
+
 ## Kiadási és kliens-cache szerződés
 
 Az IceSMP a Paper/Folia additív `Player#addResourcePack(...)` API-ját használja.
