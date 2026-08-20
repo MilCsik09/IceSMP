@@ -96,9 +96,13 @@ jobs:
       - name: Clean build and resource-pack regressions
         run: ./gradlew clean build resourcePackRegressionTest --no-daemon --console=plain
 
+      - name: Regenerate exact-head evidence after clean build
+        run: |
+          python3 scripts/equipment_rp2_asset_audit.py
+          python3 scripts/generate_equipment_rp2_manifests.py --enforce
+
       - name: Preserve final evidence
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: equipment-rp2-final-${{ github.event.pull_request.head.sha || github.sha }}
           path: build/reports/equipment-rp2
