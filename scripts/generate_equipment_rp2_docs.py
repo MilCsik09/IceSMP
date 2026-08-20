@@ -2,9 +2,9 @@
 """Publish/check compact committed Equipment RP2-A authority documents.
 
 The full 1791-file reference graph remains a deterministic CI artifact from
-`equipment_rp2_asset_audit.py`.  The repository keeps the complete 160-piece/40-line
+`equipment_rp2_asset_audit.py`. The repository keeps the complete canonical 160-piece/40-line
 handoff plus every equipment/material/armor-linked physical asset record, while a SHA-256
-digest pins the full physical inventory without duplicating ~1.6 MB of unrelated HUD/UI data.
+digest pins the full physical inventory without duplicating unrelated HUD/UI graph data.
 """
 from __future__ import annotations
 
@@ -23,8 +23,47 @@ def canonical(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+def armor_handoff(raw: dict) -> dict:
+    return {
+        "template_id": raw["template_id"],
+        "display_name": raw["display_name"],
+        "family": raw["family"],
+        "slot": raw["slot"],
+        "gear_line": raw["gear_line"],
+        "archetype": raw["archetype"],
+        "progression_band": raw["progression_band"],
+        "acquisition": raw["acquisition"],
+        "profession": raw["profession"],
+        "rarity": raw["rarity"],
+        "set": raw["set"],
+        "signature": raw["signature"],
+        "ascension": raw["ascension"],
+        "backing_material": raw["backing_material"],
+        "current_inventory_item_model": raw["item_model"],
+        "current_inventory_textures": raw["item_textures"],
+        "current_worn_representation": raw["current_worn_representation"],
+        "current_asset_status": raw["asset_status"],
+        "rp2_inventory_texture_required": raw["rp2_inventory_texture_required"],
+        "rp2_worn_model_required": raw["rp2_worn_model_required"],
+        "notes": raw["rp2_inventory_reason"],
+    }
+
+
+def requirement_handoff(raw: dict) -> dict:
+    return {
+        "status": raw["status"],
+        "asset_type": raw["asset_type"],
+        "template_ids": raw["template_ids"],
+        "gear_line": raw["gear_line"],
+        "family": raw["family"],
+        "slot": raw["slot"],
+        "current_visual_mode": raw["current_visual_mode"],
+        "reason": raw["reason"],
+    }
+
+
 def published() -> dict[str, str]:
-    authority, generated, errors = generator.build()
+    _authority, generated, errors = generator.build()
     if errors:
         raise SystemExit("RP2 authority is not publishable: " + "; ".join(errors))
 
@@ -57,16 +96,28 @@ def published() -> dict[str, str]:
         },
     }
 
+    raw_armor = json.loads(generated["equipment-rp2-armor-matrix.json"])
+    armor_matrix = {"schema": 1, "armor": [armor_handoff(row) for row in raw_armor["armor"]]}
+
+    raw_required = json.loads(generated["equipment-rp2-required-new.json"])
+    required_new = {
+        "schema": 1,
+        "inventory_item_requirements": [requirement_handoff(row) for row in raw_required["inventory_item_requirements"]],
+        "worn_line_requirements": [requirement_handoff(row) for row in raw_required["worn_line_requirements"]],
+        "material_item_texture_requirements": raw_required["material_item_texture_requirements"],
+        "other_equipment_texture_requirements": raw_required["other_equipment_texture_requirements"],
+    }
+
     result: dict[str, str] = {
         "equipment-rp2-asset-manifest.json": canonical(compact_manifest) + "\n",
+        "equipment-rp2-armor-matrix.json": canonical(armor_matrix) + "\n",
+        "equipment-rp2-required-new.json": canonical(required_new) + "\n",
     }
     for name in (
-        "equipment-rp2-armor-matrix.json",
         "equipment-rp2-gear-lines.json",
         "equipment-rp2-materials.json",
         "equipment-rp2-worn-fallback.json",
         "equipment-rp2-safe-delete.json",
-        "equipment-rp2-required-new.json",
         "equipment-rp2-final-authority.json",
     ):
         result[name] = canonical(json.loads(generated[name])) + "\n"
