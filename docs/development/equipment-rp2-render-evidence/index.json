@@ -12,7 +12,7 @@
       "kind": "worn",
       "line_id": "holdlen",
       "path": "docs/development/equipment-rp2-authored-sources/holdlen-worn-source.png",
-      "sha256": "52b17685a56ba665bfffc9fd624ec73d70a55e8e2ad8b86922469bf2c3291aa7"
+      "sha256": "31d2d8dbc750a939f81a15ef6f3f0cb1fdb65edd2ba21b2b0a1d9c84145bede0"
     },
     {
       "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
@@ -26,7 +26,7 @@
       "kind": "worn",
       "line_id": "vadbor",
       "path": "docs/development/equipment-rp2-authored-sources/vadbor-worn-source.png",
-      "sha256": "c8fd282c4deb5e771cb5dbda55e3722d83b025b6ce5494b5cc2cdf68c82d9dcd"
+      "sha256": "2029898fb78ae10697eacfcb7d53869d6eaff9a112ceb491940dac7e5faca3f7"
     },
     {
       "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
@@ -40,7 +40,7 @@
       "kind": "worn",
       "line_id": "konnyu_otvozet",
       "path": "docs/development/equipment-rp2-authored-sources/konnyu_otvozet-worn-source.png",
-      "sha256": "18e1dac3eefc1db5be8a477228efcc76ee102a1bfa36e18ab4bc8b5976c3a8d2"
+      "sha256": "078d4f9ef198692ef2498c02a40808660dbebbcbdd8a441c71c9e7d1f982b660"
     },
     {
       "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
@@ -54,7 +54,7 @@
       "kind": "worn",
       "line_id": "borostyan_tarna",
       "path": "docs/development/equipment-rp2-authored-sources/borostyan_tarna-worn-source.png",
-      "sha256": "96e20c02b873b85363e135ef62e38fceadb0841046f9a468308b2f5d24916d00"
+      "sha256": "e5d37b23469788821307debee0c2181ea89eceeb9d98521f6e42d390c9399d80"
     }
   ],
   "comparison": "docs/development/equipment-rp2-render-evidence/family-comparison.png",
@@ -110,5 +110,6 @@
   "proof_mode": "OFFLINE_DETERMINISTIC_RENDER",
   "scale_readability": "docs/development/equipment-rp2-render-evidence/scale-readability.png",
   "schema": 1,
-  "skin_compatibility": "docs/development/equipment-rp2-render-evidence/skin-compatibility.png"
+  "skin_compatibility": "docs/development/equipment-rp2-render-evidence/skin-compatibility.png",
+  "worn_reference_comparison": "docs/development/equipment-rp2-render-evidence/worn-reference-comparison.png"
 }

@@ -225,6 +225,124 @@ def project_imagegen_worn(line: dict[str, Any], main: Image.Image, leggings: Ima
                 leggings.alpha_composite(texture, (box[0], box[1]))
 
 
+def paint_face_pattern(image: Image.Image, box: tuple[int, int, int, int], pattern: tuple[str, ...],
+                       palette: list[tuple[int, int, int, int]]) -> None:
+    """Paint one authored low-resolution motif directly onto a vanilla armor UV face."""
+    width = box[2] - box[0]
+    height = box[3] - box[1]
+    if len(pattern) != height or any(len(row) != width for row in pattern):
+        raise SystemExit(f"Invalid worn UV pattern {width}x{height}: {pattern}")
+    values = {
+        ".": (0, 0, 0, 0),
+        "d": palette[0], "b": palette[1], "m": palette[2], "l": palette[3],
+        "s": palette[4], "a": palette[5],
+    }
+    pixels = image.load()
+    for y, row in enumerate(pattern):
+        for x, token in enumerate(row):
+            pixels[box[0] + x, box[1] + y] = values[token]
+
+
+def paint_imagegen_identity(line: dict[str, Any], main: Image.Image, leggings: Image.Image,
+                            palette: list[tuple[int, int, int, int]]) -> None:
+    """Preserve the bold motifs of each committed ImageGen turnaround at real UV resolution."""
+    family = line["family"]
+    identity_palette = list(palette)
+    if family == "PLATE":
+        # The Art Bible secondary is the amber-bearing leather joint, not another focal glow.
+        identity_palette[4] = shade(identity_palette[4], .58)
+    patterns: dict[str, dict[str, tuple[str, ...]]]
+    if family == "CLOTH":
+        patterns = {
+            "front": {
+                "head": ("mbllllbm", "lbbbbbbm", "lb....bm", "lb....bm", "lb....bm", "lb....bm", "lbbbbbbm", "mssssssm"),
+                "body": ("lbbbbbbm", "lbbllbbm", "lblbbbmm", "lbllbbmm", "lbllbbmm", "lblbbbmm", "lbbllbbm", "lbbbbbbm", "ssssssss", "lbbaabmm", "lbbssbmm", "mllllllm"),
+                "arm": ("mbbm", "lbbm", "lbbm", "lbbm", "lbbm", "lsbm", "sbls", "lbbm", "lbbm", "lbbm", "ssss", "mllm"),
+                "leg": ("lbbm", "lbsm", "lbam", "lbsm", "lbbm", "lbbm", "lbbm", "lbbm", "lbsm", "lsbm", "lbbm", "mllm"),
+            },
+            "back": {
+                "head": ("mbllllbm", "lbblllbm", "lbllbbbm", "lbllbbbm", "lbllbbbm", "lbblllbm", "lbbbbllm", "mllllllm"),
+                "body": ("lbbbbbbm", "lbblllbm", "lbllbbbm", "lbllbbbm", "lbllbbbm", "lbblllbm", "lbbbbllm", "lbbbbbbm", "ssssssss", "lbbbbbbm", "lbbbbbbm", "mllllllm"),
+                "arm": ("mbbm", "lbbm", "lbbm", "lbbm", "lbbm", "lsbm", "sbls", "lbbm", "lbbm", "lbbm", "ssss", "mllm"),
+                "leg": ("lbbm", "lbbm", "lbsm", "lbam", "lbsm", "lbbm", "lbbm", "lbbm", "lbbm", "lsbm", "lbbm", "mllm"),
+            },
+            "side": {
+                "head": ("mbllllbm", "lbbbbbbm", "lb....bm", "lb....bm", "lb....bm", "lb....bm", "lbbbbbbm", "mssssssm"),
+                "body": ("lbbm", "lsbm", "lbbm", "lbbm", "lbbm", "lbbm", "lbbm", "lbbm", "sbbm", "lbbm", "lbbm", "mllm"),
+                "arm": ("mbbm", "lbbm", "lbbm", "lbbm", "lbbm", "lsbm", "sbls", "lbbm", "lbbm", "lbbm", "ssss", "mllm"),
+                "leg": ("lbbm", "lbsm", "lbam", "lbsm", "lbbm", "lbbm", "lbbm", "lbbm", "lbsm", "lsbm", "lbbm", "mllm"),
+            },
+        }
+    elif family == "LEATHER":
+        patterns = {
+            "front": {
+                "head": ("bssssssb", "sbbbbbbs", "sb....bs", "sb....bs", "sb....bs", "sb....bs", "sbbbbbbs", "bbssssbb"),
+                "body": ("ssbbbbss", "ssmbbbss", "bmmbbbmb", "bmlmbmbb", "bbmmmbbb", "bbbmmmbb", "bbmbmlmb", "bmmbbmmb", "ssssssss", "bbbaabbb", "bbbssbbb", "dbbbbbbd"),
+                "arm": ("sssb", "sbbb", "mbbb", "bmbb", "bbmb", "bbbm", "ssss", "bbbs", "bbbs", "bbbs", "ssss", "dbbd"),
+                "leg": ("bmsb", "bmmb", "bbmb", "bbbm", "bbbb", "ssss", "baab", "ssss", "baab", "ssss", "bbbb", "dbbd"),
+            },
+            "back": {
+                "head": ("bbssssbb", "bbbbbbbb", "bbbsbbbb", "bbbsbbbb", "bbbsbbbb", "bbbsbbbb", "bbbsbbbb", "bbssssbb"),
+                "body": ("ssbbbbss", "smbbbbms", "bmmbbmmb", "bbmssmbb", "bbbssbbb", "bbmssmbb", "bmmbbmmb", "mmbbbbmm", "ssssssss", "bbbbbbbb", "bbbbbbbb", "dbbbbbbd"),
+                "arm": ("sssb", "sbbb", "mbbb", "bmbb", "bbmb", "bbbm", "ssss", "bbbs", "bbbs", "bbbs", "ssss", "dbbd"),
+                "leg": ("bmsb", "bmmb", "bbmb", "bbbm", "bbbb", "ssss", "bbbb", "bbbb", "ssss", "bbbb", "bbbb", "dbbd"),
+            },
+            "side": {
+                "head": ("bbssssbb", "bbbbbbbs", "bb....bs", "bb....bs", "bb....bs", "bb....bs", "bbbbbbbs", "bbssssbb"),
+                "body": ("sssb", "sbbb", "mbbb", "bmbb", "bbmb", "bbbm", "ssss", "bbbs", "bbbs", "bbbs", "ssss", "dbbd"),
+                "arm": ("sssb", "sbbb", "mbbb", "bmbb", "bbmb", "bbbm", "ssss", "bbbs", "bbbs", "bbbs", "ssss", "dbbd"),
+                "leg": ("bmsb", "bmmb", "bbmb", "bbbm", "bbbb", "ssss", "baab", "ssss", "baab", "ssss", "bbbb", "dbbd"),
+            },
+        }
+    elif family == "MAIL":
+        patterns = {
+            "front": {
+                "head": ("ldldldld", "dldldldl", "ld....ld", "dl....dl", "ld....ld", "dl....dl", "ldssssld", "sasaasas"),
+                "body": ("ldldldld", "dldldlds", "ldldldss", "dldldssb", "ldldssbl", "dldssbld", "ldssbldl", "dssbldld", "ssssssss", "bbbabbba", "bbbbbbbb", "dddddddd"),
+                "arm": ("sasa", "ldld", "dldl", "ldld", "dldl", "ldld", "sasa", "bbbb", "bbbb", "bbbb", "sasa", "dddd"),
+                "leg": ("ldld", "dldl", "ldld", "dldl", "ldld", "dldl", "ldld", "dldl", "sasa", "bbbb", "bbbb", "dddd"),
+            },
+            "back": {
+                "head": ("ldldldld", "dldldldl", "ldldldld", "dldldldl", "ldldldld", "dldldldl", "ldldldld", "sasaasas"),
+                "body": ("ldldldld", "sldldldl", "ssldldld", "bssldldl", "lbssldld", "dlbssldl", "ldlbssld", "dldlbssd", "ssssssss", "abbbabba", "bbbbbbbb", "dddddddd"),
+                "arm": ("sasa", "ldld", "dldl", "ldld", "dldl", "ldld", "sasa", "bbbb", "bbbb", "bbbb", "sasa", "dddd"),
+                "leg": ("ldld", "dldl", "ldld", "dldl", "ldld", "dldl", "ldld", "dldl", "sasa", "bbbb", "bbbb", "dddd"),
+            },
+            "side": {
+                "head": ("ldldldld", "dldldldl", "ld....ld", "dl....dl", "ld....ld", "dl....dl", "ldssssld", "sasaasas"),
+                "body": ("ldld", "dlds", "ldss", "dssb", "ssbl", "sbld", "bldl", "ldld", "ssss", "bbba", "bbbb", "dddd"),
+                "arm": ("sasa", "ldld", "dldl", "ldld", "dldl", "ldld", "sasa", "bbbb", "bbbb", "bbbb", "sasa", "dddd"),
+                "leg": ("ldld", "dldl", "ldld", "dldl", "ldld", "dldl", "ldld", "dldl", "sasa", "bbbb", "bbbb", "dddd"),
+            },
+        }
+    else:
+        patterns = {
+            "front": {
+                "head": ("dllmmlld", "lmbbbblm", "lbaaaabl", "lbddddbl", "lddddddl", "lddddddl", "lbbllbbl", "dllsslld"),
+                "body": ("dllssldd", "lssssssl", "lsllllsl", "lsmbbmsl", "lsbaabsl", "lsbaabsl", "lsmbbmsl", "lsllllsl", "lssssssl", "dbssssbd", "dbbbbbbd", "dddddddd"),
+                "arm": ("dssd", "slls", "sbbd", "lmml", "lssl", "lssl", "lmml", "sbbd", "lssl", "lmml", "sbbd", "dddd"),
+                "leg": ("dssd", "slls", "slas", "slls", "sdds", "slls", "dbbd", "ssss", "slls", "sdds", "slls", "dddd"),
+            },
+            "back": {
+                "head": ("dllmmlld", "lmbbbblm", "lmbbbblm", "lmbbbblm", "lmbbbblm", "lmbbbblm", "lbbllbbl", "dllsslld"),
+                "body": ("dllssldd", "lssssssl", "lsllllsl", "lsmbbmsl", "lsmbbmsl", "lsmbbmsl", "lsmbbmsl", "lsllllsl", "lssssssl", "dbssssbd", "dbbbbbbd", "dddddddd"),
+                "arm": ("dssd", "slls", "sbbd", "lmml", "lssl", "lssl", "lmml", "sbbd", "lssl", "lmml", "sbbd", "dddd"),
+                "leg": ("dssd", "slls", "slls", "sdds", "slls", "slls", "dbbd", "ssss", "slls", "sdds", "slls", "dddd"),
+            },
+            "side": {
+                "head": ("dllmmlld", "lmbbbblm", "lmbbbblm", "lddddddl", "lddddddl", "lddddddl", "lbbllbbl", "dllsslld"),
+                "body": ("dssd", "slls", "sbbd", "lmml", "lssl", "lssl", "lmml", "sbbd", "lssl", "lmml", "sbbd", "dddd"),
+                "arm": ("dssd", "slls", "sbbd", "lmml", "lssl", "lssl", "lmml", "sbbd", "lssl", "lmml", "sbbd", "dddd"),
+                "leg": ("dssd", "slls", "slas", "slls", "sdds", "slls", "dbbd", "ssss", "slls", "sdds", "slls", "dddd"),
+            },
+        }
+    for view, parts in patterns.items():
+        for part, pattern in parts.items():
+            paint_face_pattern(main, FACE_UV[view][part], pattern, identity_palette)
+            if part in {"body", "leg"}:
+                paint_face_pattern(leggings, FACE_UV[view][part], pattern, identity_palette)
+
+
 def worn_textures(line: dict[str, Any]) -> tuple[Image.Image, Image.Image]:
     palette = imagegen_worn_palette(line)
     dark, base, mid, light, secondary, accent = palette
@@ -328,6 +446,7 @@ def worn_textures(line: dict[str, Any]) -> tuple[Image.Image, Image.Image]:
             dm.point((x, y), fill=secondary)
         dm.rectangle((4, 23, 7, 29), outline=light)
         dm.rectangle((8, 23, 11, 29), outline=light)
+    paint_imagegen_identity(line, main, legs, palette)
     return main, legs
 
 
@@ -384,6 +503,19 @@ def comparison_sheet(renders: dict[str, Image.Image]) -> Image.Image:
     return sheet
 
 
+def worn_fidelity_sheet(references: dict[str, Image.Image], renders: dict[str, Image.Image]) -> Image.Image:
+    """Place the ImageGen front source over the actual UV render for direct fidelity review."""
+    sheet = Image.new("RGBA", (720, 560), (22, 24, 26, 255))
+    for index, family in enumerate(("CLOTH", "LEATHER", "MAIL", "PLATE")):
+        source = references[family]
+        ratio = min(164 / source.width, 260 / source.height)
+        source = source.resize((max(1, round(source.width * ratio)), max(1, round(source.height * ratio))),
+                               Image.Resampling.NEAREST)
+        sheet.alpha_composite(source, (index * 180 + (180 - source.width) // 2, (280 - source.height) // 2))
+        sheet.alpha_composite(renders[family], (index * 180, 280))
+    return sheet
+
+
 def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Path, bytes], dict[str, Any]]:
     by_id = {line["canonical_line_id"]: line for line in art["gear_lines"]}
     selected = selection["selected_lines"]
@@ -392,6 +524,7 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
     files: dict[Path, bytes] = {}
     piece_records: list[dict[str, Any]] = []
     family_front: dict[str, Image.Image] = {}
+    family_reference: dict[str, Image.Image] = {}
     evidence_index: list[dict[str, Any]] = []
     custom_assets: list[str] = []
     custom_models: list[str] = []
@@ -451,6 +584,7 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
 
         views = {view: mannequin(main, leggings, view, (177, 132, 104, 255)) for view in ("front", "back", "side")}
         family_front[line["family"]] = views["front"]
+        family_reference[line["family"]] = authored_worn_view(line_id, 0)
         inventory = inventory_sheet(line, icons)
         line_evidence = []
         for name, image in {"inventory": inventory, **views}.items():
@@ -460,6 +594,8 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
         evidence_index.append({"line_id": line_id, "family": line["family"], "proof_mode": "OFFLINE_DETERMINISTIC_RENDER", "files": line_evidence})
 
     files[EVIDENCE / "family-comparison.png"] = png_bytes(comparison_sheet(family_front))
+    files[EVIDENCE / "worn-reference-comparison.png"] = png_bytes(
+        worn_fidelity_sheet(family_reference, family_front))
     skin_sheet = Image.new("RGBA", (720, 840), (22, 24, 26, 255))
     skin_values = [(78, 52, 43, 255), (177, 132, 104, 255), (224, 184, 151, 255)]
     for row, skin in enumerate(skin_values):
@@ -497,6 +633,7 @@ def build_files(selection: dict[str, Any], art: dict[str, Any]) -> tuple[dict[Pa
         "schema": 1, "proof_mode": "OFFLINE_DETERMINISTIC_RENDER", "human_client_staging_required": True,
         "lines": evidence_index,
         "comparison": str(EVIDENCE / "family-comparison.png"),
+        "worn_reference_comparison": str(EVIDENCE / "worn-reference-comparison.png"),
         "skin_compatibility": str(EVIDENCE / "skin-compatibility.png"),
         "scale_readability": str(EVIDENCE / "scale-readability.png"),
         "concept_reference": str(concept_reference),

@@ -172,7 +172,11 @@ def main() -> None:
     render_paths = []
     for entry in render_index.get("lines", []):
         render_paths.extend(entry.get("files", []))
-    render_paths.extend([render_index.get("comparison"), render_index.get("skin_compatibility"), render_index.get("scale_readability"), render_index.get("concept_reference")])
+    render_paths.extend([
+        render_index.get("comparison"), render_index.get("worn_reference_comparison"),
+        render_index.get("skin_compatibility"), render_index.get("scale_readability"),
+        render_index.get("concept_reference"),
+    ])
     for path_name in filter(None, render_paths):
         if not (ROOT / path_name).is_file():
             errors.append(f"missing render evidence: {path_name}")

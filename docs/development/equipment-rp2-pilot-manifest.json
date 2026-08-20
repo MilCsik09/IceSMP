@@ -13,7 +13,7 @@
       "kind": "worn",
       "line_id": "holdlen",
       "path": "docs/development/equipment-rp2-authored-sources/holdlen-worn-source.png",
-      "sha256": "52b17685a56ba665bfffc9fd624ec73d70a55e8e2ad8b86922469bf2c3291aa7"
+      "sha256": "31d2d8dbc750a939f81a15ef6f3f0cb1fdb65edd2ba21b2b0a1d9c84145bede0"
     },
     {
       "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
@@ -27,7 +27,7 @@
       "kind": "worn",
       "line_id": "vadbor",
       "path": "docs/development/equipment-rp2-authored-sources/vadbor-worn-source.png",
-      "sha256": "c8fd282c4deb5e771cb5dbda55e3722d83b025b6ce5494b5cc2cdf68c82d9dcd"
+      "sha256": "2029898fb78ae10697eacfcb7d53869d6eaff9a112ceb491940dac7e5faca3f7"
     },
     {
       "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
@@ -41,7 +41,7 @@
       "kind": "worn",
       "line_id": "konnyu_otvozet",
       "path": "docs/development/equipment-rp2-authored-sources/konnyu_otvozet-worn-source.png",
-      "sha256": "18e1dac3eefc1db5be8a477228efcc76ee102a1bfa36e18ab4bc8b5976c3a8d2"
+      "sha256": "078d4f9ef198692ef2498c02a40808660dbebbcbdd8a441c71c9e7d1f982b660"
     },
     {
       "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
@@ -55,7 +55,7 @@
       "kind": "worn",
       "line_id": "borostyan_tarna",
       "path": "docs/development/equipment-rp2-authored-sources/borostyan_tarna-worn-source.png",
-      "sha256": "96e20c02b873b85363e135ef62e38fceadb0841046f9a468308b2f5d24916d00"
+      "sha256": "e5d37b23469788821307debee0c2181ea89eceeb9d98521f6e42d390c9399d80"
     }
   ],
   "minecraft_version": "1.21.11",
@@ -65,8 +65,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/holdlen.json": "360a27a84dee1f9624d0a872c0ed135dc2fa512817b421fb18f1f173be3f8a4b",
         "resource-pack/assets/icesmp/items/holdlen_sisak.json": "24c41b069d4fa2b51fb335f57059d79c110a3a2fbd0dfecc998a342856f8cdb1",
         "resource-pack/assets/icesmp/models/item/holdlen_sisak.json": "fc0f3ad4d5c4c9f5abc2ca1bdf2b8f22e9ac28eb0ede8e44b7fe3dc3d29849d2",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png": "238fdead57cc11c14b94701e528ea5054462eb80cbda79b2509026cca8839a32",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png": "afb8c0a454d56bdeb783abb4c96e090518013d77058c93daf8ff6adc0038a331",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png": "be9aa935cde262c8ef2993dbad9f4b09935b6915ff967bafb6437cf5f4241523",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png": "5a4767ba475b712f992589a7132db6670a398429eb5d3c3855d042a8d7521788",
         "resource-pack/assets/icesmp/textures/item/holdlen_sisak.png": "53f3c6c8b2748d673d6385ab8bc9b7a9d3af905d93616c7ba06a4db90fd19c7e"
       },
       "equipment_asset": "icesmp:rp2/holdlen",
@@ -93,8 +93,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/holdlen.json": "360a27a84dee1f9624d0a872c0ed135dc2fa512817b421fb18f1f173be3f8a4b",
         "resource-pack/assets/icesmp/items/holdlen_mellvert.json": "3671e15fb795b5aef4c3b356bd59643353bf27cf863ec914a5f135b5f95049af",
         "resource-pack/assets/icesmp/models/item/holdlen_mellvert.json": "1a359681d514e96b19b6dfc1eec8164a7e587191bee80eebf7715656c712e9ec",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png": "238fdead57cc11c14b94701e528ea5054462eb80cbda79b2509026cca8839a32",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png": "afb8c0a454d56bdeb783abb4c96e090518013d77058c93daf8ff6adc0038a331",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png": "be9aa935cde262c8ef2993dbad9f4b09935b6915ff967bafb6437cf5f4241523",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png": "5a4767ba475b712f992589a7132db6670a398429eb5d3c3855d042a8d7521788",
         "resource-pack/assets/icesmp/textures/item/holdlen_mellvert.png": "dcb92b2b3552ebee43a8c46aa89d4d8cdb3335c9eebefff2bfd3c67f51c8102b"
       },
       "equipment_asset": "icesmp:rp2/holdlen",
@@ -121,8 +121,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/holdlen.json": "360a27a84dee1f9624d0a872c0ed135dc2fa512817b421fb18f1f173be3f8a4b",
         "resource-pack/assets/icesmp/items/holdlen_labvert.json": "87278f9aed2ca9cad63fd05653f4b82c994decf383d3145a89d6c0cfb4805bd9",
         "resource-pack/assets/icesmp/models/item/holdlen_labvert.json": "ecc35d52ddbfca89e0dcc8e8e8da5100e30f31dd55122db3476e85c2f9783fb0",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png": "238fdead57cc11c14b94701e528ea5054462eb80cbda79b2509026cca8839a32",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png": "afb8c0a454d56bdeb783abb4c96e090518013d77058c93daf8ff6adc0038a331",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png": "be9aa935cde262c8ef2993dbad9f4b09935b6915ff967bafb6437cf5f4241523",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png": "5a4767ba475b712f992589a7132db6670a398429eb5d3c3855d042a8d7521788",
         "resource-pack/assets/icesmp/textures/item/holdlen_labvert.png": "2da25ee2163099eb6aa5e981dc8bef61faa4863b27aeb92453b530331775fe53"
       },
       "equipment_asset": "icesmp:rp2/holdlen",
@@ -149,8 +149,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/holdlen.json": "360a27a84dee1f9624d0a872c0ed135dc2fa512817b421fb18f1f173be3f8a4b",
         "resource-pack/assets/icesmp/items/holdlen_csizma.json": "c727a04034ab6d212bca1f50724a3cb095e50a27e54475491400bdadfb1a4bc6",
         "resource-pack/assets/icesmp/models/item/holdlen_csizma.json": "4999439a032b043644a8dae517bc8a6f30055a2db79e3086d3f7dc7df8f8a939",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png": "238fdead57cc11c14b94701e528ea5054462eb80cbda79b2509026cca8839a32",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png": "afb8c0a454d56bdeb783abb4c96e090518013d77058c93daf8ff6adc0038a331",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png": "be9aa935cde262c8ef2993dbad9f4b09935b6915ff967bafb6437cf5f4241523",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png": "5a4767ba475b712f992589a7132db6670a398429eb5d3c3855d042a8d7521788",
         "resource-pack/assets/icesmp/textures/item/holdlen_csizma.png": "818fecea340a5914dad157711539ac85289b33f95bc58b61fd4819a2110589ea"
       },
       "equipment_asset": "icesmp:rp2/holdlen",
@@ -177,8 +177,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/vadbor.json": "bb51a699e0d5253d6d40fb7e3fd212c06a09407705922051b56cf2cdc6d716e3",
         "resource-pack/assets/icesmp/items/vadbor_sisak.json": "69e1c99a4d1c78d469b12b0ad34656a4cc989a19983db455bb1dca95526fa547",
         "resource-pack/assets/icesmp/models/item/vadbor_sisak.json": "f0cbb3be46cb025e5e37e95b8f42758a61c5f68f919c21eac489c4d784be1c03",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png": "a880cc13ec7e9536213fc3db27e704804c2cd2e4c58fa8c9333386015c8a9a00",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png": "bf9b90144313a4398a9ae26f503faa1c5005b53714a3e69ed4acf255fb32c73a",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png": "8b2691f959f04c825c8809b7956192b524408eee38aae9f671f80bbd9ecf5d56",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png": "3c216fc436e38002d370056007ca5f83c8166a274a919df45690a2fd1b992e19",
         "resource-pack/assets/icesmp/textures/item/vadbor_sisak.png": "3fe65e5673a93edd59adeba5819b979e979c9bcfe912d8588e68bc831f9a5c66"
       },
       "equipment_asset": "icesmp:rp2/vadbor",
@@ -205,8 +205,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/vadbor.json": "bb51a699e0d5253d6d40fb7e3fd212c06a09407705922051b56cf2cdc6d716e3",
         "resource-pack/assets/icesmp/items/vadbor_mellvert.json": "9a7e110d2fe658e77c1c2a2a332e1b3749fb548bf8f1daa7c7b9e571bdd972df",
         "resource-pack/assets/icesmp/models/item/vadbor_mellvert.json": "a785262afdce98df1c4a6736945595e1acaf47863d72f1e5f4804382a975ec14",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png": "a880cc13ec7e9536213fc3db27e704804c2cd2e4c58fa8c9333386015c8a9a00",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png": "bf9b90144313a4398a9ae26f503faa1c5005b53714a3e69ed4acf255fb32c73a",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png": "8b2691f959f04c825c8809b7956192b524408eee38aae9f671f80bbd9ecf5d56",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png": "3c216fc436e38002d370056007ca5f83c8166a274a919df45690a2fd1b992e19",
         "resource-pack/assets/icesmp/textures/item/vadbor_mellvert.png": "906d4b4c1cc49f7b0f12a94931df24c6c28162ddb068b468dac4abad3d1e6360"
       },
       "equipment_asset": "icesmp:rp2/vadbor",
@@ -233,8 +233,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/vadbor.json": "bb51a699e0d5253d6d40fb7e3fd212c06a09407705922051b56cf2cdc6d716e3",
         "resource-pack/assets/icesmp/items/vadbor_labvert.json": "1b192c3a07b1d37dca28fe47fc7f6902e1d0f2ea7c446bc3bd614b6f7abe20dc",
         "resource-pack/assets/icesmp/models/item/vadbor_labvert.json": "35d3f590a22de812bd360fd84d7a165a663558d7c26c88b74c4eaf212b36defe",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png": "a880cc13ec7e9536213fc3db27e704804c2cd2e4c58fa8c9333386015c8a9a00",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png": "bf9b90144313a4398a9ae26f503faa1c5005b53714a3e69ed4acf255fb32c73a",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png": "8b2691f959f04c825c8809b7956192b524408eee38aae9f671f80bbd9ecf5d56",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png": "3c216fc436e38002d370056007ca5f83c8166a274a919df45690a2fd1b992e19",
         "resource-pack/assets/icesmp/textures/item/vadbor_labvert.png": "13db45e5056f439b029253e43f26331a6b815c53d7e648078e5669d9f5f24809"
       },
       "equipment_asset": "icesmp:rp2/vadbor",
@@ -261,8 +261,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/vadbor.json": "bb51a699e0d5253d6d40fb7e3fd212c06a09407705922051b56cf2cdc6d716e3",
         "resource-pack/assets/icesmp/items/vadbor_csizma.json": "6a70ac2f57ccd417d8cea293853d62ac2292f647e09fa408a825820813dfd092",
         "resource-pack/assets/icesmp/models/item/vadbor_csizma.json": "d2969d31745aad6a8d92ee3592392d0ff5910dbb2173429240179af8d36abd4c",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png": "a880cc13ec7e9536213fc3db27e704804c2cd2e4c58fa8c9333386015c8a9a00",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png": "bf9b90144313a4398a9ae26f503faa1c5005b53714a3e69ed4acf255fb32c73a",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png": "8b2691f959f04c825c8809b7956192b524408eee38aae9f671f80bbd9ecf5d56",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png": "3c216fc436e38002d370056007ca5f83c8166a274a919df45690a2fd1b992e19",
         "resource-pack/assets/icesmp/textures/item/vadbor_csizma.png": "40530dddea30d66d1e84b8266184e4fc486d2f67ae157c3a369a28680aec013f"
       },
       "equipment_asset": "icesmp:rp2/vadbor",
@@ -289,8 +289,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/konnyu_otvozet.json": "9f870224729a4e84ac696afa9731d30f3adb45091c67472e904f2ef1aac31425",
         "resource-pack/assets/icesmp/items/konnyu_otvozet_sisak.json": "bdfb2e24467c6fb4c3ff9db3b844b226368d7a3826216a076ad1684fcbeb2229",
         "resource-pack/assets/icesmp/models/item/konnyu_otvozet_sisak.json": "6147ccd7a6da87b0fe8f783a302a3421ae69652bd3b5313a171db5dc839ea6c4",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png": "890c20e1959b41bd7255cc376a7c1780059968b70e778a4d964866f239159b8f",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png": "e5a1214a4a48cb73322ecb40612a5f7a297376bcf0e02ccfa63d76fbc2fc76af",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png": "986692e6f5d5d4ab2b8e65ef0e22a1e9ae144e751f000091a1a9bb53fb5ccde7",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png": "1aebed39dccfe6fdad602baa8d314fc6bb94e49e0c60848111e8d3a5a81c02bc",
         "resource-pack/assets/icesmp/textures/item/konnyu_otvozet_sisak.png": "0401f65dc91fade7a59c61047299e9f3ed3242b47c3a460bdc05aa660624e896"
       },
       "equipment_asset": "icesmp:rp2/konnyu_otvozet",
@@ -317,8 +317,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/konnyu_otvozet.json": "9f870224729a4e84ac696afa9731d30f3adb45091c67472e904f2ef1aac31425",
         "resource-pack/assets/icesmp/items/konnyu_otvozet_mellvert.json": "338d1e9e712208a42a4284d7a05c4dbe82eb058204ef38150b4702377c75b722",
         "resource-pack/assets/icesmp/models/item/konnyu_otvozet_mellvert.json": "f161903dc5d030915ec9fa30161806ecf99a84d75d9068db1c0c2bbff3182371",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png": "890c20e1959b41bd7255cc376a7c1780059968b70e778a4d964866f239159b8f",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png": "e5a1214a4a48cb73322ecb40612a5f7a297376bcf0e02ccfa63d76fbc2fc76af",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png": "986692e6f5d5d4ab2b8e65ef0e22a1e9ae144e751f000091a1a9bb53fb5ccde7",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png": "1aebed39dccfe6fdad602baa8d314fc6bb94e49e0c60848111e8d3a5a81c02bc",
         "resource-pack/assets/icesmp/textures/item/konnyu_otvozet_mellvert.png": "c260ce7d8956c580d1bced03777535e015464846e5e5ac36b8bdf470bba3bdb5"
       },
       "equipment_asset": "icesmp:rp2/konnyu_otvozet",
@@ -345,8 +345,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/konnyu_otvozet.json": "9f870224729a4e84ac696afa9731d30f3adb45091c67472e904f2ef1aac31425",
         "resource-pack/assets/icesmp/items/konnyu_otvozet_labvert.json": "a17875e71e9eb697ce8c77ee875892b0a48ec297570169cb5bb79907f72c760c",
         "resource-pack/assets/icesmp/models/item/konnyu_otvozet_labvert.json": "5978908b19fa7c2a90daa1031685a2ef066c937a99514eb3e50fa2de467bfda0",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png": "890c20e1959b41bd7255cc376a7c1780059968b70e778a4d964866f239159b8f",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png": "e5a1214a4a48cb73322ecb40612a5f7a297376bcf0e02ccfa63d76fbc2fc76af",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png": "986692e6f5d5d4ab2b8e65ef0e22a1e9ae144e751f000091a1a9bb53fb5ccde7",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png": "1aebed39dccfe6fdad602baa8d314fc6bb94e49e0c60848111e8d3a5a81c02bc",
         "resource-pack/assets/icesmp/textures/item/konnyu_otvozet_labvert.png": "684f1be9b2a4da5513fd0fd86fd9573727752f2681d262f1808c354d39defb8e"
       },
       "equipment_asset": "icesmp:rp2/konnyu_otvozet",
@@ -373,8 +373,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/konnyu_otvozet.json": "9f870224729a4e84ac696afa9731d30f3adb45091c67472e904f2ef1aac31425",
         "resource-pack/assets/icesmp/items/konnyu_otvozet_csizma.json": "74ba02a1d14c6ca472280bcf76800ed7be543f0d0434b71e0af12f72938e55bf",
         "resource-pack/assets/icesmp/models/item/konnyu_otvozet_csizma.json": "20770db998624a7df35ddf7fb59f4877b73d9ae7a59a7c17fcf4e389ffcbe3dc",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png": "890c20e1959b41bd7255cc376a7c1780059968b70e778a4d964866f239159b8f",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png": "e5a1214a4a48cb73322ecb40612a5f7a297376bcf0e02ccfa63d76fbc2fc76af",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png": "986692e6f5d5d4ab2b8e65ef0e22a1e9ae144e751f000091a1a9bb53fb5ccde7",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png": "1aebed39dccfe6fdad602baa8d314fc6bb94e49e0c60848111e8d3a5a81c02bc",
         "resource-pack/assets/icesmp/textures/item/konnyu_otvozet_csizma.png": "d6e34260b4ed553eecfdd5dfef4d04293ee642c8224b93f886c8f9e961a85756"
       },
       "equipment_asset": "icesmp:rp2/konnyu_otvozet",
@@ -401,8 +401,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/borostyan_tarna.json": "1676cfcdf706657bb0ad45438895cd3de907fe3b435a7e328d359a2ead0f0ad1",
         "resource-pack/assets/icesmp/items/borostyan_tarna_sisak.json": "9a9674a05221ef68985665bab8d2bd96ab6fd4b470f00d0d960108d59cec5ac6",
         "resource-pack/assets/icesmp/models/item/borostyan_tarna_sisak.json": "158715dba7b72cc5f15d931865f8ec7357e5bb49d02b95d91cae6619467d25a6",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png": "df8d96acb6f363c47af12e41a454b37d9438d8ba6d3896cd3cee5d8e54089568",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png": "36cc22595b10616ba6921deae60cbfea3dd1a43a5265c9eae099a9315f4d31ad",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png": "e768c67d44cd75d003e896500c9819061e165c7c17aa377e948fed6ab9908978",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png": "2130a60f63893cd3e3d060955bbb5fb067d96086b8e1e2975812fa80b6069163",
         "resource-pack/assets/icesmp/textures/item/borostyan_tarna_sisak.png": "1710ae605cb1d3ece09221897d23f139b4734d9fe3175d235aa52ddadfd34e50"
       },
       "equipment_asset": "icesmp:rp2/borostyan_tarna",
@@ -429,8 +429,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/borostyan_tarna.json": "1676cfcdf706657bb0ad45438895cd3de907fe3b435a7e328d359a2ead0f0ad1",
         "resource-pack/assets/icesmp/items/melysegi_borostyan_mellvert.json": "6390503a300b3475248cdc2ba8e27342a4dcde8c04a3ae19bbe2e14326dc2c7f",
         "resource-pack/assets/icesmp/models/item/melysegi_borostyan_mellvert.json": "5ebec0ea6aea54031461baa843638ce271d356863bd596bd28087aa9bd328980",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png": "df8d96acb6f363c47af12e41a454b37d9438d8ba6d3896cd3cee5d8e54089568",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png": "36cc22595b10616ba6921deae60cbfea3dd1a43a5265c9eae099a9315f4d31ad",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png": "e768c67d44cd75d003e896500c9819061e165c7c17aa377e948fed6ab9908978",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png": "2130a60f63893cd3e3d060955bbb5fb067d96086b8e1e2975812fa80b6069163",
         "resource-pack/assets/icesmp/textures/item/melysegi_borostyan_mellvert.png": "30b82ff28a3cfc4de749d51e40df7dda8b66096fbd7e2c44b1eb748d025425aa"
       },
       "equipment_asset": "icesmp:rp2/borostyan_tarna",
@@ -457,8 +457,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/borostyan_tarna.json": "1676cfcdf706657bb0ad45438895cd3de907fe3b435a7e328d359a2ead0f0ad1",
         "resource-pack/assets/icesmp/items/borostyan_tarna_labvert.json": "4bd7977a8504a0e09e612fe55c491aa2d7ba0e599336efe65f46c91bed8487b0",
         "resource-pack/assets/icesmp/models/item/borostyan_tarna_labvert.json": "1a7b9a07f5417943a325acd4daf56c74300b0ce4e32aef2a99db10b798bad24b",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png": "df8d96acb6f363c47af12e41a454b37d9438d8ba6d3896cd3cee5d8e54089568",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png": "36cc22595b10616ba6921deae60cbfea3dd1a43a5265c9eae099a9315f4d31ad",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png": "e768c67d44cd75d003e896500c9819061e165c7c17aa377e948fed6ab9908978",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png": "2130a60f63893cd3e3d060955bbb5fb067d96086b8e1e2975812fa80b6069163",
         "resource-pack/assets/icesmp/textures/item/borostyan_tarna_labvert.png": "b4c813c2ff0969fcdfa18a6276eef87c59a394dbe222cd0d5a65a615f8fd6f40"
       },
       "equipment_asset": "icesmp:rp2/borostyan_tarna",
@@ -485,8 +485,8 @@
         "resource-pack/assets/icesmp/equipment/rp2/borostyan_tarna.json": "1676cfcdf706657bb0ad45438895cd3de907fe3b435a7e328d359a2ead0f0ad1",
         "resource-pack/assets/icesmp/items/borostyan_tarna_csizma.json": "3b4295c5cf27ae0fd8fbe8c8c98210770e346ab8c92d528c2de4af093b4bb15b",
         "resource-pack/assets/icesmp/models/item/borostyan_tarna_csizma.json": "7cc6d63ca58732d87fb214787745b878bb41537fb1314b4b275b2fbf0cb54f73",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png": "df8d96acb6f363c47af12e41a454b37d9438d8ba6d3896cd3cee5d8e54089568",
-        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png": "36cc22595b10616ba6921deae60cbfea3dd1a43a5265c9eae099a9315f4d31ad",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png": "e768c67d44cd75d003e896500c9819061e165c7c17aa377e948fed6ab9908978",
+        "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png": "2130a60f63893cd3e3d060955bbb5fb067d96086b8e1e2975812fa80b6069163",
         "resource-pack/assets/icesmp/textures/item/borostyan_tarna_csizma.png": "2be80a723fb2ea32ab70bc921dc02d9abe3119bfc00a7857442e473e100ce259"
       },
       "equipment_asset": "icesmp:rp2/borostyan_tarna",
