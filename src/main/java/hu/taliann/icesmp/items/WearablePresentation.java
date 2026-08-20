@@ -21,14 +21,15 @@ import java.util.stream.Collectors;
  * existing {@code EQUIPPABLE} component controls the appearance while the item is worn. These are
  * deliberately separate identities even when the current content uses the same IceSMP render id.
  *
- * <p>The helper never synthesizes a new {@link Equippable} component. Armor slot, equip sound,
- * swappability, damage-on-hurt and every other vanilla property are preserved by cloning the
- * component already provided by the item's material and changing only {@code assetId}.
+ * <p>The helper never synthesizes a replacement equipment slot. Custom worn presentation clones the
+ * current {@link Equippable} component and changes only {@code assetId}. The RP2-A vanilla reset does
+ * the inverse: it restores only the backing Material's vanilla {@code assetId}, preserving slot,
+ * equip sound, swappability, damage-on-hurt and every other authored/vanilla equipment property.
  *
- * <p>Configuration convention: an explicit {@code equipment-asset} always wins. If it is omitted,
- * an already-equippable item may use its {@code icesmp:*} {@code item-model} only when the material
- * is covered by the shared, versioned {@code wearable-fallback-policy.properties}. The same policy
- * is consumed by resource-pack validation, so runtime fallback eligibility cannot drift from CI.
+ * <p>The shared, versioned {@code wearable-fallback-policy.properties} is consumed by runtime and
+ * resource-pack validation. It also declares temporary RP2-A vanilla inventory fallbacks for
+ * production ids whose old config points at a non-existent item definition. Those ids are skipped
+ * intentionally instead of being sent to the client as broken ITEM_MODEL references.
  */
 @SuppressWarnings("UnstableApiUsage")
 public final class WearablePresentation {
@@ -39,13 +40,15 @@ public final class WearablePresentation {
     public enum EquipmentAssetStatus {
         NOT_REQUESTED,
         APPLIED,
+        VANILLA_FALLBACK_APPLIED,
         NOT_EQUIPPABLE,
         INVALID_ASSET_ID
     }
 
     public record Result(String itemModel, String equipmentAsset, EquipmentAssetStatus equipmentStatus) {
         public boolean equipmentApplied() {
-            return equipmentStatus == EquipmentAssetStatus.APPLIED;
+            return equipmentStatus == EquipmentAssetStatus.APPLIED
+                    || equipmentStatus == EquipmentAssetStatus.VANILLA_FALLBACK_APPLIED;
         }
     }
 
@@ -58,9 +61,15 @@ public final class WearablePresentation {
      */
     public static Result applyWearablePresentation(final ItemStack item, final String itemModelId,
                                                     final String equipmentAssetId) {
-        final String normalizedModel = normalize(itemModelId);
+        final String requestedModel = normalize(itemModelId);
+        final String normalizedModel = requestedModel != null && !forcesVanillaItemModel(requestedModel)
+                ? requestedModel : null;
         if (normalizedModel != null) {
             ItemDataFactory.applyItemModel(item, normalizedModel);
+        }
+
+        if (item != null && forcesVanillaWornMaterial(item.getType().name())) {
+            return new Result(normalizedModel, null, restoreVanillaEquipmentAsset(item));
         }
 
         final String resolvedEquipment = resolveEquipmentAsset(item, normalizedModel, equipmentAssetId);
@@ -100,8 +109,29 @@ public final class WearablePresentation {
     }
 
     /**
-     * Explicit asset ids win. Otherwise only a genuinely equippable item whose Material is covered
-     * by the shared 1.21.11 fallback policy may use the same render id for its equipment asset.
+     * RP2-A temporary reset: copy only the backing Material's vanilla asset id onto the current
+     * component. This is idempotent and also repairs already-serialized items that still carry a
+     * legacy custom asset id when they pass through the normal refresh/presentation boundary.
+     */
+    static EquipmentAssetStatus restoreVanillaEquipmentAsset(final ItemStack item) {
+        if (item == null) {
+            return EquipmentAssetStatus.NOT_REQUESTED;
+        }
+        final Equippable current = item.getData(DataComponentTypes.EQUIPPABLE);
+        final Equippable vanilla = new ItemStack(item.getType()).getData(DataComponentTypes.EQUIPPABLE);
+        if (current == null || vanilla == null) {
+            return EquipmentAssetStatus.NOT_EQUIPPABLE;
+        }
+        item.setData(DataComponentTypes.EQUIPPABLE,
+                current.toBuilder()
+                        .assetId(vanilla.assetId())
+                        .build());
+        return EquipmentAssetStatus.VANILLA_FALLBACK_APPLIED;
+    }
+
+    /**
+     * Explicit asset ids win for non-reset equipment. Otherwise only a genuinely equippable item
+     * whose Material is covered by the shared 1.21.11 fallback policy may use the same render id.
      */
     static String resolveEquipmentAsset(final ItemStack item, final String normalizedItemModel,
                                         final String explicitEquipmentAsset) {
@@ -123,6 +153,14 @@ public final class WearablePresentation {
         return FALLBACK_POLICY.allows(materialName);
     }
 
+    static boolean forcesVanillaWornMaterial(final String materialName) {
+        return FALLBACK_POLICY.forcesVanillaWorn(materialName);
+    }
+
+    static boolean forcesVanillaItemModel(final String itemModelId) {
+        return FALLBACK_POLICY.forcesVanillaItemModel(normalize(itemModelId));
+    }
+
     static String fallbackPolicyMinecraftVersion() {
         return FALLBACK_POLICY.minecraftVersion();
     }
@@ -136,7 +174,8 @@ public final class WearablePresentation {
     }
 
     private record FallbackPolicy(String minecraftVersion, Set<String> exactMaterials,
-                                  List<String> materialSuffixes) {
+                                  List<String> materialSuffixes, List<String> vanillaWornSuffixes,
+                                  Set<String> vanillaItemModels) {
 
         static FallbackPolicy load() {
             final Properties properties = new Properties();
@@ -158,13 +197,20 @@ public final class WearablePresentation {
                 throw new IllegalStateException("wearable fallback policy is missing minecraft-version");
             }
 
-            final Set<String> exact = csv(properties.getProperty("exact", "")).stream()
+            final Set<String> exact = csvUpper(properties.getProperty("exact", "")).stream()
                     .collect(Collectors.toUnmodifiableSet());
-            final List<String> suffixes = List.copyOf(csv(properties.getProperty("suffix", "")));
+            final List<String> suffixes = List.copyOf(csvUpper(properties.getProperty("suffix", "")));
+            final List<String> vanillaWorn = List.copyOf(csvUpper(
+                    properties.getProperty("vanilla-worn-suffix", "")));
+            final Set<String> vanillaModels = csvIds(properties.getProperty(
+                    "vanilla-item-model", "")).stream().collect(Collectors.toUnmodifiableSet());
             if (exact.isEmpty() && suffixes.isEmpty()) {
-                throw new IllegalStateException("wearable fallback policy contains no material rules");
+                throw new IllegalStateException("wearable fallback policy contains no implicit material rules");
             }
-            return new FallbackPolicy(minecraftVersion, exact, suffixes);
+            if (vanillaWorn.isEmpty()) {
+                throw new IllegalStateException("wearable fallback policy contains no RP2 vanilla-worn rules");
+            }
+            return new FallbackPolicy(minecraftVersion, exact, suffixes, vanillaWorn, vanillaModels);
         }
 
         boolean allows(final String materialName) {
@@ -178,7 +224,19 @@ public final class WearablePresentation {
             return materialSuffixes.stream().anyMatch(normalized::endsWith);
         }
 
-        private static List<String> csv(final String raw) {
+        boolean forcesVanillaWorn(final String materialName) {
+            if (materialName == null || materialName.isBlank()) {
+                return false;
+            }
+            final String normalized = materialName.trim().toUpperCase(Locale.ROOT);
+            return vanillaWornSuffixes.stream().anyMatch(normalized::endsWith);
+        }
+
+        boolean forcesVanillaItemModel(final String itemModelId) {
+            return itemModelId != null && vanillaItemModels.contains(itemModelId.toLowerCase(Locale.ROOT));
+        }
+
+        private static List<String> csvUpper(final String raw) {
             if (raw == null || raw.isBlank()) {
                 return List.of();
             }
@@ -186,6 +244,18 @@ public final class WearablePresentation {
                     .map(String::trim)
                     .filter(value -> !value.isEmpty())
                     .map(value -> value.toUpperCase(Locale.ROOT))
+                    .toList();
+        }
+
+        private static List<String> csvIds(final String raw) {
+            if (raw == null || raw.isBlank()) {
+                return List.of();
+            }
+            return Arrays.stream(raw.split(","))
+                    .map(String::trim)
+                    .filter(value -> !value.isEmpty())
+                    .map(WearablePresentation::normalize)
+                    .filter(java.util.Objects::nonNull)
                     .toList();
         }
     }
