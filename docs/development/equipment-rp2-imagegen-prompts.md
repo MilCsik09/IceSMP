@@ -8,9 +8,9 @@ Shared worn constraints: three equal-scale Minecraft-proportioned views in FRONT
 
 ### UV-fidelity revision
 
-The four worn sheets were regenerated after the first offline render showed that concept-scale details did not survive the vanilla atlas. The replacement prompts explicitly require flush vanilla player boxes, separated limbs, orthographic alignment and motifs readable at the canonical face budgets. Runtime textures retain the vanilla 64×32 UV coordinate grid at 2× sampling (128×64), so a face receives 16×16 / 16×24 / 8×24 texels without changing model geometry. Protruding geometry is forbidden.
+The four worn sheets were regenerated after the first offline render showed that concept-scale details did not survive the vanilla atlas. The latest replacement pass preserves the existing four identities but authors meaningful detail for the inventory-matched 4× face budgets. Runtime textures retain the vanilla 64×32 UV coordinate grid at 4× sampling (256×128), so a head/torso/arm/leg face receives 32×32 / 32×48 / 16×48 / 16×48 texels without changing model geometry. Protruding geometry is forbidden.
 
-Shared replacement prompt core: redesign the attached line reference as a strict Minecraft Java 1.21.11 vanilla-humanoid worn set; exactly FRONT, BACK and RIGHT SIDE orthographic views at one scale and baseline; rigid neutral pose; only rectangular head/body/arm/leg boxes; deliberately low-resolution Minecraft pixel art with large clusters and hard edges; preserve the named line motifs at the real 8×8 / 8×12 / 4×12 / 4×12 face budgets; no external geometry, perspective, overlapping limbs, labels, watermark, cast shadow or details that cannot survive the final atlas.
+Shared replacement prompt core: re-author the attached line reference as a strict Minecraft Java 1.21.11 vanilla-humanoid worn set for a 256×128 runtime atlas; exactly FRONT, BACK and RIGHT SIDE orthographic views at one scale and baseline; rigid neutral pose; only rectangular head/body/arm/leg boxes; deliberately authored Minecraft pixel clusters with hard edges; preserve the named line motifs at the effective 32×32 / 32×48 / 16×48 / 16×48 4× face budgets; no external geometry, perspective, overlapping limbs, labels, watermark, cast shadow or details that cannot survive the final atlas.
 
 ### Client UV correction reference
 
@@ -48,4 +48,4 @@ Worn replacement specifics: closed helmet with bold brow and narrow dark visor; 
 
 ## Deterministic handoff
 
-Every source path, authoring mode and SHA-256 digest is stored in `equipment-rp2-pilot-manifest.json`. Missing or changed source sheets fail validation. Runtime production does not require imagegen: committed 64×64 inventory and 128×64 worn PNGs remain the client authority.
+Every source path, authoring mode and SHA-256 digest is stored in `equipment-rp2-pilot-manifest.json`. Missing or changed source sheets fail validation. Runtime production does not require imagegen: committed 64×64 inventory and 256×128 worn PNGs remain the client authority.

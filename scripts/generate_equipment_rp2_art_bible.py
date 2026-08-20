@@ -22,8 +22,8 @@ GLOBAL_POLICY: dict[str, Any] = {
     "style": "Minecraft-native MMORPG",
     "inventory_texture_resolution": [64, 64],
     "inventory_logical_pixel_density": [32, 32],
-    "worn_texture_resolution": [128, 64],
-    "pixel_density_philosophy": "Author inventory art on a 32x logical grid and nearest-neighbour upscale to 64x; worn art keeps the fixed 1.21.11 64x32 UV coordinate grid at 2x texture sampling (128x64).",
+    "worn_texture_resolution": [256, 128],
+    "pixel_density_philosophy": "Inventory art is 4x the vanilla 16x16 item grid at 64x64; worn art keeps the fixed 1.21.11 64x32 UV coordinate grid at the same 4x texture sampling density (256x128).",
     "shading_philosophy": "Four-to-six authored value steps, hard pixel clusters, no smooth PBR gradients or single-pixel confetti noise.",
     "value_contrast": "Family construction must remain readable in grayscale; reserve the brightest value for material edges or one focal motif.",
     "saturation": "Most surfaces stay low-to-medium saturation; one controlled line accent may be saturated.",
@@ -265,7 +265,7 @@ Generated from production-derived gear-line and armor-matrix authority. The JSON
 
 - Style: Minecraft-native MMORPG.
 - Inventory: 64×64 physical texture, authored on a 32×32 logical pixel grid.
-- Worn: Minecraft 1.21.11 fixed 64×32 humanoid equipment UV coordinate grid, sampled at 2× as 128×64 runtime textures.
+- Worn: Minecraft 1.21.11 fixed 64×32 humanoid equipment UV coordinate grid, sampled at the same 4× density as inventory art, producing 256×128 runtime textures.
 - Material/construction and silhouette must communicate family before palette.
 - Emissive levels are 0–3 and are reserved; the pilot introduces no emissive/shader dependency.
 - Higher progression means more sophisticated construction and motif integration, not automatic gold, glow or visual noise.

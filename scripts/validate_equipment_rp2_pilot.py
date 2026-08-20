@@ -22,6 +22,7 @@ ARMOR = DOCS / "equipment-rp2-armor-matrix.json"
 FINAL = DOCS / "equipment-rp2-final-authority.json"
 CONFIG = ROOT / "src/main/resources/config/equipment-catalog-expansion.yml"
 REPORT_DIR = ROOT / "build/reports/equipment-rp2-b"
+EXPECTED_WORN_SIZE = (256, 128)
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -61,6 +62,11 @@ def alpha_values(image: Image.Image, box: tuple[int, int, int, int]) -> list[int
 def validate_worn_uv_layout(path: Path, leggings: bool, errors: list[str]) -> None:
     image = Image.open(path).convert("RGBA")
     scale = image.width // 64
+    if image.size != EXPECTED_WORN_SIZE or scale != 4 or image.height != 32 * scale:
+        errors.append(
+            f"worn/inventory 4x density parity failed {path.relative_to(ROOT)}: "
+            f"{image.size} scale={scale} expected={EXPECTED_WORN_SIZE} scale=4")
+        return
     head = [(8, 0, 16, 8), (16, 0, 24, 8), (0, 8, 8, 16),
             (8, 8, 16, 16), (16, 8, 24, 16), (24, 8, 32, 16)]
     body = [(20, 16, 28, 20), (28, 16, 36, 20), (16, 20, 20, 32),
@@ -173,7 +179,7 @@ def main() -> None:
                 errors.append(f"missing pilot worn texture: {path_name}")
         validate_png(ROOT / piece["inventory_texture"], (64, 64), errors)
         for path_name in piece["worn_textures"]:
-            validate_png(ROOT / path_name, (128, 64), errors)
+            validate_png(ROOT / path_name, EXPECTED_WORN_SIZE, errors)
             if path_name not in validated_worn:
                 validate_worn_uv_layout(ROOT / path_name,
                                         "/humanoid_leggings/" in path_name, errors)

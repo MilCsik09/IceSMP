@@ -21,7 +21,9 @@ MANIFEST = ROOT / "docs/development/equipment-rp2-pilot-manifest.json"
 EVIDENCE = Path("docs/development/equipment-rp2-render-evidence")
 AUTHORED_SOURCES = Path("docs/development/equipment-rp2-authored-sources")
 SLOT_ORDER = {"HEAD": 0, "CHEST": 1, "LEGS": 2, "FEET": 3}
-WORN_TEXTURE_SCALE = 2
+# Inventory art is 4x the vanilla 16x16 item grid; worn art must retain the same
+# sampling density on the fixed vanilla 64x32 equipment UV coordinate grid.
+WORN_TEXTURE_SCALE = 4
 
 
 def json_bytes(value: Any, pretty: bool = True) -> bytes:
