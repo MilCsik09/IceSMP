@@ -20,6 +20,7 @@ DOCS = ROOT / "docs/development"
 DEFAULT_BUILD = ROOT / "build/reports/equipment-rp2/final"
 POLICY = ROOT / "src/main/resources/wearable-fallback-policy.properties"
 PILOT_MANIFEST = DOCS / "equipment-rp2-pilot-manifest.json"
+PRODUCTION_MANIFEST = DOCS / "equipment-rp2-production-manifest.json"
 
 
 def properties() -> dict[str, str]:
@@ -55,13 +56,15 @@ def build() -> tuple[dict[str, Any], dict[str, str], list[str]]:
     policy = properties()
     vanilla_models = {normalized_id(value) for value in csv(policy.get("vanilla-item-model", ""))}
     worn_suffixes = [value.upper() for value in csv(policy.get("vanilla-worn-suffix", ""))]
-    pilot_manifest = json.loads(PILOT_MANIFEST.read_text(encoding="utf-8")) if PILOT_MANIFEST.is_file() else {}
-    pilot_pieces = {
-        str(row["template_id"]): row for row in pilot_manifest.get("pieces", [])
-        if row.get("fallback_status") == "RP2_CUSTOM"
+    presentation_path = PRODUCTION_MANIFEST if PRODUCTION_MANIFEST.is_file() else PILOT_MANIFEST
+    presentation_manifest = json.loads(presentation_path.read_text(encoding="utf-8")) if presentation_path.is_file() else {}
+    custom_pieces = {
+        str(row["template_id"]): row for row in presentation_manifest.get("pieces", [])
+        if row.get("production_status") == "FULL_RP2_CUSTOM" or row.get("fallback_status") == "RP2_CUSTOM"
     }
-    pilot_lines = {str(row["line_id"]) for row in pilot_manifest.get("selected_lines", [])}
-    pilot_active = bool(pilot_pieces)
+    custom_lines = {str(row["line_id"]) for row in custom_pieces.values()}
+    production_active = presentation_path == PRODUCTION_MANIFEST and len(custom_pieces) == 160
+    presentation_active = bool(custom_pieces)
 
     armor, lines = audit.canonical_armor()
     materials = audit.material_rows()
@@ -94,8 +97,8 @@ def build() -> tuple[dict[str, Any], dict[str, str], list[str]]:
     armor_matrix: list[dict[str, Any]] = []
     for source in armor:
         row = dict(source)
-        pilot_piece = pilot_pieces.get(str(row["template_id"]))
-        is_forced = forced_worn(str(row["backing_material"]), worn_suffixes) and pilot_piece is None
+        custom_piece = custom_pieces.get(str(row["template_id"]))
+        is_forced = forced_worn(str(row["backing_material"]), worn_suffixes) and custom_piece is None
         row["previous_worn_asset"] = row["current_worn_asset"]
         row["previous_worn_definition"] = row["worn_definition"]
         row["previous_worn_textures"] = list(row["worn_textures"])
@@ -109,20 +112,20 @@ def build() -> tuple[dict[str, Any], dict[str, str], list[str]]:
             row["current_worn_representation"] = "VANILLA_MATERIAL"
             row["asset_status"] = "VANILLA_FALLBACK"
             forced_armor.append(row)
-        elif pilot_piece is not None:
-            expected_asset = str(pilot_piece["equipment_asset"])
+        elif custom_piece is not None:
+            expected_asset = str(custom_piece["equipment_asset"])
             if row["current_worn_asset"] != expected_asset:
-                errors.append(f"pilot worn binding drift for {row['template_id']}: {row['current_worn_asset']} != {expected_asset}")
+                errors.append(f"RP2 worn binding drift for {row['template_id']}: {row['current_worn_asset']} != {expected_asset}")
             row["current_worn_representation"] = "RP2_CUSTOM"
             row["asset_status"] = "ACTIVE"
         else:
             row["asset_status"] = "ACTIVE" if row["current_worn_asset"] else "VANILLA_FALLBACK"
         row["rp2_inventory_texture_required"] = bool(row["rp2_inventory_texture_required"])
-        row["rp2_worn_model_required"] = pilot_piece is None
+        row["rp2_worn_model_required"] = custom_piece is None
         armor_matrix.append(row)
 
-    expected_forced = 144 if pilot_active else 160
-    expected_custom = 16 if pilot_active else 0
+    expected_forced = 160 - len(custom_pieces)
+    expected_custom = len(custom_pieces)
     if len(forced_armor) != expected_forced:
         errors.append(f"canonical armor vanilla-worn coverage is {len(forced_armor)}, expected {expected_forced}")
     active_custom = [row for row in armor_matrix if row["current_worn_representation"] == "RP2_CUSTOM"]
@@ -226,7 +229,7 @@ def build() -> tuple[dict[str, Any], dict[str, str], list[str]]:
             "reason": row["rp2_inventory_reason"],
         })
     for line in lines:
-        if line["line_id"] in pilot_lines:
+        if line["line_id"] in custom_lines:
             continue
         required_new.append({
             "asset_path": f"future://worn/{line['line_id']}",
@@ -261,9 +264,9 @@ def build() -> tuple[dict[str, Any], dict[str, str], list[str]]:
             else f"MIXED_{custom_icons}_OF_4_CUSTOM"
         )
         line["future_worn_requirement"] = (
-            "PILOT_COMPLETE" if line["line_id"] in pilot_lines else "ONE_COHERENT_LINE_SET"
+            "FULL_RP2_CUSTOM" if line["line_id"] in custom_lines else "ONE_COHERENT_LINE_SET"
         )
-        line["rp2_worn_set_required"] = line["line_id"] not in pilot_lines
+        line["rp2_worn_set_required"] = line["line_id"] not in custom_lines
         line["prestige"] = any(row["acquisition"] == "prestige" for row in pieces)
         line["set"] = next((str(row["set"]) for row in pieces if row["set"]), "")
         gear_lines.append(line)
@@ -311,7 +314,7 @@ def build() -> tuple[dict[str, Any], dict[str, str], list[str]]:
         "custom_worn_assets_removed": 0,
         "retained_legacy_worn_files": len(stale_retained),
         "rp2_inventory_replacements_required": inventory_required,
-        "rp2_worn_line_sets_required": len(gear_lines) - len(pilot_lines),
+        "rp2_worn_line_sets_required": len(gear_lines) - len(custom_lines),
         "managed_materials": len(materials),
         "material_item_textures_requiring_rp2_work": material_summary["rp2_texture_required"],
         "other_equipment_textures_requiring_rp2_work": 0,
@@ -331,12 +334,15 @@ def build() -> tuple[dict[str, Any], dict[str, str], list[str]]:
         errors.append(f"broken production references remain: {summary['broken_production_reference']}")
 
     readiness = (
-        "AUTOMATED_VISUAL_PIPELINE_COMPLETE" if pilot_active and not errors
+        "SOURCE_COMPLETE_AUTOMATED_TESTED_OFFLINE_VISUAL_PROVED" if production_active and not errors
+        else "AUTOMATED_VISUAL_PIPELINE_COMPLETE" if presentation_active and not errors
         else "READY FOR ART BIBLE" if not errors else "NOT READY"
     )
     final_authority = {
         "schema": 1,
-        "scope": "Equipment Resource Pack 2.0-B Art Bible + Four-Family Production Pilot" if pilot_active else "Equipment Resource Pack 2.0-A",
+        "scope": ("Equipment Resource Pack 2.0-C Full Production" if production_active
+                  else "Equipment Resource Pack 2.0-B Art Bible + Four-Family Production Pilot"
+                  if presentation_active else "Equipment Resource Pack 2.0-A"),
         "minecraft_version": policy.get("minecraft-version"),
         "summary": summary,
         "material_summary": material_summary,
