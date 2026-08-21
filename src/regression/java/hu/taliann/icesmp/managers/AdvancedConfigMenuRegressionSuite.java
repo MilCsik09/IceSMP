@@ -28,7 +28,7 @@ public final class AdvancedConfigMenuRegressionSuite {
     }
 
     private static void verifiesServerWorldCatalog() {
-        check(ServerWorldConfigMenuGUI.entryCount() == 17,
+        check(ServerWorldConfigMenuGUI.entryCount() == 21,
                 "server/world advanced entry count changed unexpectedly");
         final YamlConfiguration merged = merged("general.yml", "world.yml", "moderation.yml");
         final Set<String> keys = new HashSet<>();
@@ -51,6 +51,14 @@ public final class AdvancedConfigMenuRegressionSuite {
                 "intro line list editor missing");
         check(ServerWorldConfigMenuGUI.findEntry("moderation.chat-filter.words") != null,
                 "moderation word-list editor missing");
+        check(ServerWorldConfigMenuGUI.findEntry("wildlife-retaliation.enabled") != null,
+                "wildlife retaliation master toggle missing");
+        check(ServerWorldConfigMenuGUI.findEntry("wildlife-retaliation.herd-assist.enabled") != null,
+                "wildlife herd-assist toggle missing");
+        check(ServerWorldConfigMenuGUI.findEntry("wildlife-retaliation.herd-assist.maximum-allies") != null,
+                "wildlife herd-assist cap editor missing");
+        check(ServerWorldConfigMenuGUI.findEntry("wildlife-retaliation.warning-ticks") != null,
+                "wildlife warning-tick editor missing");
     }
 
     private static void verifiesCrateCatalogAndRewards() {
