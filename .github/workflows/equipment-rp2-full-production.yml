@@ -169,6 +169,9 @@ jobs:
           python3 scripts/equipment_rp2_asset_audit.py
           python3 scripts/generate_equipment_rp2_manifests.py --enforce
           python3 scripts/generate_equipment_rp2_docs.py --check
+          python3 scripts/validate_equipment_rp2_gameplay_immutability.py \
+            --baseline "${RP2_PARENT_SHA}" \
+            --output build/reports/equipment-rp2-c/gameplay-immutability.json
           python3 scripts/validate_equipment_rp2_production.py --enforce \
             | tee build/reports/equipment-rp2-c/validation-summary.json
           sha256sum docs/development/equipment-rp2-art-bible.json \
