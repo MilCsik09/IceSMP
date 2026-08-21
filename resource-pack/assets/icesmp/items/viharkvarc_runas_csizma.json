@@ -1,0 +1,9 @@
+{
+  "hand_animation_on_swap": true,
+  "model": {
+    "model": "icesmp:item/viharkvarc_runas_csizma",
+    "type": "minecraft:model"
+  },
+  "oversized_in_gui": false,
+  "swap_animation_scale": 1.0
+}

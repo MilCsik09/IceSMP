@@ -1,0 +1,526 @@
+{
+  "family_sheets": {
+    "CLOTH": "docs/development/equipment-rp2-production-evidence/cloth-10-line-sheet.png",
+    "LEATHER": "docs/development/equipment-rp2-production-evidence/leather-10-line-sheet.png",
+    "MAIL": "docs/development/equipment-rp2-production-evidence/mail-10-line-sheet.png",
+    "PLATE": "docs/development/equipment-rp2-production-evidence/plate-10-line-sheet.png"
+  },
+  "global": {
+    "boss_prestige_examples": "docs/development/equipment-rp2-production-evidence/boss-prestige-examples.png",
+    "family_comparison": "docs/development/equipment-rp2-production-evidence/family-comparison.png",
+    "inventory": "docs/development/equipment-rp2-production-evidence/160-inventory-icon-overview.png",
+    "mechanical_sets": "docs/development/equipment-rp2-production-evidence/mechanical-sets.png",
+    "progression_comparison": "docs/development/equipment-rp2-production-evidence/progression-comparison.png",
+    "scale_readability": "docs/development/equipment-rp2-production-evidence/scale-readability.png",
+    "worn": "docs/development/equipment-rp2-production-evidence/40-line-worn-overview.png"
+  },
+  "human_client_staging_required": true,
+  "lines": [
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/alkimista_fatyol-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/alkimista_fatyol-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/alkimista_fatyol-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/alkimista_fatyol-side.png"
+      },
+      "line_id": "alkimista_fatyol"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/aranyfust-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/aranyfust-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/aranyfust-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/aranyfust-side.png"
+      },
+      "line_id": "aranyfust"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/csillagfatyol-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/csillagfatyol-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/csillagfatyol-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/csillagfatyol-side.png"
+      },
+      "line_id": "csillagfatyol"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/csontvarro-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/csontvarro-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/csontvarro-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/csontvarro-side.png"
+      },
+      "line_id": "csontvarro"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/fonixszovet-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/fonixszovet-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/fonixszovet-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/fonixszovet-side.png"
+      },
+      "line_id": "fonixszovet"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/holdlen-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/holdlen-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/holdlen-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/holdlen-side.png"
+      },
+      "line_id": "holdlen"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/kodszovo-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/kodszovo-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/kodszovo-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/kodszovo-side.png"
+      },
+      "line_id": "kodszovo"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/melyseg_ritual-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/melyseg_ritual-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/melyseg_ritual-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/melyseg_ritual-side.png"
+      },
+      "line_id": "melyseg_ritual"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/nemakristaly-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/nemakristaly-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/nemakristaly-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/nemakristaly-side.png"
+      },
+      "line_id": "nemakristaly"
+    },
+    {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/szenthamvak-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/szenthamvak-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/szenthamvak-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/szenthamvak-side.png"
+      },
+      "line_id": "szenthamvak"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/demonbor-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/demonbor-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/demonbor-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/demonbor-side.png"
+      },
+      "line_id": "demonbor"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/holdarnyek-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/holdarnyek-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/holdarnyek-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/holdarnyek-side.png"
+      },
+      "line_id": "holdarnyek"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/kitinbor-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/kitinbor-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/kitinbor-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/kitinbor-side.png"
+      },
+      "line_id": "kitinbor"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/predator_karma-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/predator_karma-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/predator_karma-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/predator_karma-side.png"
+      },
+      "line_id": "predator_karma"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/sotetmoha-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/sotetmoha-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/sotetmoha-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/sotetmoha-side.png"
+      },
+      "line_id": "sotetmoha"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/utjaro-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/utjaro-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/utjaro-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/utjaro-side.png"
+      },
+      "line_id": "utjaro"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/vadbor-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/vadbor-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/vadbor-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/vadbor-side.png"
+      },
+      "line_id": "vadbor"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/vadorzo-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/vadorzo-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/vadorzo-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/vadorzo-side.png"
+      },
+      "line_id": "vadorzo"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/verszavanna-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/verszavanna-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/verszavanna-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/verszavanna-side.png"
+      },
+      "line_id": "verszavanna"
+    },
+    {
+      "family": "LEATHER",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/vizbor-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/vizbor-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/vizbor-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/vizbor-side.png"
+      },
+      "line_id": "vizbor"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/csontenyv-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/csontenyv-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/csontenyv-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/csontenyv-side.png"
+      },
+      "line_id": "csontenyv"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/gyongyhaz_warden-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/gyongyhaz_warden-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/gyongyhaz_warden-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/gyongyhaz_warden-side.png"
+      },
+      "line_id": "gyongyhaz_warden"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/konnyu_otvozet-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/konnyu_otvozet-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/konnyu_otvozet-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/konnyu_otvozet-side.png"
+      },
+      "line_id": "konnyu_otvozet"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/melyvizi_vadasz-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/melyvizi_vadasz-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/melyvizi_vadasz-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/melyvizi_vadasz-side.png"
+      },
+      "line_id": "melyvizi_vadasz"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/runalanc-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/runalanc-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/runalanc-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/runalanc-side.png"
+      },
+      "line_id": "runalanc"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/runapajzs-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/runapajzs-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/runapajzs-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/runapajzs-side.png"
+      },
+      "line_id": "runapajzs"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/vadvadasz-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/vadvadasz-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/vadvadasz-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/vadvadasz-side.png"
+      },
+      "line_id": "vadvadasz"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/viharjaro-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/viharjaro-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/viharjaro-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/viharjaro-side.png"
+      },
+      "line_id": "viharjaro"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/viharkvarc_runas-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/viharkvarc_runas-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/viharkvarc_runas-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/viharkvarc_runas-side.png"
+      },
+      "line_id": "viharkvarc_runas"
+    },
+    {
+      "family": "MAIL",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/viharszel-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/viharszel-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/viharszel-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/viharszel-side.png"
+      },
+      "line_id": "viharszel"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/borostyan_tarna-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/borostyan_tarna-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/borostyan_tarna-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/borostyan_tarna-side.png"
+      },
+      "line_id": "borostyan_tarna"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/csillagacel-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/csillagacel-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/csillagacel-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/csillagacel-side.png"
+      },
+      "line_id": "csillagacel"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/glatziendorfi-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/glatziendorfi-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/glatziendorfi-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/glatziendorfi-side.png"
+      },
+      "line_id": "glatziendorfi"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/hataror-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/hataror-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/hataror-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/hataror-side.png"
+      },
+      "line_id": "hataror"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/melyseg_orseg-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/melyseg_orseg-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/melyseg_orseg-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/melyseg_orseg-side.png"
+      },
+      "line_id": "melyseg_orseg"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/osicsarnok-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/osicsarnok-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/osicsarnok-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/osicsarnok-side.png"
+      },
+      "line_id": "osicsarnok"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/ostromtoro-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/ostromtoro-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/ostromtoro-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/ostromtoro-side.png"
+      },
+      "line_id": "ostromtoro"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/runaforged-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/runaforged-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/runaforged-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/runaforged-side.png"
+      },
+      "line_id": "runaforged"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/salakfal-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/salakfal-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/salakfal-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/salakfal-side.png"
+      },
+      "line_id": "salakfal"
+    },
+    {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/sarkfeny-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/sarkfeny-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/sarkfeny-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/sarkfeny-side.png"
+      },
+      "line_id": "sarkfeny"
+    }
+  ],
+  "proof_mode": "OFFLINE_DETERMINISTIC_RENDER",
+  "schema": 1,
+  "special_cases": {
+    "fonixszovet_elytra": {
+      "family": "CLOTH",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/fonixszovet-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/fonixszovet-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/fonixszovet-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/fonixszovet-side.png"
+      },
+      "line_id": "fonixszovet"
+    },
+    "glatziendorf": {
+      "family": "PLATE",
+      "files": {
+        "back": "docs/development/equipment-rp2-production-evidence/lines/glatziendorfi-back.png",
+        "front": "docs/development/equipment-rp2-production-evidence/lines/glatziendorfi-front.png",
+        "inventory": "docs/development/equipment-rp2-production-evidence/lines/glatziendorfi-inventory.png",
+        "side": "docs/development/equipment-rp2-production-evidence/lines/glatziendorfi-side.png"
+      },
+      "line_id": "glatziendorfi"
+    },
+    "mechanical_sets": [
+      {
+        "family": "CLOTH",
+        "files": {
+          "back": "docs/development/equipment-rp2-production-evidence/lines/csillagfatyol-back.png",
+          "front": "docs/development/equipment-rp2-production-evidence/lines/csillagfatyol-front.png",
+          "inventory": "docs/development/equipment-rp2-production-evidence/lines/csillagfatyol-inventory.png",
+          "side": "docs/development/equipment-rp2-production-evidence/lines/csillagfatyol-side.png"
+        },
+        "line_id": "csillagfatyol"
+      },
+      {
+        "family": "CLOTH",
+        "files": {
+          "back": "docs/development/equipment-rp2-production-evidence/lines/szenthamvak-back.png",
+          "front": "docs/development/equipment-rp2-production-evidence/lines/szenthamvak-front.png",
+          "inventory": "docs/development/equipment-rp2-production-evidence/lines/szenthamvak-inventory.png",
+          "side": "docs/development/equipment-rp2-production-evidence/lines/szenthamvak-side.png"
+        },
+        "line_id": "szenthamvak"
+      },
+      {
+        "family": "LEATHER",
+        "files": {
+          "back": "docs/development/equipment-rp2-production-evidence/lines/demonbor-back.png",
+          "front": "docs/development/equipment-rp2-production-evidence/lines/demonbor-front.png",
+          "inventory": "docs/development/equipment-rp2-production-evidence/lines/demonbor-inventory.png",
+          "side": "docs/development/equipment-rp2-production-evidence/lines/demonbor-side.png"
+        },
+        "line_id": "demonbor"
+      },
+      {
+        "family": "LEATHER",
+        "files": {
+          "back": "docs/development/equipment-rp2-production-evidence/lines/predator_karma-back.png",
+          "front": "docs/development/equipment-rp2-production-evidence/lines/predator_karma-front.png",
+          "inventory": "docs/development/equipment-rp2-production-evidence/lines/predator_karma-inventory.png",
+          "side": "docs/development/equipment-rp2-production-evidence/lines/predator_karma-side.png"
+        },
+        "line_id": "predator_karma"
+      },
+      {
+        "family": "MAIL",
+        "files": {
+          "back": "docs/development/equipment-rp2-production-evidence/lines/runapajzs-back.png",
+          "front": "docs/development/equipment-rp2-production-evidence/lines/runapajzs-front.png",
+          "inventory": "docs/development/equipment-rp2-production-evidence/lines/runapajzs-inventory.png",
+          "side": "docs/development/equipment-rp2-production-evidence/lines/runapajzs-side.png"
+        },
+        "line_id": "runapajzs"
+      },
+      {
+        "family": "MAIL",
+        "files": {
+          "back": "docs/development/equipment-rp2-production-evidence/lines/viharjaro-back.png",
+          "front": "docs/development/equipment-rp2-production-evidence/lines/viharjaro-front.png",
+          "inventory": "docs/development/equipment-rp2-production-evidence/lines/viharjaro-inventory.png",
+          "side": "docs/development/equipment-rp2-production-evidence/lines/viharjaro-side.png"
+        },
+        "line_id": "viharjaro"
+      },
+      {
+        "family": "PLATE",
+        "files": {
+          "back": "docs/development/equipment-rp2-production-evidence/lines/melyseg_orseg-back.png",
+          "front": "docs/development/equipment-rp2-production-evidence/lines/melyseg_orseg-front.png",
+          "inventory": "docs/development/equipment-rp2-production-evidence/lines/melyseg_orseg-inventory.png",
+          "side": "docs/development/equipment-rp2-production-evidence/lines/melyseg_orseg-side.png"
+        },
+        "line_id": "melyseg_orseg"
+      },
+      {
+        "family": "PLATE",
+        "files": {
+          "back": "docs/development/equipment-rp2-production-evidence/lines/ostromtoro-back.png",
+          "front": "docs/development/equipment-rp2-production-evidence/lines/ostromtoro-front.png",
+          "inventory": "docs/development/equipment-rp2-production-evidence/lines/ostromtoro-inventory.png",
+          "side": "docs/development/equipment-rp2-production-evidence/lines/ostromtoro-side.png"
+        },
+        "line_id": "ostromtoro"
+      }
+    ]
+  }
+}

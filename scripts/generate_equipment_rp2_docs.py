@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish/check compact committed Equipment RP2-A authority documents.
+"""Publish/check compact committed Equipment RP2 full-production authority documents.
 
 The full 1791-file reference graph remains a deterministic CI artifact from
 `equipment_rp2_asset_audit.py`. The repository keeps the complete canonical 160-piece/40-line
@@ -77,7 +77,7 @@ def published() -> dict[str, str]:
     physical_digest = hashlib.sha256(canonical(all_physical).encode("utf-8")).hexdigest()
     compact_manifest = {
         "schema": 1,
-        "scope": "Equipment Resource Pack 2.0-A canonical asset manifest",
+        "scope": "Equipment Resource Pack 2.0-C full-production canonical asset manifest",
         "summary": raw_manifest["summary"],
         "full_pack_inventory": {
             "physical_file_count": len(all_physical),
@@ -136,7 +136,7 @@ def main() -> None:
     if args.write:
         for name, content in docs.items():
             (DOCS / name).write_text(content, encoding="utf-8")
-        print(f"Published {len(docs)} RP2-A authority documents.")
+        print(f"Published {len(docs)} RP2-C authority documents.")
         return
 
     drift = [

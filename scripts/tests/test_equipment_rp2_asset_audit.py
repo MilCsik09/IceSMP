@@ -43,24 +43,24 @@ class EquipmentRp2AssetAuditTest(unittest.TestCase):
         self.assertEqual(0, completed.returncode, completed.stdout + completed.stderr)
         authority = json.loads(FINAL.read_text(encoding="utf-8"))
         summary = authority["summary"]
-        self.assertEqual("AUTOMATED_VISUAL_PIPELINE_COMPLETE", authority["readiness"])
+        self.assertEqual("SOURCE_COMPLETE_AUTOMATED_TESTED_OFFLINE_VISUAL_PROVED", authority["readiness"])
         self.assertEqual(0, summary["broken_production_reference"])
         self.assertEqual(0, summary["missing_mandatory_active_asset"])
         self.assertEqual(0, summary["safe_delete_asset_referenced"])
         self.assertEqual(0, summary["stale_active_reference"])
-        self.assertEqual(144, summary["armor_pieces_temporarily_vanilla_worn"])
-        self.assertEqual(16, summary["custom_worn_assets_still_active"])
+        self.assertEqual(0, summary["armor_pieces_temporarily_vanilla_worn"])
+        self.assertEqual(160, summary["custom_worn_assets_still_active"])
         self.assertEqual(84, summary["intentional_recipe_inventory_fallbacks"])
-        self.assertEqual(36, summary["rp2_worn_line_sets_required"])
+        self.assertEqual(0, summary["rp2_worn_line_sets_required"])
         self.assertEqual(27, summary["managed_materials"])
         print(completed.stdout.strip())
 
     def test_vanilla_worn_reset_repairs_serialized_asset_id_without_rebuilding_equipment(self) -> None:
         source = WEARABLE.read_text(encoding="utf-8")
         compact = "".join(source.split())
-        self.assertIn("RP2_PILOT.matches(requestedModel,requestedEquipment)", compact)
+        self.assertIn("RP2_PRODUCTION.matches(requestedModel,requestedEquipment)", compact)
         self.assertIn("forcesVanillaWornMaterial(item.getType().name())", compact)
-        self.assertLess(compact.index("RP2_PILOT.matches(requestedModel,requestedEquipment)"),
+        self.assertLess(compact.index("RP2_PRODUCTION.matches(requestedModel,requestedEquipment)"),
                         compact.index("forcesVanillaWornMaterial(item.getType().name())"))
         self.assertIn("newItemStack(item.getType()).getData(DataComponentTypes.EQUIPPABLE)", compact)
         self.assertIn("current.toBuilder().assetId(vanilla.assetId()).build()", compact)

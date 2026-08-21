@@ -1,0 +1,9 @@
+{
+  "hand_animation_on_swap": true,
+  "model": {
+    "model": "icesmp:item/alkimista_fatyol_mellvert",
+    "type": "minecraft:model"
+  },
+  "oversized_in_gui": false,
+  "swap_animation_scale": 1.0
+}

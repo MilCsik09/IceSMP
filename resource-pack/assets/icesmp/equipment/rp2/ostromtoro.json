@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "icesmp:rp2/ostromtoro"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "icesmp:rp2/ostromtoro"
+      }
+    ]
+  }
+}

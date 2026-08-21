@@ -1,0 +1,3616 @@
+{
+  "assets": [
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/alkimista_fatyol.json",
+      "safe_to_delete": false,
+      "sha256": "e0d7cb7fadc2d429ab2030e1143f8358d26c9a49597a908f6a62d71b9d239ab9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/aranyfust.json",
+      "safe_to_delete": false,
+      "sha256": "bd967e9b5945664caed3196b11f8013b8a490a5639c1f4d5cd42cecb939347ff",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/borostyan_tarna.json",
+      "safe_to_delete": false,
+      "sha256": "1676cfcdf706657bb0ad45438895cd3de907fe3b435a7e328d359a2ead0f0ad1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/csillagacel.json",
+      "safe_to_delete": false,
+      "sha256": "c18063dc840b24298108109d4ed27cd654aaaa8f3f6149b56ba9b17309d017ee",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/csillagfatyol.json",
+      "safe_to_delete": false,
+      "sha256": "6ab76aa2d646fd657ab9e510e742f7c216b2ae733ed45e9396f8ff7ed9a1a621",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/csontenyv.json",
+      "safe_to_delete": false,
+      "sha256": "9d9fcca1215849a09cc177d58d29b5e52eb592c3a9091d48ba3571eddfe92ef4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/csontvarro.json",
+      "safe_to_delete": false,
+      "sha256": "f1664e2f4f5be183e2c8caa64f1b48abf9df4fafc4118cd9dfaf8bb5f4f53219",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/demonbor.json",
+      "safe_to_delete": false,
+      "sha256": "18cfb6789ef876370711a5bd22ed9ef7abae5cfd0727ea44a60ef0161393fcd3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/fonixszovet.json",
+      "safe_to_delete": false,
+      "sha256": "e726820025df1dc472593ac1cd18d3d2a9e27d085daa16b96d2d7ff9e3a22aac",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/glatziendorfi.json",
+      "safe_to_delete": false,
+      "sha256": "9558455b90be53fd217bcd5c7c838d7dee91eeff693315f54bc03dfb8cef9427",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/gyongyhaz_warden.json",
+      "safe_to_delete": false,
+      "sha256": "68ae03443d12ffc90d697719c9935b2183c4701527544441d35c08e2f2cde571",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/hataror.json",
+      "safe_to_delete": false,
+      "sha256": "3c3df4921cb540cdcef4610a7cd7431ede07807f25888fcafe055e5bbce930b4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/holdarnyek.json",
+      "safe_to_delete": false,
+      "sha256": "42b712cf023604aa61bed105fa548f956e0a216154b56e01cc1979b59ff088f5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/holdlen.json",
+      "safe_to_delete": false,
+      "sha256": "360a27a84dee1f9624d0a872c0ed135dc2fa512817b421fb18f1f173be3f8a4b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/kitinbor.json",
+      "safe_to_delete": false,
+      "sha256": "484c04bc6fde9506dbb1f7db3d8439b1c4aa08207aa9a1e9da99e54428b11e4a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/kodszovo.json",
+      "safe_to_delete": false,
+      "sha256": "467f71c7a637a8eef5f700ea7d02b1f303e2551bd73a829a936084f95ae6aedf",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/konnyu_otvozet.json",
+      "safe_to_delete": false,
+      "sha256": "9f870224729a4e84ac696afa9731d30f3adb45091c67472e904f2ef1aac31425",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/melyseg_orseg.json",
+      "safe_to_delete": false,
+      "sha256": "6e5c2a3bd839ade96d3277bbbaafdac69aa3dc50df1f1282bf2f07e1b34cd59c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/melyseg_ritual.json",
+      "safe_to_delete": false,
+      "sha256": "eb9d060c8f17586c922b05e6db99a8abe5bd6a343fcdd8827e228aaa6e602040",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/melyvizi_vadasz.json",
+      "safe_to_delete": false,
+      "sha256": "af197943bfff84bafcd9cbf9d7334d3a0ff52794f737a948247cf9fc6e0feb3a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/nemakristaly.json",
+      "safe_to_delete": false,
+      "sha256": "eef3c4cc18284f8b6bf16972e51f020bc1ad55e5a367e6bedb53c8132e73ee82",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/osicsarnok.json",
+      "safe_to_delete": false,
+      "sha256": "af4a1e16a1d0b8334f41e7f8b0c11b94435a2966ead6343e7cadcc5428934935",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/ostromtoro.json",
+      "safe_to_delete": false,
+      "sha256": "ff05fa844b8f831efb72d49891073e30f96a8eee093e5a224fb603e0ca06e9c9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/predator_karma.json",
+      "safe_to_delete": false,
+      "sha256": "3e3e37a9198d4d9ac021c4487f7fb2b1d9c6d71f862ba21679d9a0e63ff6ef7b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/runaforged.json",
+      "safe_to_delete": false,
+      "sha256": "9d6a507a1b1440df3568f8512bef44a0c34ad6ec123d1dd6c7ae3f48ce658088",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/runalanc.json",
+      "safe_to_delete": false,
+      "sha256": "267e1ae2e6f20c6089cf3162918dc1a687988c9e676551c574af451a3b43d9ba",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/runapajzs.json",
+      "safe_to_delete": false,
+      "sha256": "25cea463cd701b5c5b72d6f18186f4dd908ecf70228c326951837b5a0489d285",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/salakfal.json",
+      "safe_to_delete": false,
+      "sha256": "1b69272b0bd1bdaaabde75a9aa178210f47bf1e46d9e804011aaee39e861de69",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/sarkfeny.json",
+      "safe_to_delete": false,
+      "sha256": "5b6219e577b80a07c8ecee3925f71d9d0017e61b3b097f301a4c24be99f10002",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/sotetmoha.json",
+      "safe_to_delete": false,
+      "sha256": "201533a5908ad29b8d19069a66336cc96e0bcbe4837ac4196fc42bfe1f5c40fc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/szenthamvak.json",
+      "safe_to_delete": false,
+      "sha256": "171c0ab4ecc4449ed2eb0d971e47a623b6ab47923272d80eabac5a6001b53353",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/utjaro.json",
+      "safe_to_delete": false,
+      "sha256": "6b8855453f52351e630a9bf5ae71cc89c8ad261c087fcb1f187300029ff77916",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/vadbor.json",
+      "safe_to_delete": false,
+      "sha256": "bb51a699e0d5253d6d40fb7e3fd212c06a09407705922051b56cf2cdc6d716e3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/vadorzo.json",
+      "safe_to_delete": false,
+      "sha256": "d8522e92c3c9d9acbe0eb3ac31a4ddf8acf54b76e36597d3ac582382f41a7dd5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/vadvadasz.json",
+      "safe_to_delete": false,
+      "sha256": "47fa88709197e28e1838fbade36b75e31b5746bfb2ee6bb82c4ac1826de88fe4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/verszavanna.json",
+      "safe_to_delete": false,
+      "sha256": "58ec23fab419fc8aaa293736bf7d01c07258aa9602d6ea0667be74fb73b945f7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/viharjaro.json",
+      "safe_to_delete": false,
+      "sha256": "8454572193af5d2738db930dcd3a386b6e4d92ea9bfb6a4b9d219375afcc2f32",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/viharkvarc_runas.json",
+      "safe_to_delete": false,
+      "sha256": "0eaeef82a0c4e2fc94180cde076ddc97d116ea38ee600c7875b41ee7211d36c1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/viharszel.json",
+      "safe_to_delete": false,
+      "sha256": "dd707d6a748240c61e9e2e22386ab37230eb039cd32defc6fb5ebdab937b6b52",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/equipment/rp2/vizbor.json",
+      "safe_to_delete": false,
+      "sha256": "29352ead4abb3b19f2e0bb77ec802ee0bb661dac90c310c19c3a35f0e7efd52e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/alkimista_fatyol_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "fcdd3ecf8d992dbaa57b089b70685577227dc9e2cd96ae35eb8554efe8f7224f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/alkimista_fatyol_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "aafea727c4562c84832640aba2e6b48ff5967e10a37be129a6a0539df53b2474",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/alkimista_fatyol_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "5d541aaed237e7a1b218c3b966f0da7942630022d1e5fda087b74db32116f909",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/alkimista_fatyol_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "6a92616b10f757438e41d7cd1bc8d9417b63206107c8d6a1fa69c35522c24a82",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/aranyfust_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "cdd207cfedb1073af5826f3d81e1f0760f146c9f62fb6957beeab6cfd9841913",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/aranyfust_kopeny.json",
+      "safe_to_delete": false,
+      "sha256": "4574989fc5ca321d3bdfc16aa3bb4ae74af3da1a9d9502b4be86a63feaff98a6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/aranyfust_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "7c70bda3ca6516a45a46559544ab435d3a2faa21c92a17c69d75cfc81b024a64",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/aranyfust_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "51a1849fb1626a3944c0dedc2c53376cffd37b82ffd57fdc3d7108038b1272af",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/borostyan_tarna_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "3b4295c5cf27ae0fd8fbe8c8c98210770e346ab8c92d528c2de4af093b4bb15b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/borostyan_tarna_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "4bd7977a8504a0e09e612fe55c491aa2d7ba0e599336efe65f46c91bed8487b0",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/borostyan_tarna_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "9a9674a05221ef68985665bab8d2bd96ab6fd4b470f00d0d960108d59cec5ac6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csillagacel_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "b21ce7a1d2bf52f968206c3c09fe67bf79268ffcccb43fa64303e10cbe4f3481",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csillagacel_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "e526e57a72077cbda08a49353cffdf63155e5769e49dfb7444fea9b832cc200c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csillagacel_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "4e1e1dc4e2716ca9979f1d2fb77490eb5588af8653271858283102c7026edadc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csillagacel_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "ef5354f59ee1e0d50227a5ed527aef9075a8795db99e993c58b839b769ec9cd8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csillagfatyol_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "0b08c1947ee1feca09a91c500e8b5c131b9f514972e2c0d9c2f731669a574315",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csillagfatyol_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "061437368aa898a1df2b6c0358edda0082857ce185498726c9f6c90419f8295d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csillagfatyol_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "e6c693fd621160a9491c6f46b208b3e1c80858b6872aef9acc394bd2e1417db7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csillagfatyol_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "9fdd10907abe7e8cca48ac614914a55e1a29276d3fb55950db019fdf78663b27",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csontenyv_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "ef6ce2422c9ce8263d89253667fd80cadd18a3a26aa2cb20209e4f9d64a176ac",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csontenyv_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "573f6fecc3ffc2869d7574643d72c2f415d34c101f2498010271446a36fc2d79",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csontenyv_pancel.json",
+      "safe_to_delete": false,
+      "sha256": "08b643f262adcb416867327c39bed5027a9722460c7130db8d2bec6457020273",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csontenyv_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "d11a42517dc8ae5d5825a6cae7496afe1a30005d10e54cb780e31b1b42bf4b1f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csontvarro_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "c93173fae7290678527e526c2b0c6c0ad3825918b39b166965756f1c1107b994",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csontvarro_kopeny.json",
+      "safe_to_delete": false,
+      "sha256": "c8dedad1edd8f03893798080527f8051f0b38da769a6e1941901f16d45a5eed9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csontvarro_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "51289f95c7e7e89b9e75d363a2378a51e0b1d6f56d334f6e2ad35076eaa6fab3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/csontvarro_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "304c1ba50551d4a46d75812cc80f715eeb7779aa3a96f0dcc6e111c8f04a61ee",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/demonbor_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "3d9e672eb3a9c40c93d22e9003ba399e25f7871f8330021428ff6dcff4a84f1a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/demonbor_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "4aef2a3b38c318b9df94d3a3838895c50b97e322913ea6091401e60e9ba3396d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/demonbor_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "897de601a42a3c05203fb4c1b615bca66e8e80e705a47074aafbeacb52eacde2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/demonbor_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "d3e4cd1b09aa4547a7e025a255282c0688f2b36d3d256645e792c041f8635493",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/fonixpihe_kopeny.json",
+      "safe_to_delete": false,
+      "sha256": "f5e14f560f7a2f02f8fe78dad9dad6a1c3852546dce8fdd0f47b1f4f68f3dd7f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/fonixszovet_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "b712383505fe71ec7b8d21b92caaf4ca9fc6643b640cea07eb1d498ff84f6bc5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/fonixszovet_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "49784a9e96685dcdeab214184ca608d7dde02a34e9cf9a86a35944feabf08979",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/fonixszovet_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "d28ff2eb3526239c7d3a02e6661e28f5e9f2cfd1f38b69321917f29c4cdc469a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/glatziendorfi_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "4708c92fe787e7ceca77ad3dc865202ac718fc4c16460458e8bd8d25e7ea1e6a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/glatziendorfi_jegvert.json",
+      "safe_to_delete": false,
+      "sha256": "bcadc767437e36df30c9d8fc0cc8e0b6b5f11fe0e92fba5d0d54efb18f449d70",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/glatziendorfi_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "d9d2b664c45f2143395e7e53c62acf7ed7aa16396568b31b942612db2b6249e5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/glatziendorfi_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "6008ea2ec711afd3c665d9e913c48fbb9bf9f3030ba1dc1e963fabe08695205d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/gyongyhaz_warden_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "76dd5a9e58a5fbf7a05e0687a65d1f5da92f42f00a34e6167a6f1aaed7feed21",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/gyongyhaz_warden_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "a347adbb5a58e79d7b24357e0ac9fcc0857d98e0958530fd89ae7f7d2f0ec17d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/gyongyhaz_warden_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "66158fcfe0dcfbd757e568de555da8c663c3e79d2a2be30d1ad03349c4c4ad55",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/gyongyhaz_warden_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "784c1f45962e313521781f377767f6969cc8d32d4fa00a1835c6b9cb97698fd5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/hataror_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "216c21d440e0ddf8ad728b3c9f3c6712fcec6b8ffe7fe84f9b1c084808d44422",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/hataror_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "99e05ff6b0f5cc1c8f274709f64f8d5ac0a462c9515feb55414c26c0d3c05669",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/hataror_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "db5064b49921ff154cb3691dc3b2a40638ccbb83955cae8de97ec01af174d3c3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/hataror_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "1207abde651ff75a79d53c790e014a01220518efbf34955def671ffddad0fcb8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/holdarnyek_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "0c98dd85931cbb2b5b85132c2b7e2d01749cc24110ede0f6312a5dffd3399fe1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/holdarnyek_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "164a337373bde13717d7ace2ff886f46cab6784e598c12a853b30104d185f215",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/holdarnyek_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "4d0962f64f8fb0a2ed25f1e258d3a974dde9a052acee106619810ab65bc0993d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/holdarnyek_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "1b0d47df53d68cce045eaf4c8bdcb466af3c4b1467daccdccdb02f38e156ab25",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/holdlen_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "c727a04034ab6d212bca1f50724a3cb095e50a27e54475491400bdadfb1a4bc6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/holdlen_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "87278f9aed2ca9cad63fd05653f4b82c994decf383d3145a89d6c0cfb4805bd9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/holdlen_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "3671e15fb795b5aef4c3b356bd59643353bf27cf863ec914a5f135b5f95049af",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/holdlen_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "24c41b069d4fa2b51fb335f57059d79c110a3a2fbd0dfecc998a342856f8cdb1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/kitinbor_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "cb37a0419b7298fab52af9aade18ce2ee5e6f0a7eeadaab8011372f390466406",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/kitinbor_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "71d5169dc174ee96e2c45a4311f8b68f9c99f95b93fba13920fe31bad548ca52",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/kitinbor_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "5c32b58dcbb67f9b856002670b89259c8f87fe69dd0a1ee2d351d45765d85222",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/kitinbor_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "7264e63f69df11db577d872cc7613b8d98a53a667ef8437cbb8830ebdd58a66c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/kodszovo_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "befba80b260e8998ee35aaab35c55b87bc43c6b6c29901d946f6888cc55a6dc3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/kodszovo_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "22d8c06fd491fcaff0e3a2938817eb30485504dba81b40123997bb5702b05b11",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/kodszovo_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "8d4735df45f689e130843f5b96f90fc9ddaffbaa6c9847557c6485e5f2fb6c23",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/kodszovo_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "ee8201e7f344ff577b14fd0541f8d34ad9719a896510488afd29b0d7d1215989",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/konnyu_otvozet_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "74ba02a1d14c6ca472280bcf76800ed7be543f0d0434b71e0af12f72938e55bf",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/konnyu_otvozet_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "a17875e71e9eb697ce8c77ee875892b0a48ec297570169cb5bb79907f72c760c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/konnyu_otvozet_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "338d1e9e712208a42a4284d7a05c4dbe82eb058204ef38150b4702377c75b722",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/konnyu_otvozet_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "bdfb2e24467c6fb4c3ff9db3b844b226368d7a3826216a076ad1684fcbeb2229",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyseg_orseg_bakancs.json",
+      "safe_to_delete": false,
+      "sha256": "12af4e618df1e620e41e2d151a4f762b17bfac4032b2903f2b5fb7fd52604008",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyseg_orseg_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "6134f92aff778545fe735b57cdd0f15b7dfbfea186f31a31ffc8b13909107e42",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyseg_orseg_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "b75209b3648ec71032ebae89dbf9aa4fd8f2b34a9fdb6386c1a5d60d6b7a4a6c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyseg_orseg_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "d5126b70a6003ebbdffbd6003281344be1ce10bfb9400fc2dae361f7fa331bfa",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyseg_ritual_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "62f93ad3c374e717aaaa1c1a36474e74ba133bc58bb8bba41d024ebff0f2ee35",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyseg_ritual_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "6459939d95f28d581e5bacf1e28cdb4fd58bfbae80a5a2967b820698b9377f16",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyseg_ritual_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "d38e809b2045ab541c8a066aa761358010c214cd20f5521987695c195f8e0e6e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyseg_ritual_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "8ec72951d227531c47a57fbf5d0ae55ee4cc29d83b0992e9e116a18f288167cb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melysegi_borostyan_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "6390503a300b3475248cdc2ba8e27342a4dcde8c04a3ae19bbe2e14326dc2c7f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyvizi_vadasz_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "7133c49d14db3026ed30da832c308e6744afba0a0cc62c9fcfb10c0aec3ff191",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyvizi_vadasz_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "e2daddf412521e51e35c2dd3ea194e5ead607b18f6ed1bef566b3709143bc905",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyvizi_vadasz_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "792c21c4c46444e7a3bd503642e84b1f9e0d61456a91bb9ddb18ae730bda94c9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/melyvizi_vadasz_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "0f885efd1da00ca8a30e96f523365777b2a7316024e48022b0a0192f90cc535f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/nemakristaly_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "0ce70d132bab783d65b4798d4024cca7de17dbfa8b18ba08b09f7707437b745c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/nemakristaly_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "45b80e7ac9660db6347fb453ad49f6c8bb1a2cbd02c061715202d4c6af2e7a84",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/nemakristaly_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "6a788938c4ef99edf1874cff804fdd8b18fad734350d18fa729af5370f48b990",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/nemakristaly_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "199a4e0804c7a3760fb82c224203c2cde42e297dce546cf1565b06d8be9bae05",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/osicsarnok_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "1279ad56954c2a6d5c1c9e8c14e4a2f887392c0e67d476a86811875dbbeca6b2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/osicsarnok_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "79c1091f290c13003ca36465c630e7203898ee117841bacadb7a962ec6f284a8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/osicsarnok_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "77301120d3decf7cc0eac76b73c7dd32a4e01c3e849b5953d1de78223d344562",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/osicsarnok_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "3e8e5d485a38b759ad09798516b6bc39922dcd397f8dcdda0b1d4cbd19426d9a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/ostromtoro_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "78accc03388099dab6f5d3b1f20e4847bb929e1e543c0b24d21ae1976d4fff76",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/ostromtoro_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "332fb04d403f0bb1cc65aa72a8d270313a3d3fed4b0d34048cfbb1717ee1825b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/ostromtoro_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "ae5f79f4b1db032a4f867d70a420c9a7551d3e3da54c26cdb00ee5942e1afc07",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/ostromtoro_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "e2f5522fcbac9e710e14ac6fc6e9d001b71d84112305f1b11268b4123fd0213c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/predator_karma_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "b7388d1e8d6a3fa36fe8fb00f0fcdc4bbb5c0b4c3cae4bbc4c0d48cbfbb96222",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/predator_karma_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "7b40e134ddc005516292485bf569bf789b74a20a14715d28762e7797c861b872",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/predator_karma_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "d2f4bfb125d9027dcb58e7e6536087661645310b207fba3074c798e274439f9d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/predator_karma_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "a717acf8c3b4e07ca7542a38ba356d7e9e336973bc8272e3d1ba9ee88c44d0be",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runaforged_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "cb743ec09fd21a797bad17bfb88f718ef85e12fdffaad92df558db20dd5c7c18",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runaforged_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "0cd8550e7a7498e2913f8626217621c09c57704e1e4a26a391660bf32a2eb01d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runaforged_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "e92eede9bc00d1ad75e13fd0e553f428c60b6fd1a88c120fc71cc2c830c16dd4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runaforged_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "4bbc249e659256f9b03b356ed8536427cbab821ce726db3495e6c5af18fc385a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runalanc_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "cdf081f7341cbcf4bfd7c524c80a8ca1e26aa4bb3c100980842b0e965a69effa",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runalanc_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "24556757cf43d1457b91c34e4174bd0d393f6582bd36769eb09d0f7bfd4e2f37",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runalanc_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "76102ec61e7c13e52e92b5cd1c4707dead820296db7c64ed383f3c3c99bea7ad",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runalanc_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "c43439a1017707541d035e62a59ef47e3a9c72bbbf63837956148a3f6700a190",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runapajzs_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "730e4f58a1b2d2f41ca1b37572e3d0e12d0293976986dba67f7650b1e04bca94",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runapajzs_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "6e21ad387fb15088921907a466366afff32da4cda8b5d6e597920bf9812b9ccb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runapajzs_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "e7ad7136b5d4c73c7e3cc4dd008c2d0d019d4c37bf1a5a9fb3d556de8eef30b9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/runapajzs_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "c553dbe51bda42f58dd79ce9822312e5e966a2601f158eaa16ec04b48afb71e2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/salakfal_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "46004291e3ae1417b38cb0da1589219d9e32408fcf9736f3e97389a7844deddb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/salakfal_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "fdd7d12c6d85bef078d2c53a9cf32f46aab9c847eec65984d233189640cb6e81",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/salakfal_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "0cf0d882e5d0aaafe25db10aaa83f78267d39d84d475e87dd438f616a06904e2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/salakfal_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "b874b17f643969b6eae6c94fad54dbd150011f5c3e8d7a6b3346baba75e17927",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/sarkfeny_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "f511c14587f7031131f41243253142ad2e5b848f7f2f26f381ab9ddd1993c95d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/sarkfeny_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "d85337ce65c79f792a4e7fbf7093da78c50b6d26aa3b06f3cce97c4b68f4e2b7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/sarkfeny_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "484b5259374eaf8521fb37612e7af49a3bf8b308781f901072bf2745416d8d36",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/sarkfeny_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "3ba209389c9d6cf23bfc58c8d53f1a693b9efb40f11c9986b235975947facb56",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/sotetmoha_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "77e744867c141efcb16c1e3dd50bdac44971cb37093ee41fd76aa4b71ec9ccf5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/sotetmoha_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "1b56c97b3cb86495ff50d5e63d124c6ff3700ef453acb6d46786de65c2f992ac",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/sotetmoha_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "797a796c0adf23b0de4b1006ff1499ca9271f2cb2913c43e3c00642a986fe141",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/sotetmoha_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "7d0c8221b695d1642247800f3f212031ba929a025030d00181c83ac6e0d68901",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/szenthamvak_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "8fd2149cca195e144ab0d11562803e7be9f867b5a34115ee7b2683433a978ca6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/szenthamvak_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "968c5f38c70aef0631db6de9fa7234b8c6596b1744df50e241117937f66ba02f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/szenthamvak_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "51e9638dbadab0fabd9bc4b21732d5011fbe2fa4f9617f61c3efea2365807ed6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/szenthamvak_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "87030b1e6f51846c18eff3b537cc6ac4cd3800bc6aa48f6518995beeabca5ec2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/utjaro_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "ce1ba1c6ab500000d96df6ee47fe9fd501b68886aa7f506dfaec9759cb24a327",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/utjaro_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "fac07b9d7c26f78e68d5b8cbefe62243f534b162ce10e372129597db89d993c8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/utjaro_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "2c90bd01277ca159b6a9738f5b2cee8359ccefe35cf0172789f1a6e475235c29",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/utjaro_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "e84f35921328c6c9072f7f42589b863c6b00f866ce20f170c1ed97541f5acbd7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadbor_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "6a70ac2f57ccd417d8cea293853d62ac2292f647e09fa408a825820813dfd092",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadbor_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "1b192c3a07b1d37dca28fe47fc7f6902e1d0f2ea7c446bc3bd614b6f7abe20dc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadbor_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "9a7e110d2fe658e77c1c2a2a332e1b3749fb548bf8f1daa7c7b9e571bdd972df",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadbor_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "69e1c99a4d1c78d469b12b0ad34656a4cc989a19983db455bb1dca95526fa547",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadorzo_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "f8af995860a76d485f4179b4f79d900fde2d88d485ae64aa0dcae1acca9a5ca9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadorzo_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "8e20d3712a7d2e1e80c462f007a501bcf7913ad3aa449b93e407961e472538ce",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadorzo_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "2e993d006e6a848d39ec9b04cef33d20219dbac45a053c8bbcc4e1dd15e15fe2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadorzo_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "8fbc76fa63bb39ac4ab893252e02f91de1db52af9c8cced1cb394f7a75a166d8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadvadasz_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "aad86141c12abf27997a235efb9bdb88665d0e00da3a34a7c1f8e66659c13a08",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadvadasz_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "5ada548cba59224ffe05294b082d789f2f69ee0a39dd45c54bc13b18a90aa07a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadvadasz_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "fed69126d025dcc757261a0f94e907afbd3e1559ad661fd4ffe19552c6858345",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vadvadasz_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "9807402821c9fee47291fb596f7cd9e285bb7f8329d7efd96c0a40564c22ead5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/verszavanna_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "b711ce9630514f2d45c08c245141d176d6246ec7e0e5c7718e6c5ef9f8af68de",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/verszavanna_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "7ce290e99ff8672377662e7328ea459051e96a2c1ad5eb03f239f4114e444218",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/verszavanna_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "082fc68c4113f907599acb410c466f0f922476d39ebef5b3abea032e9a179f9d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/verszavanna_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "1a59fdab1a6a686dffd257ca2b767513a23fe6e290cea4f0a2eedb54975d60bc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharjaro_bakancs.json",
+      "safe_to_delete": false,
+      "sha256": "147c761ee67f93410e8c9b4be596fc6d8c2690f022f3b40be7615698773c79e3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharjaro_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "0c15cbcfbe47d43491e2ce59a0123ceec36153729e42a197f9cde542bf64bc42",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharjaro_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "8d7c3c51476c56027dcbe73072965bd07d75405ba2f4e0d9811977c82e089b75",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharjaro_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "1e052e79dd4e30287193bcfe44096865839b8bbf5de0441e7655cd1e6cf04948",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharkvarc_runas_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "9828f9c97debfd6d628fbd0a8eba07713948cfae7514eacb61273b296d7d68e6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharkvarc_runas_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "fee6d07efc7aca1b2524a2eb68e95fa5ded1d4a2212370b2654040697342d2cc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharkvarc_runas_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "01c6a6fcc21457cb64bb65bc8d5591d3771f62d4194d3d603ba1c2554fc1bd0b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharkvarc_runas_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "0ce4a26558557ad099ad2d63be493163bdfb3cf43580a5b1238be0d10bb98fad",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharszel_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "e080d12ec9aa6c9c0a5ab8939ec45bb19abc5ac1a8052cea5032c9632e8ae88d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharszel_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "7158b8891b348ac2b31407a651d156a72759135084b0ce86326b42580b227890",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharszel_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "b4a5abe72caee9a72c53c4b1361bab65028b594e1db1750b3d6c38fe6d85e026",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/viharszel_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "00e4268cff4219e952964433da4166e19f56035b0674217be7be021a7754337b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vizbor_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "f0e228f7be0181aa832892174d4bc422262eaf536c178565ce8f8546733dfa03",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vizbor_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "8924c3b14d764b38b0661f6a37233cd5fee6c9b1f446f7ffbdd820ba38e8246a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vizbor_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "d52cf1490c12e7db035910a5cd9d441a915baae00c25fac1b2a57d07a87034b2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/items/vizbor_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "e46bdebfb55a4331107c8169962275bde6dac15829071ac1df33fdee8c9d39da",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/alkimista_fatyol_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "54c07c2156bb960cc97aa5c77bcb877c03c0d1684a55e08444d6f9c15edb5d2b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/alkimista_fatyol_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "59ccef12daeb3d2c42b5500895daada18992cdf986c9828c13dbeb89dae4cea4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/alkimista_fatyol_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "9bbf94f2fca9fa4d167a833062940aee31aacff4fe452ffe8a601de9990671ad",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/alkimista_fatyol_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "e67fc27dfa65ee5483659caf3147f8da7abb0470bdcd980bd82642676a79ef69",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/aranyfust_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "6635a0ee5cebc32c7a75c25bd6fe063c48d75773c5590e264f34c63c1b496548",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/aranyfust_kopeny.json",
+      "safe_to_delete": false,
+      "sha256": "e5830081e29748ea59fc34a94f2ab307649c4d7e55f26ffffa103506eea1a615",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/aranyfust_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "972e066d2a819a0593b175d21e4ba4b8517ccef60f8a4b30d3758e396db86c44",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/aranyfust_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "a1bd94b08c69082d2d85bb33f70b3ebacf3072cf3ab1974da6ee6cd6a1437e92",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/borostyan_tarna_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "7cc6d63ca58732d87fb214787745b878bb41537fb1314b4b275b2fbf0cb54f73",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/borostyan_tarna_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "1a7b9a07f5417943a325acd4daf56c74300b0ce4e32aef2a99db10b798bad24b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/borostyan_tarna_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "158715dba7b72cc5f15d931865f8ec7357e5bb49d02b95d91cae6619467d25a6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csillagacel_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "51631ca9a433d818aa114460a3e85f6b65d38ef547d257789a8b4dbc5b58ce6d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csillagacel_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "5dd4339984775bf2294645db66fedfc614c01ad9a440a7c0ce29abbc7bfd1edb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csillagacel_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "7123217b0acb00e7d1616857d9c5556f414ed7e931f08f413a6dbc2f5e8c61bf",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csillagacel_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "f2086802530bf37ceb4a89a3319caa6fc3fff341b96d0c34ef8f97cc9bd7ac02",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csillagfatyol_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "48ab12a2b302a622f07a42bddeaa3db1c3681dfe2c169bb4bb27e878069d2a69",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csillagfatyol_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "949af17fffc5dfedd97002934a003f254ab8b3d11ede070875f66392524e5122",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csillagfatyol_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "09cff50e212dade02f9e6736c4eebbf925106bdb1fe69d2c84acb905cb378c74",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csillagfatyol_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "8d04ea39e05898ef22770b79810bf3e3523bfc218d677887add9ce3937430ea9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csontenyv_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "18d870e4eb5eacfb3a4a4e32d52c33d341726cca7534909926399ac8954cf867",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csontenyv_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "bd68c17a960d58ddde4099f213c36bee519f2eefcfec16067aec217948cb6623",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csontenyv_pancel.json",
+      "safe_to_delete": false,
+      "sha256": "bedee6fb59031d13ddcfaf6126f5b4fb8c930111b8bb8966b77883775f082a8e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csontenyv_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "5be101f6ecceb23b551a5d4882a06ccc9c53a0906726577af9a63a83e2f74bef",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csontvarro_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "fa4469419150de77ecb074236f8ca07c7ec0648c22c064e6504f2e260c357a85",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csontvarro_kopeny.json",
+      "safe_to_delete": false,
+      "sha256": "4b4e8af0df2cd20267d8ca53500d33a7cda072465d8ef1a156801312afff18f4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csontvarro_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "e3a8f64ccd889b9309dcc44e48810bf012610f4305e9b839dee371daeb5a3da5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/csontvarro_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "3beaccd0be557a5e45566544212352d36618dab7dd9bc2bb10da72bf568b5221",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/demonbor_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "29d3ad4e466f5863c832425b171bafd095fd67c9ee3cc55b39145f43fce56d00",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/demonbor_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "146ec99e1bb7f2b1c1076ae72fd01da1e4c7e8f0fc9b05d324f569022e86ef85",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/demonbor_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "ea078f22d641e1d91da9cb5e7770a7ed3c623d1e88e92e7ce55f4ed5b8747383",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/demonbor_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "3ad9ac0781450db9d671ede1683563411204b8956679b438f23c057442a38418",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/fonixpihe_kopeny.json",
+      "safe_to_delete": false,
+      "sha256": "f6372edb7a092fdb8211c925c66ccfdc5ac2308a12399ba356037db6e79cec21",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/fonixszovet_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "45162127c70d7626f14ffe08b96cd4d746d9acf207079f2a9e101b845e26422d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/fonixszovet_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "7ad694f9fab44c0351a85c6c639acbf11a5730c79362d6732b6268ca518a6961",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/fonixszovet_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "71bf2377fa3d65e567e57af659994563958dc9741607dbe5a2da13dc0e716cf7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/glatziendorfi_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "36559976f1bbedafbbb6472ae08b92e38b39ffd2146171c0b2c173193267f9c5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/glatziendorfi_jegvert.json",
+      "safe_to_delete": false,
+      "sha256": "96613518ca78bea0d854a9ca9a576f0187fbfe1cb4349a45df1f2eb4ad6523cc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/glatziendorfi_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "0b6c85aebe80a19a22e22e4522cdce20eaf7a0c4a13a5b860560a7f66d6ab701",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/glatziendorfi_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "fa3636e2b0df7722ea12a028d1195f6795977f21f170f245e4658fba431bb878",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/gyongyhaz_warden_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "9d318fc7b08526002e6415776f1baaae4b0e6227b174021411c77fa429d8d2d1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/gyongyhaz_warden_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "95fc197d3ba4b8445c81c4e76079218cca562de5f4bcafe4a3884870a1b2a20e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/gyongyhaz_warden_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "7de7a7922eeb596b7f7eab93142674af4124ccdfcdf98b63c53ee8dd60e325c2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/gyongyhaz_warden_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "9617d281934ef9359201db410d80d96c29c3e3a552ecf3ec4481b3eed219cbed",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/hataror_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "c400fe01e184d18ef352ff05fdc93f1bbd6d8ba3abdc51b2a8224ccd375d91c2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/hataror_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "8d9a1e7103abf515db7bff5134d7cdf245b2f4514db4752bc0ebf2e684f4d5be",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/hataror_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "1dc5ed36dfbd5a97620594c675db3618e823f40f34a4146bf7fe79502473aaf3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/hataror_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "1ef825c9c3e1d0dcb295e70583aa67b24452185d304a5e8c7bc9d139d362a0cf",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/holdarnyek_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "71bca0d516e70f1cb6bbc0d410685018ca14537ac4cb93e8d537aaed1ebd880e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/holdarnyek_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "bef9e7bfa8a6ae77c0f70111741ed41ad303ee9de5e399f93359ff63dee0c58b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/holdarnyek_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "47011da592621359a8647a9299a8576e014338a1a903fc55242d069af2f98b2b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/holdarnyek_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "887a596b34b58ded1c0c36c37ee966d512fe81f63f6af7e225c4386a0508d83c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/holdlen_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "4999439a032b043644a8dae517bc8a6f30055a2db79e3086d3f7dc7df8f8a939",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/holdlen_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "ecc35d52ddbfca89e0dcc8e8e8da5100e30f31dd55122db3476e85c2f9783fb0",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/holdlen_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "1a359681d514e96b19b6dfc1eec8164a7e587191bee80eebf7715656c712e9ec",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/holdlen_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "fc0f3ad4d5c4c9f5abc2ca1bdf2b8f22e9ac28eb0ede8e44b7fe3dc3d29849d2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/kitinbor_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "01a8b9086941bf4949e11e0616af7493f52d2e752953f5f563a50c69b702f2ea",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/kitinbor_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "78fcf4f25434956ce59f8059dcb398dfcf9331b2b49b4205afdadbbc0ae22b87",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/kitinbor_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "2daa6c3f9f6ffc9ebad4a8e66c89fee45f3b057cfb6d5d8957a1121829148171",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/kitinbor_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "9ea383bd0a6dea8aed32f1e1ca8446b0bbf6561e9c7c3e524de0b2560cc6f86f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/kodszovo_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "57546af40feaadd5de78ce2de7dbd89dc1a970fdbf2ca69eda99da60d57af6ae",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/kodszovo_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "38b6f840886d64264c09f547b80ba8707013b4546be1d1a7f6741e6eea68790d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/kodszovo_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "e0d072b4683451b1ebf824f78df24f77c95423973d57bc35f8e4bebe0b930815",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/kodszovo_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "a01ff5b5174d8f4e7c71281e05afedac0e39b6ade3c4b5c700a65b212e735e16",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/konnyu_otvozet_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "20770db998624a7df35ddf7fb59f4877b73d9ae7a59a7c17fcf4e389ffcbe3dc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/konnyu_otvozet_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "5978908b19fa7c2a90daa1031685a2ef066c937a99514eb3e50fa2de467bfda0",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/konnyu_otvozet_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "f161903dc5d030915ec9fa30161806ecf99a84d75d9068db1c0c2bbff3182371",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/konnyu_otvozet_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "6147ccd7a6da87b0fe8f783a302a3421ae69652bd3b5313a171db5dc839ea6c4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyseg_orseg_bakancs.json",
+      "safe_to_delete": false,
+      "sha256": "42a61aaefcebd3e162c3cddf587befc90435ff371d93711e4cc0e833cde7762e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyseg_orseg_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "fcc012e3622a2fe9f38e7e21e2aa011bc2df13e3b7f63235b446fb099a09d7e6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyseg_orseg_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "e937dae169b42be2788e9d1e6f998603edca4ff8424d19ce5f36c41a4e869d6d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyseg_orseg_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "4796aad5390d24346da952e09339ab0c5d9da0c6a6a4f9da150e58aa1525cfce",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyseg_ritual_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "5501ec7c82916edfd47d65c1ef62de859f113993d431162848356f982c72cda5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyseg_ritual_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "02b0e3e5bf3e9bad840f37a9d9fd81e60e377f857195adcf82dd26a984b9adab",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyseg_ritual_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "212a6185250dea23f34a09b73cfa4a16385db16af6b4d4ff715a6d0f0d76d847",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyseg_ritual_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "f7c4d4a32fe46c8e10f8d20030cd25cb809881d620c25dbb38fc8855494f394d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melysegi_borostyan_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "5ebec0ea6aea54031461baa843638ce271d356863bd596bd28087aa9bd328980",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyvizi_vadasz_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "3d49b8f1d32187ddccdda6ed4ec8b8c916e91c5310e9cf1265f44792ceae7357",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyvizi_vadasz_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "56d3ef193270e83433d9473b7da79c9f4657197b0ae17fa2c78b02cabbf211fc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyvizi_vadasz_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "b3c69096c5c116aa748e2e0148109ef762e68e2302f3f3347f3fd3ec405df8eb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/melyvizi_vadasz_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "ffb530857ccc40d92c9e225bcff0c2c9b53fba9ced8b0df0398c834f64327d14",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/nemakristaly_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "a2ed97fc344845079244bd0f64287006f29f3c6f0bd4c6be39cb1d3ee6c3f452",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/nemakristaly_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "a17889ab0d61b1be564e53f7bda5f28208dd0c6fef0d4ad03794469664bd2185",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/nemakristaly_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "6cac1657050e089c761ac91a50e97abed11b5d022717105906089b0a2e3b3e2b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/nemakristaly_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "e42637959cec928a02d3702722ca3c1485f1e1addb212e280bd570da7112058f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/osicsarnok_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "81609830e43489f65a301e9bf44a6e28789313acb3a487e98d729ddf81b0d154",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/osicsarnok_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "8d688627fb9038bde5643ca804e9f91ffd64c7588e0625af18df1a90fc3f52a5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/osicsarnok_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "c8e6394aa391180732e740e075120badfec06c3ced73a5c3c7e06188b1544f58",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/osicsarnok_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "b4e76a24c02c943cf03579fa2c2315c8975feaef2a1aba2020d3c0a01b47a49b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/ostromtoro_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "7187c90fd9a8ab55bf2b2048770b432af90780ff861d299503256a8eebed1e63",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/ostromtoro_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "f46f2777007f38ba5f3ca1ddac5b91b89a721c39ff3d3c39bcc5d329881247e6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/ostromtoro_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "3f179bb63c716c9ca6894cfb073ee755d9546393ed35c2a60e05bbbdd6726b44",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/ostromtoro_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "fd5e93034685e4f4e1e17cce3afa4168f542ceb19d218bb30a6902961d6cc478",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/predator_karma_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "a531e7d8bd3a7673042664656993117e6229909e5dac974cfbabe78ff83411d8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/predator_karma_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "db9b64e3b7b21b61422c02d24cc5c19056ee4b678d2951999c892e871209bc38",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/predator_karma_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "cefc3fc1119644accdd6a41ca9b7fc76b9405a3631bdc071e62d04f896a31190",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/predator_karma_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "3a0eeac728aa530912eb3c3b69f2442e679c63b32e6a1fd420919197b61a6fa1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runaforged_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "afb668e411cc7c71523f6a59f33f473ae49188a56e4e49a423288b17d03b35a3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runaforged_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "101085b2088ee41e28398fe09f5326f4fe5a471486a622b5d92e123979eed7d3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runaforged_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "570b64ddbbc1db22bb6b6c491131f15404a2735db3357e3f484e0f75f2cb2d43",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runaforged_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "635ff8248af8c97d5e77c1ecd00207f6a968a785f7f8ba39122969208e604f58",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runalanc_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "f050a98c4dc5d43db56ab77db188a2964c083cf51c8a97e10f3e1bc893dcab56",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runalanc_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "23b1878b54811219bbf72ee58a7d2bf39380a60177ffd8d6d693637debf6fba9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runalanc_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "a7e01dd11f6df52dfd2cec14d156fdec8a07bdf04fcdad2d630327502a488bb3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runalanc_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "cc8a90095bb7f36602f1a67bdffed40f882045000f696e9872e87672614ef208",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runapajzs_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "e6c7f8d396b354bada92eabb78c19e9b1fb290f380b6b128f0151924a5dae7ce",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runapajzs_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "2aa4a3f528c67eaa441089b0fc30a354376dff9ddcb80c6b49d8c6b79a133c11",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runapajzs_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "f1c0626393836a1b23b25c343a6da33615ebf01e484db6c7cda49612d40ceb6a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/runapajzs_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "a4ebc3a41b343e6a35a61df9460279fee16124534f17b27ff417fdf73573ad4a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/salakfal_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "50d846216e50c80ad99575af4d096b28078da75007f3498bd62349f9b289df6e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/salakfal_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "3b07b37efc0f926bc2fdedd3264e5be9601e76143f5aaca1af777ed63ede3bfb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/salakfal_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "4566c73659af3941d91ab09c242315ac3f5d2fac5b03254099e45b4e320296b1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/salakfal_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "ffaa46ceb7c5e99dd18ddb0a1ffa0d64cadb26633ea6573140ec86a86c5f2e80",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/sarkfeny_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "efb492e00be40dceca4f737a2153b061f165e2186e20de3cb432c15f4e3d46ef",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/sarkfeny_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "b797cb89fa313147081c79944495ad7529986eaac1e45cb1737546829a1fb8ec",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/sarkfeny_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "7a872a6f67266e6424437a0c32afd1d2d13ab3732594c89cf7097695c519cc40",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/sarkfeny_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "30fa0f5c9f3ed8909f57b12f99e133aedb223a226d77bb01f82de9937bfac540",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/sotetmoha_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "7d96bc461172cd94de0fe093eec151c7ae799fb8b36a2ff1700df1fc2a6c1629",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/sotetmoha_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "b675f744d5116ff6f1d995a9f0c3ef68bf3e2ab8d86902b6ca884fbd846b0696",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/sotetmoha_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "d11e111be6eab9718db25cbebc8a5fe7f812abe81a76140fa04efdb34c48b4cb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/sotetmoha_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "e34809f7abf220d7fc06ebb7204f80cf55f06e88a40562e22c86bea21172f706",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/szenthamvak_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "a70978cd7e53c95cf52e1c84fb943566fd5fc7d47f02e9c9430d85da3c95623a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/szenthamvak_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "0022c63a37093c637270519ac802bdd81a4bfee1b70d77c44a4c0b1117e369da",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/szenthamvak_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "bf388b1cf1ab410e711578e7d9f69d83f122c2936aa879405e049773245e3c6c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/szenthamvak_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "8964c772e43bfeb1cc3691e689fac93dd6dbdb3fca9c2b5e0a66dcb832e218c7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/utjaro_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "f532b1cf5444048516ff76dfe5e8cd5b9c89e9c50151d3e74016aa8a7a89dff5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/utjaro_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "154c2a3c930765d29cca31cf055bb5d0787105064f3cb47390a97181a762297c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/utjaro_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "3a8fd710840600e3e64172a0c70b414edd748657c48a7dbed0c40dc6855ff212",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/utjaro_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "95c0bd6161d91c9058bf9949f46d8f88ed272440b2c3b9826b35b2a02100d54a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadbor_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "d2969d31745aad6a8d92ee3592392d0ff5910dbb2173429240179af8d36abd4c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadbor_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "35d3f590a22de812bd360fd84d7a165a663558d7c26c88b74c4eaf212b36defe",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadbor_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "a785262afdce98df1c4a6736945595e1acaf47863d72f1e5f4804382a975ec14",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadbor_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "f0cbb3be46cb025e5e37e95b8f42758a61c5f68f919c21eac489c4d784be1c03",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadorzo_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "88d3939b2f8841286a30461d161bbd3896995cc18481db8f16bf0158d2dd9697",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadorzo_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "c0451848e818cf8817cfdf3fe11d37e055cfd1e1eeb4603f553a6220024b2f52",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadorzo_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "f1ec9fbe7c5e48c5868377d91e02dd20ff800206ec1364906275ef6ead1a218d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadorzo_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "adde8cf55ebb8cb783faedd19dd89d1e21cd0ec8b94bac784adf8a88902530ae",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadvadasz_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "cbe4497a0f02daefe98fb8b43ec4bf9b0b7469f5322df0f421668b85a2d570a7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadvadasz_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "2d99ecbc04d9360e52ca54e4c5b12b2241824b7b6c18f07c5ddcfcedae4baa83",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadvadasz_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "8bdd885121d3aaf2d81efdac39fef0bdb7c76bba02c6467392af0fec482efbb7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vadvadasz_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "f2b18792c8bae1370b418f5fc0191c4f2a33e62d3c99f0fa9812a0a4fc92625b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/verszavanna_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "82338bdbacafb55c6fe15b842a9828de88c6a814fc147aa3e434b771513873b0",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/verszavanna_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "e334616686541b57dd4dfb558ff361e96602469fc8a956c48c861f1b0a9468ac",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/verszavanna_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "69cbe13082515414dc094e629233824d0e90c34cb1e0ad90f57601c35db3d6e1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/verszavanna_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "cbb269bc7312aec1be480d85aaedccb4cd1f6b7d5c5e4a79997631b058b8bfdf",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharjaro_bakancs.json",
+      "safe_to_delete": false,
+      "sha256": "b11a832f10e91f656684cda5f290269fcba799e0dbacbfe06f9e67e48a2f2dbe",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharjaro_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "0c2eeeff81e1a22c032731de7007747d1ba3a33f1c0edd462969b0dd1571528d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharjaro_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "83b3dc7723572da4a8126f8be339f5f2f2c10c8106849ff3e1e45baaeb97921d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharjaro_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "80dff925b1269b6f15053a6300c29f3362c06b2811efd215912468fb61b0fa01",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharkvarc_runas_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "afa92d4fb0a9e2b573fa763bf7862a86026126d3346384a31162db86f018af81",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharkvarc_runas_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "8b806d4bac3df84253f7adc7452d74f3c0512fd5dc09f86a734b8e175aece67c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharkvarc_runas_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "1ef392853941fd40b6055a2ffa3e307ffbf278e39e90973a8ac9fa61e460c55a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharkvarc_runas_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "eaf7b2d99e27d70f395728dd9ab29ca727a8d82d15b05cf02d39fa5e86cf38e6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharszel_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "1ac845c8b33a3d81f616a2460b96fd4dc3f093f894c44393ef04ba869497e0f2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharszel_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "dc784292e3c5e646e54ec853549c242de1c85e94399609d6e79ece4442be564d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharszel_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "77563c3180ceab72ad99bdca3ef3d261ea5cb13e4675157320778e8866a67520",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/viharszel_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "9952a1407d2a6f802dcc0e7548a8d5c2398ca3a90ecbf9eb9fa72e27fb1b513a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vizbor_csizma.json",
+      "safe_to_delete": false,
+      "sha256": "dacf7e1788932e08d2b77c200c1a68c1ed440adb8f9d1153cbb40da85820d7eb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vizbor_labvert.json",
+      "safe_to_delete": false,
+      "sha256": "c7261154fcb22825556388fc9dc2ae12417b53c1801c8d13d2c5a6f1b8c641a5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vizbor_mellvert.json",
+      "safe_to_delete": false,
+      "sha256": "307217568d936005b0f5b066ec37edea2e9abb928e5b2e2a66ab89677c46d52d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/models/item/vizbor_sisak.json",
+      "safe_to_delete": false,
+      "sha256": "b98ab8f2f56aec3b003a4de276ffe2da3c0b7d1af4de61c91fcf53cb95e3f5a7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/alkimista_fatyol.png",
+      "safe_to_delete": false,
+      "sha256": "bc0c8244eea02a11c3483a4f3ba4b2c25922046e8df7377b8f6717ab6a979296",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/aranyfust.png",
+      "safe_to_delete": false,
+      "sha256": "5b3d9c4a0437ac8768945b0e709abbb90af03bdec065b5ff7e784a089d8500d4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/borostyan_tarna.png",
+      "safe_to_delete": false,
+      "sha256": "c401a4bec66339e4242dd9e2a647848704d24f26469c77329c36af62de6751e4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/csillagacel.png",
+      "safe_to_delete": false,
+      "sha256": "2a9e43d9e87a1ddb3e0730562858acfe9c1f161d445ad811cd794fc1841fd46b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/csillagfatyol.png",
+      "safe_to_delete": false,
+      "sha256": "f16ff44d5c25fe68e1a030747289aec545f9276d66eed8f59af311452912765e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/csontenyv.png",
+      "safe_to_delete": false,
+      "sha256": "1d2bcbe84daeced8d30acc2726264e3e5f57b1932eb8efa498af87a5a9d27402",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/csontvarro.png",
+      "safe_to_delete": false,
+      "sha256": "065c2217e89b09054f7061c3812c635ebc6e23ddc4c6f9a67ab872f5e46a43c4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/demonbor.png",
+      "safe_to_delete": false,
+      "sha256": "ece3d4f9e8ebc684888e26246fd84b481dc884290ee3ba5cd21fcac6e242f1f1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/fonixszovet.png",
+      "safe_to_delete": false,
+      "sha256": "fc623bec479e12c5a5d0e7adb4a7611d052891e305b4fb817604e2e43100b484",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/glatziendorfi.png",
+      "safe_to_delete": false,
+      "sha256": "5b426be0f721bd629a6b7d43ec1a231577221664032334453485f51c0a79570f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/gyongyhaz_warden.png",
+      "safe_to_delete": false,
+      "sha256": "4b3907ddc92a91a5ae76af766967c9a149f0dddeda6056b12275e81e80c997a5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/hataror.png",
+      "safe_to_delete": false,
+      "sha256": "386134be2dc4d261ac52b3e1ba5dfa6b485e6e9d4bec6629fc0be75cbbb74547",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdarnyek.png",
+      "safe_to_delete": false,
+      "sha256": "90c38326fb070bf617bad8a13eaadb9b1a52c7eea0b2e1c8a0696d4f9d2db3f4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/holdlen.png",
+      "safe_to_delete": false,
+      "sha256": "ec12276d5e0858530a80b64131187757b4c9d85a0e8e9afb449f890893d58c02",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/kitinbor.png",
+      "safe_to_delete": false,
+      "sha256": "64ec409d6f29d5a0a83675a601f4128168b32c272137d4809550a0d2a995c391",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/kodszovo.png",
+      "safe_to_delete": false,
+      "sha256": "33a536f3423c4280648e159557989d279906c12df92517b18888fa9325d800e8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/konnyu_otvozet.png",
+      "safe_to_delete": false,
+      "sha256": "a735f5164a29410bd93467f0b8bfb6024c5a96753a3b768c71072698739a1e86",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/melyseg_orseg.png",
+      "safe_to_delete": false,
+      "sha256": "adbe3bc0447e113d6133a1a5ad1feeb4c5ed0d7ca208953b4dcda09016b486dd",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/melyseg_ritual.png",
+      "safe_to_delete": false,
+      "sha256": "28c72a84129543377dcc552f946ef14194f132a79d19afdf18d0efb621f6104c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/melyvizi_vadasz.png",
+      "safe_to_delete": false,
+      "sha256": "a50c398db9b5244c83bda06aa26c51f74d41d50a43d4d1694eab69bd8cf4a154",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/nemakristaly.png",
+      "safe_to_delete": false,
+      "sha256": "5aae2dd51a0e55fe39ac7b5392aef0ceca2a7d12921bf3d363f4192aea3fce70",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/osicsarnok.png",
+      "safe_to_delete": false,
+      "sha256": "f6c18d31520e59c71dcd2a5b4517bcc9e79934fd525a07557c0d1e9f95ec7aaa",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/ostromtoro.png",
+      "safe_to_delete": false,
+      "sha256": "3a46397f9f826d43363fa0f76eee890d55692a444f6051e810ab46ecccbef31b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/predator_karma.png",
+      "safe_to_delete": false,
+      "sha256": "02481af480c1aff0a6cbb61b132bd02fca2a748eee5f3782dded9a03522eb357",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/runaforged.png",
+      "safe_to_delete": false,
+      "sha256": "1084b61e2e558d77ef4c0885f5a949432531258455d41799eefda0032422fa42",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/runalanc.png",
+      "safe_to_delete": false,
+      "sha256": "f50476ef4028b078ea525558cb21bf98d08b4fc87036106835212493e8448405",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/runapajzs.png",
+      "safe_to_delete": false,
+      "sha256": "144bacc5a490059385258c018dd685626de6a2613bc153480523fbc10f152ac9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/salakfal.png",
+      "safe_to_delete": false,
+      "sha256": "13d79c5862659b05f92919ddc75b4464565ab9456be74bf21aaa77559170f8c5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/sarkfeny.png",
+      "safe_to_delete": false,
+      "sha256": "199e1fe89b63d7c5433fffac47bba04ce61a90c754ae7146140607eaf0fc7351",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/sotetmoha.png",
+      "safe_to_delete": false,
+      "sha256": "d72a9d81e07dd00ac4023b3640171cca80448a6b772e31aa1002b41583a53bfd",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/szenthamvak.png",
+      "safe_to_delete": false,
+      "sha256": "ead2551261903a380c4755e3c937db0f2aa653e8545baf91ddca0e47617ac759",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/utjaro.png",
+      "safe_to_delete": false,
+      "sha256": "55cb17538544c9a5539791eea6afa0aafda7d3970880e44402835c4099bb2f20",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadbor.png",
+      "safe_to_delete": false,
+      "sha256": "d1cbf51e549730e434ddcb7844f19756954991c6ed1ba39b9c976d42cb0b3277",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadorzo.png",
+      "safe_to_delete": false,
+      "sha256": "4a0bc84ccf492a530f08139d7948dc97e6cc955f790dd3302538a98a736b8694",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vadvadasz.png",
+      "safe_to_delete": false,
+      "sha256": "fe3ee13d45a30d9a53b3e18764c7bbd2fc318bf6ef80519adfba27f09fa1ffa1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/verszavanna.png",
+      "safe_to_delete": false,
+      "sha256": "48c78dde5e90f48f0303752278e8b1f01d21581920146f36caf130f6fb54b908",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/viharjaro.png",
+      "safe_to_delete": false,
+      "sha256": "72baf2099ee8b01274ec14a27ead6e659a5d84075201763d3219662b2687ebc7",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/viharkvarc_runas.png",
+      "safe_to_delete": false,
+      "sha256": "688b536fa4298e361f36a840d6f5018aa245f293cd11403c7cf09e9767a56dd1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/viharszel.png",
+      "safe_to_delete": false,
+      "sha256": "de0c0f6405906a9031e6f8818a7afa3484e96f818c9e389390fd17590de8b10b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid/rp2/vizbor.png",
+      "safe_to_delete": false,
+      "sha256": "6f0078b7c7587d01206f56002d43c903381506c044ba32e4d1f1675ec1a4759a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/alkimista_fatyol.png",
+      "safe_to_delete": false,
+      "sha256": "9761828e6e9aec0224881f2e20f38ef91aaa93bf154e9bd1e9a7db1dce418943",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/aranyfust.png",
+      "safe_to_delete": false,
+      "sha256": "8edd4a91d316bc94b9549fb19ae7f8fe5ef7f5a990895de5e936783867e7c749",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/borostyan_tarna.png",
+      "safe_to_delete": false,
+      "sha256": "fed526f471fdc805566827a46625686acc81cd5443bdbda0352e54c26b0f3006",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/csillagacel.png",
+      "safe_to_delete": false,
+      "sha256": "f241c5a2366d230d65e90ecb5b32816a695069a0abcb43229269f832c5f3eb98",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/csillagfatyol.png",
+      "safe_to_delete": false,
+      "sha256": "2b20e3df4488aa538fcb40632dba43c0f4f908bf93bd3ca3baaf32f2381c54fb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/csontenyv.png",
+      "safe_to_delete": false,
+      "sha256": "9745e5650e1d739d84443c0d37ecf95761dfca4e74952e8e5b7ee553c7c3b184",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/csontvarro.png",
+      "safe_to_delete": false,
+      "sha256": "746c36979da0724db9f827676d8d7aba18b0c74099b057325ce58f9a610258b4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/demonbor.png",
+      "safe_to_delete": false,
+      "sha256": "96b94ed70ec5413a6f1b02aea21657115c1bdb50a81844ea7d01fc2b0ab0a053",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/fonixszovet.png",
+      "safe_to_delete": false,
+      "sha256": "3102fda96f160bf361cfbba57c462fc606f5a50c2703ce7812e8103b9962a09f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/glatziendorfi.png",
+      "safe_to_delete": false,
+      "sha256": "554aa34d353ffc318caea5ad8082e7a6276b64c2a6379a2e2490e931a19dd111",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/gyongyhaz_warden.png",
+      "safe_to_delete": false,
+      "sha256": "1f9314d936202d4288c98c2c12a9fbfa9f0693ce9047ee21e3cec90f55f5768f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/hataror.png",
+      "safe_to_delete": false,
+      "sha256": "96a0fe612a841277ea611dcabc468695453c6ee1b504be5a5a5bea5744d764ef",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdarnyek.png",
+      "safe_to_delete": false,
+      "sha256": "51a515eea71efdc8e46437db903d1ec3dfbc22f964e463216f68aac6f47bc2d4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/holdlen.png",
+      "safe_to_delete": false,
+      "sha256": "33cdd61a29583ca52050c4dc31a4ef3db96b02a88f5e3403b6dc5964c231a8d0",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/kitinbor.png",
+      "safe_to_delete": false,
+      "sha256": "85157652e741bbb8e65f6e8bfac8e6d600b2ab3b88b23a9b0e4162df96f0f753",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/kodszovo.png",
+      "safe_to_delete": false,
+      "sha256": "3cd2f8fa2cabed684494272a6616942a3e3063bc7616c8da3dbe286b6e50bf4e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/konnyu_otvozet.png",
+      "safe_to_delete": false,
+      "sha256": "97603b336e23c4b19752341d5da9fa3aac00a3792a0e10f7615f242ced446261",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/melyseg_orseg.png",
+      "safe_to_delete": false,
+      "sha256": "cca34c0ad4a4140ff50e5ff0ff8791252764bd081e9da51a68e65f6e52c8c44a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/melyseg_ritual.png",
+      "safe_to_delete": false,
+      "sha256": "a5fecbe4396259f07e03be4076efa13cd50ce6c52618dbca2b844b8d5d8899e5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/melyvizi_vadasz.png",
+      "safe_to_delete": false,
+      "sha256": "90b353f8e9707c0da0fbfe8f97202f0c7cf2e98cc1eeafdc9d3cbba4972f81b0",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/nemakristaly.png",
+      "safe_to_delete": false,
+      "sha256": "2308d3d9497ecd3e290b237da9319794c2d8d02add7bf1733a0926933c85cff5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/osicsarnok.png",
+      "safe_to_delete": false,
+      "sha256": "a03a491ef238650210cf9339724466ebe79e8d15c85644c50f041a1494c0ac6a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/ostromtoro.png",
+      "safe_to_delete": false,
+      "sha256": "4f3dd632f7c16bf0b29fb83fe620416b9b377594cce280e6fce3048edb25f753",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/predator_karma.png",
+      "safe_to_delete": false,
+      "sha256": "9705da20601bec9d95219f0227a9caeb638f7aa739302b03f8b8d67c9c81a320",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/runaforged.png",
+      "safe_to_delete": false,
+      "sha256": "09a9b064d8137df7cc5a0d3d64c8a958523541c5b9d8ac9cba674a372234c2e1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/runalanc.png",
+      "safe_to_delete": false,
+      "sha256": "f02ac588089d57f08ffc7552d3ae780e7fb8b68cc4232079eee03653173d2580",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/runapajzs.png",
+      "safe_to_delete": false,
+      "sha256": "fd159d9ae2b64709ffbb54fbb64ebf065c9f693bbe6d263c4657cca9e839f0b3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/salakfal.png",
+      "safe_to_delete": false,
+      "sha256": "8ddec3a3867b83a5463945b15899a78a9d7b13d2e928a8bfe340c359cd785a52",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/sarkfeny.png",
+      "safe_to_delete": false,
+      "sha256": "5634aa9bb0342b52c7b1a965b6a73df16c97c2992f37c6bca9e21ea60c07d769",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/sotetmoha.png",
+      "safe_to_delete": false,
+      "sha256": "8243bfee382e93dd731ec8847fa2e6e9986a040809c4fd0817702ddc17125e7c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/szenthamvak.png",
+      "safe_to_delete": false,
+      "sha256": "8f3be1812e5fd3fab41f1dd520dc1f617ce47146af0f4df510375d9fac83e018",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/utjaro.png",
+      "safe_to_delete": false,
+      "sha256": "9ce63adb3cafe441902f2436b7252e0c95f7436fb7bd5b41c01fbe99dffe0730",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadbor.png",
+      "safe_to_delete": false,
+      "sha256": "72e27f5609b974d21281398c51f4513bda20e9bc4cb70aa33ec81ff510372589",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadorzo.png",
+      "safe_to_delete": false,
+      "sha256": "0feb576908eaf1f18dbaf1245373669099979c0e7fe80d6d7a54b3d16a930641",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vadvadasz.png",
+      "safe_to_delete": false,
+      "sha256": "12a53c07f5a76bf3220aeddb6abc6a6ee3b3d19aab3afd2a90640fe8c50d5722",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/verszavanna.png",
+      "safe_to_delete": false,
+      "sha256": "65ad11db8baea05b64a8d58c016815f7de3ad445d376c9f2a126f30d6b2cc145",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/viharjaro.png",
+      "safe_to_delete": false,
+      "sha256": "d45f12a1d1cacc3ade3dafe335da56ce815e1a474868301952622f0ab5f9a433",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/viharkvarc_runas.png",
+      "safe_to_delete": false,
+      "sha256": "259e2907c5234f48a980e05b876d1462ceda5de50cc170a267bccbaa7dae519d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/viharszel.png",
+      "safe_to_delete": false,
+      "sha256": "0a47866f4f4e3e710137324ef6acd162f584f55efa76a82f02125ed221f37210",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/entity/equipment/humanoid_leggings/rp2/vizbor.png",
+      "safe_to_delete": false,
+      "sha256": "8826e6041d312c1d34f4531a349290125ca744948948f63c290d060e7a907613",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/alkimista_fatyol_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "45f2461651818df1625a0e758f1bf45fca9d280e7b8766754a1c56fc646756f8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/alkimista_fatyol_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "93a98b8f43e29516b728669c6292ba1ea30e9d2f5387bfcaa1fc23c45f5dbce5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/alkimista_fatyol_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "8d11a187959acef0753eab76dfc58b3820feba012292650a4f61c96ef037b863",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/alkimista_fatyol_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "a4a65ffc2f0009b432c2809bee94b60007456834909c58d41444bca198d7f9d9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/aranyfust_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "9e4fc6375192437f97613c315dda64f1b9380dd9b05869635dc6415c6b53a2b1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/aranyfust_kopeny.png",
+      "safe_to_delete": false,
+      "sha256": "b02399a6088f265d5a678459429e191a961f66b100aeaf3f343385068ff3db3e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/aranyfust_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "b0bf707b606e72251408293860d8cfd517188b10d04eff2a3f383bcdf6faae6e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/aranyfust_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "e5c365b60094d0795175975387be33b3935cc7c1a36993c745d18b5450ffc09d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/borostyan_tarna_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "2be80a723fb2ea32ab70bc921dc02d9abe3119bfc00a7857442e473e100ce259",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/borostyan_tarna_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "b4c813c2ff0969fcdfa18a6276eef87c59a394dbe222cd0d5a65a615f8fd6f40",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/borostyan_tarna_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "1710ae605cb1d3ece09221897d23f139b4734d9fe3175d235aa52ddadfd34e50",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csillagacel_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "ef7b6467ebae612543aab6b33fc4858d5b85c38c9e7b3fa6718fe40c48ecaa9b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csillagacel_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "b850866fbb07998535e5e9e765f8b259008fdf3d0369e946f65de4040f05dab3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csillagacel_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "aedb4e8b5bec9498b9240abdd0c5b767974f6117e2d80d9a61cb3c0c2592eefe",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csillagacel_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "e8de87c4ad70653744b82960617cd0b4c60eee8dc12b4401a9908b0e8952b156",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csillagfatyol_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "d8a3ecaebc7831bb7759100f4390a292617146a1954dc4a1dba5f275001acd5b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csillagfatyol_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "ee690e83bee546ac37f023fabf5c7fdb409aff842b5ef13510abf55ed41d7edf",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csillagfatyol_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "cb7952f4970e464bc7b5c561d3b7ccca4df81f85bc7d0b07277ba14c6d436b6e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csillagfatyol_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "202057c65de328b30b20ae01b3565c6c3a34cea19a38623b8c4869d61f8ffa4e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csontenyv_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "f82c18a202d72a46e78bb084e1e3aa4972f331b59fbb588127f3d86c3fef31b6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csontenyv_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "2af44b6b267c7a260761ac16e6525544e37741c438b03d9e86087aa2086652dc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csontenyv_pancel.png",
+      "safe_to_delete": false,
+      "sha256": "763360837a0f0e60765dacf390539767c5fce3e2c6a21b551656e79ec0f79d4d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csontenyv_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "8b887f239798677115b4cfccc55bc8f92223226bcadb749aeac04c14f8246e9f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csontvarro_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "516aa1d0fb00e4e5b0eefc06dd4e79c62aa1ebb5e2a3b772a7650271e9f66656",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csontvarro_kopeny.png",
+      "safe_to_delete": false,
+      "sha256": "fa98592988ca98361c3d0d599c63579db11471c8272995767383524ab1d0edfa",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csontvarro_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "bc1338a37ffca89bd09fc4a6ecf8921509de64bf14c179de823495c1cc264a69",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/csontvarro_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "22b82aabe961f1516e7eb15b3b1b47a0ec310c117e4751bbe2d3557fd592e492",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/demonbor_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "9328f6187977bc2ef5d6f1a17a634f8d270e1803d62b2d64efe2ce43d223ebd4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/demonbor_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "f42a7da56e213013bb72995aa03da37f4b86eee5f8c098661c95f057434c32ae",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/demonbor_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "717aef66783cf4871593b0a11c5e7c218e441099fe9ffe25dce24b23c8004c05",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/demonbor_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "81211052e999bda349a77b998b808457ee9e021a276845b6f52abf92ede2feb6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/fonixpihe_kopeny.png",
+      "safe_to_delete": false,
+      "sha256": "d73028843ff0a1d621d2cd028de99d4fabdf5d3703ad67ffc485789a438ce6ea",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/fonixszovet_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "66eb223a96ea93078518b0fcac3157b74f82782c4d31c3c13b46b233fc92e496",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/fonixszovet_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "464549e4bd9374d7fbd4bed2960e10e08a5ac92fbe66818a1e1e8af1ca8ca512",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/fonixszovet_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "9613715414125244ed2298592554f08e38fe53007c36d1f70d973c5f93299fc0",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/glatziendorfi_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "6dcb304242024e6b845d27a20086b3a726042066aa09dff09496024369c3302f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/glatziendorfi_jegvert.png",
+      "safe_to_delete": false,
+      "sha256": "59344f8731aec9fa50e3f2f6038745448aaf2a4e4523b6667e738aee519bbb99",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/glatziendorfi_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "a5711d18cf6150e6557f904e8c39c6e6d0f75b79633a1ceb1a86e0cd686ebe0d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/glatziendorfi_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "1c0a833777261f7ef282a011445d174da7b0e998cf7e9326102f733f4d4c102a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/gyongyhaz_warden_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "f473ab35746e21ecac5adb7143436cb6736886ee0c17eff93c275f4f8eba81dc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/gyongyhaz_warden_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "2abb372e969492cf021b367cfbf17accdb3f54da6a4cc907fdd9db0a16b30650",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/gyongyhaz_warden_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "4c048411f14027350da9d696b67138ef84da664ec7593cc3428379aa46934cbf",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/gyongyhaz_warden_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "1866cd43a7587251ff18773d5576a5620155140fe0a3a0b012b967f4155f4856",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/hataror_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "98fb4bae7f16f9fa1e3c8ad8734204ac4ebdd28eb43dbad4850c23d8f7d1992d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/hataror_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "6a973459b7ededf9a35407b639600f794cf921f8f300a7e8c6a0816a27c77fb5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/hataror_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "b59a0520b1ea4cb8f716c6ab7b99b733ca9cac9b572abc62177f898a3d5b00ad",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/hataror_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "b6f25966b32106d63c6a856a06ed64fa13d8fb63963688092e45d36144890b15",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/holdarnyek_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "5a507b11788aec4e4e4b72de5f2bd129b8b1a033d0efc07dcf7a7318fa2fd13a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/holdarnyek_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "793e610d1caf4daf44e6a1a9b8046d89ad178ae0185de4ca098d6b07254deaf9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/holdarnyek_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "4a32278711a4ce5df3b936d3c1a3282e9683c76658187cac4b03e585dbc6ce87",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/holdarnyek_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "1e0168d19f64d3c834b2a6b470c7835c58dd7fed3e7feddd0ebca1b6c13c55ee",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/holdlen_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "818fecea340a5914dad157711539ac85289b33f95bc58b61fd4819a2110589ea",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/holdlen_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "2da25ee2163099eb6aa5e981dc8bef61faa4863b27aeb92453b530331775fe53",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/holdlen_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "dcb92b2b3552ebee43a8c46aa89d4d8cdb3335c9eebefff2bfd3c67f51c8102b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/holdlen_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "53f3c6c8b2748d673d6385ab8bc9b7a9d3af905d93616c7ba06a4db90fd19c7e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/kitinbor_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "ee68211d19662350731aaac50335fc4ace45ef242465e404363266150eac2c63",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/kitinbor_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "f3dd0cc33c15616cb2a88f7543ec761747328e3000268283099067b32240bb4f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/kitinbor_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "609d3cb4eee11b2c00242694acd93f9b121b97b769b43ece5a81095ec05ba0fd",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/kitinbor_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "fafe401fa2f28e20916136939dad55184b2ab2bfecb8156de213fbced9e364d1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/kodszovo_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "bd0572fce6cb95ecdd51c1aa6462845550e8d9abfee75ab7b32070943aace7de",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/kodszovo_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "7c28d83258ff3caf69b2fbca6da9b5bb0b1db7d3bbe7f2b0b723417d1e3a3688",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/kodszovo_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "642e9d06eba0d79021bdd66c75438193521532427a84d0726dcdd92d0bb12f91",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/kodszovo_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "350f8997eb2e9d72abdc1a81333f38a766762cf3c5e1f9c25a8035a705e74ab2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/konnyu_otvozet_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "d6e34260b4ed553eecfdd5dfef4d04293ee642c8224b93f886c8f9e961a85756",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/konnyu_otvozet_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "684f1be9b2a4da5513fd0fd86fd9573727752f2681d262f1808c354d39defb8e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/konnyu_otvozet_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "c260ce7d8956c580d1bced03777535e015464846e5e5ac36b8bdf470bba3bdb5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/konnyu_otvozet_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "0401f65dc91fade7a59c61047299e9f3ed3242b47c3a460bdc05aa660624e896",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyseg_orseg_bakancs.png",
+      "safe_to_delete": false,
+      "sha256": "98378a82e547696b612ea6d86f6c56dcbb2fbadcab288161a46541502f3fdb67",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyseg_orseg_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "238c8c1b1fb3e7fdf4bfeb54aeb9d542ca6f6041828866cafd969acc881a48a0",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyseg_orseg_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "70a00ce94da763c7d663d5601a017b26bf80742291848be86a8dd4e502f3fbfa",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyseg_orseg_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "92407c647dc0aafbdcd2679d378f232990276484f4719c865503504328f29cdc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyseg_ritual_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "7175ae5a1a092b2055fbada39c769956902423916af56b2bcaa7d7c6478ae6d3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyseg_ritual_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "700891d7ec755e85ec05b681367c23df66b34e3e75b7da0c3eea9c8d799669d9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyseg_ritual_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "49a2de2bd12b42fabfb5ae3194d2732df002ac9c47cd961d228f08e79dde790d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyseg_ritual_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "5de1301280456433545357a12008eee10762474a44642a0d1a1dfa9816de75e1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melysegi_borostyan_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "30b82ff28a3cfc4de749d51e40df7dda8b66096fbd7e2c44b1eb748d025425aa",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyvizi_vadasz_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "986ee368ff245da290dd220012174ffb4554994a52fb18320346cc8a55cd5924",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyvizi_vadasz_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "44d5e432180cf9c09880c99e6959b276aea533ce2e38a08e1c5dc88a3b073088",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyvizi_vadasz_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "e2ec2c7df38841cf7ae7b4a522f19d879a8769c31aada665400668c7cc5cda91",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/melyvizi_vadasz_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "5b752e40ab6f162d5d69ed50cd31ce577e36f22749982c49dc0d79dc42fa894c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/nemakristaly_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "b2ce3b0467a7d8728f023d8b73b1af58248b4fed53d3640164c5bce2b706ebd3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/nemakristaly_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "0c53c724fea197e6d7532f0f17b7560259c2a34803f1750b699309ba8bcaa717",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/nemakristaly_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "a5cac49a1df932b87be988c9a8261deb29ecc856eadab5c337b296294477c911",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/nemakristaly_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "761fd7b3e91eed1479fcee2ae004ef66e2efca06b69a4e9543203e0cde66eb00",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/osicsarnok_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "b63484403169c824e1d3c598ddceabbd51e726f355350f9853792881b4cc3b01",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/osicsarnok_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "6714b56458159497df86d0d1b8d44c5c3b4703981f54e249c70f6e23036687a5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/osicsarnok_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "1bb5b3db6f66a4fa3c818099474218206cd27a90d6bc08b614f0470044b90b7b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/osicsarnok_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "ec7e72f2680899e801a1acc1ec242419c8c04f86f69e03ce4db13031b2b2a689",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/ostromtoro_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "9328834bc84cc4f7a8d75ce811b5c0c2f97de0207b5fff19bfe0124bbeb96653",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/ostromtoro_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "3f03442af209187ca0bd1f07d2a45a26e8df74d9831a1b994dc3a4a0d7d34adb",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/ostromtoro_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "a6baf3a53e1ab64d54a60167fc642193f12068c348ce5e9c83e295a8bb0bdba1",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/ostromtoro_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "47888b92b1f3bf6e159549d56084676a2e7d8326ee96edcfa88873772935220b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/predator_karma_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "54aee35b1d45795490e22f4f52fbe7b9b40b9d315869555856795b6c8f2f60d3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/predator_karma_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "2864a6d73b54b4d904bb35f9d5ad3fd40953d8a98cc62342797c7ac7d35e610d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/predator_karma_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "37d175ef83851ad505f00cdade14ca42a7338a775d3ed70d45339d37d8d2ef3e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/predator_karma_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "c505f1046dac17fd9d42f23cb15a10a91507c3855094937934fea6bad38a94ff",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runaforged_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "5f58a8ae2fe1ed00781275cf185aa2931e7bcc6b57c7730499d4e0e01d85925b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runaforged_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "48af4110fecab5757b4ef2d7d146a1c06a965f6b6550975f39b23a504f352723",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runaforged_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "c9e2a0cc28710e2c672342c7a97cb4b55ab3b0adf01797550935bff77b2307a6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runaforged_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "31c2caba937416678df0530054ada116152c91643e68e2581fb0853db14a576f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runalanc_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "301bfdebcafdcb5719a8f95017436a81d836fba977e1cd0be35dcd084af777ce",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runalanc_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "ca2e66c572a8e9e850d48d988aacfb5855a3bf5a6b9781ee4b56f047aca2815e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runalanc_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "5225d78ab5107e99621332f9a97460ee576802be8e2b16f9174bd5debacbc149",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runalanc_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "14b316baa876e915ae412bb3a387065913a1d67b61942bc049c0c6e7363baac8",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runapajzs_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "5428cf1871158b8eb49b12b56a0182283ab5c55c18282d1c5095583937bb6caf",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runapajzs_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "9ee60d99a30f3e816dd3b15d6836460a4c0a956ad9d6a5ebd55bbfa0d0f11c51",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runapajzs_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "98893ccb5f7ed7234dc68d1ab99b456cddae34094b88e2aba1bcca9ce3334b0d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/runapajzs_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "103e026725b56e03ea41332244f462c5cb89bf657067b32412822c4d3731b053",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/salakfal_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "969529c18c311e82b685a61f89d07d9329fff5d0976af593db672e3f2c1e0965",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/salakfal_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "6903a54d44b54ef4e97eeeb2a1d8658957071c947de4b2721cba60dbc2cf9b7c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/salakfal_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "0c57275a6c95f68bb14d7d79d8f52b26584fb4cc24ac60ca77ee5c8213a4becd",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/salakfal_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "7e59c426925b5be3193b4b0a2c9f15dfbbd6bbb6bffd92ee7edebdd92a335ba6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/sarkfeny_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "bb75b54a216fbaba0a61eed504a079a9f0e86c8e218bc1278918b026c8a02ab5",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/sarkfeny_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "b3cd2f321947a7b0854103a66ff9f18b62149ee3e6e7b4cad0b64afb55e0d741",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/sarkfeny_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "dfdec537760db5abc93ec3ff08c966caa84bf633595cfe94a61cd3046aabfb21",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/sarkfeny_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "475ea0ec5ff78547f779fcfac7ce5db3316c1f7b8257bc8d53b57e690ef775d2",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/sotetmoha_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "68205398c44e5a552eb70b30a72103dc0a865919c404b674c716272bf71637c9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/sotetmoha_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "27c9c03be8abb4c5d66af61d9a6f9deafd7bcb86fb9fa3c5b5812d67e06bb22e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/sotetmoha_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "75acd2f50d96b5b694b0c6a0d8a26cb08a641e521bca8f09d4c3989e02516c14",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/sotetmoha_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "563aefe05587d3a91ce03efd5cd8e395fcef43060bfa61767991003214f5bd5c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/szenthamvak_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "1f0bc8409014d163ac4b84459b5a401d309e9f5f308388e97c030145c148f60b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/szenthamvak_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "cbfece64a438a672875ff061e3ae431656c22c80f7a1ccf38916441dee8f5286",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/szenthamvak_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "b4afa9eaaf260ca3add2201f83fc9a7b8c6ff886431351da2181680a9a700e74",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/szenthamvak_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "3edeb3bbea4f9bc3a8b58b8917d82df1c583bb796eafff6e7afdaca2cfa43f0a",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/utjaro_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "de62f35c5c7d49be024a1cfbace80933a097b10c3f6e62970445a37eee06f9db",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/utjaro_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "e69ae9b3b74b33875f0a2ea1331208501d852a17bf21afb300360116bea8d6c9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/utjaro_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "ac7da0631fbd9e910a25b77ff621413fb0c8fa3449331338c03e35af41b7f80e",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/utjaro_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "790012ba2da40065f23355e7a16a7680da536f94d724a51ecc4e8f82420b1171",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadbor_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "40530dddea30d66d1e84b8266184e4fc486d2f67ae157c3a369a28680aec013f",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadbor_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "13db45e5056f439b029253e43f26331a6b815c53d7e648078e5669d9f5f24809",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadbor_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "906d4b4c1cc49f7b0f12a94931df24c6c28162ddb068b468dac4abad3d1e6360",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadbor_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "3fe65e5673a93edd59adeba5819b979e979c9bcfe912d8588e68bc831f9a5c66",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadorzo_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "f70851cd7225963eff81f7062c41780435fc7ea69799c1255d37ee14f84db090",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadorzo_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "3c5362b482f8ed7fe9cb1002e35755ab7abe05cad7ec4859498076dde8b373bd",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadorzo_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "0671e5e3f3a7527ecb336067736b5f50984ba5782d58ade4b01d960faab17c7c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadorzo_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "5cb5aa80b5d52342711efda1fe38e4a44779f51d8f3d6b9782d1e77d7bc01d09",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadvadasz_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "8cbe82d754fef4a8a48cc3267d43ad8d1fa35f89a7e948fd23631f42ea042369",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadvadasz_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "8e27722025ec66b1c81b5c12f922259fced4c62ceb502b9b0334c1d2b2cb2a6c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadvadasz_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "9cf8d9c7148c4937a00dacf8e60c529dc538365bdbd4b09eaf72dfd6a563a41c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vadvadasz_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "899970ff586afb404ea8aaf07dc86ec68d3f3253916ce2ed243cdc966898ad87",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/verszavanna_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "5a1b89d98049ff7378481764b0ae8b98f4618c8088643d204f2eafd4e0960062",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/verszavanna_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "5e1616c388d2409e99f07b4d37b2b665dc9282e3b816982eadf6a9f0328a3062",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/verszavanna_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "b85b2ff738141ac86db411fc896bb6dd1ef306a77e7f78add2d8e1dd4fe2a47c",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/verszavanna_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "345dcb4adc66c29cc5ded249a2f463e60c1d9a9c113e20816318db7198e18936",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharjaro_bakancs.png",
+      "safe_to_delete": false,
+      "sha256": "ab7bfff21a063e524c2ac75db944d7f9b4268f5af8893027c496d991497837af",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharjaro_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "78ea50737c4b5cd1975e2cbbb58cb350adcdea3d2058d763e02ae22ad443bcb4",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharjaro_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "3f55557d8ae2685bb20008cd50dbe94000304f72a035f1a6cd34d1fc7bdee80d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharjaro_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "05cde04b81c7972dc839c6a0b94559f94750b1a9ce6eab47b17b618e182e6cf6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharkvarc_runas_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "3099270a7e3e82ee8b242012b1f7607098220d9a874cdcdc43a140cb27391c8b",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharkvarc_runas_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "3796c79a3079dc4664bb6993e69642df9699f6bc5684cf9d097df403ef305842",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharkvarc_runas_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "8b7e6e594bb83a220ef336eb325e51a9e7794e3ee5e767e7010041a966b383b9",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharkvarc_runas_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "681119776b1c28d6028249fefad29171ffbb1edd34695b53b8310542fe8e79bc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharszel_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "65030473275a46e205683288d5a5696ceb6b31f5e102c8f132f6a1f913e39a70",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharszel_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "239ffeb54e4d50cbb79457652c96b8a7e5cc85db976e9e451f1e8cb3550cdfbc",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharszel_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "9895466d3ae04085525638ff046b7a18d847ba463fb81c25c10af8d9dd71ecc6",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/viharszel_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "3c9dfdee78f7297b96915a7795c3109493174994d2012837b33e2a38dd540dc3",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vizbor_csizma.png",
+      "safe_to_delete": false,
+      "sha256": "ff17ce5664e2901c5619dad55f60904a69eb5982b4a5d5d0f9e1c2d3cbe4720d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vizbor_labvert.png",
+      "safe_to_delete": false,
+      "sha256": "abed04b9ed90cb5a2fd15be4a3342e417ea63c8f470f1c8cbc544dc53a5e9a6d",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vizbor_mellvert.png",
+      "safe_to_delete": false,
+      "sha256": "ea325abac526f2a21842e706784f5709705c90bee5140a490bfeb455617bd4ca",
+      "status": "ACTIVE"
+    },
+    {
+      "path": "resource-pack/assets/icesmp/textures/item/vizbor_sisak.png",
+      "safe_to_delete": false,
+      "sha256": "15b5e83807d7bf885c01880d59cd8784121b10608b4e7890ad973d5a27e41739",
+      "status": "ACTIVE"
+    }
+  ],
+  "authority": "docs/development/equipment-rp2-production-manifest.json",
+  "glatziendorf_legacy": {
+    "classification": "STALE_RETAINED_NOT_SAFE_TO_DELETE"
+  },
+  "schema": 1,
+  "summary": {
+    "active": 600,
+    "broken_reference": 0,
+    "orphan": 0,
+    "safe_to_delete": 0,
+    "unknown_review_required_deleted": 0
+  }
+}
