@@ -765,6 +765,7 @@ public final class IceSMPCore {
         jobManager.setXpChangeHook(player -> {
             specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
+            equipmentProficiencyService.reconcileNextTick(player);
             hu.taliann.icesmp.pve.EquippedCombatPowerService.refreshAfterMutation(player);
         });
         this.clientBridge = new hu.taliann.icesmp.client.IceSmpClientBridge(plugin, configManager);
@@ -1947,6 +1948,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(totemManager, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
         pluginManager.registerEvents(mobAbilityRuntime, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.pve.WildlifeRetaliationService(
+                plugin, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EquipmentProficiencyListener(
                 plugin, equipmentProficiencyService, itemIdentityService), plugin);
         pluginManager.registerEvents(equippedCombatPowerService, plugin);
