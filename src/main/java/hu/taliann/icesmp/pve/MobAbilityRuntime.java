@@ -46,7 +46,10 @@ public final class MobAbilityRuntime implements Listener {
     private static final class RuntimeState {
         private final Map<String, Long> readyAtTick = new LinkedHashMap<>();
         private long tick;
+        private long recoveryUntilTick;
+        private long castEpoch;
         private boolean casting;
+        private MobAbilityDefinition currentAbility;
     }
 
     private final JavaPlugin plugin;
@@ -88,6 +91,11 @@ public final class MobAbilityRuntime implements Listener {
         if (template != null) {
             for (final String abilityId : template.abilityIds()) definitions.add(abilities.require(abilityId));
         }
+        final MobRank rank = scaling.getRank(mob);
+        for (final String abilityId : config.getStringList("mob-scaling.rank-abilities."
+                + rank.name().toLowerCase(java.util.Locale.ROOT))) {
+            addIfAbsent(definitions, abilityId);
+        }
         final List<EliteAffix> affixes = scaling.getAffixes(mob);
         if (affixes.contains(EliteAffix.ARCANE)) addIfAbsent(definitions, "rime_burst");
         if (affixes.contains(EliteAffix.SUMMONER)) addIfAbsent(definitions, "call_frozen");
@@ -95,7 +103,11 @@ public final class MobAbilityRuntime implements Listener {
             mob.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,
                     Integer.MAX_VALUE, 0, false, true, true));
         }
-        if (definitions.isEmpty() && affixes.isEmpty()) return;
+        final MobArchetype archetype = archetype(mob);
+        definitions.removeIf(definition -> !definition.eligible(rank, archetype));
+        final int maximum = maximumTechniques(rank);
+        while (definitions.size() > maximum) definitions.removeLast();
+        if (definitions.isEmpty()) return;
         final RuntimeState state = new RuntimeState();
         if (!registerState(mob.getUniqueId(), state)) return;
         try {
@@ -130,36 +142,53 @@ public final class MobAbilityRuntime implements Listener {
             return;
         }
         state.tick += RUNTIME_STEP_TICKS;
-        if (state.casting || definitions.isEmpty()) return;
+        if (state.casting || state.tick < state.recoveryUntilTick || definitions.isEmpty()) return;
         final MobAbilityDefinition chosen = definitions.stream()
                 .filter(definition -> state.tick >= state.readyAtTick
                         .getOrDefault(definition.abilityId(), 0L))
                 .findFirst().orElse(null);
         if (chosen == null) return;
-        final Location target = targetSnapshot(mob, chosen.radius());
-        if (requiresTarget(chosen.kind()) && target == null) return;
+        final Location target = targetSnapshot(mob, chosen);
+        if (chosen.targetRule() != MobAbilityDefinition.TargetRule.SELF && target == null) return;
         state.casting = true;
+        state.currentAbility = chosen;
+        final long castEpoch = ++state.castEpoch;
         state.readyAtTick.put(chosen.abilityId(), state.tick + chosen.cooldownTicks());
+        CombatTelemetry.record("technique_cast", chosen.abilityId());
         telegraph(mob, chosen, target);
         try {
             mob.getScheduler().runDelayed(plugin, task -> {
-                try {
-                    if (mob.isValid() && !mob.isDead()) execute(mob, chosen, target);
-                } finally {
+                if (state.castEpoch != castEpoch) return;
+                if (mob.isValid() && !mob.isDead()) {
+                    execute(mob, chosen, target);
+                    CombatTelemetry.record("technique_execute", chosen.abilityId());
+                }
+                state.recoveryUntilTick = state.tick + chosen.recoveryTicks();
+                state.currentAbility = null;
+                state.casting = false;
+            }, () -> {
+                if (state.castEpoch == castEpoch) {
+                    state.currentAbility = null;
                     state.casting = false;
                 }
-            }, () -> {
-                state.casting = false;
                 states.remove(mob.getUniqueId(), state);
             }, Math.max(1L, chosen.telegraphTicks()));
         } catch (final RuntimeException rejected) {
+            state.currentAbility = null;
             state.casting = false;
             states.remove(mob.getUniqueId(), state);
         }
     }
 
-    private Location targetSnapshot(final Mob mob, final double radius) {
-        for (final Entity nearby : mob.getNearbyEntities(radius, radius, radius)) {
+    private Location targetSnapshot(final Mob mob, final MobAbilityDefinition definition) {
+        if (definition.targetRule() == MobAbilityDefinition.TargetRule.SELF) return mob.getLocation().clone();
+        if (definition.targetRule() == MobAbilityDefinition.TargetRule.CURRENT_TARGET
+                && mob.getTarget() instanceof Player target && Bukkit.isOwnedByCurrentRegion(target)
+                && survivor(target)) {
+            return target.getLocation().clone();
+        }
+        for (final Entity nearby : mob.getNearbyEntities(
+                definition.radius(), definition.radius(), definition.radius())) {
             if (nearby instanceof Player player && Bukkit.isOwnedByCurrentRegion(player)
                     && survivor(player)) return player.getLocation().clone();
         }
@@ -213,6 +242,21 @@ public final class MobAbilityRuntime implements Listener {
                 mob.setHealth(Math.min(maximum, mob.getHealth() + maximum * definition.power()));
             }
             case SUMMON -> summonAdds(mob, definition);
+            case CLEAVE -> impactPlayers(mob, mob.getLocation(), definition.radius(),
+                    definition.power(), false);
+            case POISON_CLOUD -> poisonPlayers(mob, definition);
+            case DELAYED_RUNE -> {
+                if (target != null) impactPlayers(mob, target, definition.radius(),
+                        definition.power(), false);
+            }
+            case RETREAT -> {
+                if (target == null || target.getWorld() != mob.getWorld()) return;
+                final Vector direction = mob.getLocation().toVector().subtract(target.toVector());
+                if (direction.lengthSquared() > 0.01D) {
+                    mob.setVelocity(direction.normalize().multiply(definition.power()).setY(0.25D));
+                }
+            }
+            case ALLY_BUFF -> buffAllies(mob, definition);
         }
     }
 
@@ -254,6 +298,18 @@ public final class MobAbilityRuntime implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAffixHurt(final EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
+        final RuntimeState state = states.get(mob.getUniqueId());
+        if (state != null && state.casting && state.currentAbility != null
+                && state.currentAbility.interruptible()
+                && event.getFinalDamage() >= state.currentAbility.tuning()
+                .getOrDefault("interrupt-damage", 1.0D)) {
+            final String interrupted = state.currentAbility.abilityId();
+            state.castEpoch++;
+            state.casting = false;
+            state.currentAbility = null;
+            state.recoveryUntilTick = state.tick + 20L;
+            CombatTelemetry.record("technique_interrupt", interrupted);
+        }
         final List<EliteAffix> affixes = scaling.getAffixes(mob);
         final double projected = mob.getHealth() - event.getFinalDamage();
         final double maximum = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) == null
@@ -300,7 +356,13 @@ public final class MobAbilityRuntime implements Listener {
         states.remove(event.getEntity().getUniqueId());
     }
 
-    public void shutdown() { states.clear(); }
+    public void shutdown() {
+        if (!CombatTelemetry.snapshot().isEmpty()) {
+            plugin.getLogger().info("Combat telemetry aggregate: " + CombatTelemetry.snapshot());
+        }
+        states.clear();
+        CombatTelemetry.clear();
+    }
 
     public int activeStateCount() { return states.size(); }
 
@@ -320,6 +382,7 @@ public final class MobAbilityRuntime implements Listener {
                 if (!survivor(player) || player.getWorld() != center.getWorld()
                         || player.getLocation().distanceSquared(center) > radius * radius) return;
                 player.damage(damage);
+                CombatTelemetry.record("technique_hit", "direct");
                 if (knockback) {
                     final Vector vector = player.getLocation().toVector().subtract(center.toVector());
                     if (vector.lengthSquared() > 0.01D) player.setVelocity(
@@ -329,13 +392,62 @@ public final class MobAbilityRuntime implements Listener {
         }
     }
 
+    private void poisonPlayers(final Mob caster, final MobAbilityDefinition definition) {
+        final Location center = caster.getLocation().clone();
+        final int duration = Math.max(20, Math.min(200, (int) Math.round(
+                definition.tuning().getOrDefault("duration-ticks", 80.0D))));
+        final int amplifier = Math.max(0, Math.min(2, (int) Math.round(
+                definition.tuning().getOrDefault("amplifier", 0.0D))));
+        for (final Entity nearby : caster.getNearbyEntities(
+                definition.radius(), definition.radius(), definition.radius())) {
+            if (!(nearby instanceof Player player)) continue;
+            player.getScheduler().run(plugin, task -> {
+                if (!survivor(player) || player.getWorld() != center.getWorld()
+                        || player.getLocation().distanceSquared(center)
+                        > definition.radius() * definition.radius()) return;
+                player.damage(definition.power());
+                player.addPotionEffect(new PotionEffect(PotionEffectType.POISON,
+                        duration, amplifier, false, true, true));
+                CombatTelemetry.record("technique_hit", definition.abilityId());
+            }, null);
+        }
+    }
+
+    private void buffAllies(final Mob caster, final MobAbilityDefinition definition) {
+        final int duration = Math.max(40, Math.min(400, (int) Math.round(
+                definition.tuning().getOrDefault("duration-ticks", 120.0D))));
+        int affected = 0;
+        for (final Entity nearby : caster.getNearbyEntities(
+                definition.radius(), definition.radius(), definition.radius())) {
+            if (!(nearby instanceof Mob ally) || !Bukkit.isOwnedByCurrentRegion(ally)) continue;
+            ally.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
+                    duration, 0, false, true, true));
+            if (++affected >= 6) break;
+        }
+    }
+
     private static boolean survivor(final Player player) {
         return player.isOnline() && (player.getGameMode() == GameMode.SURVIVAL
                 || player.getGameMode() == GameMode.ADVENTURE);
     }
 
-    private static boolean requiresTarget(final MobAbilityDefinition.Kind kind) {
-        return kind == MobAbilityDefinition.Kind.LUNGE
-                || kind == MobAbilityDefinition.Kind.PROJECTILE_BURST;
+    private MobArchetype archetype(final LivingEntity entity) {
+        final String raw = scaling.getArchetypeId(entity);
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return MobArchetype.parse(raw);
+        } catch (final IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private static int maximumTechniques(final MobRank rank) {
+        return switch (rank) {
+            case NORMAL -> 1;
+            case VETERAN -> 2;
+            case ELITE -> 3;
+            case CHAMPION, MINIBOSS -> 4;
+            case BOSS, WORLD_BOSS -> 5;
+        };
     }
 }

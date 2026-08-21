@@ -6,6 +6,9 @@ mob-abilities:
     kind: LUNGE
     cooldown-ticks: 120
     telegraph-ticks: 20
+    recovery-ticks: 15
+    target-rule: CURRENT_TARGET
+    interruptible: true
     radius: 10.0
     power: 1.15
     max-summons: 0
@@ -13,6 +16,9 @@ mob-abilities:
     kind: GROUND_SLAM
     cooldown-ticks: 180
     telegraph-ticks: 30
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
     radius: 4.5
     power: 6.0
     max-summons: 0
@@ -21,6 +27,9 @@ mob-abilities:
     kind: PROJECTILE_BURST
     cooldown-ticks: 140
     telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: CURRENT_TARGET
+    interruptible: true
     radius: 14.0
     power: 3.0
     max-summons: 0
@@ -29,6 +38,9 @@ mob-abilities:
     kind: SHIELD
     cooldown-ticks: 240
     telegraph-ticks: 10
+    recovery-ticks: 15
+    target-rule: SELF
+    interruptible: false
     radius: 2.0
     power: 0.35
     max-summons: 0
@@ -36,6 +48,9 @@ mob-abilities:
     kind: HEAL_PULSE
     cooldown-ticks: 260
     telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: SELF
+    interruptible: true
     radius: 3.0
     power: 0.12
     max-summons: 0
@@ -43,9 +58,70 @@ mob-abilities:
     kind: SUMMON
     cooldown-ticks: 300
     telegraph-ticks: 30
+    recovery-ticks: 40
+    target-rule: SELF
+    interruptible: true
     radius: 5.0
     power: 1.0
     max-summons: 3
+  veteran_cleave:
+    kind: CLEAVE
+    cooldown-ticks: 140
+    telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: NEAREST_PLAYER
+    interruptible: true
+    radius: 3.5
+    power: 4.0
+    max-summons: 0
+    eligible-ranks: [ VETERAN, ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+  venom_cloud:
+    kind: POISON_CLOUD
+    cooldown-ticks: 220
+    telegraph-ticks: 30
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 4.0
+    power: 2.0
+    max-summons: 0
+    eligible-ranks: [ ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+    tuning: { duration-ticks: 80, amplifier: 0 }
+  delayed_frost_rune:
+    kind: DELAYED_RUNE
+    cooldown-ticks: 180
+    telegraph-ticks: 40
+    recovery-ticks: 30
+    target-rule: NEAREST_PLAYER
+    interruptible: true
+    radius: 4.0
+    power: 7.0
+    max-summons: 0
+    eligible-ranks: [ ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+    tuning: { interrupt-damage: 2.0 }
+  hunter_retreat:
+    kind: RETREAT
+    cooldown-ticks: 160
+    telegraph-ticks: 15
+    recovery-ticks: 20
+    target-rule: CURRENT_TARGET
+    interruptible: false
+    radius: 9.0
+    power: 0.9
+    max-summons: 0
+    eligible-archetypes: [ RANGED, ARTILLERY, SKIRMISHER ]
+  war_cry:
+    kind: ALLY_BUFF
+    cooldown-ticks: 260
+    telegraph-ticks: 20
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 6.0
+    power: 0.15
+    max-summons: 0
+    eligible-ranks: [ CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+    tuning: { duration-ticks: 120 }
 
 # Source relevance is authoritative. Runtime loot may only choose rewards declared by the profile.
 mob-loot-profiles:

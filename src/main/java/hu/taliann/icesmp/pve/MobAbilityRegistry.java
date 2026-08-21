@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /** Atomically published, config-backed canonical mob ability registry. */
 public final class MobAbilityRegistry {
@@ -42,8 +43,14 @@ public final class MobAbilityRegistry {
             final MobAbilityDefinition definition = new MobAbilityDefinition(id,
                     MobAbilityDefinition.parseKind(section.getString("kind", "")),
                     section.getLong("cooldown-ticks"), section.getLong("telegraph-ticks"),
+                    section.getLong("recovery-ticks", 0L),
                     section.getDouble("radius"), section.getDouble("power"),
-                    section.getInt("max-summons", 0), tuning);
+                    section.getInt("max-summons", 0),
+                    MobAbilityDefinition.TargetRule.parse(section.getString("target-rule", "CURRENT_TARGET")),
+                    section.getBoolean("interruptible", false),
+                    enums(section.getStringList("eligible-ranks"), MobRank.class, "rank", id),
+                    enums(section.getStringList("eligible-archetypes"), MobArchetype.class, "archetype", id),
+                    tuning);
             parsed.put(id, definition);
         }
         if (parsed.size() < 4 || parsed.size() > 64) {
@@ -66,5 +73,22 @@ public final class MobAbilityRegistry {
 
     private static String normalize(final String raw) {
         return raw.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static <E extends Enum<E>> Set<E> enums(final java.util.List<String> values,
+                                                     final Class<E> type,
+                                                     final String field,
+                                                     final String abilityId) {
+        if (values == null || values.isEmpty()) return Set.of();
+        final java.util.LinkedHashSet<E> result = new java.util.LinkedHashSet<>();
+        for (final String raw : values) {
+            try {
+                result.add(Enum.valueOf(type, raw.trim().toUpperCase(Locale.ROOT).replace('-', '_')));
+            } catch (final IllegalArgumentException invalid) {
+                throw new IllegalStateException("unknown ability " + field + ": " + abilityId + '/' + raw,
+                        invalid);
+            }
+        }
+        return Set.copyOf(result);
     }
 }

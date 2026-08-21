@@ -275,6 +275,8 @@ public final class MobScalingManager {
         final double templateDamage = template == null ? 1.0D : template.stats().damageMultiplier();
         final double rankHealth = rankMultiplier(rank, "health-multiplier", rankHealthFallback(rank));
         final double rankDamage = rankMultiplier(rank, "damage-multiplier", rankDamageFallback(rank));
+        final double rankArmor = rankMultiplier(rank, "armor-bonus", rankArmorFallback(rank));
+        final double rankMovement = rankMultiplier(rank, "movement-multiplier", rankMovementFallback(rank));
 
         final AttributeInstance maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
@@ -297,11 +299,13 @@ public final class MobScalingManager {
                     "mob-scaling.maximum-absolute-damage", HARD_MAX_DAMAGE, HARD_MAX_DAMAGE),
                     scaled.attackDamage()));
         }
-        if (template != null) {
-            final AttributeInstance movement = entity.getAttribute(Attribute.MOVEMENT_SPEED);
-            if (movement != null) movement.setBaseValue(Math.min(1.0D,
-                    movement.getBaseValue() * template.stats().movementMultiplier()));
-        }
+        final AttributeInstance armor = entity.getAttribute(Attribute.ARMOR);
+        if (armor != null) armor.setBaseValue(Math.min(30.0D,
+                Math.max(0.0D, armor.getBaseValue() + rankArmor)));
+        final AttributeInstance movement = entity.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (movement != null) movement.setBaseValue(Math.min(1.0D,
+                movement.getBaseValue() * rankMovement
+                        * (template == null ? 1.0D : template.stats().movementMultiplier())));
 
         if (nameEnabled) {
             applyLevelName(entity, level, rank, template, affixes);
@@ -650,8 +654,9 @@ public final class MobScalingManager {
         final double configured = configManager.getDouble("mob-scaling.ranks."
                 + rank.name().toLowerCase(Locale.ROOT) + '.' + field, fallback);
         if (!Double.isFinite(configured)) return fallback;
-        final double maximum = field.startsWith("health") ? 50.0D : 20.0D;
-        final double minimum = field.startsWith("health") ? 0.1D : 0.0D;
+        final double maximum = field.startsWith("health") ? 50.0D
+                : field.startsWith("movement") ? 2.0D : 20.0D;
+        final double minimum = field.startsWith("health") || field.startsWith("movement") ? 0.1D : 0.0D;
         return Math.max(minimum, Math.min(maximum, configured));
     }
 
@@ -685,6 +690,30 @@ public final class MobScalingManager {
             case CHAMPION -> 1.22D;
             case MINIBOSS -> 1.28D;
             case BOSS, WORLD_BOSS -> 1.35D;
+        };
+    }
+
+    private static double rankArmorFallback(final MobRank rank) {
+        return switch (rank) {
+            case NORMAL -> 0.0D;
+            case VETERAN -> 1.0D;
+            case ELITE -> 2.0D;
+            case CHAMPION -> 3.0D;
+            case MINIBOSS -> 4.0D;
+            case BOSS -> 5.0D;
+            case WORLD_BOSS -> 6.0D;
+        };
+    }
+
+    private static double rankMovementFallback(final MobRank rank) {
+        return switch (rank) {
+            case NORMAL -> 1.0D;
+            case VETERAN -> 1.02D;
+            case ELITE -> 1.04D;
+            case CHAMPION -> 1.05D;
+            case MINIBOSS -> 1.04D;
+            case BOSS -> 1.02D;
+            case WORLD_BOSS -> 1.0D;
         };
     }
 

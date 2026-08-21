@@ -42,13 +42,28 @@ mob-scaling:
     blood-moon-elite-bonus-percent: 1.0
     danger-veteran-bonus-percent: 2.0
   ranks:
-    normal: { health-multiplier: 1.0, damage-multiplier: 1.0 }
-    veteran: { health-multiplier: 1.35, damage-multiplier: 1.08 }
-    elite: { health-multiplier: 1.85, damage-multiplier: 1.15 }
-    champion: { health-multiplier: 2.4, damage-multiplier: 1.22 }
-    miniboss: { health-multiplier: 3.2, damage-multiplier: 1.28 }
-    boss: { health-multiplier: 4.0, damage-multiplier: 1.35 }
-    world_boss: { health-multiplier: 5.0, damage-multiplier: 1.35 }
+    # HP is intentionally bounded: higher ranks gain readable techniques, armor and modest
+    # movement pressure instead of becoming health-only sponges.
+    normal: { health-multiplier: 1.0, damage-multiplier: 1.0, armor-bonus: 0.0, movement-multiplier: 1.0 }
+    veteran: { health-multiplier: 1.25, damage-multiplier: 1.08, armor-bonus: 1.0, movement-multiplier: 1.02 }
+    elite: { health-multiplier: 1.55, damage-multiplier: 1.14, armor-bonus: 2.0, movement-multiplier: 1.04 }
+    champion: { health-multiplier: 1.9, damage-multiplier: 1.20, armor-bonus: 3.0, movement-multiplier: 1.05 }
+    miniboss: { health-multiplier: 2.4, damage-multiplier: 1.25, armor-bonus: 4.0, movement-multiplier: 1.04 }
+    boss: { health-multiplier: 3.0, damage-multiplier: 1.30, armor-bonus: 5.0, movement-multiplier: 1.02 }
+    world_boss: { health-multiplier: 3.6, damage-multiplier: 1.32, armor-bonus: 6.0, movement-multiplier: 1.0 }
+  # Template abilities are evaluated first; these defaults guarantee promoted wilderness ranks
+  # have mechanics even without a matching authored template. Runtime rank caps remain authoritative.
+  rank-abilities:
+    normal: []
+    veteran: [ "veteran_cleave" ]
+    elite: [ "veteran_cleave", "delayed_frost_rune" ]
+    champion: [ "veteran_cleave", "delayed_frost_rune", "war_cry" ]
+    miniboss: [ "veteran_cleave", "venom_cloud", "delayed_frost_rune", "war_cry" ]
+    boss: [ "glacial_slam", "venom_cloud", "delayed_frost_rune", "war_cry" ]
+    world_boss: [ "glacial_slam", "venom_cloud", "delayed_frost_rune", "war_cry", "call_frozen" ]
+  abilities:
+    maximum-summons-per-cast: 3
+    summon-lifespan-ticks: 300
   hostile-only: true
   ignored-spawn-reasons:
     - "SPAWNER"
@@ -59,6 +74,89 @@ mob-scaling:
     always-visible: false
     prefix: "&7[Lvl %level%] "
     color: "WHITE"
+
+# Passive fauna can defend itself after direct player provocation. This is not a rank promotion,
+# encounter or loot source; baby and tamed animals are always excluded.
+wildlife-retaliation:
+  enabled: true
+  warning-ticks: 20
+  herd-assist:
+    enabled: true
+    radius: 6.0
+    maximum-allies: 2
+  species:
+    cow:
+      enabled: true
+      temperament: { timid: 35, defensive: 50, aggressive: 15 }
+      retaliation-percent: { timid: 8.0, defensive: 70.0, aggressive: 100.0 }
+      damage: 2.0
+      knockback: 0.55
+      retaliation-range: 4.0
+      cooldown-ticks: 160
+    sheep:
+      enabled: true
+      temperament: { timid: 55, defensive: 40, aggressive: 5 }
+      retaliation-percent: { timid: 5.0, defensive: 60.0, aggressive: 100.0 }
+      damage: 1.5
+      knockback: 0.45
+      retaliation-range: 3.5
+      cooldown-ticks: 180
+    pig:
+      enabled: true
+      temperament: { timid: 45, defensive: 45, aggressive: 10 }
+      retaliation-percent: { timid: 8.0, defensive: 65.0, aggressive: 100.0 }
+      damage: 1.5
+      knockback: 0.45
+      retaliation-range: 3.5
+      cooldown-ticks: 160
+    horse:
+      enabled: true
+      temperament: { timid: 50, defensive: 40, aggressive: 10 }
+      retaliation-percent: { timid: 10.0, defensive: 70.0, aggressive: 100.0 }
+      damage: 2.5
+      knockback: 0.70
+      retaliation-range: 4.5
+      cooldown-ticks: 200
+    donkey:
+      enabled: true
+      temperament: { timid: 40, defensive: 45, aggressive: 15 }
+      retaliation-percent: { timid: 10.0, defensive: 75.0, aggressive: 100.0 }
+      damage: 2.5
+      knockback: 0.70
+      retaliation-range: 4.5
+      cooldown-ticks: 200
+    mule:
+      enabled: true
+      temperament: { timid: 35, defensive: 45, aggressive: 20 }
+      retaliation-percent: { timid: 12.0, defensive: 80.0, aggressive: 100.0 }
+      damage: 3.0
+      knockback: 0.75
+      retaliation-range: 4.5
+      cooldown-ticks: 200
+    chicken:
+      enabled: true
+      temperament: { timid: 75, defensive: 24, aggressive: 1 }
+      retaliation-percent: { timid: 2.0, defensive: 45.0, aggressive: 100.0 }
+      damage: 0.5
+      knockback: 0.15
+      retaliation-range: 2.5
+      cooldown-ticks: 220
+    rabbit:
+      enabled: true
+      temperament: { timid: 80, defensive: 19, aggressive: 1 }
+      retaliation-percent: { timid: 2.0, defensive: 40.0, aggressive: 100.0 }
+      damage: 0.5
+      knockback: 0.20
+      retaliation-range: 2.5
+      cooldown-ticks: 220
+    goat:
+      enabled: true
+      temperament: { timid: 30, defensive: 45, aggressive: 25 }
+      retaliation-percent: { timid: 15.0, defensive: 85.0, aggressive: 100.0 }
+      damage: 3.0
+      knockback: 0.85
+      retaliation-range: 5.0
+      cooldown-ticks: 180
 
 # ===== Világesemények =====
 world-events:
