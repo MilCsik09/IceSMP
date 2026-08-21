@@ -37,9 +37,9 @@ import java.util.stream.Collectors;
 public final class WearablePresentation {
 
     private static final String FALLBACK_POLICY_RESOURCE = "wearable-fallback-policy.properties";
-    private static final String RP2_PILOT_RESOURCE = "equipment-rp2-pilot.properties";
+    private static final String RP2_PRODUCTION_RESOURCE = "equipment-rp2-production.properties";
     private static final FallbackPolicy FALLBACK_POLICY = FallbackPolicy.load();
-    private static final PilotPresentationIndex RP2_PILOT = PilotPresentationIndex.load();
+    private static final ProductionPresentationIndex RP2_PRODUCTION = ProductionPresentationIndex.load();
 
     public enum EquipmentAssetStatus {
         NOT_REQUESTED,
@@ -67,7 +67,7 @@ public final class WearablePresentation {
                                                     final String equipmentAssetId) {
         final String requestedModel = normalize(itemModelId);
         final String requestedEquipment = normalize(equipmentAssetId);
-        if (RP2_PILOT.matches(requestedModel, requestedEquipment)) {
+        if (RP2_PRODUCTION.matches(requestedModel, requestedEquipment)) {
             ItemDataFactory.applyItemModel(item, requestedModel);
             return new Result(requestedModel, requestedEquipment,
                     applyEquipmentAsset(item, requestedEquipment));
@@ -175,8 +175,8 @@ public final class WearablePresentation {
         return FALLBACK_POLICY.minecraftVersion();
     }
 
-    static boolean isRp2PilotBinding(final String itemModelId, final String equipmentAssetId) {
-        return RP2_PILOT.matches(normalize(itemModelId), normalize(equipmentAssetId));
+    static boolean isRp2ProductionBinding(final String itemModelId, final String equipmentAssetId) {
+        return RP2_PRODUCTION.matches(normalize(itemModelId), normalize(equipmentAssetId));
     }
 
     static String normalize(final String id) {
@@ -274,32 +274,32 @@ public final class WearablePresentation {
         }
     }
 
-    /** Immutable O(1) runtime projection of the canonical RP2 pilot manifest. */
-    private record PilotPresentationIndex(String minecraftVersion, Map<String, String> bindings) {
+    /** Immutable O(1) runtime projection of the canonical full-production RP2 manifest. */
+    private record ProductionPresentationIndex(String minecraftVersion, Map<String, String> bindings) {
 
-        static PilotPresentationIndex load() {
+        static ProductionPresentationIndex load() {
             final Properties properties = new Properties();
             try (InputStream input = WearablePresentation.class.getClassLoader()
-                    .getResourceAsStream(RP2_PILOT_RESOURCE)) {
+                    .getResourceAsStream(RP2_PRODUCTION_RESOURCE)) {
                 if (input == null) {
-                    throw new IllegalStateException("Missing " + RP2_PILOT_RESOURCE);
+                    throw new IllegalStateException("Missing " + RP2_PRODUCTION_RESOURCE);
                 }
                 properties.load(input);
             } catch (final IOException exception) {
-                throw new IllegalStateException("Failed to load " + RP2_PILOT_RESOURCE, exception);
+                throw new IllegalStateException("Failed to load " + RP2_PRODUCTION_RESOURCE, exception);
             }
-            if (!"1".equals(properties.getProperty("schema"))) {
-                throw new IllegalStateException("Unsupported RP2 pilot presentation schema");
+            if (!"2".equals(properties.getProperty("schema"))) {
+                throw new IllegalStateException("Unsupported RP2 production presentation schema");
             }
             final String minecraftVersion = properties.getProperty("minecraft-version", "").trim();
             if (!FALLBACK_POLICY.minecraftVersion().equals(minecraftVersion)) {
-                throw new IllegalStateException("RP2 pilot Minecraft version does not match wearable policy");
+                throw new IllegalStateException("RP2 production Minecraft version does not match wearable policy");
             }
             final int count;
             try {
                 count = Integer.parseInt(properties.getProperty("binding.count", "-1"));
             } catch (final NumberFormatException invalidCount) {
-                throw new IllegalStateException("Invalid RP2 pilot binding count", invalidCount);
+                throw new IllegalStateException("Invalid RP2 production binding count", invalidCount);
             }
             final Map<String, String> bindings = new HashMap<>();
             for (int index = 0; index < count; index++) {
@@ -307,13 +307,13 @@ public final class WearablePresentation {
                 final String equipment = normalize(properties.getProperty(
                         "binding." + index + ".equipment-asset"));
                 if (model == null || equipment == null || bindings.put(model, equipment) != null) {
-                    throw new IllegalStateException("Invalid or duplicate RP2 pilot binding at index " + index);
+                    throw new IllegalStateException("Invalid or duplicate RP2 production binding at index " + index);
                 }
             }
-            if (bindings.size() != 16) {
-                throw new IllegalStateException("RP2 pilot runtime index must contain exactly 16 bindings");
+            if (bindings.size() != 160) {
+                throw new IllegalStateException("RP2 production runtime index must contain exactly 160 bindings");
             }
-            return new PilotPresentationIndex(minecraftVersion, Map.copyOf(bindings));
+            return new ProductionPresentationIndex(minecraftVersion, Map.copyOf(bindings));
         }
 
         boolean matches(final String itemModelId, final String equipmentAssetId) {

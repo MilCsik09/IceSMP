@@ -45,7 +45,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
             try {
                 verifyAttributeComponentSemantics();
                 verifyEquipmentRuntimeStates(identity);
-                verifyRp2PilotPresentation(identity);
+                verifyRp2ProductionPresentation(identity);
                 verifyActualInventoryAtomicity();
                 verifyMutationPhysicalState(identity);
                 verifyCatalogPositiveLoad(catalog, templates);
@@ -183,42 +183,51 @@ public final class PaperSourceIntegrityRuntimeProbe {
         return value;
     }
 
-    private static void verifyRp2PilotPresentation(final ItemIdentityService identity) {
-        final Properties pilot = new Properties();
+    private static void verifyRp2ProductionPresentation(final ItemIdentityService identity) {
+        final Properties production = new Properties();
         try (var input = PaperSourceIntegrityRuntimeProbe.class.getClassLoader()
-                .getResourceAsStream("equipment-rp2-pilot.properties")) {
-            check(input != null, "RP2 pilot runtime index must be packaged");
-            pilot.load(input);
+                .getResourceAsStream("equipment-rp2-production.properties")) {
+            check(input != null, "RP2 production runtime index must be packaged");
+            production.load(input);
         } catch (final java.io.IOException failure) {
-            throw new IllegalStateException("RP2 pilot runtime index cannot be read", failure);
+            throw new IllegalStateException("RP2 production runtime index cannot be read", failure);
         }
-        final int count = Integer.parseInt(pilot.getProperty("binding.count", "-1"));
-        check(count == 16, "RP2 pilot runtime index must expose exactly 16 pieces");
+        final int count = Integer.parseInt(production.getProperty("binding.count", "-1"));
+        check(count == 160, "RP2 production runtime index must expose exactly 160 pieces");
         for (int index = 0; index < count; index++) {
-            final String model = pilot.getProperty("binding." + index + ".item-model");
-            final String equipment = pilot.getProperty("binding." + index + ".equipment-asset");
+            final String model = production.getProperty("binding." + index + ".item-model");
+            final String equipment = production.getProperty("binding." + index + ".equipment-asset");
             final String templateId = model.substring("icesmp:".length());
-            final ItemStack item = identity.create(templateId, "runtime:rp2-pilot", "paper", null);
+            final ItemStack item = identity.create(templateId, "runtime:rp2-production", "paper", null);
             check(identity.inspect(item).status() == ItemIdentityService.Status.VALID,
-                    "RP2 pilot canonical identity must remain VALID: " + templateId);
+                    "RP2 production canonical identity must remain VALID: " + templateId);
             check(model.equals(String.valueOf(item.getData(DataComponentTypes.ITEM_MODEL))),
-                    "RP2 pilot inventory model mismatch: " + templateId);
+                    "RP2 production inventory model mismatch: " + templateId);
             final var equippable = item.getData(DataComponentTypes.EQUIPPABLE);
             check(equippable != null && equipment.equals(String.valueOf(equippable.assetId())),
-                    "RP2 pilot worn asset mismatch: " + templateId);
+                    "RP2 production worn asset mismatch: " + templateId);
             final var attributes = item.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
             check(attributes != null && !attributes.modifiers().isEmpty(),
                     "RP2 presentation must not change canonical attributes: " + templateId);
         }
 
-        final ItemStack nonpilot = identity.create("csontvarro_sisak",
-                "runtime:rp2-nonpilot", "paper", null);
-        final var actual = nonpilot.getData(DataComponentTypes.EQUIPPABLE);
-        final var vanilla = new ItemStack(nonpilot.getType()).getData(DataComponentTypes.EQUIPPABLE);
-        check(identity.inspect(nonpilot).status() == ItemIdentityService.Status.VALID,
-                "RP2 nonpilot canonical identity must remain VALID");
-        check(actual != null && vanilla != null && actual.assetId().equals(vanilla.assetId()),
-                "RP2 nonpilot armor must retain backing Material vanilla worn fallback");
+        final ItemStack legacy = identity.create("csillagfatyol_mellvert",
+                "runtime:rp2-legacy", "paper", null);
+        final var before = identity.inspect(legacy);
+        final var current = legacy.getData(DataComponentTypes.EQUIPPABLE);
+        final var vanilla = new ItemStack(legacy.getType()).getData(DataComponentTypes.EQUIPPABLE);
+        check(before.status() == ItemIdentityService.Status.VALID && current != null && vanilla != null,
+                "RP2 legacy refresh fixture must start as valid equippable canonical armor");
+        legacy.setData(DataComponentTypes.EQUIPPABLE,
+                current.toBuilder().assetId(vanilla.assetId()).build());
+        identity.refreshPresentation(legacy, before.template(), before.instance());
+        final var after = identity.inspect(legacy);
+        check(after.status() == ItemIdentityService.Status.VALID
+                        && before.instance().equals(after.instance()),
+                "RP2 visual refresh must preserve UUID, rolls, runes, reroll, ascension and provenance");
+        check("icesmp:rp2/csillagfatyol".equals(String.valueOf(
+                        legacy.getData(DataComponentTypes.EQUIPPABLE).assetId())),
+                "RP2 legacy refresh must converge on the final custom worn binding");
     }
 
     private static double sumAdditive(final ItemAttributeModifiers data, final Attribute attribute) {

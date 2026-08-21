@@ -87,6 +87,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:fonixszovet_sisak
+    equipment-asset: icesmp:rp2/fonixszovet
   fonixpihe_kopeny:
     encounter-metadata:
       catalog-line: fonixszovet
@@ -99,6 +101,8 @@ item-templates:
     - combat:event
     - profession:enchanter
     - catalog:crafted
+    item-model: icesmp:fonixpihe_kopeny
+    equipment-asset: icesmp:rp2/fonixszovet
   fonixszovet_labvert:
     schema: 2
     version: 1
@@ -128,6 +132,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:fonixszovet_labvert
+    equipment-asset: icesmp:rp2/fonixszovet
   fonixszovet_csizma:
     schema: 2
     version: 1
@@ -157,6 +163,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:fonixszovet_csizma
+    equipment-asset: icesmp:rp2/fonixszovet
   holdlen_sisak:
     schema: 2
     version: 1
@@ -310,6 +318,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:nemakristaly_sisak
+    equipment-asset: icesmp:rp2/nemakristaly
   nemakristaly_mellvert:
     schema: 2
     version: 1
@@ -339,6 +349,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:nemakristaly_mellvert
+    equipment-asset: icesmp:rp2/nemakristaly
   nemakristaly_labvert:
     schema: 2
     version: 1
@@ -368,6 +380,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:nemakristaly_labvert
+    equipment-asset: icesmp:rp2/nemakristaly
   nemakristaly_csizma:
     schema: 2
     version: 1
@@ -397,6 +411,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:nemakristaly_csizma
+    equipment-asset: icesmp:rp2/nemakristaly
   alkimista_fatyol_sisak:
     schema: 2
     version: 1
@@ -426,6 +442,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:alkimista_fatyol_sisak
+    equipment-asset: icesmp:rp2/alkimista_fatyol
   alkimista_fatyol_mellvert:
     schema: 2
     version: 1
@@ -455,6 +473,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:alkimista_fatyol_mellvert
+    equipment-asset: icesmp:rp2/alkimista_fatyol
   alkimista_fatyol_labvert:
     schema: 2
     version: 1
@@ -484,6 +504,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:alkimista_fatyol_labvert
+    equipment-asset: icesmp:rp2/alkimista_fatyol
   alkimista_fatyol_csizma:
     schema: 2
     version: 1
@@ -513,6 +535,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:alkimista_fatyol_csizma
+    equipment-asset: icesmp:rp2/alkimista_fatyol
   csontvarro_sisak:
     schema: 2
     version: 1
@@ -541,6 +565,8 @@ item-templates:
       catalog-archetype: Sanctified
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:csontvarro_sisak
+    equipment-asset: icesmp:rp2/csontvarro
   csontvarro_kopeny:
     encounter-metadata:
       catalog-line: csontvarro
@@ -548,6 +574,8 @@ item-templates:
       catalog-archetype: Sanctified
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:csontvarro_kopeny
+    equipment-asset: icesmp:rp2/csontvarro
   csontvarro_labvert:
     schema: 2
     version: 1
@@ -576,6 +604,8 @@ item-templates:
       catalog-archetype: Sanctified
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:csontvarro_labvert
+    equipment-asset: icesmp:rp2/csontvarro
   csontvarro_csizma:
     schema: 2
     version: 1
@@ -604,6 +634,8 @@ item-templates:
       catalog-archetype: Sanctified
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:csontvarro_csizma
+    equipment-asset: icesmp:rp2/csontvarro
   kodszovo_sisak:
     schema: 2
     version: 1
@@ -632,6 +664,8 @@ item-templates:
       catalog-archetype: Veil
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:kodszovo_sisak
+    equipment-asset: icesmp:rp2/kodszovo
   kodszovo_mellvert:
     schema: 2
     version: 1
@@ -660,6 +694,8 @@ item-templates:
       catalog-archetype: Veil
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:kodszovo_mellvert
+    equipment-asset: icesmp:rp2/kodszovo
   kodszovo_labvert:
     schema: 2
     version: 1
@@ -688,6 +724,8 @@ item-templates:
       catalog-archetype: Veil
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:kodszovo_labvert
+    equipment-asset: icesmp:rp2/kodszovo
   kodszovo_csizma:
     schema: 2
     version: 1
@@ -716,6 +754,8 @@ item-templates:
       catalog-archetype: Veil
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:kodszovo_csizma
+    equipment-asset: icesmp:rp2/kodszovo
   melyseg_ritual_sisak:
     schema: 2
     version: 1
@@ -744,6 +784,8 @@ item-templates:
       catalog-archetype: Ritual
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:melyseg_ritual_sisak
+    equipment-asset: icesmp:rp2/melyseg_ritual
   melyseg_ritual_mellvert:
     schema: 2
     version: 1
@@ -772,6 +814,8 @@ item-templates:
       catalog-archetype: Ritual
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:melyseg_ritual_mellvert
+    equipment-asset: icesmp:rp2/melyseg_ritual
   melyseg_ritual_labvert:
     schema: 2
     version: 1
@@ -800,6 +844,8 @@ item-templates:
       catalog-archetype: Ritual
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:melyseg_ritual_labvert
+    equipment-asset: icesmp:rp2/melyseg_ritual
   melyseg_ritual_csizma:
     schema: 2
     version: 1
@@ -828,6 +874,8 @@ item-templates:
       catalog-archetype: Ritual
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:melyseg_ritual_csizma
+    equipment-asset: icesmp:rp2/melyseg_ritual
   csillagfatyol_sisak:
     schema: 2
     version: 1
@@ -857,6 +905,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: csillagfatyol
+    item-model: icesmp:csillagfatyol_sisak
+    equipment-asset: icesmp:rp2/csillagfatyol
   csillagfatyol_mellvert:
     schema: 2
     version: 1
@@ -886,6 +936,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: csillagfatyol
+    item-model: icesmp:csillagfatyol_mellvert
+    equipment-asset: icesmp:rp2/csillagfatyol
     ascension-path:
     - awakened
     ascension-stages:
@@ -928,6 +980,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: csillagfatyol
+    item-model: icesmp:csillagfatyol_labvert
+    equipment-asset: icesmp:rp2/csillagfatyol
   csillagfatyol_csizma:
     schema: 2
     version: 1
@@ -957,6 +1011,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: csillagfatyol
+    item-model: icesmp:csillagfatyol_csizma
+    equipment-asset: icesmp:rp2/csillagfatyol
   szenthamvak_sisak:
     schema: 2
     version: 1
@@ -986,6 +1042,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: szenthamvak
+    item-model: icesmp:szenthamvak_sisak
+    equipment-asset: icesmp:rp2/szenthamvak
   szenthamvak_mellvert:
     schema: 2
     version: 1
@@ -1015,6 +1073,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: szenthamvak
+    item-model: icesmp:szenthamvak_mellvert
+    equipment-asset: icesmp:rp2/szenthamvak
   szenthamvak_labvert:
     schema: 2
     version: 1
@@ -1044,6 +1104,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: szenthamvak
+    item-model: icesmp:szenthamvak_labvert
+    equipment-asset: icesmp:rp2/szenthamvak
   szenthamvak_csizma:
     schema: 2
     version: 1
@@ -1073,6 +1135,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: szenthamvak
+    item-model: icesmp:szenthamvak_csizma
+    equipment-asset: icesmp:rp2/szenthamvak
   aranyfust_sisak:
     schema: 2
     version: 1
@@ -1101,6 +1165,8 @@ item-templates:
       catalog-archetype: Veil
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:aranyfust_sisak
+    equipment-asset: icesmp:rp2/aranyfust
   aranyfust_kopeny:
     encounter-metadata:
       catalog-line: aranyfust
@@ -1108,6 +1174,8 @@ item-templates:
       catalog-archetype: Veil
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:aranyfust_kopeny
+    equipment-asset: icesmp:rp2/aranyfust
   aranyfust_labvert:
     schema: 2
     version: 1
@@ -1136,6 +1204,8 @@ item-templates:
       catalog-archetype: Veil
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:aranyfust_labvert
+    equipment-asset: icesmp:rp2/aranyfust
   aranyfust_csizma:
     schema: 2
     version: 1
@@ -1164,6 +1234,8 @@ item-templates:
       catalog-archetype: Veil
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:aranyfust_csizma
+    equipment-asset: icesmp:rp2/aranyfust
   vadorzo_sisak:
     schema: 2
     version: 1
@@ -1195,6 +1267,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vadorzo_sisak
+    equipment-asset: icesmp:rp2/vadorzo
   vadorzo_mellvert:
     schema: 2
     version: 1
@@ -1224,6 +1298,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vadorzo_mellvert
+    equipment-asset: icesmp:rp2/vadorzo
   vadorzo_labvert:
     schema: 2
     version: 1
@@ -1253,6 +1329,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vadorzo_labvert
+    equipment-asset: icesmp:rp2/vadorzo
   vadorzo_csizma:
     encounter-metadata:
       catalog-line: vadorzo
@@ -1265,6 +1343,8 @@ item-templates:
     - profession:alchemist
     - combat:wilderness
     - catalog:crafted
+    item-model: icesmp:vadorzo_csizma
+    equipment-asset: icesmp:rp2/vadorzo
   vadbor_sisak:
     schema: 2
     version: 1
@@ -1418,6 +1498,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vizbor_sisak
+    equipment-asset: icesmp:rp2/vizbor
   vizbor_mellvert:
     schema: 2
     version: 1
@@ -1447,6 +1529,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vizbor_mellvert
+    equipment-asset: icesmp:rp2/vizbor
   vizbor_labvert:
     schema: 2
     version: 1
@@ -1476,6 +1560,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vizbor_labvert
+    equipment-asset: icesmp:rp2/vizbor
   vizbor_csizma:
     schema: 2
     version: 1
@@ -1505,6 +1591,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
+    item-model: icesmp:vizbor_csizma
+    equipment-asset: icesmp:rp2/vizbor
   kitinbor_sisak:
     schema: 2
     version: 1
@@ -1534,6 +1622,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:kitinbor_sisak
+    equipment-asset: icesmp:rp2/kitinbor
   kitinbor_mellvert:
     schema: 2
     version: 1
@@ -1563,6 +1653,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:kitinbor_mellvert
+    equipment-asset: icesmp:rp2/kitinbor
   kitinbor_labvert:
     schema: 2
     version: 1
@@ -1592,6 +1684,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:kitinbor_labvert
+    equipment-asset: icesmp:rp2/kitinbor
   kitinbor_csizma:
     schema: 2
     version: 1
@@ -1621,6 +1715,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:kitinbor_csizma
+    equipment-asset: icesmp:rp2/kitinbor
   utjaro_sisak:
     schema: 2
     version: 1
@@ -1649,6 +1745,8 @@ item-templates:
       catalog-archetype: Shadow
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:utjaro_sisak
+    equipment-asset: icesmp:rp2/utjaro
   utjaro_mellvert:
     schema: 2
     version: 1
@@ -1677,6 +1775,8 @@ item-templates:
       catalog-archetype: Shadow
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:utjaro_mellvert
+    equipment-asset: icesmp:rp2/utjaro
   utjaro_labvert:
     schema: 2
     version: 1
@@ -1705,6 +1805,8 @@ item-templates:
       catalog-archetype: Shadow
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:utjaro_labvert
+    equipment-asset: icesmp:rp2/utjaro
   utjaro_csizma:
     encounter-metadata:
       catalog-line: utjaro
@@ -1712,6 +1814,8 @@ item-templates:
       catalog-archetype: Shadow
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:utjaro_csizma
+    equipment-asset: icesmp:rp2/utjaro
   sotetmoha_sisak:
     schema: 2
     version: 1
@@ -1740,6 +1844,8 @@ item-templates:
       catalog-archetype: Wildheart
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:sotetmoha_sisak
+    equipment-asset: icesmp:rp2/sotetmoha
   sotetmoha_mellvert:
     schema: 2
     version: 1
@@ -1768,6 +1874,8 @@ item-templates:
       catalog-archetype: Wildheart
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:sotetmoha_mellvert
+    equipment-asset: icesmp:rp2/sotetmoha
   sotetmoha_labvert:
     schema: 2
     version: 1
@@ -1796,6 +1904,8 @@ item-templates:
       catalog-archetype: Wildheart
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:sotetmoha_labvert
+    equipment-asset: icesmp:rp2/sotetmoha
   sotetmoha_csizma:
     schema: 2
     version: 1
@@ -1824,6 +1934,8 @@ item-templates:
       catalog-archetype: Wildheart
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:sotetmoha_csizma
+    equipment-asset: icesmp:rp2/sotetmoha
   verszavanna_sisak:
     schema: 2
     version: 1
@@ -1852,6 +1964,8 @@ item-templates:
       catalog-archetype: Predator
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:verszavanna_sisak
+    equipment-asset: icesmp:rp2/verszavanna
   verszavanna_mellvert:
     schema: 2
     version: 1
@@ -1880,6 +1994,8 @@ item-templates:
       catalog-archetype: Predator
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:verszavanna_mellvert
+    equipment-asset: icesmp:rp2/verszavanna
   verszavanna_labvert:
     schema: 2
     version: 1
@@ -1908,6 +2024,8 @@ item-templates:
       catalog-archetype: Predator
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:verszavanna_labvert
+    equipment-asset: icesmp:rp2/verszavanna
   verszavanna_csizma:
     schema: 2
     version: 1
@@ -1936,6 +2054,8 @@ item-templates:
       catalog-archetype: Predator
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:verszavanna_csizma
+    equipment-asset: icesmp:rp2/verszavanna
   predator_karma_sisak:
     schema: 2
     version: 1
@@ -1965,6 +2085,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: predator_karma
+    item-model: icesmp:predator_karma_sisak
+    equipment-asset: icesmp:rp2/predator_karma
   predator_karma_mellvert:
     schema: 2
     version: 1
@@ -1994,6 +2116,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: predator_karma
+    item-model: icesmp:predator_karma_mellvert
+    equipment-asset: icesmp:rp2/predator_karma
   predator_karma_labvert:
     schema: 2
     version: 1
@@ -2023,6 +2147,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: predator_karma
+    item-model: icesmp:predator_karma_labvert
+    equipment-asset: icesmp:rp2/predator_karma
   predator_karma_csizma:
     schema: 2
     version: 1
@@ -2052,6 +2178,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: predator_karma
+    item-model: icesmp:predator_karma_csizma
+    equipment-asset: icesmp:rp2/predator_karma
   demonbor_sisak:
     schema: 2
     version: 1
@@ -2081,6 +2209,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: demonbor
+    item-model: icesmp:demonbor_sisak
+    equipment-asset: icesmp:rp2/demonbor
   demonbor_mellvert:
     schema: 2
     version: 1
@@ -2110,6 +2240,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: demonbor
+    item-model: icesmp:demonbor_mellvert
+    equipment-asset: icesmp:rp2/demonbor
     ascension-path:
     - awakened
     ascension-stages:
@@ -2152,6 +2284,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: demonbor
+    item-model: icesmp:demonbor_labvert
+    equipment-asset: icesmp:rp2/demonbor
   demonbor_csizma:
     schema: 2
     version: 1
@@ -2181,6 +2315,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: demonbor
+    item-model: icesmp:demonbor_csizma
+    equipment-asset: icesmp:rp2/demonbor
   holdarnyek_sisak:
     schema: 2
     version: 1
@@ -2209,6 +2345,8 @@ item-templates:
       catalog-archetype: Shadow
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:holdarnyek_sisak
+    equipment-asset: icesmp:rp2/holdarnyek
   holdarnyek_mellvert:
     schema: 2
     version: 1
@@ -2237,6 +2375,8 @@ item-templates:
       catalog-archetype: Shadow
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:holdarnyek_mellvert
+    equipment-asset: icesmp:rp2/holdarnyek
   holdarnyek_labvert:
     schema: 2
     version: 1
@@ -2265,6 +2405,8 @@ item-templates:
       catalog-archetype: Shadow
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:holdarnyek_labvert
+    equipment-asset: icesmp:rp2/holdarnyek
   holdarnyek_csizma:
     schema: 2
     version: 1
@@ -2293,6 +2435,8 @@ item-templates:
       catalog-archetype: Shadow
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:holdarnyek_csizma
+    equipment-asset: icesmp:rp2/holdarnyek
   csontenyv_sisak:
     schema: 2
     version: 1
@@ -2324,6 +2468,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:csontenyv_sisak
+    equipment-asset: icesmp:rp2/csontenyv
   csontenyv_pancel:
     encounter-metadata:
       catalog-line: csontenyv
@@ -2332,6 +2478,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:csontenyv_pancel
+    equipment-asset: icesmp:rp2/csontenyv
   csontenyv_labvert:
     schema: 2
     version: 1
@@ -2361,6 +2509,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:csontenyv_labvert
+    equipment-asset: icesmp:rp2/csontenyv
   csontenyv_csizma:
     schema: 2
     version: 1
@@ -2390,6 +2540,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:csontenyv_csizma
+    equipment-asset: icesmp:rp2/csontenyv
   konnyu_otvozet_sisak:
     schema: 2
     version: 1
@@ -2543,6 +2695,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:runalanc_sisak
+    equipment-asset: icesmp:rp2/runalanc
   runalanc_mellvert:
     schema: 2
     version: 1
@@ -2572,6 +2726,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:runalanc_mellvert
+    equipment-asset: icesmp:rp2/runalanc
   runalanc_labvert:
     schema: 2
     version: 1
@@ -2601,6 +2757,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:runalanc_labvert
+    equipment-asset: icesmp:rp2/runalanc
   runalanc_csizma:
     schema: 2
     version: 1
@@ -2630,6 +2788,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:runalanc_csizma
+    equipment-asset: icesmp:rp2/runalanc
   viharkvarc_runas_sisak:
     schema: 2
     version: 1
@@ -2659,6 +2819,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:viharkvarc_runas_sisak
+    equipment-asset: icesmp:rp2/viharkvarc_runas
   viharkvarc_runas_mellvert:
     schema: 2
     version: 1
@@ -2688,6 +2850,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:viharkvarc_runas_mellvert
+    equipment-asset: icesmp:rp2/viharkvarc_runas
   viharkvarc_runas_labvert:
     schema: 2
     version: 1
@@ -2717,6 +2881,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:viharkvarc_runas_labvert
+    equipment-asset: icesmp:rp2/viharkvarc_runas
   viharkvarc_runas_csizma:
     schema: 2
     version: 1
@@ -2746,6 +2912,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:viharkvarc_runas_csizma
+    equipment-asset: icesmp:rp2/viharkvarc_runas
   vadvadasz_sisak:
     schema: 2
     version: 1
@@ -2774,6 +2942,8 @@ item-templates:
       catalog-archetype: Hunter
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:vadvadasz_sisak
+    equipment-asset: icesmp:rp2/vadvadasz
   vadvadasz_mellvert:
     schema: 2
     version: 1
@@ -2802,6 +2972,8 @@ item-templates:
       catalog-archetype: Hunter
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:vadvadasz_mellvert
+    equipment-asset: icesmp:rp2/vadvadasz
   vadvadasz_labvert:
     schema: 2
     version: 1
@@ -2830,6 +3002,8 @@ item-templates:
       catalog-archetype: Hunter
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:vadvadasz_labvert
+    equipment-asset: icesmp:rp2/vadvadasz
   vadvadasz_csizma:
     schema: 2
     version: 1
@@ -2858,6 +3032,8 @@ item-templates:
       catalog-archetype: Hunter
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:vadvadasz_csizma
+    equipment-asset: icesmp:rp2/vadvadasz
   gyongyhaz_warden_sisak:
     schema: 2
     version: 1
@@ -2886,6 +3062,8 @@ item-templates:
       catalog-archetype: Warden
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:gyongyhaz_warden_sisak
+    equipment-asset: icesmp:rp2/gyongyhaz_warden
   gyongyhaz_warden_mellvert:
     schema: 2
     version: 1
@@ -2914,6 +3092,8 @@ item-templates:
       catalog-archetype: Warden
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:gyongyhaz_warden_mellvert
+    equipment-asset: icesmp:rp2/gyongyhaz_warden
   gyongyhaz_warden_labvert:
     schema: 2
     version: 1
@@ -2942,6 +3122,8 @@ item-templates:
       catalog-archetype: Warden
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:gyongyhaz_warden_labvert
+    equipment-asset: icesmp:rp2/gyongyhaz_warden
   gyongyhaz_warden_csizma:
     schema: 2
     version: 1
@@ -2970,6 +3152,8 @@ item-templates:
       catalog-archetype: Warden
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:gyongyhaz_warden_csizma
+    equipment-asset: icesmp:rp2/gyongyhaz_warden
   viharszel_sisak:
     schema: 2
     version: 1
@@ -2998,6 +3182,8 @@ item-templates:
       catalog-archetype: Tempest
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:viharszel_sisak
+    equipment-asset: icesmp:rp2/viharszel
   viharszel_mellvert:
     schema: 2
     version: 1
@@ -3026,6 +3212,8 @@ item-templates:
       catalog-archetype: Tempest
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:viharszel_mellvert
+    equipment-asset: icesmp:rp2/viharszel
   viharszel_labvert:
     schema: 2
     version: 1
@@ -3054,6 +3242,8 @@ item-templates:
       catalog-archetype: Tempest
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:viharszel_labvert
+    equipment-asset: icesmp:rp2/viharszel
   viharszel_csizma:
     schema: 2
     version: 1
@@ -3082,6 +3272,8 @@ item-templates:
       catalog-archetype: Tempest
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:viharszel_csizma
+    equipment-asset: icesmp:rp2/viharszel
   viharjaro_sisak:
     encounter-metadata:
       catalog-line: viharjaro
@@ -3090,6 +3282,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: viharjaro
+    item-model: icesmp:viharjaro_sisak
+    equipment-asset: icesmp:rp2/viharjaro
   viharjaro_mellvert:
     encounter-metadata:
       catalog-line: viharjaro
@@ -3098,6 +3292,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: viharjaro
+    item-model: icesmp:viharjaro_mellvert
+    equipment-asset: icesmp:rp2/viharjaro
   viharjaro_labvert:
     encounter-metadata:
       catalog-line: viharjaro
@@ -3106,6 +3302,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: viharjaro
+    item-model: icesmp:viharjaro_labvert
+    equipment-asset: icesmp:rp2/viharjaro
   viharjaro_bakancs:
     encounter-metadata:
       catalog-line: viharjaro
@@ -3114,6 +3312,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: viharjaro
+    item-model: icesmp:viharjaro_bakancs
+    equipment-asset: icesmp:rp2/viharjaro
   runapajzs_sisak:
     schema: 2
     version: 1
@@ -3143,6 +3343,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: runapajzs
+    item-model: icesmp:runapajzs_sisak
+    equipment-asset: icesmp:rp2/runapajzs
   runapajzs_mellvert:
     schema: 2
     version: 1
@@ -3172,6 +3374,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: runapajzs
+    item-model: icesmp:runapajzs_mellvert
+    equipment-asset: icesmp:rp2/runapajzs
   runapajzs_labvert:
     schema: 2
     version: 1
@@ -3201,6 +3405,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: runapajzs
+    item-model: icesmp:runapajzs_labvert
+    equipment-asset: icesmp:rp2/runapajzs
   runapajzs_csizma:
     schema: 2
     version: 1
@@ -3230,6 +3436,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: runapajzs
+    item-model: icesmp:runapajzs_csizma
+    equipment-asset: icesmp:rp2/runapajzs
   melyvizi_vadasz_sisak:
     schema: 2
     version: 1
@@ -3258,6 +3466,8 @@ item-templates:
       catalog-archetype: Hunter
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:melyvizi_vadasz_sisak
+    equipment-asset: icesmp:rp2/melyvizi_vadasz
   melyvizi_vadasz_mellvert:
     schema: 2
     version: 1
@@ -3286,6 +3496,8 @@ item-templates:
       catalog-archetype: Hunter
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:melyvizi_vadasz_mellvert
+    equipment-asset: icesmp:rp2/melyvizi_vadasz
     ascension-path:
     - awakened
     ascension-stages:
@@ -3327,6 +3539,8 @@ item-templates:
       catalog-archetype: Hunter
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:melyvizi_vadasz_labvert
+    equipment-asset: icesmp:rp2/melyvizi_vadasz
   melyvizi_vadasz_csizma:
     schema: 2
     version: 1
@@ -3355,6 +3569,8 @@ item-templates:
       catalog-archetype: Hunter
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:melyvizi_vadasz_csizma
+    equipment-asset: icesmp:rp2/melyvizi_vadasz
   glatziendorfi_sisak:
     schema: 2
     version: 1
@@ -3386,6 +3602,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:glatziendorfi_sisak
+    equipment-asset: icesmp:rp2/glatziendorfi
   glatziendorfi_jegvert:
     encounter-metadata:
       catalog-line: glatziendorfi
@@ -3394,6 +3612,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:glatziendorfi_jegvert
+    equipment-asset: icesmp:rp2/glatziendorfi
   glatziendorfi_labvert:
     schema: 2
     version: 1
@@ -3423,6 +3643,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:glatziendorfi_labvert
+    equipment-asset: icesmp:rp2/glatziendorfi
   glatziendorfi_csizma:
     schema: 2
     version: 1
@@ -3452,6 +3674,8 @@ item-templates:
       progression-band: high
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:glatziendorfi_csizma
+    equipment-asset: icesmp:rp2/glatziendorfi
   borostyan_tarna_sisak:
     schema: 2
     version: 1
@@ -3563,6 +3787,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:sarkfeny_sisak
+    equipment-asset: icesmp:rp2/sarkfeny
   sarkfeny_mellvert:
     schema: 2
     version: 1
@@ -3592,6 +3818,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:sarkfeny_mellvert
+    equipment-asset: icesmp:rp2/sarkfeny
   sarkfeny_labvert:
     schema: 2
     version: 1
@@ -3621,6 +3849,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:sarkfeny_labvert
+    equipment-asset: icesmp:rp2/sarkfeny
   sarkfeny_csizma:
     schema: 2
     version: 1
@@ -3650,6 +3880,8 @@ item-templates:
       progression-band: mid
       rank-eligibility: CRAFTED
       catalog-profession: armorer
+    item-model: icesmp:sarkfeny_csizma
+    equipment-asset: icesmp:rp2/sarkfeny
   runaforged_sisak:
     schema: 2
     version: 1
@@ -3679,6 +3911,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:runaforged_sisak
+    equipment-asset: icesmp:rp2/runaforged
   runaforged_mellvert:
     schema: 2
     version: 1
@@ -3708,6 +3942,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:runaforged_mellvert
+    equipment-asset: icesmp:rp2/runaforged
     ascension-path:
     - awakened
     ascension-stages:
@@ -3750,6 +3986,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:runaforged_labvert
+    equipment-asset: icesmp:rp2/runaforged
   runaforged_csizma:
     schema: 2
     version: 1
@@ -3779,6 +4017,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
+    item-model: icesmp:runaforged_csizma
+    equipment-asset: icesmp:rp2/runaforged
   hataror_sisak:
     schema: 2
     version: 1
@@ -3807,6 +4047,8 @@ item-templates:
       catalog-archetype: Crusader
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:hataror_sisak
+    equipment-asset: icesmp:rp2/hataror
   hataror_mellvert:
     schema: 2
     version: 1
@@ -3835,6 +4077,8 @@ item-templates:
       catalog-archetype: Crusader
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:hataror_mellvert
+    equipment-asset: icesmp:rp2/hataror
   hataror_labvert:
     schema: 2
     version: 1
@@ -3863,6 +4107,8 @@ item-templates:
       catalog-archetype: Crusader
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:hataror_labvert
+    equipment-asset: icesmp:rp2/hataror
   hataror_csizma:
     schema: 2
     version: 1
@@ -3891,6 +4137,8 @@ item-templates:
       catalog-archetype: Crusader
       progression-band: early
       rank-eligibility: NORMAL
+    item-model: icesmp:hataror_csizma
+    equipment-asset: icesmp:rp2/hataror
   salakfal_sisak:
     schema: 2
     version: 1
@@ -3919,6 +4167,8 @@ item-templates:
       catalog-archetype: Dread
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:salakfal_sisak
+    equipment-asset: icesmp:rp2/salakfal
   salakfal_mellvert:
     schema: 2
     version: 1
@@ -3947,6 +4197,8 @@ item-templates:
       catalog-archetype: Dread
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:salakfal_mellvert
+    equipment-asset: icesmp:rp2/salakfal
   salakfal_labvert:
     schema: 2
     version: 1
@@ -3975,6 +4227,8 @@ item-templates:
       catalog-archetype: Dread
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:salakfal_labvert
+    equipment-asset: icesmp:rp2/salakfal
   salakfal_csizma:
     schema: 2
     version: 1
@@ -4003,6 +4257,8 @@ item-templates:
       catalog-archetype: Dread
       progression-band: early
       rank-eligibility: VETERAN
+    item-model: icesmp:salakfal_csizma
+    equipment-asset: icesmp:rp2/salakfal
   osicsarnok_sisak:
     schema: 2
     version: 1
@@ -4031,6 +4287,8 @@ item-templates:
       catalog-archetype: Bulwark
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:osicsarnok_sisak
+    equipment-asset: icesmp:rp2/osicsarnok
   osicsarnok_mellvert:
     schema: 2
     version: 1
@@ -4059,6 +4317,8 @@ item-templates:
       catalog-archetype: Bulwark
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:osicsarnok_mellvert
+    equipment-asset: icesmp:rp2/osicsarnok
   osicsarnok_labvert:
     schema: 2
     version: 1
@@ -4087,6 +4347,8 @@ item-templates:
       catalog-archetype: Bulwark
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:osicsarnok_labvert
+    equipment-asset: icesmp:rp2/osicsarnok
   osicsarnok_csizma:
     schema: 2
     version: 1
@@ -4115,6 +4377,8 @@ item-templates:
       catalog-archetype: Bulwark
       progression-band: high
       rank-eligibility: ELITE
+    item-model: icesmp:osicsarnok_csizma
+    equipment-asset: icesmp:rp2/osicsarnok
   melyseg_orseg_sisak:
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4123,6 +4387,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: melyseg_orseg
+    item-model: icesmp:melyseg_orseg_sisak
+    equipment-asset: icesmp:rp2/melyseg_orseg
   melyseg_orseg_mellvert:
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4131,6 +4397,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: melyseg_orseg
+    item-model: icesmp:melyseg_orseg_mellvert
+    equipment-asset: icesmp:rp2/melyseg_orseg
   melyseg_orseg_labvert:
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4139,6 +4407,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: melyseg_orseg
+    item-model: icesmp:melyseg_orseg_labvert
+    equipment-asset: icesmp:rp2/melyseg_orseg
   melyseg_orseg_bakancs:
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4147,6 +4417,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: melyseg_orseg
+    item-model: icesmp:melyseg_orseg_bakancs
+    equipment-asset: icesmp:rp2/melyseg_orseg
   ostromtoro_sisak:
     schema: 2
     version: 1
@@ -4176,6 +4448,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: ostromtoro_ostromfal
+    item-model: icesmp:ostromtoro_sisak
+    equipment-asset: icesmp:rp2/ostromtoro
   ostromtoro_mellvert:
     encounter-metadata:
       catalog-line: ostromtoro
@@ -4184,6 +4458,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: ostromtoro_ostromfal
+    item-model: icesmp:ostromtoro_mellvert
+    equipment-asset: icesmp:rp2/ostromtoro
   ostromtoro_labvert:
     schema: 2
     version: 1
@@ -4213,6 +4489,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: ostromtoro_ostromfal
+    item-model: icesmp:ostromtoro_labvert
+    equipment-asset: icesmp:rp2/ostromtoro
   ostromtoro_csizma:
     schema: 2
     version: 1
@@ -4242,6 +4520,8 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     set-id: ostromtoro_ostromfal
+    item-model: icesmp:ostromtoro_csizma
+    equipment-asset: icesmp:rp2/ostromtoro
   csillagacel_sisak:
     schema: 2
     version: 1
@@ -4270,6 +4550,8 @@ item-templates:
       catalog-archetype: Crusader
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:csillagacel_sisak
+    equipment-asset: icesmp:rp2/csillagacel
   csillagacel_mellvert:
     schema: 2
     version: 1
@@ -4298,6 +4580,8 @@ item-templates:
       catalog-archetype: Crusader
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:csillagacel_mellvert
+    equipment-asset: icesmp:rp2/csillagacel
   csillagacel_labvert:
     schema: 2
     version: 1
@@ -4326,6 +4610,8 @@ item-templates:
       catalog-archetype: Crusader
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:csillagacel_labvert
+    equipment-asset: icesmp:rp2/csillagacel
   csillagacel_csizma:
     schema: 2
     version: 1
@@ -4354,6 +4640,8 @@ item-templates:
       catalog-archetype: Crusader
       progression-band: endgame
       rank-eligibility: CHAMPION
+    item-model: icesmp:csillagacel_csizma
+    equipment-asset: icesmp:rp2/csillagacel
 profession-recipes:
   lte_fonixszovet_sisak:
     profession: enchanter

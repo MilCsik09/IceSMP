@@ -21,7 +21,7 @@ public final class ResourcePackRegressionSuite {
         wearablePresentationSeparatesInventoryAndEquippedRendering();
         wearablePresentationPreservesVanillaEquippableState();
         wearableFallbackPolicyIsSharedAndVersioned();
-        rp2PilotManifestDrivesExactCustomBindings();
+        rp2ProductionManifestDrivesExactCustomBindings();
         wearableCreationPathsUseTheCentralBoundary();
         relicWingEquipmentAssetsStayBundled();
         horseArmorEquipmentAssetsStayBundled();
@@ -178,36 +178,36 @@ public final class ResourcePackRegressionSuite {
                 "relic create/refresh paths no longer route wearable wings through the central boundary");
     }
 
-    private static void rp2PilotManifestDrivesExactCustomBindings() throws Exception {
-        final Properties pilot = new Properties();
+    private static void rp2ProductionManifestDrivesExactCustomBindings() throws Exception {
+        final Properties production = new Properties();
         try (var reader = Files.newBufferedReader(
-                Path.of("src/main/resources/equipment-rp2-pilot.properties"))) {
-            pilot.load(reader);
+                Path.of("src/main/resources/equipment-rp2-production.properties"))) {
+            production.load(reader);
         }
-        check("1".equals(pilot.getProperty("schema")), "unexpected RP2 pilot runtime schema");
-        check("1.21.11".equals(pilot.getProperty("minecraft-version")),
-                "RP2 pilot runtime index must stay pinned to the server target");
-        check("16".equals(pilot.getProperty("binding.count")),
-                "RP2 pilot runtime index must contain exactly 16 piece bindings");
+        check("2".equals(production.getProperty("schema")), "unexpected RP2 production runtime schema");
+        check("1.21.11".equals(production.getProperty("minecraft-version")),
+                "RP2 production runtime index must stay pinned to the server target");
+        check("160".equals(production.getProperty("binding.count")),
+                "RP2 production runtime index must contain exactly 160 piece bindings");
         final java.util.Set<String> models = new java.util.HashSet<>();
         final java.util.Set<String> assets = new java.util.HashSet<>();
-        for (int index = 0; index < 16; index++) {
-            models.add(pilot.getProperty("binding." + index + ".item-model", ""));
-            assets.add(pilot.getProperty("binding." + index + ".equipment-asset", ""));
+        for (int index = 0; index < 160; index++) {
+            models.add(production.getProperty("binding." + index + ".item-model", ""));
+            assets.add(production.getProperty("binding." + index + ".equipment-asset", ""));
         }
-        check(models.size() == 16 && !models.contains(""),
-                "every RP2 pilot piece needs one unique inventory model");
-        check(assets.size() == 4 && !assets.contains(""),
-                "the 16 RP2 pilot pieces must resolve to exactly four coherent worn sets");
+        check(models.size() == 160 && !models.contains(""),
+                "every RP2 production piece needs one unique inventory model");
+        check(assets.size() == 40 && !assets.contains(""),
+                "the 160 RP2 pieces must resolve to exactly 40 coherent worn sets");
 
         final String runtime = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/items/WearablePresentation.java"));
-        check(runtime.contains("RP2_PILOT.matches(requestedModel, requestedEquipment)")
-                        && runtime.indexOf("RP2_PILOT.matches(requestedModel, requestedEquipment)")
+        check(runtime.contains("RP2_PRODUCTION.matches(requestedModel, requestedEquipment)")
+                        && runtime.indexOf("RP2_PRODUCTION.matches(requestedModel, requestedEquipment)")
                         < runtime.indexOf("forcesVanillaWornMaterial(item.getType().name())"),
-                "exact manifest-backed pilot bindings must win before the nonpilot vanilla fallback");
+                "exact manifest-backed production bindings must win before safe vanilla fallback");
         check(runtime.contains("Map.copyOf(bindings)") && !runtime.contains("Set.of(\"holdlen"),
-                "RP2 pilot availability must use an immutable generated index, not a Java shadow list");
+                "RP2 production availability must use an immutable generated index, not a Java shadow list");
     }
 
     private static void relicWingEquipmentAssetsStayBundled() {
