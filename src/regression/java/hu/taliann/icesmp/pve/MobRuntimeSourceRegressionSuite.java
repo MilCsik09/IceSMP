@@ -18,6 +18,7 @@ public final class MobRuntimeSourceRegressionSuite {
         final String cultists = read("src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java");
         final String wildHunt = read("src/main/java/hu/taliann/icesmp/managers/WildHuntManager.java");
         final String content = read("src/main/resources/config/mob-templates.yml");
+        final String wildlife = read("src/main/java/hu/taliann/icesmp/pve/WildlifeRetaliationService.java");
 
         check(scaling.contains("MobProgressionPolicy.resolve")
                         && scaling.contains("normalMaximum()")
@@ -99,6 +100,19 @@ public final class MobRuntimeSourceRegressionSuite {
         check(content.contains("VOLATILE") && content.contains("VAMPIRIC")
                         && content.contains("SHIELDED") && content.contains("FROSTBOUND"),
                 "pilot lacks four elite affixes");
+        check(runtime.contains("recoveryUntilTick") && runtime.contains("interruptible()")
+                        && runtime.contains("maximumTechniques")
+                        && runtime.contains("rank-abilities"),
+                "rank techniques lack recovery, interrupt counterplay or bounded rank defaults");
+        check(wildlife.contains("EntityDamageByEntityEvent")
+                        && wildlife.contains("instanceof Tameable")
+                        && wildlife.contains("!ageable.isAdult()")
+                        && wildlife.contains("maximum-allies")
+                        && wildlife.contains("player.getScheduler().run")
+                        && !wildlife.contains("MobRank")
+                        && !wildlife.contains("dropItem")
+                        && !wildlife.contains("Bukkit.getScheduler"),
+                "passive wildlife retaliation is not provocation-only, bounded, Folia-safe or reward-neutral");
 
         System.out.println("Mob runtime source regression suite passed. assertions=" + assertions);
     }

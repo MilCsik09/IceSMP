@@ -16,12 +16,33 @@ public final class MobEncounterDomainRegressionSuite {
         progressionCoversOneToSeventyWithSeparateCurves();
         hybridPrecedenceAndBonusesAreBounded();
         authoredTemplateAbilityAndAffixInvariantsHold();
+        wildlifeTemperamentIsStableAndBounded();
         encounterSnapshotUsesDiminishingStableScaling();
         contributionIsBoundedMeaningfulAndIdempotent();
         combatPowerRemainsAContextEstimate();
         equippedCombatPowerTracksLiveCanonicalGear();
         encounterRewardFaultMatrixIsFailClosed();
         System.out.println("Mob/Encounter behavioral domain regression suite passed. assertions=" + assertions);
+    }
+
+    private static void wildlifeTemperamentIsStableAndBounded() {
+        final UUID animal = UUID.fromString("00000000-0000-0000-0000-00000000a11f");
+        final WildlifeRetaliationPolicy.Weights weights =
+                new WildlifeRetaliationPolicy.Weights(45, 40, 15);
+        final WildlifeRetaliationPolicy.Temperament first =
+                WildlifeRetaliationPolicy.stableTemperament(animal, weights);
+        check(first == WildlifeRetaliationPolicy.stableTemperament(animal, weights),
+                "wildlife temperament is stable for the entity UUID");
+        final WildlifeRetaliationPolicy.Chances chances =
+                new WildlifeRetaliationPolicy.Chances(0.0D, 70.0D, 100.0D);
+        check(!WildlifeRetaliationPolicy.retaliates(
+                        WildlifeRetaliationPolicy.Temperament.TIMID, chances, 0.0D),
+                "timid zero-chance animal can flee without retaliation");
+        check(WildlifeRetaliationPolicy.retaliates(
+                        WildlifeRetaliationPolicy.Temperament.AGGRESSIVE, chances, .999D),
+                "aggressive configured animal retaliates within the bounded window");
+        expectFailure(() -> new WildlifeRetaliationPolicy.Weights(0, 0, 0),
+                "empty temperament distribution is rejected");
     }
 
     private static void progressionCoversOneToSeventyWithSeparateCurves() {
@@ -99,6 +120,14 @@ public final class MobEncounterDomainRegressionSuite {
                 5.0D, 8.0D, 0, Map.of("knockback", 0.8D));
         check(slam.telegraphTicks() == 30L && MobAbilityDefinition.dangerous(slam.kind()),
                 "dangerous registry ability carries a readable telegraph");
+        final MobAbilityDefinition counterable = new MobAbilityDefinition("counterable_rune",
+                MobAbilityDefinition.Kind.DELAYED_RUNE, 180L, 40L, 30L,
+                4.0D, 7.0D, 0, MobAbilityDefinition.TargetRule.NEAREST_PLAYER, true,
+                Set.of(MobRank.ELITE), Set.of(MobArchetype.CONTROLLER), Map.of());
+        check(counterable.recoveryTicks() == 30L && counterable.interruptible()
+                        && counterable.eligible(MobRank.ELITE, MobArchetype.CONTROLLER)
+                        && !counterable.eligible(MobRank.VETERAN, MobArchetype.CONTROLLER),
+                "technique eligibility, recovery and interrupt counterplay are explicit data");
         expectFailure(() -> new MobAbilityDefinition("instant_slam",
                 MobAbilityDefinition.Kind.GROUND_SLAM, 100L, 0L,
                 4.0D, 10.0D, 0, Map.of()),

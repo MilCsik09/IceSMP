@@ -68,7 +68,8 @@ _mob_archetypes = {"BRUISER", "CHARGER", "SKIRMISHER", "RANGED", "ARTILLERY",
                    "DEFENDER", "SUPPORT", "HEALER", "SUMMONER", "ASSASSIN",
                    "CONTROLLER", "FLYING"}
 _mob_ability_kinds = {"LUNGE", "GROUND_SLAM", "PROJECTILE_BURST", "SHIELD",
-                      "HEAL_PULSE", "SUMMON"}
+                      "HEAL_PULSE", "SUMMON", "CLEAVE", "POISON_CLOUD",
+                      "DELAYED_RUNE", "RETREAT", "ALLY_BUFF"}
 if not 4 <= len(_mob_abilities) <= 64:
     fail(f"mob-abilities katalógus mérete {len(_mob_abilities)}; elvárt 4-64")
 if not 4 <= len(_mob_templates) <= 256:
@@ -78,7 +79,8 @@ _bestiary_ids = set()
 for _aid, _ability in _mob_abilities.items():
     if not isinstance(_ability, dict) or str(_ability.get("kind", "")).upper() not in _mob_ability_kinds:
         fail(f"mob-ability '{_aid}' kind érvénytelen")
-    if str(_ability.get("kind", "")).upper() in {"LUNGE", "GROUND_SLAM", "PROJECTILE_BURST", "SUMMON"} \
+    if str(_ability.get("kind", "")).upper() in {"LUNGE", "GROUND_SLAM", "PROJECTILE_BURST", "SUMMON",
+                                                  "CLEAVE", "POISON_CLOUD", "DELAYED_RUNE"} \
             and int(_ability.get("telegraph-ticks", 0)) < 10:
         fail(f"mob-ability '{_aid}' veszélyes, de nincs olvasható telegraph")
 for _mid, _template in _mob_templates.items():

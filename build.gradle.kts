@@ -81,6 +81,21 @@ val equipment2ReportRegressionTest by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/generate_equipment_2_report.py", "--check")
 }
 
+val combatEncounterFoundationAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates normalized equipment, level gates, enemy techniques, TTK and wildlife evidence."
+    inputs.files(
+        "scripts/audit_combat_encounter_foundation.py",
+        "scripts/generate_long_term_equipment_catalog.py",
+        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/config/equipment-catalog-expansion.yml",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/config/world.yml",
+        "docs/development/combat-balance-authority.json",
+    )
+    commandLine(pythonCommand, "scripts/audit_combat_encounter_foundation.py", "--check")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -893,6 +908,7 @@ tasks.check {
     dependsOn(validateIceSmpHudPackage)
     dependsOn(progressionBalanceRegressionTest)
     dependsOn(equipment2ReportRegressionTest)
+    dependsOn(combatEncounterFoundationAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
