@@ -68,24 +68,32 @@ public final class EquipmentBudgetModel {
             if ("max_health".equals(definition.id())) health += amount;
             if ("armor".equals(definition.id())) armor += amount;
         }
-        final double normalized = normalized(offensive, profile.offensiveShare())
-                + normalized(defensive, profile.defensiveShare())
-                + normalized(utility, profile.utilityShare());
+        // The stat weights already express one common combat-impact currency. Family shares are
+        // presentation/build-identity guidance, not divisors: dividing by them made two equally
+        // useful items incomparable solely because they belonged to different armor families.
+        final double normalized = offensive + defensive + utility;
         final double slotShare = switch (template.slot()) {
-            case CHEST -> 1.0D;
-            case LEGS -> 0.82D;
-            case HEAD -> 0.62D;
-            case FEET -> 0.56D;
+            case CHEST -> 0.34D;
+            case LEGS -> 0.28D;
+            case HEAD -> 0.19D;
+            case FEET -> 0.19D;
             default -> 0.0D;
         };
-        final double rarity = 1.0D + template.rarity().ordinal() * 0.10D;
-        final double expected = slotShare * rarity * (2.0D + template.itemLevel() * 0.12D);
-        final double normalizedArmor = armor / profile.baseArmorCoefficient();
-        final double physicalEhp = (20.0D + health) * (1.0D + normalizedArmor / 100.0D);
+        final String band = template.encounterMetadata().getOrDefault("progression-band", "");
+        final double setBudget = switch (band) {
+            case "early" -> 32.0D;
+            case "mid" -> 60.0D;
+            case "high" -> 76.0D;
+            case "endgame" -> 92.0D;
+            default -> 20.0D + Math.min(50, template.itemLevel());
+        };
+        final double expected = slotShare * setBudget;
+        final double toughness = Math.max(0.0D, values.getOrDefault("armor_toughness", 0.0D));
+        final double representativeHit = 10.0D;
+        final double armorPoints = Math.min(20.0D, Math.max(armor / 5.0D,
+                armor - 4.0D * representativeHit / (toughness + 8.0D)));
+        final double reduction = Math.max(0.0D, armorPoints / 25.0D);
+        final double physicalEhp = (20.0D + health) / Math.max(0.20D, 1.0D - reduction);
         return new Budget(offensive, defensive, utility, normalized, expected, physicalEhp);
-    }
-
-    private static double normalized(final double amount, final double share) {
-        return share <= 0.0D ? (amount == 0.0D ? 0.0D : amount * 10.0D) : amount / share;
     }
 }

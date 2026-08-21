@@ -73,11 +73,34 @@ MATERIAL = {
     "MAIL": {"head":"CHAINMAIL_HELMET","chest":"CHAINMAIL_CHESTPLATE","legs":"CHAINMAIL_LEGGINGS","feet":"CHAINMAIL_BOOTS"},
     "PLATE": {"head":"IRON_HELMET","chest":"IRON_CHESTPLATE","legs":"IRON_LEGGINGS","feet":"IRON_BOOTS"},
 }
-BASE_ARMOR = {
-    "CLOTH":{"head":.20,"chest":.45,"legs":.30,"feet":.20},
-    "LEATHER":{"head":.30,"chest":.60,"legs":.45,"feet":.30},
-    "MAIL":{"head":.45,"chest":.85,"legs":.65,"feet":.45},
-    "PLATE":{"head":.60,"chest":1.10,"legs":.85,"feet":.60},
+# Combat-budget authority. The slot shares sum to one, so a complete set is directly comparable
+# across families and progression bands. Armor remains the defensive identity; the remaining
+# weighted budget is allocated to the line's authored sidegrade pattern.
+SLOT_SHARE = {"head": .19, "chest": .34, "legs": .28, "feet": .19}
+# Full-set combat value tracks actual Paper survival checkpoints: early is an iron-sidegrade,
+# mid clears the diamond transition, and high/endgame add bounded vertical identity above
+# netherite without treating any backing Material as the canonical source of stats.
+SET_BUDGET = {"early": 32.0, "mid": 60.0, "high": 76.0, "endgame": 92.0}
+SET_ARMOR = {
+    "CLOTH": {"early": 4.0, "mid": 5.5, "high": 7.0, "endgame": 8.5},
+    "LEATHER": {"early": 5.5, "mid": 7.5, "high": 9.5, "endgame": 11.5},
+    "MAIL": {"early": 7.0, "mid": 9.5, "high": 12.0, "endgame": 14.5},
+    "PLATE": {"early": 8.5, "mid": 11.5, "high": 14.5, "endgame": 17.5},
+}
+SET_TOUGHNESS = {
+    "CLOTH": {"early": 0.0, "mid": 0.0, "high": 0.0, "endgame": 0.0},
+    "LEATHER": {"early": 0.0, "mid": 0.0, "high": 1.0, "endgame": 2.0},
+    "MAIL": {"early": 0.0, "mid": 1.0, "high": 2.5, "endgame": 4.0},
+    "PLATE": {"early": 0.0, "mid": 1.5, "high": 3.5, "endgame": 6.0},
+}
+STAT_WEIGHTS = {
+    "attack_damage": 5.0,
+    "attack_speed": 8.0,
+    "ability_power": 1.25,
+    "max_health": .70,
+    "armor": 2.0,
+    "armor_toughness": 2.5,
+    "movement_speed": 120.0,
 }
 PATTERN = {
     "CLOTH": {"Arcane":{"ability_power":2.0,"max_health":1.0},"Ritual":{"ability_power":1.3,"max_health":1.6},"Veil":{"movement_speed":.006,"max_health":1.5},"Sanctified":{"max_health":2.0,"ability_power":1.0}},
@@ -87,8 +110,6 @@ PATTERN = {
 }
 BAND_LEVEL = {"early":14,"mid":24,"high":33,"endgame":42}
 BAND_RARITY = {"early":"uncommon","mid":"rare","high":"epic","endgame":"legendary"}
-BAND_COEFF = {"early":.60,"mid":.80,"high":.95,"endgame":1.05}
-SLOT_COEFF = {"head":.85,"chest":1.25,"legs":1.05,"feet":.80}
 SLOT_OFFSET = {"head":0,"chest":1,"legs":0,"feet":-1}
 RANK_BY_LINE = {4:"NORMAL",5:"VETERAN",6:"ELITE",7:"BOSS",8:"BOSS",9:"CHAMPION"}
 RANK_SOURCE = {"NORMAL":"combat:wilderness","VETERAN":"combat:veteran","ELITE":"combat:elite","CHAMPION":"combat:champion","BOSS":"combat:boss"}
@@ -147,12 +168,67 @@ ASCENSION_COSTS = {
     "runaforged_mellvert":{"szorny_szerv":2,"kovacsolt_lemez":3,"runapor":4},
 }
 
+# Existing combat catalog only. These are overlays: identity, material, visuals, acquisition,
+# restrictions, signature, set and ascension authorities remain in item-templates.yml.
+COMBAT_ITEM_RECALIBRATION: dict[str, dict[str, Any]] = {
+    "kovacstanonc_penge": {"base-damage": 4.0, "fixed-stats": {"attack_speed": -2.4}},
+    "borkeretes_ij": {"fixed-stats": {"ability_power": .5}},
+    "mohas_fokusz": {"fixed-stats": {"ability_power": 1.5}},
+    "tarnapajzs": {"base-armor": 1.0, "fixed-stats": {"max_health": 1.0}},
+    "holdfeny_bot": {"fixed-stats": {"ability_power": 3.0}},
+    "hamuszeli_vadaszij": {"fixed-stats": {"ability_power": 2.0}},
+    "vadvilagi_eskukard": {"base-damage": 5.3, "fixed-stats": {"attack_speed": -2.4}},
+    "viharkvarc_pallos": {"base-damage": 6.0, "fixed-stats": {"attack_speed": -2.7}},
+    "szelvago_ij": {"fixed-stats": {"ability_power": 2.5}},
+    "gyongyhaz_pajzs": {"base-armor": 2.0, "fixed-stats": {"max_health": 2.0}},
+    "nema_kristaly_fokusz": {"fixed-stats": {"ability_power": 4.0}},
+    "parazs_kard": {"base-damage": 5.8, "fixed-stats": {"attack_speed": -2.4}},
+    "holdsarlo": {"base-damage": 4.8, "fixed-stats": {"ability_power": 3.0, "attack_speed": -2.2}},
+    "viharszovo_bot": {"base-damage": 6.5, "fixed-stats": {"ability_power": 4.0, "attack_speed": -2.9}},
+    "glatziendorfi_jegtoro": {"base-damage": 7.0, "fixed-stats": {"ability_power": 3.0, "attack_speed": -3.2}},
+    "csillagvesz_ritualbot": {"fixed-stats": {"ability_power": 5.0}},
+    "kapuparazs_pallos": {"base-damage": 7.2, "fixed-stats": {"attack_speed": -2.7}},
+    "sarkanycsont_ij": {"fixed-stats": {"ability_power": 4.0}},
+    "verszavanna_agyara": {"base-damage": 6.8, "fixed-stats": {"attack_speed": -2.4}},
+    "kallan_szeletelo": {"base-damage": 7.5, "fixed-stats": {"attack_speed": -3.2}},
+    "pyralingradi_tuzkopo": {"fixed-stats": {"ability_power": 5.0}},
+    "zhoris_langnyelve": {"base-damage": 4.5, "fixed-stats": {"ability_power": 7.0, "attack_speed": -2.2}},
+    "napfogyatkozas_fokusz": {"fixed-stats": {"ability_power": 8.0}},
+    "miinus_haragja": {"base-damage": 8.5, "fixed-stats": {"attack_speed": -3.0}},
+    "elsocsend_penge": {"base-damage": 8.0, "fixed-stats": {"attack_speed": -2.4}},
+}
 
-def fixed_stats(family: str, archetype: str, band: str, slot: str) -> dict[str, float]:
-    scale = BAND_COEFF[band] * SLOT_COEFF[slot]
+
+def base_armor(family: str, band: str, slot: str) -> float:
+    return round(SET_ARMOR[family][band] * SLOT_SHARE[slot], 2)
+
+
+def fixed_stats(family: str, archetype: str, band: str, slot: str,
+                reserved_stats: dict[str, float] | None = None) -> dict[str, float]:
+    reserved_stats = reserved_stats or {}
+    reserved_budget = sum(value * STAT_WEIGHTS[stat] for stat, value in reserved_stats.items())
+    target = SET_BUDGET[band] * SLOT_SHARE[slot]
+    armor_budget = base_armor(family, band, slot) * STAT_WEIGHTS["armor"]
+    toughness = round(max(0.0, SET_TOUGHNESS[family][band] * SLOT_SHARE[slot]
+                          - reserved_stats.get("armor_toughness", 0.0)), 2)
+    remaining = max(0.0, target - armor_budget
+                    - toughness * STAT_WEIGHTS["armor_toughness"] - reserved_budget)
+    pattern = PATTERN[family][archetype]
+    authored_weight = sum(abs(value) * STAT_WEIGHTS[stat] for stat, value in pattern.items())
     result: dict[str, float] = {}
-    for stat, value in PATTERN[family][archetype].items():
-        result[stat] = round(value * scale, 4 if stat in {"movement_speed", "attack_speed"} else 2)
+    for stat, value in pattern.items():
+        share = abs(value) * STAT_WEIGHTS[stat] / authored_weight
+        raw = remaining * share / STAT_WEIGHTS[stat]
+        result[stat] = round(raw, 4 if stat in {"movement_speed", "attack_speed"} else 2)
+    if toughness > 0.0:
+        result["armor_toughness"] = round(result.get("armor_toughness", 0.0) + toughness, 2)
+    return result
+
+
+def midpoint_stats(stats: dict[str, Any] | None) -> dict[str, float]:
+    result: dict[str, float] = {}
+    for stat, bounds in (stats or {}).items():
+        result[stat] = (float(bounds["min"]) + float(bounds["max"])) / 2.0
     return result
 
 
@@ -187,6 +263,9 @@ def render() -> str:
     armor_ids: list[str] = []
     new_count = 0
     rp2 = rp2_presentations()
+    base_catalog = yaml.safe_load((ROOT / "src/main/resources/config/item-templates.yml")
+                                  .read_text(encoding="utf-8")) or {}
+    base_templates: dict[str, dict[str, Any]] = base_catalog.get("item-templates", {}) or {}
 
     for family, family_lines in LINES.items():
         if len(family_lines) != 10:
@@ -207,7 +286,23 @@ def render() -> str:
                 if line.get("profession"):
                     metadata["catalog-profession"] = line["profession"]
                 if ident in line.get("anchors", {}).values():
-                    patch: dict[str, Any] = {"encounter-metadata": metadata}
+                    authored = base_templates.get(ident, {})
+                    reserved = midpoint_stats(authored.get("rolled-stats"))
+                    recalibrated = fixed_stats(family, line["archetype"], line["band"], slot, reserved)
+                    # The packaged merge is leaf-based. Explicit zeroes retire obsolete fixed
+                    # leaves without changing template identity/version or the signature rolls.
+                    fixed = {key: 0.0 for key in (authored.get("fixed-stats") or {})}
+                    fixed.update(recalibrated)
+                    item_level = BAND_LEVEL[line["band"]] + SLOT_OFFSET[slot]
+                    patch: dict[str, Any] = {
+                        "rarity": BAND_RARITY[line["band"]],
+                        "item-level": item_level,
+                        "level-requirement": max(1, item_level - 4),
+                        "base-armor": base_armor(family, line["band"], slot),
+                        "fixed-stats": fixed,
+                        "rune-sockets": 0 if line["band"] == "early" else (1 if line["band"] in {"mid", "high"} else 2),
+                        "encounter-metadata": metadata,
+                    }
                     if ident == "fonixpihe_kopeny":
                         patch["source-tags"] = ["combat:event", "profession:enchanter", "catalog:crafted"]
                     elif ident == "vadorzo_csizma":
@@ -231,7 +326,7 @@ def render() -> str:
                         "slot": slot,
                         "material": MATERIAL[family][slot],
                         "level-requirement": max(1, item_level - 4),
-                        "base-armor": BASE_ARMOR[family][slot],
+                        "base-armor": base_armor(family, line["band"], slot),
                         "fixed-stats": fixed_stats(family, line["archetype"], line["band"], slot),
                         "rune-sockets": 0 if line["band"] == "early" else (1 if line["band"] in {"mid", "high"} else 2),
                         "source-tags": ([f"profession:{line['profession']}", "catalog:crafted"] if line["acq"] == "crafted" else [RANK_SOURCE[rank], f"rank:{rank.lower()}"]),
@@ -287,6 +382,19 @@ def render() -> str:
     if rp2 and len(rp2) not in {16, 160}:
         raise AssertionError(f"RP2 presentation count drift: {len(rp2)}")
 
+    if set(COMBAT_ITEM_RECALIBRATION) != {
+            ident for ident, template in base_templates.items()
+            if str(template.get("family", "")) == "weapon"
+            or (str(template.get("slot", "")) == "off-hand"
+                and str(template.get("material", "")) == "SHIELD")}:
+        raise AssertionError("existing weapon/off-hand catalog identity drift")
+    for ident, mechanical_patch in COMBAT_ITEM_RECALIBRATION.items():
+        authored = base_templates[ident]
+        item_level = int(authored["item-level"])
+        patch = dict(mechanical_patch)
+        patch["level-requirement"] = max(1, item_level - 4)
+        templates[ident] = patch
+
     for ident, costs in ASCENSION_COSTS.items():
         template = templates[ident]
         template["ascension-path"] = ["awakened"]
@@ -325,7 +433,7 @@ def main() -> None:
     if args.check or not args.write:
         if not OUTPUT.exists() or OUTPUT.read_text(encoding="utf-8") != rendered:
             raise SystemExit("equipment-catalog-expansion.yml is stale; run generator with --write")
-    print("Long-term equipment catalog generator: 160 armor / 40 lines / 64 crafted recipes / 8 mechanical-set lines")
+    print("Long-term equipment catalog generator: 160 armor / 25 combat items / 40 lines / 64 crafted recipes / 8 mechanical-set lines")
 
 
 if __name__ == "__main__":

@@ -33,6 +33,8 @@ STAT_GROUPS = {
     "movement_speed": "utility",
 }
 SLOT_SHARE = {"chest": 1.0, "legs": 0.82, "head": 0.62, "feet": 0.56}
+COMBAT_SLOT_SHARE = {"chest": 0.34, "legs": 0.28, "head": 0.19, "feet": 0.19}
+SET_BUDGET = {"early": 32.0, "mid": 60.0, "high": 76.0, "endgame": 92.0}
 RARITY_ORDER = ["common", "uncommon", "rare", "epic", "legendary", "mythic"]
 CONFIG_FILES = [
     "item-templates.yml",
@@ -89,18 +91,15 @@ def budget(template_id: str, template: dict[str, Any], profiles: dict[str, Any])
     raw = {"offense": 0.0, "defense": 0.0, "utility": 0.0}
     for stat, value in values.items():
         raw[STAT_GROUPS[stat]] += value * STAT_WEIGHTS[stat]
-    shares = {
-        "offense": float(profile["budget"]["offensive"]),
-        "defense": float(profile["budget"]["defensive"]),
-        "utility": float(profile["budget"]["utility"]),
-    }
-    normalized = sum(raw[group] / shares[group] for group in raw)
+    # STAT_WEIGHTS are the shared combat-impact currency. Family budget shares remain build
+    # identity guidance and must not make equal-power items incomparable across families.
+    normalized = sum(raw.values())
     rarity = str(template.get("rarity", "common")).lower()
-    rarity_factor = 1.0 + RARITY_ORDER.index(rarity) * 0.10
     slot = str(template["slot"]).lower()
-    expected = SLOT_SHARE[slot] * rarity_factor * (2.0 + int(template["item-level"]) * 0.12)
-    ratio = normalized / expected if expected else 0.0
     metadata = template.get("encounter-metadata") or {}
+    band = str(metadata.get("progression-band", ""))
+    expected = COMBAT_SLOT_SHARE[slot] * SET_BUDGET[band]
+    ratio = normalized / expected if expected else 0.0
     return {
         "template_id": template_id,
         "family": family,
@@ -119,7 +118,7 @@ def budget(template_id: str, template: dict[str, Any], profiles: dict[str, Any])
         "set": str(template.get("set-id", "")),
         "signature": str(template.get("signature-effect", "")),
         "ascension": list(template.get("ascension-path") or []),
-        "status": "BALANCE_REQUIRED" if ratio < 0.20 or ratio > 8.0 else "VERIFIED",
+        "status": "BALANCE_REQUIRED" if ratio < 0.88 or ratio > 1.12 else "VERIFIED",
     }
 
 
