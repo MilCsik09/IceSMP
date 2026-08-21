@@ -64,7 +64,7 @@ public final class EquipmentProficiencyListener implements Listener {
         final Denial denial = denial(player, candidate, targetSlot);
         if (denial == null) return;
         event.setCancelled(true);
-        notify(player, denial.decision());
+        notify(player, denial.activity());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -75,7 +75,7 @@ public final class EquipmentProficiencyListener implements Listener {
             final Denial denial = denial(player, entry.getValue(), armorSlot(entry.getKey()));
             if (denial == null) continue;
             event.setCancelled(true);
-            notify(player, denial.decision());
+            notify(player, denial.activity());
             return;
         }
     }
@@ -89,7 +89,7 @@ public final class EquipmentProficiencyListener implements Listener {
         final Denial denial = denial(player, event.getItem(), inspection.template().slot());
         if (denial == null) return;
         event.setCancelled(true);
-        notify(player, denial.decision());
+        notify(player, denial.activity());
     }
 
     /**
@@ -109,14 +109,19 @@ public final class EquipmentProficiencyListener implements Listener {
                 : event.getEquipmentChanges().entrySet()) {
             final ItemTemplate.Slot slot = slot(entry.getKey());
             if (slot == null) continue;
-            final ItemStack equipped = entry.getValue().newItem();
+            final ItemStack current = getEquipped(player, entry.getKey());
+            final ItemStack equipped = current == null ? entry.getValue().newItem() : current;
             final Denial denial = denial(player, equipped, slot);
+            final ItemIdentityService.Inspection inspection = identities.inspect(equipped);
+            if (inspection.status() == ItemIdentityService.Status.VALID) {
+                identities.setEquipmentSuppressed(equipped, inspection.template(),
+                        inspection.instance(), denial != null);
+            }
             if (denial == null) {
                 continue;
             }
-            if (!isArmorSlot(entry.getKey())) continue;
-            deniedArmor = true;
-            notify(player, denial.decision());
+            notify(player, denial.activity());
+            if (isArmorSlot(entry.getKey())) deniedArmor = true;
         }
         if (deniedArmor) {
             scheduleEquipmentReconcile(player);
@@ -144,15 +149,20 @@ public final class EquipmentProficiencyListener implements Listener {
     private Denial denial(final Player player, final ItemStack item,
                           final ItemTemplate.Slot targetSlot) {
         final ItemIdentityService.Inspection inspection = identities.inspect(item);
-        if (inspection.status() != ItemIdentityService.Status.VALID
-                || !inspection.template().isArmorFamilyEquipment()) return null;
-        final EquipmentProficiencyPolicy.Decision decision = proficiency.decision(player, inspection.template());
+        if (inspection.status() != ItemIdentityService.Status.VALID) return null;
+        final EquipmentProficiencyService.Activity activity =
+                proficiency.inspectAdmission(player, item, targetSlot);
         if (targetSlot != null && inspection.template().slot() != targetSlot) {
-            return new Denial(inspection, new EquipmentProficiencyPolicy.Decision(
+            final EquipmentProficiencyPolicy.Decision decision = activity.decision();
+            return new Denial(inspection, new EquipmentProficiencyService.Activity(
+                    EquipmentProficiencyService.ActivityStatus.SLOT_MISMATCH,
+                    inspection, targetSlot, new EquipmentProficiencyPolicy.Decision(
                     EquipmentProficiencyPolicy.Status.INVALID_TEMPLATE,
-                    inspection.template().armorFamily(), decision.classFamily()));
+                    inspection.template().armorFamily(),
+                    decision == null ? null : decision.classFamily()), activity.levelDecision()));
         }
-        return proficiency.profileReady(player) && decision.allowed() ? null : new Denial(inspection, decision);
+        return activity.status() == EquipmentProficiencyService.ActivityStatus.ACTIVE
+                ? null : new Denial(inspection, activity);
     }
 
     private void scheduleEquipmentReconcile(final Player player) {
@@ -201,13 +211,9 @@ public final class EquipmentProficiencyListener implements Listener {
                             }
                         });
                 if (!rehomed) {
-                    player.sendActionBar(proficiency.denialMessage(
-                            new EquipmentProficiencyPolicy.Decision(
-                                    EquipmentProficiencyPolicy.Status.INVALID_TEMPLATE,
-                                    denial.inspection().template().armorFamily(),
-                                    denial.decision().classFamily())));
+                    player.sendActionBar(proficiency.denialMessage(denial.activity()));
                 }
-                notify(player, denial.decision());
+                notify(player, denial.activity());
             }
         } finally {
             reconciling.remove(playerId);
@@ -223,11 +229,11 @@ public final class EquipmentProficiencyListener implements Listener {
         }
     }
 
-    private void notify(final Player player, final EquipmentProficiencyPolicy.Decision decision) {
+    private void notify(final Player player, final EquipmentProficiencyService.Activity activity) {
         final long now = System.currentTimeMillis();
         final Long previous = lastHint.put(player.getUniqueId(), now);
         if (previous != null && now - previous < FEEDBACK_COOLDOWN_MILLIS) return;
-        final net.kyori.adventure.text.Component message = proficiency.denialMessage(decision);
+        final net.kyori.adventure.text.Component message = proficiency.denialMessage(activity);
         if (org.bukkit.Bukkit.isOwnedByCurrentRegion(player)) {
             player.sendActionBar(message);
             return;
@@ -286,6 +292,15 @@ public final class EquipmentProficiencyListener implements Listener {
         };
     }
 
+    private static ItemStack getEquipped(final Player player,
+                                         final org.bukkit.inventory.EquipmentSlot slot) {
+        return switch (slot) {
+            case HAND -> player.getInventory().getItemInMainHand();
+            case OFF_HAND -> player.getInventory().getItemInOffHand();
+            default -> getArmor(player, slot);
+        };
+    }
+
     private static boolean isArmorSlot(final org.bukkit.inventory.EquipmentSlot slot) {
         return slot == org.bukkit.inventory.EquipmentSlot.HEAD
                 || slot == org.bukkit.inventory.EquipmentSlot.CHEST
@@ -294,5 +309,5 @@ public final class EquipmentProficiencyListener implements Listener {
     }
 
     private record Denial(ItemIdentityService.Inspection inspection,
-                          EquipmentProficiencyPolicy.Decision decision) { }
+                          EquipmentProficiencyService.Activity activity) { }
 }

@@ -25,6 +25,7 @@ public final class EquipmentDomainRegressionSuite {
         schemaAndRestrictionPrecedenceFailClosed();
         vanillaBasicArmorRemainsClassAgnostic();
         activeEquipmentStateMachineFailsClosed();
+        levelRequirementPrecedenceAndTransitionsFailClosed();
         deniedEquipmentRehomeIsLossless();
         invalidIdentityMatrixIsGameplayInert();
         classSpecAndReconnectTransitionsReevaluate();
@@ -96,31 +97,53 @@ public final class EquipmentDomainRegressionSuite {
                     "netherite armor remains BASIC survival gear");
         }
         check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.NOT_MANAGED,
-                        true, false, false, false, false)
+                        true, false, false, false, false, false)
                         == EquipmentProficiencyService.ActivityStatus.NOT_MANAGED,
                 "BASIC/NOT_MANAGED is explicitly outside the MMO active-equipment gate");
     }
 
     /** Behavioral contract for the shared active-equipment state machine, independent of Bukkit events. */
     private static void activeEquipmentStateMachineFailsClosed() {
-        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.ACTIVE,
                 "valid own-family canonical equipment is ACTIVE");
-        check(activity(ItemIdentityService.Status.VALID, false, false, true, true, false)
+        check(activity(ItemIdentityService.Status.VALID, false, false, true, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.SLOT_MISMATCH,
                 "wrong physical slot is inactive");
-        check(activity(ItemIdentityService.Status.VALID, true, true, true, true, false)
+        check(activity(ItemIdentityService.Status.VALID, true, true, true, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.DUPLICATE_UUID,
                 "duplicate equipped UUID fails closed");
-        check(activity(ItemIdentityService.Status.VALID, true, false, false, true, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, false, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.PROFILE_NOT_READY,
                 "profile-not-ready canonical gear is inactive");
-        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, false, false)
                         == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
                 "wrong-family/class/spec canonical gear is inactive");
-        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true)
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true, true)
                         == EquipmentProficiencyService.ActivityStatus.SUPPRESSED,
                 "suppression marker is authoritative at runtime");
+    }
+
+    private static void levelRequirementPrecedenceAndTransitionsFailClosed() {
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.UNDER_LEVEL,
+                "below-requirement canonical equipment is inactive");
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true, false)
+                        == EquipmentProficiencyService.ActivityStatus.ACTIVE,
+                "meeting the exact requirement reactivates canonical equipment");
+        check(activity(ItemIdentityService.Status.VALID, true, false, false, true, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.PROFILE_NOT_READY,
+                "profile readiness has deterministic precedence over level");
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
+                "class/family restriction has deterministic precedence over level");
+        check(activity(ItemIdentityService.Status.NOT_MANAGED, true, false, false, false, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.NOT_MANAGED,
+                "BASIC gear never inherits the canonical level gate");
+        check(new EquipmentProficiencyService.LevelDecision(29, 30).allowed() == false,
+                "level policy rejects one level below requirement");
+        check(new EquipmentProficiencyService.LevelDecision(30, 30).allowed(),
+                "level policy admits the exact requirement");
     }
 
     private static void deniedEquipmentRehomeIsLossless() {
@@ -167,29 +190,29 @@ public final class EquipmentDomainRegressionSuite {
                 ItemIdentityService.Status.TEMPLATE_VERSION_STALE,
                 ItemIdentityService.Status.TEMPLATE_MISMATCH,
                 ItemIdentityService.Status.POLICY_VIOLATION)) {
-            check(activity(invalid, true, false, true, true, false)
+            check(activity(invalid, true, false, true, true, true, false)
                             == EquipmentProficiencyService.ActivityStatus.INVALID_IDENTITY,
                     invalid + " is gameplay-inert");
         }
     }
 
     private static void classSpecAndReconnectTransitionsReevaluate() {
-        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.ACTIVE,
                 "Warrior own-family PLATE starts active");
-        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, true, false)
                         == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
                 "Warrior -> Wizard class change turns the same PLATE inactive");
-        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.ACTIVE,
                 "Wizard -> Warrior re-evaluation can reactivate without permanent suppression state");
-        check(activity(ItemIdentityService.Status.VALID, true, false, false, true, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, false, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.PROFILE_NOT_READY,
                 "reconnect before PlayerProfile readiness is fail-closed");
-        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.ACTIVE,
                 "reconnect activation re-evaluates after PlayerProfile becomes ready");
-        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, false)
+        check(activity(ItemIdentityService.Status.VALID, true, false, true, false, true, false)
                         == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
                 "spec restriction change uses the same re-evaluation state");
     }
@@ -222,9 +245,10 @@ public final class EquipmentDomainRegressionSuite {
     private static EquipmentProficiencyService.ActivityStatus activity(
             final ItemIdentityService.Status identityStatus, final boolean slotMatches,
             final boolean duplicateUuid, final boolean profileReady,
-            final boolean restrictionsAllowed, final boolean suppressed) {
+            final boolean restrictionsAllowed, final boolean levelAllowed,
+            final boolean suppressed) {
         return EquipmentProficiencyService.decideActivity(identityStatus, slotMatches, duplicateUuid,
-                profileReady, restrictionsAllowed, suppressed);
+                profileReady, restrictionsAllowed, levelAllowed, suppressed);
     }
 
     private static void referenceBuildsRemainComparable() {

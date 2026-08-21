@@ -14,6 +14,8 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,27 @@ public final class PaperSourceIntegrityRuntimeProbe {
 
     private PaperSourceIntegrityRuntimeProbe() { }
 
+    private static final class RuntimeEquipmentAdapter implements EquipmentRehomeTransaction.Adapter {
+        private final Inventory inventory;
+        private final AtomicReference<ItemStack> equipped;
+
+        private RuntimeEquipmentAdapter(final Inventory inventory,
+                                        final AtomicReference<ItemStack> equipped) {
+            this.inventory = inventory;
+            this.equipped = equipped;
+        }
+
+        @Override public ItemStack equipped() { return equipped.get(); }
+        @Override public ItemStack[] storageContents() { return inventory.getStorageContents(); }
+        @Override public void setEquipped(final ItemStack item) { equipped.set(item); }
+        @Override public Map<Integer, ItemStack> addToStorage(final ItemStack item) {
+            return inventory.addItem(item);
+        }
+        @Override public void restoreStorage(final ItemStack[] snapshot) {
+            inventory.setStorageContents(snapshot);
+        }
+    }
+
     public static void maybeRun(final JavaPlugin plugin, final Object assembledCore) {
         if (!Boolean.getBoolean(PROPERTY)) return;
         final ItemIdentityService identity = readField(assembledCore,
@@ -43,12 +66,13 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 "professionRecipeCatalog", ProfessionRecipeCatalog.class);
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
             try {
+                writeVanillaRuntimeBenchmark();
                 verifyAttributeComponentSemantics();
                 verifyEquipmentRuntimeStates(identity);
                 verifyRp2ProductionPresentation(identity);
                 verifyActualInventoryAtomicity();
                 verifyMutationPhysicalState(identity);
-                verifyCatalogPositiveLoad(catalog, templates);
+                verifyCatalogPositiveLoad(identity, catalog, templates);
                 plugin.getLogger().info(PASS_MARKER);
             } catch (final Throwable failure) {
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -57,6 +81,64 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 Bukkit.shutdown();
             }
         }, 1L);
+    }
+
+    /**
+     * Real Paper 1.21.11 denominator for every authored balance report. Values come from fresh
+     * runtime ItemStacks and their backing ATTRIBUTE_MODIFIERS component, never from a wiki table.
+     */
+    private static void writeVanillaRuntimeBenchmark() throws java.io.IOException {
+        final List<Material> materials = List.of(
+                Material.LEATHER_HELMET, Material.LEATHER_CHESTPLATE,
+                Material.LEATHER_LEGGINGS, Material.LEATHER_BOOTS,
+                Material.GOLDEN_HELMET, Material.GOLDEN_CHESTPLATE,
+                Material.GOLDEN_LEGGINGS, Material.GOLDEN_BOOTS,
+                Material.CHAINMAIL_HELMET, Material.CHAINMAIL_CHESTPLATE,
+                Material.CHAINMAIL_LEGGINGS, Material.CHAINMAIL_BOOTS,
+                Material.IRON_HELMET, Material.IRON_CHESTPLATE,
+                Material.IRON_LEGGINGS, Material.IRON_BOOTS,
+                Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE,
+                Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS,
+                Material.NETHERITE_HELMET, Material.NETHERITE_CHESTPLATE,
+                Material.NETHERITE_LEGGINGS, Material.NETHERITE_BOOTS,
+                Material.WOODEN_SWORD, Material.STONE_SWORD, Material.IRON_SWORD,
+                Material.DIAMOND_SWORD, Material.NETHERITE_SWORD,
+                Material.WOODEN_AXE, Material.STONE_AXE, Material.IRON_AXE,
+                Material.DIAMOND_AXE, Material.NETHERITE_AXE,
+                Material.BOW, Material.CROSSBOW, Material.TRIDENT, Material.SHIELD);
+        final StringBuilder json = new StringBuilder(8_192)
+                .append("{\n  \"schema\": 1,\n")
+                .append("  \"runtime\": \"Paper 1.21.11\",\n")
+                .append("  \"measurement\": \"fresh ItemStack backing ATTRIBUTE_MODIFIERS\",\n")
+                .append("  \"player_base_attack_damage\": 1.0,\n")
+                .append("  \"player_base_attack_speed\": 4.0,\n")
+                .append("  \"items\": [\n");
+        for (int index = 0; index < materials.size(); index++) {
+            final Material material = materials.get(index);
+            final ItemStack item = new ItemStack(material);
+            final ItemAttributeModifiers data = item.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+            if (index > 0) json.append(",\n");
+            json.append("    {\"material\":\"").append(material.name()).append("\"")
+                    .append(",\"has_attribute_component\":").append(data != null)
+                    .append(",\"armor\":").append(number(sumAdditive(data, Attribute.ARMOR)))
+                    .append(",\"armor_toughness\":").append(number(sumAdditive(data, Attribute.ARMOR_TOUGHNESS)))
+                    .append(",\"knockback_resistance\":").append(number(sumAdditive(data, Attribute.KNOCKBACK_RESISTANCE)))
+                    .append(",\"attack_damage_modifier\":").append(number(sumAdditive(data, Attribute.ATTACK_DAMAGE)))
+                    .append(",\"attack_speed_modifier\":").append(number(sumAdditive(data, Attribute.ATTACK_SPEED)))
+                    .append(",\"attack_knockback\":").append(number(sumAdditive(data, Attribute.ATTACK_KNOCKBACK)))
+                    .append('}');
+        }
+        json.append("\n  ]\n}\n");
+        final Path output = Path.of(System.getProperty("icesmp.combat-evidence-dir",
+                "../build/reports/combat-foundation")).toAbsolutePath().normalize()
+                .resolve("vanilla-runtime-benchmark.json");
+        Files.createDirectories(output.getParent());
+        Files.writeString(output, json.toString());
+        check(Files.size(output) > 512L, "vanilla runtime benchmark evidence is unexpectedly empty");
+    }
+
+    private static String number(final double value) {
+        return String.format(java.util.Locale.ROOT, "%.6f", value);
     }
 
     private static <T> T readField(final Object target, final String name, final Class<T> type) {
@@ -125,7 +207,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 "managed canonical zero projection must not inherit NETHERITE_CHESTPLATE defaults");
 
         check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.VALID,
-                        true, false, true, false, false)
+                        true, false, true, false, true, false)
                         == EquipmentProficiencyService.ActivityStatus.RESTRICTED,
                 "wrong-family/class restriction must be runtime-inert");
         identity.setEquipmentSuppressed(canonical, inspection.template(), inspection.instance(), true);
@@ -136,9 +218,16 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         && restricted != null && restricted.modifiers().isEmpty(),
                 "wrong-family/restricted canonical item must have zero effective modifiers");
         check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.VALID,
-                        true, false, true, true, true)
+                        true, false, true, true, true, true)
                         == EquipmentProficiencyService.ActivityStatus.SUPPRESSED,
                 "suppression marker must remain authoritative until reconciliation reactivates");
+        check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.VALID,
+                        true, false, true, true, false, false)
+                        == EquipmentProficiencyService.ActivityStatus.UNDER_LEVEL,
+                "underlevel canonical equipment must be runtime-inert");
+        check(!new EquipmentProficiencyService.LevelDecision(19, 20).allowed()
+                        && new EquipmentProficiencyService.LevelDecision(20, 20).allowed(),
+                "level boundary must deny requirement-1 and allow exact requirement");
 
         identity.setEquipmentSuppressed(canonical, inspection.template(), inspection.instance(), false);
         check(!identity.isEquipmentSuppressed(canonical),
@@ -154,7 +243,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         check(identity.inspect(invalid).status() == ItemIdentityService.Status.TEMPLATE_MISMATCH,
                 "managed-invalid runtime fixture must be rejected by canonical identity");
         check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.TEMPLATE_MISMATCH,
-                        true, false, true, true, false)
+                        true, false, true, true, true, false)
                         == EquipmentProficiencyService.ActivityStatus.INVALID_IDENTITY,
                 "managed-invalid canonical item must fail closed before proficiency contribution");
         identity.suppressManagedInvalid(invalid);
@@ -166,7 +255,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
 
         final ItemStack basic = new ItemStack(Material.IRON_SWORD);
         check(EquipmentProficiencyService.decideActivity(ItemIdentityService.Status.NOT_MANAGED,
-                        true, false, false, false, false)
+                        true, false, false, false, false, false)
                         == EquipmentProficiencyService.ActivityStatus.NOT_MANAGED,
                 "BASIC/not-managed item must stay outside the MMO activity gate");
         final var basicDefaults = basic.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
@@ -231,6 +320,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
     }
 
     private static double sumAdditive(final ItemAttributeModifiers data, final Attribute attribute) {
+        if (data == null) return 0.0D;
         return data.modifiers().stream()
                 .filter(entry -> attribute.equals(entry.attribute()))
                 .map(ItemAttributeModifiers.Entry::modifier)
@@ -287,6 +377,33 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 "persistence exception must restore cursor snapshot");
         check(rollbackPersists.get() == 2,
                 "persistence exception must attempt a second durable rollback save");
+
+        final Inventory full = Bukkit.createInventory(null, 36);
+        for (int slot = 0; slot < 36; slot++) full.setItem(slot, new ItemStack(Material.COBBLESTONE, 64));
+        final AtomicReference<ItemStack> fullEquipped = new AtomicReference<>(
+                new ItemStack(Material.NETHERITE_CHESTPLATE));
+        final byte[] fullEquippedBefore = fullEquipped.get().serializeAsBytes();
+        final ItemStack[] fullBefore = cloneContents(full.getStorageContents());
+        check(!EquipmentRehomeTransaction.rehome(equipmentAdapter(full, fullEquipped)),
+                "full inventory must reject equipment rehome without dropping the denied item");
+        check(Arrays.equals(fullEquippedBefore, fullEquipped.get().serializeAsBytes())
+                        && Arrays.deepEquals(serialize(fullBefore), serialize(full.getStorageContents())),
+                "failed full-inventory equipment rehome must conserve exact equipped/storage state");
+
+        final Inventory available = Bukkit.createInventory(null, 36);
+        for (int slot = 0; slot < 35; slot++) {
+            available.setItem(slot, new ItemStack(Material.COBBLESTONE, 64));
+        }
+        final AtomicReference<ItemStack> movable = new AtomicReference<>(
+                new ItemStack(Material.NETHERITE_CHESTPLATE));
+        check(EquipmentRehomeTransaction.rehome(equipmentAdapter(available, movable))
+                        && movable.get() == null,
+                "one free storage slot must rehome denied equipment exactly once");
+    }
+
+    private static EquipmentRehomeTransaction.Adapter equipmentAdapter(
+            final Inventory inventory, final AtomicReference<ItemStack> equipped) {
+        return new RuntimeEquipmentAdapter(inventory, equipped);
     }
 
     private static AtomicCursorRehome.Adapter adapter(final Inventory inventory,
@@ -344,7 +461,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 "mutation physical-state preservation must leave canonical checksum VALID");
     }
 
-    private static void verifyCatalogPositiveLoad(final ProfessionRecipeCatalog catalog,
+    private static void verifyCatalogPositiveLoad(final ItemIdentityService identity,
+                                                  final ProfessionRecipeCatalog catalog,
                                                   final ItemTemplateRegistry templates) {
         final int count = catalog.allIds().size();
         final boolean longTerm = catalog.get("lte_fonixszovet_sisak") != null;
@@ -388,6 +506,35 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                     && template.slot() == slot).count() == 10L,
                             "long-term family/slot must load exactly 10 armor: " + family + '/' + slot);
                 }
+            }
+            final java.util.Set<String> bands = armor.stream()
+                    .map(template -> template.encounterMetadata().get("progression-band"))
+                    .filter(java.util.Objects::nonNull)
+                    .collect(java.util.stream.Collectors.toSet());
+            check(bands.containsAll(java.util.Set.of("early", "mid", "high", "endgame")),
+                    "Paper runtime must load armor samples for all four canonical bands");
+            final List<ItemTemplate> combatItems = templates.snapshot().values().stream()
+                    .filter(template -> template.family() == ItemTemplate.Family.WEAPON
+                            || (template.slot() == ItemTemplate.Slot.OFF_HAND
+                            && "SHIELD".equals(template.material())))
+                    .toList();
+            check(combatItems.size() == 25,
+                    "Paper runtime must load exactly 25 existing weapon/off-hand templates");
+            for (final ItemTemplate template : combatItems) {
+                check(template.levelRequirement() == Math.max(1, template.itemLevel() - 4),
+                        "combat item level requirement mismatch: " + template.templateId());
+                final ItemStack item = identity.create(template.templateId(),
+                        "runtime:combat-item", "paper", null);
+                final ItemIdentityService.Inspection inspection = identity.inspect(item);
+                final ItemAttributeModifiers attributes = item.getData(
+                        DataComponentTypes.ATTRIBUTE_MODIFIERS);
+                check(inspection.status() == ItemIdentityService.Status.VALID
+                                && item.hasData(DataComponentTypes.ATTRIBUTE_MODIFIERS)
+                                && attributes != null
+                                && attributes.modifiers().stream().allMatch(entry ->
+                                "icesmp".equals(entry.modifier().getKey().getNamespace())),
+                        "combat item must be VALID and own its Paper attribute projection: "
+                                + template.templateId());
             }
             final ProfessionRecipeCatalog.Recipe newOutput = catalog.get("lte_fonixszovet_sisak");
             check(newOutput != null && "fonixszovet_sisak".equals(newOutput.templateId()),

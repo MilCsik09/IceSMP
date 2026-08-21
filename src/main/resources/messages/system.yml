@@ -6,6 +6,7 @@ messages:
       wrong-family: '&cA kasztod nem tud %s felszerelést viselni.'
       class-restricted: '&cEzt a felszerelést a kasztod nem használhatja.'
       spec-restricted: '&cEzt a felszerelést az aktív specializációd nem használhatja.'
+      under-level: '&cEhhez a felszereléshez {required}. kasztszint szükséges. &7(Jelenlegi: {current})'
       invalid: '&cEz a canonical felszerelés jelenleg nem aktiválható.'
   admin:
     iceitem:

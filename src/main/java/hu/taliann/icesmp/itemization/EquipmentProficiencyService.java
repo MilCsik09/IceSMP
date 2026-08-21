@@ -26,12 +26,25 @@ public final class EquipmentProficiencyService {
         DUPLICATE_UUID,
         PROFILE_NOT_READY,
         RESTRICTED,
+        UNDER_LEVEL,
         SUPPRESSED
+    }
+
+    public record LevelDecision(int currentLevel, int requiredLevel) {
+        public LevelDecision {
+            currentLevel = Math.max(0, currentLevel);
+            requiredLevel = Math.max(0, requiredLevel);
+        }
+
+        public boolean allowed() {
+            return currentLevel >= requiredLevel;
+        }
     }
 
     public record Activity(ActivityStatus status, ItemIdentityService.Inspection inspection,
                            ItemTemplate.Slot equippedSlot,
-                           EquipmentProficiencyPolicy.Decision decision) {
+                           EquipmentProficiencyPolicy.Decision decision,
+                           LevelDecision levelDecision) {
         public boolean activeCanonical() {
             return status == ActivityStatus.ACTIVE;
         }
@@ -82,7 +95,15 @@ public final class EquipmentProficiencyService {
 
     /** Template-level admission only; runtime gameplay consumers must use {@link #isActive}. */
     public boolean canUse(final Player player, final ItemTemplate template) {
-        return template != null && profileReady(player) && decision(player, template).allowed();
+        return template != null && profileReady(player) && decision(player, template).allowed()
+                && levelDecision(player, template, "base").allowed();
+    }
+
+    public LevelDecision levelDecision(final Player player, final ItemTemplate template,
+                                       final String ascensionStageId) {
+        final int currentLevel = player == null ? 0 : jobs.getPrimaryLevel(player);
+        final int requiredLevel = template == null ? 0 : template.levelRequirementAt(ascensionStageId);
+        return new LevelDecision(currentLevel, requiredLevel);
     }
 
     /**
@@ -95,6 +116,7 @@ public final class EquipmentProficiencyService {
                                                 final boolean duplicateUuid,
                                                 final boolean profileReady,
                                                 final boolean restrictionsAllowed,
+                                                final boolean levelAllowed,
                                                 final boolean suppressed) {
         if (identityStatus == ItemIdentityService.Status.NOT_MANAGED) {
             return ActivityStatus.NOT_MANAGED;
@@ -106,26 +128,42 @@ public final class EquipmentProficiencyService {
         if (duplicateUuid) return ActivityStatus.DUPLICATE_UUID;
         if (!profileReady) return ActivityStatus.PROFILE_NOT_READY;
         if (!restrictionsAllowed) return ActivityStatus.RESTRICTED;
+        if (!levelAllowed) return ActivityStatus.UNDER_LEVEL;
         if (suppressed) return ActivityStatus.SUPPRESSED;
         return ActivityStatus.ACTIVE;
     }
 
     public Activity inspectActive(final Player player, final ItemStack item,
                                   final ItemTemplate.Slot equippedSlot) {
+        return inspect(player, item, equippedSlot, true);
+    }
+
+    /** Admission ignores a stale suppression marker so newly eligible equipment can reactivate. */
+    public Activity inspectAdmission(final Player player, final ItemStack item,
+                                     final ItemTemplate.Slot equippedSlot) {
+        return inspect(player, item, equippedSlot, false);
+    }
+
+    private Activity inspect(final Player player, final ItemStack item,
+                             final ItemTemplate.Slot equippedSlot,
+                             final boolean includeSuppression) {
         final ItemIdentityService.Inspection inspection = identities.inspect(item);
         if (inspection.status() == ItemIdentityService.Status.NOT_MANAGED) {
-            return new Activity(ActivityStatus.NOT_MANAGED, inspection, equippedSlot, null);
+            return new Activity(ActivityStatus.NOT_MANAGED, inspection, equippedSlot, null, null);
         }
         if (inspection.status() != ItemIdentityService.Status.VALID) {
-            return new Activity(ActivityStatus.INVALID_IDENTITY, inspection, equippedSlot, null);
+            return new Activity(ActivityStatus.INVALID_IDENTITY, inspection, equippedSlot, null, null);
         }
         final ItemTemplate template = inspection.template();
         final EquipmentProficiencyPolicy.Decision policy = decision(player, template);
+        final LevelDecision level = levelDecision(player, template,
+                inspection.instance().ascension().stageId());
         final ActivityStatus status = decideActivity(inspection.status(),
                 fits(template.slot(), equippedSlot),
                 isDuplicateEquippedUuid(player, inspection.instance().itemId()),
-                profileReady(player), policy.allowed(), identities.isEquipmentSuppressed(item));
-        return new Activity(status, inspection, equippedSlot, policy);
+                profileReady(player), policy.allowed(), level.allowed(),
+                includeSuppression && identities.isEquipmentSuppressed(item));
+        return new Activity(status, inspection, equippedSlot, policy, level);
     }
 
     public boolean isActive(final Player player, final ItemStack item,
@@ -149,8 +187,20 @@ public final class EquipmentProficiencyService {
     }
 
     public net.kyori.adventure.text.Component denialMessage(
-            final EquipmentProficiencyPolicy.Decision decision) {
-        if (decision == null || decision.allowed()) return net.kyori.adventure.text.Component.empty();
+            final Activity activity) {
+        if (activity == null) return net.kyori.adventure.text.Component.empty();
+        if (activity.status() == ActivityStatus.UNDER_LEVEL && activity.levelDecision() != null) {
+            return messages.getMessage("equipment.proficiency.under-level",
+                    "&cEhhez a felszereléshez {required}. kasztszint szükséges. &7(Jelenlegi: {current})",
+                    java.util.Map.of(
+                            "required", Integer.toString(activity.levelDecision().requiredLevel()),
+                            "current", Integer.toString(activity.levelDecision().currentLevel())));
+        }
+        final EquipmentProficiencyPolicy.Decision decision = activity.decision();
+        if (decision == null || decision.allowed()) {
+            return messages.getMessage("equipment.proficiency.invalid",
+                    "&cEz a canonical felszerelés jelenleg nem aktiválható.");
+        }
         return switch (decision.status()) {
             case NO_CLASS -> messages.getMessage("equipment.proficiency.no-class",
                     "&cAz authored MMORPG felszereléshez előbb válassz kasztot.");
@@ -207,10 +257,12 @@ public final class EquipmentProficiencyService {
             return;
         }
         final EquipmentProficiencyPolicy.Decision policy = decision(player, inspection.template());
+        final LevelDecision level = levelDecision(player, inspection.template(),
+                inspection.instance().ascension().stageId());
         final ActivityStatus eligibility = decideActivity(inspection.status(),
                 fits(inspection.template().slot(), slot),
                 duplicateIds.contains(inspection.instance().itemId()),
-                profileReady(player), policy.allowed(), false);
+                profileReady(player), policy.allowed(), level.allowed(), false);
         identities.setEquipmentSuppressed(item, inspection.template(), inspection.instance(),
                 eligibility != ActivityStatus.ACTIVE);
     }
