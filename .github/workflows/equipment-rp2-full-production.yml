@@ -156,6 +156,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/reports/equipment-rp2-c
+          child_sha=$(git rev-parse HEAD)
+          merge_base=$(git merge-base HEAD "${RP2_PARENT_SHA}")
+          read behind ahead < <(git rev-list --left-right --count "${RP2_PARENT_SHA}...HEAD")
+          test "${merge_base}" = "${RP2_PARENT_SHA}"
+          test "${behind}" = "0"
+          printf '{"child":"%s","parent":"%s","merge_base":"%s","behind":0,"ahead":%s}\n' \
+            "${child_sha}" "${RP2_PARENT_SHA}" "${merge_base}" "${ahead}" \
+            > build/reports/equipment-rp2-c/final-topology.json
           python3 scripts/generate_equipment_rp2_art_bible.py --check \
             --collision-output build/reports/equipment-rp2-c/collision-audit.json
           python3 scripts/equipment_rp2_asset_audit.py
