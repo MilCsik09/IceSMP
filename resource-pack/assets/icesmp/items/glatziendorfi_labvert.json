@@ -1,7 +1,7 @@
 {
   "hand_animation_on_swap": true,
   "model": {
-    "model": "icesmp:item/glatziendorfi_jegvert",
+    "model": "icesmp:item/glatziendorfi_labvert",
     "type": "minecraft:model"
   },
   "oversized_in_gui": false,
