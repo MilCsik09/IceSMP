@@ -171,9 +171,23 @@ publikus gear score és nem loot-authority.
 
 Az ability runtime eseményvezérelt, legfeljebb 2048 aktív state-et tart, minden mobot
 a saját entity schedulerén kezel, a location-hatásokat region schedulerre adja át.
-Veszélyes castnál a vanilla partikula/hang telegráf megelőzi az executiont. A summon,
-projectile és state élettartama bounded; terrain-rombolás nincs. Az Elite spawnkor
-legfeljebb két valid affixet kap, kombinációs tiltással és despawn/death/disable cleanup-pal.
+A registry 11 technikájának rank/archetype eligibilityje, célzási szabálya, castideje,
+recoveryje és interruptibilitása explicit. A rank legfeljebb Normal/Veteran/Elite/
+Champion/Boss vonalon 1/2/3/4/5 technikát enged; a veszélyes castot vanilla partikula/
+hang telegráf előzi meg. A cast epoch megakadályozza a stale callback executiont,
+a konfigurált sebzésküszöb megszakíthatja az interruptible castot. Summon, ally buff,
+herd/area traversal, projectile és state élettartam bounded; terrain-rombolás nincs.
+Az Elite spawnkor legfeljebb két valid affixet kap, kombinációs tiltással és
+despawn/death/disable cleanup-pal. A `CombatTelemetry` csak bounded aggregált
+cast/execute/interrupt/hit számlálókat tart, játékosazonosítót nem.
+
+A külön `WildlifeRetaliationService` nem promotion vagy loot alrendszer. Csak direkt
+`EntityDamageByEntityEvent` esetén, játékos vagy játékos által lőtt projectile forrásnál
+vizsgál valóban passzív `Animals` entitást. A temperament stabil UUID-hashből és validált
+species súlyokból születik; baby/tamed állat fail-closed kimarad. Warning után az állat
+owner schedulerén indul a bounded reakció, a játékosmutáció pedig player scheduleren fut.
+Az azonos fajú herd assist max. hat jelöltet jár be, nem láncol, és nincs rank-, XP- vagy
+extra-loot oldali hatása.
 
 A világboss startkor immutable résztvevő-snapshotot készít. A HP létszámgörbéje
 `1 + 0.65×(n-1)^0.8` (configolt és capelt), a damage csak logaritmikusan, legfeljebb
@@ -395,9 +409,12 @@ MMORPG endgame authority.
 ### 3.8.3 Equipment 2.0 authority
 
 Az immutable `EquipmentProficiencyPolicy` a 13 `JobType` mindegyikéhez pontosan egy
-familyt rendel; a specialization a szülő kaszt familyjét örökli. Döntési sorrend:
-explicit class restriction → explicit spec restriction → ArmorFamily proficiency.
-No-class canonical armor DENY, de a `BASIC_SURVIVAL_GEAR` soha nem lép ebbe a policyba.
+familyt rendel; a specialization a szülő kaszt familyjét örökli. Az aktív equipment-
+döntés központi sorrendje: canonical identity → slot → duplicate UUID → profile →
+explicit class/spec és ArmorFamily restriction → stage-specifikus level requirement →
+suppression. No-class canonical armor DENY, de a `BASIC_SURVIVAL_GEAR` soha nem lép
+ebbe a policyba. A level authority a jelenlegi kaszt Profile v2 szintje; kasztszint-
+változás owner-thread reconcile-t indít.
 
 Az armor family csak HEAD/CHEST/LEGS/FEET sloton érvényes. A schema v2 hiányzó,
 érvénytelen vagy nem armor slotra tett familyt, class-family konfliktust, mixed-family
@@ -416,11 +433,14 @@ kérdezi. Class-váltás, Profile v2 aktiváció és config reload owner-thread 
 ütemez; nincs disk I/O vagy YAML parse az inventory eseményben.
 
 Az `ArmorFamilyProfile` az item-level authorityt nem helyettesíti: offensive/defensive/
-utility share-eket, base-armor coefficientet és valódi consumerrel rendelkező preferred/
-disfavored statokat ad. A `EquipmentBudgetModel` reportol, nem auto-fixel. A flat Armor
-flat érték marad; nincs publikus gear score, current/max armor vagy family armor cap.
-Az internal CombatPower a family coefficienttel normalizálja az armor jelet, ezért a
-Plate nem kap automatikus fölényt a Cloth fölött.
+utility identitást és valódi consumerrel rendelkező preferred/disfavored statokat ad.
+A `EquipmentBudgetModel` a tényleges statok közös súlyozott összegét reportolja, nem
+auto-fixel és nem osztja vissza family-koefficienssel. Bandenként a teljes szettbudget
+32/60/76/92, a slot share HEAD/CHEST/LEGS/FEET = 19/34/28/19%; a 160 páncéldarab
+0,88–1,12 kapun belül marad. A 25 meglévő fegyver/pajzs ugyanennek az authoritynak a
+harci pacingjét követi. A flat Armor flat érték marad; nincs publikus gear score,
+current/max armor vagy family armor cap. A külső sanity authority a valódi Paper
+1.21.11 default ItemStack attribute benchmark, nem a backing Material szivárgása.
 
 A géppel generált migráció-, balance-, Profession 2.0- és Resource Pack 2.0-handoff:
 [`development/equipment-2-handoff.json`](development/equipment-2-handoff.json).

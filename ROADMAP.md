@@ -16,6 +16,15 @@ konfiguráció a mérvadó. Egy zöld build nem helyettesíti a Folia
 runtime-tesztet, egy lore-ban szereplő hely pedig nem helyettesíti a
 világban elvégzett bekötést.
 
+**Combat & Encounter foundation — forrásoldalon lezárva, staging előtt.** A 160 armor,
+a 25 meglévő weapon/offhand, a központi level gate, a rank/technique runtime és az
+opcionális wildlife retaliation gépi authorityja elkészült. Ez nem Itemization 3.0,
+Equipment 3.0 vagy Mob 3.0, és nem nyit új weapon production catalogot. Nyitott kézi
+kapu marad a reprezentatív build-TTK/TTL és healing érzet, a telegráf olvashatósága,
+a két-régiós Folia próba, valamint az 50–60 játékosos profiler/stressz. A későbbi tuning
+a bounded `CombatTelemetry` és a verziózott evidence report méréseit fogyassza; a kód
+nem módosít automatikusan balance értéket élő log alapján.
+
 Jelölések:
 
 - 🚧 **kiadási kapu** — rollout előtt kötelező;

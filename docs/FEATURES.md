@@ -636,19 +636,23 @@ WAL-műveletként végrehajtott old→new replace előnézetet is ad; a régi r�
 `destroy` policy szerint megsemmisül. Reroll, rúnacsere és ascension közben az item UUID-ja nem
 változik; az ismételt reroll költséglépcsője magával az itemmel utazik.
 
-A jelenlegi systemic survival katalógus 48 authored template, 15 registry-bekötött
-Signature Effect, 3 szett, 7 explicit ascension-út és 10 valós rúna. A 392 receptből
-15 gear-recept canonical `ItemTemplate → ItemInstance`; ezek szint, blueprint és
-masterwork quality-padlót adhatnak, de nem változtatják meg a template stat-budgetjét.
+A combat progression authority 160 authored páncéldarabot — 40 teljes, négydarabos
+felszereléssort — és a már létező 25 fegyver/pajzs sablont kezel közös, normalizált
+költségmodellben. A katalógus 64 profession-craftolt darabot, 8 mechanikus szettet,
+15 registry-bekötött Signature Effectet, explicit ascension-utakat és 10 valós rúnát
+is összeköt. A canonical `ItemTemplate → ItemInstance` producer szint-, blueprint- és
+masterwork quality-padlót adhat, de nem írja át önkényesen a template stat-budgetjét.
 
-Az Equipment 2.0 a 18 valódi armor-slot sablont explicit családba sorolja: 3 CLOTH,
-2 LEATHER, 5 MAIL és 8 PLATE. A 13 kaszt familyje fix, a specialization nem írja át.
+Az Equipment 2.0 mind a 160 armor-slot sablont explicit családba sorolja: 40 CLOTH,
+40 LEATHER, 40 MAIL és 40 PLATE. A 13 kaszt familyje fix, a specialization nem írja át.
 Azonos tierben a family nem rangsor: Cloth ability/resource/utility, Leather
 mobility/crit/sustain, Mail hybrid/resistance, Plate armor/HP/mitigation budgetet
 hangsúlyoz. Csak a katalógusban tényleges consumerrel rendelkező stat használható.
 
-Wrong-family authored gear birtokolható, rúnázható, listázható és megvehető; csak a
-viselése tiltott. Tiltott vagy no-class equip nem ad fixed/rolled statot, setet,
+Wrong-family vagy túl magas szintű authored gear birtokolható, rúnázható, listázható
+és megvehető; csak az aktív használata tiltott. A kapu minden canonical armor-,
+mainhand- és offhand-úton a jelenlegi kasztszintet hasonlítja az adott ascension-stage
+`level-requirement` értékéhez. Tiltott, no-class vagy underlevel equip nem ad fixed/rolled statot, setet,
 Signature-t, rúnahatást vagy CombatPowert. A market ArmorFamily szerint szűrhető
 (`@cloth`, `@leather`, `@mail`, `@plate`), a loot saját familyt preferál, de az eddigi
 1.5× cap és a bounded soft-diversity miatt más family trade-dropja sem tűnik el.
@@ -1147,9 +1151,17 @@ nő; 70 fölötti boss csak authored override, nem wilderness extrapoláció.
 A rendszer 18 canonical MobTemplate-et használ surface/night/deep/swamp/Nether/End/
 storm és meglévő event forrásokra, miközben a többi vanilla mob fallbackként
 helyes marad. A hét rank: Normal, Veteran, Elite, Champion, Miniboss, Boss és World
-Boss; a 12 archetype közös ability registryre épül. Hat reusable ability vanilla
-telegráfot ad, az Elite spawnkor legfeljebb két biztonságos affixet kaphat a hétből.
+Boss; a 12 archetype közös ability registryre épül. Tizenegy reusable technika rank-
+és archetype-engedélyt, célzási szabályt, telegráfot, castot, recoveryt és opcionális
+sebzés-interruptot kap. A magasabb rank armor- és óvatos mobility-karaktert is hordoz,
+nem pusztán több HP-t; az Elite spawnkor legfeljebb két biztonságos affixet kaphat.
 Az invasion hullámai/bajnoka, a kultisták és a Wild Hunt canonical rankot kapnak.
+
+Az opcionális `wildlife-retaliation` réteg a valóban passzív állatokhoz stabil,
+UUID-alapú timid/defensive/aggressive temperamentet rendel. Csak közvetlen játékos-
+vagy játékoslövedék-sebzés válthat ki rövid, előre jelzett és cooldownos visszavágást;
+baby és megszelídített állat kimarad. Az azonos fajú herd assist kis sugarú és darabszámú,
+nem láncol, és a rendszer nem ad mob rankot, extra lootot vagy reward-promóciót.
 
 A világboss startkor stabil, csökkenő hozadékú player-count és élő equipped-CombatPower
 snapshotot készít. A power csak valid main/offhand+armor canonical itemek tényleges
@@ -1173,7 +1185,7 @@ reconnectig függőben marad, nem esik a földre.
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.yml` `mob-scaling.*` és `world-events.world-boss.*`,
+- Config: `world.yml` `mob-scaling.*`, `wildlife-retaliation.*` és `world-events.world-boss.*`,
   `mob-templates.yml`, `loot.*`, `itemization.loot.*`, bestiary- (mérföldkövek,
   `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`) és miniondefiníciók.
 - Tartós állapot: Bestiárium progress, bounded authored-loot előzmény és egyes

@@ -1178,9 +1178,11 @@ A részletes persistence-, recovery- és shutdown-folyamat:
   engedélyezett; a tényleges equip ugyanazon a kapun bukik.
 - Market family filter: `/market search @cloth|@leather|@mail|@plate`. Listázást és vételt
   az eladó/vevő proficiencyje nem tiltja.
-- A `scripts/generate_equipment_2_report.py --check` ellenőrzi a 48 template-et, 18 armor
-  mappinget, 3 setet, 7 ascension utat, 15 canonical receptet, normalized budgetet és a
-  Profession/RP handoffot. A követett output: `docs/development/equipment-2-handoff.json`.
+- A `scripts/generate_long_term_equipment_catalog.py --check` determinisztikusan védi a
+  160 armor leafet; az `audit_combat_encounter_foundation.py --check` mind a 160 armor +
+  25 meglévő weapon/offhand normalizált budgetjét, same-band mediánját, level gate-jét,
+  TTK-mátrixát, technikafedését és wildlife-policyját ellenőrzi. A követett authority:
+  `docs/development/combat-balance-authority.json`.
 - Template schema 2, de a template-version változatlan. ArmorFamily template property,
   ezért a régi ItemInstance UUID/provenance/roll/rúna/ascension állapota nem íródik át.
 
@@ -1196,6 +1198,12 @@ csizmát jobb kattintással próbál felvenni. A felszerelés maradjon tiltott, 
 item a vanilla equip-tranzakció lezárása után pontosan egyszer kerüljön vissza az inventoryba.
 Teljes inventorynál maradjon fizikailag felszerelve, de suppression miatt minden canonical
 hatása legyen inaktív; sem eltűnés, sem klónozott példány, sem world drop nem elfogadható.
+
+Ugyanezt futtasd le minden armor-, mainhand- és offhand-úton a követelmény alatti,
+pontosan megfelelő és felette levő kasztszinttel. A döntési precedencia identity/slot/
+duplicate/profile/class-family-spec/level/suppression. Underlevel ACTIVE contribution
+mindig nulla; az eredeti UUID-t teljes inventory, relog, reload és későbbi level-up után
+is meg kell őrizni. BASIC survival gear kontrollként minden szinten használható marad.
 
 Staging acceptance — ezeket CI alapján ne pipáld ki:
 
@@ -1300,8 +1308,12 @@ anyagláncok és Equipment Resource Pack 2.0 nem részei ennek a változásnak.
   protected-city selectorban nem. Mélység, Nether/End és Vérhold kis bounded bónuszt
   ad; Elite legfeljebb két valid affixet kap.
 - Az ability runtime globális scan helyett entity scheduler tickeket használ, legfeljebb
-  2048 aktív state-tel. Telegraph, cooldown, summon-darab és summon-lifespan bounded;
-  disable/death/despawn cleanup kötelező, terrain damage nincs.
+  2048 aktív state-tel. A technikák rank/archetype eligibilityje, target rule-ja,
+  telegráfja, castja, recoveryje és interruptibilitása explicit. Cooldown, summon/ally
+  darabszám és lifespan bounded; disable/death/despawn cleanup kötelező, terrain damage nincs.
+- `world.yml` `wildlife-retaliation.*`: speciesenként stabil temperament-súlyok és
+  retaliation chance; baby/tamed kizárás, bounded warning/range/damage/knockback/cooldown,
+  valamint kis, nem láncoló same-species herd assist. Nem ad rankot vagy extra rewardot.
 - Világboss scaling: `1 + player-coefficient × (n-1)^player-exponent`, default
   `0.65`/`0.8`, max HP-szorzó `12`; damage per doubling `0.04`, max `1.18`.
   A snapshot startkor rögzül, late join nem skáláz újra. A power-inputot az
@@ -1316,9 +1328,10 @@ anyagláncok és Equipment Resource Pack 2.0 nem részei ennek a változásnak.
 Mob 2.0 staging acceptance: (1) Lv. 1/10/25/50/70 és cap, (2) távolság + mélység +
 Deep Dark + territory + Vérhold, (3) Veteran/Elite max. két affix, (4) mind a 18 authored
 template és vanilla fallback, (5) telegráf/cast/caster death/target death/region hop/
-disable, (6) 1/2/5/40 fős boss snapshot, late join/death/disconnect, (7) contribution,
+interrupt/recovery/disable, (6) 1/2/5/40 fős boss snapshot, late join/death/disconnect, (7) contribution,
 AFK és duplicate settlement, (8) tele inventory + reconnect/restart delivery, (9)
-50–60 online játékos melletti profiler-felvétel. Ments JAR SHA-256-ot, config snapshotot,
+timid/defensive/aggressive wildlife, baby/tamed/environmental damage és herd cap,
+(10) 50–60 online játékos melletti profiler-felvétel. Ments JAR SHA-256-ot, config snapshotot,
 boss encounter ID-t és az érintett Profile operation receiptet.
 
 ### Üzenetfájlok
@@ -1736,6 +1749,21 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CRATE-24 Valós preview-modellek | Tesztelő | unique-, recipe-, blueprint- és key reward mind browserben, mind fizikai nyitással | a GUI és a végső ItemDisplay ugyanazt az itemmodellt mutatja, mint a kiosztott stack | crate rollout stop, pack/model manifest vizsgálata | `crate/CRATE-24/` |
 | [ ] | CRATE-25 Random tervrajz policy | Admin/tesztelő | szakma- és szintszűrt normál pool, majd Mitikus `include-loot-only` pool | minden sorsolt recept a tartományban van; boss-only csak engedélyezett poolból jön | érintett pool tiltása | `crate/CRATE-25/` |
 | [ ] | CRATE-26 Elytra-tiltás | Admin | közvetlen `item: ELYTRA`, Elytra-recept és ilyen tervrajz tesztdefiníciója | mindhárom config betöltéskor elutasított; bundled lootban nincs Elytra | crate config rollback | `crate/CRATE-26/` |
+
+### Combat & Encounter recalibration
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | COMBAT-01 Valódi Paper benchmark | Fejlesztő | exact-head Paper 1.21.11 probe, 38 vanilla ItemStack | runtime attribute modifier értékek és SHA-256 csomagban | rollout stop | `combat/COMBAT-01/` |
+| [ ] | COMBAT-02 BASIC kontroll | Tesztelő | vanilla armor/fegyver minden kaszt- és szintállapotban | nincs canonical level/family gate | equipment rollback | `combat/COMBAT-02/` |
+| [ ] | COMBAT-03 Szint-határ minden sloton | Tesztelő | armor/main/offhand req−1, req, req+1 | req−1 inert, req és fölötte aktív | equipment rollout stop | `combat/COMBAT-03/` |
+| [ ] | COMBAT-04 Precedencia és tele inventory | Admin/tesztelő | invalid/duplicate/classless/wrong-family/underlevel, tele inventory | determinisztikus denial, nincs drop/loss/clone | érintett producer tiltása | `combat/COMBAT-04/` |
+| [ ] | COMBAT-05 Reaktiváció | Tesztelő | level-up, relog, respawn és reload suppressed itemmel | ugyanaz az UUID pontosan egyszer aktívvá válik | reconcile rollback | `combat/COMBAT-05/` |
+| [ ] | COMBAT-06 Katalógus integritás | Fejlesztő | 160 armor + 25 jelenlegi combat item report | ID/verzió/visual/acquisition megmarad; budget gate zöld | catalog rollback | `combat/COMBAT-06/` |
+| [ ] | COMBAT-07 Rangtechnikák | Tesztelő | Normal→Boss reprezentatív archetype-ok | rank-kit, telegráf, recovery és interrupt működik | technique config tiltása | `combat/COMBAT-07/` |
+| [ ] | COMBAT-08 Folia régióhatár | Üzemeltető | két régió, több player, technique/herd/boss | nincs thread-warning; cleanup és cap helyes | rollout stop | `combat/COMBAT-08/` |
+| [ ] | COMBAT-09 Wildlife safety | Tesztelő | temperamentek, baby/tamed, projectile/environment, herd | bounded visszavágás; nincs chain/rank/extra reward | wildlife kapu kikapcsolása | `combat/COMBAT-09/` |
+| [ ] | COMBAT-10 TTK és terhelés | Balance owner | benchmark buildek, Normal/Veteran/Elite/Champion/Boss, 50–60 player | elfogadott TTK/TTL, olvasható telegráf, profiler és telemetry | balance rollout stop | `combat/COMBAT-10/` |
 
 ### Szakma-katalógus (rework)
 

@@ -23,6 +23,29 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 > köztes mainline commit. A JAR nem tartalmaz Git SHA-t, ezért ez
 > `HIGH_CONFIDENCE`, nem `EXACT` azonosítás.
 
+## Combat & Encounter foundation — stacked recalibration
+
+- A 160 páncéldarab és a már létező 25 fegyver/pajzs közös normalizált combat budgetet
+  kapott. A generátor most a raw armor/toughness mellett a tényleges offense, defense és
+  utility statokat osztja; azonos bandben a négy family eltérő karaktert, nem automatikus
+  numerikus rangsort jelent. Az ID, template-version, visual, source, set, Signature,
+  rune és ascension kapcsolatok megmaradtak; új fegyverkatalógus nem készült.
+- A `level-requirement` központi runtime kapu lett armoron, mainhanden és offhanden.
+  Underlevel canonical gear inert/suppressed, ACTIVE hozzájárulása nulla, de tele
+  inventorynál sem vész el vagy esik a földre. Pontos szinten, level-up/relog/reload
+  reconcile után ugyanaz a példány aktiválódhat. BASIC survival gear nem érintett.
+- A hét mob rank külön HP/damage/armor/mobility profilt és rankonként bounded technikakitet
+  használ. A 11 reusable technique target rule-t, vanilla telegráfot, castot, recoveryt,
+  opcionális interruptot és bounded summon/ally/area viselkedést kapott; nincs globális
+  mob scan vagy terrain-rombolás.
+- Az opcionális wildlife retaliation stabil timid/defensive/aggressive temperamentet,
+  rövid figyelmeztetést és nem láncoló herd assistot ad. Baby/tamed állat, nem játékos
+  damage és reward/rank promotion kimarad.
+- Az exact-head workflow valódi Paper 1.21.11 default ItemStack benchmarkot, a 160+25
+  item-reportot, level-gate/TTK/technique/wildlife evidence-t és SHA-256 manifestet csomagol.
+  A forrásoldali szimuláció nem helyettesíti a productionközeli Folia-, 50–60 player-,
+  telegráf-olvashatósági és balance staginget.
+
 ## Augusztus eleji integrációs hullám (staging előtt)
 
 ### Vanilla Crafting Boundary — stacked foundation

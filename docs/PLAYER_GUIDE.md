@@ -601,6 +601,13 @@ Másik family authored tárgyát is megtarthatod, fejlesztheted és eladhatod; f
 nem tudod. Sikertelen equipnél a tárgy nem fogy el, és rövid magyar actionbar jelzi az
 okot. Kasztválasztás előtt a canonical armor nem aktív.
 
+A canonical tárgy `Szintkövetelmény` sora valódi használati kapu. Ha a jelenlegi
+kasztszinted kisebb, a páncél, főkéz vagy mellékkéz nem ad statot, szett-, rúna- vagy
+Signature-hatást. A tárgy ettől a tiéd marad: tele inventorynál sem dobódik a földre,
+hanem inert/suppressed állapotban marad. A pontos szint elérésekor, belépéskor vagy
+profilfrissítéskor ugyanaz a példány újra aktiválható. A normál vanilla survival gearre
+ez a kapu nem vonatkozik.
+
 Két fő szakmai helyed van:
 
 - **egy gyűjtögető szakma:** Bányász, Gyógynövényész vagy Favágó;
@@ -637,9 +644,10 @@ tervrajz és mestermű jelző additív, plafonozott minimum-qualityt adhat. A t�
 megmarad a készítő UUID-ja, a név craftkori pillanatképe, a szakma, hely/idő és a
 Mestermű jelző; egy későbbi névváltás nem írja át az eredetét.
 
-A jelenlegi 48 tárgyas katalógus starter, mid-game és high-end felszerelést, három
-szettet, valamint mining/fishing/hunting/farming, profession, wilderness, event és
-boss forrásokat köt össze. A tíz rúna közül a Súly nagy célpont ellen, az Oltalom
+A jelenlegi combat katalógus 160 páncéldarabot — familynként 40-et — és 25 már
+létező fegyver/pajzs sablont köt starter, mid-game, high-end és endgame sávba.
+Nem került be új fegyverkatalógus; a meglévő azonosítók, kinézetek és források kaptak
+közös erőskálát. A tíz rúna közül a Súly nagy célpont ellen, az Oltalom
 alacsony életerőn, a Vadász pedig nem játékos célpontra lőve ad bounded előnyt.
 
 A főkézben tartott canonical tárggyal nyisd meg a `/profession forge` felületet:
@@ -800,12 +808,21 @@ Authored rom, dungeon vagy boss saját szintet írhat elő; 70 fölötti szint n
 végtelen távolsági skála, hanem külön boss/encounter tartalom. A HP gyorsabban,
 a sebzés óvatosabban nő, így a magas szint nem automatikus előjel nélküli one-shot.
 
-A **Veterán** erősebb alapellenfél, az **Elit** legfeljebb két, a neve mellett
-röviden jelzett affixet kaphat; a Bajnok/Miniboss/Boss saját mechanikákat használhat.
-Charge, slam, lövedéksorozat vagy zóna előtt vanilla kliensen is hang/részecske
-telegráf látható — ezt figyeld, ne csak a nametaget. A spawnerből származó mobok
+A **Veterán** már technikát hozhat, az **Elit** több technikát és legfeljebb két,
+a neve mellett röviden jelzett affixet kaphat; a Bajnok/Miniboss/Boss nagyobb
+mechanikai készletet használ. A rangok armorban és mozgáskarakterben is eltérhetnek,
+nem csak életerőben. Charge, slam, lövedéksorozat, cleave vagy zóna előtt vanilla
+kliensen is hang/részecske telegráf látható; egyes castok elég nagy sebzéssel
+megszakíthatók, végrehajtás után pedig recovery ablak következik. Ezt figyeld, ne csak
+a nametaget. A spawnerből származó mobok
 nem a vadon kihívásának pótlására valók, ezért nem kapják meg ugyanazt a skálázást
 és jutalmat.
+
+Néhány passzív vadállatnak stabil természete van: lehet félénk, védekező vagy
+agresszívebb. Közvetlen megütéskor rövid figyelmeztetés után visszavághat, és kis
+számban az azonos fajú közeli csorda is segíthet. A bébi és megszelídített állat nem
+vesz részt ebben, a reakció rövid és cooldownos, és nem jár érte elit rang vagy extra
+jutalom. Környezeti sebzés és más mob támadása sem teszi a farmot jutalomforrássá.
 
 Világbossnál nem csak a killing blow számít. Érdemi bosssebzés, tankolás és a
 támogatott encounter-célok contributiont adnak; AFK, önmagadon farmolt heal vagy
