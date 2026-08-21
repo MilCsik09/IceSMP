@@ -388,6 +388,20 @@ def runtime_join(report: dict[str, Any], benchmark_path: Path) -> dict[str, Any]
     slot_suffix = {"HEAD": "HELMET", "CHEST": "CHESTPLATE", "LEGS": "LEGGINGS", "FEET": "BOOTS"}
     band_material = {"EARLY": "IRON", "MID": "DIAMOND", "HIGH": "NETHERITE", "ENDGAME": "NETHERITE"}
 
+    def combat_reference(row: dict[str, Any]) -> tuple[str | None, str]:
+        """Resolve an authored combat archetype; backing Material is not stat authority."""
+        material = str(row["material"])
+        if material in vanilla:
+            return material, "DIRECT_VANILLA_COMBAT_ARCHETYPE"
+        if float(row.get("stats_midpoint", {}).get("attack_damage", 0.0)) <= 0.0:
+            return None, "NO_VANILLA_ATTRIBUTE_EQUIVALENT"
+        level = int(row["item_level"])
+        tier = ("WOODEN" if level <= 10 else "STONE" if level <= 20 else
+                "IRON" if level <= 30 else "DIAMOND" if level <= 40 else "NETHERITE")
+        attack_speed = float(row.get("attack_speed_with_player_base") or 0.0)
+        weapon_class = "AXE" if attack_speed <= 1.15 else "SWORD"
+        return f"{tier}_{weapon_class}", "AUTHORED_MELEE_PACING_ARCHETYPE"
+
     def denominator(row: dict[str, Any]) -> float:
         return (max(0.0, float(row.get("armor", 0.0))) * STAT_WEIGHTS["armor"]
                 + max(0.0, float(row.get("armor_toughness", 0.0))) * STAT_WEIGHTS["armor_toughness"]
@@ -401,9 +415,14 @@ def runtime_join(report: dict[str, Any], benchmark_path: Path) -> dict[str, Any]
         row["vanilla_benchmark_ratio"] = round(float(row["normalized_budget"]) / value, 6)
         row["flags"] = ["PAPER_RUNTIME_RATIO_VERIFIED"]
     for row in joined["combat_items"]:
-        reference = row["material"]
-        value = denominator(vanilla[reference])
+        reference, basis = combat_reference(row)
         row["vanilla_benchmark_material"] = reference
+        row["vanilla_benchmark_basis"] = basis
+        if reference is None:
+            row["vanilla_benchmark_ratio"] = None
+            row["flags"] = ["NO_VANILLA_ATTRIBUTE_EQUIVALENT"]
+            continue
+        value = denominator(vanilla[reference])
         row["vanilla_benchmark_ratio"] = (round(float(row["normalized_budget"]) / value, 6)
                                            if value > 0.0 else None)
         row["flags"] = (["PAPER_RUNTIME_RATIO_VERIFIED"] if value > 0.0 else
