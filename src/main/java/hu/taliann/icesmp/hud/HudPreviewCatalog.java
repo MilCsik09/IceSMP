@@ -20,7 +20,7 @@ public final class HudPreviewCatalog {
             "red", new FactionFixture("Láng", "ember", "E7683F", "red"),
             "blue", new FactionFixture("Fagy", "frost", "8BE9FD", "blue"),
             "neutral", new FactionFixture("Menedék", "guild", "D6A74B", "neutral"),
-            "dark", new FactionFixture("Kitaszított", "lich", "62D7CE", "dark"));
+            "dark", new FactionFixture("Kitaszított", "lich", "A955E8", "dark"));
 
     private static final Map<String, ClassFixture> CLASSES = Map.ofEntries(
             entry("warrior", "Harcos", "Berserker", "Düh", "battle_tempo", "blood_frenzy"),

@@ -1,6 +1,7 @@
 # IceSMP üzenetek — pet alrendszer (a MessageManager az összes messages/*.yml-t betölti)
 messages:
   pet-gui-title: '&2» Társak «'
+  pet-release-confirm-title: '&4» Társ elengedése «'
   pet-command-usage: '&cHasználat: /pet <menu|item|summon|select|dismiss|release|name|stance|info>'
   pet-select-usage: '&cHasználat: /pet select <istállóhely>'
   pet-selection-invalid: '&cNincs társ ezen a helyen.'

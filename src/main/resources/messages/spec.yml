@@ -12,7 +12,11 @@ messages:
   spec-doctrine-options: '&7Szint %s: &f%s'
   spec-doctrine-success: '&aDoctrine rögzítve: &f%s &7(szint %s)'
   spec-doctrine-usage: '&e/spec doctrine <30|40|50> <választás>'
+  spec-doctrine-detail-title: <dark_aqua>» Doctrine-kódex «</dark_aqua>
+  spec-capstone-detail-title: <gold>» Záróképesség «</gold>
+  spec-artifact-detail-title: <light_purple>» Lélekkapocs «</light_purple>
   spec-gui-title: <dark_aqua>» Specializációk «</dark_aqua>
+  spec-mechanic-setup-title: <gold>» Harci irány beállítása «</gold>
   spec-help-choose: '&e/spec choose <specializáció> &7- Specializáció kiválasztása.'
   spec-help-doctrine: '&e/spec doctrine <30|40|50> <választás> &7- Harcos doctrine rögzítése.'
   spec-help-header: '&6/spec &7- Elérhető parancsok:'

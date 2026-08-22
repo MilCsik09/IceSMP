@@ -3,10 +3,13 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.data.ProfessionSpecializationType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.data.SpecializationType;
+import hu.taliann.icesmp.classspec.domain.LoadoutSlot;
 import hu.taliann.icesmp.gui.CharacterMenuContext;
+import hu.taliann.icesmp.gui.GuiUtil;
 import hu.taliann.icesmp.gui.JobGUI;
 import hu.taliann.icesmp.gui.ProfessionGUI;
 import hu.taliann.icesmp.gui.ProfessionHolder;
+import hu.taliann.icesmp.gui.PetGUI;
 import hu.taliann.icesmp.gui.ProfileGUI;
 import hu.taliann.icesmp.gui.ProfileHolder;
 import hu.taliann.icesmp.gui.SkillTreeGUI;
@@ -67,7 +70,7 @@ public final class CharacterGUIListener implements Listener {
             }
         } else if (holder instanceof SpecHolder specHolder) {
             if (specHolder.getOwnerUuid().equals(player.getUniqueId())) {
-                handleSpec(player, slot);
+                handleSpec(player, specHolder, slot);
             }
         } else if (holder instanceof ProfessionHolder professionHolder) {
             if (professionHolder.getOwnerUuid().equals(player.getUniqueId())) {
@@ -84,7 +87,8 @@ public final class CharacterGUIListener implements Listener {
         switch (slot) {
             case ProfileGUI.JOB_SLOT -> {
                 click(player);
-                JobGUI.openJobMenu(player, ctx.jobManager(), ctx.catalystItemFactory(), ctx.messageManager());
+                JobGUI.openJobMenu(player, ctx.jobManager(), ctx.catalystItemFactory(),
+                        ctx.factionManager(), ctx.messageManager());
             }
             case ProfileGUI.SPEC_SLOT -> {
                 click(player);
@@ -101,7 +105,7 @@ public final class CharacterGUIListener implements Listener {
             case ProfileGUI.SKILLTREE_SLOT -> {
                 click(player);
                 SkillTreeGUI.open(player, ctx.jobManager(), ctx.specializationManager(),
-                        ctx.spellRegistry(), ctx.configManager(), ctx.messageManager());
+                        ctx.spellRegistry(), ctx.configManager(), ctx.factionManager(), ctx.messageManager());
             }
             case ProfileGUI.MENU_SLOT -> {
                 click(player);
@@ -114,23 +118,46 @@ public final class CharacterGUIListener implements Listener {
         }
     }
 
-    private void handleSpec(final Player player, final int slot) {
-        if (slot == SpecGUI.getBackSlot()) {
-            click(player);
-            ProfileGUI.open(player, ctx);
-            return;
+    private void handleSpec(final Player player, final SpecHolder holder, final int slot) {
+        final SpecHolder.Action action = holder.actionAt(slot);
+        if (action == null) return;
+        switch (action.type()) {
+            case BACK -> {
+                click(player);
+                ProfileGUI.open(player, ctx);
+            }
+            case OPEN_CLASS_PROGRESS, CANCEL_CLASS_RESPEC -> SpecGUI.openClassProgress(player, ctx);
+            case OPEN_PROFESSION -> SpecGUI.openProfession(player, ctx);
+            case OPEN_COMPANION -> PetGUI.open(player, ctx.petManager(), ctx.messageManager());
+            case OPEN_MECHANIC_SETUP -> SpecGUI.openMechanicSetup(player, ctx);
+            case OPEN_DOCTRINE_DETAIL -> SpecGUI.openDoctrineDetail(player, ctx);
+            case OPEN_CAPSTONE_DETAIL -> SpecGUI.openCapstoneDetail(player, ctx);
+            case OPEN_ARTIFACT_DETAIL -> SpecGUI.openArtifactDetail(player, ctx);
+            case CHOOSE_PALADIN_OATH -> chooseTransientMechanic(player,
+                    ctx.specializationManager().choosePaladinOath(player, action.value()));
+            case CHOOSE_PRIEST_LITANY -> chooseTransientMechanic(player,
+                    ctx.specializationManager().choosePriestLitany(player, action.value()));
+            case REQUEST_CLASS_RESPEC -> SpecGUI.openRespecConfirmation(player, ctx);
+            case CONFIRM_CLASS_RESPEC -> respec(player, true);
+            case RESPEC_PROFESSION -> respec(player, false);
+            case SELECT_CLASS_SPEC -> selectClassSpecialization(player,
+                    SpecializationType.fromId(action.value()));
+            case SELECT_PROFESSION_SPEC -> selectProfessionSpecialization(player,
+                    ProfessionSpecializationType.valueOf(action.value()));
+            case SWITCH_LOADOUT -> switchLoadout(player, LoadoutSlot.valueOf(action.value()));
+            case CHOOSE_DOCTRINE -> chooseDoctrine(player, action.level(), action.value());
         }
-        if (slot == SpecGUI.getRespecClassSlot()) {
-            respec(player, true);
-            return;
-        }
-        if (slot == SpecGUI.getRespecProfSlot()) {
-            respec(player, false);
-            return;
-        }
+    }
 
-        final SpecializationType classSpec = SpecGUI.resolveClassSpec(player, ctx, slot);
-        if (classSpec != null) {
+    private void chooseTransientMechanic(final Player player, final boolean chosen) {
+        if (chosen) GuiUtil.sound(player, GuiUtil.GuiSound.SUCCESS);
+        else GuiUtil.sound(player, GuiUtil.GuiSound.ERROR);
+        SpecGUI.openClassProgress(player, ctx);
+    }
+
+    private void selectClassSpecialization(final Player player,
+                                           final SpecializationType classSpec) {
+        if (classSpec == null) return;
             player.closeInventory();
             ctx.specializationManager().selectClassSpecializationV2(player, classSpec)
                     .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
@@ -145,11 +172,11 @@ public final class CharacterGUIListener implements Listener {
                         SpecGUI.open(player, ctx);
                     }, () -> ctx.specializationManager().profileGateway().blockSession(
                             player.getUniqueId(), "Spec GUI completion scheduler rejected")));
-            return;
-        }
+    }
 
-        final ProfessionSpecializationType profSpec = SpecGUI.resolveProfSpec(player, ctx, slot);
-        if (profSpec != null) {
+    private void selectProfessionSpecialization(final Player player,
+                                                final ProfessionSpecializationType profSpec) {
+        if (profSpec == null) return;
             if (ctx.specializationManager().selectProfessionSpecialization(player, profSpec)) {
                 success(player, ctx.messageManager().getMessage("spec-choose-success", "&aSpecializáció kiválasztva:")
                         .append(Component.space()).append(profSpec.getDisplayName()));
@@ -157,8 +184,41 @@ public final class CharacterGUIListener implements Listener {
                 fail(player, ctx.messageManager().getComponent("spec-choose-failed-profession",
                         "&cNem választhatod ezt a specializációt (szakma vagy szint feltétel hiányzik)."));
             }
-            SpecGUI.open(player, ctx);
-        }
+            SpecGUI.openProfession(player, ctx);
+    }
+
+    private void switchLoadout(final Player player, final LoadoutSlot targetSlot) {
+        player.closeInventory();
+        ctx.specializationManager().switchClassSpecializationV2(player, targetSlot)
+                .whenComplete((switched, failure) -> player.getScheduler().run(plugin, task -> {
+                    if (failure == null && Boolean.TRUE.equals(switched)) {
+                        success(player, ctx.messageManager().getComponent("spec-switch-success",
+                                "&aAz új class-összeállítás aktív."));
+                    } else {
+                        final String reason = ctx.specializationManager()
+                                .classSwitchBlockReason(player, targetSlot)
+                                .orElse("Az összeállítás-váltás nem sikerült.");
+                        fail(player, Component.text(reason));
+                    }
+                    SpecGUI.openClassProgress(player, ctx);
+                }, () -> ctx.specializationManager().profileGateway().blockSession(
+                        player.getUniqueId(), "Spec switch GUI completion scheduler rejected")));
+    }
+
+    private void chooseDoctrine(final Player player, final int level, final String doctrineId) {
+        player.closeInventory();
+        ctx.specializationManager().chooseDoctrineV2(player, level, doctrineId)
+                .whenComplete((selected, failure) -> player.getScheduler().run(plugin, task -> {
+                    if (failure == null && Boolean.TRUE.equals(selected)) {
+                        success(player, ctx.messageManager().getComponent("spec-doctrine-success",
+                                "&aDoctrine rögzítve a(z) &f%s. &aszinthez.", level));
+                    } else {
+                        fail(player, ctx.messageManager().getComponent("spec-doctrine-failed",
+                                "&cA doctrine nem választható vagy ezen a szinten már döntöttél."));
+                    }
+                    SpecGUI.openClassProgress(player, ctx);
+                }, () -> ctx.specializationManager().profileGateway().blockSession(
+                        player.getUniqueId(), "Doctrine GUI completion scheduler rejected")));
     }
 
     private void handleProfession(final Player player, final int slot) {

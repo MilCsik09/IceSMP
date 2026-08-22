@@ -93,6 +93,42 @@ The existing two Profile v2 loadouts remain authoritative. Level 28 unlocks the 
 
 Doctrine choices live in `ClassLoadout#doctrineChoices`, keyed by the level tier (`level_30`, `level_40`, `level_50`). They are slot-local and durable. Mastery and capstone state remain the existing loadout fields; no mastery YAML or separate talent/doctrine store exists.
 
+`ClassProgressView` is the immutable presentation boundary over those fields.
+The faction-themed vanilla `Kasztműhely` renders both loadouts, switch-safety
+reasons, doctrine choices, mastery progress, capstone trial state and complete
+DARK seal visibility from that boundary. Click routing is holder-bound rather
+than recomputed from raw slot indexes, and active-loadout respec requires an
+explicit confirmation surface.
+
+`ClassUiAssets` is the single inventory resource-pack contract shared by the
+Profile, class selector, Spellbook, SkillTree, Talent, detail, companion and
+workshop surfaces. Its generated font covers eight surfaces in four faction
+themes, all 35 specialization badges and all 13 class badges. Badge glyphs and
+backgrounds are presentation only; holders and Profile v2 IDs remain the click
+and state authority.
+
+Doctrine, capstone and artifact drill-down pages consume the same immutable
+progress snapshot. `DoctrinePresentation` and `SpellDescriptionCatalog` only
+provide deterministic player-facing descriptions. Live oath/litany, resource,
+target-mark, companion and relic state comes from the existing runtime
+services. Spellbook mastery upgrades reuse the durable `SpellMasteryManager`
+transaction and refresh the inventory only after a successful result.
+
+`CompanionProgressView` applies the same boundary to durable companion data.
+The custom `Társműhely` shows localized role/form, XP curve, effective combat
+level, mutation and next evolution tier. Pet entity type is rebuildable: ghoul
+and demon tier changes reconcile the live entity from this rule without
+changing the logical roster identity, and destructive release stays behind a
+holder-bound confirmation generation.
+
+`ClassMechanicView` is a closed 13/35 UI catalogue checked against
+`ClassSpecCatalog` during class initialization and by dependency-free
+regression. It explains the common class producer and the specialization
+consumer cycle, plus any non-obvious in-world targeting gesture. Paladin Oath
+and Priest Litany remain intentionally session-scoped runtime choices, but the
+custom mechanic setup screen invokes their existing runtime selectors directly
+instead of requiring command-only discovery.
+
 ## Lélekkapocs
 
 The Sárkánykirály Kürtje stays the Warrior's spellbook/caster focus and uses the existing catalyst/spellbook UX. The physical `ItemStack` carries only rebuildable owner/class/presentation mirrors; it is never gameplay authority. Profile v2 and spell provenance decide what may be cast.

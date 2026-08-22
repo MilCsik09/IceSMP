@@ -1,0 +1,319 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/berserker.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/retribution.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/necromancer.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/beast_master.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/phantom.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/holy.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/elemental.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/elementalist.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/demonologist.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/windwalker.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/ironbark.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/havoc.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/devastation.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/blood.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/frost.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/plaguebringer.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/discipline.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/protection.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/guardian.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/feral.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/sharpshooter.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/shadow.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/tidal.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/enhancement.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/restoration.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/lunar.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/affliction.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/bone_priest.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/destruction.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/brewmaster.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/vengeance.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/mistweaver.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/preservation.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/unholy.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "icesmp_hud:class_ui/spec_badges/poisoner.png",
+      "ascent": 14,
+      "height": 16,
+      "chars": [
+        ""
+      ]
+    }
+  ]
+}

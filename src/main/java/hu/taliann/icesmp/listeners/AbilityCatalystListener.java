@@ -13,6 +13,7 @@ import hu.taliann.icesmp.evoker.EvokerGameplayService;
 import hu.taliann.icesmp.gui.SpellbookGUI;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
@@ -112,6 +113,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     private final PlayerProfileSpellbookStateStore spellbookStateStore =
             new PlayerProfileSpellbookStateStore();
     private final ConfigManager configManager;
+    private final FactionManager factionManager;
     private final MessageManager messageManager;
     private final TalentManager talentManager;
     private final ResourceManager resourceManager;
@@ -138,6 +140,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                                    final SpellRegistry spellRegistry,
                                    final CatalystItemFactory catalystItemFactory,
                                    final ConfigManager configManager,
+                                   final FactionManager factionManager,
                                    final SpellMasteryManager masteryManager,
                                    final SpecializationManager specializationManager,
                                    final ResourceManager resourceManager,
@@ -149,6 +152,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         this.spellRegistry = java.util.Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.catalystItemFactory = java.util.Objects.requireNonNull(catalystItemFactory, "catalystItemFactory");
         this.configManager = java.util.Objects.requireNonNull(configManager, "configManager");
+        this.factionManager = java.util.Objects.requireNonNull(factionManager, "factionManager");
         this.masteryManager = java.util.Objects.requireNonNull(masteryManager, "masteryManager");
         this.specializationManager = java.util.Objects.requireNonNull(specializationManager, "specializationManager");
         this.resourceManager = java.util.Objects.requireNonNull(resourceManager, "resourceManager");
@@ -930,7 +934,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
     public void openSpellbook(final Player player, final int page, final boolean onlyUnlocked) {
         SpellbookGUI.open(player, this, jobManager, specializationManager, spellRegistry,
                 masteryManager, configManager, messageManager, resourceManager,
-                spellFavoritesManager, page, onlyUnlocked);
+                factionManager, spellFavoritesManager, page, onlyUnlocked);
     }
 
     public List<String> getUnlockedSpellIds(final Player player) { return resolveUnlockedSpellIds(player); }

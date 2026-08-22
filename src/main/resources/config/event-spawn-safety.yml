@@ -25,8 +25,22 @@ world-events:
     recent-location-distance-blocks: 256.0
     recent-location-share-across-events: true
     max-concurrent-searches: 2
-    search-timeout-millis: 5000
+    # A rescue phase can include asynchronous terrain generation, so the watchdog must leave
+    # enough time for it without ever permitting an unbounded search.
+    search-timeout-millis: 15000
     max-chunks-per-search: 96
+    # One selected chunk is checked at several nearby columns while the complete footprint stays
+    # inside the same Folia region. This avoids rejecting usable terrain because of one tree.
+    max-column-probes-per-candidate: 8
+    terrain-expansion:
+      # First the guard tries already generated terrain. Only after that phase is exhausted may
+      # it generate this strictly bounded number of distant chunks asynchronously.
+      enabled: true
+      attempts: 24
+      max-new-chunks-per-search: 24
+      max-radius-blocks: 768.0
+      # Older deployed files may still override the outer search timeout to 5 seconds.
+      minimum-timeout-millis: 15000
     search-backoff-seconds: 30
     route-attempts: 8
     arrival:
@@ -45,6 +59,7 @@ world-events:
   # Eventenkénti footprint, lejtés, biom és láthatósági profilok.
   profiles:
     stranger:
+      terrain-expansion-enabled: false
       min-horizontal-distance-blocks: 48.0
       search-min-radius-blocks: 64.0
       search-max-radius-blocks: 96.0
@@ -60,6 +75,8 @@ world-events:
         max-distance-blocks: 128.0
         angle-degrees: 120.0
       denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
+    animal-migration:
+      terrain-expansion-enabled: false
     caravan:
       footprint-radius-blocks: 5
       max-height-delta-blocks: 2

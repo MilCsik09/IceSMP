@@ -526,9 +526,17 @@ public final class WorldBossManager {
             spawnGraceUntil = 0L;
             return;
         }
-        final int highestY = approx.getWorld().getHighestBlockYAt(approx.getBlockX(), approx.getBlockZ());
-        final Location spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
-                highestY + 1.0D, approx.getBlockZ() + 0.5D);
+        final Location spawnLocation;
+        if (finale) {
+            final int highestY = approx.getWorld().getHighestBlockYAt(
+                    approx.getBlockX(), approx.getBlockZ());
+            spawnLocation = new Location(approx.getWorld(), approx.getBlockX() + 0.5D,
+                    highestY + 1.0D, approx.getBlockZ() + 0.5D);
+        } else {
+            // The guard already resolved and revalidated the exact standing Y. Recomputing with
+            // WORLD_SURFACE here could move the boss onto a leaf canopy after a successful search.
+            spawnLocation = approx.clone();
+        }
 
         final EventSpawnGuard guard = spawnGuard;
         if (!finale && guard != null && (guard.isBlocked("world-boss", spawnLocation)

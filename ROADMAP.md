@@ -193,8 +193,13 @@ koordinátája, pozitív és negatív próbája, valamint visszaállítható men
 
 ## 3. Runtime- és balanszkapuk
 
-- ◇ Az A17 kaszt-HP rendszer alapból ki van kapcsolva. Bekapcsolás előtt
-  egységes pajzs/abszorpció-szabály, PvP TTK- és PvE sebzésteszt kell.
+- ◇ Az A17 kaszt-HP rendszer alapból aktív. Kiadás előtt egységes
+  pajzs/abszorpció-szabály, PvP TTK- és PvE sebzésteszt kell.
+- ◇ A 2026-08-16-i caravan/world-boss spawnkifutás forrásoldali oka javítva: a guard
+  egy chunkon belül több Folia-lokális oszlopot próbál, majd a generált terepet preferáló
+  első fázis után legfeljebb 24 új chunkos aszinkron mentőfázist használ. Stagingen még
+  kötelező ugyanazon `-8513,10055` / `-8533,10036` környezet, óceánpart, erdő és hegyvidék
+  runtime próbája; veszélyes víz-, közeli-, látható vagy protection-fallback továbbra sincs.
 - ◇ A frakciópasszív-rework defaultjai csak konzervatív kiindulópontok. A
   `docs/ADMIN_GUIDE.md` teljes membership/RED/BLUE/NEUTRAL/DARK, vegyes
   játékosos, Suttogó- és lifecycle mátrixát productionközeli Folia stagingen
@@ -467,6 +472,20 @@ fázisonként, a terv szerinti sorrendben:
   kit 7/7 feloldható spell. A csúcspróbák spec- és szintkapus
   `CAST_SPELLS` questek, a durable pet/minion roster egyetlen példány-authorityt
   használ, a Szentségtelen ghúl mutációja pedig tényleges Profile v2 társállapot.
+- ✅ Class UI rework első szállítható szelete: közös `ClassProgressView`,
+  két-loadoutos frakciótémás Kasztműhely, doctrine/mastery/capstone/DARK-seal
+  láthatóság, pontos switch- és spell-lock okok, respec-megerősítés, valamint
+  reprodukálható egyedi resource-pack háttér- és ornament-assetek.
+- ✅ Class UI rework második szelete: `CompanionProgressView`-alapú custom
+  Társműhely, lokalizált roster/szint/XP/mutáció/formaváltás, kétlépcsős
+  elengedés és automatikus ghúl/démon live-entity evolúció.
+- ✅ Class UI rework harmadik szelete: zárt 13/35 `ClassMechanicView`
+  mechanikakatalógus, célkijelölési súgók, Kasztműhelyből nyíló Társműhely,
+  valamint parancs nélküli Paplovag Eskü- és Pap Litánia-választó.
+- ✅ Class UI rework záró szelete: egységes nyolcféle inventory-felület
+  négy frakciótémával, 35 spec- és 13 kasztjelvény, doctrine/capstone/
+  relic-Awakening részletlapok, live class-mechanika projekció, teljes spell-
+  leíráskatalógus és Spellbookból indítható tartós mastery-fejlesztés.
 - ⬜ Review-ből nyitva hagyott kis tételek: (1) a protokollnak nincs
   aggregát (beágyazott listás) payload-méret garanciája — a jelenlegi
   tartalom-skálán elméleti, a hibaút a HUD-tick védőhálóval lefedve; ha a
@@ -588,6 +607,10 @@ entity cleanup és boss-victory persistence race hardeningjét is lezárta.
 - ✅ **DORMANT pass-through:** élesítés előtt nincs Prologue content/progression
   ceiling, season/community override, Nether authority, HUD/ambient/breach vagy
   idő előtti catch-up; a normál szerverconfig marad érvényben.
+- ✅ **Aktív Nether-kapu hardening:** a lezárt történeti kaput territory
+  bypass és command/plugin teleport sem kerüli meg normál
+  játékosnál; a valódi OP-státusz explicit üzemeltetői bypass. Nem-OP
+  Overworld→Nether belépés csak az Olethropyla kapukörzetéből indulhat.
 - ✅ **Dokumentációs szinkron:** lore mapping, player-facing Prologue policy,
   admin live-ops és builder hookok a meglévő kanonikus guide-okban szerepelnek.
 - ◇ **World-builder acceptance:** a `prologue-gate`, `prologue-gathering`,

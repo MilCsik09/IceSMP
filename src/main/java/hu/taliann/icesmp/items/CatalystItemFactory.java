@@ -217,7 +217,7 @@ public final class CatalystItemFactory {
         } else {
             lore.add(line("<gray>Aktív út: <dark_gray>még nincs specializáció</dark_gray></gray>"));
         }
-        if (classLevel >= 35 && !spec.isBlank()) {
+        if (classLevel >= 30 && !spec.isBlank()) {
             if (jobType == JobType.WARRIOR) {
                 addWarriorEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             } else if (jobType == JobType.EVOKER) {
@@ -244,6 +244,12 @@ public final class CatalystItemFactory {
                 addWarlockEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
             } else if (jobType == JobType.WIZARD) {
                 addWizardEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
+            }
+            if (classLevel >= 50) {
+                final String finalDoctrine = (doctrineChoices == null ? Map.<String, String>of()
+                        : doctrineChoices).getOrDefault("level_50", "még kialakulatlan");
+                lore.add(line("<gold>Beteljesedés: <white>"
+                        + doctrineDisplay(finalDoctrine) + "</white></gold>"));
             }
         }
         if (masteryRank >= 5) {

@@ -177,7 +177,8 @@ public final class IceSmpHudRegressionSuite {
                         && hud.contains("case RED -> \"ember\"")
                         && hud.contains("case BLUE -> \"frost\"")
                         && hud.contains("case NEUTRAL -> \"guild\"")
-                        && hud.contains("case DARK -> \"lich\""),
+                        && hud.contains("case DARK -> \"lich\"")
+                        && hud.contains("case DARK -> \"A955E8\""),
                 "HUD snapshot and renderer theme ids must retain their five-frame ordering contract");
         final String preview = read("src/main/java/hu/taliann/icesmp/hud/HudPreviewCatalog.java");
         check(!preview.contains("\"wallet\".equals(state)")
@@ -520,10 +521,21 @@ public final class IceSmpHudRegressionSuite {
                     "hardcore heart sprites must remain untouched on the non-hardcore server");
         }
         final String classesConfig = read("src/main/resources/config/classes.yml");
-        check(classesConfig.contains("normalize: false")
-                        && classesConfig.contains("scale-heals: true")
-                        && classesConfig.contains("enabled: false"),
-                "HP scaling must be rollout-ready without activating class health prematurely");
+        final int healthSection = classesConfig.indexOf("\nhealth:\n");
+        final int healthDisplay = classesConfig.indexOf("\n  display:\n", healthSection);
+        check(healthSection >= 0 && healthDisplay > healthSection
+                        && classesConfig.substring(healthSection, healthDisplay)
+                        .contains("enabled: true")
+                        && classesConfig.contains("normalize: false")
+                        && classesConfig.contains("scale-heals: true"),
+                "HP scaling must ship active while retaining real current/max HUD values");
+        for (final String lichFrame : List.of(
+                "player_lich.png", "target_player_lich.png", "party_lich.png")) {
+            final var frame = ImageIO.read(Path.of(
+                    "resource-pack/assets/icesmp_hud/textures/hud/survival", lichFrame).toFile());
+            check(frame != null && (frame.getRGB(12, 1) & 0x00FFFFFF) == 0xA955E8,
+                    "DARK survival frame must retain the canonical purple palette: " + lichFrame);
+        }
         check(Files.isRegularFile(Path.of(
                         "dev-assets/icesmp-hud/source/LICENSE_INTER")),
                 "Inter must retain its bundled OFL license");

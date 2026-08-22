@@ -5,7 +5,7 @@
 # Társ-parancs: lopakodás + jobb katt a saját minionon → állásmód-váltás.
 pets:
   # Rituálé-idézés (Szentségtelen ghúl / Boszorkánymester démon): kellék + éjszaka.
-  # A forma a pet-szinttel fejlődik (tier2/tier3-level), az idézett társ
+  # A forma a társszinttel automatikusan fejlődik (tier2/tier3-level), az idézett társ
   # bonus-levels erő-prémiumot kap (a nehezebb beszerzés ellentételezése).
   # Az Imp (vex) falakon átrepül — ez szándékos (démon-fantázia), nem hiba.
   # A Vadmester Istállójának kapacitása; a befogás e felett fail-closed elutasít.

@@ -1109,6 +1109,48 @@
     }
   },
   "components": {
+    "component.hu.taliann.icesmp.classspec.application.ClassMechanicView": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.ClassProgressView": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.CompanionProgressView": {
+      "feature": "feature.progression.pets",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.DoctrinePresentation": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ClassUiAssets": {
+      "feature": "feature.progression.classes_specializations",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.spells.SpellDescriptionCatalog": {
+      "feature": "feature.progression.spells",
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md"
+      ]
+    },
     "component.hu.taliann.icesmp.gui.SkillTreeHolder": {
       "feature": "feature.progression.talents_skills",
       "docs": [

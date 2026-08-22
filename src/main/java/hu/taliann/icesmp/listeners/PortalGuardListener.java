@@ -9,6 +9,7 @@ import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -46,11 +47,43 @@ public final class PortalGuardListener implements Listener {
     public void onNetherPortalUse(final PlayerPortalEvent event) {
         if (event.getCause() != PlayerTeleportEvent.TeleportCause.NETHER_PORTAL) return;
         final Player player = event.getPlayer();
-        if (player.hasPermission(Permissions.TERRITORY_BYPASS)) return;
         // Nether -> Overworld return remains legal. The restriction controls entry from the living world.
         if (event.getFrom().getWorld() != null
                 && event.getFrom().getWorld().getEnvironment() == World.Environment.NETHER) return;
         if (!PrologueContentPolicy.netherGateAuthorityActive(configManager)) return;
+        if (player.isOp()) return;
+        if (!PrologueContentPolicy.netherTraversalAvailable(configManager)) {
+            event.setCancelled(true);
+            player.sendActionBar(messageManager.getMessage(
+                    "doom-gate-sealed",
+                    "<dark_purple>Olethropyla zúg, de nem enged át. A Kárhozat Kapuja még instabil.</dark_purple>"));
+            return;
+        }
+        final PrologueRuntime runtime = PrologueRuntime.current();
+        final double radius = Math.max(4.0D, configManager.getDouble(
+                "world-events.prologue.gate.travel-radius", 24.0D));
+        if (runtime == null || !PrologueWorldAccess.within(
+                event.getFrom(), runtime.worldAccess().gateAnchor(), radius)) {
+            event.setCancelled(true);
+            player.sendActionBar(messageManager.getMessage(
+                    "nether-gate-wrong-portal",
+                    "<dark_purple>A Nether csak Olethropylán, a Kárhozat Kapuján át érhető el.</dark_purple>"));
+        }
+    }
+
+    /**
+     * Closes command/plugin/custom-portal routes into the Nether as well. Only Bukkit's explicit
+     * OP status bypasses the story gate; ordinary admin/territory permissions remain subject to it.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onDirectNetherEntry(final PlayerTeleportEvent event) {
+        if (event instanceof PlayerPortalEvent || event.getTo() == null
+                || event.getTo().getWorld() == null || event.getFrom().getWorld() == null) return;
+        if (event.getFrom().getWorld().getEnvironment() == World.Environment.NETHER
+                || event.getTo().getWorld().getEnvironment() != World.Environment.NETHER) return;
+        if (!PrologueContentPolicy.netherGateAuthorityActive(configManager)) return;
+        final Player player = event.getPlayer();
+        if (player.isOp()) return;
         if (!PrologueContentPolicy.netherTraversalAvailable(configManager)) {
             event.setCancelled(true);
             player.sendActionBar(messageManager.getMessage(

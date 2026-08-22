@@ -46,7 +46,7 @@ public final class JobManager implements PlayerStateCleanup {
             new hu.taliann.icesmp.playerprofile.application.PlayerProfileSpellGrantStore();
     private volatile FactionManager factionManagerRef;
     private volatile ClassSpecProfileGateway profileGateway;
-    private java.util.function.Consumer<Player> xpChangeHook;
+    private java.util.function.Function<Player, CompletionStage<Void>> xpChangeHook;
 
     public JobManager(final JavaPlugin plugin, final ConfigManager configManager,
                       final MessageManager messageManager, final FactionManager factionManager) {
@@ -227,8 +227,9 @@ public final class JobManager implements PlayerStateCleanup {
                     return schedulePlayer(player, () -> {
                         if (getPrimaryLevel(player) >= MAX_JOB_LEVEL)
                             AdvancementService.award(player, "class_max");
-                        final java.util.function.Consumer<Player> hook = xpChangeHook;
-                        if (hook != null) hook.accept(player);
+                    }).thenCompose(ignored -> {
+                        final java.util.function.Function<Player, CompletionStage<Void>> hook = xpChangeHook;
+                        return hook == null ? CompletableFuture.completedFuture(null) : hook.apply(player);
                     }).thenCompose(ignored -> applyAutoUnlocksV2(player))
                             .handle((ignored, failure) -> {
                                 if (failure == null) return result;
@@ -243,9 +244,12 @@ public final class JobManager implements PlayerStateCleanup {
                 });
     }
 
-    public void setXpChangeHook(final java.util.function.Consumer<Player> hook) {
+    public void setXpChangeHook(
+            final java.util.function.Function<Player, CompletionStage<Void>> hook) {
         if (hook == null) return;
-        xpChangeHook = xpChangeHook == null ? hook : xpChangeHook.andThen(hook);
+        final java.util.function.Function<Player, CompletionStage<Void>> previous = xpChangeHook;
+        xpChangeHook = previous == null ? hook : player -> previous.apply(player)
+                .thenCompose(ignored -> hook.apply(player));
     }
 
     public CompletionStage<Void> applyAutoUnlocksV2(final Player player) {

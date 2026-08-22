@@ -387,7 +387,7 @@ def generate_preview(air_visible: bool, target_name: str) -> None:
 def main() -> None:
     palette = {
         "ice": (91, 174, 190), "ember": (207, 86, 59), "frost": (98, 206, 231),
-        "guild": (203, 164, 69), "lich": (79, 198, 190),
+        "guild": (203, 164, 69), "lich": (169, 85, 232),
     }
     for theme, accent in palette.items():
         generate_frame_panel(f"player_{theme}.png", PANEL_SIZE, accent, "player")

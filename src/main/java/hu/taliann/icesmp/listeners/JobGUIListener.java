@@ -88,7 +88,7 @@ public final class JobGUIListener implements Listener {
         if (event.getRawSlot() == JobGUI.getSkillTreeSlot()) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.2F);
             SkillTreeGUI.open(player, jobManager, specializationManager, spellRegistry,
-                    configManager, messageManager);
+                    configManager, factionManager, messageManager);
             return;
         }
 
@@ -139,7 +139,8 @@ public final class JobGUIListener implements Listener {
                                         "messages.job-select-primary-success",
                                         "&aElsődleges kaszt kiválasztva:")
                                 .append(Component.space()).append(selectedJob.getDisplayName()));
-                        JobGUI.openJobMenu(player, jobManager, catalystItemFactory, messageManager);
+                        JobGUI.openJobMenu(player, jobManager, catalystItemFactory,
+                                factionManager, messageManager);
                     } else {
                         player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO,
                                 1.0F, 1.0F);

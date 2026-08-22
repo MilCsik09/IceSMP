@@ -114,6 +114,18 @@ public final class EventSpawnConfigMenuExtension {
                 ConfigMenuGUI.Entry.integer(
                         "world-events.placement.max-chunks-per-search", "Max. chunk keresésenként", 8, 1, 512),
                 ConfigMenuGUI.Entry.integer(
+                        "world-events.placement.max-column-probes-per-candidate", "Oszloppróba jelöltenként", 1, 1, 32),
+                ConfigMenuGUI.Entry.toggle(
+                        "world-events.placement.terrain-expansion.enabled", "Limitált event-terepbővítés"),
+                ConfigMenuGUI.Entry.integer(
+                        "world-events.placement.terrain-expansion.attempts", "Terepbővítő mentőpróbák", 2, 1, 96),
+                ConfigMenuGUI.Entry.integer(
+                        "world-events.placement.terrain-expansion.max-new-chunks-per-search", "Max. új chunk keresésenként", 2, 0, 96),
+                ConfigMenuGUI.Entry.number(
+                        "world-events.placement.terrain-expansion.max-radius-blocks", "Mentőkeresés maximumtáv", 32, 64, 4096),
+                ConfigMenuGUI.Entry.integer(
+                        "world-events.placement.terrain-expansion.minimum-timeout-millis", "Mentőkeresés minimum timeout", 500, 1000, 30000),
+                ConfigMenuGUI.Entry.integer(
                         "world-events.placement.search-backoff-seconds", "Sikertelen keresés pihenője", 5, 0, 3600),
                 ConfigMenuGUI.Entry.integer(
                         "world-events.placement.route-attempts", "Útvonal-irány próbák", 1, 1, 32),

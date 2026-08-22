@@ -23,6 +23,7 @@ public final class EventSpawnSafetyRegressionSuite {
         verifiesCircularWaterBuffer();
         verifiesFixedAnchorChunkGeometry();
         verifiesSingleRegionProbeGeometry();
+        verifiesBoundedCandidateColumnProbes();
         verifiesPackagedSafetyProfiles();
         verifiesRuntimeWiring();
         verifiesMeteorRecoveryWiring();
@@ -131,6 +132,25 @@ public final class EventSpawnSafetyRegressionSuite {
         }
     }
 
+    private static void verifiesBoundedCandidateColumnProbes() {
+        for (int radius = 0; radius <= 7; radius++) {
+            final List<EventSpawnSafetyPolicy.GridOffset> probes =
+                    EventSpawnSafetyPolicy.candidateProbeOffsets(radius, 8, 42L);
+            check(!probes.isEmpty() && probes.size() <= 8,
+                    "candidate column probe budget escaped its bound");
+            check(probes.equals(EventSpawnSafetyPolicy.candidateProbeOffsets(radius, 8, 42L)),
+                    "candidate column probe order must be deterministic");
+            for (final EventSpawnSafetyPolicy.GridOffset probe : probes) {
+                check(8 + probe.x() - radius >= 0 && 8 + probe.x() + radius <= 15
+                                && 8 + probe.z() - radius >= 0
+                                && 8 + probe.z() + radius <= 15,
+                        "candidate footprint escaped its selected Folia chunk");
+            }
+        }
+        check(EventSpawnSafetyPolicy.candidateProbeOffsets(7, 8, 1L).size() == 4,
+                "a seven-block footprint must retain all four safe centre columns");
+    }
+
     private static void verifiesPackagedSafetyProfiles() {
         final YamlConfiguration config = YamlConfiguration.loadConfiguration(Path.of(
                 "src/main/resources/config/event-spawn-safety.yml").toFile());
@@ -144,8 +164,19 @@ public final class EventSpawnSafetyRegressionSuite {
                 "search concurrency default changed unexpectedly");
         check(config.getInt("world-events.placement.max-chunks-per-search") >= 96,
                 "distant footprint search lacks a viable chunk budget");
-        check(config.getLong("world-events.placement.search-timeout-millis") >= 5000L,
-                "async search timeout is too short");
+        check(config.getLong("world-events.placement.search-timeout-millis") >= 10000L,
+                "async terrain rescue timeout is too short");
+        check(config.getInt("world-events.placement.max-column-probes-per-candidate") >= 4,
+                "blocked chunk centres lack bounded alternative column probes");
+        check(config.getBoolean("world-events.placement.terrain-expansion.enabled")
+                        && config.getInt("world-events.placement.terrain-expansion.attempts") >= 16
+                        && config.getInt("world-events.placement.terrain-expansion"
+                        + ".max-new-chunks-per-search") >= 16
+                        && config.getDouble("world-events.placement.terrain-expansion"
+                        + ".max-radius-blocks") >= 512.0D
+                        && config.getLong("world-events.placement.terrain-expansion"
+                        + ".minimum-timeout-millis") >= 10000L,
+                "generated-terrain rescue phase is not viable");
         check(config.getInt("world-events.placement.arrival.delay-seconds") > 0,
                 "arrival state must have a visible pre-spawn window");
         check(config.getBoolean("world-events.placement.arrival.player-hint"),
@@ -162,6 +193,10 @@ public final class EventSpawnSafetyRegressionSuite {
                 "Stranger hidden-local search ring is missing");
         check(!config.getBoolean("world-events.profiles.stranger.use-dynamic-view-distance", true),
                 "Stranger must use its intentional local hidden profile");
+        check(!config.getBoolean("world-events.profiles.stranger.terrain-expansion-enabled", true)
+                        && !config.getBoolean("world-events.profiles.animal-migration"
+                        + ".terrain-expansion-enabled", true),
+                "ambient local events must not expand generated terrain");
         check(!config.getBoolean("world-events.profiles.player-caravan.arrival.enabled", true),
                 "paid player caravan must not be held in a cosmetic arrival delay");
         for (final String internal : List.of("escort-route", "escort-wave", "invasion-wave")) {
@@ -181,7 +216,7 @@ public final class EventSpawnSafetyRegressionSuite {
                     large + " footprint may cross the scheduled Folia region");
         }
         check(!config.isSet("world-events.placement.generate-unloaded-chunks"),
-                "event placement must never expose world generation as an option");
+                "removed unbounded terrain-generation option must not return");
     }
 
     private static void verifiesRuntimeWiring() throws Exception {
@@ -196,7 +231,9 @@ public final class EventSpawnSafetyRegressionSuite {
                         && guard.contains("final BlockReason surface = surfaceReason(key, world")
                         && guard.contains("recentLocations")
                         && guard.contains("allowed-biomes")
-                        && guard.contains("getChunkAtAsync(chunkX, chunkZ, false)")
+                        && guard.contains("getChunkAtAsync(chunkX, chunkZ, allowTerrainExpansion)")
+                        && guard.contains("candidateProbeOffsets")
+                        && guard.contains("terrain-expansion.max-new-chunks-per-search")
                         && guard.contains("max-concurrent-searches")
                         && guard.contains("search-timeout-millis")
                         && guard.contains("timeoutTicks")
@@ -209,7 +246,11 @@ public final class EventSpawnSafetyRegressionSuite {
                         && guard.contains("EventSpawnConfigMenuExtension.install"),
                 "central guard lost one or more immersive placement guarantees");
         check(!guard.contains("generate-unloaded-chunks"),
-                "runtime must not allow event searches to generate terrain");
+                "removed unbounded terrain-generation option must not return");
+        final String nextProbe = "probeIndex + 1, seed, allowTerrainExpansion";
+        check(guard.indexOf(nextProbe) >= 0
+                        && guard.indexOf(nextProbe, guard.indexOf(nextProbe) + 1) >= 0,
+                "surface and footprint rejection must both try the next safe column");
 
         final String snapshots = read(
                 "src/main/java/hu/taliann/icesmp/listeners/EventSpawnGuardListener.java");
@@ -262,6 +303,12 @@ public final class EventSpawnSafetyRegressionSuite {
                 "world-events.placement.visibility-cone.enabled",
                 "world-events.placement.max-concurrent-searches",
                 "world-events.placement.search-timeout-millis",
+                "world-events.placement.max-column-probes-per-candidate",
+                "world-events.placement.terrain-expansion.enabled",
+                "world-events.placement.terrain-expansion.attempts",
+                "world-events.placement.terrain-expansion.max-new-chunks-per-search",
+                "world-events.placement.terrain-expansion.max-radius-blocks",
+                "world-events.placement.terrain-expansion.minimum-timeout-millis",
                 "world-events.placement.route-attempts",
                 "world-events.placement.arrival.player-hint")) {
             check(keys.contains(required), "config GUI extension missing: " + required);
@@ -301,6 +348,12 @@ public final class EventSpawnSafetyRegressionSuite {
         check(spawnPoints.contains("chunkCenterCoordinate")
                         && spawnPoints.contains("\"world-boss\".equals(eventKey)"),
                 "world-boss fixed anchors may escape their Folia scheduler chunk");
+
+        final String worldBoss = read(
+                "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java");
+        check(worldBoss.contains("spawnLocation = approx.clone()")
+                        && worldBoss.contains("if (finale)"),
+                "validated world-boss standing Y may be replaced by a leaf-canopy surface");
 
         final String ambient = read(
                 "src/main/java/hu/taliann/icesmp/managers/AmbientEventManager.java");

@@ -13,7 +13,7 @@ public final class ClassSpecApplicationRegressionSuite {
     private static int assertions;
     private ClassSpecApplicationRegressionSuite(){}
     public static void main(String[] args){
-        greenfieldClassAndSpec(); activationReconcileBeforeReady(); allDarkSpecsRequireGates(); completeGateSetSealsAndUnseals(); runtimeFailureIsVisible(); staleSessionFencesRuntime(); atomicSessionCallbackFence(); concurrentMutationsSerialize(); operationReceiptsAreDurableAndParameterBound(); companionIsolation(); companionDeltaSerializationAndReceipts(); shutdownDrainsAndRejectsNewWork();
+        greenfieldClassAndSpec(); classProgressProjectionKeepsBothLoadouts(); classMechanicProjectionCoversEveryPath(); companionProgressProjectionExplainsEvolution(); activationReconcileBeforeReady(); allDarkSpecsRequireGates(); completeGateSetSealsAndUnseals(); runtimeFailureIsVisible(); staleSessionFencesRuntime(); atomicSessionCallbackFence(); concurrentMutationsSerialize(); operationReceiptsAreDurableAndParameterBound(); companionIsolation(); companionDeltaSerializationAndReceipts(); shutdownDrainsAndRejectsNewWork();
         System.out.println("Class/spec application regression suite passed. assertions="+assertions);
     }
     private static void greenfieldClassAndSpec(){
@@ -22,6 +22,60 @@ public final class ClassSpecApplicationRegressionSuite {
         check(assigned.committed(),"class assignment");check(h.store.profile.primaryClassId().equals("wizard"),"class durable");
         var selected=h.gateway.select(PLAYER,new ClassSpecProfileGateway.SelectRequest("elementalist",LoadoutSlot.FIRST,satisfied())).toCompletableFuture().join();
         check(selected.committed(),"spec selection");check(h.gateway.activeSpecId(PLAYER).orElseThrow().equals("elementalist"),"active spec");check(h.store.profile.revision()==2,"exact revisions");
+    }
+    private static void classProgressProjectionKeepsBothLoadouts(){
+        ClassLoadout first=new ClassLoadout("elementalist",LoadoutStatus.ACTIVE,null,
+                Map.of("level_30","gyors_rahangolodas"),new MasteryProgress(4,450),null,
+                Set.of(),"",CapstoneStatus.AVAILABLE,Map.of(),Map.of(),"");
+        ClassLoadout second=new ClassLoadout("necromancer",LoadoutStatus.INACTIVE,null,
+                Map.of("level_30","nagyobb_udvar","level_40","csontkiraly"),
+                new MasteryProgress(2,225),null,Set.of(),"",CapstoneStatus.COMPLETED,
+                Map.of(),Map.of(),"");
+        ClassSpecSection profile=ClassSpecSection.builder().revision(7).primaryClassId("wizard")
+                .classLevel(50).classExperience(9000).secondSpecUnlocked(true)
+                .activeSlot(LoadoutSlot.FIRST).loadout(LoadoutSlot.FIRST,first)
+                .loadout(LoadoutSlot.SECOND,second).build();
+        Harness h=harness(profile,ClassSpecRuntimePort.noop());
+        ClassProgressView view=ClassProgressView.project(h.gateway.diagnostic(PLAYER),
+                Optional.of(profile),25,28,100);
+        check(view.gameplayUsable(),"progress projection usable");
+        check(view.activeSlot().orElseThrow()==LoadoutSlot.FIRST,"progress active slot");
+        check(view.loadout(LoadoutSlot.FIRST).doctrineChoices().get("level_30")
+                .equals("gyors_rahangolodas"),"active doctrine projected");
+        check(view.loadout(LoadoutSlot.FIRST).experienceIntoRank()==50,"mastery rank progress");
+        check(view.loadout(LoadoutSlot.SECOND).capstoneStatus()==CapstoneStatus.COMPLETED,
+                "inactive capstone projected");
+    }
+    private static void companionProgressProjectionExplainsEvolution(){
+        UUID id=UUID.fromString("00000000-0000-0000-0000-000000000397");
+        CompanionProfile ghoul=new CompanionProfile(id,"unholy.ghoul","HUSK","",9,7,"","ACTIVE",
+                List.of("pet_armor"),0,Map.of("ritual_summoned","true","ghoul_mutation_stage","3"));
+        CompanionProgressView view=CompanionProgressView.project(ghoul,true,true,30,10,5,5,2,4,15,25);
+        check(view.displayName().equals("Ghúl")&&view.roleName().equals("Szentségtelen ghúl"),"ghoul labels localized");
+        check(view.level()==9&&view.powerLevel()==20,"ritual and mutation power projected");
+        check(view.nextLevelCost()==50&&view.experienceRemaining()==43,"companion XP curve projected");
+        check(view.formName().equals("Csontszolga")&&view.nextFormName().equals("Förtelem"),"ghoul evolution projected");
+        check(view.nextFormLevel().orElseThrow()==19,"mutation advances next visual tier");
+        check(CompanionProgressView.expectedEntityType(ghoul,2,4,15,25).equals("WITHER_SKELETON"),"runtime form shares projection rule");
+
+        CompanionProfile wolf=new CompanionProfile(UUID.randomUUID(),"beast_master.stable","WOLF","Fang",30,0,"","ACTIVE",List.of(),0,Map.of());
+        CompanionProgressView maxed=CompanionProgressView.project(wolf,false,false,30,10,5,5,2,3,15,25);
+        check(maxed.formName().equals("Farkas")&&maxed.maxLevelReached(),"captured type localized at level cap");
+        check(maxed.nextFormLevel().isEmpty()&&maxed.experienceRemaining()==0,"non-evolving companion has no phantom tier");
+    }
+    private static void classMechanicProjectionCoversEveryPath(){
+        check(ClassMechanicView.coveredClassIds().equals(ClassSpecCatalog.classIds()),"all 13 class mechanic panels covered");
+        check(ClassMechanicView.coveredSpecializationIds().equals(ClassSpecCatalog.specializationIds()),"all 35 spec mechanic panels covered");
+        for(String specId:ClassSpecCatalog.specializationIds()){
+            ClassMechanicView view=ClassMechanicView.forSpecialization(specId).orElseThrow();
+            check(view.classId().equals(ClassSpecCatalog.parentOf(specId)),specId+" mechanic parent");
+            check(!view.classCycle().isBlank()&&!view.specializationCycle().isBlank(),specId+" mechanic explanation");
+            check(view.companionSpecialization()==(ClassSpecCatalog.companionNamespace(specId)!=null),specId+" companion route");
+        }
+        check(ClassMechanicView.forSpecialization("guardian").orElseThrow().interactionHint().contains("Lopakodás"),"guardian target hint");
+        check(ClassMechanicView.forSpecialization("holy").orElseThrow().interactionHint().contains("Haranggal"),"paladin beacon hint");
+        check(ClassMechanicView.forSpecialization("preservation").orElseThrow().interactionHint().contains("Sárkányvér-fiolával"),"evoker ally mark hint");
+        check(ClassMechanicView.forSpecialization("mistweaver").orElseThrow().interactionHint().contains("Élet Ágával"),"mistweaver link hint");
     }
     private static void activationReconcileBeforeReady(){
         FakeStore store=new FakeStore(active("necromancer",Map.of("necromancer.soulforge.shards","5")));

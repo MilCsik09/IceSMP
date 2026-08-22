@@ -5,6 +5,7 @@ import hu.taliann.icesmp.gui.SkillTreeGUI;
 import hu.taliann.icesmp.gui.SkillTreeHolder;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.JobManager;
+import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -18,12 +19,14 @@ public final class SkillTreeGUIListener implements Listener {
 
     private final JobManager jobManager;
     private final CatalystItemFactory catalystItemFactory;
+    private final FactionManager factionManager;
     private final MessageManager messageManager;
 
     public SkillTreeGUIListener(final JobManager jobManager, final CatalystItemFactory catalystItemFactory,
-                                final MessageManager messageManager) {
+                                final FactionManager factionManager, final MessageManager messageManager) {
         this.jobManager = jobManager;
         this.catalystItemFactory = catalystItemFactory;
+        this.factionManager = factionManager;
         this.messageManager = messageManager;
     }
 
@@ -42,7 +45,7 @@ public final class SkillTreeGUIListener implements Listener {
 
         if (event.getRawSlot() == SkillTreeGUI.getBackSlot()) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.0F);
-            JobGUI.openJobMenu(player, jobManager, catalystItemFactory, messageManager);
+            JobGUI.openJobMenu(player, jobManager, catalystItemFactory, factionManager, messageManager);
         }
     }
 
