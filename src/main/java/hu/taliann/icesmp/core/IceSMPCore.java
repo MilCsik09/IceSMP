@@ -621,7 +621,8 @@ public final class IceSMPCore {
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.spellFavoritesManager = new hu.taliann.icesmp.managers.SpellFavoritesManager(plugin);
         this.abilityCatalystListener = new AbilityCatalystListener(plugin, jobManager, spellRegistry,
-                catalystItemFactory, configManager, spellMasteryManager, specializationManager, resourceManager,
+                catalystItemFactory, configManager, factionManager, spellMasteryManager,
+                specializationManager, resourceManager,
                 talentManager, messageManager, spellFavoritesManager);
         abilityCatalystListener.setQuestManager(questManager);
         abilityCatalystListener.setItemRarityService(itemRarityService);
@@ -688,7 +689,8 @@ public final class IceSMPCore {
                 specializationManager, classSpecRuntimeAdapter, respecService);
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
-                catalystItemFactory, spellRegistry, configManager, respecService);
+                catalystItemFactory, spellRegistry, petManager, resourceManager, classRelicService,
+                configManager, respecService);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
         this.chronicleManager = new hu.taliann.icesmp.managers.ChronicleManager(plugin, configManager, statsManager, seasonManager, messageManager);
         // Korszakváltás-narratíva: a szezonzárás hookja (a StatsManager itt már él).
@@ -773,10 +775,10 @@ public final class IceSMPCore {
             communityGoalManager.contribute(fighter, "WIN_RAID", null, 1);
         });
         jobManager.setXpChangeHook(player -> {
-            specializationManager.applyClassSpecializationUnlocks(player);
             questManager.handleLevelChange(player);
             equipmentProficiencyService.reconcileNextTick(player);
             hu.taliann.icesmp.pve.EquippedCombatPowerService.refreshAfterMutation(player);
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
         });
         this.clientBridge = new hu.taliann.icesmp.client.IceSmpClientBridge(plugin, configManager);
         this.playerSessionCleanupListener = new PlayerSessionCleanupListener(
@@ -1256,7 +1258,7 @@ public final class IceSMPCore {
             // A tablist/scoreboard mostantól natívan megy (TablistManager + HudManager) — a TAB
             // plugin felesleges, és ha mindkettő aktív, a teameken/neveken verekedni fognak.
             if (configManager.getBoolean("tablist.enabled", true)
-                    || configManager.getBoolean("hud.sidebar-enabled", true)) {
+                    || configManager.getBoolean("hud.sidebar-enabled", false)) {
                 plugin.getLogger().warning("TAB észlelve, miközben az IceSMP natív tablist/scoreboard rétege aktív —"
                         + " a kettő ütközni fog! Ajánlott: a TAB plugin eltávolítása (a teljes funkciója house-ban van:"
                         + " config/tablist.yml + hud.sidebar). Ha mégis a TAB-ot tartod meg: tablist.enabled: false"
@@ -1948,12 +1950,14 @@ public final class IceSMPCore {
                 specializationManager, spellRegistry, configManager, messageManager, characterMenuContext);
         jobGUIListener.setFactionManager(factionManager);
         pluginManager.registerEvents(jobGUIListener, plugin);
-        pluginManager.registerEvents(new SkillTreeGUIListener(jobManager, catalystItemFactory, messageManager), plugin);
+        pluginManager.registerEvents(new SkillTreeGUIListener(
+                jobManager, catalystItemFactory, factionManager, messageManager), plugin);
         pluginManager.registerEvents(new MarketGUIListener(plugin, marketManager, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new MarketDeliveryListener(marketManager, messageManager), plugin);
         pluginManager.registerEvents(new DonationChestListener(donationChestManager, messageManager), plugin);
         pluginManager.registerEvents(abilityCatalystListener, plugin);
-        pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener, spellFavoritesManager), plugin);
+        pluginManager.registerEvents(new SpellbookListener(abilityCatalystListener, spellFavoritesManager,
+                spellMasteryManager, messageManager), plugin);
         pluginManager.registerEvents(new CatalystCraftSafetyListener(catalystItemFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CatalystProtectionListener(plugin, catalystItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SignatureItemListener(
