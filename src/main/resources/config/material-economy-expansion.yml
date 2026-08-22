@@ -1,0 +1,440 @@
+# Long-term economy overlay. This file extends the canonical profession-materials and
+# profession-recipes roots; it is not a second runtime authority.
+profession-materials:
+  holdlen_fonal:
+    material: STRING
+    display-name: '&dHoldlen Fonal'
+    tier: REFINED
+    processing-state: REFINED
+    primary-profession: enchanter
+    source-types:
+    - profession-processing:magical-fiber
+    sink-types:
+    - cloth-equipment
+    - enchanting-service
+    - market
+    economy-managed: true
+    lore:
+    - '&7Rúnaporral stabilizált, mágikus növényi fonal.'
+    - '&8Szerep: magical fiber'
+  cserle:
+    material: HONEY_BOTTLE
+    display-name: '&6Cserlé'
+    tier: REFINED
+    processing-state: REFINED
+    primary-profession: alchemist
+    source-types:
+    - profession-processing:tannin
+    sink-types:
+    - leather-processing
+    - aquatic-hide-processing
+    - market
+    economy-managed: true
+    lore:
+    - '&7Növényi tannin és kötőanyag bőrkezeléshez.'
+    - '&8Szerep: tannin'
+  fenyves_gyanta:
+    material: HONEYCOMB
+    display-name: '&eFenyves Gyanta'
+    tier: REFINED
+    processing-state: REFINED
+    primary-profession: lumberjack
+    source-types:
+    - profession-processing:resin
+    sink-types:
+    - binding-processing
+    - armor-components
+    - market
+    economy-managed: true
+    lore:
+    - '&7Sűrű, tisztított gyanta ragasztáshoz és impregnáláshoz.'
+    - '&8Szerep: binding resin'
+  kotogyanta:
+    material: SLIME_BALL
+    display-name: '&aKötőgyanta'
+    tier: SPECIAL
+    processing-state: COMPONENT
+    primary-profession: alchemist
+    source-types:
+    - profession-processing:resin
+    sink-types:
+    - cloth-equipment
+    - leather-equipment
+    - mail-equipment
+    - market
+    economy-managed: true
+    lore:
+    - '&7Rugalmas alkimista kötőanyag összetett páncélszerkezetekhez.'
+    - '&8Szerep: organic binder'
+  halolaj:
+    material: COD
+    display-name: '&bHalolaj'
+    tier: REFINED
+    processing-state: REFINED
+    primary-profession: fisherman
+    source-types:
+    - profession-processing:aquatic-oil
+    sink-types:
+    - alchemy-service
+    - resistance-equipment
+    - leather-equipment
+    - market
+    economy-managed: true
+    lore:
+    - '&7Tisztított vízi olaj kezelésekhez és ellenálló bevonatokhoz.'
+    - '&8Szerep: fish oil'
+  gyongyhaz_hej:
+    material: NAUTILUS_SHELL
+    display-name: '&fGyöngyház Héj'
+    tier: SPECIAL
+    processing-state: COMPONENT
+    primary-profession: fisherman
+    source-types:
+    - profession-processing:shell
+    sink-types:
+    - mail-equipment
+    - resistance-equipment
+    - enchanting-service
+    - market
+    economy-managed: true
+    lore:
+    - '&7Rétegelt kagylóhéj könnyű, vízálló erősítéshez.'
+    - '&8Szerep: shell'
+  vizbor:
+    material: RABBIT_HIDE
+    display-name: '&3Vízbőr'
+    tier: SPECIAL
+    processing-state: COMPONENT
+    primary-profession: alchemist
+    source-types:
+    - profession-processing:aquatic-hide
+    sink-types:
+    - leather-equipment
+    - mail-backing
+    - resistance-equipment
+    - market
+    economy-managed: true
+    lore:
+    - '&7Olajozott és cserzett, vízálló könnyű páncélbőr.'
+    - '&8Szerep: aquatic hide'
+  in_kotelez:
+    material: LEAD
+    display-name: '&fÍnkötelez'
+    tier: REFINED
+    processing-state: COMPONENT
+    primary-profession: alchemist
+    source-types:
+    - profession-processing:tendon
+    sink-types:
+    - leather-equipment
+    - mail-backing
+    - support-equipment
+    - market
+    economy-managed: true
+    lore:
+    - '&7Vadászati anyagból kezelt, nagy szakítószilárdságú kötegelés.'
+    - '&8Szerep: tendon / cordage'
+  kitin_lemez:
+    material: TURTLE_SCUTE
+    display-name: '&2Kitinlemez'
+    tier: SPECIAL
+    processing-state: COMPONENT
+    primary-profession: armorer
+    source-types:
+    - profession-processing:chitin
+    sink-types:
+    - mail-equipment
+    - resistance-equipment
+    - plate-reinforcement
+    - market
+    economy-managed: true
+    lore:
+    - '&7Könnyű, egymásra lapolt szerves páncélkomponens.'
+    - '&8Szerep: chitin'
+  konnyu_otvozet:
+    material: COPPER_INGOT
+    display-name: '&fKönnyű Ötvözet'
+    tier: SPECIAL
+    processing-state: COMPONENT
+    primary-profession: armorer
+    source-types:
+    - profession-processing:light-metal
+    sink-types:
+    - mail-equipment
+    - runic-equipment
+    - market
+    economy-managed: true
+    lore:
+    - '&7Viharkvarccal stabilizált vezetőképes könnyűfém.'
+    - '&8Szerep: light / conductive metal'
+  szivfa_mag:
+    material: OCHRE_FROGLIGHT
+    display-name: '&6Szívfamag'
+    tier: RARE
+    processing-state: RAW
+    primary-profession: lumberjack
+    source-types:
+    - gathering:lumberjack-rare
+    sink-types:
+    - prestige-equipment
+    - enchanting-service
+    - market
+    economy-managed: true
+    lore:
+    - '&7Öreg fák rendkívül sűrű, rezonáló belső magja.'
+    - '&8Szerep: rare heartwood'
+  bokic_gyongy:
+    material: ENDER_PEARL
+    display-name: '&bBökic Gyöngy'
+    tier: RARE
+    processing-state: RAW
+    primary-profession: fisherman
+    source-types:
+    - fishing:treasure
+    sink-types:
+    - resistance-equipment
+    - alchemy-service
+    - market
+    economy-managed: true
+    lore:
+    - '&7Ritka mélyvízi gyöngy, amely stabilizálja az infúziókat.'
+    - '&8Szerep: pearl / catalyst'
+  melyvizi_esszencia:
+    material: HEART_OF_THE_SEA
+    display-name: '&3Mélyvízi Esszencia'
+    tier: RARE
+    processing-state: RAW
+    primary-profession: fisherman
+    source-types:
+    - fishing:rare
+    - combat:aquatic-elite
+    sink-types:
+    - resistance-equipment
+    - enchanting-service
+    - ascension-service
+    - market
+    economy-managed: true
+    lore:
+    - '&7Sűrített vízi energia hosszú távú equipment- és service sinkekhez.'
+    - '&8Szerep: aquatic essence'
+  szorny_szerv:
+    material: FERMENTED_SPIDER_EYE
+    display-name: '&5Szörny Szerv'
+    tier: RARE
+    processing-state: RAW
+    source-types:
+    - combat:elite
+    - combat:champion
+    sink-types:
+    - alchemy-service
+    - prestige-equipment
+    - ascension-service
+    - market
+    economy-managed: true
+    lore:
+    - '&7Instabil szörnykomponens célzott alkimista és prestige felhasználásra.'
+    - '&8Szerep: monster organ'
+
+profession-recipes:
+  lte_holdlen_fonal:
+    profession: enchanter
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: REFINED
+    economy-managed: true
+    batchable: true
+    batch-limit: 12
+    level: 18
+    learn: level
+    display-name: Holdlen Fonal
+    category: Feldolgozás • Mágikus rost
+    result:
+      unique: holdlen_fonal
+      amount: 2
+    ingredients:
+    - STRING:6
+    - ALLIUM:3
+    - unique:runapor:1
+    processing-dependencies:
+    - runapor
+  lte_cserle:
+    profession: alchemist
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: REFINED
+    economy-managed: true
+    batchable: true
+    batch-limit: 16
+    level: 12
+    learn: level
+    display-name: Cserlé
+    category: Feldolgozás • Tannin
+    result:
+      unique: cserle
+      amount: 2
+    ingredients:
+    - OAK_LEAVES:6
+    - BROWN_MUSHROOM:2
+    - HONEY_BOTTLE:1
+  lte_fenyves_gyanta:
+    profession: lumberjack
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: REFINED
+    economy-managed: true
+    batchable: true
+    batch-limit: 16
+    level: 16
+    learn: level
+    display-name: Fenyves Gyanta
+    category: Feldolgozás • Gyanta
+    result:
+      unique: fenyves_gyanta
+      amount: 2
+    ingredients:
+    - SPRUCE_LOG:8
+    - HONEYCOMB:2
+  lte_kotogyanta:
+    profession: alchemist
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: SPECIAL
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    level: 24
+    learn: level
+    display-name: Kötőgyanta
+    category: Feldolgozás • Kötőanyag
+    result:
+      unique: kotogyanta
+      amount: 1
+    ingredients:
+    - unique:fenyves_gyanta:2
+    - SLIME_BALL:2
+    processing-dependencies:
+    - fenyves_gyanta
+  lte_halolaj:
+    profession: fisherman
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: REFINED
+    economy-managed: true
+    batchable: true
+    batch-limit: 16
+    level: 12
+    learn: level
+    display-name: Halolaj
+    category: Feldolgozás • Vízi olaj
+    result:
+      unique: halolaj
+      amount: 2
+    ingredients:
+    - COD:4
+    - SALMON:2
+  lte_gyongyhaz_hej:
+    profession: fisherman
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: SPECIAL
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    level: 30
+    learn: level
+    display-name: Gyöngyház Héj
+    category: Feldolgozás • Kagyló
+    result:
+      unique: gyongyhaz_hej
+      amount: 1
+    ingredients:
+    - NAUTILUS_SHELL:1
+    - unique:gyongyhaz_pikkely:2
+    processing-dependencies:
+    - gyongyhaz_pikkely
+  lte_vizbor:
+    profession: alchemist
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: SPECIAL
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    level: 28
+    learn: level
+    display-name: Vízbőr
+    category: Feldolgozás • Vízi bőr
+    result:
+      unique: vizbor
+      amount: 1
+    ingredients:
+    - LEATHER:2
+    - unique:halolaj:1
+    - unique:cserle:1
+    processing-dependencies:
+    - halolaj
+    - cserle
+  lte_in_kotelez:
+    profession: alchemist
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: REFINED
+    economy-managed: true
+    batchable: true
+    batch-limit: 12
+    level: 22
+    learn: level
+    display-name: Ínkötelez
+    category: Feldolgozás • Kötegelés
+    result:
+      unique: in_kotelez
+      amount: 2
+    ingredients:
+    - STRING:4
+    - unique:vad_esszencia:1
+    - BONE:2
+    processing-dependencies:
+    - vad_esszencia
+  lte_kitin_lemez:
+    profession: armorer
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: SPECIAL
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    level: 32
+    learn: level
+    display-name: Kitinlemez
+    category: Feldolgozás • Szerves lemez
+    result:
+      unique: kitin_lemez
+      amount: 1
+    ingredients:
+    - TURTLE_SCUTE:2
+    - PHANTOM_MEMBRANE:1
+    - unique:fenyves_gyanta:1
+    processing-dependencies:
+    - fenyves_gyanta
+  lte_konnyu_otvozet:
+    profession: armorer
+    kind: processing
+    economy-category: PROCESSING
+    material-tier: SPECIAL
+    economy-managed: true
+    batchable: true
+    batch-limit: 8
+    level: 34
+    learn: level
+    display-name: Könnyű Ötvözet
+    category: Feldolgozás • Könnyűfém
+    result:
+      unique: konnyu_otvozet
+      amount: 2
+    ingredients:
+    - COPPER_INGOT:3
+    - unique:rezgo_rez_otvozet:1
+    - unique:viharkvarc:1
+    processing-dependencies:
+    - rezgo_rez_otvozet
+    - viharkvarc

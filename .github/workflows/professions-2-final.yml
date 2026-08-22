@@ -1,0 +1,121 @@
+name: Professions 2.0 Exact Head
+
+on:
+  push:
+    branches:
+      - feature/professions-2
+  pull_request:
+    branches:
+      - feature/equipment-2
+
+permissions:
+  contents: read
+
+jobs:
+  exact-head:
+    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, '[professions-2-final]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Checkout exact child head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact child and parent heads
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          SYNTHETIC_MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha || '' }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
+          git fetch origin feature/equipment-2:refs/remotes/origin/feature/equipment-2
+          test "$(git merge-base HEAD refs/remotes/origin/feature/equipment-2)" = "$(git rev-parse refs/remotes/origin/feature/equipment-2)"
+          echo "PROFESSIONS_2_HEAD=${EXPECTED_HEAD}"
+          echo "EQUIPMENT_2_PARENT=$(git rev-parse refs/remotes/origin/feature/equipment-2)"
+          echo "SYNTHETIC_MERGE_SHA=${SYNTHETIC_MERGE_SHA}"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install repository build dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          'PyYAML>=6.0,<7.0'
+          'Pillow==11.3.0'
+
+      - name: Verify committed Professions 2.0 authority and idempotent closures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/apply_professions_2_closure.py
+          python scripts/apply_professions_2_specialization_closure.py
+          git diff --exit-code
+          python scripts/check_professions_2_reports.py
+          python scripts/check_professions_2_runtime_closure.py
+          python scripts/test_professions_2_economy.py
+
+      - name: Validate PlayerProfile authority contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/tests/test_player_profile_transition_gate.py
+          python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority-current.json
+          python3 scripts/check_player_profile_transitions.py --root . --json-output build/player-profile-transition-report.json
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Java 21 clean build and complete Gradle check
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee gradle-build.log
+
+      - name: Verify Professions and stacked regression evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Professions2RegressionSuite: OK" gradle-build.log
+          grep -F "Itemization domain regression suite passed." gradle-build.log
+          grep -F "Mob/Encounter behavioral domain regression suite passed." gradle-build.log
+          ./gradlew professions2RegressionTest professionRecipeAuditRegressionTest \
+            itemizationDomainRegressionTest vanillaCraftingBoundaryRegressionTest \
+            equipmentDomainRegressionTest runeLifecycleRegressionTest \
+            playerProfileFullAuthorityRegressionTest configStartupRegressionTest \
+            --no-daemon --console=plain
+
+      - name: Validate resource pack and repository consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_resource_pack.py
+          python3 scripts/audit_equipment_assets.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_documentation_coverage.py
+          python3 scripts/check_markdown_links.py
+
+      - name: Check complete child diff whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=$(git merge-base HEAD refs/remotes/origin/feature/equipment-2)
+          git diff --check "${BASE}...HEAD"
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"

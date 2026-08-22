@@ -1,0 +1,8 @@
+allprojects { project ->
+    project.plugins.withId('xyz.jpenilla.run-paper') {
+        project.tasks.named('runServer') { task ->
+            task.minecraftVersion('1.21.11')
+            task.runDirectory.set(project.layout.projectDirectory.dir('run'))
+        }
+    }
+}

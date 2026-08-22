@@ -63,6 +63,10 @@ public final class UniqueMaterialFactory {
         for (final String line : section.getStringList("lore")) {
             lore.add(legacy(line).colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         }
+        for (final String hint : managedSourceHints(section)) {
+            lore.add(Component.text(hint, NamedTextColor.DARK_GRAY)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         meta.lore(lore);
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
@@ -113,6 +117,52 @@ public final class UniqueMaterialFactory {
         final ConfigurationSection root = configManager.getConfiguration()
                 .getConfigurationSection("profession-materials");
         return root == null ? List.of() : List.copyOf(root.getKeys(false));
+    }
+
+    /** Player-facing source/processor/sink hints derived from the same material authority. */
+    private static List<String> managedSourceHints(final ConfigurationSection material) {
+        if (material == null || !material.getBoolean("economy-managed", false)) return List.of();
+        final ArrayList<String> hints = new ArrayList<>(3);
+        final List<String> sources = material.getStringList("source-types");
+        if (!sources.isEmpty()) {
+            hints.add("Forrás: " + sources.stream().limit(2).map(UniqueMaterialFactory::humanizeTag)
+                    .reduce((left, right) -> left + " / " + right).orElse("ismeretlen"));
+        }
+        final String profession = material.getString("primary-profession", "").trim();
+        if (!profession.isBlank()) hints.add("Feldolgozza: " + humanize(profession));
+        final List<String> sinks = material.getStringList("sink-types");
+        if (!sinks.isEmpty()) {
+            hints.add("Felhasználás: " + sinks.stream().limit(3).map(UniqueMaterialFactory::humanizeTag)
+                    .reduce((left, right) -> left + ", " + right).orElse("felszerelés"));
+        }
+        return List.copyOf(hints);
+    }
+
+    private static String humanizeTag(final String raw) {
+        if (raw == null || raw.isBlank()) return "ismeretlen";
+        final String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        final int separator = normalized.indexOf(':');
+        if (separator < 0) return humanize(normalized);
+        final String scope = normalized.substring(0, separator);
+        final String detail = humanize(normalized.substring(separator + 1));
+        return switch (scope) {
+            case "gathering" -> "Gyűjtögetés • " + detail;
+            case "profession-processing" -> "Feldolgozás • " + detail;
+            case "combat" -> "PvE • " + detail;
+            case "fishing" -> "Halászat • " + detail;
+            case "mining" -> "Bányászat • " + detail;
+            case "hunting" -> "Vadászat • " + detail;
+            case "herbalist" -> "Gyógynövény • " + detail;
+            case "profession" -> "Szakma • " + detail;
+            case "catalog" -> "Katalógus • " + detail;
+            default -> humanize(scope) + " • " + detail;
+        };
+    }
+
+    private static String humanize(final String raw) {
+        if (raw == null || raw.isBlank()) return "ismeretlen";
+        final String cleaned = raw.trim().replace('_', ' ').replace('-', ' ');
+        return Character.toUpperCase(cleaned.charAt(0)) + cleaned.substring(1);
     }
 
     private static Component legacy(final String text) {

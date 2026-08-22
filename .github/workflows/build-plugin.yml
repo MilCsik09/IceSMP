@@ -2,22 +2,66 @@ name: Build IceSMP Plugin
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/professions-2
 
 permissions:
   contents: read
 
 jobs:
   build:
-    name: Build plugin JAR
+    name: Exact-head plugin build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
 
     steps:
-      - name: Checkout repository
+      - name: Checkout exact pushed commit
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Prove exact head
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          git fetch origin feature/equipment-2:refs/remotes/origin/feature/equipment-2
+          echo "PROFESSIONS_2_HEAD=${GITHUB_SHA}"
+          echo "EQUIPMENT_2_PARENT=$(git rev-parse refs/remotes/origin/feature/equipment-2)"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install repository build dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          'PyYAML>=6.0,<7.0'
+          'Pillow==11.3.0'
+
+      - name: Verify committed Professions 2.0 authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/apply_professions_2_closure.py
+          python scripts/apply_professions_2_specialization_closure.py
+          git diff --exit-code
+          python scripts/check_professions_2_reports.py
+          python scripts/check_professions_2_runtime_closure.py
+          python scripts/test_professions_2_economy.py
+
+      - name: Validate PlayerProfile authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/tests/test_player_profile_transition_gate.py
+          python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority-current.json
+          python3 scripts/check_player_profile_transitions.py --root . --json-output build/player-profile-transition-report.json
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
@@ -31,10 +75,40 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build plugin
-        run: ./gradlew clean build --no-daemon --stacktrace
+      - name: Java 21 clean build and complete check
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew clean build --no-daemon --console=plain --stacktrace | tee gradle-build.log
+          grep -F "Professions2RegressionSuite: OK" gradle-build.log
+          grep -F "Itemization domain regression suite passed." gradle-build.log
+          grep -F "Mob/Encounter behavioral domain regression suite passed." gradle-build.log
+
+      - name: Re-run stacked critical regressions
+        run: >-
+          ./gradlew professions2RegressionTest professionRecipeAuditRegressionTest
+          itemizationDomainRegressionTest vanillaCraftingBoundaryRegressionTest
+          equipmentDomainRegressionTest runeLifecycleRegressionTest
+          playerProfileFullAuthorityRegressionTest configStartupRegressionTest
+          --no-daemon --console=plain
+
+      - name: Validate repository and resource-pack contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_resource_pack.py
+          python3 scripts/audit_equipment_assets.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_documentation_coverage.py
+          python3 scripts/check_markdown_links.py
+          BASE=$(git merge-base HEAD refs/remotes/origin/feature/equipment-2)
+          git diff --check "${BASE}...HEAD"
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
 
       - name: Upload plugin JAR
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: IceSMP-plugin-${{ github.run_number }}

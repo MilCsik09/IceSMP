@@ -22,27 +22,18 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Rolls unique random-attribute gear with a WoW/Terraria-style rarity ladder. Every affixable item
- * (profession crafts and mob loot) rolls a rarity from a shared ladder — Ócska (Trash) → Ereklye
- * (Artifact) — that determines the colour, the name prefix/adjective, how many affixes roll, how
- * strong they are (value-multiplier) and the chance an affix rolls negative. Trash is all-negative;
- * higher rarities roll more and stronger bonuses, so the prefix matches the affixes. Which rarities
- * a source can roll (and their weights) comes from the loot tier. Rolled items carry a PDC tag so
- * they are never re-rolled.
+ * Legacy/random-affix rarity authority. Any canonical identity footprint, including a malformed
+ * partial identity, is a hard boundary: managed gear never receives or contributes legacy affixes.
  */
 public final class ItemRarityService {
 
     private enum Family { ARMOR, WEAPON, TOOL, OTHER }
 
-    private record Affix(String id, Attribute attribute, EquipmentSlotGroup slot, boolean forArmor, boolean forHand) {
-    }
+    private record Affix(String id, Attribute attribute, EquipmentSlotGroup slot, boolean forArmor, boolean forHand) { }
 
-    /** One rung of the shared rarity ladder. */
     private record Rarity(String id, String name, String color, int affixCount, double negativeChance,
-                         double valueMultiplier, List<String> adjectives, List<String> flavor) {
-    }
+                         double valueMultiplier, List<String> adjectives, List<String> flavor) { }
 
-    /** Source tiers (config: item-rarity.tiers.&lt;id&gt;.weights). */
     public static final String TIER_DROP = "drop";
     public static final String TIER_CRAFTED = "crafted";
     public static final String TIER_BOSS = "boss";
@@ -54,52 +45,57 @@ public final class ItemRarityService {
             new Affix("movement_speed", Attribute.MOVEMENT_SPEED, EquipmentSlotGroup.ARMOR, true, false),
             new Affix("attack_damage", Attribute.ATTACK_DAMAGE, EquipmentSlotGroup.MAINHAND, false, true),
             new Affix("attack_speed", Attribute.ATTACK_SPEED, EquipmentSlotGroup.MAINHAND, false, true),
-            // Varázserő: nem vanília attribútum — PDC-ben él, a cast-kori erő-számítás
-            // olvassa (caster-gear). Páncélra ÉS kézbe is eshet.
             new Affix("spell_power", null, EquipmentSlotGroup.ANY, true, true));
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final NamespacedKey qualityKey;
     private final NamespacedKey spellPowerKey;
+    private final List<NamespacedKey> managedIdentityKeys;
 
     public ItemRarityService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.qualityKey = new NamespacedKey(plugin, "masterwork_quality");
         this.spellPowerKey = new NamespacedKey(plugin, "spell_power");
+        this.managedIdentityKeys = List.of(
+                new NamespacedKey(plugin, "item_schema"),
+                new NamespacedKey(plugin, "item_uuid"),
+                new NamespacedKey(plugin, "item_template"),
+                new NamespacedKey(plugin, "item_template_version"),
+                new NamespacedKey(plugin, "item_instance"),
+                new NamespacedKey(plugin, "item_integrity"));
     }
 
-    /** Egy tárgy Varázserő-affixe (%-pont), affix nélkül 0. */
-    public double spellPowerOf(final org.bukkit.inventory.ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+    /** Legacy Varázserő is inert on every identity-managed canonical item, valid or invalid. */
+    public double spellPowerOf(final ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta() || isCanonicalManaged(item)) {
             return 0.0D;
         }
         return item.getItemMeta().getPersistentDataContainer()
-                .getOrDefault(spellPowerKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D);
+                .getOrDefault(spellPowerKey, PersistentDataType.DOUBLE, 0.0D);
+    }
+
+    private boolean isCanonicalManaged(final ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        final var pdc = item.getItemMeta().getPersistentDataContainer();
+        for (final NamespacedKey key : managedIdentityKeys) {
+            if (pdc.has(key)) return true;
+        }
+        return false;
     }
 
     public boolean isEnabled() {
         return configManager.getBoolean("item-rarity.enabled", true);
     }
 
-    /**
-     * A tárgyra rollott raritás-fok id-je (pl. {@code "legendas"}), vagy null, ha nincs rajta.
-     * A mestermű-mérföldkő ebből dönt, hogy a craft a létra felső fokát adta-e.
-     */
-    public String rarityIdOf(final org.bukkit.inventory.ItemStack item) {
-        if (item == null || !item.hasItemMeta()) {
-            return null;
-        }
-        return item.getItemMeta().getPersistentDataContainer()
-                .get(qualityKey, PersistentDataType.STRING);
+    public String rarityIdOf(final ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return null;
+        return item.getItemMeta().getPersistentDataContainer().get(qualityKey, PersistentDataType.STRING);
     }
 
-    /** Whether the item already carries a rolled rarity (so it is not re-rolled). */
     public boolean isRolled(final ItemStack item) {
-        if (item == null || !item.hasItemMeta()) {
-            return false;
-        }
+        if (item == null || !item.hasItemMeta()) return false;
         return item.getItemMeta().getPersistentDataContainer().has(qualityKey, PersistentDataType.STRING);
     }
 
@@ -107,46 +103,28 @@ public final class ItemRarityService {
         return roll(base, tierId, false);
     }
 
-    /**
-     * Rolls a rarity + affixes for the given loot tier. With {@code randomName} the item gets a
-     * rarity-matched generated name (mob loot); otherwise it keeps its designed name (crafts).
-     */
+    /** Canonical identity never enters the legacy rarity/affix path. */
     public ItemStack roll(final ItemStack base, final String tierId, final boolean randomName) {
-        if (base == null || !isEnabled() || isRolled(base)) {
-            return base;
-        }
+        if (base == null || !isEnabled() || isRolled(base) || isCanonicalManaged(base)) return base;
         final Family family = familyOf(base.getType());
-        if (family == Family.OTHER) {
-            return base;
-        }
+        if (family == Family.OTHER) return base;
 
         final Map<String, Rarity> ladder = loadRarities();
         final Rarity rarity = pickRarity(tierId, ladder);
-        if (rarity == null) {
-            return base;
-        }
+        if (rarity == null) return base;
 
         final List<Affix> eligible = new ArrayList<>();
         for (final Affix affix : AFFIXES) {
-            // A Varázserő a WoW-mód (health.enabled) része: kikapcsolt módban nem sorsolódik
-            // (a már kisorsolt példányok PDC-je megmarad, visszakapcsoláskor újra él).
-            if (affix.attribute() == null && !configManager.getBoolean("health.enabled", true)) {
-                continue;
-            }
-            if (family == Family.ARMOR ? affix.forArmor() : affix.forHand()) {
-                eligible.add(affix);
-            }
+            if (affix.attribute() == null && !configManager.getBoolean("health.enabled", true)) continue;
+            if (family == Family.ARMOR ? affix.forArmor() : affix.forHand()) eligible.add(affix);
         }
-        if (eligible.isEmpty()) {
-            return base;
-        }
+        if (eligible.isEmpty()) return base;
 
         final ItemStack rolled = base.clone();
         final ItemMeta meta = rolled.getItemMeta();
         final List<Component> extraLore = new ArrayList<>();
         extraLore.add(Component.text("✦ " + rarity.name() + (randomName ? "" : " mestermű"), colorOf(rarity.color()))
                 .decoration(TextDecoration.ITALIC, false));
-        // Flavour line: a random evocative line for the rarity, italic in the rarity colour.
         if (!rarity.flavor().isEmpty()) {
             extraLore.add(Component.text("\"" + rarity.flavor().get(ThreadLocalRandom.current().nextInt(rarity.flavor().size())) + "\"",
                     colorOf(rarity.color())).decoration(TextDecoration.ITALIC, true));
@@ -158,39 +136,20 @@ public final class ItemRarityService {
             final ConfigurationSection cfg = affixConfig(affix.id());
             final double min = cfg == null ? 0.0D : cfg.getDouble("min", 0.0D);
             final double max = cfg == null ? 0.0D : cfg.getDouble("max", 0.0D);
-            if (max <= 0.0D) {
-                continue;
-            }
+            if (max <= 0.0D) continue;
             final int decimals = cfg.getInt("decimals", 0);
             double raw = (min + ThreadLocalRandom.current().nextDouble() * Math.max(0.0D, max - min)) * rarity.valueMultiplier();
-            final boolean negative = rarity.negativeChance() > 0.0D
-                    && ThreadLocalRandom.current().nextDouble() < rarity.negativeChance();
-            if (negative) {
-                raw = -raw;
-            }
+            if (rarity.negativeChance() > 0.0D && ThreadLocalRandom.current().nextDouble() < rarity.negativeChance()) raw = -raw;
             double amount = round(raw, decimals);
-            // A low-multiplier roll (e.g. Ócska ×0.4) can round to 0 on an integer attribute — clamp to
-            // the smallest representable step (keeping the sign) so the affix always shows.
-            if (amount == 0.0D && raw != 0.0D) {
-                amount = Math.copySign(Math.pow(10, -Math.max(0, decimals)), raw);
-            }
-            if (amount == 0.0D) {
-                continue;
-            }
+            if (amount == 0.0D && raw != 0.0D) amount = Math.copySign(Math.pow(10, -Math.max(0, decimals)), raw);
+            if (amount == 0.0D) continue;
             final String affixName = cfg.getString("name", affix.id());
             if (affix.attribute() == null) {
-                // Varázserő (%): PDC-érték, a spell-erő számítás összegzi a viselt darabokról.
                 final double stored = meta.getPersistentDataContainer()
-                        .getOrDefault(spellPowerKey, org.bukkit.persistence.PersistentDataType.DOUBLE, 0.0D);
-                meta.getPersistentDataContainer().set(spellPowerKey,
-                        org.bukkit.persistence.PersistentDataType.DOUBLE, stored + amount);
+                        .getOrDefault(spellPowerKey, PersistentDataType.DOUBLE, 0.0D);
+                meta.getPersistentDataContainer().set(spellPowerKey, PersistentDataType.DOUBLE, stored + amount);
             } else {
-                // Az első explicit módosító felülírja a tárgy vanília attribute_modifiers komponensét,
-                // ezért az alap-statokat (kard sebzése, páncél védelme) előbb át kell menteni.
                 hu.taliann.icesmp.items.ItemDataFactory.seedDefaultAttributeModifiers(rolled, meta);
-                // A módosító-kulcs a Materialt IS hordozza: MC 1.21-ben az azonos id-jű módosítók
-                // ugyanazon attribútumon NEM összegződnek, így két külön viselt darab (sisak+mellvért)
-                // azonos affixe csak egyszer számítana — a Material (=felszerelés-slot) egyedivé teszi.
                 meta.addAttributeModifier(affix.attribute(), new AttributeModifier(
                         new NamespacedKey(plugin, "mw_" + rolled.getType().name().toLowerCase(Locale.ROOT)
                                 + "_" + affix.id() + "_" + i),
@@ -205,8 +164,6 @@ public final class ItemRarityService {
         final List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
         lore.addAll(extraLore);
         meta.lore(lore);
-        // Rarity-matched name: a fitting adjective (mob loot) or the designed name (crafts), prefixed
-        // with the rarity so the prefix reads its power — WoW/Terraria style.
         final String adjective = randomName && !rarity.adjectives().isEmpty()
                 ? rarity.adjectives().get(ThreadLocalRandom.current().nextInt(rarity.adjectives().size())) + " " : "";
         final Component baseName = randomName ? Component.text(adjective + nounFor(family, rolled.getType()))
@@ -215,11 +172,7 @@ public final class ItemRarityService {
                 .decoration(TextDecoration.ITALIC, false).append(baseName));
         meta.getPersistentDataContainer().set(qualityKey, PersistentDataType.STRING, rarity.id());
         rolled.setItemMeta(meta);
-        // A vanília attribútum-blokkot elrejtjük (a stat a fenti affix-lore-ban látszik) — a
-        // data-komponens a setItemMeta UTÁN, különben törlődne.
         hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(rolled);
-        // A vanília RARITY a rollott fokot tükrözze, ne a Material alapértelmezését — így a
-        // vanília felületek a saját létránkkal konzisztensen kezelik a tárgyat.
         hu.taliann.icesmp.items.ItemDataFactory.applyRarity(rolled,
                 hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rarity.id()));
         return rolled;
@@ -232,36 +185,22 @@ public final class ItemRarityService {
             return Family.ARMOR;
         }
         if (name.endsWith("_sword") || material == Material.TRIDENT || material == Material.BOW
-                || material == Material.CROSSBOW) {
-            return Family.WEAPON;
-        }
+                || material == Material.CROSSBOW) return Family.WEAPON;
         if (name.endsWith("_pickaxe") || name.endsWith("_axe") || name.endsWith("_shovel")
-                || name.endsWith("_hoe")) {
-            return Family.TOOL;
-        }
+                || name.endsWith("_hoe")) return Family.TOOL;
         return Family.OTHER;
     }
 
-    /** Loads the shared rarity ladder (item-rarity.rarities). */
     private Map<String, Rarity> loadRarities() {
         final Map<String, Rarity> ladder = new LinkedHashMap<>();
-        if (configManager.getConfiguration() == null) {
-            return ladder;
-        }
-        final ConfigurationSection section = configManager.getConfiguration()
-                .getConfigurationSection("item-rarity.rarities");
-        if (section == null) {
-            return ladder;
-        }
+        if (configManager.getConfiguration() == null) return ladder;
+        final ConfigurationSection section = configManager.getConfiguration().getConfigurationSection("item-rarity.rarities");
+        if (section == null) return ladder;
         for (final String id : section.getKeys(false)) {
             final ConfigurationSection r = section.getConfigurationSection(id);
-            if (r == null) {
-                continue;
-            }
+            if (r == null) continue;
             ladder.put(id.toLowerCase(Locale.ROOT), new Rarity(
-                    id.toLowerCase(Locale.ROOT),
-                    r.getString("name", id),
-                    r.getString("color", "&f"),
+                    id.toLowerCase(Locale.ROOT), r.getString("name", id), r.getString("color", "&f"),
                     Math.max(1, r.getInt("affixes", 1)),
                     Math.max(0.0D, Math.min(1.0D, r.getDouble("negative-chance", 0.0D))),
                     Math.max(0.0D, r.getDouble("value-multiplier", 1.0D)),
@@ -270,16 +209,11 @@ public final class ItemRarityService {
         return ladder;
     }
 
-    /** Picks a rarity for a loot tier by its weighted rarity distribution (tiers.&lt;id&gt;.weights). */
     private Rarity pickRarity(final String tierId, final Map<String, Rarity> ladder) {
-        if (configManager.getConfiguration() == null || tierId == null || ladder.isEmpty()) {
-            return null;
-        }
+        if (configManager.getConfiguration() == null || tierId == null || ladder.isEmpty()) return null;
         final ConfigurationSection weights = configManager.getConfiguration()
                 .getConfigurationSection("item-rarity.tiers." + tierId + ".weights");
-        if (weights == null) {
-            return null;
-        }
+        if (weights == null) return null;
         int total = 0;
         final Map<String, Integer> valid = new LinkedHashMap<>();
         for (final String rarityId : weights.getKeys(false)) {
@@ -289,23 +223,17 @@ public final class ItemRarityService {
                 total += weight;
             }
         }
-        if (total <= 0) {
-            return null;
-        }
+        if (total <= 0) return null;
         int roll = ThreadLocalRandom.current().nextInt(total);
         for (final Map.Entry<String, Integer> entry : valid.entrySet()) {
             roll -= entry.getValue();
-            if (roll < 0) {
-                return ladder.get(entry.getKey());
-            }
+            if (roll < 0) return ladder.get(entry.getKey());
         }
         return ladder.get(valid.keySet().iterator().next());
     }
 
     private ConfigurationSection affixConfig(final String affixId) {
-        if (configManager.getConfiguration() == null) {
-            return null;
-        }
+        if (configManager.getConfiguration() == null) return null;
         return configManager.getConfiguration().getConfigurationSection("item-rarity.affixes." + affixId);
     }
 
@@ -348,9 +276,7 @@ public final class ItemRarityService {
         final String[] parts = material.name().toLowerCase(Locale.ROOT).split("_");
         final StringBuilder sb = new StringBuilder();
         for (final String part : parts) {
-            if (!part.isEmpty()) {
-                sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1)).append(' ');
-            }
+            if (!part.isEmpty()) sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1)).append(' ');
         }
         return sb.toString().trim();
     }

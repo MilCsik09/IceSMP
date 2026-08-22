@@ -111,7 +111,7 @@ public final class PrologueEncounterEngine implements Listener {
         scheduleSpawn(e,anchor,()->{
             anchor.getWorld().playSound(anchor,Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,1.8F,.55F);
             anchor.getWorld().spawnParticle(Particle.REVERSE_PORTAL,anchor.clone().add(0,1,0),60,1.5,2,1.5,.08);
-            Mob boss=spawnMob(e,topOf(anchor.getWorld(),anchor.getBlockX(),anchor.getBlockZ()),bossType(),"boss");
+            Mob boss=spawnMob(e,topOf(anchor.getWorld(),anchor.getBlockX(),anchor.getBlockZ()),EntityType.WITHER_SKELETON,"boss");
             if(boss==null){failEncounter(e,"A Prologue boss nem spawnolható a beállított anchoron.");return;}
             bossId=boss.getUniqueId();configureBoss(boss,players,e);
         });
@@ -151,73 +151,49 @@ public final class PrologueEncounterEngine implements Listener {
             try{Bukkit.getGlobalRegionScheduler().run(plugin,t->checkWaveComplete(e));}catch(IllegalPluginAccessException ignored){}}
     }
     private void setMobPause(ActiveEncounter e,boolean paused){
+        hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns=
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
         for(UUID id:Set.copyOf(e.mobs)){
             MobHandle h=liveMobs.get(id);if(h==null)continue;
             try{h.scheduler.run(plugin,t->{Mob m=h.mob;if(!m.isValid()||m.isDead()){liveMobs.remove(id,h);return;}
-                m.setAI(!paused);m.setInvulnerable(paused);if(paused)m.setTarget(null);},()->liveMobs.remove(id,h));}
+                m.setAI(!paused);m.setInvulnerable(paused);if(paused){m.setTarget(null);if(spawns!=null)spawns.pause(m);}
+                else if(spawns!=null)spawns.resume(m);},()->liveMobs.remove(id,h));}
             catch(IllegalPluginAccessException x){liveMobs.remove(id,h);}
         }
     }
 
     private Mob spawnMob(ActiveEncounter e,Location spot,EntityType type,String role){
         if(spot==null||spot.getWorld()==null||e.finished.get()||e.paused.get())return null;
-        Class<? extends Entity> cls=type.getEntityClass();
-        if(cls==null||!Mob.class.isAssignableFrom(cls)||spawnGuard!=null&&(spawnGuard.isBlocked(EVENT_KEY,spot)||spawnGuard.isUnsafeSurface(EVENT_KEY,spot.getWorld(),spot.getBlockX(),spot.getBlockZ())))return null;
-        Mob mob=(Mob)spot.getWorld().spawn(spot,cls.asSubclass(Mob.class));EventSpawnGuard.prepare(mob);
+        if(spawnGuard!=null&&(spawnGuard.isBlocked(EVENT_KEY,spot)||spawnGuard.isUnsafeSurface(EVENT_KEY,spot.getWorld(),spot.getBlockX(),spot.getBlockZ())))return null;
+        hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns=
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();if(spawns==null)return null;
+        String template=templateFor(type,role);int level=levelFor(role);
+        Mob mob=spawns.spawn(spot,hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                "prologue",e.id,role,template,level,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.NONE,true,
+                1D,1D,0L));if(mob==null)return null;
         mob.getPersistentDataContainer().set(prologueMobKey,PersistentDataType.BYTE,(byte)1);
         mob.getPersistentDataContainer().set(encounterKey,PersistentDataType.STRING,e.id);
         mob.getPersistentDataContainer().set(roleKey,PersistentDataType.STRING,role);
         mob.setRemoveWhenFarAway(false);mob.setPersistent(false);mob.setGlowing("elite".equals(role)||"boss".equals(role));
         TransientEntities.register(plugin,mob);UUID id=mob.getUniqueId();transientEntities.add(id);entityEncounters.put(id,e.id);e.mobs.add(id);liveMobs.put(id,new MobHandle(mob,mob.getScheduler()));
-        if("elite".equals(role)){AttributeInstance hp=mob.getAttribute(Attribute.MAX_HEALTH);if(hp!=null){hp.setBaseValue(hp.getBaseValue()*1.6D);mob.setHealth(hp.getValue());}
-            AttributeInstance attack=mob.getAttribute(Attribute.ATTACK_DAMAGE);if(attack!=null)attack.setBaseValue(attack.getBaseValue()*1.25D);
-            mob.customName(Component.text("Hasadékbajnok",NamedTextColor.DARK_RED));mob.setCustomNameVisible(true);}
+        if("elite".equals(role)){mob.customName(Component.text("Hasadékbajnok",NamedTextColor.DARK_RED));mob.setCustomNameVisible(true);}
         return mob;
     }
 
     private void configureBoss(Mob boss,int players,ActiveEncounter e){
         int min=Math.max(1,config.getInt("world-events.prologue.scaling.minimum-players",5)),max=Math.max(min,config.getInt("world-events.prologue.scaling.maximum-players",45));
-        double health=PrologueScaling.bossHealth(Math.max(40D,config.getDouble("world-events.prologue.finale.boss.base-health",500D)),players,min,max,
+        double healthMultiplier=PrologueScaling.bossHealth(1D,players,min,max,
                 Math.max(0D,config.getDouble("world-events.prologue.scaling.boss-health-per-extra-player",.075D)),
                 Math.max(1D,config.getDouble("world-events.prologue.scaling.boss-health-maximum-multiplier",4D)));
-        AttributeInstance hp=boss.getAttribute(Attribute.MAX_HEALTH);if(hp!=null){hp.setBaseValue(health);boss.setHealth(hp.getValue());}
-        AttributeInstance attack=boss.getAttribute(Attribute.ATTACK_DAMAGE);if(attack!=null)attack.setBaseValue(Math.max(4D,config.getDouble("world-events.prologue.finale.boss.base-attack-damage",9D)));
+        hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns=
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+        if(spawns!=null)spawns.applyParticipantModifier(boss,healthMultiplier,1D,"prologue:participants");
         boss.customName(Component.text(config.getString("world-events.prologue.finale.boss.name","A Hasadék Őre"),NamedTextColor.DARK_RED));boss.setCustomNameVisible(true);boss.setGlowing(true);
-        AtomicBoolean adds=new AtomicBoolean(),enrage=new AtomicBoolean();AtomicInteger tick=new AtomicInteger();
-        boss.getScheduler().runAtFixedRate(plugin,t->{
-            if(boss.isDead()){t.cancel();return;}if(!boss.isValid()){t.cancel();if(!e.finished.get()&&!shuttingDown)failEncounter(e,"A Prologue boss váratlanul eltűnt.");return;}
-            if(e.paused.get()||e.finished.get())return;
-            AttributeInstance a=boss.getAttribute(Attribute.MAX_HEALTH);double fraction=boss.getHealth()/Math.max(1D,a==null?boss.getHealth():a.getValue());int n=tick.incrementAndGet();
-            if(fraction>.65D){if(n%2==0)slam(boss,e);}else if(fraction>.30D){if(adds.compareAndSet(false,true))spawnAdds(boss,e,players);if(n%2==0)slam(boss,e);}
-            else{if(enrage.compareAndSet(false,true)){AttributeInstance d=boss.getAttribute(Attribute.ATTACK_DAMAGE);if(d!=null)d.setBaseValue(d.getBaseValue()*1.25D);}hazard(boss,e);}
-        },()->{if(!e.finished.get()&&!shuttingDown&&!e.paused.get())failEncounter(e,"A Prologue boss entity schedulerje megszűnt.");},60L,80L);
     }
-    private void slam(Mob boss,ActiveEncounter e){
-        if(e.paused.get()||e.finished.get())return;Location c=boss.getLocation().clone();
-        boss.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,c.clone().add(0,1,0),28,2.8,.5,2.8,.03);
-        boss.getScheduler().runDelayed(plugin,t->{if(e.paused.get()||e.finished.get()||!boss.isValid()||boss.isDead())return;
-            double amount=Math.max(1D,config.getDouble("world-events.prologue.finale.boss.slam-damage",7D));
-            for(Entity n:boss.getNearbyEntities(5,3.5,5))if(n instanceof Player p)applyEventHit(p,amount,boss,c,.65,e);},null,24L);
-    }
-    private void hazard(Mob boss,ActiveEncounter e){
-        if(e.paused.get()||e.finished.get())return;Location c=boss.getLocation().clone();
-        boss.getWorld().spawnParticle(Particle.REVERSE_PORTAL,c.clone().add(0,.4,0),34,4.5,.4,4.5,.12);
-        double amount=Math.max(.5D,config.getDouble("world-events.prologue.finale.boss.hazard-damage",3D));
-        for(Entity n:boss.getNearbyEntities(6,3.5,6))if(n instanceof Player p)applyEventHit(p,amount,boss,c,.25,e);
-    }
-    private void applyEventHit(Player p,double amount,Mob source,Location center,double kb,ActiveEncounter e){
-        if(e.paused.get()||e.finished.get())return;Runnable r=()->{if(e.paused.get()||e.finished.get()||!p.isOnline()||p.isDead())return;
-            p.damage(amount,source);org.bukkit.util.Vector away=p.getLocation().toVector().subtract(center.toVector()).setY(.25);
-            if(away.lengthSquared()>.01)p.setVelocity(p.getVelocity().add(away.normalize().multiply(kb).setY(.25)));};
-        if(Bukkit.isOwnedByCurrentRegion(p))r.run();else p.getScheduler().run(plugin,t->r.run(),null);
-    }
-    private void spawnAdds(Mob boss,ActiveEncounter e,int players){
-        if(e.paused.get()||e.finished.get())return;int min=Math.max(1,config.getInt("world-events.prologue.scaling.minimum-players",5)),max=Math.max(min,config.getInt("world-events.prologue.scaling.maximum-players",45));
-        int count=PrologueScaling.mobCount(3,players,min,max,.16D,3,9);List<EntityType> types=mobTypes("world-events.prologue.finale.boss.add-types",List.of(EntityType.PIGLIN_BRUTE,EntityType.BLAZE,EntityType.WITHER_SKELETON));
-        Location c=boss.getLocation().clone();e.pendingSpawns.addAndGet(count);
-        for(int i=0;i<count;i++){double a=Math.PI*2D*i/Math.max(1,count);int x=c.getBlockX()+(int)Math.round(Math.cos(a)*5),z=c.getBlockZ()+(int)Math.round(Math.sin(a)*5);EntityType type=types.get(i%types.size());
-            scheduleSpawn(e,new Location(c.getWorld(),x,c.getBlockY(),z),()->spawnMob(e,topOf(c.getWorld(),x,z),type,"add"));}
-    }
+
+    private int levelFor(String role){return switch(role){case "boss"->Math.max(1,config.getInt("world-events.prologue.finale.boss.level",55));case "elite"->Math.max(1,config.getInt("world-events.prologue.breach.elite-level",28));case "add"->Math.max(1,config.getInt("world-events.prologue.finale.boss.add-level",32));default->Math.max(1,config.getInt("world-events.prologue.breach.mob-level",20));};}
+    private static String templateFor(EntityType type,String role){if("boss".equals(role))return "prologue_finale_boss";if("elite".equals(role))return "prologue_breach_elite";if("add".equals(role))return switch(type){case BLAZE->"prologue_flame_add";case PIGLIN_BRUTE->"prologue_brute_add";default->"prologue_bone_add";};return switch(type){case PIGLIN->"prologue_breach_piglin";case PIGLIN_BRUTE->"prologue_breach_brute";case HOGLIN->"prologue_breach_hoglin";case BLAZE->"prologue_breach_blaze";case WITHER_SKELETON->"prologue_breach_skeleton";default->throw new IllegalArgumentException("Unsupported Prologue wave type: "+type);};}
 
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=false)
     public void onAnyDamage(EntityDamageEvent event){if(pausedFor(event.getEntity().getUniqueId())!=null)event.setCancelled(true);}
@@ -245,12 +221,11 @@ public final class PrologueEncounterEngine implements Listener {
     public void abortActive(String reason){ActiveEncounter e=activeEncounter;if(e!=null)failEncounter(e,reason==null||reason.isBlank()?"Az encounter megszakadt.":reason);}
     public void abortActiveSilently(){ActiveEncounter e=activeEncounter;if(e==null||!e.finished.compareAndSet(false,true))return;cancelTimeout(e);cleanupEncounterEntities(e);if(activeEncounter==e)activeEncounter=null;bossId=null;}
     private void failEncounter(ActiveEncounter e,String reason){if(!e.finished.compareAndSet(false,true))return;cancelTimeout(e);cleanupEncounterEntities(e);if(activeEncounter==e)activeEncounter=null;bossId=null;e.failure.accept(reason);}
-    private void cleanupEncounterEntities(ActiveEncounter e){for(UUID id:Set.copyOf(e.mobs)){TransientEntities.removeById(plugin,id);transientEntities.remove(id);entityEncounters.remove(id);liveMobs.remove(id);}e.mobs.clear();}
+    private void cleanupEncounterEntities(ActiveEncounter e){hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns=hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();for(UUID id:Set.copyOf(e.mobs)){MobHandle h=liveMobs.get(id);if(spawns!=null&&h!=null)h.scheduler.run(plugin,t->spawns.detach(h.mob),null);TransientEntities.removeById(plugin,id);transientEntities.remove(id);entityEncounters.remove(id);liveMobs.remove(id);}e.mobs.clear();}
     public void shutdown(){shuttingDown=true;ActiveEncounter e=activeEncounter;if(e!=null&&e.finished.compareAndSet(false,true)){cancelTimeout(e);cleanupEncounterEntities(e);}activeEncounter=null;bossId=null;TransientEntities.removeAllOnShutdown(transientEntities);transientEntities.clear();entityEncounters.clear();liveMobs.clear();}
 
     private void warningPulse(Location anchor,BreachSeverity severity){plugin.getServer().getRegionScheduler().run(plugin,anchor,t->{if(anchor.getWorld()==null)return;anchor.getWorld().playSound(anchor,Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,severity==BreachSeverity.CRITICAL?1.8F:1.2F,severity==BreachSeverity.MINOR?.9F:.6F);anchor.getWorld().spawnParticle(Particle.REVERSE_PORTAL,anchor.clone().add(0,1,0),severity==BreachSeverity.CRITICAL?72:36,1.5,2,1.5,.08);});}
     private Location topOf(World world,int x,int z){return new Location(world,x+.5,world.getHighestBlockYAt(x,z)+1,z+.5);}
-    private EntityType bossType(){try{EntityType t=EntityType.valueOf(config.getString("world-events.prologue.finale.boss.entity-type","WITHER_SKELETON").trim().toUpperCase(Locale.ROOT));return t.getEntityClass()!=null&&Mob.class.isAssignableFrom(t.getEntityClass())?t:EntityType.WITHER_SKELETON;}catch(IllegalArgumentException x){return EntityType.WITHER_SKELETON;}}
     private List<EntityType> mobTypes(String path,List<EntityType> fallback){List<EntityType> out=new ArrayList<>();for(String raw:config.getStringList(path))try{EntityType t=EntityType.valueOf(raw.trim().toUpperCase(Locale.ROOT));if(t.getEntityClass()!=null&&Mob.class.isAssignableFrom(t.getEntityClass()))out.add(t);}catch(IllegalArgumentException ignored){}return out.isEmpty()?fallback:List.copyOf(out);}
     private static Player playerAttacker(Entity d){if(d instanceof Player p)return p;if(d instanceof Projectile p&&p.getShooter() instanceof Player player)return player;return null;}
     private static long timeout(long override,long fallback){return override>0?override:fallback;}

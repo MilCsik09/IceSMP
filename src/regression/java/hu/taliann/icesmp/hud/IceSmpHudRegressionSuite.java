@@ -112,8 +112,12 @@ public final class IceSmpHudRegressionSuite {
         final String listener = read(
                 "src/main/java/hu/taliann/icesmp/listeners/DamageIndicatorListener.java");
         check(listener.contains("recordLastTarget(attacker.getUniqueId(), victim, damage)")
-                        && listener.contains("living.getHealth() - finalDamage")
-                        && listener.contains("TargetHudState.Rank")
+                        && listener.contains("rayTrace(viewer.getEyeLocation()")
+                        && listener.contains("target.getScheduler().run(plugin")
+                        && listener.contains("TargetFrameMetadataPolicy")
+                        && listener.contains("mob_template")
+                        && listener.contains("mob_level")
+                        && listener.contains("mob_rank")
                         && !listener.contains("showTargetVitals")
                         && !listener.contains("vitalDisplays")
                         && listener.contains("setVisibleByDefault(false)")
@@ -123,10 +127,12 @@ public final class IceSmpHudRegressionSuite {
         final String config = read("src/main/resources/config/general.yml");
         final String manager = read("src/main/java/hu/taliann/icesmp/managers/HudManager.java");
         check(config.contains("target-frame:") && config.contains("enabled: true")
+                        && config.contains("range: 24.0")
                         && config.contains("expire-seconds: 10")
                         && !config.contains("visibility: attacker-only"),
                 "combat target vitals must ship as a screen-space target frame");
-        check(manager.contains("survivalSnapshots.get(target.targetId())")
+        check(manager.contains("indicators.sampleTarget(player)")
+                        && manager.contains("survivalSnapshots.get(target.targetId())")
                         && manager.contains("snapshots.get(target.targetId())")
                         && manager.contains("targetSurvival == null ? target.health()"),
                 "player targets must refresh from immutable live HUD caches without cross-region reads");

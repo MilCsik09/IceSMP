@@ -49,6 +49,9 @@ public final class SoulstoneListener implements Listener {
         }
 
         final LivingEntity entity = event.getEntity();
+        if (!hu.taliann.icesmp.pve.CreatureProfileService.authoredRewardEligible(entity)) {
+            return;
+        }
         final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
                 hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(entity,
                         hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager);

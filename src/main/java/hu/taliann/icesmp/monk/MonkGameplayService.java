@@ -76,6 +76,12 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
     private final Set<UUID> drainActive = ConcurrentHashMap.newKeySet();
 
     private volatile ResourceManager combatTracker;
+    private volatile hu.taliann.icesmp.managers.WorldBossManager worldBossManager;
+
+    public void setWorldBossManager(
+            final hu.taliann.icesmp.managers.WorldBossManager worldBossManager) {
+        this.worldBossManager = worldBossManager;
+    }
 
     public MonkGameplayService(final JavaPlugin plugin,
                                final ConfigManager config,
@@ -259,11 +265,11 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
                     removeLink(playerId, link.id());
                     return;
                 }
-                healPlayer(ally, rippleAmount, regen, absorption);
+                healPlayer(playerId, ally, rippleAmount, regen, absorption);
             }, () -> removeLink(playerId, link.id()));
         }
         if (!anyScheduled) return;
-        if (selfRipple) healPlayer(player, rippleAmount / 2.0D, false, false);
+        if (selfRipple) healPlayer(playerId, player, rippleAmount / 2.0D, false, false);
         if (isInCombat(playerId)) {
             specs.contributeClassMastery(player, JobType.MONK,
                     config.getInt("classes.monk.mastery.ripple-xp", 4));
@@ -272,11 +278,12 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
                 "<aqua>🌫 A gyógyítás végighullámzott a Ködszálakon.</aqua>"));
     }
 
-    private static void healPlayer(final Player target, final double amount,
-                                   final boolean regen, final boolean absorption) {
+    private void healPlayer(final UUID actor, final Player target, final double amount,
+                            final boolean regen, final boolean absorption) {
         final double maxHealth = maxHealth(target);
-        final double after = Math.min(maxHealth, target.getHealth() + Math.max(0.0D, amount));
-        if (after > target.getHealth()) target.setHealth(after);
+        final double before = target.getHealth();
+        final double after = Math.min(maxHealth, before + Math.max(0.0D, amount));
+        if (after > before) target.setHealth(after);
         if (regen) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
                     60, 0, false, true, true));
@@ -285,6 +292,9 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
             target.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION,
                     100, 0, false, true, true));
         }
+        final var boss = worldBossManager;
+        if (boss != null) boss.recordBossSupport(actor, target.getUniqueId(),
+                Math.max(0.0D, after - before) + (absorption ? Math.min(4.0D, amount) : 0.0D));
     }
 
     /** Sörfőző: a bounded part of every hit is deferred into the Stagger pool. */
@@ -411,7 +421,7 @@ public final class MonkGameplayService implements Listener, PlayerStateCleanup {
         links.add(new LinkTarget(target.getUniqueId(), target.getScheduler()));
         mistLinks.link(monkId, target.getUniqueId());
         if ("gyors_szoves".equals(doctrine(monkId, 30))) {
-            target.getScheduler().run(plugin, task -> healPlayer(target, config.getDouble(
+            target.getScheduler().run(plugin, task -> healPlayer(monkId, target, config.getDouble(
                     "classes.monk.mist.weave-heal", 2.0D), false, false), null);
         }
         monk.sendActionBar(messages.getMessage("monk.mist.linked",

@@ -1,0 +1,2679 @@
+{
+  "canonical_equipment": [
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [],
+      "recipe_id": "vadvilagi_eskukard",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "vadvilagi_eskukard"
+    },
+    {
+      "armor_family": "PLATE",
+      "migration_action": "MIGRATE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [
+        "kovacsolt_lemez"
+      ],
+      "recipe_id": "glatziendorfi_jegvert",
+      "slot": "chest",
+      "status": "VERIFIED",
+      "template_id": "glatziendorfi_jegvert"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [],
+      "recipe_id": "glatziendorfi_jegtoro",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "glatziendorfi_jegtoro"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [],
+      "recipe_id": "item2_kovacstanonc_penge",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "kovacstanonc_penge"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [],
+      "recipe_id": "item2_tarnapajzs",
+      "slot": "off-hand",
+      "status": "VERIFIED",
+      "template_id": "tarnapajzs"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [],
+      "recipe_id": "item2_viharkvarc_pallos",
+      "slot": "two-hand",
+      "status": "VERIFIED",
+      "template_id": "viharkvarc_pallos"
+    },
+    {
+      "armor_family": "PLATE",
+      "migration_action": "MIGRATE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [
+        "kovacsolt_lemez"
+      ],
+      "recipe_id": "item2_borostyan_tarnavert",
+      "slot": "chest",
+      "status": "VERIFIED",
+      "template_id": "melysegi_borostyan_mellvert"
+    },
+    {
+      "armor_family": "PLATE",
+      "migration_action": "MIGRATE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [
+        "kovacsolt_lemez"
+      ],
+      "recipe_id": "item2_sarkfeny_sisak",
+      "slot": "head",
+      "status": "VERIFIED",
+      "template_id": "sarkfeny_sisak"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "armorer",
+      "old_owner": "armorer",
+      "processing_dependency": [],
+      "recipe_id": "item2_gyongyhaz_pajzs",
+      "slot": "off-hand",
+      "status": "VERIFIED",
+      "template_id": "gyongyhaz_pajzs"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "enchanter",
+      "old_owner": "enchanter",
+      "processing_dependency": [],
+      "recipe_id": "item2_holdfeny_bot",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "holdfeny_bot"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "enchanter",
+      "old_owner": "enchanter",
+      "processing_dependency": [],
+      "recipe_id": "item2_nema_kristaly_fokusz",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "nema_kristaly_fokusz"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "enchanter",
+      "old_owner": "enchanter",
+      "processing_dependency": [],
+      "recipe_id": "item2_viharszovo_bot",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "viharszovo_bot"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "lumberjack",
+      "old_owner": "lumberjack",
+      "processing_dependency": [],
+      "recipe_id": "item2_sarkanycsont_ij",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "sarkanycsont_ij"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "miner",
+      "old_owner": "miner",
+      "processing_dependency": [],
+      "recipe_id": "item2_vasmuvek_csakanya",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "vasmuvek_csakanya"
+    },
+    {
+      "armor_family": null,
+      "migration_action": "RETUNE",
+      "new_owner": "fisherman",
+      "old_owner": "fisherman",
+      "processing_dependency": [],
+      "recipe_id": "item2_bokic_horgaszbot",
+      "slot": "main-hand",
+      "status": "VERIFIED",
+      "template_id": "bokic_horgaszbot"
+    },
+    {
+      "armor_family": "CLOTH",
+      "migration_action": "ADD",
+      "new_owner": "armorer",
+      "old_owner": null,
+      "processing_dependency": [
+        "runaszott_poszto",
+        "fonixpihe"
+      ],
+      "recipe_id": "p2_fonixpihe_kopeny",
+      "slot": "chest",
+      "status": "VERIFIED",
+      "template_id": "fonixpihe_kopeny"
+    },
+    {
+      "armor_family": "LEATHER",
+      "migration_action": "ADD",
+      "new_owner": "armorer",
+      "old_owner": null,
+      "processing_dependency": [
+        "erositett_bor"
+      ],
+      "recipe_id": "p2_vadorzo_csizma",
+      "slot": "feet",
+      "status": "VERIFIED",
+      "template_id": "vadorzo_csizma"
+    },
+    {
+      "armor_family": "MAIL",
+      "migration_action": "ADD",
+      "new_owner": "armorer",
+      "old_owner": null,
+      "processing_dependency": [
+        "cserzett_bor",
+        "sodrott_lancszem"
+      ],
+      "recipe_id": "p2_csontenyv_pancel",
+      "slot": "chest",
+      "status": "VERIFIED",
+      "template_id": "csontenyv_pancel"
+    }
+  ],
+  "cycles": [],
+  "dead_managed_materials": [],
+  "family_distribution": {
+    "CLOTH": 1,
+    "LEATHER": 1,
+    "MAIL": 1,
+    "PLATE": 3
+  },
+  "mail_mixed_dependency_verified": true,
+  "material_nodes": [
+    {
+      "consumer_recipes": [
+        "hordokeszites",
+        "utazolada"
+      ],
+      "economy_managed": false,
+      "id": "acskapocs",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:hordokeszites",
+        "recipe:utazolada"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "arany_lopancel",
+        "kiralyi_ostya",
+        "kovacsmesteri_sablon",
+        "runa_moho_kovacsolas"
+      ],
+      "economy_managed": false,
+      "id": "aranyfust_lemez",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "aranyfust_veres"
+      ],
+      "sinks": [
+        "recipe:arany_lopancel",
+        "recipe:kiralyi_ostya",
+        "recipe:kovacsmesteri_sablon",
+        "recipe:runa_moho_kovacsolas"
+      ],
+      "sources": [
+        "recipe:aranyfust_veres"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "arnyekfa_gerenda",
+        "arnyekmereg",
+        "csontkripta_kulcsa",
+        "ej_fatyol_tekercs",
+        "ejszaka_pengeje",
+        "fonix_tollkopeny",
+        "jegsarkany_kantar",
+        "runavert_tekercs"
+      ],
+      "economy_managed": false,
+      "id": "arnyekpor",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:arnyekfa_gerenda",
+        "recipe:arnyekmereg",
+        "recipe:csontkripta_kulcsa",
+        "recipe:ej_fatyol_tekercs",
+        "recipe:ejszaka_pengeje",
+        "recipe:fonix_tollkopeny",
+        "recipe:jegsarkany_kantar",
+        "recipe:runavert_tekercs"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "arnygomba_fozet",
+        "gombafonal_agy",
+        "hamvak_lakomaja",
+        "sporavirag"
+      ],
+      "economy_managed": false,
+      "id": "arnygomba",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "arnygomba_szedes"
+      ],
+      "sinks": [
+        "recipe:arnygomba_fozet",
+        "recipe:gombafonal_agy",
+        "recipe:hamvak_lakomaja",
+        "recipe:sporavirag"
+      ],
+      "sources": [
+        "recipe:arnygomba_szedes"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "gyogyfu_kotes",
+        "gyogyfuves_kotes",
+        "szerencsefu_tea"
+      ],
+      "economy_managed": false,
+      "id": "aszalohalo",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:gyogyfu_kotes",
+        "recipe:gyogyfuves_kotes",
+        "recipe:szerencsefu_tea"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_bor_reclamation"
+      ],
+      "economy_managed": true,
+      "id": "bor_hulladek",
+      "processing_state": "SALVAGE",
+      "producer_recipes": [],
+      "sinks": [
+        "reclamation",
+        "market"
+      ],
+      "sources": [
+        "salvage:leather"
+      ],
+      "tier": "COMMON"
+    },
+    {
+      "consumer_recipes": [
+        "mestermuves_bot",
+        "sotet_prizmarin_faragas",
+        "vizallo_csizma",
+        "vizallo_nadrag"
+      ],
+      "economy_managed": false,
+      "id": "csalizsir",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:mestermuves_bot",
+        "recipe:sotet_prizmarin_faragas",
+        "recipe:vizallo_csizma",
+        "recipe:vizallo_nadrag"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_csontenyv_pancel",
+        "p2_erositett_bor",
+        "p2_sodrott_lancszem"
+      ],
+      "economy_managed": true,
+      "id": "cserzett_bor",
+      "processing_state": "REFINED",
+      "producer_recipes": [
+        "p2_bor_reclamation",
+        "p2_cserzett_bor"
+      ],
+      "sinks": [
+        "leather-processing",
+        "mail-processing",
+        "market"
+      ],
+      "sources": [
+        "profession-processing:hide"
+      ],
+      "tier": "REFINED"
+    },
+    {
+      "consumer_recipes": [
+        "sinkoteg"
+      ],
+      "economy_managed": false,
+      "id": "csillekenocs",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:sinkoteg"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "csontenyves_ijkar",
+        "erdok_kurtje",
+        "feszitett_szaru_ij",
+        "tuskes_pajzs",
+        "vadonjaro_szamszerij"
+      ],
+      "economy_managed": false,
+      "id": "csontenyv",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "csontenyv_fozes"
+      ],
+      "sinks": [
+        "recipe:csontenyves_ijkar",
+        "recipe:erdok_kurtje",
+        "recipe:feszitett_szaru_ij",
+        "recipe:tuskes_pajzs",
+        "recipe:vadonjaro_szamszerij"
+      ],
+      "sources": [
+        "recipe:csontenyv_fozes"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "eleftheria_fatyla",
+        "tenger_szive_foglalat"
+      ],
+      "economy_managed": false,
+      "id": "dermedt_konnycsepp",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:eleftheria_fatyla",
+        "recipe:tenger_szive_foglalat"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "arnygomba_fozet",
+        "bokic_gyogytea",
+        "desztillacio",
+        "hosnapi_fozet",
+        "sarkanylehelet_parlat",
+        "vizi_fu_fozet"
+      ],
+      "economy_managed": false,
+      "id": "desztillalt_esoviz",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:arnygomba_fozet",
+        "recipe:bokic_gyogytea",
+        "recipe:desztillacio",
+        "recipe:hosnapi_fozet",
+        "recipe:sarkanylehelet_parlat",
+        "recipe:vizi_fu_fozet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "savfozet"
+      ],
+      "economy_managed": false,
+      "id": "ecet_eszencia",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:savfozet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_kovacsolt_lemez"
+      ],
+      "economy_managed": true,
+      "id": "edzett_otvozet",
+      "processing_state": "REFINED",
+      "producer_recipes": [
+        "p2_edzett_otvozet",
+        "p2_fem_reclamation"
+      ],
+      "sinks": [
+        "plate-processing",
+        "market"
+      ],
+      "sources": [
+        "profession-processing:ore"
+      ],
+      "tier": "REFINED"
+    },
+    {
+      "consumer_recipes": [
+        "cehmester_ulloje",
+        "pajzsdudor",
+        "pancelozott_sisakrostely"
+      ],
+      "economy_managed": false,
+      "id": "edzoolaj",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:cehmester_ulloje",
+        "recipe:pajzsdudor",
+        "recipe:pancelozott_sisakrostely"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "bokic_aldasa",
+        "bolcsek_kove",
+        "cehmester_ulloje",
+        "eleftheria_fatyla",
+        "erdo_szive_totem",
+        "kapu_lakomaja",
+        "melyseg_szive",
+        "melysegi_korona",
+        "miinus_haragja",
+        "vegtelen_kodex"
+      ],
+      "economy_managed": false,
+      "id": "elso_csend_szilankja",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:bokic_aldasa",
+        "recipe:bolcsek_kove",
+        "recipe:cehmester_ulloje",
+        "recipe:eleftheria_fatyla",
+        "recipe:erdo_szive_totem",
+        "recipe:kapu_lakomaja",
+        "recipe:melyseg_szive",
+        "recipe:melysegi_korona",
+        "recipe:miinus_haragja",
+        "recipe:vegtelen_kodex"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "arnyuzo_tekercs",
+        "emlekek_konyve",
+        "felepules_iranytuje"
+      ],
+      "economy_managed": false,
+      "id": "emlekszilank",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:arnyuzo_tekercs",
+        "recipe:emlekek_konyve",
+        "recipe:felepules_iranytuje"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "aranyrudak",
+        "csiszolt_ametiszt",
+        "gyemantpor_csiszolo",
+        "lapisz_kiemeles",
+        "melysegi_borostyan_tisztitas",
+        "sarkfeny_gyujtes",
+        "smaragd_kiemeles",
+        "szen_kiemeles",
+        "viharkvarc_csakany"
+      ],
+      "economy_managed": false,
+      "id": "ercmoso_lug",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:aranyrudak",
+        "recipe:csiszolt_ametiszt",
+        "recipe:gyemantpor_csiszolo",
+        "recipe:lapisz_kiemeles",
+        "recipe:melysegi_borostyan_tisztitas",
+        "recipe:sarkfeny_gyujtes",
+        "recipe:smaragd_kiemeles",
+        "recipe:szen_kiemeles",
+        "recipe:viharkvarc_csakany"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_vadorzo_csizma"
+      ],
+      "economy_managed": true,
+      "id": "erositett_bor",
+      "processing_state": "COMPONENT",
+      "producer_recipes": [
+        "p2_erositett_bor"
+      ],
+      "sinks": [
+        "leather-equipment",
+        "market"
+      ],
+      "sources": [
+        "profession-processing:leather"
+      ],
+      "tier": "SPECIAL"
+    },
+    {
+      "consumer_recipes": [
+        "emlekek_konyve",
+        "vegtelen_kodex"
+      ],
+      "economy_managed": false,
+      "id": "ezust_toll",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:emlekek_konyve",
+        "recipe:vegtelen_kodex"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "csontenyves_ijkar",
+        "erdojaro_csuklya",
+        "erdojaro_labszar",
+        "mefonott_pajzs",
+        "osfa_gerenda",
+        "pacolt_gerenda",
+        "parazsfa_maglya"
+      ],
+      "economy_managed": false,
+      "id": "favedo_pac",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:csontenyves_ijkar",
+        "recipe:erdojaro_csuklya",
+        "recipe:erdojaro_labszar",
+        "recipe:mefonott_pajzs",
+        "recipe:osfa_gerenda",
+        "recipe:pacolt_gerenda",
+        "recipe:parazsfa_maglya"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_fem_reclamation"
+      ],
+      "economy_managed": true,
+      "id": "femhulladek",
+      "processing_state": "SALVAGE",
+      "producer_recipes": [],
+      "sinks": [
+        "reclamation",
+        "market"
+      ],
+      "sources": [
+        "salvage:plate"
+      ],
+      "tier": "COMMON"
+    },
+    {
+      "consumer_recipes": [
+        "favago_szekerce",
+        "vasfejsze"
+      ],
+      "economy_managed": false,
+      "id": "fenoko",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:favago_szekerce",
+        "recipe:vasfejsze"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_sodrott_lancszem"
+      ],
+      "economy_managed": true,
+      "id": "finom_huzal",
+      "processing_state": "REFINED",
+      "producer_recipes": [
+        "p2_finom_huzal",
+        "p2_lanc_reclamation"
+      ],
+      "sinks": [
+        "mail-processing",
+        "market"
+      ],
+      "sources": [
+        "profession-processing:metal"
+      ],
+      "tier": "REFINED"
+    },
+    {
+      "consumer_recipes": [
+        "cehmester_ulloje",
+        "eleftheria_fatyla",
+        "glatziendorfi_jegtoro",
+        "item2_sarkfeny_sisak",
+        "melysegi_korona",
+        "miinus_haragja",
+        "napfogyatkozas",
+        "netherit_lapat",
+        "vasarany_otvozet",
+        "viharjaro_csizma",
+        "zhoris_langnyelve"
+      ],
+      "economy_managed": false,
+      "id": "folyositoszer",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:cehmester_ulloje",
+        "recipe:eleftheria_fatyla",
+        "recipe:glatziendorfi_jegtoro",
+        "recipe:item2_sarkfeny_sisak",
+        "recipe:melysegi_korona",
+        "recipe:miinus_haragja",
+        "recipe:napfogyatkozas",
+        "recipe:netherit_lapat",
+        "recipe:vasarany_otvozet",
+        "recipe:viharjaro_csizma",
+        "recipe:zhoris_langnyelve"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "eletfa_balzsam",
+        "fonixpihe_agyas",
+        "fonixtoll_tekercs",
+        "napfogyatkozas",
+        "p2_fonixpihe_kopeny",
+        "viharjaro_csizma"
+      ],
+      "economy_managed": false,
+      "id": "fonixpihe",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:eletfa_balzsam",
+        "recipe:fonixpihe_agyas",
+        "recipe:fonixtoll_tekercs",
+        "recipe:napfogyatkozas",
+        "recipe:p2_fonixpihe_kopeny",
+        "recipe:viharjaro_csizma"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "lancszem_koteg"
+      ],
+      "economy_managed": false,
+      "id": "fujtatobor",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:lancszem_koteg"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "vadlakoma"
+      ],
+      "economy_managed": false,
+      "id": "fustoloforgacs",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:vadlakoma"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "erdei_nyilkoteg",
+        "favago_szekerce",
+        "vadaszij"
+      ],
+      "economy_managed": false,
+      "id": "gyantaoldo",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:erdei_nyilkoteg",
+        "recipe:favago_szekerce",
+        "recipe:vadaszij"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "bokic_gyogytea",
+        "eletfa_balzsam",
+        "eletfa_kereg",
+        "eronlet_kenocs",
+        "hosnapi_fozet",
+        "jegviragos_borogatas",
+        "kemenyfa_tartositas",
+        "kivonatos_regeneracio_fozet",
+        "laposfoldi_kenocs",
+        "meregfojto_tekercs",
+        "meregvono_pep",
+        "szerencsefu_tea",
+        "vandor_labkenocs"
+      ],
+      "economy_managed": false,
+      "id": "gyogy_kivonat",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "gyogykivonat_fozes",
+        "gyogykivonat_gerendaszures"
+      ],
+      "sinks": [
+        "recipe:bokic_gyogytea",
+        "recipe:eletfa_balzsam",
+        "recipe:eletfa_kereg",
+        "recipe:eronlet_kenocs",
+        "recipe:hosnapi_fozet",
+        "recipe:jegviragos_borogatas",
+        "recipe:kemenyfa_tartositas",
+        "recipe:kivonatos_regeneracio_fozet",
+        "recipe:laposfoldi_kenocs",
+        "recipe:meregfojto_tekercs",
+        "recipe:meregvono_pep",
+        "recipe:szerencsefu_tea",
+        "recipe:vandor_labkenocs"
+      ],
+      "sources": [
+        "recipe:gyogykivonat_fozes",
+        "recipe:gyogykivonat_gerendaszures"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "bokic_aldasa",
+        "buvar_sisak",
+        "husegeskuu_szigony",
+        "husegeskuu_tomus",
+        "item2_bokic_horgaszbot",
+        "item2_gyongyhaz_pajzs",
+        "legzes_tomus",
+        "melysegjaro_csizma",
+        "mesterfoku_horgaszbot",
+        "prizmarin_kristaly",
+        "tenger_szive_foglalat"
+      ],
+      "economy_managed": false,
+      "id": "gyongyhaz_pikkely",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "gyongyhaz_fejtes"
+      ],
+      "sinks": [
+        "recipe:bokic_aldasa",
+        "recipe:buvar_sisak",
+        "recipe:husegeskuu_szigony",
+        "recipe:husegeskuu_tomus",
+        "recipe:item2_bokic_horgaszbot",
+        "recipe:item2_gyongyhaz_pajzs",
+        "recipe:legzes_tomus",
+        "recipe:melysegjaro_csizma",
+        "recipe:mesterfoku_horgaszbot",
+        "recipe:prizmarin_kristaly",
+        "recipe:tenger_szive_foglalat"
+      ],
+      "sources": [
+        "recipe:gyongyhaz_fejtes"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "halaszhalo_fonas",
+        "husegeskuu_szigony",
+        "melysegjaro_csizma",
+        "melyseglepte_tomus",
+        "teknos_sisak",
+        "vizallo_nadrag"
+      ],
+      "economy_managed": false,
+      "id": "halofonal",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:halaszhalo_fonas",
+        "recipe:husegeskuu_szigony",
+        "recipe:melysegjaro_csizma",
+        "recipe:melyseglepte_tomus",
+        "recipe:teknos_sisak",
+        "recipe:vizallo_nadrag"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "item2_holdfeny_bot",
+        "item2_nema_kristaly_fokusz",
+        "vasfa_ij"
+      ],
+      "economy_managed": false,
+      "id": "holdezust_huzal",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "holdezust_huzas"
+      ],
+      "sinks": [
+        "recipe:item2_holdfeny_bot",
+        "recipe:item2_nema_kristaly_fokusz",
+        "recipe:vasfa_ij"
+      ],
+      "sources": [
+        "recipe:holdezust_huzas"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "dofoszigony",
+        "melyvizi_horog",
+        "mesterfoku_horgaszbot",
+        "mestermuves_bot",
+        "villamszigony"
+      ],
+      "economy_managed": false,
+      "id": "horogkeszlet",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:dofoszigony",
+        "recipe:melyvizi_horog",
+        "recipe:mesterfoku_horgaszbot",
+        "recipe:mestermuves_bot",
+        "recipe:villamszigony"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "fagypancel_tekercs",
+        "fonixtoll_tekercs",
+        "tapasztalat_kotes",
+        "vegtelen_kodex"
+      ],
+      "economy_managed": false,
+      "id": "irnok_tinta",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:fagypancel_tekercs",
+        "recipe:fonixtoll_tekercs",
+        "recipe:tapasztalat_kotes",
+        "recipe:vegtelen_kodex"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "fagyjaro_tomus",
+        "fagypancel_tekercs",
+        "glatziendorfi_jegtoro",
+        "jegviragos_borogatas",
+        "runa_fagy_irasa",
+        "sarkany_porkolt"
+      ],
+      "economy_managed": false,
+      "id": "jegviragpor",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "jegviragpor_orles"
+      ],
+      "sinks": [
+        "recipe:fagyjaro_tomus",
+        "recipe:fagypancel_tekercs",
+        "recipe:glatziendorfi_jegtoro",
+        "recipe:jegviragos_borogatas",
+        "recipe:runa_fagy_irasa",
+        "recipe:sarkany_porkolt"
+      ],
+      "sources": [
+        "recipe:jegviragpor_orles"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "kaosz_zabla_tekercs",
+        "sarkanylehelet_parlat",
+        "zhoris_langnyelve"
+      ],
+      "economy_managed": false,
+      "id": "karhozat_parazs",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:kaosz_zabla_tekercs",
+        "recipe:sarkanylehelet_parlat",
+        "recipe:zhoris_langnyelve"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "bolcsek_kove",
+        "lang_por",
+        "lelekhamu_kinyeres",
+        "vasbor_fozet"
+      ],
+      "economy_managed": false,
+      "id": "katalizator_so",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:bolcsek_kove",
+        "recipe:lang_por",
+        "recipe:lelekhamu_kinyeres",
+        "recipe:vasbor_fozet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "arnyekfa_gerenda",
+        "erdo_szive_totem",
+        "erdojaro_csizma",
+        "erdojaro_csuklya",
+        "erdojaro_labszar",
+        "erdok_kurtje",
+        "gerendahid_elem",
+        "gyogykivonat_gerendaszures",
+        "item2_bokic_horgaszbot",
+        "item2_sarkanycsont_ij",
+        "kemenyfa_ijkeret_tomus",
+        "mestervadasz_ij",
+        "osfa_gerenda",
+        "tuskes_pajzs",
+        "vasfa_ij"
+      ],
+      "economy_managed": false,
+      "id": "kemenyfa_gerenda",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "kemenyfa_gyaluzas",
+        "kemenyfa_tartositas"
+      ],
+      "sinks": [
+        "recipe:arnyekfa_gerenda",
+        "recipe:erdo_szive_totem",
+        "recipe:erdojaro_csizma",
+        "recipe:erdojaro_csuklya",
+        "recipe:erdojaro_labszar",
+        "recipe:erdok_kurtje",
+        "recipe:gerendahid_elem",
+        "recipe:gyogykivonat_gerendaszures",
+        "recipe:item2_bokic_horgaszbot",
+        "recipe:item2_sarkanycsont_ij",
+        "recipe:kemenyfa_ijkeret_tomus",
+        "recipe:mestervadasz_ij",
+        "recipe:osfa_gerenda",
+        "recipe:tuskes_pajzs",
+        "recipe:vasfa_ij"
+      ],
+      "sources": [
+        "recipe:kemenyfa_gyaluzas",
+        "recipe:kemenyfa_tartositas"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "ceklaleves",
+        "sarkany_porkolt"
+      ],
+      "economy_managed": false,
+      "id": "koso",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:ceklaleves",
+        "recipe:sarkany_porkolt"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "glatziendorfi_jegvert",
+        "item2_borostyan_tarnavert",
+        "item2_sarkfeny_sisak"
+      ],
+      "economy_managed": true,
+      "id": "kovacsolt_lemez",
+      "processing_state": "COMPONENT",
+      "producer_recipes": [
+        "p2_kovacsolt_lemez"
+      ],
+      "sinks": [
+        "plate-equipment",
+        "market"
+      ],
+      "sources": [
+        "profession-processing:alloy"
+      ],
+      "tier": "SPECIAL"
+    },
+    {
+      "consumer_recipes": [
+        "banyaszlampa_soul",
+        "sarkfeny_prizma",
+        "tarnalampas"
+      ],
+      "economy_managed": false,
+      "id": "lampaolaj",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:banyaszlampa_soul",
+        "recipe:sarkfeny_prizma",
+        "recipe:tarnalampas"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_lanc_reclamation"
+      ],
+      "economy_managed": true,
+      "id": "lanc_toredek",
+      "processing_state": "SALVAGE",
+      "producer_recipes": [],
+      "sinks": [
+        "reclamation",
+        "market"
+      ],
+      "sources": [
+        "salvage:mail"
+      ],
+      "tier": "COMMON"
+    },
+    {
+      "consumer_recipes": [
+        "eleftheria_fatyla",
+        "wither_rozsa_oltvany"
+      ],
+      "economy_managed": false,
+      "id": "lelekhamu",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "lelekhamu_kinyeres"
+      ],
+      "sinks": [
+        "recipe:eleftheria_fatyla",
+        "recipe:wither_rozsa_oltvany"
+      ],
+      "sources": [
+        "recipe:lelekhamu_kinyeres"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "parazsmag_kinyeres",
+        "sarkanyver_fozet",
+        "vegtelen_lombik"
+      ],
+      "economy_managed": false,
+      "id": "lombik_szen",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:parazsmag_kinyeres",
+        "recipe:sarkanyver_fozet",
+        "recipe:vegtelen_lombik"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "item2_borostyan_tarnavert",
+        "item2_vasmuvek_csakanya",
+        "melyseg_szive",
+        "melysegi_korona",
+        "melyszikla_lapat",
+        "netherit_lapat",
+        "pyralingradi_ostrom_szamszerij",
+        "runa_suly_kovacsolas"
+      ],
+      "economy_managed": false,
+      "id": "melysegi_borostyan",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "melysegi_borostyan_tisztitas"
+      ],
+      "sinks": [
+        "recipe:item2_borostyan_tarnavert",
+        "recipe:item2_vasmuvek_csakanya",
+        "recipe:melyseg_szive",
+        "recipe:melysegi_korona",
+        "recipe:melyszikla_lapat",
+        "recipe:netherit_lapat",
+        "recipe:pyralingradi_ostrom_szamszerij",
+        "recipe:runa_suly_kovacsolas"
+      ],
+      "sources": [
+        "recipe:melysegi_borostyan_tisztitas"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "melyseg_szive"
+      ],
+      "economy_managed": false,
+      "id": "melysegi_iranytu",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:melyseg_szive"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "banyasz_vesocsakany",
+        "celkereszt_szamszerij"
+      ],
+      "economy_managed": false,
+      "id": "merozsinor",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:banyasz_vesocsakany",
+        "recipe:celkereszt_szamszerij"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "csendulo_harang",
+        "item2_nema_kristaly_fokusz",
+        "melysegi_korona",
+        "runa_visszhang_irasa",
+        "visszhang_szilank"
+      ],
+      "economy_managed": false,
+      "id": "nema_kristaly",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:csendulo_harang",
+        "recipe:item2_nema_kristaly_fokusz",
+        "recipe:melysegi_korona",
+        "recipe:runa_visszhang_irasa",
+        "recipe:visszhang_szilank"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "lancing",
+        "lancnadrag",
+        "pancelozott_sisakrostely",
+        "sarkanycsont_pajzs",
+        "vas_lopancel"
+      ],
+      "economy_managed": false,
+      "id": "nyelbor",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:lancing",
+        "recipe:lancnadrag",
+        "recipe:pancelozott_sisakrostely",
+        "recipe:sarkanycsont_pajzs",
+        "recipe:vas_lopancel"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "napfogyatkozas",
+        "runa_elek_kovacsolas"
+      ],
+      "economy_managed": false,
+      "id": "obszidian_szilank",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "obszidian_pattintas"
+      ],
+      "sinks": [
+        "recipe:napfogyatkozas",
+        "recipe:runa_elek_kovacsolas"
+      ],
+      "sources": [
+        "recipe:obszidian_pattintas"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "elnyulo_regeneracio_fozet",
+        "hosszu_erofozet"
+      ],
+      "economy_managed": false,
+      "id": "olomdugo",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:elnyulo_regeneracio_fozet",
+        "recipe:hosszu_erofozet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "eletfa_balzsam",
+        "eronlet_kenocs",
+        "viragzo_azalea"
+      ],
+      "economy_managed": false,
+      "id": "oltoviasz",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:eletfa_balzsam",
+        "recipe:eronlet_kenocs",
+        "recipe:viragzo_azalea"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "ereklye_elixir",
+        "ereklye_penge",
+        "ereklyeszilankos_banyasisak",
+        "melytengeri_ereklyeszigony",
+        "miinus_haragja",
+        "zhoris_langnyelve"
+      ],
+      "economy_managed": false,
+      "id": "osi_ereklyeszilank",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:ereklye_elixir",
+        "recipe:ereklye_penge",
+        "recipe:ereklyeszilankos_banyasisak",
+        "recipe:melytengeri_ereklyeszigony",
+        "recipe:miinus_haragja",
+        "recipe:zhoris_langnyelve"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "halaszkalap",
+        "mesterfoku_horgaszbot",
+        "mestermuves_bot",
+        "uszokeszlet"
+      ],
+      "economy_managed": false,
+      "id": "parafa_uszo",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:halaszkalap",
+        "recipe:mesterfoku_horgaszbot",
+        "recipe:mestermuves_bot",
+        "recipe:uszokeszlet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "langvarazs_krem",
+        "magma_jaro_talp",
+        "mestervadasz_ij",
+        "napfogyatkozas",
+        "runa_lang_irasa",
+        "sietseg_fozet",
+        "vadlakoma",
+        "zhoris_langnyelve"
+      ],
+      "economy_managed": false,
+      "id": "parazsmag",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "parazsmag_kinyeres"
+      ],
+      "sinks": [
+        "recipe:langvarazs_krem",
+        "recipe:magma_jaro_talp",
+        "recipe:mestervadasz_ij",
+        "recipe:napfogyatkozas",
+        "recipe:runa_lang_irasa",
+        "recipe:sietseg_fozet",
+        "recipe:vadlakoma",
+        "recipe:zhoris_langnyelve"
+      ],
+      "sources": [
+        "recipe:parazsmag_kinyeres"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "runavert_tekercs"
+      ],
+      "economy_managed": false,
+      "id": "pergamen_simito",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:runavert_tekercs"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "bambusz_hajtatas",
+        "koral_kertesz",
+        "vandor_labkenocs",
+        "viragzo_azalea"
+      ],
+      "economy_managed": false,
+      "id": "permetezo_kanna",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:bambusz_hajtatas",
+        "recipe:koral_kertesz",
+        "recipe:vandor_labkenocs",
+        "recipe:viragzo_azalea"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "aranyfust_veres",
+        "gyemant_lopancel",
+        "kvarc_teglazat"
+      ],
+      "economy_managed": false,
+      "id": "polirpaszta",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:aranyfust_veres",
+        "recipe:gyemant_lopancel",
+        "recipe:kvarc_teglazat"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "melysegi_borostyan_tisztitas",
+        "p2_edzett_otvozet",
+        "rezhorgany_horgaszbot",
+        "rezvertezet_lablemez",
+        "vasesszencia_otvozetkatalizis"
+      ],
+      "economy_managed": false,
+      "id": "rezgo_rez_otvozet",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "rezotvozet_ontes",
+        "rezotvozet_runasegitett_ontes"
+      ],
+      "sinks": [
+        "recipe:melysegi_borostyan_tisztitas",
+        "recipe:p2_edzett_otvozet",
+        "recipe:rezhorgany_horgaszbot",
+        "recipe:rezvertezet_lablemez",
+        "recipe:vasesszencia_otvozetkatalizis"
+      ],
+      "sources": [
+        "recipe:rezotvozet_ontes",
+        "recipe:rezotvozet_runasegitett_ontes"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "robbanto_toltet"
+      ],
+      "economy_managed": false,
+      "id": "robbantopor",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:robbanto_toltet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_bastya",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_bastya_kovacsolas"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_bastya_kovacsolas"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_elek",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_elek_kovacsolas"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_elek_kovacsolas"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_fagy",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_fagy_irasa"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_fagy_irasa"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_lang",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_lang_irasa"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_lang_irasa"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_moho",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_moho_kovacsolas"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_moho_kovacsolas"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_oltalom",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_oltalom_irasa"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_oltalom_irasa"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_suly",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_suly_kovacsolas"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_suly_kovacsolas"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_vadasz",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_vadasz_irasa"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_vadasz_irasa"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_visszhang",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_visszhang_irasa"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_visszhang_irasa"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "runa_zapor",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "runa_zapor_irasa"
+      ],
+      "sinks": [],
+      "sources": [
+        "recipe:runa_zapor_irasa"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "magnesko",
+        "runa_bastya_kovacsolas",
+        "runa_elek_kovacsolas",
+        "runa_fagy_irasa",
+        "runa_lang_irasa",
+        "runa_moho_kovacsolas",
+        "runa_oltalom_irasa",
+        "runa_suly_kovacsolas",
+        "runa_vadasz_irasa",
+        "runa_visszhang_irasa",
+        "runa_zapor_irasa"
+      ],
+      "economy_managed": false,
+      "id": "runakreta",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:magnesko",
+        "recipe:runa_bastya_kovacsolas",
+        "recipe:runa_elek_kovacsolas",
+        "recipe:runa_fagy_irasa",
+        "recipe:runa_lang_irasa",
+        "recipe:runa_moho_kovacsolas",
+        "recipe:runa_oltalom_irasa",
+        "recipe:runa_suly_kovacsolas",
+        "recipe:runa_vadasz_irasa",
+        "recipe:runa_visszhang_irasa",
+        "recipe:runa_zapor_irasa"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "fagypancel_tekercs",
+        "fonixtoll_tekercs",
+        "holdezust_huzas",
+        "item2_holdfeny_bot",
+        "item2_nema_kristaly_fokusz",
+        "item2_viharszovo_bot",
+        "melyseg_kulcsa",
+        "nagy_tapasztalat_ampulla",
+        "nagy_tapasztalat_kodex",
+        "p2_runaszott_poszto",
+        "rezotvozet_runasegitett_ontes",
+        "runa_bastya_kovacsolas",
+        "runa_elek_kovacsolas",
+        "runa_fagy_irasa",
+        "runa_lang_irasa",
+        "runa_moho_kovacsolas",
+        "runa_oltalom_irasa",
+        "runa_suly_kovacsolas",
+        "runa_vadasz_irasa",
+        "runa_visszhang_irasa",
+        "runa_zapor_irasa",
+        "runafenyes_csakany",
+        "runakovacsolt_penge",
+        "runasav_bomba",
+        "szornymag_talizman",
+        "vegtelen_tomus"
+      ],
+      "economy_managed": false,
+      "id": "runapor",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "p2_szovet_reclamation",
+        "runapor_fokozott_orles",
+        "runapor_orles"
+      ],
+      "sinks": [
+        "recipe:fagypancel_tekercs",
+        "recipe:fonixtoll_tekercs",
+        "recipe:holdezust_huzas",
+        "recipe:item2_holdfeny_bot",
+        "recipe:item2_nema_kristaly_fokusz",
+        "recipe:item2_viharszovo_bot",
+        "recipe:melyseg_kulcsa",
+        "recipe:nagy_tapasztalat_ampulla",
+        "recipe:nagy_tapasztalat_kodex",
+        "recipe:p2_runaszott_poszto",
+        "recipe:rezotvozet_runasegitett_ontes",
+        "recipe:runa_bastya_kovacsolas",
+        "recipe:runa_elek_kovacsolas",
+        "recipe:runa_fagy_irasa",
+        "recipe:runa_lang_irasa",
+        "recipe:runa_moho_kovacsolas",
+        "recipe:runa_oltalom_irasa",
+        "recipe:runa_suly_kovacsolas",
+        "recipe:runa_vadasz_irasa",
+        "recipe:runa_visszhang_irasa",
+        "recipe:runa_zapor_irasa",
+        "recipe:runafenyes_csakany",
+        "recipe:runakovacsolt_penge",
+        "recipe:runasav_bomba",
+        "recipe:szornymag_talizman",
+        "recipe:vegtelen_tomus"
+      ],
+      "sources": [
+        "recipe:p2_szovet_reclamation",
+        "recipe:runapor_fokozott_orles",
+        "recipe:runapor_orles"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_fonixpihe_kopeny"
+      ],
+      "economy_managed": true,
+      "id": "runaszott_poszto",
+      "processing_state": "COMPONENT",
+      "producer_recipes": [
+        "p2_runaszott_poszto"
+      ],
+      "sinks": [
+        "cloth-equipment",
+        "market"
+      ],
+      "sources": [
+        "profession-processing:cloth"
+      ],
+      "tier": "SPECIAL"
+    },
+    {
+      "consumer_recipes": [
+        "glatziendorfi_jegtoro",
+        "item2_sarkanycsont_ij",
+        "miinus_haragja",
+        "sarkanycsont_ij",
+        "sarkanycsont_pajzs",
+        "sarkanyver_fozet"
+      ],
+      "economy_managed": false,
+      "id": "sarkanycsont_szilank",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:glatziendorfi_jegtoro",
+        "recipe:item2_sarkanycsont_ij",
+        "recipe:miinus_haragja",
+        "recipe:sarkanycsont_ij",
+        "recipe:sarkanycsont_pajzs",
+        "recipe:sarkanyver_fozet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "glatziendorfi_jegvert",
+        "item2_sarkfeny_sisak",
+        "runa_oltalom_irasa",
+        "sarkfeny_prizma",
+        "vilagito_tomb"
+      ],
+      "economy_managed": false,
+      "id": "sarkfeny_cseppko",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "sarkfeny_gyujtes"
+      ],
+      "sinks": [
+        "recipe:glatziendorfi_jegvert",
+        "recipe:item2_sarkfeny_sisak",
+        "recipe:runa_oltalom_irasa",
+        "recipe:sarkfeny_prizma",
+        "recipe:vilagito_tomb"
+      ],
+      "sources": [
+        "recipe:sarkfeny_gyujtes"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_csontenyv_pancel"
+      ],
+      "economy_managed": true,
+      "id": "sodrott_lancszem",
+      "processing_state": "COMPONENT",
+      "producer_recipes": [
+        "p2_sodrott_lancszem"
+      ],
+      "sinks": [
+        "mail-equipment",
+        "market"
+      ],
+      "sources": [
+        "profession-processing:mail"
+      ],
+      "tier": "SPECIAL"
+    },
+    {
+      "consumer_recipes": [
+        "gyongyhaz_fejtes",
+        "hinarkoteg"
+      ],
+      "economy_managed": false,
+      "id": "sozott_csali",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:gyongyhaz_fejtes",
+        "recipe:hinarkoteg"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "keksz_tepsi",
+        "mezes_sult_tok",
+        "mezeskalacs_figurak",
+        "vandorunnep_lepenye"
+      ],
+      "economy_managed": false,
+      "id": "sutopergamen",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:keksz_tepsi",
+        "recipe:mezes_sult_tok",
+        "recipe:mezeskalacs_figurak",
+        "recipe:vandorunnep_lepenye"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [],
+      "economy_managed": false,
+      "id": "suttogas_meghivo",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "csontenyves_ijkar",
+        "erdojaro_csizma",
+        "erdojaro_csuklya",
+        "item2_sarkanycsont_ij",
+        "lombkorona_letra"
+      ],
+      "economy_managed": false,
+      "id": "szavannafu_kotel",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "szavannafu_sodras"
+      ],
+      "sinks": [
+        "recipe:csontenyves_ijkar",
+        "recipe:erdojaro_csizma",
+        "recipe:erdojaro_csuklya",
+        "recipe:item2_sarkanycsont_ij",
+        "recipe:lombkorona_letra"
+      ],
+      "sources": [
+        "recipe:szavannafu_sodras"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "ereklye_penge",
+        "szornymag_talizman",
+        "szornyvert_mellveny",
+        "verszavanna_agyara",
+        "viharfogo_tekercs"
+      ],
+      "economy_managed": false,
+      "id": "szorny_mag",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:ereklye_penge",
+        "recipe:szornymag_talizman",
+        "recipe:szornyvert_mellveny",
+        "recipe:verszavanna_agyara",
+        "recipe:viharfogo_tekercs"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "p2_runaszott_poszto"
+      ],
+      "economy_managed": true,
+      "id": "szott_poszto",
+      "processing_state": "REFINED",
+      "producer_recipes": [
+        "p2_szott_poszto"
+      ],
+      "sinks": [
+        "cloth-processing",
+        "market"
+      ],
+      "sources": [
+        "profession-processing:fiber"
+      ],
+      "tier": "REFINED"
+    },
+    {
+      "consumer_recipes": [
+        "p2_szovet_reclamation"
+      ],
+      "economy_managed": true,
+      "id": "szovet_foszlany",
+      "processing_state": "SALVAGE",
+      "producer_recipes": [],
+      "sinks": [
+        "reclamation",
+        "market"
+      ],
+      "sources": [
+        "salvage:cloth"
+      ],
+      "tier": "COMMON"
+    },
+    {
+      "consumer_recipes": [
+        "tapasztalat_szurlet",
+        "vorospor_tisztitas"
+      ],
+      "economy_managed": false,
+      "id": "szuropapir",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:tapasztalat_szurlet",
+        "recipe:vorospor_tisztitas"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "melyszikla_lapat",
+        "sinkoteg",
+        "tarnasz_lapat",
+        "tuff_teglazat"
+      ],
+      "economy_managed": false,
+      "id": "tarnatamasz_szegecs",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:melyszikla_lapat",
+        "recipe:sinkoteg",
+        "recipe:tarnasz_lapat",
+        "recipe:tuff_teglazat"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "aranyfust_veres",
+        "dobo_vasbor_fozet",
+        "esszencialt_vasvert",
+        "glatziendorfi_jegvert",
+        "item2_borostyan_tarnavert",
+        "item2_gyongyhaz_pajzs",
+        "item2_tarnapajzs",
+        "item2_vasmuvek_csakanya",
+        "item2_viharkvarc_pallos",
+        "runa_bastya_kovacsolas",
+        "runakovacsolt_penge",
+        "runapor_fokozott_orles",
+        "vadvilagi_eskukard",
+        "vasbor_fozet",
+        "vasesszencias_pajzs",
+        "vasesszencias_paloscsapas_tomus"
+      ],
+      "economy_managed": false,
+      "id": "tiszta_vasesszencia",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "vasesszencia_leparlas",
+        "vasesszencia_otvozetkatalizis"
+      ],
+      "sinks": [
+        "recipe:aranyfust_veres",
+        "recipe:dobo_vasbor_fozet",
+        "recipe:esszencialt_vasvert",
+        "recipe:glatziendorfi_jegvert",
+        "recipe:item2_borostyan_tarnavert",
+        "recipe:item2_gyongyhaz_pajzs",
+        "recipe:item2_tarnapajzs",
+        "recipe:item2_vasmuvek_csakanya",
+        "recipe:item2_viharkvarc_pallos",
+        "recipe:runa_bastya_kovacsolas",
+        "recipe:runakovacsolt_penge",
+        "recipe:runapor_fokozott_orles",
+        "recipe:vadvilagi_eskukard",
+        "recipe:vasbor_fozet",
+        "recipe:vasesszencias_pajzs",
+        "recipe:vasesszencias_paloscsapas_tomus"
+      ],
+      "sources": [
+        "recipe:vasesszencia_leparlas",
+        "recipe:vasesszencia_otvozetkatalizis"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "arnygomba_szedes",
+        "fonixpihe_agyas",
+        "kaktusz_uveghaz",
+        "laposfoldi_kenocs",
+        "taplalo_pep",
+        "tokfold",
+        "tozeg_agyas"
+      ],
+      "economy_managed": false,
+      "id": "tozegkocka",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:arnygomba_szedes",
+        "recipe:fonixpihe_agyas",
+        "recipe:kaktusz_uveghaz",
+        "recipe:laposfoldi_kenocs",
+        "recipe:taplalo_pep",
+        "recipe:tokfold",
+        "recipe:tozeg_agyas"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "aranyfeny_mezsor",
+        "arnyeklikor",
+        "caldesterai_gyogytea",
+        "hamvasztott_kave",
+        "jeghegyi_sor",
+        "jegkiraly_parlat",
+        "kofejto_sore",
+        "mortengradi_keseru",
+        "parazs_palinka",
+        "szentelt_bor",
+        "tengeresz_rum",
+        "viharfi_almabor"
+      ],
+      "economy_managed": false,
+      "id": "ures_kupa",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "ures_kupa"
+      ],
+      "sinks": [
+        "recipe:aranyfeny_mezsor",
+        "recipe:arnyeklikor",
+        "recipe:caldesterai_gyogytea",
+        "recipe:hamvasztott_kave",
+        "recipe:jeghegyi_sor",
+        "recipe:jegkiraly_parlat",
+        "recipe:kofejto_sore",
+        "recipe:mortengradi_keseru",
+        "recipe:parazs_palinka",
+        "recipe:szentelt_bor",
+        "recipe:tengeresz_rum",
+        "recipe:viharfi_almabor"
+      ],
+      "sources": [
+        "recipe:ures_kupa"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "kivonatos_regeneracio_fozet"
+      ],
+      "economy_managed": false,
+      "id": "uvegfiola_keszlet",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:kivonatos_regeneracio_fozet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "bokic_horgaszbot",
+        "erdo_szive_totem",
+        "eszencias_fozet",
+        "kallan_szeletelo",
+        "p2_erositett_bor",
+        "pyralingradi_tuzkopo",
+        "sarkanycsont_ij",
+        "szellemszarvas_bubaj",
+        "vadbor_pancel",
+        "vadolo_csizma",
+        "vasmuvek_csakanya"
+      ],
+      "economy_managed": false,
+      "id": "vad_esszencia",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:bokic_horgaszbot",
+        "recipe:erdo_szive_totem",
+        "recipe:eszencias_fozet",
+        "recipe:kallan_szeletelo",
+        "recipe:p2_erositett_bor",
+        "recipe:pyralingradi_tuzkopo",
+        "recipe:sarkanycsont_ij",
+        "recipe:szellemszarvas_bubaj",
+        "recipe:vadbor_pancel",
+        "recipe:vadolo_csizma",
+        "recipe:vasmuvek_csakanya"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "aranyalma_befott",
+        "aranyrepa_konfit",
+        "kapu_lakomaja",
+        "lakodalmas_torta",
+        "unnepi_torta",
+        "vajas_sutemeny",
+        "vandorunnep_lepenye"
+      ],
+      "economy_managed": false,
+      "id": "vaj",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:aranyalma_befott",
+        "recipe:aranyrepa_konfit",
+        "recipe:kapu_lakomaja",
+        "recipe:lakodalmas_torta",
+        "recipe:unnepi_torta",
+        "recipe:vajas_sutemeny",
+        "recipe:vandorunnep_lepenye"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "fuszeres_nyulragu",
+        "lakodalmas_torta",
+        "vadlakoma",
+        "vandor_lepenye",
+        "vandorunnep_lepenye"
+      ],
+      "economy_managed": false,
+      "id": "vandorfuszer",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "vandorfuszer_keveres"
+      ],
+      "sinks": [
+        "recipe:fuszeres_nyulragu",
+        "recipe:lakodalmas_torta",
+        "recipe:vadlakoma",
+        "recipe:vandor_lepenye",
+        "recipe:vandorunnep_lepenye"
+      ],
+      "sources": [
+        "recipe:vandorfuszer_keveres"
+      ],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "emlekek_konyve"
+      ],
+      "economy_managed": false,
+      "id": "viaszgyertya",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:emlekek_konyve"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "smaragdko_bankbetet"
+      ],
+      "economy_managed": false,
+      "id": "viaszpecset",
+      "processing_state": "LEGACY",
+      "producer_recipes": [],
+      "sinks": [
+        "recipe:smaragdko_bankbetet"
+      ],
+      "sources": [],
+      "tier": "LEGACY"
+    },
+    {
+      "consumer_recipes": [
+        "item2_viharkvarc_pallos",
+        "item2_viharszovo_bot",
+        "runa_vadasz_irasa",
+        "runa_zapor_irasa",
+        "szigonyvihar_tomus",
+        "viharjaro_csizma",
+        "viharkvarc_csakany",
+        "viharszigony",
+        "villamlo_szilank",
+        "villamszigony"
+      ],
+      "economy_managed": false,
+      "id": "viharkvarc",
+      "processing_state": "LEGACY",
+      "producer_recipes": [
+        "viharkvarc_fejtes"
+      ],
+      "sinks": [
+        "recipe:item2_viharkvarc_pallos",
+        "recipe:item2_viharszovo_bot",
+        "recipe:runa_vadasz_irasa",
+        "recipe:runa_zapor_irasa",
+        "recipe:szigonyvihar_tomus",
+        "recipe:viharjaro_csizma",
+        "recipe:viharkvarc_csakany",
+        "recipe:viharszigony",
+        "recipe:villamlo_szilank",
+        "recipe:villamszigony"
+      ],
+      "sources": [
+        "recipe:viharkvarc_fejtes"
+      ],
+      "tier": "LEGACY"
+    }
+  ],
+  "new_processing_edges": [
+    {
+      "from": "bor_hulladek",
+      "recipe": "p2_bor_reclamation",
+      "to": "cserzett_bor"
+    },
+    {
+      "from": "cserzett_bor",
+      "recipe": "p2_csontenyv_pancel",
+      "to": "csontenyv_pancel"
+    },
+    {
+      "from": "cserzett_bor",
+      "recipe": "p2_erositett_bor",
+      "to": "erositett_bor"
+    },
+    {
+      "from": "cserzett_bor",
+      "recipe": "p2_sodrott_lancszem",
+      "to": "sodrott_lancszem"
+    },
+    {
+      "from": "edzett_otvozet",
+      "recipe": "p2_kovacsolt_lemez",
+      "to": "kovacsolt_lemez"
+    },
+    {
+      "from": "erositett_bor",
+      "recipe": "p2_vadorzo_csizma",
+      "to": "vadorzo_csizma"
+    },
+    {
+      "from": "femhulladek",
+      "recipe": "p2_fem_reclamation",
+      "to": "edzett_otvozet"
+    },
+    {
+      "from": "finom_huzal",
+      "recipe": "p2_sodrott_lancszem",
+      "to": "sodrott_lancszem"
+    },
+    {
+      "from": "fonixpihe",
+      "recipe": "p2_fonixpihe_kopeny",
+      "to": "fonixpihe_kopeny"
+    },
+    {
+      "from": "lanc_toredek",
+      "recipe": "p2_lanc_reclamation",
+      "to": "finom_huzal"
+    },
+    {
+      "from": "rezgo_rez_otvozet",
+      "recipe": "p2_edzett_otvozet",
+      "to": "edzett_otvozet"
+    },
+    {
+      "from": "runapor",
+      "recipe": "p2_runaszott_poszto",
+      "to": "runaszott_poszto"
+    },
+    {
+      "from": "runaszott_poszto",
+      "recipe": "p2_fonixpihe_kopeny",
+      "to": "fonixpihe_kopeny"
+    },
+    {
+      "from": "sodrott_lancszem",
+      "recipe": "p2_csontenyv_pancel",
+      "to": "csontenyv_pancel"
+    },
+    {
+      "from": "szott_poszto",
+      "recipe": "p2_runaszott_poszto",
+      "to": "runaszott_poszto"
+    },
+    {
+      "from": "szovet_foszlany",
+      "recipe": "p2_szovet_reclamation",
+      "to": "runapor"
+    },
+    {
+      "from": "vad_esszencia",
+      "recipe": "p2_erositett_bor",
+      "to": "erositett_bor"
+    }
+  ],
+  "north_star": "survival_gathering -> processing -> crafting -> equipment/utility -> use/trade/salvage -> upgrade -> market",
+  "profession_nodes": [
+    {
+      "consumes": [
+        "arnyekpor",
+        "bor_hulladek",
+        "cserzett_bor",
+        "desztillalt_esoviz",
+        "ecet_eszencia",
+        "elso_csend_szilankja",
+        "gyogy_kivonat",
+        "katalizator_so",
+        "lombik_szen",
+        "olomdugo",
+        "osi_ereklyeszilank",
+        "parazsmag",
+        "runapor",
+        "sarkanycsont_szilank",
+        "szuropapir",
+        "tiszta_vasesszencia",
+        "uvegfiola_keszlet",
+        "vad_esszencia",
+        "viharkvarc"
+      ],
+      "produces": [
+        "cserzett_bor",
+        "erositett_bor",
+        "lelekhamu",
+        "parazsmag"
+      ],
+      "profession": "alchemist"
+    },
+    {
+      "consumes": [
+        "aranyfust_lemez",
+        "arnyekpor",
+        "cserzett_bor",
+        "dermedt_konnycsepp",
+        "edzett_otvozet",
+        "edzoolaj",
+        "elso_csend_szilankja",
+        "erositett_bor",
+        "femhulladek",
+        "finom_huzal",
+        "folyositoszer",
+        "fonixpihe",
+        "fujtatobor",
+        "gyongyhaz_pikkely",
+        "jegviragpor",
+        "karhozat_parazs",
+        "kovacsolt_lemez",
+        "lanc_toredek",
+        "lelekhamu",
+        "melysegi_borostyan",
+        "nema_kristaly",
+        "nyelbor",
+        "obszidian_szilank",
+        "osi_ereklyeszilank",
+        "parazsmag",
+        "polirpaszta",
+        "rezgo_rez_otvozet",
+        "runakreta",
+        "runapor",
+        "runaszott_poszto",
+        "sarkanycsont_szilank",
+        "sarkfeny_cseppko",
+        "sodrott_lancszem",
+        "szorny_mag",
+        "tiszta_vasesszencia",
+        "vad_esszencia",
+        "viharkvarc"
+      ],
+      "produces": [
+        "aranyfust_lemez",
+        "edzett_otvozet",
+        "finom_huzal",
+        "kovacsolt_lemez",
+        "runa_bastya",
+        "runa_elek",
+        "runa_moho",
+        "runa_suly",
+        "sodrott_lancszem",
+        "tiszta_vasesszencia"
+      ],
+      "profession": "armorer"
+    },
+    {
+      "consumes": [
+        "aranyfust_lemez",
+        "arnygomba",
+        "elso_csend_szilankja",
+        "fustoloforgacs",
+        "jegviragpor",
+        "koso",
+        "parazsmag",
+        "sutopergamen",
+        "ures_kupa",
+        "vaj",
+        "vandorfuszer"
+      ],
+      "produces": [
+        "csontenyv",
+        "ures_kupa",
+        "vandorfuszer"
+      ],
+      "profession": "cook"
+    },
+    {
+      "consumes": [
+        "arnyekpor",
+        "elso_csend_szilankja",
+        "emlekszilank",
+        "ezust_toll",
+        "fonixpihe",
+        "gyogy_kivonat",
+        "gyongyhaz_pikkely",
+        "halofonal",
+        "holdezust_huzal",
+        "irnok_tinta",
+        "jegviragpor",
+        "karhozat_parazs",
+        "kemenyfa_gerenda",
+        "lampaolaj",
+        "nema_kristaly",
+        "parazsmag",
+        "pergamen_simito",
+        "runakreta",
+        "runapor",
+        "sarkfeny_cseppko",
+        "szorny_mag",
+        "szott_poszto",
+        "szovet_foszlany",
+        "tiszta_vasesszencia",
+        "viaszgyertya",
+        "viaszpecset",
+        "viharkvarc"
+      ],
+      "produces": [
+        "holdezust_huzal",
+        "runa_fagy",
+        "runa_lang",
+        "runa_oltalom",
+        "runa_vadasz",
+        "runa_visszhang",
+        "runa_zapor",
+        "runapor",
+        "runaszott_poszto",
+        "szott_poszto"
+      ],
+      "profession": "enchanter"
+    },
+    {
+      "consumes": [
+        "csalizsir",
+        "dermedt_konnycsepp",
+        "elso_csend_szilankja",
+        "gyongyhaz_pikkely",
+        "halofonal",
+        "horogkeszlet",
+        "kemenyfa_gerenda",
+        "osi_ereklyeszilank",
+        "parafa_uszo",
+        "permetezo_kanna",
+        "rezgo_rez_otvozet",
+        "sozott_csali",
+        "vad_esszencia",
+        "viharkvarc"
+      ],
+      "produces": [
+        "gyongyhaz_pikkely"
+      ],
+      "profession": "fisherman"
+    },
+    {
+      "consumes": [
+        "arnygomba",
+        "aszalohalo",
+        "desztillalt_esoviz",
+        "fonixpihe",
+        "gyogy_kivonat",
+        "jegviragpor",
+        "karhozat_parazs",
+        "kemenyfa_gerenda",
+        "lelekhamu",
+        "oltoviasz",
+        "parazsmag",
+        "permetezo_kanna",
+        "tozegkocka",
+        "vad_esszencia"
+      ],
+      "produces": [
+        "arnygomba",
+        "gyogy_kivonat",
+        "jegviragpor"
+      ],
+      "profession": "herbalist"
+    },
+    {
+      "consumes": [
+        "acskapocs",
+        "arnyekpor",
+        "csontenyv",
+        "elso_csend_szilankja",
+        "favedo_pac",
+        "fenoko",
+        "gyantaoldo",
+        "gyogy_kivonat",
+        "holdezust_huzal",
+        "kemenyfa_gerenda",
+        "merozsinor",
+        "parazsmag",
+        "sarkanycsont_szilank",
+        "szavannafu_kotel",
+        "vad_esszencia"
+      ],
+      "produces": [
+        "kemenyfa_gerenda",
+        "szavannafu_kotel"
+      ],
+      "profession": "lumberjack"
+    },
+    {
+      "consumes": [
+        "csillekenocs",
+        "elso_csend_szilankja",
+        "ercmoso_lug",
+        "folyositoszer",
+        "lampaolaj",
+        "melysegi_borostyan",
+        "melysegi_iranytu",
+        "merozsinor",
+        "nema_kristaly",
+        "osi_ereklyeszilank",
+        "parazsmag",
+        "polirpaszta",
+        "rezgo_rez_otvozet",
+        "robbantopor",
+        "runapor",
+        "sarkfeny_cseppko",
+        "tarnatamasz_szegecs",
+        "tiszta_vasesszencia",
+        "vad_esszencia",
+        "viharkvarc"
+      ],
+      "produces": [
+        "melysegi_borostyan",
+        "obszidian_szilank",
+        "rezgo_rez_otvozet",
+        "sarkfeny_cseppko",
+        "viharkvarc"
+      ],
+      "profession": "miner"
+    }
+  ],
+  "salvage_reclamation_sinks_verified": [
+    "szovet_foszlany",
+    "bor_hulladek",
+    "lanc_toredek",
+    "femhulladek"
+  ],
+  "schema": 2
+}

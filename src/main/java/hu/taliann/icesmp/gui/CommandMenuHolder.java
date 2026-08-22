@@ -1,10 +1,17 @@
 package hu.taliann.icesmp.gui;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -71,5 +78,21 @@ public final class CommandMenuHolder implements InventoryHolder {
 
     public void setInventory(final Inventory inventory) {
         this.inventory = inventory;
+        if (menu == Menu.MAIN && inventory != null && inventory.getSize() > 33) {
+            final ItemStack forge = new ItemStack(Material.SMITHING_TABLE);
+            final ItemMeta meta = forge.getItemMeta();
+            meta.displayName(Component.text("Szakma-műhely", NamedTextColor.AQUA)
+                    .decoration(TextDecoration.ITALIC, false));
+            meta.lore(List.of(
+                    Component.text("Mestermű, rúna, újrakovácsolás és Felemelkedés",
+                                    NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                    Component.text("a canonical Item Forge felületén.", NamedTextColor.GRAY)
+                            .decoration(TextDecoration.ITALIC, false),
+                    Component.text("» Kattints", NamedTextColor.YELLOW)
+                            .decoration(TextDecoration.ITALIC, false)));
+            forge.setItemMeta(meta);
+            inventory.setItem(33, forge);
+            actions.put(33, "OPEN:profession forge");
+        }
     }
 }

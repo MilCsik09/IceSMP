@@ -5,6 +5,11 @@ import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.TransactionJournal;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.itemization.ItemIdentityService;
+import hu.taliann.icesmp.itemization.ItemInstance;
+import hu.taliann.icesmp.itemization.ItemTemplate;
+import hu.taliann.icesmp.itemization.ArmorFamily;
+import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -69,12 +74,34 @@ public final class MarketManager implements PersistentStore {
                               Map<CurrencyType, Double> averagePriceByCurrency,
                               Transaction biggestRecentSale, int recentSaleCount) { }
 
+    public record ItemMetadata(String templateId, hu.taliann.icesmp.itemization.ItemRarity rarity,
+                               int itemLevel, ItemTemplate.Slot slot, ArmorFamily armorFamily,
+                               Set<String> classRestrictions,
+                               String signatureEffectId, int socketCount, String ascensionState,
+                               double averageRollQuality, String setId, Set<String> statIds) { }
+
+    public record ItemFilter(String templateId,
+                             hu.taliann.icesmp.itemization.ItemRarity rarity,
+                             Integer minimumItemLevel, Integer maximumItemLevel,
+                             ItemTemplate.Slot slot, ArmorFamily armorFamily, String classId,
+                             String signatureEffectId, Integer minimumSocketCount,
+                             String ascensionState, Double minimumRollQuality,
+                             String setId, String requiredStatId) { }
+
     private enum TakeEvidence { TAGGED_PRESENT, ORIGINAL_PRESENT, ABSENT, AMBIGUOUS }
 
     private record DeliveryEvidence(int expectedAmount, int taggedAmount, boolean invalid) {
         boolean none() { return taggedAmount == 0 && !invalid; }
         boolean complete() { return taggedAmount == expectedAmount && !invalid; }
         boolean partial() { return taggedAmount > 0 && taggedAmount < expectedAmount && !invalid; }
+    }
+
+    private record PendingDeliveryPartition(List<ItemStack> deliverable,
+                                            List<ItemStack> quarantined) {
+        private PendingDeliveryPartition {
+            deliverable = deliverable.stream().map(ItemStack::clone).toList();
+            quarantined = quarantined.stream().map(ItemStack::clone).toList();
+        }
     }
 
     private static final int TRANSACTION_LOG_CAP = 50;
@@ -95,6 +122,7 @@ public final class MarketManager implements PersistentStore {
     private final FactionManager factionManager;
     private final FactionRelationManager relationManager;
     private final MessageManager messageManager;
+    private final ItemIdentityService itemIdentity;
     private final File storageFile;
     private final TransactionJournal journal;
     private final Map<UUID, Listing> listings = new ConcurrentHashMap<>();
@@ -112,13 +140,15 @@ public final class MarketManager implements PersistentStore {
                          final CurrencyManager currencyManager,
                          final FactionManager factionManager,
                          final FactionRelationManager relationManager,
-                         final MessageManager messageManager) {
+                         final MessageManager messageManager,
+                         final ItemIdentityService itemIdentity) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.currencyManager = currencyManager;
         this.factionManager = factionManager;
         this.relationManager = relationManager;
         this.messageManager = messageManager;
+        this.itemIdentity = itemIdentity;
         this.storageFile = new File(plugin.getDataFolder(), "market.yml");
         this.journal = new TransactionJournal(
                 new File(plugin.getDataFolder(), "market-journal.yml"), plugin.getLogger());
@@ -288,6 +318,67 @@ public final class MarketManager implements PersistentStore {
                 .sorted(Comparator.comparingLong(Listing::createdAt).reversed()).toList();
     }
 
+    public ItemMetadata metadataOf(final Listing listing) {
+        if (listing == null) return null;
+        final ItemIdentityService.Inspection inspection = itemIdentity.inspect(listing.item());
+        if (inspection.status() != ItemIdentityService.Status.VALID) return null;
+        final ItemInstance instance = inspection.instance();
+        final ItemTemplate template = inspection.template();
+        final double averageQuality = instance.rolls().isEmpty() ? 1.0D
+                : instance.rolls().values().stream().mapToDouble(ItemInstance.Roll::quality)
+                .average().orElse(1.0D);
+        final HashSet<String> stats = new HashSet<>(template.fixedStatsAt(
+                instance.ascension().stageId()).keySet());
+        stats.addAll(instance.rolls().keySet());
+        return new ItemMetadata(template.templateId(), template.rarity(), instance.itemLevel(),
+                template.slot(), template.armorFamily(), template.classRestrictions(),
+                template.signatureEffectId(),
+                template.runeSocketCountAt(instance.ascension().stageId()),
+                instance.ascension().stageId(), averageQuality, template.setId(), Set.copyOf(stats));
+    }
+
+    public List<Listing> filterListings(final ItemFilter filter) {
+        if (filter == null) return getListingsSorted();
+        return getListingsSorted().stream().filter(listing -> {
+            final ItemMetadata item = metadataOf(listing);
+            if (item == null) return false;
+            return (filter.templateId() == null || filter.templateId().isBlank()
+                    || item.templateId().equalsIgnoreCase(filter.templateId()))
+                    && (filter.rarity() == null || item.rarity() == filter.rarity())
+                    && (filter.minimumItemLevel() == null || item.itemLevel() >= filter.minimumItemLevel())
+                    && (filter.maximumItemLevel() == null || item.itemLevel() <= filter.maximumItemLevel())
+                    && (filter.slot() == null || item.slot() == filter.slot())
+                    && (filter.armorFamily() == null || item.armorFamily() == filter.armorFamily())
+                    && (filter.classId() == null || filter.classId().isBlank()
+                    || matchesClassFilter(item, filter.classId()))
+                    && (filter.signatureEffectId() == null || filter.signatureEffectId().isBlank()
+                    || item.signatureEffectId().equalsIgnoreCase(filter.signatureEffectId()))
+                    && (filter.minimumSocketCount() == null
+                    || item.socketCount() >= filter.minimumSocketCount())
+                    && (filter.ascensionState() == null || filter.ascensionState().isBlank()
+                    || item.ascensionState().equalsIgnoreCase(filter.ascensionState()))
+                    && (filter.minimumRollQuality() == null
+                    || item.averageRollQuality() >= Math.max(0.0D,
+                    Math.min(1.0D, filter.minimumRollQuality())))
+                    && (filter.setId() == null || filter.setId().isBlank()
+                    || item.setId().equalsIgnoreCase(filter.setId()))
+                    && (filter.requiredStatId() == null || filter.requiredStatId().isBlank()
+                    || item.statIds().contains(filter.requiredStatId()
+                    .toLowerCase(java.util.Locale.ROOT).replace('-', '_')));
+        }).toList();
+    }
+
+    private static boolean matchesClassFilter(final ItemMetadata item, final String rawClassId) {
+        final String classId = rawClassId.toLowerCase(java.util.Locale.ROOT);
+        if (!item.classRestrictions().isEmpty()) {
+            return item.classRestrictions().contains(classId);
+        }
+        if (item.armorFamily() == null) return true;
+        final hu.taliann.icesmp.data.JobType job = hu.taliann.icesmp.data.JobType.fromId(classId);
+        return job != null && hu.taliann.icesmp.itemization.EquipmentProficiencyPolicy.familyOf(job)
+                == item.armorFamily();
+    }
+
     public long countListingsOf(final UUID seller) {
         return listings.values().stream()
                 .filter(listing -> !unconfirmedListings.contains(listing.id()))
@@ -320,6 +411,22 @@ public final class MarketManager implements PersistentStore {
                                          final double buyOut) {
         final ItemStack held = seller.getInventory().getItemInMainHand();
         if (held.getType().isAir()) return "market-no-item";
+        final ItemIdentityService.Inspection authored = itemIdentity.inspect(held);
+        if (authored.status() != ItemIdentityService.Status.NOT_MANAGED) {
+            if (authored.status() != ItemIdentityService.Status.VALID) {
+                return "market-item-identity-invalid";
+            }
+            if (authored.template().tradePolicy() != ItemTemplate.TradePolicy.TRADEABLE
+                    || authored.template().bindPolicy() == ItemTemplate.BindPolicy.ACCOUNT) {
+                return "market-item-policy-blocked";
+            }
+            final ItemIdentityService.DuplicateReport duplicates = itemIdentity.inspectDuplicates(
+                    java.util.Arrays.asList(seller.getInventory().getContents()));
+            if (!duplicates.clean()) return "market-item-duplicate";
+        } else if (itemIdentity.classifyLegacy(held) != ItemIdentityService.LegacyKind.NONE
+                && !configManager.getBoolean("itemization.legacy.market-enabled", true)) {
+            return "market-legacy-blocked";
+        }
         if (!configManager.getBoolean("market.allow-relic-listing", false)
                 && held.hasItemMeta()
                 && held.getItemMeta().getPersistentDataContainer().has(
@@ -351,13 +458,16 @@ public final class MarketManager implements PersistentStore {
         seller.getInventory().setItemInMainHand(tagged);
         if (!persistPlayer(seller)) {
             seller.getInventory().setItemInMainHand(original);
+            EquippedCombatPowerService.refreshAfterMutation(seller);
             journal.complete(entry);
             return "market-playerdata-unavailable";
         }
 
         seller.getInventory().setItemInMainHand(null);
+        EquippedCombatPowerService.refreshAfterMutation(seller);
         if (!persistPlayer(seller)) {
             seller.getInventory().setItemInMainHand(tagged);
+            EquippedCombatPowerService.refreshAfterMutation(seller);
             plugin.getLogger().warning("Piaci listázás playerdata eltávolítása bizonytalan; "
                     + "a tárgy markerrel a játékosnál marad, a napló recoveryre vár: " + entry.id());
             return "market-playerdata-unavailable";
@@ -379,6 +489,8 @@ public final class MarketManager implements PersistentStore {
         if (listing == null) return BuyOutcome.error("market-listing-gone");
         if (listing.auction()) return BuyOutcome.error("market-auction-use-bid");
         if (listing.seller().equals(buyer.getUniqueId())) return BuyOutcome.error("market-own-listing");
+        final String transferError = validateCanonicalTransfer(listing.item(), buyer, true);
+        if (transferError != null) return BuyOutcome.error(transferError);
         final double buyerCost = getEffectivePrice(buyer, listing);
         if (currencyManager.getBalance(buyer.getUniqueId(), listing.currency()) < buyerCost) {
             return BuyOutcome.error("market-insufficient-balance");
@@ -454,6 +566,8 @@ public final class MarketManager implements PersistentStore {
         if (listing == null || !listing.auction()) return BidOutcome.error("market-listing-gone");
         if (System.currentTimeMillis() >= listing.endsAt()) return BidOutcome.error("market-auction-ended");
         if (listing.seller().equals(bidder.getUniqueId())) return BidOutcome.error("market-own-listing");
+        final String transferError = validateCanonicalTransfer(listing.item(), bidder, true);
+        if (transferError != null) return BidOutcome.error(transferError);
         if (!Double.isFinite(amount)) return BidOutcome.error("market-bid-too-low");
         final boolean boughtOut = listing.hasBuyOut() && amount >= listing.buyOut();
         if (bidder.getUniqueId().equals(listing.highestBidder()) && !boughtOut) {
@@ -581,15 +695,28 @@ public final class MarketManager implements PersistentStore {
     public synchronized int deliverPending(final Player player) {
         resolvePlayerRecoveries(player);
         cleanupOrphanMarkers(player);
-        final List<ItemStack> items = pendingDeliveries.get(player.getUniqueId());
-        if (items == null || items.isEmpty()) {
-            pendingDeliveries.remove(player.getUniqueId());
+        final UUID playerId = player.getUniqueId();
+        final List<ItemStack> original = pendingDeliveries.get(playerId);
+        if (original == null || original.isEmpty()) {
+            pendingDeliveries.remove(playerId);
             return 0;
         }
         if (!storageHealthy() || !playerSaveSupported) return 0;
 
+        final PendingDeliveryPartition partition = partitionPending(player, original);
+        final List<ItemStack> items = partition.deliverable();
+        final List<ItemStack> quarantined = partition.quarantined();
+        if (!quarantined.isEmpty()) {
+            plugin.getLogger().warning("Market pending delivery quarantine: player=" + playerId
+                    + " quarantined=" + quarantined.size() + " deliverable=" + items.size()
+                    + ". Invalid/stale records stay durable for explicit support resolution.");
+            player.sendMessage(messageManager.getMessage("market-delivery-quarantined",
+                    "<yellow>Egy hibás vagy elavult piaci tétel karanténban maradt; a többi átvehető tételt ettől még kézbesítjük.</yellow>"));
+        }
+        if (items.isEmpty()) return 0;
+
         final TransactionJournal.Entry entry = journal.create(TYPE_DELIVER);
-        entry.data().set("owner", player.getUniqueId().toString());
+        entry.data().set("owner", playerId.toString());
         entry.data().set("items", items.stream().map(ItemStack::clone).toList());
         if (!journal.prepare(entry)) return 0;
         final List<ItemStack> tagged = items.stream()
@@ -602,9 +729,11 @@ public final class MarketManager implements PersistentStore {
             return 0;
         }
 
-        pendingDeliveries.remove(player.getUniqueId());
+        if (quarantined.isEmpty()) pendingDeliveries.remove(playerId);
+        else pendingDeliveries.put(playerId, new ArrayList<>(quarantined));
         if (!commitState(entry, false)) {
-            pendingDeliveries.put(player.getUniqueId(), items);
+            pendingDeliveries.put(playerId, original.stream().map(ItemStack::clone)
+                    .collect(Collectors.toCollection(ArrayList::new)));
             committedTxns.remove(entry.id().toString());
             journal.complete(entry);
             return 0;
@@ -616,10 +745,11 @@ public final class MarketManager implements PersistentStore {
             if (!leftovers.isEmpty()) {
                 player.getInventory().setStorageContents(before);
                 plugin.getLogger().severe("Market delivery fit preflight diverged for "
-                        + player.getUniqueId() + "; journal remains open.");
+                        + playerId + "; journal remains open and only its deliverable batch is recoverable.");
                 return 0;
             }
         }
+        EquippedCombatPowerService.refreshAfterMutation(player);
         if (!persistPlayer(player)) {
             plugin.getLogger().warning("A piaci kézbesítés tárgy-oldala nem lett azonnal tartós ("
                     + entry.id() + "); a napló nyitva marad.");
@@ -630,6 +760,71 @@ public final class MarketManager implements PersistentStore {
             persistPlayer(player);
         }
         return items.size();
+    }
+
+    private PendingDeliveryPartition partitionPending(final Player player,
+                                                       final List<ItemStack> pending) {
+        final ArrayList<ItemStack> deliverable = new ArrayList<>();
+        final ArrayList<ItemStack> quarantined = new ArrayList<>();
+        final ArrayList<ItemStack> accepted = new ArrayList<>(
+                java.util.Arrays.asList(player.getInventory().getContents()));
+        for (final ItemStack item : pending) {
+            final String transferError = validateCanonicalTransfer(item, null, false);
+            if (transferError != null) {
+                quarantined.add(item.clone());
+                continue;
+            }
+            final ItemIdentityService.Inspection candidate = itemIdentity.inspect(item);
+            boolean duplicate = false;
+            if (candidate.status() == ItemIdentityService.Status.VALID) {
+                final UUID itemId = candidate.instance().itemId();
+                for (final ItemStack existing : accepted) {
+                    final var existingInstance = itemIdentity.instanceOf(existing);
+                    if (existingInstance.isPresent()
+                            && existingInstance.orElseThrow().itemId().equals(itemId)) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+            }
+            if (duplicate) {
+                quarantined.add(item.clone());
+                continue;
+            }
+            deliverable.add(item.clone());
+            accepted.add(item.clone());
+        }
+        return new PendingDeliveryPartition(deliverable, quarantined);
+    }
+
+    private String validateCanonicalTransfer(final ItemStack item, final Player recipient,
+                                             final boolean enforceTradePolicy) {
+        final ItemIdentityService.Inspection authored = itemIdentity.inspect(item);
+        if (authored.status() == ItemIdentityService.Status.NOT_MANAGED) return null;
+        if (authored.status() != ItemIdentityService.Status.VALID) {
+            return "market-item-identity-invalid";
+        }
+        if (enforceTradePolicy && (authored.template().tradePolicy()
+                != ItemTemplate.TradePolicy.TRADEABLE
+                || authored.template().bindPolicy() == ItemTemplate.BindPolicy.ACCOUNT)) {
+            return "market-item-policy-blocked";
+        }
+        if (recipient != null) {
+            final ArrayList<ItemStack> combined = new ArrayList<>(
+                    java.util.Arrays.asList(recipient.getInventory().getContents()));
+            combined.add(item);
+            for (final ItemStack candidate : combined) {
+                final ItemIdentityService.Inspection inspection = itemIdentity.inspect(candidate);
+                if (inspection.status() != ItemIdentityService.Status.NOT_MANAGED
+                        && inspection.status() != ItemIdentityService.Status.VALID) {
+                    return "market-item-identity-invalid";
+                }
+            }
+            if (!itemIdentity.inspectDuplicates(combined).clean()) {
+                return "market-item-duplicate";
+            }
+        }
+        return null;
     }
 
     public synchronized int cancelListings(final Player player) {
@@ -669,8 +864,7 @@ public final class MarketManager implements PersistentStore {
                 .collect(Collectors.groupingBy(
                         listing -> listing.item().getType(), Collectors.counting()));
         final List<Map.Entry<Material, Long>> topItemTypes = counts.entrySet().stream()
-                .sorted(Map.Entry.<Material, Long>comparingByValue().reversed())
-                .limit(3).toList();
+                .sorted(Map.Entry.<Material, Long>comparingByValue().reversed()).limit(3).toList();
         final List<Transaction> transactionSnapshot = List.copyOf(recentTransactions);
         final Map<CurrencyType, double[]> sumAndCount = new EnumMap<>(CurrencyType.class);
         Transaction biggest = null;

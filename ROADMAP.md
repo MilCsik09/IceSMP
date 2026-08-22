@@ -16,6 +16,15 @@ konfiguráció a mérvadó. Egy zöld build nem helyettesíti a Folia
 runtime-tesztet, egy lore-ban szereplő hely pedig nem helyettesíti a
 világban elvégzett bekötést.
 
+**Combat & Encounter foundation — forrásoldalon lezárva, staging előtt.** A 160 armor,
+a 25 meglévő weapon/offhand, a központi level gate, a rank/technique runtime és az
+opcionális wildlife retaliation gépi authorityja elkészült. Ez nem Itemization 3.0,
+Equipment 3.0 vagy Mob 3.0, és nem nyit új weapon production catalogot. Nyitott kézi
+kapu marad a reprezentatív build-TTK/TTL és healing érzet, a telegráf olvashatósága,
+a két-régiós Folia próba, valamint az 50–60 játékosos profiler/stressz. A későbbi tuning
+a bounded `CombatTelemetry` és a verziózott evidence report méréseit fogyassza; a kód
+nem módosít automatikusan balance értéket élő log alapján.
+
 Jelölések:
 
 - 🚧 **kiadási kapu** — rollout előtt kötelező;
@@ -263,25 +272,60 @@ nyilvános felületre.
 
 ### C — PvE Depth
 
-- ⬜ Elit-affix réteg: kevés, jól olvasható affix, legfeljebb kettő
+- ✅ `MobTemplate` + hibrid 1–50 progression, ahol az explicit encounter/zóna
+  felülírja, a távolság/mélység/territory pedig survival-wilderness fallback;
+  általános vadon hard cap 70. A rendszer 18 authored template-et, vanilla fallbacket,
+  12 archetype-vokabulárt és külön bounded HP/damage görbét ad.
+- ✅ Elit-affix réteg: kevés, jól olvasható affix, legfeljebb kettő
   mobonként, spawnkor rögzített döntéssel és bounded élettartammal.
-- ⬜ Eseményvezérelt boss contribution ledger sebzés, gyógyítás, tankolás
-  és mechanikai részvétel alapján.
+- ✅ Eseményvezérelt, legfeljebb 128 résztvevős boss contribution ledger sebzés,
+  támogatás, tankolás és objective API-val; a világboss start-snapshotból skálázódik,
+  a személyes komponens receipt-alapúan idempotens és tele inventorynál függőben marad.
 - ⬜ Személyes harci összefoglaló; nyilvános DPS-szégyenfal nélkül.
-- ⬜ Bestiárium 2.0 többszintű kutatással és információs/kozmetikai
-  jutalmakkal.
+- ✅ Bestiárium authored rang/archetípus → ability/resistance → loot-profile
+  tudáslépcsőkkel; pontos drop rate nélkül. Kozmetikai jutalomkatalógus későbbi scope.
+
+**Release-gate:** a dependency-free domain/source regresszió nem helyettesíti az
+exact Java 21 CI-t és a 50–60 fős Folia staging playtestet (region-hop, late join,
+disconnect, full inventory, boss despawn/restart, képesség-telegráf olvashatóság).
 
 **Kapunyitás D/E felé:** minden idézett entitás életciklusa rendezett,
 a jutalom pénzsemleges, az offline jogosultság az inboxba kerül.
 
-### D — Profession és item economy
+### D — Survival itemizáció, profession és piac
 
+- ✅ Vanilla Crafting Boundary foundation: a normál survival crafting, tool- és
+  basic gear progression szabad; a canonical MMORPG itemek crafting/anvil/smithing/
+  enchanting/grindstone identity-laundering útjai központi, fail-closed policy alatt
+  állnak. A vanilla/basic gear nem canonical salvage- vagy profession-input.
 - ⬜ A 16 profession-specializáció tényleges passzívjai és fizetős respec.
-- ⬜ Veszteséges salvage szigorú tiltólistával.
-- ⬜ `ItemIdentityService` és bounded item history, csak fontos
-  mérföldkövekkel.
-- ⬜ Rúna 2.0 UX: előnézet, kódex és rúnapor-salvage; több foglalat nélkül.
+- ✅ Controlled reroll (Full Reforge, Stat Lock, Quality Amplifier, Stability Seal),
+  deterministic authored ascension és veszteséges salvage szigorú legacy/admin/
+  bind tiltással, bounded költséggörbével és item-mutation WAL recoveryvel.
+- ✅ Az authored `ItemTemplate`/`ItemInstance`/`ItemIdentityService`, 0–2 rúnahely,
+  signature/set fogyasztó és build-aware, restartbiztos soft-diversity alap
+  elkészült; a Phase 4–5 pure-domain regresszió és consistency kapu zöld. Az exact
+  Java 21 Gradle CI forráskapu, a Folia staging identity/migration/death/market
+  runtime acceptance külön kötelező release-gate.
+- ✅ Az első survival vertical slice a jelenlegi 48 authored template-es systemic
+  katalógusban is megmarad:
+  vanilla mining → Sarkfény-cseppkő → profession craft → reroll/rúna/piac →
+  világboss-komponens → ugyanazon UUID-val ascension.
+- ✅ Rúna 2.0: canonical insert, kiválasztott socketes remove és atomikus replace
+  ugyanazon whole-inventory mutation WAL-on fut. A Forge előnézet/költség/SHIFT
+  megerősítést ad; a régi rúna explicit `destroy` economy-sink policyt követ.
 - ⬜ Crafting order piactér escrow-val és naplózott settlementtel.
+- ✅ Equipment 2.0 foundation: canonical `ArmorFamily` (CLOTH/LEATHER/MAIL/PLATE),
+  13 kasztos proficiency authority, 48 sablonos migráció, equip/suppression lifecycle,
+  family-aware loot/market/CombatPower és validálható stat-budget profil. A Bukkit
+  `Material` továbbra sem armor-family authority.
+- ⬜ Profession 2.0 feldolgozási láncok (fiber→cloth, hide→leather,
+  leather+metal→mail, ore/alloy→plate), a 392 recept ownership/migration auditja,
+  family salvage, Masterwork és profession-specializáció.
+- 🟨 Equipment Resource Pack 2.0: RP2-A asset authority, RP2-B 40-line Art Bible és elfogadott
+  4-line pilot, valamint RP2-C 40-line/160-piece full-production source és automated/offline
+  evidence kész. Hátra van a teljes katalógus 1.21.11 human-client stagingje; a normál canonical
+  worn fallback jelenleg 0/160.
 
 **Kapunyitás E felé:** a tárgyazonosság másolás, újraindítás és
 inventoryhiba után is bizonyítható; nincs új pénzforrás.
@@ -582,3 +626,11 @@ entity cleanup és boss-victory persistence race hardeningjét is lezárta.
 
 A Prologue scope-on kívül marad a Season 2 End-nyitás, az Első Csend
 magyarázata és a Néma Királynő végjátéka; ezek nem #121 hiányosságok.
+
+## Professions 2.0 — source closure
+- Survival gathering remains vanilla-world activity; Professions 2.0 adds processing/economy, not static gathering nodes.
+- CLOTH/LEATHER/MAIL/PLATE production is stacked on Equipment 2.0. ArmorFamily/class proficiency are not redefined here.
+- Recipe migration/report authority: `docs/development/professions-2-recipe-migration.json`.
+- Economy graph/dead-content authority: `docs/development/professions-2-economy-graph.json`.
+- Runtime staging remains required for multiplayer throughput, real market prices, disconnect/packet-sync and 50–60-player balance.
+- Equipment Resource Pack 2.0 and crafting-order escrow marketplace remain future stacked scopes.

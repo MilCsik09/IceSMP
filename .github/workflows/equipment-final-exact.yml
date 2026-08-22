@@ -1,0 +1,66 @@
+name: Equipment Final Exact Head
+
+on:
+  pull_request:
+    branches:
+      - feature/vanilla-crafting-boundary
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-head:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact equipment head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact parent and clean patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feature/vanilla-crafting-boundary:refs/remotes/origin/feature/vanilla-crafting-boundary
+          test "$(git merge-base HEAD refs/remotes/origin/feature/vanilla-crafting-boundary)" = "$(git rev-parse refs/remotes/origin/feature/vanilla-crafting-boundary)"
+          git diff --check "refs/remotes/origin/feature/vanilla-crafting-boundary...HEAD"
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install repository audit dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Clean build and stacked behavioral regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew clean build --console=plain --no-daemon --stacktrace
+          ./gradlew equipmentDomainRegressionTest itemizationDomainRegressionTest \
+            vanillaCraftingBoundaryRegressionTest runeLifecycleRegressionTest \
+            playerProfileFullAuthorityRegressionTest professionRecipeAuditRegressionTest \
+            configStartupRegressionTest --no-daemon --console=plain
+      - name: Source authority and repository consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_consistency.py
+          python3 scripts/test_player_profile_authority.py
+          python3 scripts/check_player_profile_authority.py --root . --write-report build/player-profile-authority-equipment-final.json
+          python3 scripts/check_markdown_links.py
+      - name: Require clean tested worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"

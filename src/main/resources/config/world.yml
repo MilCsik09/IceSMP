@@ -1,21 +1,69 @@
 # IceSMP konfiguráció — world
 
-# ===== Távolság-alapú mob szintezés =====
+# ===== Mob/Encounter 2.0 — hibrid survival szintezés =====
 mob-scaling:
   enabled: true
-  blocks-per-level: 1000
-  max-level: 10
-  hard-cap-level: 15
+  # Wilderness komponens: Lv. 1 a spawnnál, normál plafon Lv. 50.
+  blocks-per-level: 500
+  normal-max-level: 50
+  # Territory/biome/depth/event bónuszokkal elérhető általános survival plafon.
+  hard-cap-level: 70
+  # Csak explicit authored boss/encounter override használhatja; wilderness soha.
+  authored-boss-cap-level: 200
   zone-ramp:
     enabled: true
     blocks-per-level: 250
-  health-per-level: 2.0
-  damage-per-level: 1.0
-  hostile-only: true
-  ignored-spawn-reasons:
-    - "SPAWNER"
-    - "CUSTOM"
-    - "COMMAND"
+  curves:
+    # Level 1 baseline; a HP gyorsabban, a damage sokkal lassabban nő.
+    health-per-level: 0.08
+    damage-per-level: 0.025
+    maximum-health-multiplier: 8.0
+    maximum-damage-multiplier: 3.0
+  maximum-absolute-health: 4096.0
+  maximum-absolute-damage: 80.0
+  depth:
+    start-y: 32
+    blocks-per-level: 16
+    maximum-bonus: 8
+  biome-bonuses:
+    deep_dark: 8
+    basalt_deltas: 4
+    soul_sand_valley: 3
+  dimension-bonuses:
+    nether: 5
+    the_end: 8
+  promotion:
+    veteran-percent: 6.0
+    elite-percent: 1.5
+    second-affix-percent: 20.0
+    deep-threshold-y: 0
+    deep-elite-bonus-percent: 0.75
+    dimension-elite-bonus-percent: 0.75
+    blood-moon-elite-bonus-percent: 1.0
+    danger-veteran-bonus-percent: 2.0
+  ranks:
+    # HP is intentionally bounded: higher ranks gain readable techniques, armor and modest
+    # movement pressure instead of becoming health-only sponges.
+    normal: { health-multiplier: 1.0, damage-multiplier: 1.0, armor-bonus: 0.0, movement-multiplier: 1.0 }
+    veteran: { health-multiplier: 1.25, damage-multiplier: 1.08, armor-bonus: 1.0, movement-multiplier: 1.02 }
+    elite: { health-multiplier: 1.55, damage-multiplier: 1.14, armor-bonus: 2.0, movement-multiplier: 1.04 }
+    champion: { health-multiplier: 1.9, damage-multiplier: 1.20, armor-bonus: 3.0, movement-multiplier: 1.05 }
+    miniboss: { health-multiplier: 2.4, damage-multiplier: 1.25, armor-bonus: 4.0, movement-multiplier: 1.04 }
+    boss: { health-multiplier: 3.0, damage-multiplier: 1.30, armor-bonus: 5.0, movement-multiplier: 1.02 }
+    world_boss: { health-multiplier: 3.6, damage-multiplier: 1.32, armor-bonus: 6.0, movement-multiplier: 1.0 }
+  # Template abilities are evaluated first; these defaults guarantee promoted wilderness ranks
+  # have mechanics even without a matching authored template. Runtime rank caps remain authoritative.
+  rank-abilities:
+    normal: []
+    veteran: [ "veteran_cleave" ]
+    elite: [ "veteran_cleave", "delayed_frost_rune" ]
+    champion: [ "veteran_cleave", "delayed_frost_rune", "war_cry" ]
+    miniboss: [ "veteran_cleave", "venom_cloud", "delayed_frost_rune", "war_cry" ]
+    boss: [ "glacial_slam", "venom_cloud", "delayed_frost_rune", "war_cry" ]
+    world_boss: [ "glacial_slam", "venom_cloud", "delayed_frost_rune", "war_cry", "call_frozen" ]
+  abilities:
+    maximum-summons-per-cast: 3
+    summon-lifespan-ticks: 300
   name:
     enabled: true
     always-visible: false
@@ -101,24 +149,31 @@ world-events:
     force-duration-minutes: 10
     force-night: true
   world-boss:
+    # Itemization 2.0: contribution-gated, PlayerProfile-receiptes személyes komponens.
+    ascension-component: osi_ereklyeszilank
+    ascension-component-amount: 1
+    display-level: 75
     enabled: true
     check-interval-minutes: 90
     chance-percent: 35
     lifetime-minutes: 20
-    health: 300.0
-    damage-multiplier: 2.0
-    aura-radius: 12.0
-    special-damage: 6.0
-    add-lifespan-seconds: 25
+    scaling:
+      participant-radius: 128.0
+      player-coefficient: 0.65
+      player-exponent: 0.80
+      maximum-health-multiplier: 12.0
+      damage-per-doubling: 0.04
+      maximum-damage-multiplier: 1.18
+      combat-power-influence: 0.20
+      tier-reference-power: 250.0
+    contribution:
+      minimum-score: 25.0
+      # A telegráf célpontjának sikeres kitérése csak már aktív résztvevőnek jár,
+      # encounterenként bounded darabszámmal; AFK/előharc padding nem kvalifikál.
+      maximum-objectives: 5
     treasury-reward: 300.0
     season-points: 10
     buff-minutes: 10
-    killer-loot-rolls: 2
-    killer-loot:
-      - "DIAMOND:2:4"
-      - "EXPERIENCE_BOTTLE:6:12"
-      - "GOLDEN_APPLE:1:2"
-      - "unique:emlekszilank:1"
   invasion:
     enabled: true
     check-interval-minutes: 75
@@ -128,7 +183,6 @@ world-events:
     radius: 8.0
     mini-boss-level-bonus: 6
     mob-lifespan-seconds: 600
-    champion-slam-damage: 5.0
   season:
     enabled: true
     length-days: 60

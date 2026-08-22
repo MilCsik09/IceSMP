@@ -24,6 +24,7 @@ public final class BestiaryManager {
     private final FactionManager factionManager;
     private final MessageManager messageManager;
     private final PlayerProfileAchievementStore store = new PlayerProfileAchievementStore();
+    private volatile hu.taliann.icesmp.pve.MobTemplateRegistry mobTemplates;
 
     public BestiaryManager(final JavaPlugin plugin, final ConfigManager configManager,
                            final CurrencyManager currencyManager,
@@ -38,6 +39,27 @@ public final class BestiaryManager {
 
     public JavaPlugin plugin() { return plugin; }
     public boolean isEnabled() { return configManager.getBoolean("bestiary.enabled", true); }
+
+    public void setMobTemplateRegistry(
+            final hu.taliann.icesmp.pve.MobTemplateRegistry mobTemplates) {
+        this.mobTemplates = mobTemplates;
+    }
+
+    public Map<String, hu.taliann.icesmp.pve.MobTemplate> mobTemplates() {
+        final var registry = mobTemplates;
+        return registry == null ? Map.of() : registry.all();
+    }
+
+    public hu.taliann.icesmp.pve.MobTemplate mobTemplate(final String id) {
+        return mobTemplates().get(id == null ? "" : id.toLowerCase(Locale.ROOT));
+    }
+
+    public int knownMobEntryCount() {
+        final java.util.HashSet<String> ids = new java.util.HashSet<>();
+        knownMonsterTypes().forEach(type -> ids.add(type.name().toLowerCase(Locale.ROOT)));
+        ids.addAll(mobTemplates().keySet());
+        return ids.size();
+    }
 
     public Set<String> entries(final Player player, final Category category) {
         return player == null ? Set.of() : entries(player.getUniqueId(), category);
@@ -203,6 +225,8 @@ public final class BestiaryManager {
      * (BestiaryListener, StatsCombatListener) és a GUI-megjelenítés ugyanezt a formát használja.
      */
     public static String entryId(final org.bukkit.entity.Entity entity) {
+        final String template = MobScalingManager.templateIdOf(entity);
+        if (template != null && !template.isBlank()) return template.toLowerCase(Locale.ROOT);
         final String variant = MobScalingManager.rareVariantOf(entity);
         return ((variant == null ? "" : variant + "_") + entity.getType().name())
                 .toLowerCase(Locale.ROOT);

@@ -1,0 +1,276 @@
+# PvE reward and discoverability closure. This extends the existing loot and mob-template
+# authorities; it does not introduce a second loot framework.
+
+# Legacy reusable hunting material brought under the same economy metadata contract as the new
+# vocabulary. The canonical item id stays unchanged and existing recipes remain authoritative.
+profession-materials:
+  vad_esszencia:
+    tier: SPECIAL
+    processing-state: RAW
+    source-types:
+    - combat:wilderness
+    - combat:veteran
+    sink-types:
+    - leather-equipment
+    - cordage-processing
+    - alchemy-service
+    - market
+    economy-managed: true
+
+# Reward-source reconciliation for pre-existing catalog anchors. Their template ids, stats,
+# set/signature identity and legacy thematic source tags remain intact; these additions make the
+# line's canonical rank eligibility reachable by the BuildAware source index.
+item-templates:
+  csontvarro_kopeny:
+    source-tags:
+    - combat:wilderness
+    - rank:normal
+  utjaro_csizma:
+    source-tags:
+    - combat:wilderness
+    - rank:normal
+  aranyfust_kopeny:
+    source-tags:
+    - combat:champion
+    - rank:champion
+  viharjaro_sisak:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+  viharjaro_mellvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+  viharjaro_labvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+  viharjaro_bakancs:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+  melyseg_orseg_sisak:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+  melyseg_orseg_mellvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+  melyseg_orseg_labvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+  melyseg_orseg_bakancs:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+  ostromtoro_mellvert:
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - profession:armorer
+
+# The HIGH Runic MAIL line keeps one foreign processed dependency (Armorer chain links).
+# The aquatic shell moves to the HIGH Vízbőr line, where it shares the already-required Fisherman
+# ecosystem with fish oil/pearl/aquatic hide instead of adding a second foreign profession.
+profession-recipes:
+  lte_runalanc_sisak:
+    ingredients:
+    - unique:sodrott_lancszem:2
+    - unique:holdlen_fonal:1
+    - unique:runapor:1
+    processing-dependencies:
+    - sodrott_lancszem
+    - holdlen_fonal
+    - runapor
+  lte_runalanc_mellvert:
+    ingredients:
+    - unique:sodrott_lancszem:4
+    - unique:holdlen_fonal:1
+    - unique:runapor:1
+    processing-dependencies:
+    - sodrott_lancszem
+    - holdlen_fonal
+    - runapor
+  lte_runalanc_labvert:
+    ingredients:
+    - unique:sodrott_lancszem:3
+    - unique:holdlen_fonal:1
+    - unique:runapor:1
+    processing-dependencies:
+    - sodrott_lancszem
+    - holdlen_fonal
+    - runapor
+  lte_runalanc_csizma:
+    ingredients:
+    - unique:sodrott_lancszem:2
+    - unique:holdlen_fonal:1
+    - unique:runapor:1
+    processing-dependencies:
+    - sodrott_lancszem
+    - holdlen_fonal
+    - runapor
+  lte_vizbor_sisak:
+    ingredients:
+    - unique:erositett_bor:2
+    - unique:vizbor:1
+    - unique:halolaj:1
+    - unique:bokic_gyongy:1
+    - unique:gyongyhaz_hej:1
+    processing-dependencies:
+    - erositett_bor
+    - vizbor
+    - halolaj
+    - bokic_gyongy
+    - gyongyhaz_hej
+  lte_vizbor_mellvert:
+    ingredients:
+    - unique:erositett_bor:4
+    - unique:vizbor:1
+    - unique:halolaj:1
+    - unique:bokic_gyongy:1
+    - unique:gyongyhaz_hej:1
+    processing-dependencies:
+    - erositett_bor
+    - vizbor
+    - halolaj
+    - bokic_gyongy
+    - gyongyhaz_hej
+  lte_vizbor_labvert:
+    ingredients:
+    - unique:erositett_bor:3
+    - unique:vizbor:1
+    - unique:halolaj:1
+    - unique:bokic_gyongy:1
+    - unique:gyongyhaz_hej:1
+    processing-dependencies:
+    - erositett_bor
+    - vizbor
+    - halolaj
+    - bokic_gyongy
+    - gyongyhaz_hej
+  lte_vizbor_csizma:
+    ingredients:
+    - unique:erositett_bor:2
+    - unique:vizbor:1
+    - unique:halolaj:1
+    - unique:bokic_gyongy:1
+    - unique:gyongyhaz_hej:1
+    processing-dependencies:
+    - erositett_bor
+    - vizbor
+    - halolaj
+    - bokic_gyongy
+    - gyongyhaz_hej
+
+loot:
+  rank-rewards:
+    normal:
+      source-tags: [combat:wilderness]
+      gear-chance-additive: 0.0
+      blueprint-chance: 0.002
+      special-material: ''
+      special-material-chance: 0.0
+    veteran:
+      source-tags: [combat:veteran, combat:wilderness]
+      gear-chance-additive: 0.02
+      blueprint-chance: 0.0035
+      special-material: vad_esszencia
+      special-material-chance: 0.01
+    elite:
+      source-tags: [combat:elite, combat:veteran, combat:wilderness]
+      gear-chance-additive: 0.04
+      blueprint-chance: 0.006
+      special-material: szorny_szerv
+      special-material-chance: 0.015
+    champion:
+      source-tags: [combat:champion, combat:elite, combat:veteran, combat:wilderness]
+      gear-chance-additive: 0.06
+      blueprint-chance: 0.01
+      special-material: melyvizi_esszencia
+      special-material-chance: 0.01
+    boss:
+      source-tags: [combat:boss]
+      gear-chance-additive: 0.0
+      blueprint-chance: 0.05
+      special-material: ''
+      special-material-chance: 0.0
+
+# `profile-id` is the deprecation/migration marker for the former authored reward block. Bukkit's
+# YAML merge may still expose old packaged sources/rewards leaves when a null tombstone is loaded;
+# MobTemplateRegistry deliberately ignores those leaves for every marked profile. They are not a
+# runtime authority: only BuildAware ItemTemplate loot + the bounded rank policy can choose rewards.
+mob-loot-profiles:
+  frozen_wilderness:
+    profile-id: frozen_wilderness
+    sources: null
+    rewards: null
+  deep_mine:
+    profile-id: deep_mine
+    sources: null
+    rewards: null
+  cultist:
+    profile-id: cultist
+    sources: null
+    rewards: null
+  champion:
+    profile-id: champion
+    sources: null
+    rewards: null
+  world_boss:
+    profile-id: world_boss
+    sources: null
+    rewards: null
+  surface_survival:
+    profile-id: surface_survival
+    sources: null
+    rewards: null
+  night_hunt:
+    profile-id: night_hunt
+    sources: null
+    rewards: null
+  swamp_survival:
+    profile-id: swamp_survival
+    sources: null
+    rewards: null
+  nether_survival:
+    profile-id: nether_survival
+    sources: null
+    rewards: null
+  end_survival:
+    profile-id: end_survival
+    sources: null
+    rewards: null
+  storm_survival:
+    profile-id: storm_survival
+    sources: null
+    rewards: null
+  wild_hunt:
+    profile-id: wild_hunt
+    sources: null
+    rewards: null
+  undead-common:
+    profile-id: undead-common
+  undead-elite:
+    profile-id: undead-elite
+  construct-elite:
+    profile-id: construct-elite
+  glacial-boss:
+    profile-id: glacial-boss

@@ -254,6 +254,11 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
         "tile", "firework", "mount", "npc",
     }
 
+    if kind == "PLAYER_PDC" and "getchunk().getpersistentdatacontainer" in lower_symbol:
+        return "GLOBAL_AGGREGATE_REFERENCE", (
+            "Chunk-owned durable block provenance is world state, not player-owned profile state."
+        )
+
     if kind == "PLAYER_PDC" and receiver in player_receivers:
         return "TRANSITION", (
             "Direct player PDC access is durable player-state authority until replaced by PlayerProfile."
@@ -424,7 +429,9 @@ def main() -> int:
 
     report = audit(root, allow_path)
     if args.write_report:
-        output = root / args.write_report
+        output = Path(args.write_report)
+        if not output.is_absolute():
+            output = root / output
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n",

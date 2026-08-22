@@ -38,12 +38,12 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 |--------|-------:|--------|
 | `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
 | `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
+| `listeners/` | 124 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 61 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
 | `quest/` | 8 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
-| `gui/` | 70 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
+| `gui/` | 72 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
 | `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
@@ -62,7 +62,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `assassin/` | 2 | Orgyilkos gameplay vertical slice: transiens állapot + konkrét runtime (Lehetőség négy nyitányból, háromhelyes Toxinkészlet + Dózis, Észleltség/időkorlátos rejtőzés, korlátos Járvány-nyilvántartás). |
 | `warlock/` | 2 | Boszorkánymester gameplay vertical slice: transiens állapot + konkrét runtime (Paktum/Lélekadósság, háromhelyes Átokgrimoár + Lélekfonal, Izzó Parázs/Túlhevülés). A Demonológus paktum NEM transziens: egyetlen authorityja a durable `demonologist.roster` companion névsor, amit a runtime csak a közös `ClassSpecCatalog.companionProjection` szabállyal olvas, és a `PetManager` companion-gatewayen keresztül, durable-first módon mutál. |
 | `wizard/` | 2 | Varázsló gameplay vertical slice: transiens állapot + konkrét runtime (Rúnaszövés öt tételes párral, három ráhangolódás Konvergenciával/Elemi Koronával; a lecsengés rögzített horgonyból számol, ezért lekérdezés-gyakoriságtól független). A Holtak Udvara NEM transziens: egyetlen authorityja a durable `necromancer.court` companion névsor, és ugyanaz a felvételi szabály (`ClassSpecCatalog.admitsCompanion`) dönt a cast előtt és a commitban. |
-| `storage/` | 7 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
+| `storage/` | 8 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 28 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, `PlatformCapabilities`, egyebek. |
 | `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
@@ -141,6 +141,103 @@ a resource csak aktív kaszt-erőforrásnál, a party pedig tagonként bővül. 
 `spacer` sora választja el a resource-packből érkező cím-glyphöt a felső vonaltól. A glyph
 `height`/`ascent` metrikája továbbra is a resource pack font-JSON-jának felelőssége.
 
+### 3.1.3 Mob/Encounter 2.0 — authored réteg és survival fallback
+
+A `pve/` csomag dependency-free domainje az authority a mob ID, schema, rank,
+archetype, ability, affix, levelgörbe, encounter snapshot és contribution szabályokhoz.
+A `MobTemplateRegistry` a 18 elemű `mob-templates.yml` katalógust fail-fast tölti: invalid entity,
+rank/archetype, hiányzó ability/loot profile, Bestiary ID-ütközés vagy schemahiba nem
+eredményez részleges registryt. Természetes vanilla mobhoz nem kötelező template;
+`MobTemplateRegistry.naturalTemplate` biome-, dimension-, depth-, night- és weather-tag
+specificitás alapján választ; üres találatán a vanilla fallback él tovább.
+
+A level resolution precedenciája: encounter override → authored location → explicit
+MobTemplate → survival földrajzi alap. Az utolsó réteg a wilderness-distance alap fölé
+territory-, biome/dimension-, depth- és event/Vérhold-bónuszt tesz, majd 70-nél clampel;
+a normál távolsági görbe önmagában 1–50. A 70 fölötti display level csak explicit
+authored boss/encounter útvonalon engedett. A HP és damage külön, monoton és bounded:
+alapértelmezésben `min(8, 1 + (level-1)×0.08)` és
+`min(3, 1 + (level-1)×0.025)`, amelyre a template/rank szorzók kerülnek; abszolút
+védőkorlát is érvényes. Az `EquippedCombatPowerService` a player owner-threadjén csak a
+main/offhand és négy armor slot valid, UUID-duplikátummentes canonical itemjeit mintavételezi,
+majd immutable cache-t publikál a cross-region boss-snapshotnak. A
+`EquippedCombatPowerModel` tényleges statot, item levelt, Signature-tier kontextust, szettet és
+rúnát ad a bounded `CombatPowerEstimator`-nak; malformed/stale/rossz slot fail-closed kimarad.
+Az invalidálás inventory/equipment eseményvezérelt; a plugin saját mutation-, craft-, market-,
+crate- és admin inventory útjai explicit owner-thread refresh hookot hívnak. Nincs periodikus
+equipment polling. A set transient modifier stabil `NamespacedKey`-t használ, és refreshkor
+eltávolítja az előző példányt az új hozzáadása előtt. Ez belső telemetry/snapshot input, nem
+publikus gear score és nem loot-authority.
+
+Az ability authority továbbra is a `MobAbilityDefinition` → `MobAbilityRegistry` →
+`MobAbilityRuntime` lánc. A #137 tizenegy `Kind` technikája source-compatible maradt, mellette
+nyolc jelenleg használt `COMPOSITE` definíció typed triggerből, legfeljebb nyolc conditionből
+és legfeljebb nyolc actionből épül. A bounded vocabulary csak a jelenlegi contenthez szükséges
+`DAMAGE`, `KNOCKBACK`, `DASH`, `RETREAT`, `GUARD` primitive-eket, valamint `ON_TIMER`,
+`ON_COMBAT_ENTER`, `ON_PROVOKED`, `ON_DAMAGED` triggereket tartalmazza; nincs expression
+language, általános scripting DSL vagy speciesenkénti Java mechanic. A target rule és az action
+target külön typed mező. A registry hibás trigger/condition/action/ability referenciára fail-fast,
+a runtime pedig cooldown, telegraph, recovery, interrupt és cast epoch mellett hajt végre.
+
+A `CreatureSpeciesRegistry` a `mob-templates.yml` egyetlen `creature-species` matrixát atomikusan
+publikálja. Runtime teljességi authority a Paper 1.21.11 `EntityType.values()` azon halmaza, ahol
+`isAlive && isSpawnable`, player nélkül; minden típusnak pontosan egy explicit row kell. A 91 row
+közös level/rank/stat/ability authorityra vetít, és category, disposition, temperament,
+provocation, social, reward, baby és tame policy szerint különbözik. Hiányzó runtime lookup
+`NON_COMBAT/VANILLA_ONLY` fallback, invalid config pedig startup-hiba: random agresszió nincs.
+
+A `CreatureProfileService` spawnkor PDC-be rögzíti a profile verziót, spawn source-ot,
+dispositiont, temperamentet, stabil reakciót és reward profilt. A level/rankot ugyanaz a
+`MobScalingManager` számolja Cow, Wolf, Zombie és Skeleton esetén; chunk load/restart nem reroll,
+mert a meglévő PDC marker authoritative. PASSIVE soha nem kezdeményez player combatot pusztán
+level vagy rank miatt. Valid provocation csak direkt player, player projectile vagy player-owned
+tameable damage; környezeti sebzés, etetés, tenyésztés, fejés, nyírás, mount, tame és lead nem
+provokáció. A UUID-seeded temperament és reaction entitynként stabil: az outcome `FLEE`, vagy a
+config szerint `WARN/FIGHT`, nem hitenként új RNG.
+
+`FIGHT` esetén a passzív creature ugyanabba a `MobAbilityRuntime` target/cooldown/cast/telegraph/
+interrupt/cleanup életciklusba lép, mint a hostile mob. A korábbi `WildlifeRetaliationService` és
+`WildlifeRetaliationPolicy` megszűnt, ezért nincs legacy+új double damage vagy double assist.
+Timeout, invalid/logout target, death, unload, leash-szerű távolságvesztés és shutdown cast epoch
+invalidációval bontja az authored combatot. A runtime legfeljebb 2048 aktív state-et tart, nincs
+world scan vagy per-tick YAML parse. PASSIVE timer technique csak authored combatban, NEUTRAL
+timer technique csak vanilla target mellett futhat; így Enderman/Wolf/Bee/Piglin vanilla trigger
+identityje nem válik proximity aggróvá.
+
+A social policy relationt, sugarat (max. 16), jelöltet (max. 32), asszisztenst (max. 6), szükséges
+temperamentet és cooldown-t deklarál. A shipped Cow policy ennél szűkebb: 6 blokk, 12 jelölt,
+2 asszisztens. Nincs rekurzív propagáció; a remote ally kizárólag saját entity schedulerén kap
+state-et. Bee/Wolf/Goat/Llama vanilla social/AI authorityt tart meg. Baby alapból csak identityt,
+nem combat kitet kap; owner-safe tameable az owner ellen nem lép authored combatba.
+
+A combat profile és reward profile külön authority. A normal survival wildlife mindig
+`VANILLA_ONLY`, tehát Elite Cow sem kap canonical gear-, soulstone- vagy class-XP faucetet.
+Spawner, spawn egg, breeding, command és custom forrású hostile profile sem kap automatikus
+faucetet; explicit event/template út `EXPLICIT_AUTHORED` markert használ. Rank a stat- és
+technique-komplexitást növelheti, dispositiont nem. A `CombatTelemetry` csak bounded species,
+provocation, outcome, social assist és technique aggregate-eket tart, PII nélkül.
+
+Az engine szándékosan nem encounter DSL. Boss phase, wave, objective, branching, delay/repeat,
+richer targeter és teljes threat authority a későbbi „Composable Encounter & Boss Authoring
+Runtime” scope határa; új primitive csak konkrét IceSMP content use case miatt kerülhet ide.
+
+A világboss startkor immutable résztvevő-snapshotot készít. A HP létszámgörbéje
+`1 + 0.65×(n-1)^0.8` (configolt és capelt), a damage csak logaritmikusan, legfeljebb
+1.18×-ra nő; late join hozzájárulhat, de a boss HP-ja nem ugrál. A bounded
+`ContributionLedger` elutasítja a pre-combat és self-support paddinget. A Monk és Paladin
+owner-thread heal/shield runtimeja tényleges ally-hatást jelent a ledgernek; a kijelölt
+világboss-zónából kitérő, már aktív résztvevő bounded objective-et kap. A ledger egyszeri
+settlement claimet ad, majd encounter-endkor lezár. A Profile-receipt alapú személyes
+reward az Itemization 2.0 boss-component source authorityja.
+
+Az item mutation crash policy közös exact snapshot-mátrixot használ reroll/rúna/ascension
+művelethez: prepare előtti/utáni exact-before abort, inventory publish utáni exact-after
+commit, mixed state kézi review. Az encounter reward PREPARED receiptje nulla markernél
+kézbesít, egy exact markernél commitol, több markernél fail-closed kézi vizsgálat.
+Rúnánál az insert, a kiválasztott foglalat remove-ja és az old→new replace egyaránt egyetlen
+whole-inventory before/after WAL-bejegyzés. A replace nem két egymás utáni mutation;
+UUID-t, provenance-t, ascensiont és a másik rúnát ugyanabban az immutable candidate-ben őrzi.
+
 ### 3.2 Üzenetek — több-fájlos merge + formátum-tudatos rendering
 `MessageManager.load()` egyesíti a `messages/<csoport>.yml` fájlokat (a `MESSAGE_GROUPS` szerint),
 majd a fő `messages.yml`-t override-ként. Rendering: a `get`/`getMessage`/`getComponent` **mind**
@@ -168,6 +265,20 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
     restartnál recoveryt ad. A wallet, market YAML és player inventory között nincs formális
     több-store atomicitás vagy exactly-once bizonyítás; a globális currency gate külön
     egyszerűsítési és runtime-validációs scope.
+  - **`storage/ItemMutationJournal`** (`item-mutation-journal.yml`): kizárólag a
+    reroll/ascension/salvage egy-játékosos inventory-határára szolgáló szűk WAL, nem
+    általános transaction framework. A domain előbb immutable candidate-et épít; a WAL
+    exact teljes before/after inventory snapshotot ír, majd ugyanazon owner threaden
+    payment+item publish és `player.saveData()` történik. Boot/join recovery csak a két
+    exact állapotot fogadja el; mixed snapshot kézi review. Az itembe írt bounded operation
+    receipt és revision védi a retry/double-click utat.
+  - **Encounter reward receipt/outbox** (PlayerProfile v2 `OPERATIONS`): a világboss
+    meaningful-contribution küszöbénél először bounded eligibility receipt készül.
+    Settlementkor ez COMMITTED állapotba kerül, majd a személyes delivery külön PREPARED
+    receiptet kap. A sorrend `receipt → inventory → player.saveData() → COMMITTED`;
+    full inventory nem dob tárgyat a földre, az exact markeres item reconnect után commitolható.
+    A boss transient, ezért restart után a COMMITTED eligibility újrakézbesíthető, a csak
+    PREPARED jelölt exact-before állapotként rollbackelhető.
   - **Frakcióváltás- és adó-WAL** (`faction-switch-journal.yml`,
     `faction-tax-journal.yml`): a `DurableTransactionProtocol` előbb tartós prepare rekordot ír,
     majd exact wallet before/after snapshotot commitol, ezután írja a teljes membership- vagy
@@ -307,6 +418,80 @@ ModelEngine-, MythicMobs- vagy Fancy-típus csak későbbi adaptercsomagban jele
 A class/spec integráció teljes helyi próbája a `runFolia` feladattal fut: ugyanazt a lockolt
 Folia 1.21.11 build 14-et és a lockolt pluginverziókat használja, mint a production cél, és előkészíti az egyetlen
 IceSMP + külső composite packot. A sima `runServer` nem production-helyettesítő.
+
+### 3.8.2 Vanilla Crafting Boundary
+
+Az `ItemTransformationPolicy` az egyetlen authority az item-domain és a vanilla
+transzformáció döntésére. A listenerek csak Paper-eseményt fordítanak policy inputtá;
+nem tarthatnak saját állomásspecifikus szabálykészletet. A besorolás O(1) Material/PDC
+lookup, a config immutable generációs snapshot, ezért a prepare hot path nem kér
+PlayerProfile-t, nem olvas fájlt és nem scannel receptkatalógust.
+
+| Input | Művelet | Output | Identity-következmény | Döntés |
+|---|---|---|---|---|
+| VANILLA_SURVIVAL | vanilla craft/cook/stonecut | vanilla | nincs MMO identity | engedélyezett |
+| BASIC_SURVIVAL_GEAR | craft/enchant/repair/smithing/grindstone | basic gear | továbbra sincs ItemInstance | engedélyezett |
+| CANONICAL_MMO_GEAR | crafting input, repair, enchant, netherite upgrade, grindstone | vanilla vagy módosított item | UUID/PDC/checksum lemosódhatna | blokkolt |
+| CANONICAL_MMO_GEAR | rune/reroll/ascension/salvage | canonical | exact before/after állapot | `ItemMutationCoordinator` + WAL kötelező |
+| CANONICAL_MMO_GEAR | rename/trim | canonical cosmetic | serialized meta/checksum változna | default blokkolt; csak journalolt adapterrel támogatható |
+| LEGACY | bármely vanilla transzformáció | bizonytalan | legacy marker részben vagy egészben eltűnhet | blokkolt |
+
+A valid canonical item runtime-validátora az explicit whitelistán kívüli közvetlen és
+stored enchantot `POLICY_VIOLATION` állapotnak minősíti. Így a command/plugin/loot eredetű
+tiltott enchantot az inspect, a felszerelés- és market-authority sem fogadja el csendben.
+Malformed PDC, stale checksum, invalid template és duplicate UUID továbbra is a meglévő
+identity/CombatPower kapukon zár. Container move, drop és death nem transzformáció; ezek
+engedettek, hogy a hibás tárgy elkülöníthető legyen.
+
+A durability jelenlegi szerződése minden domainben vanilla: wear, Unbreaking/Mending és
+break a Bukkit állapotot követi; canonical gearhez azonban vanilla enchant nem adható az
+üres default whitelist mellett. Töréskor az item megsemmisül, a meglévő equipment refresh
+eltávolítja CombatPower/set hatását. Külön repair economy nem része ennek a foundationnek.
+
+Az Equipment 2.0 megvalósította a `Material != ArmorFamily` contractot. A
+CLOTH/LEATHER/MAIL/PLATE az `ItemTemplate.armorFamily` explicit metadata; például az
+`IRON_CHESTPLATE` BASIC gear, nem implicit PLATE. Netherite kiváló survival material
+marad, és később lehet Plate/Mail alloy, Masterwork vagy Ascension reagent, de nem
+MMORPG endgame authority.
+
+### 3.8.3 Equipment 2.0 authority
+
+Az immutable `EquipmentProficiencyPolicy` a 13 `JobType` mindegyikéhez pontosan egy
+familyt rendel; a specialization a szülő kaszt familyjét örökli. Az aktív equipment-
+döntés központi sorrendje: canonical identity → slot → duplicate UUID → profile →
+explicit class/spec és ArmorFamily restriction → stage-specifikus level requirement →
+suppression. No-class canonical armor DENY, de a `BASIC_SURVIVAL_GEAR` soha nem lép
+ebbe a policyba. A level authority a jelenlegi kaszt Profile v2 szintje; kasztszint-
+változás owner-thread reconcile-t indít.
+
+Az armor family csak HEAD/CHEST/LEGS/FEET sloton érvényes. A schema v2 hiányzó,
+érvénytelen vagy nem armor slotra tett familyt, class-family konfliktust, mixed-family
+setet és family-idegen spec restrictiont startupkor elutasít. Az instance nem duplikálja
+a familyt: `ItemInstance → templateId → ItemTemplate` marad az authority. A template
+verziók nem változtak, ezért a meglévő UUID/provenance/roll/rúna/ascension példányok
+deterministikusan ugyanarra a most family-aware sablonra oldódnak fel.
+
+Az equip hot path O(1) profil-cache + template lookup. Click, shift/number-key, drag,
+right-click/plugin mutation, armor dispenser, join és respawn út közös listenerre jut.
+Tiltott állapotban az item nem vész el: lehetőség szerint inventoryba kerül, tele
+inventorynál a slotban marad explicit suppressed állapotban. A suppression eltávolítja
+az authored és backing-Material attribute komponenst; a set, Signature, rune,
+ability-power és CombatPower fogyasztó külön is ugyanazt a proficiency authorityt
+kérdezi. Class-váltás, Profile v2 aktiváció és config reload owner-thread reconcile-t
+ütemez; nincs disk I/O vagy YAML parse az inventory eseményben.
+
+Az `ArmorFamilyProfile` az item-level authorityt nem helyettesíti: offensive/defensive/
+utility identitást és valódi consumerrel rendelkező preferred/disfavored statokat ad.
+A `EquipmentBudgetModel` a tényleges statok közös súlyozott összegét reportolja, nem
+auto-fixel és nem osztja vissza family-koefficienssel. Bandenként a teljes szettbudget
+32/60/76/92, a slot share HEAD/CHEST/LEGS/FEET = 19/34/28/19%; a 160 páncéldarab
+0,88–1,12 kapun belül marad. A 25 meglévő fegyver/pajzs ugyanennek az authoritynak a
+harci pacingjét követi. A flat Armor flat érték marad; nincs publikus gear score,
+current/max armor vagy family armor cap. A külső sanity authority a valódi Paper
+1.21.11 default ItemStack attribute benchmark, nem a backing Material szivárgása.
+
+A géppel generált migráció-, balance-, Profession 2.0- és Resource Pack 2.0-handoff:
+[`development/equipment-2-handoff.json`](development/equipment-2-handoff.json).
 
 ### 3.9 Territórium-zónák és zóna-védelem
 
@@ -641,7 +826,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   holt bejegyzés, tartalom-drift.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 870 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
+- **Méret:** 960 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
   Csomag-megoszlás: listeners 121, managers 125, commands 95, spells 60, gui 69, crates 14, utils 26, data 15, classrelic 14,
   items 12, relics 11, quest 8, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -1287,17 +1472,22 @@ class health-scaling gate later does not require another HUD protocol or asset c
 Az armor flat számként, maximum és százalékos sáv nélkül rajzolódik; a food és conditional oxygen
 egymástól független fixed-width draw group. Az oxygen csak `air < maximumAir` esetén jelenik meg.
 
-### Eseményvezérelt Target Frame
+### Canonical Target Frame producer
 
-`DamageIndicatorListener` a nem törölt, pozitív játékos-sebzés MONITOR eseményén, a sérült
-entitás owner-threadjén rögzíti a név/típus/rang/szint és a találat után projektált current/max HP
-immutable snapshotját. A `HudManager` ezt screen-space `TargetHudState`-té alakítja. Játékos
-célpontnál a célpont saját HUD tickjének immutable health/resource snapshotja frissíti az adatot;
-cross-region live `Player`-olvasás nincs. A mob eredeti nevét a rendszer nem írja.
+A `HudManager` minden néző saját owner-threadjén bounded, blokk-LOS-t tisztelő szemirányú
+raytrace mintát kér a `DamageIndicatorListener`-től. Nincs world/entity-list scan. A kiválasztott
+entity a saját schedulerén publikál immutable `TargetFrameTracker.Snapshot`-ot; a generációs
+token elutasítja a későn visszaérő target callbacket. Canonical Mob 2.0 célpontnál a már felírt
+`mob_template`, `mob_level`, `mob_rank`, `mob_archetype` és legfeljebb két valid affix az
+authority: a HUD nem számol külön moblevelt. Stale template vagy malformed PDC vanilla fallbackre,
+0-s ismeretlen levelre és `NORMAL` rangra zár, nem talál ki Elite státuszt.
 
-Nincs online-player × nearby-entity poll, cross-region world scan vagy tartós vitals-entity.
-Lejárat, death és quit törli a target snapshotot. Egyedül a rövid életű floating damage-number
-marad `TextDisplay`; saját entity schedulerén egy másodperc után eltávolítja magát.
+A snapshotból készül a közös screen-space `TargetHudState`, amelyet a first-party resource-pack
+HUD renderel; külön Fabric target-authority nincs. Player targetnél a célpont saját HUD tickjének
+immutable health/resource snapshotja frissíti az adatot, cross-region live `Player`-olvasás nélkül.
+No target/LOS, target switch, range, death, despawn, world change, disconnect és expiry ugyanazt
+a bounded clear contractot használja. A mob eredeti neve változatlan; egyedül a rövid életű
+floating damage-number marad `TextDisplay`.
 
 ## Client Bridge — az IceSMP Client protokoll-alapja
 
@@ -1537,7 +1727,7 @@ gépi `ACTION_RESULT` után friss profession- és profil-state megy ki.
 
 ### Natív recept-böngésző (BROWSE_RECIPES → RECIPE_PAGE)
 
-A recept-katalógus (376 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
+A recept-katalógus (377 recept) nem fér a push-protokoll 64-es lista-limitjébe, ezért
 ez az egyetlen pull-modellű domain: a kliens `BROWSE_RECIPES`-szel egy szakma egy
 lapját kéri, a válasz requestId-korrelált `RECIPE_PAGE` a `RECIPE_BROWSER` capability
 + `client.features.recipe-browser` kapu mögött. A lap a játékos régió-szálán épül
@@ -1586,7 +1776,9 @@ vanilla barral egyezően globális. A natív boss-frame-et kapó játékosnál a
 vanilla világboss-bar elhallgat (`ClientHudRoute.bossFrameActive` suppression —
 nincs dupla presentation); vanilla kliens változatlanul a bart kapja. Kazamata
 mini-bossnak nincs vanilla felülete, ezért a frame-ben sem szerepel
-(display-paritás); encounter-scope/contribution-kör külön rendszer híján nincs.
+(display-paritás). A Mob/Encounter 2.0 contribution ledger külön server-authority;
+nem kerül nyilvános DPS-listaként a frame-be, a személyes eligibilityt csak a reward
+settlement fogyasztja.
 
 ### Territory overlay (TERRITORY_STATE)
 
@@ -1664,3 +1856,11 @@ registry-életciklust, a sequence-monotonitást és a rate limitert. A kliensold
 szimulált szerveres kézfogás-suite-okkal (lásd az AGENTS.md kliensprotokoll-DoD szabályát);
 az élő Paper↔Fabric roundtrip-bizonyítás (CLIENT-02) staging-teszt. A protokoll-tartomány
 szándékosan 1..1, és a feature-kapuk alapból zárva maradnak.
+
+## Professions 2.0 authority
+`PlayerProfile` remains the only durable profession progression authority. `ProfessionRecipeCatalog` publishes one immutable indexed recipe generation after validating stable material IDs, semantic duplicates, aliases and managed processing cycles. `ProfessionMaterialRegistry` is configuration identity for stackable economy materials; it deliberately does not assign ItemInstance UUIDs to ordinary stacks.
+
+The execution boundary is owner-thread inventory state: `ProfessionCraftTransaction` plans removal plus output placement against cloned storage and commits only after the whole batch fits. Canonical equipment is still `ItemTemplate -> ItemInstance`; deterministic operation-seeded quality decisions prevent retry from becoming a free Masterwork reroll. Vanilla Crafting Boundary and Equipment 2.0 active-equipment authority remain upstream contracts.
+
+### Professions 2.0 family closure
+A végső canonical páncél-összeállítás az Armorer gazdasági szerepe. CLOTH-hoz az Enchanter textil-feldolgozása, LEATHER-höz az Alchemist bőrkezelése kell; MAIL explicit bőr + könnyű fém dependency. Ez crafting expertise, nem class proficiency. A family scrap csak veszteséges reclamation útvonalon kerül vissza köztes anyagba.

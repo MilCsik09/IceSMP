@@ -1,0 +1,116 @@
+{
+  "authored_sources": [
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "inventory",
+      "line_id": "holdlen",
+      "path": "docs/development/equipment-rp2-authored-sources/holdlen-inventory-source.png",
+      "sha256": "0f07b6652b2acf5192dcc28fe237f4abab519912be39e3fa83019d1d81f0acff"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "worn",
+      "line_id": "holdlen",
+      "path": "docs/development/equipment-rp2-authored-sources/holdlen-worn-source.png",
+      "sha256": "e8599204560b9351c2e72af658ecf273bbb7429a44535c3da880790f1217b1d3"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "inventory",
+      "line_id": "vadbor",
+      "path": "docs/development/equipment-rp2-authored-sources/vadbor-inventory-source.png",
+      "sha256": "eaf17529183829d55e66c5fb73852e47eb314f12d2bdf9993b491eb180fab230"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "worn",
+      "line_id": "vadbor",
+      "path": "docs/development/equipment-rp2-authored-sources/vadbor-worn-source.png",
+      "sha256": "d43834470f178ddf32894817096fb8c626bac7dd40f63a70fcb5db576b015b8e"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "inventory",
+      "line_id": "konnyu_otvozet",
+      "path": "docs/development/equipment-rp2-authored-sources/konnyu_otvozet-inventory-source.png",
+      "sha256": "cfe96ccc0d4cf943edb01685b34b12c5a410ae86f7147582d79e22fe5aba64eb"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "worn",
+      "line_id": "konnyu_otvozet",
+      "path": "docs/development/equipment-rp2-authored-sources/konnyu_otvozet-worn-source.png",
+      "sha256": "32c0bed99b290c010c12b5c5eb73458f4d3edee7c74057c4f3eaba2046247bab"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "inventory",
+      "line_id": "borostyan_tarna",
+      "path": "docs/development/equipment-rp2-authored-sources/borostyan_tarna-inventory-source.png",
+      "sha256": "fef3a7a045107fc9e4246c0a8de35165639cc100c5378baf47847ef1121bba0b"
+    },
+    {
+      "authoring": "OPENAI_IMAGEGEN_BUILT_IN",
+      "kind": "worn",
+      "line_id": "borostyan_tarna",
+      "path": "docs/development/equipment-rp2-authored-sources/borostyan_tarna-worn-source.png",
+      "sha256": "dde9914c750385a0bca1e06b341cb1729b1ff9c2ec831ea50c165a16e894cd7f"
+    }
+  ],
+  "comparison": "docs/development/equipment-rp2-render-evidence/family-comparison.png",
+  "concept_reference": "docs/development/equipment-rp2-render-evidence/concept-reference.png",
+  "concept_reference_sha256": "6f1b55a0c632d2dc2c1b18afe131a52d324ef4ae891cdcce8e5d2f7d55ff84a8",
+  "human_client_staging_required": true,
+  "lines": [
+    {
+      "family": "CLOTH",
+      "files": [
+        "docs/development/equipment-rp2-render-evidence/holdlen-inventory.png",
+        "docs/development/equipment-rp2-render-evidence/holdlen-front.png",
+        "docs/development/equipment-rp2-render-evidence/holdlen-back.png",
+        "docs/development/equipment-rp2-render-evidence/holdlen-side.png"
+      ],
+      "line_id": "holdlen",
+      "proof_mode": "OFFLINE_DETERMINISTIC_RENDER"
+    },
+    {
+      "family": "LEATHER",
+      "files": [
+        "docs/development/equipment-rp2-render-evidence/vadbor-inventory.png",
+        "docs/development/equipment-rp2-render-evidence/vadbor-front.png",
+        "docs/development/equipment-rp2-render-evidence/vadbor-back.png",
+        "docs/development/equipment-rp2-render-evidence/vadbor-side.png"
+      ],
+      "line_id": "vadbor",
+      "proof_mode": "OFFLINE_DETERMINISTIC_RENDER"
+    },
+    {
+      "family": "MAIL",
+      "files": [
+        "docs/development/equipment-rp2-render-evidence/konnyu_otvozet-inventory.png",
+        "docs/development/equipment-rp2-render-evidence/konnyu_otvozet-front.png",
+        "docs/development/equipment-rp2-render-evidence/konnyu_otvozet-back.png",
+        "docs/development/equipment-rp2-render-evidence/konnyu_otvozet-side.png"
+      ],
+      "line_id": "konnyu_otvozet",
+      "proof_mode": "OFFLINE_DETERMINISTIC_RENDER"
+    },
+    {
+      "family": "PLATE",
+      "files": [
+        "docs/development/equipment-rp2-render-evidence/borostyan_tarna-inventory.png",
+        "docs/development/equipment-rp2-render-evidence/borostyan_tarna-front.png",
+        "docs/development/equipment-rp2-render-evidence/borostyan_tarna-back.png",
+        "docs/development/equipment-rp2-render-evidence/borostyan_tarna-side.png"
+      ],
+      "line_id": "borostyan_tarna",
+      "proof_mode": "OFFLINE_DETERMINISTIC_RENDER"
+    }
+  ],
+  "proof_mode": "OFFLINE_DETERMINISTIC_RENDER",
+  "scale_readability": "docs/development/equipment-rp2-render-evidence/scale-readability.png",
+  "schema": 1,
+  "skin_compatibility": "docs/development/equipment-rp2-render-evidence/skin-compatibility.png",
+  "slot_layer_separation": "docs/development/equipment-rp2-render-evidence/slot-layer-separation.png",
+  "worn_reference_comparison": "docs/development/equipment-rp2-render-evidence/worn-reference-comparison.png"
+}

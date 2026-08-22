@@ -28,7 +28,7 @@ public final class AdvancedConfigMenuRegressionSuite {
     }
 
     private static void verifiesServerWorldCatalog() {
-        check(ServerWorldConfigMenuGUI.entryCount() == 17,
+        check(ServerWorldConfigMenuGUI.entryCount() == 16,
                 "server/world advanced entry count changed unexpectedly");
         final YamlConfiguration merged = merged("general.yml", "world.yml", "moderation.yml");
         final Set<String> keys = new HashSet<>();
@@ -46,11 +46,13 @@ public final class AdvancedConfigMenuRegressionSuite {
             }
         }
         check(textEntries >= 4, "safe text editor lost required text fields");
-        check(listEntries >= 5, "safe list editor lost required list fields");
+        check(listEntries >= 4, "safe list editor lost required list fields");
         check(ServerWorldConfigMenuGUI.findEntry("world-events.intro.lines") != null,
                 "intro line list editor missing");
         check(ServerWorldConfigMenuGUI.findEntry("moderation.chat-filter.words") != null,
                 "moderation word-list editor missing");
+        check(ServerWorldConfigMenuGUI.findEntry("wildlife-retaliation.enabled") == null,
+                "retired wildlife shadow authority remains editable");
     }
 
     private static void verifiesCrateCatalogAndRewards() {

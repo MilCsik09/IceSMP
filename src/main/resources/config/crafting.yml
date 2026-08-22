@@ -1,72 +1,38 @@
 # IceSMP konfiguráció — crafting (a ConfigManager a támogatott CONFIG_FILES-listát tölti be)
-# ===== Kaszt/szakma-alapú craftolási korlátozások =====
-# required-job: kaszt azonosító (pl. "warrior") vagy "ANY" (bármely kaszt megfelel) + required-level.
-# required-profession: szakma azonosító (pl. "armorer") + required-profession-level.
-# Ha mindkettő meg van adva, mindkét feltételnek teljesülnie kell.
+# ===== Vanilla Crafting Boundary =====
+# A normál survival crafting és a basic combat gear szabad. Canonical ItemInstance csak explicit
+# IceSMP producerből születhet, és vanilla station nem írhatja át. A rename/trim kapcsoló azt jelzi,
+# hogy a policy egy jövőbeli WAL-os adaptert elfogadna; a jelenlegi station listener közvetlen
+# Bukkit-meta mutáció helyett továbbra is fail-closed CANONICAL_MUTATION_REQUIRED döntést ad.
+itemization:
+  vanilla-boundary:
+    basic-survival-gear: true
+    feedback-cooldown-seconds: 2
+    canonical:
+      rename: false
+      armor-trim: false
+      vanilla-repair: false
+      smithing-upgrade: false
+      grindstone: false
+      enchanting: false
+      # Csak explicit canonical producer által felrakott, ismert enchant kerülhet ide.
+      # Az enchanting table és az anvil ettől még nem kerülheti meg a mutation/WAL boundaryt.
+      allowed-enchantments: []
+      durability: "vanilla"
+
+# ===== Legacy kaszt/szakma-alapú vanilla receptkapu =====
+# A Survival Sandbox MMORPG policy szerint a vanilla tool, armor, workstation és étel nem kér
+# profession szintet. A manager kompatibilitásból megmarad, de alapból nincs aktív szabálya.
 crafting-restrictions:
-  enabled: true
+  enabled: false
   notify-cooldown-seconds: 3
-  rules:
-    # === ARMORER: a netherite-felszerelést a páncélkovács kovácsolja (csúcs-tier) ===
-    netherite-gear:
-      required-profession: "armorer"
-      required-profession-level: 25
-      materials:
-        - "NETHERITE_SWORD"
-        - "NETHERITE_PICKAXE"
-        - "NETHERITE_AXE"
-        - "NETHERITE_SHOVEL"
-        - "NETHERITE_HOE"
-        - "NETHERITE_HELMET"
-        - "NETHERITE_CHESTPLATE"
-        - "NETHERITE_LEGGINGS"
-        - "NETHERITE_BOOTS"
-
-    # === MINER: a netherite-rúd finomítása (a bányász olvaszt/kohósít; a kovács ebből forgat gear-t) ===
-    netherite-refining:
-      required-profession: "miner"
-      required-profession-level: 20
-      materials:
-        - "NETHERITE_INGOT"
-
-    # === LUMBERJACK: finom faipari termékek (számszeríj + pajzs); az ÍJat NEM kapuzzuk (íjász alap) ===
-    fine-woodwork:
-      required-profession: "lumberjack"
-      required-profession-level: 8
-      materials:
-        - "CROSSBOW"
-        - "SHIELD"
-
-    # === ALCHEMIST: a főzőállványt csak alkimista építi (alacsony szint = puha kölcsönös függés) ===
-    brewing-station:
-      required-profession: "alchemist"
-      required-profession-level: 5
-      materials:
-        - "BREWING_STAND"
-
-    # === ENCHANTER: az bűvölő-asztalt csak enchanter építi (alacsony szint) ===
-    enchanting-station:
-      required-profession: "enchanter"
-      required-profession-level: 5
-      materials:
-        - "ENCHANTING_TABLE"
-
-    # === COOK: összetett ételek (a nyers sültek szabadok maradnak) ===
-    fine-cooking:
-      required-profession: "cook"
-      required-profession-level: 6
-      materials:
-        - "CAKE"
-        - "PUMPKIN_PIE"
-        - "RABBIT_STEW"
-
-    # HERBALIST + FISHERMAN: ezeknek a craft-asztali kapuzás erőltetett lenne — az értékük a
-    # GYŰJTÉS és a főző-/alkimista-alapanyag-ellátás. Nekik a főzés-hook (brew) vagy egy gyűjtés-
-    # oldali mechanika illik jobban — lásd a tervet (ROADMAP/IDEAS), nem ebben a config-körben.
+  rules: {}
 
 # ===== Signature-item perkek (K2/K3/K4 — frakció-kapus craftolt tárgyak) =====
 # Minden kulcs élőben olvasódik (/icesmp reload után restart nélkül él).
 signature:
+  # Canonical ascension Signature-fokozatonkénti additív módosítása (nem multiplikatív power creep).
+  itemization-tier-bonus: 0.03
   # Bootstrap-regisztrált EGYEDI enchantok a signature itemeken (Jégfog, Vihartűz,
   # Vérszomj, Fagypáncél, Főnixtoll, Érc-érzék, Bokic Kegye) — a magyar nevük valódi
   # enchant-sorként jelenik meg a tooltipben (kliens-mod és resource pack nélkül).
@@ -149,7 +115,10 @@ signature:
 
 # ===== B26 — Rúna-kovácsolás: hatás-értékek (élő kulcsok, /icesmp reload) =====
 # A rúna unique-materialként készül (profession-materials + recept), felhelyezés:
-# a kurzoron tartott rúnát kattintsd a cél-tárgyra. Tárgyanként EGY rúna, nem cserélhető.
+# a kurzoron tartott rúnát kattintsd a cél-tárgyra. A canonical ItemInstance a
+# template aktuális 0–2 socketét használja; a legacy tárgy kompatibilitásból egyetlen,
+# ezen az insert-UX-on nem cserélhető rúnát tarthat. A canonical remove/replace domain-API
+# identity-stabil, a külön játékosfelülete későbbi kapu.
 runes:
   runa_elek:
     display: "Él Rúnája"
@@ -184,3 +153,16 @@ runes:
     applies: [ "weapon" ]
     chance: 0.08
     echo-damage-percent: 30.0
+  runa_suly:
+    display: "Súly Rúnája"
+    applies: [ "weapon" ]
+    minimum-target-health: 40.0
+    large-target-damage-percent: 4.0
+  runa_oltalom:
+    display: "Oltalom Rúnája"
+    applies: [ "chest" ]
+    low-health-reduction-percent: 6.0
+  runa_vadasz:
+    display: "Vadász Rúnája"
+    applies: [ "bow" ]
+    monster-damage-percent: 5.0

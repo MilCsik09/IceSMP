@@ -15,6 +15,23 @@ resource-pack:
   override-sha1: ""
   prompt: "&bAz IceSMP egyedi modelljeihez és felületéhez szükséges resource pack."
 
+# ===== Professions 2.0 — family salvage delivery =====
+# A salvage domain output-keyjei stabil profession material ID-k; nincs runapor fallback.
+itemization:
+  salvage:
+    output-map:
+      szovet_foszlany: szovet_foszlany
+      bor_hulladek: bor_hulladek
+      lanc_toredek: lanc_toredek
+      femhulladek: femhulladek
+
+# A meglévő Profile v2 profession specializációk gazdasági hatása bounded és determinisztikus.
+# Efficiency inputot takarít meg; yield csak stackelhető processing/consumable outputot növel.
+professions:
+  specialization:
+    economy-efficiency-percent: 0.10
+    economy-yield-percent: 0.10
+
 # ===== Season 0 / Prologue — Olethropyla =====
 # Nincsenek map-koordináták a kódban: az anchorokat az /events spawnpoint rendszerrel
 # kell felvenni (prologue-gate, prologue-gathering, prologue-breach, prologue-boss).
@@ -57,6 +74,9 @@ world-events:
       mob-per-extra-player: 0.40
       minimum-mob-count: 4
       maximum-mob-count: 28
+      mob-level: 20
+      elite-level: 28
+      add-level: 32
       boss-health-per-extra-player: 0.075
       boss-health-maximum-multiplier: 4.0
     breach:
@@ -83,10 +103,5 @@ world-events:
         minimum-boss-damage: 1.0
       boss:
         name: "A Hasadék Őre"
-        entity-type: "WITHER_SKELETON"
-        base-health: 500.0
-        base-attack-damage: 9.0
+        level: 55
         timeout-seconds: 900
-        slam-damage: 7.0
-        hazard-damage: 3.0
-        add-types: [ "PIGLIN_BRUTE", "BLAZE", "WITHER_SKELETON" ]

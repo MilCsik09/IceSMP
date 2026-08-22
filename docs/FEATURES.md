@@ -563,7 +563,7 @@ Regisztrált spellkatalógus, célzás, költség, cooldown, projectile/state ke
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
 Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz és szakmai GUI.
-A receptkatalógus 376 receptet tartalmaz, és minden recept kimondja a **fajtáját**
+A receptkatalógus 392 receptet tartalmaz, és minden recept kimondja a **fajtáját**
 (gyakorló / hozam / egyedi / lánc / ritkaság); a fajta szabja meg, mit adhat a
 vanília fölé, és ezt gépi kapu tartja fenn.
 
@@ -600,6 +600,13 @@ vanília fölé, és ezt gépi kapu tartja fenn.
 
 Szakmai receptkönyv, craft-korlátok, blueprint-feloldás, katalizátorvédelem és masterwork craft.
 
+A Vanilla Crafting Boundary megőrzi a survival sandboxot: building block, workstation,
+storage, redstone, transport, food, vanilla tool és basic combat gear szabadon craftolható,
+enchantolható és javítható. Ezek nem kapnak automatikusan template-et, UUID-t, rollt,
+Signature-t, runát, setet vagy Ascensiont. Canonical IceSMP gear csak explicit profession,
+loot, boss, event, blueprint, quest vagy admin producerből jön létre; vanilla recept,
+üllő, smithing, enchanting és grindstone nem moshatja le vagy írhatja át az identityt.
+
 - **Így találkozol vele:** Crafting események, blueprint item, szakmai receptkönyv GUI. GUI: Szakmai receptkönyv.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Craft-előkészítés/befejezés, blueprint használat és item-validáció.
@@ -610,7 +617,8 @@ Szakmai receptkönyv, craft-korlátok, blueprint-feloldás, katalizátorvédelem
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `crafting.*`, `profession-recipes.*`, `profession-materials.*`, itemdefiníciók.
+- Config: `crafting.*`, `itemization.vanilla-boundary.*`, `profession-recipes.*`,
+  `profession-materials.*`, itemdefiníciók.
 - Tartós állapot: Blueprint/unlock és szakmai állapot tartós; craft tranzakció eseményalapú.
 - Reload: Receptcache célzottan reloadolható; strukturális registry-váltás restartot igényelhet.
 
@@ -622,11 +630,57 @@ Szakmai receptkönyv, craft-korlátok, blueprint-feloldás, katalizátorvédelem
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Adatvezérelt ritkaság, egyedi anyag, item-provenance, rúnázás, signature enchantok és tárgyvédelmek.
+Az Itemization 2.0 stabil template- és példányazonosságot, hatfokú ritkaságot,
+normalizált roll qualityt, 0–2 rúnahelyet, signature/set fogyasztókat és bounded,
+UUID-authority crafter provenance-t ad. A `/profession forge` vanilla GUI Full
+Reforge, egy authored rollra alkalmazható Stat Lock, quality-padlót emelő Amplifier,
+költséglépcsőt megőrző Stability Seal, determinisztikus Ascension és veszteséges
+salvage előnézetet kínál. A Forge kiválasztott socketes rúna-remove és egyetlen
+WAL-műveletként végrehajtott old→new replace előnézetet is ad; a régi rúna a bundled
+`destroy` policy szerint megsemmisül. Reroll, rúnacsere és ascension közben az item UUID-ja nem
+változik; az ismételt reroll költséglépcsője magával az itemmel utazik.
 
-- **Így találkozol vele:** Craft, loot, itemhasználat, anvil/rúna esemény; admin itemadás.
+A combat progression authority 160 authored páncéldarabot — 40 teljes, négydarabos
+felszereléssort — és a már létező 25 fegyver/pajzs sablont kezel közös, normalizált
+költségmodellben. A katalógus 64 profession-craftolt darabot, 8 mechanikus szettet,
+15 registry-bekötött Signature Effectet, explicit ascension-utakat és 10 valós rúnát
+is összeköt. A canonical `ItemTemplate → ItemInstance` producer szint-, blueprint- és
+masterwork quality-padlót adhat, de nem írja át önkényesen a template stat-budgetjét.
+
+Az Equipment 2.0 mind a 160 armor-slot sablont explicit családba sorolja: 40 CLOTH,
+40 LEATHER, 40 MAIL és 40 PLATE. A 13 kaszt familyje fix, a specialization nem írja át.
+Azonos tierben a family nem rangsor: Cloth ability/resource/utility, Leather
+mobility/crit/sustain, Mail hybrid/resistance, Plate armor/HP/mitigation budgetet
+hangsúlyoz. Csak a katalógusban tényleges consumerrel rendelkező stat használható.
+
+Wrong-family vagy túl magas szintű authored gear birtokolható, rúnázható, listázható
+és megvehető; csak az aktív használata tiltott. A kapu minden canonical armor-,
+mainhand- és offhand-úton a jelenlegi kasztszintet hasonlítja az adott ascension-stage
+`level-requirement` értékéhez. Tiltott, no-class vagy underlevel equip nem ad fixed/rolled statot, setet,
+Signature-t, rúnahatást vagy CombatPowert. A market ArmorFamily szerint szűrhető
+(`@cloth`, `@leather`, `@mail`, `@plate`), a loot saját familyt preferál, de az eddigi
+1.5× cap és a bounded soft-diversity miatt más family trade-dropja sem tűnik el.
+
+Az ascension csak explicit stage-et definiáló template-nél működik. Az új rollérték
+a régi normalizált qualityt viszi át az új authored tartományba, nem sorsol újra;
+közben item level, fixed/rolled budget, követelmény, rune socket, lore/model és
+Signature-fokozat változhat. A pilotban a magasabb Signature-fokozat additív,
+configolt erősítést kap, nem kontrollálatlan multiplikatív szorzót.
+
+A régi random-affix, egyrúnás, relikvia- és custom tárgyak felismerhetők maradnak.
+Az ismeretlen eredetű legacy gear nem rerollolható, nem ascendelhető és nem salvage-
+elhető automatikusan; piaci engedélye külön config-policy. A combat authored gear
+engedélyezésekor a normál gear producer nem esik vissza új legacy random-affix gearre,
+a crate parser pedig ilyen receptjutalmat elutasítja.
+Az eddigi legacy egy-rúnás insert kompatibilitás megmarad, de canonical remove/replace
+nem fut rajta. Külön, kétoldalú közvetlen player-trade rendszer nincs a repóban; az
+ellenőrzött ItemInstance-átruházási authority ebben a körben a WAL-os market.
+
+- **Így találkozol vele:** `/profession recipes`, `/profession forge`, mining,
+  combat/world-boss loot, rúnázás, `/market`; admin: `/iceitem template <id>`.
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
-- **Mitől mozdul meg:** Item létrehozása, frissítése, craftja, lootja és használata.
+- **Mitől mozdul meg:** Item létrehozása, craftja, rerollja, rúnázása, piaci
+  escrow-ja, salvage-e és authored ascensionje.
 - **Ami még kellhet hozzá:** Resource-pack `ITEM_MODEL` mappingek, lootforrások és displaynevek ellenőrzendők.
 - **Fontos határ:** Meglévő, régi metadata-s itemek migrációját production mintán kell tesztelni.
 
@@ -634,8 +688,15 @@ Adatvezérelt ritkaság, egyedi anyag, item-provenance, rúnázás, signature en
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `item-rarity.*`, `dev-items.*`, crafting-, rune- és signature-item definíciók.
-- Tartós állapot: Az itemadat magában az itemben és egyes dev-item state-ekben tartós.
+- Config: `itemization.*`, `item-templates.*`, `item-sets.*`, `item-rarity.*`, `dev-items.*`, crafting-, rune- és signature-item definíciók.
+- Tartós állapot: A canonical példányadat, reroll count/költséglépcső, receipt-lista,
+  rune/ascension/provenance az itemben van. A bounded loot-diverzitási előzmény a
+  PlayerProfile v2 statisztikai szekciójában, a ritka mining napi anti-farm budgetje
+  a Profile v2 economy extensionben marad reconnect és restart után is.
+- Tranzakció: `item-mutation-journal.yml` exact before/after inventory snapshotot
+  készít payment előtt; playerdata publish után a receiptet tartalmazó candidate és
+  az elfogyasztott anyagok egy snapshotként recoveryzhetők. Insert/remove/replace ugyanazt
+  a boundaryt használja; mixed rune/payment witness nem automatikusan rendeződik.
 - Reload: Definíciók részben reloadolhatók; meglévő itemek frissítő listeneren vagy újrageneráláskor változnak.
 
 </details>
@@ -1083,20 +1144,68 @@ Szezonállapot, jutalmak, történetmesélés, finálé, monumentum, holiday, am
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és undead segédszabályok.
+Mobskálázás, loot table, dungeon/mob jutalom, minionvédelem, bestiárium és undead
+segédszabályok. A combat gear-sor releváns forrásnál authored Itemization 2.0
+template-et választ: level/class/spec/build/üres slot/forrás legfeljebb 1,5× súlyt
+adhat, az utolsó legfeljebb 32 drop pedig csak enyhe, nem garantált diverzitási
+korrekciót végez. A más kasztnak való, kereskedhető tárgyak súlya pozitív marad.
+
+A Mob/Encounter 2.0 normál survival progressionje Lv. 1–50, a földrajzi/event
+bónuszokkal elérhető általános hard cap Lv. 70. A mob szintjét rétegesen az explicit
+encounter vagy authored hely, a MobTemplate, majd a territory/biome/mélység/távolság
+és event állapot határozza meg. A HP gyorsabb, a damage lassabb, külön bounded görbén
+nő; 70 fölötti boss csak authored override, nem wilderness extrapoláció.
+
+A rendszer 18 canonical MobTemplate-et és egy 91 soros Paper 1.21.11 species matrixot
+használ. A hét rank és 12 archetype közös ability registryre épül. A #137 tizenegy legacy
+`Kind` technikája mellett nyolc authored composition használja az öt ténylegesen szükséges
+typed primitive-et (`DAMAGE`, `KNOCKBACK`, `DASH`, `RETREAT`, `GUARD`). Új Cow/Sheep/Pig/
+Horse kit authored paraméterekkel bővíthető, species-specific listener/service nélkül.
+
+PASSIVE, NEUTRAL, HOSTILE és NON_COMBAT elsősorban azt szabja meg, mikor nyílhat combat;
+level, rank, stat és technique ettől független. A passzív creature stable UUID-seeded
+TIMID/CALM/DEFENSIVE/TERRITORIAL/HERD_DEFENSIVE/PACK_DEFENSIVE policyból kap FLEE vagy
+WARN/FIGHT reakciót, így ugyanaz az entity nem dob új személyiséget minden ütésnél. Csak
+player, player projectile vagy player-owned valid damage provokál. Fight esetén ugyanaz a
+telegraph/cooldown/cast epoch/disengage runtime fut, mint hostile mobnál; a legacy wildlife
+damage listener megszűnt. Cow bounded herd defense-et, Rabbit flee-first identitást kap;
+Goat/Bee/Wolf/Llama és más neutral fajok vanilla trigger/social viselkedése megmarad.
+
+Minden combat-capable row canonical level/rank projectiont kap, de Elite vagy Lv40 PASSIVE
+nem auto-aggro. Baby alapból nem kap authored combatot, owner-safe tameable nem fordul a gazda
+ellen. A social query sugaras, jelölt- és asszisztens-capelt, nem rekurzív és entity-scheduleres.
+Passzív wildlife rewardja `VANILLA_ONLY`: a combat capability, level vagy rank önmagában nem
+ad gear-, soulstone-, encounter- vagy class-XP jutalmat.
+
+A világboss startkor stabil, csökkenő hozadékú player-count és élő equipped-CombatPower
+snapshotot készít. A power csak valid main/offhand+armor canonical itemek tényleges
+stat/rúna/Signature/szett kontextusa; nem publikus Gear Score. Late
+join után contribution gyűjthető, de a HP nem ugrál. A bounded ledger sebzést,
+tankolást, Monk/Paladin ally-healt és shieldet, valamint telegráf-kitérés objective-et
+támogat; self-paddinget,
+pre-combat farmot és dupla settlementet elutasít. Az érdemi résztvevő személyes,
+PlayerProfile receipt-alapú ascension komponenst kap; tele inventorynál a jutalom
+reconnectig függőben marad, nem esik a földre.
 
 - **Így találkozol vele:** `/bestiarium`; automatikus spawn/kill/loot események. Parancs: /bestiarium (alias: /bestiary, /lajstrom). GUI: Bestiárium (kattintható kategória-főoldal + lapozható lajstrom: ismert bejegyzések ikonnal, ismeretlenek „???" sziluettként, teljesítmény-%-kal). A szörny-bejegyzések faj-szintű mélységet kapnak: elejtés-számláló, első-elejtés dátum és kill-alapú tudás-fokozatok (kódex-jegyzet → zsákmány-jegyzet → mestervadász), a világbossok archetípusonként (nem vanilla-fajonként) kerülnek a lajstromba. Külső kijelzéshez: `%icesmp_bestiary_<kategória>%` és `_total` placeholderek.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
 - **Mitől mozdul meg:** Mob spawn, sebzés, ölés, loot, bestiárium-felfedezés és minion lifecycle.
-- **Ami még kellhet hozzá:** Mobspawnokat, arénákat, farmvédelmet és lootforrásokat ellenőrizni kell.
-- **Fontos határ:** Vanilla/custom mob és más lootplugin együttműködése runtime tesztet igényel.
+- **Ami még kellhet hozzá:** Mobspawnokat, arénákat, telegráf-láthatóságot,
+  farmvédelmet, 50–60 fős encounter terhelést és lootforrásokat stagingen ellenőrizni kell.
+- **Fontos határ:** A forrásregresszió nem bizonyít production Folia region-hopot,
+  harcérzetet vagy vanilla/custom mob és más lootplugin együttműködést.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.*`, `loot.*`, mob-, bestiary- (mérföldkövek, `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`), scaling- és miniondefiníciók.
-- Tartós állapot: Bestiárium progress és egyes loot/event state-ek tartósak; mob entity runtime.
+- Config: `world.yml` `mob-scaling.*` és `world-events.world-boss.*`,
+  `mob-templates.yml` `mob-abilities`, `creature-species`, `mob-templates`, `loot.*`,
+  `itemization.loot.*`, bestiary- (mérföldkövek,
+  `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`) és miniondefiníciók.
+- Tartós állapot: Bestiárium progress, bounded authored-loot előzmény és egyes
+  loot/event state-ek tartósak; mob/ability/ledger entity runtime. A személyes boss
+  reward eligibility/delivery receipt a PlayerProfile v2 `OPERATIONS` szekcióban él.
 - Reload: Loot/balance reloadolható; már spawnolt mobok nem feltétlenül változnak visszamenőleg.
 
 </details>
@@ -1403,3 +1512,13 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 
 <sub>Dokumentációs snapshot: 2026-07-30 · release `4643ab535…` · deployed mapping:
 `775d9e247…` (`HIGH_CONFIDENCE`, nem `EXACT`).</sub>
+
+## Professions 2.0 economy
+- Meaningful raw → refined → component → craft chains for textile, leather, hybrid mail and forged plate.
+- Cross-profession MAIL dependency and selected high-tier combat components.
+- Targeted canonical crafting, bounded non-guaranteed Masterwork, family-aware lossy salvage and player-market-ready material metadata.
+- Shift-click batch processing for stackable processing recipes with all-or-nothing inventory capacity checks.
+- Machine-readable migration, producer/consumer and resource-pack handoff reports.
+
+### Professions 2.0 family crafting
+A négy Equipment 2.0 family mind rendelkezik profession craft végponttal: CLOTH, LEATHER, MAIL és PLATE. A salvage-family maradékoknak valós, veszteséges visszanyerési sinkjük van; boss-komponens nem állítható vissza salvage-ből.

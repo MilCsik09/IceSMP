@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TransientEntities;
 import net.kyori.adventure.text.Component;
@@ -307,12 +308,21 @@ public final class CultistEventManager {
         if (where == null || spawnGuard.isBlocked("cultists", where)) {
             return;
         }
-        final Entity spawned = world.spawnEntity(where, type);
-        if (!(spawned instanceof Mob mob)) {
-            spawned.remove();
-            return;
-        }
+        final Mob mob = spawnCultistMob(where, type);
+        if (mob == null) return;
         prepareCultist(mob, name);
+    }
+
+    private Mob spawnCultistMob(final Location where, final EntityType type) {
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+        return spawns == null ? null : spawns.spawn(where,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
+                        "cultists", "cultists:active", "cultist", type,
+                        Math.max(1, configManager.getInt("cultists.mob-level", 5)),
+                        MobRank.VETERAN, "SKIRMISHER",
+                        hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
+                        true, 0L));
     }
 
     private void prepareCultist(final Mob mob, final String name) {
@@ -324,18 +334,13 @@ public final class CultistEventManager {
         mob.customName(Component.text("🕯 " + name,
                 NamedTextColor.DARK_PURPLE));
         mob.setCustomNameVisible(true);
-        mobScalingManager.forceLevel(mob, Math.max(1,
-                configManager.getInt("cultists.mob-level", 5)));
         TransientEntities.register(plugin, mob);
         cultists.add(mob.getUniqueId());
     }
 
     private void spawnCourier(final World world, final Location site) {
-        final Entity spawned = world.spawnEntity(site, EntityType.VINDICATOR);
-        if (!(spawned instanceof Mob courier)) {
-            spawned.remove();
-            return;
-        }
+        final Mob courier = spawnCultistMob(site, EntityType.VINDICATOR);
+        if (courier == null) return;
         prepareCultist(courier, "Kultista hírvivő");
         Location goal = null;
         double best = Double.MAX_VALUE;

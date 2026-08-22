@@ -281,6 +281,10 @@ public final class MarketCommand implements BasicCommand {
             case "market-too-many-listings" -> "&cElérted a maximális tétel-számot a piacon.";
             case "amount-must-be-positive" -> "&cAz összegnek pozitívnak kell lennie.";
             case "market-relic-not-tradeable" -> "&cA relikviák nem bocsáthatók piacra — a börze a szilánkoké és az unique anyagoké.";
+            case "market-item-identity-invalid" -> "&cA tárgy canonical identitása hibás vagy elavult; nem kerülhet escrow-ba.";
+            case "market-item-policy-blocked" -> "&cA template kötési/kereskedési szabálya tiltja a piaci listázást.";
+            case "market-item-duplicate" -> "&cDuplikált item UUID észlelve; a piac biztonsági okból lezárta a műveletet.";
+            case "market-legacy-blocked" -> "&cA legacy tárgyak piaci listázása jelenleg tiltott.";
             case "market-journal-unavailable" ->
                     "&cA piac tranzakció-naplója most nem írható — a művelet biztonsági okból elmaradt. Próbáld újra kicsit később.";
             default -> "&cA listázás nem sikerült.";

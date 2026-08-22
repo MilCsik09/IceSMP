@@ -46,6 +46,135 @@ A jelenlegi Java resource-pack equipment rendszer a rögzített equipment layer-
 
 A `WearablePresentation` a központi bővítési pont. A stabil `<render-id>` legyen a jövőbeli renderer identitása is; egy későbbi kliensoldali/modded vagy külön entity/display-alapú 3D wearable réteg így ugyanarra a tartalom-azonosítóra épülhet, a jelenlegi vanilla equipment assetek újraírása nélkül.
 
+### Equipment RP2-C full-production authority
+
+Az Art Bible machine-readable authorityja a `docs/development/equipment-rp2-art-bible.json`; a teljes 40 line / 160 piece asset-state authorityja az `equipment-rp2-production-manifest.json`. A négy elfogadott referencia-line változatlan checksumját továbbra is az `equipment-rp2-pilot-manifest.json` rögzíti. A generált `equipment-rp2-production.properties` 160 elemű immutable O(1) runtime index, kézzel nem szerkeszthető. Exact manifest-pár esetén custom item/equipment asset aktiválódik; normál canonical armor nem használ vanilla worn fallbacket, de sérült vagy hiányzó mappingnél a közös fail-safe képesség megmarad.
+
+A 40 line végleges vizuális source-of-truthja line-onként két committed, built-in OpenAI imagegennel authored lap az `equipment-rp2-authored-sources/` könyvtárban: egy négy-slot inventory sheet és egy front/back/side worn turnaround. A generátor ezeket pixel-cleanup, bináris alfa, palettakorlátozás és a vanilla 64×32 UV-koordinátarács inventoryval egyező 4× mintavételezése után 256×128-as runtime PNG-vé alakítja. Az imagegen nem runtime dependency; a committed source és a belőle determinisztikusan előálló PNG-k az authorityk.
+
+Az alkalmazott promptkészlet és a family-specifikus negatív korlátok az `equipment-rp2-imagegen-prompts.md` authoring recordban találhatók.
+
+Kötelező ellenőrzési sorrend:
+
+1. `python3 scripts/generate_equipment_rp2_art_bible.py --check`
+2. `python3 scripts/generate_equipment_rp2_pilot.py --check`
+3. `python3 scripts/generate_equipment_rp2_production.py --check`
+4. `python3 scripts/validate_equipment_rp2_production.py --enforce`
+5. `python3 scripts/generate_equipment_rp2_manifests.py --enforce` + `python3 scripts/generate_equipment_rp2_docs.py --check`
+6. `python3 scripts/resource_pack.py validate --source resource-pack`
+7. `./gradlew resourcePackRegressionTest`
+
+A determinisztikus full-catalog render `OFFLINE_VISUAL_PROVED`, nem valódi kliens-screenshot. Release előtt ezért `FULL_HUMAN_CLIENT_QA_REQUIRED` marad.
+
+#### Full-production item-model inventory
+
+Az alábbi 40 sor az Art Bible canonical line-jait és a hozzájuk tartozó négy immutable `ITEM_MODEL` render-azonosítót sorolja fel. Ez nem párhuzamos authority: a lista a full-production manifest emberileg auditálható lenyomata.
+
+- **alkimista_fatyol** (CLOTH): `alkimista_fatyol_sisak`, `alkimista_fatyol_mellvert`, `alkimista_fatyol_labvert`, `alkimista_fatyol_csizma`
+- **aranyfust** (CLOTH): `aranyfust_sisak`, `aranyfust_kopeny`, `aranyfust_labvert`, `aranyfust_csizma`
+- **csillagfatyol** (CLOTH): `csillagfatyol_sisak`, `csillagfatyol_mellvert`, `csillagfatyol_labvert`, `csillagfatyol_csizma`
+- **csontvarro** (CLOTH): `csontvarro_sisak`, `csontvarro_kopeny`, `csontvarro_labvert`, `csontvarro_csizma`
+- **fonixszovet** (CLOTH): `fonixszovet_sisak`, `fonixpihe_kopeny`, `fonixszovet_labvert`, `fonixszovet_csizma`
+- **holdlen** (CLOTH): `holdlen_sisak`, `holdlen_mellvert`, `holdlen_labvert`, `holdlen_csizma`
+- **kodszovo** (CLOTH): `kodszovo_sisak`, `kodszovo_mellvert`, `kodszovo_labvert`, `kodszovo_csizma`
+- **melyseg_ritual** (CLOTH): `melyseg_ritual_sisak`, `melyseg_ritual_mellvert`, `melyseg_ritual_labvert`, `melyseg_ritual_csizma`
+- **nemakristaly** (CLOTH): `nemakristaly_sisak`, `nemakristaly_mellvert`, `nemakristaly_labvert`, `nemakristaly_csizma`
+- **szenthamvak** (CLOTH): `szenthamvak_sisak`, `szenthamvak_mellvert`, `szenthamvak_labvert`, `szenthamvak_csizma`
+- **demonbor** (LEATHER): `demonbor_sisak`, `demonbor_mellvert`, `demonbor_labvert`, `demonbor_csizma`
+- **holdarnyek** (LEATHER): `holdarnyek_sisak`, `holdarnyek_mellvert`, `holdarnyek_labvert`, `holdarnyek_csizma`
+- **kitinbor** (LEATHER): `kitinbor_sisak`, `kitinbor_mellvert`, `kitinbor_labvert`, `kitinbor_csizma`
+- **predator_karma** (LEATHER): `predator_karma_sisak`, `predator_karma_mellvert`, `predator_karma_labvert`, `predator_karma_csizma`
+- **sotetmoha** (LEATHER): `sotetmoha_sisak`, `sotetmoha_mellvert`, `sotetmoha_labvert`, `sotetmoha_csizma`
+- **utjaro** (LEATHER): `utjaro_sisak`, `utjaro_mellvert`, `utjaro_labvert`, `utjaro_csizma`
+- **vadbor** (LEATHER): `vadbor_sisak`, `vadbor_mellvert`, `vadbor_labvert`, `vadbor_csizma`
+- **vadorzo** (LEATHER): `vadorzo_sisak`, `vadorzo_mellvert`, `vadorzo_labvert`, `vadorzo_csizma`
+- **verszavanna** (LEATHER): `verszavanna_sisak`, `verszavanna_mellvert`, `verszavanna_labvert`, `verszavanna_csizma`
+- **vizbor** (LEATHER): `vizbor_sisak`, `vizbor_mellvert`, `vizbor_labvert`, `vizbor_csizma`
+- **csontenyv** (MAIL): `csontenyv_sisak`, `csontenyv_pancel`, `csontenyv_labvert`, `csontenyv_csizma`
+- **gyongyhaz_warden** (MAIL): `gyongyhaz_warden_sisak`, `gyongyhaz_warden_mellvert`, `gyongyhaz_warden_labvert`, `gyongyhaz_warden_csizma`
+- **konnyu_otvozet** (MAIL): `konnyu_otvozet_sisak`, `konnyu_otvozet_mellvert`, `konnyu_otvozet_labvert`, `konnyu_otvozet_csizma`
+- **melyvizi_vadasz** (MAIL): `melyvizi_vadasz_sisak`, `melyvizi_vadasz_mellvert`, `melyvizi_vadasz_labvert`, `melyvizi_vadasz_csizma`
+- **runalanc** (MAIL): `runalanc_sisak`, `runalanc_mellvert`, `runalanc_labvert`, `runalanc_csizma`
+- **runapajzs** (MAIL): `runapajzs_sisak`, `runapajzs_mellvert`, `runapajzs_labvert`, `runapajzs_csizma`
+- **vadvadasz** (MAIL): `vadvadasz_sisak`, `vadvadasz_mellvert`, `vadvadasz_labvert`, `vadvadasz_csizma`
+- **viharjaro** (MAIL): `viharjaro_sisak`, `viharjaro_mellvert`, `viharjaro_labvert`, `viharjaro_bakancs`
+- **viharkvarc_runas** (MAIL): `viharkvarc_runas_sisak`, `viharkvarc_runas_mellvert`, `viharkvarc_runas_labvert`, `viharkvarc_runas_csizma`
+- **viharszel** (MAIL): `viharszel_sisak`, `viharszel_mellvert`, `viharszel_labvert`, `viharszel_csizma`
+- **borostyan_tarna** (PLATE): `borostyan_tarna_sisak`, `melysegi_borostyan_mellvert`, `borostyan_tarna_labvert`, `borostyan_tarna_csizma`
+- **csillagacel** (PLATE): `csillagacel_sisak`, `csillagacel_mellvert`, `csillagacel_labvert`, `csillagacel_csizma`
+- **glatziendorfi** (PLATE): `glatziendorfi_sisak`, `glatziendorfi_jegvert`, `glatziendorfi_labvert`, `glatziendorfi_csizma`
+- **hataror** (PLATE): `hataror_sisak`, `hataror_mellvert`, `hataror_labvert`, `hataror_csizma`
+- **melyseg_orseg** (PLATE): `melyseg_orseg_sisak`, `melyseg_orseg_mellvert`, `melyseg_orseg_labvert`, `melyseg_orseg_bakancs`
+- **osicsarnok** (PLATE): `osicsarnok_sisak`, `osicsarnok_mellvert`, `osicsarnok_labvert`, `osicsarnok_csizma`
+- **ostromtoro** (PLATE): `ostromtoro_sisak`, `ostromtoro_mellvert`, `ostromtoro_labvert`, `ostromtoro_csizma`
+- **runaforged** (PLATE): `runaforged_sisak`, `runaforged_mellvert`, `runaforged_labvert`, `runaforged_csizma`
+- **salakfal** (PLATE): `salakfal_sisak`, `salakfal_mellvert`, `salakfal_labvert`, `salakfal_csizma`
+- **sarkfeny** (PLATE): `sarkfeny_sisak`, `sarkfeny_mellvert`, `sarkfeny_labvert`, `sarkfeny_csizma`
+
+### `holdlen_sisak` — Holdlen csuklya
+- **Fájl:** `holdlen_sisak.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_HELMET`
+- Rétegzett indigó textil, keskeny ezüst holdív és puha, lefelé futó forma.
+
+### `holdlen_mellvert` — Holdlen köntös
+- **Fájl:** `holdlen_mellvert.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_CHESTPLATE`
+- Függőleges köntöspanelek, varrott szegély és visszafogott holdfény-akcent.
+
+### `holdlen_labvert` — Holdlen nadrág
+- **Fájl:** `holdlen_labvert.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_LEGGINGS`
+- Hosszú, keskeny textilcsíkok és egymásra fekvő alsó rétegek.
+
+### `holdlen_csizma` — Holdlen csizma
+- **Fájl:** `holdlen_csizma.png` | **Család:** CLOTH | **Alap-item:** `LEATHER_BOOTS`
+- Könnyű szövetcsizma tekert bokaszalagokkal, merev lemez nélkül.
+
+### `vadbor_sisak` — Vadőr csuklya
+- **Fájl:** `vadbor_sisak.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_HELMET`
+- Cserzett barna bőrpanelek ferde varrattal és tompa mohazöld akcenttel.
+
+### `vadbor_mellvert` — Vadőr mellény
+- **Fájl:** `vadbor_mellvert.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_CHESTPLATE`
+- Mobil, átlapolt bőrmellény keresztpánttal és kis organikus erősítésekkel.
+
+### `vadbor_labvert` — Vadőr lábvért
+- **Fájl:** `vadbor_labvert.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_LEGGINGS`
+- Szegmentált bőrpanelek, térd körüli pántok és szabálytalan természetes élek.
+
+### `vadbor_csizma` — Vadőr csizma
+- **Fájl:** `vadbor_csizma.png` | **Család:** LEATHER | **Alap-item:** `LEATHER_BOOTS`
+- Rugalmas, pántolt vadászbőr csizma könnyű orr-erősítéssel.
+
+### `konnyu_otvozet_sisak` — Könnyűötvözet sisak
+- **Fájl:** `konnyu_otvozet_sisak.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_HELMET`
+- Ezüst sodronyperem, ismétlődő gyűrűritmus és réz rögzítési pontok.
+
+### `konnyu_otvozet_mellvert` — Könnyűötvözet ing
+- **Fájl:** `konnyu_otvozet_mellvert.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_CHESTPLATE`
+- Textil backing fölötti könnyű láncing, közepes kemény élekkel, lemeztest nélkül.
+
+### `konnyu_otvozet_labvert` — Könnyűötvözet lábvért
+- **Fájl:** `konnyu_otvozet_labvert.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_LEGGINGS`
+- Függő láncpanelek és külön olvasható apró sodronyminta.
+
+### `konnyu_otvozet_csizma` — Könnyűötvözet csizma
+- **Fájl:** `konnyu_otvozet_csizma.png` | **Család:** MAIL | **Alap-item:** `CHAINMAIL_BOOTS`
+- Bőr alapú lábbeli láncos felsőrésszel és finom rézkapcsokkal.
+
+### `borostyan_tarna_sisak` — Borostyántárna sisak
+- **Fájl:** `borostyan_tarna_sisak.png` | **Család:** PLATE | **Alap-item:** `IRON_HELMET`
+- Széles, keretezett sötétacél lemez, központi borostyán bányászjelzéssel.
+
+### `melysegi_borostyan_mellvert` — Borostyántárna mellvért
+- **Fájl:** `melysegi_borostyan_mellvert.png` | **Család:** PLATE | **Alap-item:** `IRON_CHESTPLATE`
+- Nagy geometrikus kovácsolt tömeg, szegecselt perem és zárt mellkasi keret.
+
+### `borostyan_tarna_labvert` — Borostyántárna lábvért
+- **Fájl:** `borostyan_tarna_labvert.png` | **Család:** PLATE | **Alap-item:** `IRON_LEGGINGS`
+- Nehéz, egymásba záródó comb- és térdlemezek, széles hard edge-ekkel.
+
+### `borostyan_tarna_csizma` — Borostyántárna csizma
+- **Fájl:** `borostyan_tarna_csizma.png` | **Család:** PLATE | **Alap-item:** `IRON_BOOTS`
+- Masszív, keretezett sabatonforma tompa borostyán akcenttel.
+
 ## Kiadási és kliens-cache szerződés
 
 Az IceSMP a Paper/Folia additív `Player#addResourcePack(...)` API-ját használja.
@@ -73,7 +202,7 @@ keresztül kerül a klienshez.
 ## Technikai tudnivalók
 
 - **Inventory-item mérete:** 64×64 px, átlátszó háttérrel (PNG). Ez a pack egységes item-sprite felbontása.
-- **Viselt equipment mérete:** humanoid, leggings és wings layer 64×32 px; horse body és saddle layer 64×64 px. Ezek rögzített vanilla UV-lapok, nem szabad őket inventory-ikonként elforgatni vagy átméretezni.
+- **Viselt equipment UV:** a humanoid, leggings és wings alap-koordinátarácsa 64×32; egész számú, azonos oldalarányú mintavételezés megengedett. A teljes RP2 production catalog humanoid/leggings layerje 256×128 px, vagyis ugyanazt a 4× pixelsűrűséget használja, mint a vanilla 16×16-ról 64×64-re növelt inventory art. Horse body és saddle layer 64×64 px. Ezek rögzített vanilla UV-lapok, nem szabad őket inventory-ikonként elforgatni vagy eltolni.
 - **Fájlnév és hely:** a kész PNG az `assets/icesmp/textures/item/<modell-id>.png` útvonalra kerül; a JSON-bekötés kész, csak a PNG-t kell szállítani.
 - **Alap-item:** a vanilla tárgy, aminek a helyén az item megjelenik — a vanilla textúrája jó kiindulás a sziluetthez/érzethez.
 - **Frakció-színvilág:** RED = Perinfernicitas (láng, vörös-arany), BLUE = Cryghaliris (jég, kék-ezüst), NEUTRAL = Ryanora/Caldestera (kereskedő-arany, zöld-okker), DARK = Kitaszítottak (csont, éjfekete-lila, és a jellegzetes **hideg türkiz derengés** — a lich-szem: a Néma Királyné élőhalott-fénye a szemekben, rúnákban, élek mentén).

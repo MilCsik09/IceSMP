@@ -123,7 +123,7 @@ public final class ItemDataFactory {
     }
 
     /**
-     * A 7 fokú saját létra leképezése a vanília 4 fokra. Ismeretlen id → COMMON (fail-safe:
+     * A 6 fokú saját létra leképezése a vanília 4 fokra. Ismeretlen id → COMMON (fail-safe:
      * a craft nem törhet el egy elgépelt raritás-id-től).
      */
     public static org.bukkit.inventory.ItemRarity vanillaRarityOf(final String ladderId) {
@@ -133,7 +133,7 @@ public final class ItemDataFactory {
         return switch (ladderId.toLowerCase(java.util.Locale.ROOT)) {
             case "nem_mindennapi" -> org.bukkit.inventory.ItemRarity.UNCOMMON;
             case "ritka" -> org.bukkit.inventory.ItemRarity.RARE;
-            case "epikus", "legendas", "ereklye" -> org.bukkit.inventory.ItemRarity.EPIC;
+            case "epikus", "legendas", "mitikus", "ereklye" -> org.bukkit.inventory.ItemRarity.EPIC;
             default -> org.bukkit.inventory.ItemRarity.COMMON;
         };
     }
@@ -168,6 +168,10 @@ public final class ItemDataFactory {
      * bármilyen egyedi módosítót adnánk hozzá. Az ELSŐ explicit módosító felülírja a tárgy teljes
      * {@code attribute_modifiers} komponensét — enélkül a vaskard elveszítené a +6 sebzését, és csak
      * a rátett bónusz maradna. Idempotens: ha már van explicit lista, nem nyúl hozzá.
+     *
+     * <p>Ez kizárólag NON-CANONICAL/BASIC/custom utility út. Az Itemization 2.0 canonical itemek
+     * saját explicit attribute componentet birtokolnak, ezért azok a
+     * {@link #applyCanonicalAttributeModifiers(ItemStack, List, boolean)} útvonalat használják.</p>
      */
     public static void seedDefaultAttributeModifiers(final ItemStack item, final ItemMeta meta) {
         if (item == null) {
@@ -201,6 +205,93 @@ public final class ItemDataFactory {
      * @return true, ha legalább egy módosító felkerült (ekkor a hívó hívja a hideAttributeTooltip-et)
      */
     public static boolean applyAttributeModifiers(final ItemStack item, final List<String> specs) {
+        return applyAttributeModifiers(item, specs, true);
+    }
+
+    public static boolean applyAttributeModifiers(final ItemStack item, final List<String> specs,
+                                                   final boolean appendStatLore) {
+        return applyAttributeModifiers(item, specs, appendStatLore, true);
+    }
+
+    /**
+     * Canonical Itemization attribute ownership. A backing Material attribútumai SOHA nem kerülnek
+     * át az explicit componentbe. Paper 1.21.11-en a Material-default csak akkor van ténylegesen
+     * felülírva, ha az ATTRIBUTE_MODIFIERS valued component maga explicit jelen van; ezért a
+     * canonical út közvetlenül ezt a componentet írja, üres vagy authored modifier listával.
+     */
+    public static boolean applyCanonicalAttributeModifiers(final ItemStack item, final List<String> specs,
+                                                            final boolean appendStatLore) {
+        if (item == null || item.getType().isAir()) {
+            return false;
+        }
+        final ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+        final io.papermc.paper.datacomponent.item.ItemAttributeModifiers.Builder component =
+                io.papermc.paper.datacomponent.item.ItemAttributeModifiers.itemAttributes();
+        final List<Component> statLore = new ArrayList<>();
+        int index = 0;
+        boolean any = false;
+        if (specs != null) {
+            for (final String raw : specs) {
+                if (raw == null || raw.isBlank()) {
+                    continue;
+                }
+                final String[] parts = raw.trim().split(":");
+                if (parts.length < 2) {
+                    continue;
+                }
+                final String statId = parts[0].trim().toLowerCase(Locale.ROOT);
+                final Attribute attribute = ATTRIBUTES.get(statId);
+                if (attribute == null) {
+                    continue;
+                }
+                final double amount;
+                try {
+                    amount = Double.parseDouble(parts[1].trim());
+                } catch (final NumberFormatException ignored) {
+                    continue;
+                }
+                if (!Double.isFinite(amount) || amount == 0.0D) {
+                    continue;
+                }
+                final EquipmentSlotGroup slot = parts.length >= 3 && !parts[2].isBlank()
+                        ? SLOTS.getOrDefault(parts[2].trim().toLowerCase(Locale.ROOT), inferSlot(item.getType()))
+                        : inferSlot(item.getType());
+                final AttributeModifier.Operation operation = parts.length >= 4
+                        ? OPERATIONS.getOrDefault(parts[3].trim().toLowerCase(Locale.ROOT),
+                        AttributeModifier.Operation.ADD_NUMBER)
+                        : AttributeModifier.Operation.ADD_NUMBER;
+                final NamespacedKey modifierKey = NamespacedKey.fromString("icesmp:attr_"
+                        + item.getType().name().toLowerCase(Locale.ROOT) + "_" + statId + "_" + index);
+                if (modifierKey == null) {
+                    continue;
+                }
+                final AttributeModifier modifier = new AttributeModifier(
+                        modifierKey, amount, operation, slot);
+                component.addModifier(attribute, modifier, slot);
+                if (appendStatLore) {
+                    statLore.add(statLine(statId, amount, operation));
+                }
+                any = true;
+                index++;
+            }
+        }
+        if (appendStatLore && !statLore.isEmpty()) {
+            final List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+            lore.addAll(statLore);
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+        // Deliberately last: a later ItemMeta round-trip may discard direct data components.
+        item.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, component);
+        return any;
+    }
+
+    private static boolean applyAttributeModifiers(final ItemStack item, final List<String> specs,
+                                                    final boolean appendStatLore,
+                                                    final boolean seedMaterialDefaults) {
         if (item == null || specs == null || specs.isEmpty()) {
             return false;
         }
@@ -247,7 +338,9 @@ public final class ItemDataFactory {
             if (modifierKey == null) {
                 continue;
             }
-            seedDefaultAttributeModifiers(item, meta);
+            if (seedMaterialDefaults) {
+                seedDefaultAttributeModifiers(item, meta);
+            }
             meta.addAttributeModifier(attribute, new AttributeModifier(modifierKey, amount, operation, slot));
             statLore.add(statLine(parts[0].trim().toLowerCase(Locale.ROOT), amount, operation));
             any = true;
@@ -256,9 +349,11 @@ public final class ItemDataFactory {
         if (!any) {
             return false;
         }
-        final List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
-        lore.addAll(statLore);
-        meta.lore(lore);
+        if (appendStatLore) {
+            final List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+            lore.addAll(statLore);
+            meta.lore(lore);
+        }
         item.setItemMeta(meta);
         return true;
     }
@@ -319,7 +414,6 @@ public final class ItemDataFactory {
                         positive ? NamedTextColor.GRAY : NamedTextColor.RED)
                 .decoration(TextDecoration.ITALIC, false);
     }
-
     private static EquipmentSlotGroup inferSlot(final Material material) {
         final String name = material.name();
         if (name.endsWith("_HELMET") || name.equals("TURTLE_HELMET") || name.equals("CARVED_PUMPKIN")) {

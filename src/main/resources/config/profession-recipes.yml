@@ -16,6 +16,8 @@
 #     result:
 #       material: <MATERIAL>
 #       amount: <db>                     # alapból 1
+#       template: <item-template-id>      # canonical gear: célzott ItemTemplate → ItemInstance; amount csak 1
+#       masterwork: true                  # opcionális bounded quality/provenance jelölő canonical gearen
 #       affix-tier: crafted              # HA szerepel, a kész tárgy egyedi minőséget + affixeket kap (random)
 #       attributes: [ "<attr>:<érték>[:<slot>[:<művelet>]]", ... ]   # explicit, DETERMINISZTIKUS stat
 #         # attr: attack_damage|attack_speed|attack_knockback|max_health|armor|armor_toughness|
@@ -1186,6 +1188,17 @@ profession-recipes:
     category: "Fagyott Királyság (tervrajz)"
     result: {material: BOW, amount: 1, affix-tier: crafted, signature: kallan_szeletelo, item-model: "icesmp:kallan_szeletelo"}
     ingredients: ["BOW:1", "STRING:8", "NETHERITE_INGOT:1", "unique:vad_esszencia:3"]
+  vadvilagi_eskukard:
+    profession: armorer
+    kind: egyedi
+    level: 22
+    learn: level
+    display-name: "Vadvidéki Eskükard"
+    lore:
+    - "&7Célzott authored fegyver: csak a template roll-range-ei sorsolódnak."
+    category: "Fegyver"
+    result: {material: IRON_SWORD, amount: 1, template: vadvilagi_eskukard}
+    ingredients: ["IRON_SWORD:1", "IRON_INGOT:8", "LEATHER:2", "unique:tiszta_vasesszencia:2"]
   glatziendorfi_jegvert:
     profession: armorer
     kind: egyedi
@@ -1198,8 +1211,8 @@ profession-recipes:
     - "&7sziklaként rögzíti; az ellenség fegyverei"
     - "&7tompán koppannak rajta."
     category: "Fagyott Királyság (tervrajz)"
-    result: {material: NETHERITE_CHESTPLATE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegvert, item-model: "icesmp:glatziendorfi_jegvert"}
-    ingredients: ["NETHERITE_CHESTPLATE:1", "PACKED_ICE:16", "IRON_BLOCK:2", "unique:osi_ereklyeszilank:1"]
+    result: {material: NETHERITE_CHESTPLATE, amount: 1, template: glatziendorfi_jegvert, masterwork: true}
+    ingredients: ["NETHERITE_CHESTPLATE:1", "PACKED_ICE:16", "IRON_BLOCK:2", "unique:sarkfeny_cseppko:4", "unique:tiszta_vasesszencia:4"]
   jegsarkany_kantar:
     profession: armorer
     kind: egyedi
@@ -1537,7 +1550,7 @@ profession-recipes:
     - "&7csatabárd — ami egyszer megdermedt,"
     - "&7azt ez a fejsze megtöri."
     category: "Fagyott Királyság (tervrajz)"
-    result: {material: NETHERITE_AXE, amount: 1, affix-tier: crafted, signature: glatziendorfi_jegtoro, item-model: "icesmp:glatziendorfi_jegtoro"}
+    result: {material: NETHERITE_AXE, amount: 1, template: glatziendorfi_jegtoro, masterwork: true}
     ingredients: ["DIAMOND_AXE:1", "NETHERITE_INGOT:2", "unique:jegviragpor:3", "unique:sarkanycsont_szilank:2", "unique:folyositoszer:1"]
   miinus_haragja:
     profession: armorer
@@ -3239,6 +3252,33 @@ profession-recipes:
     category: "Rúna"
     result: {unique: runa_visszhang}
     ingredients: ["AMETHYST_SHARD:4", "unique:runapor:2", "unique:nema_kristaly:1", "unique:runakreta:1"]
+  runa_suly_kovacsolas:
+    profession: armorer
+    kind: lanc
+    level: 36
+    learn: level
+    display-name: "Súly Rúnája"
+    category: "Rúna"
+    result: {unique: runa_suly}
+    ingredients: ["IRON_BLOCK:1", "unique:runapor:2", "unique:melysegi_borostyan:1", "unique:runakreta:1"]
+  runa_oltalom_irasa:
+    profession: enchanter
+    kind: lanc
+    level: 38
+    learn: level
+    display-name: "Oltalom Rúnája"
+    category: "Rúna"
+    result: {unique: runa_oltalom}
+    ingredients: ["AMETHYST_SHARD:4", "unique:runapor:2", "unique:sarkfeny_cseppko:1", "unique:runakreta:1"]
+  runa_vadasz_irasa:
+    profession: enchanter
+    kind: lanc
+    level: 34
+    learn: level
+    display-name: "Vadász Rúnája"
+    category: "Rúna"
+    result: {unique: runa_vadasz}
+    ingredients: ["FEATHER:8", "unique:runapor:2", "unique:viharkvarc:1", "unique:runakreta:1"]
 
   # ===== Kazamata-kulcsok (B3): belépő a DUNGEON zónákba =====
   # A signature "dungeonkulcs_<zóna-id>" — a zónát az admin hozza létre:
@@ -5274,5 +5314,117 @@ profession-recipes:
     lore:
     - '&7Szárítva, tömbbe kötve.'
     - '&7A kemencében tovább ég, mint a fa.'
+  # ===== Itemization 2.0 — célzott canonical survival gear receptek =====
+  item2_kovacstanonc_penge:
+    profession: armorer
+    kind: egyedi
+    level: 6
+    learn: level
+    display-name: "Kovácstanonc Pengéje"
+    category: "Canonical felszerelés"
+    result: { material: STONE_SWORD, template: kovacstanonc_penge }
+    ingredients: [ "COBBLESTONE:2", "STICK:1" ]
+  item2_tarnapajzs:
+    profession: armorer
+    kind: egyedi
+    level: 22
+    learn: level
+    display-name: "Tárnapajzs"
+    category: "Canonical felszerelés"
+    result: { material: SHIELD, template: tarnapajzs }
+    ingredients: [ "IRON_INGOT:3", "OAK_PLANKS:6", "unique:tiszta_vasesszencia:1" ]
+  item2_viharkvarc_pallos:
+    profession: armorer
+    kind: egyedi
+    level: 24
+    learn: level
+    display-name: "Viharkvarc Pallos"
+    category: "Canonical felszerelés"
+    result: { material: IRON_SWORD, template: viharkvarc_pallos }
+    ingredients: [ "IRON_INGOT:6", "unique:viharkvarc:2", "unique:tiszta_vasesszencia:2" ]
+  item2_borostyan_tarnavert:
+    profession: armorer
+    kind: egyedi
+    level: 30
+    learn: level
+    display-name: "Borostyán Tárnavért"
+    category: "Canonical felszerelés"
+    result: { material: IRON_CHESTPLATE, template: melysegi_borostyan_mellvert }
+    ingredients: [ "IRON_INGOT:8", "unique:melysegi_borostyan:3", "unique:tiszta_vasesszencia:2" ]
+  item2_sarkfeny_sisak:
+    profession: armorer
+    kind: egyedi
+    level: 34
+    learn: blueprint
+    display-name: "Sarkfény Sisak"
+    category: "Canonical tervrajz"
+    result: { material: DIAMOND_HELMET, template: sarkfeny_sisak, masterwork: true }
+    ingredients: [ "DIAMOND:5", "unique:sarkfeny_cseppko:3", "unique:folyositoszer:1" ]
+  item2_gyongyhaz_pajzs:
+    profession: armorer
+    kind: egyedi
+    level: 28
+    learn: level
+    display-name: "Gyöngyház Pajzs"
+    category: "Canonical felszerelés"
+    result: { material: SHIELD, template: gyongyhaz_pajzs }
+    ingredients: [ "SHIELD:1", "unique:gyongyhaz_pikkely:4", "unique:tiszta_vasesszencia:1" ]
+  item2_holdfeny_bot:
+    profession: enchanter
+    kind: egyedi
+    level: 26
+    learn: level
+    display-name: "Holdfény Bot"
+    category: "Canonical felszerelés"
+    result: { material: BLAZE_ROD, template: holdfeny_bot }
+    ingredients: [ "BLAZE_ROD:1", "unique:holdezust_huzal:2", "unique:runapor:2" ]
+  item2_nema_kristaly_fokusz:
+    profession: enchanter
+    kind: egyedi
+    level: 32
+    learn: blueprint
+    display-name: "Néma Kristályfókusz"
+    category: "Canonical tervrajz"
+    result: { material: ECHO_SHARD, template: nema_kristaly_fokusz, masterwork: true }
+    ingredients: [ "unique:nema_kristaly:3", "unique:holdezust_huzal:3", "unique:runapor:4" ]
+  item2_viharszovo_bot:
+    profession: enchanter
+    kind: egyedi
+    level: 38
+    learn: blueprint
+    display-name: "Viharszövő Bot"
+    category: "Canonical tervrajz"
+    result: { material: TRIDENT, template: viharszovo_bot, masterwork: true }
+    ingredients: [ "TRIDENT:1", "unique:viharkvarc:4", "unique:runapor:5" ]
+  item2_sarkanycsont_ij:
+    profession: lumberjack
+    kind: egyedi
+    level: 44
+    learn: blueprint
+    loot-only: true
+    display-name: "Sárkánycsont Íj"
+    category: "Canonical boss-tervrajz"
+    result: { material: BOW, template: sarkanycsont_ij, masterwork: true }
+    ingredients: [ "unique:sarkanycsont_szilank:6", "unique:kemenyfa_gerenda:3", "unique:szavannafu_kotel:3" ]
+  item2_vasmuvek_csakanya:
+    profession: miner
+    kind: egyedi
+    level: 46
+    learn: blueprint
+    loot-only: true
+    display-name: "Vasművek Csákánya"
+    category: "Canonical mesterterv"
+    result: { material: NETHERITE_PICKAXE, template: vasmuvek_csakanya, masterwork: true }
+    ingredients: [ "NETHERITE_INGOT:2", "unique:melysegi_borostyan:4", "unique:tiszta_vasesszencia:5" ]
+  item2_bokic_horgaszbot:
+    profession: fisherman
+    kind: egyedi
+    level: 45
+    learn: blueprint
+    display-name: "Bokic Öreg Horgászbotja"
+    category: "Canonical mesterterv"
+    result: { material: FISHING_ROD, template: bokic_horgaszbot, masterwork: true }
+    ingredients: [ "FISHING_ROD:1", "unique:gyongyhaz_pikkely:5", "unique:kemenyfa_gerenda:2" ]
+
 crafted-by:
   enabled: true

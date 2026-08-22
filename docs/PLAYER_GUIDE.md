@@ -110,7 +110,8 @@ polgárává is tudatosan a `/faction join neutral` paranccsal válsz.
   kap, az oxigén pedig csak fogyó levegőnél jelenik meg. A frame, név, HP-sáv, HP-szöveg,
   százalék, pajzs, páncél, étel és oxigén külön editor-komponens; a Player Frame csoporttal
   együtt is mozgathatók. Pack nélkül a vanilla kijelzők maradnak láthatók.
-- Ha megütsz egy mobot vagy játékost, a Player Frame mellett jelenik meg a **Target Frame**.
+- Ha egy mobra vagy játékosra nézel a beállított hatótávon belül, a Player Frame mellett
+  jelenik meg a **Target Frame**.
   A mobok bestiárium-stílusú, a játékosok frakciószínű keretet kapnak. A név, szint,
   current/max HP, százalék, rang/státusz, valamint játékosnál a class resource is látszik.
   A kijelzés nem hoz létre követő feliratot a mob testén, ezért az eredeti nametag nem tűnik el.
@@ -591,6 +592,49 @@ egy teljes, később elavuló táblázat.
 *A Káosz Korát nem csak hősök élik túl. Kell valaki, aki kivágja a gerendát,
 megfőzi az ellenszert és újraélezi a pengét.*
 
+### A normál Minecraft crafting nincs letiltva
+
+Ez továbbra is Minecraft survival. Profession nélkül is építhetsz, bányászhatsz,
+farmolhatsz, redstone-ozhatsz, készíthetsz csákányt, alap páncélt vagy fegyvert, és
+használhatod a crafting table-t, furnace-t, enchanting table-t, anvilt, smithing table-t
+és grindstone-t. A wood→stone→iron→diamond→netherite tool progression változatlan.
+
+A vanilla páncél, kard, íj, pajzs és más alap harci tárgy **Survival felszerelés**:
+craftolható, lootolható, enchantolható, javítható és használható, de nem kap IceSMP
+rollokat, Signature-t, rúnát, szettet vagy Ascensiont. A különleges canonical IceSMP
+MMORPG felszerelést ezzel szemben saját profession/loot/boss/event/quest út készíti és
+a `/profession forge` fejleszti. Ilyen tárgyat vanilla recept, üllő, smithing vagy
+grindstone nem alakíthat át; a rövid actionbar üzenet elmagyarázza a tiltás okát.
+
+Az armor trim és rename canonical tárgyon jelenleg szintén blokkolt, mert a cosmetic
+változásnak is meg kell őriznie és journalolnia kell az UUID/PDC/checksum állapotot.
+Netherite továbbra is kiváló survival material, de önmagában nem IceSMP endgame rang.
+
+### Páncélcsaládok az authored felszerelésen
+
+A különleges IceSMP páncél tooltipje `Páncéltípus` sort mutat. Minden kaszt egyetlen
+családot visel:
+
+| Család | Kasztok | Fő karakter |
+|---|---|---|
+| Szövet (CLOTH) | Pap, Boszorkánymester, Varázsló | képesség, erőforrás, utility/support |
+| Bőr (LEATHER) | Szerzetes, Démonvadász, Druida, Orgyilkos | mobilitás, crit, sustain |
+| Sodrony (MAIL) | Íjász, Sámán, Sárkányidéző | hybrid támadás, ellenállás, sustain |
+| Lemez (PLATE) | Harcos, Paplovag, Halállovag | armor, életerő, mitigation |
+
+Ez kizárólag a canonical MMORPG felszerelés szabálya. Varázslóként továbbra is
+felvehetsz normál vanilla vas-, gyémánt- vagy netherite páncélt: a survival szabad.
+Másik family authored tárgyát is megtarthatod, fejlesztheted és eladhatod; felszerelni
+nem tudod. Sikertelen equipnél a tárgy nem fogy el, és rövid magyar actionbar jelzi az
+okot. Kasztválasztás előtt a canonical armor nem aktív.
+
+A canonical tárgy `Szintkövetelmény` sora valódi használati kapu. Ha a jelenlegi
+kasztszinted kisebb, a páncél, főkéz vagy mellékkéz nem ad statot, szett-, rúna- vagy
+Signature-hatást. A tárgy ettől a tiéd marad: tele inventorynál sem dobódik a földre,
+hanem inert/suppressed állapotban marad. A pontos szint elérésekor, belépéskor vagy
+profilfrissítéskor ugyanaz a példány újra aktiválható. A normál vanilla survival gearre
+ez a kapu nem vonatkozik.
+
 Két fő szakmai helyed van:
 
 - **egy gyűjtögető szakma:** Bányász, Gyógynövényész vagy Favágó;
@@ -608,6 +652,8 @@ pedig a saját műhelyfolyamataikban haladnak.
 - `/profession info` — szakmai állapot.
 - `/profession join <szakma>` — tanulás vagy váltás.
 - `/profession recipes` — a ténylegesen ismert és zárolt receptek.
+- `/profession forge` — Itemization 2.0 műhely: reroll, Stat Lock, rúna remove/replace,
+  Ascension és salvage.
 - `/szakmacel` — a szakmád heti közös célja.
 
 A teljes receptkatalógus nem része ennek a kézikönyvnek. A receptkönyv jelzi a
@@ -616,6 +662,53 @@ szolgáltatói kellék hiányzik.
 
 Craftolni csak abból a szakmából tudsz, amelyet **éppen gyakorolsz**. A korábbi
 szakmád szintje megmarad a profilodon, de a receptjei váltás után zárva vannak.
+
+### Authored felszerelés és item műhely
+
+Az authored gear nem „véletlen kardfajta”: a recept előre megmondja a template-et,
+és csak a template által felsorolt roll-range-ekben van randomness. A szakmaszint,
+tervrajz és mestermű jelző additív, plafonozott minimum-qualityt adhat. A tárgyon
+megmarad a készítő UUID-ja, a név craftkori pillanatképe, a szakma, hely/idő és a
+Mestermű jelző; egy későbbi névváltás nem írja át az eredetét.
+
+A jelenlegi combat katalógus 160 páncéldarabot — familynként 40-et — és 25 már
+létező fegyver/pajzs sablont köt starter, mid-game, high-end és endgame sávba.
+Nem került be új fegyverkatalógus; a meglévő azonosítók, kinézetek és források kaptak
+közös erőskálát. A tíz rúna közül a Súly nagy célpont ellen, az Oltalom
+alacsony életerőn, a Vadász pedig nem játékos célpontra lőve ad bounded előnyt.
+
+A főkézben tartott canonical tárggyal nyisd meg a `/profession forge` felületet:
+
+- **Full Reforge:** minden rollolható stat újragurul;
+- **Stat Lock:** kattints egy statra, így az változatlan marad, a többi újragurul;
+- **Quality Amplifier:** a következő reroll minimum qualityjét emeli;
+- **Stability Seal:** a reroll megtörténik, de a következő költséglépcső nem nő;
+- **Ascension:** előre megmutatott, ritka és determinisztikus fejlesztés;
+- **Rúna eltávolítása:** válassz foglalatot; a költség kifizetése után a régi rúna
+  megsemmisül;
+- **Rúna cseréje:** válassz foglalatot és tarts új canonical rúnát a mellékkézben;
+  az old→new csere egyetlen atomikus művelet;
+- **Salvage:** irreverzibilis, veszteséges bontás runa-/salvage alapanyagra.
+
+A gombok megmutatják a költséget és az eredményt; a tényleges művelethez
+**SHIFT+katt** kell. A reroll count, az Ascension, a rúnák és a provenance piaci
+adásvétel, relog és restart után sem nullázódik.
+
+### A pilot survival gazdasági út
+
+Egy Bányász valódi vanilla érctörésből, közös napi anti-farm sapkával ritkán
+**Sarkfény-cseppkövet, Viharkvarcot, Mélységi Borostyánt, Néma Kristályt** vagy a
+Netherben **Kárhozat Parazsát** talál. Silk Touch, regenerált/pajzsolt blokk, AFK,
+védett régió és tele inventory nem termel ritka jutalmat. A Kovács ezt feldolgozott alapanyagokkal authored
+Vadvidéki Eskükarddá vagy tervrajzos Glatziendorfi gearré kovácsolja. A gear
+rerollolható, rúnázható és — trade policy szerint — a piacon eladható. A követett
+világboss személyes **Fekete Villám Szilánkja** olyan komponens, amely a Jégvért
+Ascensionjéhez kell. Az Ascension után ugyanaz az item UUID marad, és a rollok a régi
+relatív qualityn maradnak az új tartományban.
+
+A Bestiárium első elejtés után mutatja az authored mob rangját és archetípusát;
+további elejtésekkel képesség-/ellenállás-jegyek, majd a forrásprofil nyílik meg.
+Pontos drop rate-et nem spoilerez.
 
 ### Miért van, hogy egy recept ugyanannyit ad, mint a műhelyasztal?
 
@@ -710,7 +803,7 @@ A nagy harci események alapból nem torlódnak egymásra.
 | Jelenség | Mit jelent neked? |
 |---|---|
 | Vérhold | erősebb éjszakai ellenfelek, nagyobb kockázat és jutalom |
-| Világboss | közösségi nagy ellenfél, jelzett támadásokkal |
+| Világboss | közösségi nagy ellenfél, jelzett támadásokkal és személyes contribution-jutalommal |
 | Invázió | hullámokban érkező, megerősített szörnyek |
 | Vad Hajsza | kóbor elit fenevad és személyes jutalom |
 | Kereskedő-karaván | időleges, rotáló ritka kínálat |
@@ -735,10 +828,42 @@ meteor vagy kíséret tényleges indulását a szerver eseményüzenete és az
 
 ### A világ nehézsége
 
-A biztonságos vidékektől távolodva a szörnyek szintje emelkedhet. Erősebbek,
-de több kaszt-XP-t és jobb zsákmányt adhatnak. A spawnerből származó mobok
-nem a vadon kihívásának pótlására valók, ezért nem kapják meg ugyanazt a
-skálázást és jutalmat.
+A biztonságos vidékektől távolodva a szörnyek szintje emelkedhet. A normál vadon
+Lv. 1–50 között halad; a territory, biome, föld alatti mélység, dimenzió, Vérhold
+vagy más event együtt legfeljebb az általános Lv. 70 survival capig emelheti.
+Authored rom, dungeon vagy boss saját szintet írhat elő; 70 fölötti szint nem a
+végtelen távolsági skála, hanem külön boss/encounter tartalom. A HP gyorsabban,
+a sebzés óvatosabban nő, így a magas szint nem automatikus előjel nélküli one-shot.
+
+A **Veterán** már technikát hozhat, az **Elit** több technikát és legfeljebb két,
+a neve mellett röviden jelzett affixet kaphat; a Bajnok/Miniboss/Boss nagyobb
+mechanikai készletet használ. A rangok armorban és mozgáskarakterben is eltérhetnek,
+nem csak életerőben. Charge, slam, lövedéksorozat, cleave vagy zóna előtt vanilla
+kliensen is hang/részecske telegráf látható; egyes castok elég nagy sebzéssel
+megszakíthatók, végrehajtás után pedig recovery ablak következik. Ezt figyeld, ne csak
+a nametaget. A spawnerből származó mobok
+nem a vadon kihívásának pótlására valók, ezért nem kapják meg ugyanazt a skálázást
+és jutalmat.
+
+Néhány passzív vadállatnak stabil természete van: lehet félénk, védekező vagy
+agresszívebb. Közvetlen megütéskor rövid figyelmeztetés után visszavághat, és kis
+számban az azonos fajú közeli csorda is segíthet. A bébi és megszelídített állat nem
+vesz részt ebben, a reakció rövid és cooldownos, és nem jár érte elit rang vagy extra
+jutalom. Környezeti sebzés és más mob támadása sem teszi a farmot jutalomforrássá.
+
+Világbossnál nem csak a killing blow számít. Érdemi bosssebzés, tankolás és a
+támogatott encounter-célok contributiont adnak; AFK, önmagadon farmolt heal vagy
+harc előtti padding nem. A boss HP-ja a harc eleji résztvevő-snapshot alapján,
+csökkenő hozadékkal skálázódik, ezért ki-/belépéssel nem ugráltatható. A küszöböt
+elérő játékos személyes ascension komponenst kap. Ha tele az inventoryd, a jutalom
+nem esik a földre: felszabadított hellyel a következő reconnectkor újrapróbálható.
+
+Az authored harci felszerelés enyhén figyelembe veszi a szintedet, kasztodat,
+specializációdat, jelenlegi gear-statisztikáidat, üres felszereléshelyedet és a
+forrást. Ez nem személyes kívánságlista: más buildhez vagy kaszthoz való,
+piacon értékes darab továbbra is eshet. A közelmúlt ismétlődése csak finoman
+módosítja a súlyokat, és nem garantál rövid úton Mitikus tárgyat; az előzmény
+kilépéssel vagy szerver-újraindítással sem nullázódik.
 
 ### Szezonális liga
 
@@ -1157,3 +1282,20 @@ A nyitó korszak végének történeti részleteit ez az útmutató szándékosa
 ---
 
 <sub>Dokumentált release: `4643ab53586f0c1ee7352df16dcd477013e6fad4`</sub>
+
+## Professions 2.0 — mit csináljak?
+A szakmád most gazdasági szerep. A nyersanyag továbbra is valódi Minecraft-tevékenységből jön: bányászol, vadászol, gyűjtesz, halászol és farmolsz. A receptkönyvben a **Feldolgozás** receptek nyers alapanyagból olyan komponenseket készítenek, amelyekre más játékosoknak is szükségük lehet.
+
+- **CLOTH:** rost/fonal → Szőtt Posztó → Rúnaszőtt Posztó → canonical szövet gear.
+- **LEATHER:** bőr → Cserzett Bőr → Erősített Bőr → canonical bőr gear.
+- **MAIL:** könnyű fémhuzal **és** cserzett bőr → Sodrott Láncszem → canonical sodrony gear. Ez szándékosan több szakmát köt össze.
+- **PLATE:** survival fém + meglévő ötvözet → Edzett Ötvözet → Kovácsolt Lemez → canonical lemez gear.
+
+A **Mestermű** nem külön rarity és nem garantált tökéletes roll. Magasabb szakmaszint javítja a quality floor-t, a kijelölt mestermű-recepteknél pedig ritka, korlátozott extra esélyt ad. A tárgy template-je ugyanaz marad, a készítő és a Mestermű-jelölés az ItemInstance eredetében látszik.
+
+Stackelhető feldolgozásnál normál kattintás 1 craft, **Shift+kattintás 5-ös batch**. Ha nincs hely az összes outputnak, semmi nem fogy el. Canonical gear nem batch-elődik.
+
+Salvage veszteséges visszaforgatás. CLOTH textilfoszlányt, LEATHER bőrhulladékot, MAIL lánctöredéket, PLATE fémhulladékot adhat; boss-komponenst nem kapsz automatikusan vissza. A rúnázás/reforge/ascension továbbra is az Itemization saját canonical rendszerét használja.
+
+### Hogyan lesz a feldolgozott anyagból páncél?
+A Kovács (Armorer) rakja össze a végső canonical páncélt, de nem önellátó: a CLOTH textilhez Bűvölő, a LEATHER kezelt bőrhöz Alkimista munka kell, a MAIL pedig kezelt bőrt és sodronyt is kér. A salvage maradék visszaforgatható, de mindig veszteséggel.

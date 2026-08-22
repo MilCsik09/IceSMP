@@ -203,19 +203,23 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
             if (type.getEntityClass() == null || !Mob.class.isAssignableFrom(type.getEntityClass())) {
                 return;
             }
-            final Mob boss = (Mob) world.spawn(loc, type.getEntityClass().asSubclass(Mob.class));
-            EventSpawnGuard.prepare(boss);
+            final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
+                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+            if (spawns == null) return;
+            final Mob boss = spawns.spawn(loc,
+                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
+                            "dungeon", "dungeon:" + id, "miniboss", type,
+                            Math.max(1, configManager.getInt("dungeon.minibosses." + id + ".level", 12)),
+                            hu.taliann.icesmp.pve.MobRank.MINIBOSS, "BRUISER",
+                            hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.EVENT,
+                            false, 0L));
+            if (boss == null) return;
             boss.setPersistent(true);
             boss.setRemoveWhenFarAway(false);
-            mobScalingManager.forceLevel(boss, Math.max(1,
-                    configManager.getInt("dungeon.minibosses." + id + ".level", 12)));
             final double healthMult = Math.max(1.0D, configManager.getDouble(
                     "dungeon.minibosses." + id + ".health-multiplier", 4.0D));
-            final AttributeInstance health = boss.getAttribute(Attribute.MAX_HEALTH);
-            if (health != null) {
-                health.setBaseValue(health.getBaseValue() * healthMult);
-                boss.setHealth(health.getValue());
-            }
+            spawns.applyParticipantModifier(boss, Math.min(16.0D, healthMult), 1.0D,
+                    "dungeon:miniboss");
             final String name = configManager.getString("dungeon.minibosses." + id + ".name",
                     "A Mélység Őrzője");
             boss.customName(net.kyori.adventure.text.Component.text(name,

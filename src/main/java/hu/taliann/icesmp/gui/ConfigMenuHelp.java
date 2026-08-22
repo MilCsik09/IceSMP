@@ -112,6 +112,22 @@ public final class ConfigMenuHelp {
             case "signature.szarvas.cooldown-seconds" -> "A Szellemszarvas signature képesség két használata közti cooldown másodpercben.";
             case "signature.agyar.damage-mult" -> "Az Agyar signature támadás kimenő sebzésének szorzója. 1.5 = 50%-kal nagyobb sebzés.";
             case "signature.jegvert.damage-mult" -> "A Jégvért viselőjére érkező releváns sebzés megtartott része. 0.8 = 20% csökkentés.";
+            case "itemization.vanilla-boundary.basic-survival-gear" -> "A normál vanilla armor és dedikált fegyver Basic Survival Gear marad: craftolható, enchantolható, javítható, de nem kap ItemInstance identityt.";
+            case "itemization.vanilla-boundary.feedback-cooldown-seconds" -> "Ugyanannak a játékosnak két blokkolt station actionbar-üzenete között ennyi másodperc telik el.";
+            case "itemization.vanilla-boundary.canonical.rename" -> "A policy WAL-os rename adaptert engedne; közvetlen vanilla meta-írás adapter nélkül továbbra is fail-closed.";
+            case "itemization.vanilla-boundary.canonical.armor-trim" -> "A policy identity-safe, journalolt trim adaptert engedne; a jelenlegi vanilla result közvetlenül nem commitolható.";
+            case "itemization.vanilla-boundary.canonical.vanilla-repair" -> "A policy journalolt canonical repairt engedne; a vanilla anvil két UUID-t nem olvaszthat össze.";
+            case "itemization.vanilla-boundary.canonical.smithing-upgrade" -> "A policy journalolt canonical smithing adaptert engedne; az Ascension authorityt közvetlen vanilla upgrade nem kerülheti meg.";
+            case "itemization.vanilla-boundary.canonical.grindstone" -> "A policy journalolt grindstone adaptert engedne; közvetlen PDC/enchant stripping nem commitolható.";
+            case "itemization.vanilla-boundary.canonical.enchanting" -> "A policy journalolt canonical enchant adaptert engedne; enchanting table és anvil közvetlenül nem írhatja át az itemet.";
+            case "itemization.stats.ability-power-percent-per-point" -> "Egy érvényes, felszerelt Itemization 2.0 tárgy egy Képességerő pontja ennyi százalékkal növeli a cast nagyságát.";
+            case "itemization.stats.ability-power-max-percent" -> "A felszerelt Itemization 2.0 tárgyakból összesen kapható Képességerő százalékos plafonja.";
+            case "itemization.loot.enabled" -> "A combat loot generikus random-affix gear sorát releváns forrásnál authored Itemization 2.0 tárgyra cseréli.";
+            case "itemization.loot.max-personalization-multiplier" -> "A level, class, spec, build, slot és forrás együtt sem emelheti egy jelölt súlyát e szorzó fölé; legfeljebb 1.5.";
+            case "itemization.loot.history-window" -> "Az utolsó ennyi authored combat drop rarity/slot/family/template adata vesz részt a soft-diverzitásban. Profilban marad reconnect és restart után is.";
+            case "itemization.loot.repeated-template-penalty" -> "Minden közelmúltbeli azonos template enyhén osztja az újabb példány súlyát; nem tiltja ki a tárgyat.";
+            case "itemization.loot.repeated-category-penalty" -> "Minden közelmúltbeli azonos rarity, slot vagy family enyhén csökkenti a kategória súlyát.";
+            case "itemization.loot.unseen-category-boost" -> "A diverzitási ablakban nem látott rarity, slot vagy family kategóriánként kapott enyhe súlybónusz; nem garantál Mitikust.";
 
             case "relics.enabled" -> "Globálisan engedélyezi a relikvia-regisztert, relikviaparancsokat, triggerek és tulajdonkezelés aktív használatát.";
             case "relics.inactivity.expiry-days" -> "Ennyi inaktív nap után szabadulhat fel egy normál, birtokolt relikvia a konfigurált lejárási szabály szerint.";

@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.PartyRewardResolver;
 import org.bukkit.Bukkit;
@@ -320,13 +321,17 @@ public final class WildHuntManager {
             spawnGraceUntil = 0L;
             return;
         }
-        final Class<? extends Entity> entityClass = beast.type.getEntityClass();
-        if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
-            spawnGraceUntil = 0L;
-            return;
-        }
-        final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
-        EventSpawnGuard.prepare(mob);
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+        if (spawns == null) { spawnGraceUntil = 0L; return; }
+        final Mob mob = spawns.spawn(spot,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
+                        "wild_hunt", "wild-hunt:active", "beast", beast.type,
+                        Math.max(1, configManager.getInt("wild-hunt.beast-level", 8)),
+                        MobRank.ELITE, "ASSASSIN",
+                        hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
+                        true, 0L));
+        if (mob == null) { spawnGraceUntil = 0L; return; }
         mob.setGlowing(true);
         mob.setRemoveWhenFarAway(false);
         mob.setPersistent(false);
@@ -334,8 +339,6 @@ public final class WildHuntManager {
                 "🏹 " + beast.displayName,
                 net.kyori.adventure.text.format.NamedTextColor.DARK_RED));
         mob.setCustomNameVisible(true);
-        mobScalingManager.forceLevel(mob, Math.max(1,
-                configManager.getInt("wild-hunt.beast-level", 8)));
         hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
         beastId = mob.getUniqueId();
         expiresAt = System.currentTimeMillis() + expireMillis();

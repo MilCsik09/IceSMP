@@ -3,6 +3,7 @@ package hu.taliann.icesmp.playerprofile.application;
 import hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.OperationSection;
+import hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,6 +32,27 @@ public final class PlayerProfileOperationStore {
                 Objects.requireNonNull(playerId, "playerId"),
                 ProfileSectionId.OPERATIONS, OperationSection.class);
         return Optional.ofNullable(section.operations().get(requireId(operationId)));
+    }
+
+    /** Bounded restart-recovery view for one operation type. */
+    public java.util.List<PlayerProfileOperation> prepared(final UUID playerId,
+                                                            final String type) {
+        return byTypeAndStatus(playerId, type, PlayerProfileOperation.Status.PREPARED);
+    }
+
+    public java.util.List<PlayerProfileOperation> byTypeAndStatus(
+            final UUID playerId, final String type,
+            final PlayerProfileOperation.Status status) {
+        final String normalizedType = requireId(type);
+        Objects.requireNonNull(status, "status");
+        final OperationSection section = PlayerProfileAuthority.current().requireSection(
+                Objects.requireNonNull(playerId, "playerId"),
+                ProfileSectionId.OPERATIONS, OperationSection.class);
+        return section.operations().values().stream()
+                .filter(operation -> operation.status() == status
+                        && operation.type().equals(normalizedType))
+                .sorted(Comparator.comparing(PlayerProfileOperation::createdAt))
+                .toList();
     }
 
     public CompletionStage<PlayerProfileOperation> prepare(
@@ -149,8 +171,7 @@ public final class PlayerProfileOperationStore {
                         .toList());
         terminal.sort(Comparator.comparing(PlayerProfileOperation::updatedAt));
         if (terminal.isEmpty()) {
-            throw new IllegalStateException(
-                    "operation section is full of recoverable PREPARED operations");
+            throw new PlayerProfileTransactionManager.LedgerSaturated();
         }
         operations.remove(terminal.getFirst().operationId());
         return operations;

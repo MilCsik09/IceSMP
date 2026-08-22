@@ -1,0 +1,118 @@
+name: Equipment RP2 Asset Foundation
+
+on:
+  push:
+    branches:
+      - feature/equipment-rp2-asset-foundation
+  pull_request:
+    branches:
+      - feature/reward-discoverability-closure
+    paths:
+      - "resource-pack/**"
+      - "src/main/resources/config/**"
+      - "src/main/resources/wearable-fallback-policy.properties"
+      - "src/main/java/hu/taliann/icesmp/items/**"
+      - "src/regression/java/hu/taliann/icesmp/resourcepack/**"
+      - "scripts/equipment_rp2_asset_audit.py"
+      - "scripts/generate_equipment_rp2_manifests.py"
+      - "scripts/generate_equipment_rp2_docs.py"
+      - "scripts/tests/test_equipment_rp2_asset_audit.py"
+      - "scripts/resource_pack.py"
+      - "scripts/test_resource_pack.py"
+      - "scripts/audit_equipment_assets.py"
+      - ".github/workflows/equipment-rp2-asset-foundation.yml"
+      - "docs/development/equipment-rp2-*"
+
+permissions:
+  contents: read
+
+jobs:
+  asset-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 96
+          persist-credentials: false
+
+      - name: Verify exact stacked parent
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
+          git fetch --no-tags --depth=96 origin \
+            feature/reward-discoverability-closure:refs/remotes/origin/feature/reward-discoverability-closure
+          parent_sha=$(git rev-parse refs/remotes/origin/feature/reward-discoverability-closure)
+          test "$(git merge-base HEAD refs/remotes/origin/feature/reward-discoverability-closure)" = "${parent_sha}"
+          echo "EQUIPMENT_RP2_HEAD=${EXPECTED_HEAD}"
+          echo "STACK_PARENT_SHA=${parent_sha}"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install audit dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
+
+      - name: Prove generated catalog authority
+        run: python3 scripts/generate_long_term_equipment_catalog.py --check
+
+      - name: Build full RP2-A production asset graph
+        run: python3 scripts/equipment_rp2_asset_audit.py
+
+      - name: Enforce final RP2-A authority
+        run: python3 scripts/generate_equipment_rp2_manifests.py --enforce
+
+      - name: Prove committed manifest determinism
+        run: python3 scripts/generate_equipment_rp2_docs.py --check
+
+      - name: Resource-pack unit validation
+        run: python3 scripts/test_resource_pack.py
+
+      - name: Validate complete resource pack
+        run: python3 scripts/resource_pack.py validate --source resource-pack
+
+      - name: Audit existing equipment visual assets
+        run: python3 scripts/audit_equipment_assets.py
+
+      - name: Repository consistency gate
+        run: python3 scripts/check_consistency.py
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Clean build and resource-pack regressions
+        run: ./gradlew clean build resourcePackRegressionTest --no-daemon --console=plain
+
+      - name: Regenerate exact-head evidence after clean build
+        run: |
+          python3 scripts/equipment_rp2_asset_audit.py
+          python3 scripts/generate_equipment_rp2_manifests.py --enforce
+
+      - name: Preserve final evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: equipment-rp2-final-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/reports/equipment-rp2
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Prove checkout remains read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"

@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.itemization.EquipmentProficiencyService;
+import hu.taliann.icesmp.itemization.ItemTemplate;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -12,26 +14,30 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * B54 — Elátkozott felszerelés (lore: az Ócska-átok és az Első Csend-érintette tárgyak —
- * kódex I. + item-rarity). BOSS-forrású gear-loot ritkán "Átkozott": erősebb (a viselője
- * bónusz-sebzést kap), de FELVÉVE NEM ERESZT — a páncél nem vehető le szabadon, csak a
- * rituálé-oltár Átok-törése ({@code uncurse} rituálé-típus) oldja. A felvétel tudatos
- * döntés: az első felhelyezési kísérlet figyelmeztet, csak a gyors második erősít meg.
- *
- * <p>Állapot: PDC-flag az itemen ({@code cursed}) + figyelmeztető lore-sorok. A viselkedést
- * a {@code CursedGearListener} adja; a curse-stamp a MobLootListener boss-ágából jön.
- * Minden kulcs élőben olvasódik (item-rarity.cursed.*).
+ * B54 — Elátkozott felszerelés. A curse gameplay-hozzájárulás ugyanazt az active-equipment
+ * authorityt használja, mint a canonical stat/set/rune/signature/CombatPower útvonalak.
  */
 public final class CursedGearService {
 
     /** A lore-sor kezdete, amiről az átok-sor felismerhető (törléskor is ez a marker). */
     private static final String CURSE_MARK = "☠ Átkozott";
 
+    private record RuntimeSuppression(UUID playerId, ItemTemplate.Slot slot) { }
+
     private final ConfigManager configManager;
     private final NamespacedKey cursedKey;
+    /**
+     * Csak a confirmation-visszavétel overflow-eseteire: ha az itemet nincs hová rehome-olni,
+     * a fizikai slotban maradhat, de a curse teljesen inert és levehető marad. Az ItemStack snapshot
+     * biztosítja, hogy egy későbbi másik tárgy ne örökölje a transient tiltást.
+     */
+    private final ConcurrentHashMap<RuntimeSuppression, ItemStack> runtimeSuppressed =
+            new ConcurrentHashMap<>();
 
     public CursedGearService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.configManager = configManager;
@@ -45,6 +51,48 @@ public final class CursedGearService {
     public boolean isCursed(final ItemStack item) {
         return item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer()
                 .getOrDefault(cursedKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    /** BASIC keeps its existing curse policy; managed canonical curse contributes only while ACTIVE. */
+    public boolean isActiveCurse(final Player player, final ItemStack item,
+                                 final ItemTemplate.Slot slot) {
+        return isCursed(item)
+                && !isRuntimeSuppressed(player, item, slot)
+                && EquipmentProficiencyService.allowsGameplayContribution(player, item, slot);
+    }
+
+    public void suppressRuntimeCurse(final Player player, final ItemStack item,
+                                     final ItemTemplate.Slot slot) {
+        if (player == null || item == null || slot == null) return;
+        runtimeSuppressed.put(new RuntimeSuppression(player.getUniqueId(), slot), item.clone());
+    }
+
+    public void clearRuntimeSuppression(final Player player, final ItemTemplate.Slot slot) {
+        if (player != null && slot != null) {
+            runtimeSuppressed.remove(new RuntimeSuppression(player.getUniqueId(), slot));
+        }
+    }
+
+    /** Clears a stale transient block only when the physical slot no longer contains that item. */
+    public void reconcileRuntimeSuppression(final Player player, final ItemStack current,
+                                            final ItemTemplate.Slot slot) {
+        if (player == null || slot == null) return;
+        final RuntimeSuppression key = new RuntimeSuppression(player.getUniqueId(), slot);
+        final ItemStack blocked = runtimeSuppressed.get(key);
+        if (blocked != null && (current == null || current.getType().isAir() || !blocked.isSimilar(current))) {
+            runtimeSuppressed.remove(key, blocked);
+        }
+    }
+
+    public void clearRuntimeState(final UUID playerId) {
+        if (playerId != null) runtimeSuppressed.keySet().removeIf(key -> key.playerId().equals(playerId));
+    }
+
+    private boolean isRuntimeSuppressed(final Player player, final ItemStack item,
+                                        final ItemTemplate.Slot slot) {
+        if (player == null || item == null || slot == null) return false;
+        final ItemStack blocked = runtimeSuppressed.get(new RuntimeSuppression(player.getUniqueId(), slot));
+        return blocked != null && blocked.isSimilar(item);
     }
 
     /**
@@ -79,17 +127,15 @@ public final class CursedGearService {
         return item;
     }
 
-    /** Viselt/forgatott Átkozott darabok száma (páncél + főkéz) — a sebzés-bónusz alapja. */
+    /** Viselt/forgatott ACTIVE átkozott darabok száma (páncél + főkéz). */
     public int cursedPieceCount(final Player player) {
+        if (player == null) return 0;
         int count = 0;
-        for (final ItemStack armor : player.getInventory().getArmorContents()) {
-            if (isCursed(armor)) {
-                count++;
-            }
-        }
-        if (isCursed(player.getInventory().getItemInMainHand())) {
-            count++;
-        }
+        if (isActiveCurse(player, player.getInventory().getHelmet(), ItemTemplate.Slot.HEAD)) count++;
+        if (isActiveCurse(player, player.getInventory().getChestplate(), ItemTemplate.Slot.CHEST)) count++;
+        if (isActiveCurse(player, player.getInventory().getLeggings(), ItemTemplate.Slot.LEGS)) count++;
+        if (isActiveCurse(player, player.getInventory().getBoots(), ItemTemplate.Slot.FEET)) count++;
+        if (isActiveCurse(player, player.getInventory().getItemInMainHand(), ItemTemplate.Slot.MAIN_HAND)) count++;
         return count;
     }
 
@@ -122,7 +168,6 @@ public final class CursedGearService {
         final ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().remove(cursedKey);
         final List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
-        // Az átok-sorok (marker + a két magyarázó sor) eltávolítása a plain-szöveg alapján.
         lore.removeIf(line -> {
             final String plain = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
                     .plainText().serialize(line);

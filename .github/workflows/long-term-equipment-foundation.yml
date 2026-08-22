@@ -1,0 +1,181 @@
+name: Long-Term Equipment Foundation
+
+on:
+  push:
+    branches:
+      - feature/material-economy-expansion
+      - feature/equipment-catalog-expansion
+      - feature/reward-discoverability-closure
+  pull_request:
+    branches:
+      - feature/professions-2
+      - feature/material-economy-expansion
+      - feature/equipment-catalog-expansion
+
+permissions:
+  contents: read
+
+jobs:
+  exact-head:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact stacked head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # The stack is <96 commits deep. A bounded depth fetch keeps enough ancestry for the
+          # exact merge-base proof without pulling every historical refs/heads/* branch.
+          fetch-depth: 96
+          persist-credentials: false
+
+      - name: Verify exact head and stacked parent
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          REF_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
+          case "${REF_NAME}" in
+            feature/material-economy-expansion) PARENT=feature/professions-2 ;;
+            feature/equipment-catalog-expansion) PARENT=feature/material-economy-expansion ;;
+            feature/reward-discoverability-closure) PARENT=feature/equipment-catalog-expansion ;;
+            *)
+              echo "Unsupported stacked branch: ${REF_NAME}" >&2
+              exit 1
+              ;;
+          esac
+          git fetch --no-tags --depth=96 origin "${PARENT}:refs/remotes/origin/${PARENT}"
+          PARENT_SHA=$(git rev-parse "refs/remotes/origin/${PARENT}")
+          test "$(git merge-base HEAD "refs/remotes/origin/${PARENT}")" = "${PARENT_SHA}"
+          echo "LONG_TERM_EQUIPMENT_HEAD=${EXPECTED_HEAD}"
+          echo "STACK_PARENT=${PARENT}"
+          echo "STACK_PARENT_SHA=${PARENT_SHA}"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install repository validation dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          'PyYAML>=6.0,<7.0'
+          'Pillow==11.3.0'
+
+      - name: Audit sustainable material economy and production catalog
+        shell: bash
+        env:
+          REF_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_long_term_equipment_economy.py
+          python3 scripts/test_professions_2_economy.py
+          if [[ -f scripts/generate_long_term_equipment_catalog.py ]]; then
+            python3 scripts/generate_long_term_equipment_catalog.py --check
+            if [[ "${REF_NAME}" == "feature/reward-discoverability-closure" ]]; then
+              python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets
+              python3 scripts/audit_reward_discoverability_closure.py
+            else
+              python3 scripts/audit_long_term_equipment_catalog.py
+            fi
+          fi
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Java 21 clean build and stacked regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee gradle-build.log
+          ./gradlew professions2RegressionTest professionRecipeAuditRegressionTest \
+            itemizationDomainRegressionTest vanillaCraftingBoundaryRegressionTest \
+            equipmentDomainRegressionTest runeLifecycleRegressionTest \
+            playerProfileFullAuthorityRegressionTest configStartupRegressionTest \
+            hardeningClosureRegressionTest progressionBalanceRegressionTest \
+            equipment2ReportRegressionTest \
+            --no-daemon --console=plain
+          grep -F "Professions2RegressionSuite: OK" gradle-build.log
+          grep -F "Itemization domain regression suite passed." gradle-build.log
+          grep -F "Mob/Encounter behavioral domain regression suite passed." gradle-build.log
+
+      - name: Paper 1.21.11 cumulative runtime probes
+        if: ${{ (github.head_ref || github.ref_name) == 'feature/reward-discoverability-closure' }}
+        shell: bash
+        timeout-minutes: 12
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.source-integrity-runtime=true
+        run: |
+          set -euo pipefail
+          rm -rf run
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+          set +e
+          timeout --signal=INT --kill-after=20s 420s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            2>&1 | tee paper-runtime.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [[ ${status} -ne 0 && ${status} -ne 124 && ${status} -ne 130 ]]; then
+            echo "runServer exited unexpectedly: ${status}" >&2
+            exit "${status}"
+          fi
+          grep -E "Running the server|Starting minecraft server version 1\.21\.11|Done \(" paper-runtime.log
+          grep -F 'ICESMP_PROFESSIONS_RUNTIME_PROBE_PASS' paper-runtime.log
+          ! grep -F 'ICESMP_PROFESSIONS_RUNTIME_PROBE_FAIL' paper-runtime.log
+          grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS' paper-runtime.log
+          ! grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL' paper-runtime.log
+          if grep -E "Could not load.*IceSMP|Error occurred while enabling IceSMP|Exception.*IceSMP" paper-runtime.log; then
+            echo "IceSMP Paper runtime startup failed" >&2
+            exit 1
+          fi
+
+      - name: Validate resource pack and repository consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_resource_pack.py
+          python3 scripts/audit_equipment_assets.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_documentation_coverage.py
+          python3 scripts/check_markdown_links.py
+
+      - name: Regenerate final machine-readable evidence
+        if: ${{ (github.head_ref || github.ref_name) == 'feature/reward-discoverability-closure' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_long_term_equipment_economy.py
+          python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets
+          python3 scripts/audit_reward_discoverability_closure.py
+
+      - name: Prove immutable checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "HEAD^...HEAD"
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Upload long-term economy evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: long-term-equipment-foundation-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            build/reports/long-term-equipment
+            paper-runtime.log
+          if-no-files-found: warn
+          retention-days: 30

@@ -113,7 +113,9 @@ hud:
       refresh-ticks: 2
     target-frame:
       enabled: true
-      # Találat után ennyi másodpercig marad látható a Target Frame (1–30).
+      # Szemirányú, bounded entity-raytrace távolsága; runtime clamp: 3–64 blokk.
+      range: 24.0
+      # Entity-owner snapshot felső életkora (1–30 mp); nem tart életben elvesztett célpontot.
       expire-seconds: 10
     # Csomagszerződés, NEM runtime kapcsoló: a kiadott pack ezeket a vanilla sprite-okat
     # átlátszóra cseréli. Mind a négynek true értéken kell maradnia; hibás értéknél a

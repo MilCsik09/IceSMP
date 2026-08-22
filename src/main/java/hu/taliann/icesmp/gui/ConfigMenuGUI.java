@@ -202,6 +202,23 @@ public final class ConfigMenuGUI {
                 Entry.integer("signature.szarvas.cooldown-seconds", "Szellemszarvas cooldown (mp)", 10, 0, 100000),
                 Entry.number("signature.agyar.damage-mult", "Agyar sebzés-szorzó", 0.05, 1, 5),
                 Entry.number("signature.jegvert.damage-mult", "Jégvért bejövő-szorzó", 0.05, 0, 1))));
+        categories.put("itemization", new Category("itemization", "Itemization 2.0", Material.NETHERITE_CHESTPLATE, List.of(
+                Entry.toggle("itemization.vanilla-boundary.basic-survival-gear", "Basic survival gear domain"),
+                Entry.integer("itemization.vanilla-boundary.feedback-cooldown-seconds", "Station-hint cooldown (mp)", 1, 0, 30),
+                Entry.toggle("itemization.vanilla-boundary.canonical.rename", "Canonical rename policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.armor-trim", "Canonical armor trim policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.vanilla-repair", "Canonical vanilla repair policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.smithing-upgrade", "Canonical smithing policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.grindstone", "Canonical grindstone policy"),
+                Entry.toggle("itemization.vanilla-boundary.canonical.enchanting", "Canonical enchant policy"),
+                Entry.number("itemization.stats.ability-power-percent-per-point", "Képességerő pontszorzó (%)", 0.1, 0, 100),
+                Entry.number("itemization.stats.ability-power-max-percent", "Képességerő gear-plafon (%)", 1, 0, 1000),
+                Entry.toggle("itemization.loot.enabled", "Authored combat loot"),
+                Entry.number("itemization.loot.max-personalization-multiplier", "Build-súly plafon", 0.05, 1, 1.5),
+                Entry.integer("itemization.loot.history-window", "Diverzitási előzmény", 1, 1, 32),
+                Entry.number("itemization.loot.repeated-template-penalty", "Template ismétlésfék", 0.005, 0, 0.25),
+                Entry.number("itemization.loot.repeated-category-penalty", "Kategória ismétlésfék", 0.005, 0, 0.1),
+                Entry.number("itemization.loot.unseen-category-boost", "Új kategória bónusz", 0.005, 0, 0.1))));
         categories.put("relikviak", new Category("relikviak", "Relikviák", Material.ELYTRA, List.of(
                 Entry.toggle("relics.enabled", "Relikvia-rendszer"),
                 Entry.integer("relics.inactivity.expiry-days", "Inaktivitás-lejárat (nap)", 1, 0, 3650),

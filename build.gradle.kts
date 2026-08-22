@@ -70,6 +70,79 @@ val auditEquipmentAssets by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_equipment_assets.py")
 }
 
+val progressionBalanceRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Runs the Itemization/Mob 2.0 economy, Monte Carlo and bounded-load gate."
+    inputs.files(
+        "scripts/test_progression_balance.py",
+        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/config/crafting.yml",
+        "src/main/resources/config/profession-recipes.yml",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/config/world.yml",
+    )
+    commandLine(pythonCommand, "scripts/test_progression_balance.py")
+}
+
+val equipment2ReportRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates the deterministic Equipment 2.0 migration, budget and handoff report."
+    inputs.files(
+        "scripts/generate_equipment_2_report.py",
+        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/config/profession-recipes.yml",
+        "docs/development/equipment-2-handoff.json",
+    )
+    commandLine(pythonCommand, "scripts/generate_equipment_2_report.py", "--check")
+}
+
+val combatEncounterFoundationAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates normalized equipment, level gates, enemy techniques, TTK and wildlife evidence."
+    inputs.files(
+        "scripts/audit_combat_encounter_foundation.py",
+        "scripts/generate_long_term_equipment_catalog.py",
+        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/config/equipment-catalog-expansion.yml",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/config/world.yml",
+        "docs/development/combat-balance-authority.json",
+    )
+    commandLine(pythonCommand, "scripts/audit_combat_encounter_foundation.py", "--check")
+}
+
+val unifiedCreatureCombatAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates the bounded creature species, technique, reaction, reward and social authority."
+    inputs.files(
+        "scripts/audit_unified_creature_combat.py",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
+        "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
+    )
+    commandLine(pythonCommand, "scripts/audit_unified_creature_combat.py", "--check")
+}
+
+val authoredPveConsolidationAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates authored event spawn, template, ability, reward and lifecycle consolidation."
+    inputs.files(
+        "scripts/audit_authored_pve_consolidation.py",
+        "src/main/resources/config.yml",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/config/world.yml",
+        "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
+        "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java",
+        "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/InvasionManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/DarkUndeadAmbienceManager.java",
+        "src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java",
+    )
+    commandLine(pythonCommand, "scripts/audit_authored_pve_consolidation.py", "--check")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -479,6 +552,21 @@ val iceSmpHudRegressionTest = registerRegression(
     "iceSmpHudRegressionTest",
     "Runs first-party HUD fixed-layout, wallet, readiness and authority regressions.",
     "hu.taliann.icesmp.hud.IceSmpHudRegressionSuite")
+val targetFrameRegressionTest = registerRegression(
+    "targetFrameRegressionTest",
+    "Runs behavioral canonical Target Frame selection, metadata and lifecycle regressions.",
+    "hu.taliann.icesmp.hud.TargetFrameRegressionSuite")
+val runeLifecycleRegressionTest = registerRegression(
+    "runeLifecycleRegressionTest",
+    "Runs behavioral rune insert, remove, replace, identity and recovery regressions.",
+    "hu.taliann.icesmp.itemization.RuneLifecycleRegressionSuite")
+val hardeningClosureRegressionTest = registerRegression(
+    "hardeningClosureRegressionTest",
+    "Runs final CombatPower, set, boss, reward, contribution and ability closure regressions.",
+    "hu.taliann.icesmp.pve.HardeningClosureRegressionSuite")
+hardeningClosureRegressionTest.configure {
+    dependsOn(targetFrameRegressionTest, runeLifecycleRegressionTest)
+}
 val hudEditorRegressionTest = registerRegression(
     "hudEditorRegressionTest",
     "Runs first-party HUD editor gate, isolation, layout, shader and authority regressions.",
@@ -707,6 +795,24 @@ val professionRecipeAuditRegressionTest = registerRegression(
     "professionRecipeAuditRegressionTest",
     "Validates deterministic profession recipes, semantic uniqueness and reload cleanup.",
     "hu.taliann.icesmp.professions.ProfessionRecipeAuditRegressionSuite")
+val professions2RegressionTest = registerRegression(
+    "professions2RegressionTest",
+    "Runs deterministic Masterwork and Professions 2.0 economy contracts.",
+    "hu.taliann.icesmp.professions.Professions2RegressionSuite")
+val professions2ReportRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates Professions 2.0 recipe migration and economy graph reports."
+    inputs.files("scripts/check_professions_2_reports.py", "docs/development/professions-2-recipe-migration.json",
+        "docs/development/professions-2-economy-graph.json", "docs/development/professions-2-rp-handoff.json")
+    commandLine(pythonCommand, "scripts/check_professions_2_reports.py")
+}
+val professions2EconomyRegressionTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Runs the seeded Professions 2.0 economy sanity harness."
+    inputs.files("scripts/test_professions_2_economy.py", "src/main/resources/config/professions-2.yml",
+        "src/main/resources/config/profession-recipes.yml", "src/main/resources/config/professions.yml")
+    commandLine(pythonCommand, "scripts/test_professions_2_economy.py")
+}
 val runtimeHardeningRegressionTest = registerRegression(
     "runtimeHardeningRegressionTest",
     "Runs 2D claim, vanish retracking and DARK mob lifecycle regressions.",
@@ -819,11 +925,41 @@ val wizardProfileRegressionTest = registerRegression(
     "wizardProfileRegressionTest",
     "Runs Profile v2 Wizard allowlist, DARK gate, court-authority and slot-isolation regressions.",
     "hu.taliann.icesmp.wizard.WizardProfileRegressionSuite")
+val itemizationDomainRegressionTest = registerRegression(
+    "itemizationDomainRegressionTest",
+    "Runs canonical item template, identity, roll-quality, history, set and soft-diversity regressions.",
+    "hu.taliann.icesmp.itemization.ItemizationDomainRegressionSuite")
+val vanillaCraftingBoundaryRegressionTest = registerRegression(
+    "vanillaCraftingBoundaryRegressionTest",
+    "Runs vanilla/basic/canonical/legacy transformation and laundering regressions.",
+    "hu.taliann.icesmp.itemization.VanillaCraftingBoundaryRegressionSuite")
+val equipmentDomainRegressionTest = registerRegression(
+    "equipmentDomainRegressionTest",
+    "Runs Equipment 2.0 class-family, budget, BASIC boundary and bypass regressions.",
+    "hu.taliann.icesmp.itemization.EquipmentDomainRegressionSuite")
+val playerProfileLootDiversityRegressionTest = registerRegression(
+    "playerProfileLootDiversityRegressionTest",
+    "Runs durable, bounded and idempotent Itemization 2.0 loot diversity regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileLootDiversityStoreRegressionSuite")
+val mobEncounterDomainRegressionTest = registerRegression(
+    "mobEncounterDomainRegressionTest",
+    "Runs level 1-70 scaling, authored mob, ability, affix, encounter and contribution regressions.",
+    "hu.taliann.icesmp.pve.MobEncounterDomainRegressionSuite")
+val mobRuntimeSourceRegressionTest = registerRegression(
+    "mobRuntimeSourceRegressionTest",
+    "Runs Folia, telegraph, bounded lifecycle and durable encounter reward source gates.",
+    "hu.taliann.icesmp.pve.MobRuntimeSourceRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
     dependsOn(auditEquipmentAssets)
     dependsOn(validateIceSmpHudPackage)
+    dependsOn(progressionBalanceRegressionTest)
+    dependsOn(equipment2ReportRegressionTest)
+    dependsOn(combatEncounterFoundationAudit)
+    dependsOn(unifiedCreatureCombatAudit)
+    dependsOn(professions2ReportRegressionTest)
+    dependsOn(professions2EconomyRegressionTest)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
@@ -833,7 +969,9 @@ tasks.check {
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
-        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, hudEditorRegressionTest,
+        classSpecCompatibilityRegressionTest, iceSmpHudRegressionTest, targetFrameRegressionTest,
+        runeLifecycleRegressionTest, hardeningClosureRegressionTest,
+        hudEditorRegressionTest,
         playerProfileHudLayoutRegressionTest,
         classSpecSectionRegressionTest, classSpecApplicationRegressionTest, targetRegistryRegressionTest,
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
@@ -850,7 +988,7 @@ tasks.check {
         prologueRegressionTest,
         eventSpawnSafetyRegressionTest, configGuiTransactionRegressionTest, configGuiCoverageRegressionTest,
         clientProtocolRegressionTest,
-        professionRecipeAuditRegressionTest, inventoryReadWriteRegressionTest,
+        professionRecipeAuditRegressionTest, professions2RegressionTest, inventoryReadWriteRegressionTest,
         donationChestDurabilityRegressionTest,
         operationalConfigMenuRegressionTest, advancedConfigMenuRegressionTest, factionDisplayColorRegressionTest,
         warriorGameplayRegressionTest, warriorProfileRegressionTest,
@@ -865,6 +1003,9 @@ tasks.check {
         deathKnightGameplayRegressionTest, deathKnightProfileRegressionTest,
         assassinGameplayRegressionTest, assassinProfileRegressionTest,
         warlockGameplayRegressionTest, warlockProfileRegressionTest,
-        wizardGameplayRegressionTest, wizardProfileRegressionTest
+        wizardGameplayRegressionTest, wizardProfileRegressionTest,
+        itemizationDomainRegressionTest, vanillaCraftingBoundaryRegressionTest,
+        equipmentDomainRegressionTest, playerProfileLootDiversityRegressionTest,
+        mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest
     )
 }

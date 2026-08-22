@@ -1,0 +1,1445 @@
+# IceSMP Mob/Encounter 2.0 — authored pilot content.
+# Natural vanilla mobs without a matching entry stay on the safe fallback path.
+
+mob-abilities:
+  telegraphed_lunge:
+    kind: LUNGE
+    cooldown-ticks: 120
+    telegraph-ticks: 20
+    recovery-ticks: 15
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 10.0
+    power: 1.15
+    max-summons: 0
+  glacial_slam:
+    kind: GROUND_SLAM
+    cooldown-ticks: 180
+    telegraph-ticks: 30
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 4.5
+    power: 6.0
+    max-summons: 0
+    tuning: { knockback: 0.8 }
+  rime_burst:
+    kind: PROJECTILE_BURST
+    cooldown-ticks: 140
+    telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 14.0
+    power: 3.0
+    max-summons: 0
+    tuning: { projectiles: 3 }
+  iceguard:
+    kind: SHIELD
+    cooldown-ticks: 240
+    telegraph-ticks: 10
+    recovery-ticks: 15
+    target-rule: SELF
+    interruptible: false
+    radius: 2.0
+    power: 0.35
+    max-summons: 0
+  winter_mend:
+    kind: HEAL_PULSE
+    cooldown-ticks: 260
+    telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: SELF
+    interruptible: true
+    radius: 3.0
+    power: 0.12
+    max-summons: 0
+  call_frozen:
+    kind: SUMMON
+    cooldown-ticks: 300
+    telegraph-ticks: 30
+    recovery-ticks: 40
+    target-rule: SELF
+    interruptible: true
+    radius: 5.0
+    power: 1.0
+    max-summons: 3
+  veteran_cleave:
+    kind: CLEAVE
+    cooldown-ticks: 140
+    telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: NEAREST_PLAYER
+    interruptible: true
+    radius: 3.5
+    power: 4.0
+    max-summons: 0
+    eligible-ranks: [ VETERAN, ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+  venom_cloud:
+    kind: POISON_CLOUD
+    cooldown-ticks: 220
+    telegraph-ticks: 30
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 4.0
+    power: 2.0
+    max-summons: 0
+    eligible-ranks: [ ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+    tuning: { duration-ticks: 80, amplifier: 0 }
+  delayed_frost_rune:
+    kind: DELAYED_RUNE
+    cooldown-ticks: 180
+    telegraph-ticks: 40
+    recovery-ticks: 30
+    target-rule: NEAREST_PLAYER
+    interruptible: true
+    radius: 4.0
+    power: 7.0
+    max-summons: 0
+    eligible-ranks: [ ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+    tuning: { interrupt-damage: 2.0 }
+  hunter_retreat:
+    kind: RETREAT
+    cooldown-ticks: 160
+    telegraph-ticks: 15
+    recovery-ticks: 20
+    target-rule: CURRENT_TARGET
+    interruptible: false
+    radius: 9.0
+    power: 0.9
+    max-summons: 0
+    eligible-archetypes: [ RANGED, ARTILLERY, SKIRMISHER ]
+  war_cry:
+    kind: ALLY_BUFF
+    cooldown-ticks: 260
+    telegraph-ticks: 20
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 6.0
+    power: 0.15
+    max-summons: 0
+    eligible-ranks: [ CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+    tuning: { duration-ticks: 120 }
+
+  # Authored PvE primitives introduced only for migrated world-boss/event content.
+  boss_slam:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 160
+    telegraph-ticks: 30
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 5.0
+    power: 6.0
+    max-summons: 0
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 6.0, radius: 5.0, per-level: 0.002, maximum-level-multiplier: 1.15 } }
+      - { type: KNOCKBACK, target: NEARBY_PLAYERS, parameters: { strength: 0.85, radius: 5.0 } }
+  boss_frost_zone:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 190
+    telegraph-ticks: 30
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 6.0
+    power: 4.5
+    max-summons: 0
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 4.5, radius: 6.0 } }
+      - { type: APPLY_EFFECT, target: NEARBY_PLAYERS, reference: slowness, parameters: { radius: 6.0, duration-ticks: 100, amplifier: 1 } }
+  boss_weakening_zone:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 190
+    telegraph-ticks: 30
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 6.0
+    power: 4.0
+    max-summons: 0
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 4.0, radius: 6.0 } }
+      - { type: APPLY_EFFECT, target: NEARBY_PLAYERS, reference: weakness, parameters: { radius: 6.0, duration-ticks: 100, amplifier: 0 } }
+  boss_wither_zone:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 210
+    telegraph-ticks: 32
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 5.5
+    power: 4.0
+    max-summons: 0
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 4.0, radius: 5.5 } }
+      - { type: APPLY_EFFECT, target: NEARBY_PLAYERS, reference: wither, parameters: { radius: 5.5, duration-ticks: 80, amplifier: 0 } }
+  boss_darkness_zone:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 220
+    telegraph-ticks: 32
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 7.0
+    power: 5.0
+    max-summons: 0
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 5.0, radius: 7.0 } }
+      - { type: APPLY_EFFECT, target: NEARBY_PLAYERS, reference: darkness, parameters: { radius: 7.0, duration-ticks: 100, amplifier: 0 } }
+  boss_enrage:
+    kind: COMPOSITE
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
+    telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: SELF
+    interruptible: false
+    radius: 3.0
+    power: 0.0
+    max-summons: 0
+    conditions:
+      - { type: HEALTH_BELOW, value: 0.50 }
+    actions:
+      - { type: APPLY_EFFECT, target: SELF, reference: strength, parameters: { duration-ticks: 1200, amplifier: 1 } }
+      - { type: APPLY_EFFECT, target: SELF, reference: speed, parameters: { duration-ticks: 1200, amplifier: 0 } }
+  summon_frozen_adds:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 300
+    telegraph-ticks: 30
+    recovery-ticks: 40
+    target-rule: SELF
+    interruptible: true
+    radius: 5.0
+    power: 0.0
+    max-summons: 3
+    actions:
+      - { type: SUMMON_TEMPLATE, target: SELF, reference: frozen_boss_add, parameters: { count: 3, lifespan-ticks: 500 } }
+  summon_bone_adds:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 300
+    telegraph-ticks: 30
+    recovery-ticks: 40
+    target-rule: SELF
+    interruptible: true
+    radius: 5.0
+    power: 0.0
+    max-summons: 3
+    actions:
+      - { type: SUMMON_TEMPLATE, target: SELF, reference: bone_boss_add, parameters: { count: 3, lifespan-ticks: 500 } }
+  summon_venom_adds:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 320
+    telegraph-ticks: 30
+    recovery-ticks: 40
+    target-rule: SELF
+    interruptible: true
+    radius: 5.0
+    power: 0.0
+    max-summons: 3
+    actions:
+      - { type: SUMMON_TEMPLATE, target: SELF, reference: venom_boss_add, parameters: { count: 3, lifespan-ticks: 500 } }
+  summon_piglin_adds:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 300
+    telegraph-ticks: 30
+    recovery-ticks: 40
+    target-rule: SELF
+    interruptible: true
+    radius: 5.0
+    power: 0.0
+    max-summons: 3
+    actions:
+      - { type: SUMMON_TEMPLATE, target: SELF, reference: piglin_boss_add, parameters: { count: 3, lifespan-ticks: 500 } }
+  prologue_call_adds:
+    kind: COMPOSITE
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
+    telegraph-ticks: 30
+    recovery-ticks: 40
+    target-rule: SELF
+    interruptible: true
+    radius: 5.0
+    power: 0.0
+    max-summons: 3
+    conditions:
+      - { type: HEALTH_BELOW, value: 0.65 }
+    actions:
+      - { type: SUMMON_TEMPLATE, target: SELF, reference: prologue_bone_add, parameters: { count: 3, lifespan-ticks: 600 } }
+  prologue_hazard:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 120
+    telegraph-ticks: 24
+    recovery-ticks: 24
+    target-rule: SELF
+    interruptible: true
+    radius: 6.0
+    power: 3.0
+    max-summons: 0
+    conditions:
+      - { type: HEALTH_BELOW, value: 0.30 }
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 3.0, radius: 6.0 } }
+      - { type: APPLY_EFFECT, target: NEARBY_PLAYERS, reference: weakness, parameters: { radius: 6.0, duration-ticks: 60, amplifier: 0 } }
+
+  # Bounded physical primitives used by the creature species matrix. These are authored
+  # compositions, not species-specific Java mechanics.
+  panic_dash:
+    kind: COMPOSITE
+    triggers: [ ON_PROVOKED ]
+    cooldown-ticks: 100
+    telegraph-ticks: 10
+    recovery-ticks: 10
+    target-rule: PROVOKER
+    interruptible: false
+    radius: 8.0
+    power: 1.05
+    max-summons: 0
+    conditions:
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+    actions:
+      - { type: RETREAT, target: PROVOKER, parameters: { strength: 1.05 } }
+  headbutt:
+    kind: COMPOSITE
+    triggers: [ ON_COMBAT_ENTER, ON_TIMER ]
+    cooldown-ticks: 120
+    telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 5.0
+    power: 2.0
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 6.0 }
+    actions:
+      - { type: DASH, target: PROVOKER, parameters: { strength: 0.72 } }
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 2.0, per-level: 0.008, maximum-level-multiplier: 1.45 } }
+      - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.48, per-level: 0.004, maximum-level-multiplier: 1.20 } }
+  short_charge:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 180
+    telegraph-ticks: 24
+    recovery-ticks: 24
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 7.0
+    power: 3.0
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 8.0 }
+    actions:
+      - { type: DASH, target: PROVOKER, parameters: { strength: 1.05 } }
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 3.0, per-level: 0.008, maximum-level-multiplier: 1.45 } }
+      - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.72, per-level: 0.004, maximum-level-multiplier: 1.20 } }
+  defensive_stomp:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 220
+    telegraph-ticks: 28
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 3.5
+    power: 2.5
+    max-summons: 0
+    eligible-ranks: [ ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+      - { type: HEALTH_BELOW, value: 0.65 }
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 2.5, radius: 3.5, per-level: 0.008, maximum-level-multiplier: 1.45 } }
+      - { type: KNOCKBACK, target: NEARBY_PLAYERS, parameters: { strength: 0.70, radius: 3.5 } }
+  rear_kick:
+    kind: COMPOSITE
+    triggers: [ ON_COMBAT_ENTER, ON_TIMER ]
+    cooldown-ticks: 150
+    telegraph-ticks: 18
+    recovery-ticks: 22
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 4.5
+    power: 2.5
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 5.0 }
+    actions:
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 2.5, per-level: 0.008, maximum-level-multiplier: 1.45 } }
+      - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.78, per-level: 0.004, maximum-level-multiplier: 1.20 } }
+  panic_peck:
+    kind: COMPOSITE
+    triggers: [ ON_COMBAT_ENTER, ON_TIMER ]
+    cooldown-ticks: 100
+    telegraph-ticks: 12
+    recovery-ticks: 15
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 2.5
+    power: 0.5
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 3.0 }
+    actions:
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 0.5, per-level: 0.006, maximum-level-multiplier: 1.30 } }
+  shell_brace:
+    kind: COMPOSITE
+    triggers: [ ON_DAMAGED ]
+    cooldown-ticks: 180
+    telegraph-ticks: 10
+    recovery-ticks: 15
+    target-rule: SELF
+    interruptible: false
+    radius: 2.0
+    power: 0.0
+    max-summons: 0
+    conditions:
+      - { type: ADULT, value: 0 }
+    actions:
+      - { type: GUARD, target: SELF, parameters: { duration-ticks: 100, amplifier: 0 } }
+  aquatic_ram:
+    kind: COMPOSITE
+    triggers: [ ON_COMBAT_ENTER, ON_TIMER ]
+    cooldown-ticks: 140
+    telegraph-ticks: 18
+    recovery-ticks: 18
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 5.0
+    power: 1.5
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 6.0 }
+    actions:
+      - { type: DASH, target: PROVOKER, parameters: { strength: 0.85 } }
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 1.5, per-level: 0.006, maximum-level-multiplier: 1.35 } }
+      - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.40 } }
+
+# Paper 1.21.11 EntityType.values() is the runtime completeness authority. Every living,
+# spawnable, non-player type has exactly one explicit row; missing rows fail startup/CI closed.
+creature-species:
+  ALLAY: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SUPPORT, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: OWNER_SAFE }
+  ARMOR_STAND: { category: CIVILIAN, disposition: NON_COMBAT, archetype: DEFENDER, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  COPPER_GOLEM: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SUPPORT, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  HAPPY_GHAST: { category: CIVILIAN, disposition: NON_COMBAT, archetype: FLYING, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: OWNER_SAFE }
+  MANNEQUIN: { category: CIVILIAN, disposition: NON_COMBAT, archetype: DEFENDER, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  VILLAGER: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SUPPORT, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  WANDERING_TRADER: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SUPPORT, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+
+  ARMADILLO:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: DEFENDER
+    temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 45, CALM: 40, DEFENSIVE: 15 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 15 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: true, combat-ticks: 180, flee-technique: panic_dash }
+    techniques: [ shell_brace ]
+    social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  AXOLOTL:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: SKIRMISHER
+    temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 45, CALM: 40, DEFENSIVE: 15 }, fight-percent: { TIMID: 0, CALM: 5, DEFENSIVE: 35 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: false, combat-ticks: 180, flee-technique: panic_dash }
+    techniques: [ aquatic_ram ]
+    social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  BAT: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: FLYING, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  CAMEL: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 25, CALM: 55, DEFENSIVE: 20 }, fight-percent: { TIMID: 0, CALM: 5, DEFENSIVE: 45 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 220, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  CAT: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 70, CALM: 30 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  CHICKEN:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: SKIRMISHER
+    temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 75, CALM: 20, DEFENSIVE: 5 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 35 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }
+    techniques: [ panic_peck ]
+    social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  COD: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  COW:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: BRUISER
+    temperament: { allowed: [ TIMID, CALM, DEFENSIVE, HERD_DEFENSIVE ], weights: { TIMID: 35, CALM: 30, DEFENSIVE: 25, HERD_DEFENSIVE: 10 }, fight-percent: { TIMID: 0, CALM: 8, DEFENSIVE: 65, HERD_DEFENSIVE: 82 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: true, combat-ticks: 240, flee-technique: panic_dash }
+    techniques: [ headbutt ]
+    rank-techniques: { VETERAN: [ short_charge ], ELITE: [ defensive_stomp ] }
+    social: { relation: SAME_SPECIES, radius: 6.0, maximum-assistants: 2, required-temperaments: [ DEFENSIVE, HERD_DEFENSIVE ], cooldown-ticks: 240, maximum-candidates: 12 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  DOLPHIN:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: SKIRMISHER
+    temperament: { allowed: [ CALM, DEFENSIVE, PACK_DEFENSIVE ], weights: { CALM: 55, DEFENSIVE: 30, PACK_DEFENSIVE: 15 }, fight-percent: { CALM: 8, DEFENSIVE: 65, PACK_DEFENSIVE: 80 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: true, combat-ticks: 200, flee-technique: panic_dash }
+    techniques: [ aquatic_ram ]
+    social: { relation: SAME_SPECIES, radius: 8.0, maximum-assistants: 2, required-temperaments: [ PACK_DEFENSIVE ], cooldown-ticks: 260, maximum-candidates: 12 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  DONKEY: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 35, CALM: 40, DEFENSIVE: 25 }, fight-percent: { TIMID: 0, CALM: 8, DEFENSIVE: 68 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 220, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  FOX: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 75, CALM: 25 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 140, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  FROG: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 85, CALM: 15 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  GLOW_SQUID: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  HORSE: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 40, CALM: 40, DEFENSIVE: 20 }, fight-percent: { TIMID: 0, CALM: 6, DEFENSIVE: 62 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 220, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  MOOSHROOM: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: BRUISER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE, HERD_DEFENSIVE ], weights: { TIMID: 35, CALM: 30, DEFENSIVE: 25, HERD_DEFENSIVE: 10 }, fight-percent: { TIMID: 0, CALM: 8, DEFENSIVE: 65, HERD_DEFENSIVE: 82 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 240, flee-technique: panic_dash }, techniques: [ headbutt ], rank-techniques: { VETERAN: [ short_charge ], ELITE: [ defensive_stomp ] }, social: { relation: SAME_SPECIES, radius: 6.0, maximum-assistants: 2, required-temperaments: [ DEFENSIVE, HERD_DEFENSIVE ], cooldown-ticks: 240, maximum-candidates: 12 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  MULE: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 30, CALM: 40, DEFENSIVE: 30 }, fight-percent: { TIMID: 0, CALM: 10, DEFENSIVE: 72 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 220, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  NAUTILUS: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 35, CALM: 50, DEFENSIVE: 15 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 25 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 180, flee-technique: panic_dash }, techniques: [ shell_brace ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  OCELOT: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 75, CALM: 25 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 140, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  PARROT: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: FLYING, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 80, CALM: 20 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  PIG: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: CHARGER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 45, CALM: 35, DEFENSIVE: 20 }, fight-percent: { TIMID: 0, CALM: 7, DEFENSIVE: 58 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 200, flee-technique: panic_dash }, techniques: [ headbutt ], rank-techniques: { VETERAN: [ short_charge ] }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  PUFFERFISH: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 80, CALM: 20 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  RABBIT:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: SKIRMISHER
+    temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 92, CALM: 8 }, fight-percent: { TIMID: 0, CALM: 0 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }
+    social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  SALMON: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  SHEEP: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: CHARGER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE, HERD_DEFENSIVE ], weights: { TIMID: 55, CALM: 25, DEFENSIVE: 15, HERD_DEFENSIVE: 5 }, fight-percent: { TIMID: 0, CALM: 3, DEFENSIVE: 48, HERD_DEFENSIVE: 65 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 180, flee-technique: panic_dash }, techniques: [ headbutt ], rank-techniques: { VETERAN: [ short_charge ] }, social: { relation: SAME_SPECIES, radius: 5.0, maximum-assistants: 1, required-temperaments: [ HERD_DEFENSIVE ], cooldown-ticks: 260, maximum-candidates: 10 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  SNIFFER: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 25, CALM: 60, DEFENSIVE: 15 }, fight-percent: { TIMID: 0, CALM: 2, DEFENSIVE: 32 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 200, flee-technique: panic_dash }, techniques: [ headbutt ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  SQUID: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  STRIDER: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 65, CALM: 35 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 140, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  TADPOLE: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SKIRMISHER, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  TROPICAL_FISH: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  TURTLE: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 45, CALM: 45, DEFENSIVE: 10 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 10 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 160, flee-technique: panic_dash }, techniques: [ shell_brace ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  ZOMBIE_HORSE: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ CALM, DEFENSIVE ], weights: { CALM: 60, DEFENSIVE: 40 }, fight-percent: { CALM: 5, DEFENSIVE: 55 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 200, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+
+  BEE: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: FLYING, temperament: { allowed: [ CALM, DEFENSIVE, PACK_DEFENSIVE ], weights: { CALM: 55, DEFENSIVE: 30, PACK_DEFENSIVE: 15 }, fight-percent: { CALM: 0, DEFENSIVE: 100, PACK_DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 200 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  ENDERMAN: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ CALM, TERRITORIAL ], weights: { CALM: 55, TERRITORIAL: 45 }, fight-percent: { CALM: 0, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 260 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  GOAT: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: CHARGER, temperament: { allowed: [ CALM, DEFENSIVE, TERRITORIAL ], weights: { CALM: 35, DEFENSIVE: 35, TERRITORIAL: 30 }, fight-percent: { CALM: 0, DEFENSIVE: 100, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  IRON_GOLEM: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ DEFENSIVE, TERRITORIAL ], weights: { DEFENSIVE: 65, TERRITORIAL: 35 }, fight-percent: { DEFENSIVE: 100, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 300 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  LLAMA: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: RANGED, temperament: { allowed: [ CALM, DEFENSIVE, TERRITORIAL ], weights: { CALM: 45, DEFENSIVE: 40, TERRITORIAL: 15 }, fight-percent: { CALM: 0, DEFENSIVE: 100, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  PANDA: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: BRUISER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 20, CALM: 55, DEFENSIVE: 25 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  PIGLIN: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ CALM, TERRITORIAL, PACK_DEFENSIVE ], weights: { CALM: 25, TERRITORIAL: 50, PACK_DEFENSIVE: 25 }, fight-percent: { CALM: 0, TERRITORIAL: 100, PACK_DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 260 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: HOSTILE, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  POLAR_BEAR: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: BRUISER, temperament: { allowed: [ CALM, DEFENSIVE, TERRITORIAL ], weights: { CALM: 30, DEFENSIVE: 35, TERRITORIAL: 35 }, fight-percent: { CALM: 0, DEFENSIVE: 100, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 260 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  SKELETON_HORSE: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ CALM, DEFENSIVE ], weights: { CALM: 60, DEFENSIVE: 40 }, fight-percent: { CALM: 0, DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 200 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  SNOW_GOLEM: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: RANGED, temperament: { allowed: [ DEFENSIVE ], weights: { DEFENSIVE: 100 }, fight-percent: { DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  TRADER_LLAMA: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: RANGED, temperament: { allowed: [ CALM, DEFENSIVE ], weights: { CALM: 45, DEFENSIVE: 55 }, fight-percent: { CALM: 0, DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  WOLF: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ CALM, DEFENSIVE, PACK_DEFENSIVE ], weights: { CALM: 45, DEFENSIVE: 30, PACK_DEFENSIVE: 25 }, fight-percent: { CALM: 0, DEFENSIVE: 100, PACK_DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 240 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  ZOMBIFIED_PIGLIN: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ CALM, PACK_DEFENSIVE ], weights: { CALM: 35, PACK_DEFENSIVE: 65 }, fight-percent: { CALM: 0, PACK_DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 280 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+
+  BLAZE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  BOGGED: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  BREEZE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  CAMEL_HUSK: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  CAVE_SPIDER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ASSASSIN, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  CREAKING: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  CREEPER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ASSASSIN, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  DROWNED: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ELDER_GUARDIAN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ENDER_DRAGON: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: FLYING, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ENDERMITE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ASSASSIN, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  EVOKER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: SUMMONER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  GHAST: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ARTILLERY, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  GIANT: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  GUARDIAN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  HOGLIN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  HUSK: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ILLUSIONER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  MAGMA_CUBE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  PARCHED: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  PHANTOM: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: FLYING, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  PIGLIN_BRUTE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  PILLAGER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  RAVAGER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SHULKER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ARTILLERY, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SILVERFISH: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ASSASSIN, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SKELETON: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SLIME: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SPIDER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  STRAY: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  VEX: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: FLYING, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  VINDICATOR: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  WARDEN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  WITCH: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  WITHER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ARTILLERY, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  WITHER_SKELETON: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ZOGLIN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ZOMBIE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ZOMBIE_NAUTILUS: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ZOMBIE_VILLAGER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+
+# Source relevance is authoritative. Runtime loot may only choose rewards declared by the profile.
+mob-loot-profiles:
+  frozen_wilderness:
+    sources: [ "combat:wilderness:frozen" ]
+    rewards: [ "material:dermedt_csont", "authored:fagyott_eskukard" ]
+  deep_mine:
+    sources: [ "combat:deep_mine" ]
+    rewards: [ "material:sarkfeny_cseppko", "rune:fagy_runa" ]
+  cultist:
+    sources: [ "combat:cultist" ]
+    rewards: [ "material:runapor", "blueprint:glatziendorfi_jegtoro" ]
+  champion:
+    sources: [ "combat:champion" ]
+    rewards: [ "rune:fagy_runa", "material:folyositoszer" ]
+  world_boss:
+    sources: [ "combat:world_boss" ]
+    rewards: [ "material:osi_ereklyeszilank", "authored:glatziendorfi_jegtoro" ]
+  surface_survival:
+    sources: [ "combat:wilderness" ]
+    rewards: [ "material:vad_esszencia", "authored:kovacstanonc_penge", "authored:borkeretes_ij" ]
+  night_hunt:
+    sources: [ "combat:wilderness:night" ]
+    rewards: [ "material:arnyekpor", "authored:szelvago_ij" ]
+  swamp_survival:
+    sources: [ "combat:wilderness:swamp" ]
+    rewards: [ "material:gyogy_kivonat", "rune:runa_oltalom" ]
+  nether_survival:
+    sources: [ "combat:wilderness:nether" ]
+    rewards: [ "material:karhozat_parazs", "authored:parazs_kard" ]
+  end_survival:
+    sources: [ "combat:wilderness:end" ]
+    rewards: [ "material:nema_kristaly", "authored:nema_kristaly_fokusz" ]
+  storm_survival:
+    sources: [ "combat:wilderness:storm" ]
+    rewards: [ "material:viharkvarc", "rune:runa_vadasz" ]
+  wild_hunt:
+    sources: [ "combat:event:wild_hunt" ]
+    rewards: [ "material:vad_esszencia", "authored:szellemszarvas_bubaj" ]
+
+mob-templates:
+  frozen_husk:
+    schema-version: 1
+    display-name: "Dermedt Kóborló"
+    entity-type: ZOMBIE
+    level: { minimum: 6, maximum: 16 }
+    rank: NORMAL
+    archetype: BRUISER
+    stats: { health-multiplier: 1.10, damage-multiplier: 0.90, movement-multiplier: 0.90, cc-resistance: 0.10 }
+    abilities: [ "iceguard" ]
+    resistances: [ "frost" ]
+    weaknesses: [ "fire" ]
+    loot-profile: frozen_wilderness
+    source-tags: [ "biome:snowy_plains", "region:frozen" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: frozen_husk
+    affix-pool: [ "VOLATILE", "SHIELDED", "FROSTBOUND", "FRENZIED" ]
+  frostbound_stray:
+    schema-version: 1
+    display-name: "Fagybilincs Íjász"
+    entity-type: STRAY
+    level: { minimum: 14, maximum: 26 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.95, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.15 }
+    abilities: [ "rime_burst" ]
+    resistances: [ "frost" ]
+    weaknesses: [ "fire" ]
+    loot-profile: frozen_wilderness
+    source-tags: [ "biome:snowy_taiga", "region:frozen" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: frostbound_stray
+    affix-pool: [ "VOLATILE", "SHIELDED", "FROSTBOUND", "ARCANE" ]
+  deep_vein_stalker:
+    schema-version: 1
+    display-name: "Érjáró Leselkedő"
+    entity-type: CAVE_SPIDER
+    level: { minimum: 24, maximum: 40 }
+    rank: NORMAL
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.90, damage-multiplier: 1.10, movement-multiplier: 1.15, cc-resistance: 0.10 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: deep_mine
+    source-tags: [ "depth:deep", "region:mine" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: deep_vein_stalker
+    affix-pool: [ "VOLATILE", "VAMPIRIC", "FRENZIED", "FROSTBOUND" ]
+  rime_cultist:
+    schema-version: 1
+    display-name: "Zúzmara Kultista"
+    entity-type: PILLAGER
+    level: { minimum: 22, maximum: 38 }
+    rank: VETERAN
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 1.10, damage-multiplier: 1.05, movement-multiplier: 1.05, cc-resistance: 0.20 }
+    abilities: [ "telegraphed_lunge", "rime_burst" ]
+    resistances: [ "frost" ]
+    weaknesses: [ "holy" ]
+    loot-profile: cultist
+    source-tags: [ "event:cultist" ]
+    spawn-policy: event
+    bestiary-id: rime_cultist
+    affix-pool: [ "VOLATILE", "SHIELDED", "ARCANE", "SUMMONER" ]
+  glacier_champion:
+    schema-version: 1
+    display-name: "Jégfal Bajnoka"
+    entity-type: RAVAGER
+    level: { minimum: 42, maximum: 50 }
+    rank: CHAMPION
+    archetype: CHARGER
+    stats: { health-multiplier: 1.55, damage-multiplier: 1.10, movement-multiplier: 1.0, cc-resistance: 0.55 }
+    abilities: [ "telegraphed_lunge", "glacial_slam", "iceguard" ]
+    resistances: [ "frost", "knockback" ]
+    weaknesses: [ "fire" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion", "region:frozen" ]
+    spawn-policy: authored
+    bestiary-id: glacier_champion
+    affix-pool: [ "SHIELDED", "FRENZIED", "FROSTBOUND", "VOLATILE" ]
+  ring_warden:
+    schema-version: 1
+    display-name: "A Gyűrűk Őre"
+    entity-type: RAVAGER
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: DEFENDER
+    stats: { health-multiplier: 0.12, damage-multiplier: 0.51, movement-multiplier: 0.95, cc-resistance: 0.80 }
+    abilities: [ "boss_slam", "iceguard", "summon_frozen_adds", "boss_enrage" ]
+    resistances: [ "frost", "knockback" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: ring_warden
+    affix-pool: []
+  magma_behemoth:
+    schema-version: 1
+    display-name: "Lávakohó Behemót"
+    entity-type: BLAZE
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: ARTILLERY
+    stats: { health-multiplier: 0.60, damage-multiplier: 0.56, movement-multiplier: 0.9, cc-resistance: 0.75 }
+    abilities: [ "rime_burst", "boss_weakening_zone", "war_cry", "boss_enrage" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: magma_behemoth
+    affix-pool: []
+  frost_king:
+    schema-version: 1
+    display-name: "Fagyott Trón Királya"
+    entity-type: STRAY
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: RANGED
+    stats: { health-multiplier: 0.66, damage-multiplier: 0.51, movement-multiplier: 1.0, cc-resistance: 0.8 }
+    abilities: [ "rime_burst", "boss_frost_zone", "summon_frozen_adds", "boss_enrage" ]
+    resistances: [ "frost" ]
+    weaknesses: [ "fire" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: frost_king
+    affix-pool: []
+  bone_king:
+    schema-version: 1
+    display-name: "Csontkirály"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: SUMMONER
+    stats: { health-multiplier: 0.60, damage-multiplier: 0.61, movement-multiplier: 1.0, cc-resistance: 0.8 }
+    abilities: [ "veteran_cleave", "boss_wither_zone", "summon_bone_adds", "boss_enrage" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: bone_king
+    affix-pool: []
+  deep_horror:
+    schema-version: 1
+    display-name: "Mélységi Rém"
+    entity-type: WARDEN
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: BRUISER
+    stats: { health-multiplier: 0.024, damage-multiplier: 0.51, movement-multiplier: 0.9, cc-resistance: 0.9 }
+    abilities: [ "boss_slam", "boss_darkness_zone", "iceguard", "boss_enrage" ]
+    resistances: [ "dark", "knockback" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: deep_horror
+    affix-pool: []
+  venom_broodmother:
+    schema-version: 1
+    display-name: "Méreg Anyakirálynő"
+    entity-type: CAVE_SPIDER
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: ASSASSIN
+    stats: { health-multiplier: 1.0, damage-multiplier: 0.51, movement-multiplier: 1.2, cc-resistance: 0.7 }
+    abilities: [ "telegraphed_lunge", "venom_cloud", "summon_venom_adds", "boss_enrage" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "fire" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: venom_broodmother
+    affix-pool: []
+  storm_herald:
+    schema-version: 1
+    display-name: "Vihar Hírnöke"
+    entity-type: VINDICATOR
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 0.50, damage-multiplier: 0.61, movement-multiplier: 1.15, cc-resistance: 0.75 }
+    abilities: [ "rime_burst", "boss_weakening_zone", "boss_slam", "boss_enrage" ]
+    resistances: [ "lightning" ]
+    weaknesses: [ "frost" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: storm_herald
+    affix-pool: []
+  plague_titan:
+    schema-version: 1
+    display-name: "Dögvész Titán"
+    entity-type: HUSK
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: BRUISER
+    stats: { health-multiplier: 0.72, damage-multiplier: 0.51, movement-multiplier: 0.9, cc-resistance: 0.85 }
+    abilities: [ "boss_slam", "boss_wither_zone", "venom_cloud", "boss_enrage" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "holy" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: plague_titan
+    affix-pool: []
+  golem_sentinel:
+    schema-version: 1
+    display-name: "Vas Őrszem"
+    entity-type: IRON_GOLEM
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: DEFENDER
+    stats: { health-multiplier: 0.16, damage-multiplier: 0.51, movement-multiplier: 0.85, cc-resistance: 0.95 }
+    abilities: [ "boss_slam", "iceguard", "war_cry", "boss_enrage" ]
+    resistances: [ "stone", "knockback" ]
+    weaknesses: [ "lightning" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: golem_sentinel
+    affix-pool: []
+  piglin_warlord:
+    schema-version: 1
+    display-name: "Pokoli Hadúr"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 75, maximum: 75 }
+    rank: WORLD_BOSS
+    archetype: CHARGER
+    stats: { health-multiplier: 0.24, damage-multiplier: 0.61, movement-multiplier: 1.05, cc-resistance: 0.8 }
+    abilities: [ "veteran_cleave", "war_cry", "summon_piglin_adds", "boss_enrage" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss" ]
+    spawn-policy: boss
+    bestiary-id: piglin_warlord
+    affix-pool: []
+  frozen_boss_add:
+    schema-version: 1
+    display-name: "Dermedt Szolga"
+    entity-type: STRAY
+    level: { minimum: 30, maximum: 75 }
+    rank: VETERAN
+    archetype: RANGED
+    stats: { health-multiplier: 0.9, damage-multiplier: 0.8, movement-multiplier: 1.0, cc-resistance: 0.2 }
+    abilities: [ "rime_burst" ]
+    resistances: [ "frost" ]
+    weaknesses: [ "fire" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss", "role:add" ]
+    spawn-policy: event
+    bestiary-id: frozen_boss_add
+    affix-pool: []
+  bone_boss_add:
+    schema-version: 1
+    display-name: "Csontkirály Szolgája"
+    entity-type: SKELETON
+    level: { minimum: 30, maximum: 75 }
+    rank: VETERAN
+    archetype: RANGED
+    stats: { health-multiplier: 1.0, damage-multiplier: 0.8, movement-multiplier: 1.0, cc-resistance: 0.2 }
+    abilities: [ "veteran_cleave" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss", "role:add" ]
+    spawn-policy: event
+    bestiary-id: bone_boss_add
+    affix-pool: []
+  venom_boss_add:
+    schema-version: 1
+    display-name: "Méregivadék"
+    entity-type: CAVE_SPIDER
+    level: { minimum: 30, maximum: 75 }
+    rank: VETERAN
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.8, damage-multiplier: 0.8, movement-multiplier: 1.1, cc-resistance: 0.15 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "fire" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss", "role:add" ]
+    spawn-policy: event
+    bestiary-id: venom_boss_add
+    affix-pool: []
+  piglin_boss_add:
+    schema-version: 1
+    display-name: "Hadúri Rohamosztagos"
+    entity-type: PIGLIN
+    level: { minimum: 30, maximum: 75 }
+    rank: VETERAN
+    archetype: BRUISER
+    stats: { health-multiplier: 1.0, damage-multiplier: 0.85, movement-multiplier: 1.0, cc-resistance: 0.2 }
+    abilities: [ "veteran_cleave" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: world_boss
+    source-tags: [ "event:world_boss", "role:add" ]
+    spawn-policy: event
+    bestiary-id: piglin_boss_add
+    affix-pool: []
+  invasion_undead_champion:
+    schema-version: 1
+    display-name: "Élőhalott Áradat Bajnoka"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 10, maximum: 70 }
+    rank: CHAMPION
+    archetype: BRUISER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.45 }
+    abilities: [ "veteran_cleave", "boss_slam", "war_cry" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion" ]
+    spawn-policy: event
+    bestiary-id: invasion_undead_champion
+    affix-pool: []
+  invasion_bone_champion:
+    schema-version: 1
+    display-name: "Csontlégió Bajnoka"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 10, maximum: 70 }
+    rank: CHAMPION
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 0.95, cc-resistance: 0.5 }
+    abilities: [ "veteran_cleave", "boss_slam", "iceguard" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion" ]
+    spawn-policy: event
+    bestiary-id: invasion_bone_champion
+    affix-pool: []
+  invasion_spider_champion:
+    schema-version: 1
+    display-name: "Pókfészek Bajnoka"
+    entity-type: SPIDER
+    level: { minimum: 10, maximum: 70 }
+    rank: CHAMPION
+    archetype: ASSASSIN
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.15, cc-resistance: 0.35 }
+    abilities: [ "telegraphed_lunge", "venom_cloud", "boss_slam" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "fire" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion" ]
+    spawn-policy: event
+    bestiary-id: invasion_spider_champion
+    affix-pool: []
+  invasion_chaos_champion:
+    schema-version: 1
+    display-name: "Káosz-horda Bajnoka"
+    entity-type: RAVAGER
+    level: { minimum: 10, maximum: 70 }
+    rank: CHAMPION
+    archetype: CHARGER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.55 }
+    abilities: [ "telegraphed_lunge", "boss_slam", "war_cry" ]
+    resistances: [ "knockback" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion" ]
+    spawn-policy: event
+    bestiary-id: invasion_chaos_champion
+    affix-pool: []
+  invasion_nether_champion:
+    schema-version: 1
+    display-name: "Alvilági Roham Bajnoka"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 10, maximum: 70 }
+    rank: CHAMPION
+    archetype: CHARGER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.05, cc-resistance: 0.45 }
+    abilities: [ "veteran_cleave", "boss_slam", "war_cry" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion" ]
+    spawn-policy: event
+    bestiary-id: invasion_nether_champion
+    affix-pool: []
+  invasion_illager_champion:
+    schema-version: 1
+    display-name: "Zsivány Hadtest Bajnoka"
+    entity-type: RAVAGER
+    level: { minimum: 10, maximum: 70 }
+    rank: CHAMPION
+    archetype: CHARGER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.55 }
+    abilities: [ "telegraphed_lunge", "boss_slam", "iceguard" ]
+    resistances: [ "knockback" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion" ]
+    spawn-policy: event
+    bestiary-id: invasion_illager_champion
+    affix-pool: []
+  invasion_witch_champion:
+    schema-version: 1
+    display-name: "Boszorkány Gyülekezet Bajnoka"
+    entity-type: EVOKER
+    level: { minimum: 10, maximum: 70 }
+    rank: CHAMPION
+    archetype: CONTROLLER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.45 }
+    abilities: [ "rime_burst", "boss_weakening_zone", "war_cry" ]
+    resistances: [ "arcane" ]
+    weaknesses: [ "holy" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion" ]
+    spawn-policy: event
+    bestiary-id: invasion_witch_champion
+    affix-pool: []
+  invasion_blazing_champion:
+    schema-version: 1
+    display-name: "Lángoló Sereg Bajnoka"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 10, maximum: 70 }
+    rank: CHAMPION
+    archetype: BRUISER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.45 }
+    abilities: [ "veteran_cleave", "boss_weakening_zone", "war_cry" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion" ]
+    spawn-policy: event
+    bestiary-id: invasion_blazing_champion
+    affix-pool: []
+  prologue_breach_piglin:
+    schema-version: 1
+    display-name: "Hasadék Fosztogató"
+    entity-type: PIGLIN
+    level: { minimum: 10, maximum: 40 }
+    rank: VETERAN
+    archetype: BRUISER
+    stats: { health-multiplier: 1.1, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.2 }
+    abilities: [ "veteran_cleave" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: cultist
+    source-tags: [ "event:prologue" ]
+    spawn-policy: event
+    bestiary-id: prologue_breach_piglin
+    affix-pool: []
+  prologue_breach_brute:
+    schema-version: 1
+    display-name: "Hasadék Rohamosztagos"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 10, maximum: 40 }
+    rank: VETERAN
+    archetype: CHARGER
+    stats: { health-multiplier: 1.2, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.3 }
+    abilities: [ "telegraphed_lunge", "veteran_cleave" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: cultist
+    source-tags: [ "event:prologue" ]
+    spawn-policy: event
+    bestiary-id: prologue_breach_brute
+    affix-pool: []
+  prologue_breach_hoglin:
+    schema-version: 1
+    display-name: "Hasadék Vadkan"
+    entity-type: HOGLIN
+    level: { minimum: 10, maximum: 40 }
+    rank: VETERAN
+    archetype: CHARGER
+    stats: { health-multiplier: 1.2, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.3 }
+    abilities: [ "telegraphed_lunge", "boss_slam" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: cultist
+    source-tags: [ "event:prologue" ]
+    spawn-policy: event
+    bestiary-id: prologue_breach_hoglin
+    affix-pool: []
+  prologue_breach_blaze:
+    schema-version: 1
+    display-name: "Hasadékláng"
+    entity-type: BLAZE
+    level: { minimum: 10, maximum: 40 }
+    rank: VETERAN
+    archetype: ARTILLERY
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.2 }
+    abilities: [ "rime_burst", "hunter_retreat" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: cultist
+    source-tags: [ "event:prologue" ]
+    spawn-policy: event
+    bestiary-id: prologue_breach_blaze
+    affix-pool: []
+  prologue_breach_skeleton:
+    schema-version: 1
+    display-name: "Hasadék Csontőr"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 10, maximum: 40 }
+    rank: VETERAN
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.15, damage-multiplier: 1.0, movement-multiplier: 0.95, cc-resistance: 0.3 }
+    abilities: [ "veteran_cleave", "iceguard" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: cultist
+    source-tags: [ "event:prologue" ]
+    spawn-policy: event
+    bestiary-id: prologue_breach_skeleton
+    affix-pool: []
+  prologue_breach_elite:
+    schema-version: 1
+    display-name: "Hasadékbajnok"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 20, maximum: 50 }
+    rank: ELITE
+    archetype: CHARGER
+    stats: { health-multiplier: 0.33, damage-multiplier: 0.65, movement-multiplier: 1.05, cc-resistance: 0.45 }
+    abilities: [ "telegraphed_lunge", "veteran_cleave", "boss_slam" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: champion
+    source-tags: [ "event:prologue", "role:elite" ]
+    spawn-policy: event
+    bestiary-id: prologue_breach_elite
+    affix-pool: []
+  prologue_finale_boss:
+    schema-version: 1
+    display-name: "A Hasadék Őre"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 55, maximum: 55 }
+    rank: BOSS
+    archetype: SUMMONER
+    stats: { health-multiplier: 1.57, damage-multiplier: 0.74, movement-multiplier: 1.0, cc-resistance: 0.8 }
+    abilities: [ "boss_slam", "prologue_call_adds", "prologue_hazard", "boss_enrage" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: world_boss
+    source-tags: [ "event:prologue", "role:boss" ]
+    spawn-policy: boss
+    bestiary-id: prologue_finale_boss
+    affix-pool: []
+  prologue_flame_add:
+    schema-version: 1
+    display-name: "Hasadékláng Szolga"
+    entity-type: BLAZE
+    level: { minimum: 20, maximum: 55 }
+    rank: VETERAN
+    archetype: ARTILLERY
+    stats: { health-multiplier: 0.8, damage-multiplier: 0.8, movement-multiplier: 1.0, cc-resistance: 0.15 }
+    abilities: [ "rime_burst" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: world_boss
+    source-tags: [ "event:prologue", "role:add" ]
+    spawn-policy: event
+    bestiary-id: prologue_flame_add
+    affix-pool: []
+  prologue_brute_add:
+    schema-version: 1
+    display-name: "Hasadék Rohamosztagos"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 20, maximum: 55 }
+    rank: VETERAN
+    archetype: BRUISER
+    stats: { health-multiplier: 0.9, damage-multiplier: 0.85, movement-multiplier: 1.0, cc-resistance: 0.2 }
+    abilities: [ "veteran_cleave" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: world_boss
+    source-tags: [ "event:prologue", "role:add" ]
+    spawn-policy: event
+    bestiary-id: prologue_brute_add
+    affix-pool: []
+  prologue_bone_add:
+    schema-version: 1
+    display-name: "Hasadék Csontszolga"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 20, maximum: 55 }
+    rank: VETERAN
+    archetype: BRUISER
+    stats: { health-multiplier: 0.9, damage-multiplier: 0.85, movement-multiplier: 1.0, cc-resistance: 0.2 }
+    abilities: [ "veteran_cleave" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: world_boss
+    source-tags: [ "event:prologue", "role:add" ]
+    spawn-policy: event
+    bestiary-id: prologue_bone_add
+    affix-pool: []
+  frontier_shambler:
+    schema-version: 1
+    display-name: "Határvidéki Kóborló"
+    entity-type: ZOMBIE
+    level: { minimum: 1, maximum: 18 }
+    rank: NORMAL
+    archetype: BRUISER
+    stats: { health-multiplier: 1.0, damage-multiplier: 0.95, movement-multiplier: 0.95, cc-resistance: 0.05 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "holy" ]
+    loot-profile: surface_survival
+    source-tags: [ "region:wilderness" ]
+    spawn-policy: natural
+    bestiary-id: frontier_shambler
+    affix-pool: [ "VOLATILE", "VAMPIRIC", "FRENZIED", "SHIELDED" ]
+  moonbone_archer:
+    schema-version: 1
+    display-name: "Holdcsont Íjász"
+    entity-type: SKELETON
+    level: { minimum: 8, maximum: 28 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.9, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.08 }
+    abilities: [ "rime_burst" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: night_hunt
+    source-tags: [ "time:night" ]
+    spawn-policy: natural
+    bestiary-id: moonbone_archer
+    affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "FROSTBOUND" ]
+  dusk_weaver:
+    schema-version: 1
+    display-name: "Alkonyszövő"
+    entity-type: SPIDER
+    level: { minimum: 10, maximum: 30 }
+    rank: NORMAL
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.9, damage-multiplier: 1.1, movement-multiplier: 1.15, cc-resistance: 0.10 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "fire" ]
+    loot-profile: night_hunt
+    source-tags: [ "time:night" ]
+    spawn-policy: natural
+    bestiary-id: dusk_weaver
+    affix-pool: [ "VAMPIRIC", "VOLATILE", "FRENZIED", "FROSTBOUND" ]
+  mire_hexer:
+    schema-version: 1
+    display-name: "Lápi Rontó"
+    entity-type: WITCH
+    level: { minimum: 18, maximum: 36 }
+    rank: VETERAN
+    archetype: CONTROLLER
+    stats: { health-multiplier: 1.1, damage-multiplier: 0.95, movement-multiplier: 0.95, cc-resistance: 0.25 }
+    abilities: [ "rime_burst", "winter_mend" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: swamp_survival
+    source-tags: [ "biome:swamp" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: mire_hexer
+    affix-pool: [ "ARCANE", "VAMPIRIC", "SUMMONER", "SHIELDED" ]
+  bog_warden:
+    schema-version: 1
+    display-name: "Iszapőr"
+    entity-type: SLIME
+    level: { minimum: 14, maximum: 32 }
+    rank: NORMAL
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.25, damage-multiplier: 0.9, movement-multiplier: 0.9, cc-resistance: 0.35 }
+    abilities: [ "iceguard" ]
+    resistances: [ "poison" ]
+    weaknesses: [ "frost" ]
+    loot-profile: swamp_survival
+    source-tags: [ "biome:mangrove_swamp" ]
+    spawn-policy: natural
+    bestiary-id: bog_warden
+    affix-pool: [ "SHIELDED", "VAMPIRIC", "VOLATILE", "FRENZIED" ]
+  ember_brute:
+    schema-version: 1
+    display-name: "Parázsverő"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 28, maximum: 48 }
+    rank: VETERAN
+    archetype: BRUISER
+    stats: { health-multiplier: 1.25, damage-multiplier: 1.08, movement-multiplier: 1.0, cc-resistance: 0.30 }
+    abilities: [ "telegraphed_lunge", "glacial_slam" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: ember_brute
+    affix-pool: [ "FRENZIED", "VOLATILE", "SHIELDED", "VAMPIRIC" ]
+  ash_artillery:
+    schema-version: 1
+    display-name: "Hamuzápor"
+    entity-type: BLAZE
+    level: { minimum: 26, maximum: 46 }
+    rank: NORMAL
+    archetype: ARTILLERY
+    stats: { health-multiplier: 0.95, damage-multiplier: 1.08, movement-multiplier: 1.0, cc-resistance: 0.18 }
+    abilities: [ "rime_burst" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether" ]
+    spawn-policy: natural
+    bestiary-id: ash_artillery
+    affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "SUMMONER" ]
+  soul_valley_sentinel:
+    schema-version: 1
+    display-name: "Lélek-völgyi Őr"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 34, maximum: 54 }
+    rank: VETERAN
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.2, damage-multiplier: 1.05, movement-multiplier: 0.95, cc-resistance: 0.40 }
+    abilities: [ "iceguard", "glacial_slam" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether", "biome:soul_sand_valley" ]
+    spawn-policy: natural
+    bestiary-id: soul_valley_sentinel
+    affix-pool: [ "SHIELDED", "VAMPIRIC", "FRENZIED", "ARCANE" ]
+  void_skirmisher:
+    schema-version: 1
+    display-name: "Ürességi Portyázó"
+    entity-type: ENDERMAN
+    level: { minimum: 38, maximum: 58 }
+    rank: NORMAL
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 1.1, damage-multiplier: 1.05, movement-multiplier: 1.1, cc-resistance: 0.30 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "arcane" ]
+    weaknesses: [ "holy" ]
+    loot-profile: end_survival
+    source-tags: [ "dimension:the_end" ]
+    spawn-policy: natural
+    bestiary-id: void_skirmisher
+    affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "VAMPIRIC" ]
+  storm_charged_creeper:
+    schema-version: 1
+    display-name: "Vihartöltött Kúszó"
+    entity-type: CREEPER
+    level: { minimum: 20, maximum: 44 }
+    rank: NORMAL
+    archetype: CHARGER
+    stats: { health-multiplier: 1.05, damage-multiplier: 1.0, movement-multiplier: 1.05, cc-resistance: 0.15 }
+    abilities: [ "telegraphed_lunge" ]
+    resistances: [ "lightning" ]
+    weaknesses: [ "frost" ]
+    loot-profile: storm_survival
+    source-tags: [ "weather:storm" ]
+    spawn-policy: natural
+    bestiary-id: storm_charged_creeper
+    affix-pool: [ "VOLATILE", "ARCANE", "FRENZIED", "FROSTBOUND" ]
+  deepstone_brood:
+    schema-version: 1
+    display-name: "Mélyszikla Raj"
+    entity-type: SILVERFISH
+    level: { minimum: 24, maximum: 44 }
+    rank: NORMAL
+    archetype: SUMMONER
+    stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.1, cc-resistance: 0.12 }
+    abilities: [ "call_frozen" ]
+    resistances: [ "stone" ]
+    weaknesses: [ "fire" ]
+    loot-profile: deep_mine
+    source-tags: [ "dimension:normal", "depth:deep" ]
+    spawn-policy: natural
+    bestiary-id: deepstone_brood
+    affix-pool: [ "SUMMONER", "FRENZIED", "FROSTBOUND", "VOLATILE" ]
+  wild_hunt_hound:
+    schema-version: 1
+    display-name: "Vad Hajtóeb"
+    entity-type: WOLF
+    level: { minimum: 34, maximum: 50 }
+    rank: ELITE
+    archetype: ASSASSIN
+    stats: { health-multiplier: 1.3, damage-multiplier: 1.08, movement-multiplier: 1.2, cc-resistance: 0.25 }
+    abilities: [ "telegraphed_lunge", "rime_burst" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: wild_hunt
+    source-tags: [ "event:wild_hunt" ]
+    spawn-policy: event
+    bestiary-id: wild_hunt_hound
+    affix-pool: [ "VAMPIRIC", "FRENZIED", "FROSTBOUND", "VOLATILE" ]

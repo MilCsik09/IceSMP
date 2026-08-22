@@ -683,3 +683,24 @@ profession-materials:
       - "&7csak a Varázsló olvassa hangosan."
       - "&7Fegyverre: eséllyel visszhang-csapás."
       - "&eKattintsd a rúnát a fegyverre a táskádban!"
+  runa_suly:
+    material: AMETHYST_SHARD
+    display-name: "&7Súly Rúnája"
+    item-model: "icesmp:runa_elek"
+    lore:
+      - "&7A nagytestű ellenfelek páncélját keresi."
+      - "&7Fegyverre: több sebzés nagy életerejű célpontra."
+  runa_oltalom:
+    material: AMETHYST_SHARD
+    display-name: "&aOltalom Rúnája"
+    item-model: "icesmp:runa_bastya"
+    lore:
+      - "&7A végveszélyben erősödő védőjel."
+      - "&7Mellvértre: alacsony életerőn extra csillapítás."
+  runa_vadasz:
+    material: AMETHYST_SHARD
+    display-name: "&2Vadász Rúnája"
+    item-model: "icesmp:runa_zapor"
+    lore:
+      - "&7A vad nyomát a lövedékbe vési."
+      - "&7Íjra: több sebzés nem játékos ellenfelekre."

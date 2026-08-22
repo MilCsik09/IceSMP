@@ -613,16 +613,17 @@ public final class CorruptionManager implements PersistentStore {
                     }
 
                     final EntityType type = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
-                    final Class<? extends Entity> entityClass = type.getEntityClass();
-                    if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
-                        return;
-                    }
-                    final Mob mob = (Mob) world.spawn(spot, entityClass.asSubclass(Mob.class));
-                    EventSpawnGuard.prepare(mob);
                     final int level = configuredMobLevel(spot);
-                    if (level > 0) {
-                        mobScalingManager.forceLevel(mob, level);
-                    }
+                    final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
+                            hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+                    if (spawns == null || level < 1) return;
+                    final Mob mob = spawns.spawn(spot,
+                            hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
+                                    "corruption", "corruption:active", "wave", type, level,
+                                    hu.taliann.icesmp.pve.MobRank.NORMAL, "BRUISER",
+                                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
+                                    true, 0L));
+                    if (mob == null) return;
                     trackCorruptMob(mob);
                 } finally {
                     pendingSpawns.decrementAndGet();
