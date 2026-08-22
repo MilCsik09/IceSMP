@@ -80,6 +80,7 @@ public final class MobAbilityRuntime implements Listener {
     private final MobAbilityRegistry abilities;
     private final CreatureSpeciesRegistry species;
     private final Map<UUID, RuntimeState> states = new ConcurrentHashMap<>();
+    private final java.util.Set<String> reportedScheduleRejections = ConcurrentHashMap.newKeySet();
     private final NamespacedKey volatileArmedKey;
     private final NamespacedKey frenziedKey;
     private final NamespacedKey summonOwnerKey;
@@ -356,6 +357,11 @@ public final class MobAbilityRuntime implements Listener {
             state.currentAbility = null;
             state.casting = false;
             states.remove(mob.getUniqueId(), state);
+            CombatTelemetry.record("technique_schedule_rejected", chosen.abilityId());
+            if (reportedScheduleRejections.add(chosen.abilityId())) {
+                plugin.getLogger().warning("Mob technique schedule rejected ["
+                        + chosen.abilityId() + "]: " + rejected);
+            }
             return false;
         }
     }
