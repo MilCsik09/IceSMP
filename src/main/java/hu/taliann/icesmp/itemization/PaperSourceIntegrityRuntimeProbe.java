@@ -166,6 +166,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         EntityType.ZOMBIE.getEntityClass().asSubclass(Mob.class)));
                 controls.add((Mob) world.spawn(at.clone().add(7.0D, 0.0D, 0.0D),
                         EntityType.SKELETON.getEntityClass().asSubclass(Mob.class)));
+                spawned.forEach(mob -> mob.setAI(false));
+                controls.forEach(mob -> mob.setAI(false));
                 plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_CONTROLS");
                 check("ring_warden".equals(hu.taliann.icesmp.managers.MobScalingManager
                                 .templateIdOf(worldBoss))
@@ -185,7 +187,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         "encounter participant modifier accepted a duplicate application");
                 plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_PROVENANCE");
                 spawns.pause(prologue);
-                prologue.getScheduler().runDelayed(plugin, resume -> spawns.resume(prologue), null, 60L);
+                plugin.getServer().getRegionScheduler().runDelayed(plugin, at,
+                        resume -> spawns.resume(prologue), 60L);
                 final var maximumHealth = worldBoss.getAttribute(Attribute.MAX_HEALTH);
                 check(maximumHealth != null && maximumHealth.getValue() > 0.0D,
                         "authored world boss lacks canonical maximum health");
@@ -193,7 +196,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 worldBoss.damage(maximumHealth.getValue() * 0.20D);
                 worldBoss.damage(1.0D);
                 plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_THRESHOLD_ARMED");
-                worldBoss.getScheduler().runDelayed(plugin, verify -> {
+                plugin.getServer().getRegionScheduler().runDelayed(plugin, at, verify -> {
                     try {
                         final Map<String, Long> telemetry = CombatTelemetry.snapshot();
                         check(telemetry.getOrDefault("technique_execute:boss_slam", 0L) > 0L,
@@ -222,7 +225,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                 remove -> { if (mob.isValid()) mob.remove(); }, null));
                         Bukkit.shutdown();
                     }
-                }, null, 120L);
+                }, 120L);
                 plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_VERIFY_SCHEDULED");
             } catch (final Throwable failure) {
                 spawned.forEach(mob -> mob.getScheduler().run(plugin,
