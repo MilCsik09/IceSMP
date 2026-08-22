@@ -14,10 +14,32 @@ public final class TargetFrameRegressionSuite {
     public static void main(final String[] args) {
         canonicalRanksAndMetadataRoundTrip();
         targetSwitchRejectsStaleCallbacks();
+        asynchronousRefreshAndAimNoiseRetainSnapshot();
         lifecycleClearsStaleTargets();
         metadataFailsClosed();
         rangeBoundaryIsBounded();
         System.out.println("Target Frame behavioral regression suite passed. assertions=" + assertions);
+    }
+
+    private static void asynchronousRefreshAndAimNoiseRetainSnapshot() {
+        final TargetFrameTracker tracker = new TargetFrameTracker();
+        final UUID target = new UUID(0L, 450L);
+        final long initial = tracker.begin(VIEWER, target);
+        tracker.publish(VIEWER, initial, snapshot(target, "chicken",
+                TargetHudState.Rank.NORMAL, 2, 4.0D, 4.0D, 100L));
+        final long refresh = tracker.beginSample(VIEWER);
+        check(tracker.current(VIEWER, WORLD, 110L, 1_000L) != null,
+                "asynchronous refresh keeps the previous immutable snapshot visible");
+        check(tracker.retainOnMiss(VIEWER, 120L, 400L, 2)
+                        && tracker.retainOnMiss(VIEWER, 180L, 400L, 2),
+                "two bounded raytrace misses retain a small target");
+        check(tracker.publish(VIEWER, refresh, snapshot(target, "chicken",
+                        TargetHudState.Rank.NORMAL, 2, 3.0D, 4.0D, 190L)),
+                "refresh after aim noise replaces the retained snapshot");
+        check(tracker.retainOnMiss(VIEWER, 200L, 400L, 2)
+                        && tracker.retainOnMiss(VIEWER, 250L, 400L, 2)
+                        && !tracker.retainOnMiss(VIEWER, 300L, 400L, 2),
+                "continued misses clear the frame without indefinite wall retention");
     }
 
     private static void canonicalRanksAndMetadataRoundTrip() {

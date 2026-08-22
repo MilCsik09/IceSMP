@@ -69,10 +69,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 38
-    base-armor: 1.61
+    base-armor: 2.0
     fixed-stats:
-      ability_power: 8.91
-      max_health: 4.46
+      ability_power: 8.43
+      max_health: 4.21
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -93,10 +93,10 @@ item-templates:
     rarity: legendary
     item-level: 43
     level-requirement: 39
-    base-armor: 2.89
+    base-armor: 3.57
     fixed-stats:
-      ability_power: 13.81
-      max_health: 6.9
+      ability_power: 12.96
+      max_health: 6.48
     rune-sockets: 2
     encounter-metadata:
       catalog-line: fonixszovet
@@ -124,10 +124,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 38
-    base-armor: 2.38
+    base-armor: 2.94
     fixed-stats:
-      ability_power: 13.12
-      max_health: 6.56
+      ability_power: 12.43
+      max_health: 6.21
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -155,10 +155,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 37
-    base-armor: 1.61
+    base-armor: 2.0
     fixed-stats:
-      ability_power: 8.91
-      max_health: 4.46
+      ability_power: 8.43
+      max_health: 4.21
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -186,10 +186,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 20
-    base-armor: 1.04
+    base-armor: 1.43
     fixed-stats:
-      ability_power: 4.41
-      max_health: 5.43
+      ability_power: 4.04
+      max_health: 4.98
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -217,10 +217,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 21
-    base-armor: 1.87
+    base-armor: 2.55
     fixed-stats:
-      ability_power: 7.89
-      max_health: 9.71
+      ability_power: 7.25
+      max_health: 8.92
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -248,10 +248,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 20
-    base-armor: 1.54
+    base-armor: 2.1
     fixed-stats:
-      ability_power: 6.5
-      max_health: 8.0
+      ability_power: 5.97
+      max_health: 7.34
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -279,10 +279,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 19
-    base-armor: 1.04
+    base-armor: 1.43
     fixed-stats:
-      ability_power: 4.41
-      max_health: 5.43
+      ability_power: 4.04
+      max_health: 4.98
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -310,10 +310,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 29
-    base-armor: 1.33
+    base-armor: 1.71
     fixed-stats:
-      ability_power: 7.36
-      max_health: 3.68
+      ability_power: 6.89
+      max_health: 3.44
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -341,10 +341,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 30
-    base-armor: 2.38
+    base-armor: 3.06
     fixed-stats:
-      ability_power: 13.18
-      max_health: 6.59
+      ability_power: 12.33
+      max_health: 6.16
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -372,10 +372,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 29
-    base-armor: 1.96
+    base-armor: 2.52
     fixed-stats:
-      ability_power: 10.85
-      max_health: 5.42
+      ability_power: 10.15
+      max_health: 5.08
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -403,10 +403,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 28
-    base-armor: 1.33
+    base-armor: 1.71
     fixed-stats:
-      ability_power: 7.36
-      max_health: 3.68
+      ability_power: 6.89
+      max_health: 3.44
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -434,10 +434,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 20
-    base-armor: 1.04
+    base-armor: 1.43
     fixed-stats:
-      max_health: 7.03
-      ability_power: 3.52
+      max_health: 6.45
+      ability_power: 3.22
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -465,10 +465,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 21
-    base-armor: 1.87
+    base-armor: 2.55
     fixed-stats:
-      max_health: 12.57
-      ability_power: 6.29
+      max_health: 11.55
+      ability_power: 5.77
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -496,10 +496,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 20
-    base-armor: 1.54
+    base-armor: 2.1
     fixed-stats:
-      max_health: 10.35
-      ability_power: 5.18
+      max_health: 9.51
+      ability_power: 4.75
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -527,10 +527,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 19
-    base-armor: 1.04
+    base-armor: 1.43
     fixed-stats:
-      max_health: 7.03
-      ability_power: 3.52
+      max_health: 6.45
+      ability_power: 3.22
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -558,10 +558,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 10
-    base-armor: 0.76
+    base-armor: 1.14
     fixed-stats:
-      max_health: 3.44
-      ability_power: 1.72
+      max_health: 2.87
+      ability_power: 1.43
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -579,10 +579,10 @@ item-templates:
     rarity: uncommon
     item-level: 15
     level-requirement: 11
-    base-armor: 1.36
+    base-armor: 2.04
     fixed-stats:
-      max_health: 4.48
-      ability_power: 2.24
+      max_health: 3.45
+      ability_power: 1.73
     rune-sockets: 0
     encounter-metadata:
       catalog-line: csontvarro
@@ -605,10 +605,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 10
-    base-armor: 1.12
+    base-armor: 1.68
     fixed-stats:
-      max_health: 5.07
-      ability_power: 2.54
+      max_health: 4.23
+      ability_power: 2.11
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -635,10 +635,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 9
-    base-armor: 0.76
+    base-armor: 1.14
     fixed-stats:
-      max_health: 3.44
-      ability_power: 1.72
+      max_health: 2.87
+      ability_power: 1.43
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -665,10 +665,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 10
-    base-armor: 0.76
+    base-armor: 1.14
     fixed-stats:
-      movement_speed: 0.0155
-      max_health: 3.86
+      movement_speed: 0.0129
+      max_health: 3.22
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -695,10 +695,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 11
-    base-armor: 1.36
+    base-armor: 2.04
     fixed-stats:
-      movement_speed: 0.0277
-      max_health: 6.92
+      movement_speed: 0.0231
+      max_health: 5.76
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -725,10 +725,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 10
-    base-armor: 1.12
+    base-armor: 1.68
     fixed-stats:
-      movement_speed: 0.0228
-      max_health: 5.69
+      movement_speed: 0.019
+      max_health: 4.75
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -755,10 +755,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 9
-    base-armor: 0.76
+    base-armor: 1.14
     fixed-stats:
-      movement_speed: 0.0155
-      max_health: 3.86
+      movement_speed: 0.0129
+      max_health: 3.22
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -785,10 +785,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 29
-    base-armor: 1.33
+    base-armor: 1.71
     fixed-stats:
-      ability_power: 5.58
-      max_health: 6.87
+      ability_power: 5.22
+      max_health: 6.42
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -815,10 +815,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 30
-    base-armor: 2.38
+    base-armor: 3.06
     fixed-stats:
-      ability_power: 9.98
-      max_health: 12.29
+      ability_power: 9.34
+      max_health: 11.49
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -845,10 +845,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 29
-    base-armor: 1.96
+    base-armor: 2.52
     fixed-stats:
-      ability_power: 8.22
-      max_health: 10.12
+      ability_power: 7.69
+      max_health: 9.47
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -875,10 +875,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 28
-    base-armor: 1.33
+    base-armor: 1.71
     fixed-stats:
-      ability_power: 5.58
-      max_health: 6.87
+      ability_power: 5.22
+      max_health: 6.42
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -905,10 +905,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 38
-    base-armor: 1.61
+    base-armor: 2.0
     fixed-stats:
-      ability_power: 8.91
-      max_health: 4.46
+      ability_power: 8.43
+      max_health: 4.21
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -936,10 +936,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 39
-    base-armor: 2.89
+    base-armor: 3.57
     fixed-stats:
-      ability_power: 15.94
-      max_health: 7.97
+      ability_power: 15.09
+      max_health: 7.54
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -961,8 +961,8 @@ item-templates:
         item-level: 47
         level-requirement: 43
         fixed-stats:
-          ability_power: 17.2152
-          max_health: 8.6076
+          ability_power: 16.2972
+          max_health: 8.1432
         rune-sockets: 2
         signature-tier: 0
         lore:
@@ -980,10 +980,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 38
-    base-armor: 2.38
+    base-armor: 2.94
     fixed-stats:
-      ability_power: 13.12
-      max_health: 6.56
+      ability_power: 12.43
+      max_health: 6.21
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -1011,10 +1011,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 37
-    base-armor: 1.61
+    base-armor: 2.0
     fixed-stats:
-      ability_power: 8.91
-      max_health: 4.46
+      ability_power: 8.43
+      max_health: 4.21
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -1042,10 +1042,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 38
-    base-armor: 1.61
+    base-armor: 2.0
     fixed-stats:
-      max_health: 10.76
-      ability_power: 5.38
+      max_health: 10.17
+      ability_power: 5.09
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -1073,10 +1073,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 39
-    base-armor: 2.89
+    base-armor: 3.57
     fixed-stats:
-      max_health: 19.25
-      ability_power: 9.62
+      max_health: 18.22
+      ability_power: 9.11
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -1104,10 +1104,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 38
-    base-armor: 2.38
+    base-armor: 2.94
     fixed-stats:
-      max_health: 15.85
-      ability_power: 7.92
+      max_health: 15.0
+      ability_power: 7.5
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -1135,10 +1135,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 37
-    base-armor: 1.61
+    base-armor: 2.0
     fixed-stats:
-      max_health: 10.76
-      ability_power: 5.38
+      max_health: 10.17
+      ability_power: 5.09
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -1166,10 +1166,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 38
-    base-armor: 1.61
+    base-armor: 2.0
     fixed-stats:
-      movement_speed: 0.0483
-      max_health: 12.08
+      movement_speed: 0.0457
+      max_health: 11.42
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -1187,11 +1187,11 @@ item-templates:
     rarity: legendary
     item-level: 43
     level-requirement: 39
-    base-armor: 2.89
+    base-armor: 3.57
     fixed-stats:
       ability_power: 0.0
-      movement_speed: 0.0785
-      max_health: 19.62
+      movement_speed: 0.0739
+      max_health: 18.47
     rune-sockets: 2
     encounter-metadata:
       catalog-line: aranyfust
@@ -1214,10 +1214,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 38
-    base-armor: 2.38
+    base-armor: 2.94
     fixed-stats:
-      movement_speed: 0.0712
-      max_health: 17.8
+      movement_speed: 0.0674
+      max_health: 16.85
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -1244,10 +1244,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 37
-    base-armor: 1.61
+    base-armor: 2.0
     fixed-stats:
-      movement_speed: 0.0483
-      max_health: 12.08
+      movement_speed: 0.0457
+      max_health: 11.42
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -1274,10 +1274,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 20
-    base-armor: 1.43
+    base-armor: 1.9
     fixed-stats:
-      attack_damage: 1.54
-      attack_speed: 0.1065
+      attack_damage: 1.37
+      attack_speed: 0.0947
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -1307,10 +1307,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 21
-    base-armor: 2.55
+    base-armor: 3.4
     fixed-stats:
-      attack_damage: 2.75
-      attack_speed: 0.1907
+      attack_damage: 2.45
+      attack_speed: 0.1695
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -1338,10 +1338,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 20
-    base-armor: 2.1
+    base-armor: 2.8
     fixed-stats:
-      attack_damage: 2.27
-      attack_speed: 0.1571
+      attack_damage: 2.02
+      attack_speed: 0.1396
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -1360,10 +1360,10 @@ item-templates:
     rarity: rare
     item-level: 23
     level-requirement: 19
-    base-armor: 1.43
+    base-armor: 1.9
     fixed-stats:
-      attack_damage: 1.17
-      attack_speed: 0.081
+      attack_damage: 1.0
+      attack_speed: 0.0693
     rune-sockets: 1
     encounter-metadata:
       catalog-line: vadorzo
@@ -1391,10 +1391,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 20
-    base-armor: 1.43
+    base-armor: 1.9
     fixed-stats:
-      max_health: 8.39
-      movement_speed: 0.0222
+      max_health: 7.47
+      movement_speed: 0.0198
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -1422,10 +1422,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 21
-    base-armor: 2.55
+    base-armor: 3.4
     fixed-stats:
-      max_health: 15.03
-      movement_speed: 0.0398
+      max_health: 13.36
+      movement_speed: 0.0354
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -1453,10 +1453,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 20
-    base-armor: 2.1
+    base-armor: 2.8
     fixed-stats:
-      max_health: 12.38
-      movement_speed: 0.0328
+      max_health: 11.01
+      movement_speed: 0.0291
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -1484,10 +1484,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 19
-    base-armor: 1.43
+    base-armor: 1.9
     fixed-stats:
-      max_health: 8.39
-      movement_speed: 0.0222
+      max_health: 7.47
+      movement_speed: 0.0198
     rune-sockets: 1
     source-tags:
     - profession:alchemist
@@ -1515,10 +1515,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 29
-    base-armor: 1.8
+    base-armor: 2.19
     fixed-stats:
-      armor: 1.9
-      attack_damage: 1.31
+      armor: 1.75
+      attack_damage: 1.22
       armor_toughness: 0.19
     rune-sockets: 1
     source-tags:
@@ -1547,10 +1547,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 30
-    base-armor: 3.23
+    base-armor: 3.91
     fixed-stats:
-      armor: 3.39
-      attack_damage: 2.35
+      armor: 3.14
+      attack_damage: 2.18
       armor_toughness: 0.34
     rune-sockets: 1
     source-tags:
@@ -1579,10 +1579,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 29
-    base-armor: 2.66
+    base-armor: 3.22
     fixed-stats:
-      armor: 2.79
-      attack_damage: 1.93
+      armor: 2.59
+      attack_damage: 1.79
       armor_toughness: 0.28
     rune-sockets: 1
     source-tags:
@@ -1611,10 +1611,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 28
-    base-armor: 1.8
+    base-armor: 2.19
     fixed-stats:
-      armor: 1.9
-      attack_damage: 1.31
+      armor: 1.75
+      attack_damage: 1.22
       armor_toughness: 0.19
     rune-sockets: 1
     source-tags:
@@ -1643,10 +1643,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 38
-    base-armor: 2.19
+    base-armor: 2.47
     fixed-stats:
-      movement_speed: 0.0275
-      attack_damage: 1.77
+      movement_speed: 0.0263
+      attack_damage: 1.69
       armor_toughness: 0.38
     rune-sockets: 2
     source-tags:
@@ -1675,10 +1675,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 39
-    base-armor: 3.91
+    base-armor: 4.42
     fixed-stats:
-      movement_speed: 0.0493
-      attack_damage: 3.17
+      movement_speed: 0.047
+      attack_damage: 3.02
       armor_toughness: 0.68
     rune-sockets: 2
     source-tags:
@@ -1707,10 +1707,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 38
-    base-armor: 3.22
+    base-armor: 3.64
     fixed-stats:
-      movement_speed: 0.0406
-      attack_damage: 2.61
+      movement_speed: 0.0387
+      attack_damage: 2.49
       armor_toughness: 0.56
     rune-sockets: 2
     source-tags:
@@ -1739,10 +1739,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 37
-    base-armor: 2.19
+    base-armor: 2.47
     fixed-stats:
-      movement_speed: 0.0275
-      attack_damage: 1.77
+      movement_speed: 0.0263
+      attack_damage: 1.69
       armor_toughness: 0.38
     rune-sockets: 2
     source-tags:
@@ -1771,10 +1771,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 10
-    base-armor: 1.04
+    base-armor: 1.52
     fixed-stats:
-      movement_speed: 0.0091
-      attack_damage: 0.58
+      movement_speed: 0.0069
+      attack_damage: 0.44
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -1801,10 +1801,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 11
-    base-armor: 1.87
+    base-armor: 2.72
     fixed-stats:
-      movement_speed: 0.0162
-      attack_damage: 1.04
+      movement_speed: 0.0123
+      attack_damage: 0.79
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -1831,10 +1831,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 10
-    base-armor: 1.54
+    base-armor: 2.24
     fixed-stats:
-      movement_speed: 0.0133
-      attack_damage: 0.86
+      movement_speed: 0.0101
+      attack_damage: 0.65
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -1852,10 +1852,10 @@ item-templates:
     rarity: uncommon
     item-level: 13
     level-requirement: 9
-    base-armor: 1.04
+    base-armor: 1.52
     fixed-stats:
-      movement_speed: 0.008
-      attack_damage: 0.51
+      movement_speed: 0.0058
+      attack_damage: 0.37
     rune-sockets: 0
     encounter-metadata:
       catalog-line: utjaro
@@ -1878,10 +1878,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 10
-    base-armor: 1.04
+    base-armor: 1.52
     fixed-stats:
-      max_health: 3.93
-      movement_speed: 0.0104
+      max_health: 2.99
+      movement_speed: 0.0079
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -1908,10 +1908,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 11
-    base-armor: 1.87
+    base-armor: 2.72
     fixed-stats:
-      max_health: 7.02
-      movement_speed: 0.0186
+      max_health: 5.35
+      movement_speed: 0.0142
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -1938,10 +1938,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 10
-    base-armor: 1.54
+    base-armor: 2.24
     fixed-stats:
-      max_health: 5.78
-      movement_speed: 0.0153
+      max_health: 4.4
+      movement_speed: 0.0117
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -1968,10 +1968,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 9
-    base-armor: 1.04
+    base-armor: 1.52
     fixed-stats:
-      max_health: 3.93
-      movement_speed: 0.0104
+      max_health: 2.99
+      movement_speed: 0.0079
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -1998,10 +1998,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 29
-    base-armor: 1.8
+    base-armor: 2.19
     fixed-stats:
-      attack_damage: 1.87
-      attack_speed: 0.1292
+      attack_damage: 1.73
+      attack_speed: 0.1195
       armor_toughness: 0.19
     rune-sockets: 1
     source-tags:
@@ -2029,10 +2029,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 30
-    base-armor: 3.23
+    base-armor: 3.91
     fixed-stats:
-      attack_damage: 3.34
-      attack_speed: 0.231
+      attack_damage: 3.09
+      attack_speed: 0.214
       armor_toughness: 0.34
     rune-sockets: 1
     source-tags:
@@ -2060,10 +2060,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 29
-    base-armor: 2.66
+    base-armor: 3.22
     fixed-stats:
-      attack_damage: 2.75
-      attack_speed: 0.1902
+      attack_damage: 2.55
+      attack_speed: 0.1763
       armor_toughness: 0.28
     rune-sockets: 1
     source-tags:
@@ -2091,10 +2091,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 28
-    base-armor: 1.8
+    base-armor: 2.19
     fixed-stats:
-      attack_damage: 1.87
-      attack_speed: 0.1292
+      attack_damage: 1.73
+      attack_speed: 0.1195
       armor_toughness: 0.19
     rune-sockets: 1
     source-tags:
@@ -2122,10 +2122,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 38
-    base-armor: 2.19
+    base-armor: 2.47
     fixed-stats:
-      attack_damage: 2.19
-      attack_speed: 0.1515
+      attack_damage: 2.09
+      attack_speed: 0.1445
       armor_toughness: 0.38
     rune-sockets: 2
     source-tags:
@@ -2154,10 +2154,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 39
-    base-armor: 3.91
+    base-armor: 4.42
     fixed-stats:
-      attack_damage: 3.92
-      attack_speed: 0.2712
+      attack_damage: 3.73
+      attack_speed: 0.2585
       armor_toughness: 0.68
     rune-sockets: 2
     source-tags:
@@ -2186,10 +2186,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 38
-    base-armor: 3.22
+    base-armor: 3.64
     fixed-stats:
-      attack_damage: 3.23
-      attack_speed: 0.2234
+      attack_damage: 3.08
+      attack_speed: 0.2129
       armor_toughness: 0.56
     rune-sockets: 2
     source-tags:
@@ -2218,10 +2218,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 37
-    base-armor: 2.19
+    base-armor: 2.47
     fixed-stats:
-      attack_damage: 2.19
-      attack_speed: 0.1515
+      attack_damage: 2.09
+      attack_speed: 0.1445
       armor_toughness: 0.38
     rune-sockets: 2
     source-tags:
@@ -2250,10 +2250,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 38
-    base-armor: 2.19
+    base-armor: 2.47
     fixed-stats:
-      armor: 2.22
-      attack_damage: 1.54
+      armor: 2.12
+      attack_damage: 1.47
       armor_toughness: 0.38
     rune-sockets: 2
     source-tags:
@@ -2282,10 +2282,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 39
-    base-armor: 3.91
+    base-armor: 4.42
     fixed-stats:
-      armor: 3.98
-      attack_damage: 2.76
+      armor: 3.8
+      attack_damage: 2.63
       armor_toughness: 0.68
     rune-sockets: 2
     source-tags:
@@ -2308,8 +2308,8 @@ item-templates:
         item-level: 47
         level-requirement: 43
         fixed-stats:
-          armor: 4.2984
-          attack_damage: 2.9808
+          armor: 4.104
+          attack_damage: 2.8404
           armor_toughness: 0.7344
         rune-sockets: 2
         signature-tier: 0
@@ -2328,10 +2328,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 38
-    base-armor: 3.22
+    base-armor: 3.64
     fixed-stats:
-      armor: 3.28
-      attack_damage: 2.27
+      armor: 3.13
+      attack_damage: 2.17
       armor_toughness: 0.56
     rune-sockets: 2
     source-tags:
@@ -2360,10 +2360,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 37
-    base-armor: 2.19
+    base-armor: 2.47
     fixed-stats:
-      armor: 2.22
-      attack_damage: 1.54
+      armor: 2.12
+      attack_damage: 1.47
       armor_toughness: 0.38
     rune-sockets: 2
     source-tags:
@@ -2392,10 +2392,10 @@ item-templates:
     slot: head
     material: LEATHER_HELMET
     level-requirement: 38
-    base-armor: 2.19
+    base-armor: 2.47
     fixed-stats:
-      movement_speed: 0.0275
-      attack_damage: 1.77
+      movement_speed: 0.0263
+      attack_damage: 1.69
       armor_toughness: 0.38
     rune-sockets: 2
     source-tags:
@@ -2423,10 +2423,10 @@ item-templates:
     slot: chest
     material: LEATHER_CHESTPLATE
     level-requirement: 39
-    base-armor: 3.91
+    base-armor: 4.42
     fixed-stats:
-      movement_speed: 0.0493
-      attack_damage: 3.17
+      movement_speed: 0.047
+      attack_damage: 3.02
       armor_toughness: 0.68
     rune-sockets: 2
     source-tags:
@@ -2454,10 +2454,10 @@ item-templates:
     slot: legs
     material: LEATHER_LEGGINGS
     level-requirement: 38
-    base-armor: 3.22
+    base-armor: 3.64
     fixed-stats:
-      movement_speed: 0.0406
-      attack_damage: 2.61
+      movement_speed: 0.0387
+      attack_damage: 2.49
       armor_toughness: 0.56
     rune-sockets: 2
     source-tags:
@@ -2485,10 +2485,10 @@ item-templates:
     slot: feet
     material: LEATHER_BOOTS
     level-requirement: 37
-    base-armor: 2.19
+    base-armor: 2.47
     fixed-stats:
-      movement_speed: 0.0275
-      attack_damage: 1.77
+      movement_speed: 0.0263
+      attack_damage: 1.69
       armor_toughness: 0.38
     rune-sockets: 2
     source-tags:
@@ -2516,11 +2516,11 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 20
-    base-armor: 1.8
+    base-armor: 2.47
     fixed-stats:
-      armor: 2.09
-      max_health: 4.48
-      armor_toughness: 0.19
+      armor: 1.57
+      max_health: 3.37
+      armor_toughness: 0.38
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -2541,11 +2541,11 @@ item-templates:
     rarity: rare
     item-level: 25
     level-requirement: 21
-    base-armor: 3.23
+    base-armor: 4.42
     fixed-stats:
-      armor: 2.57
-      max_health: 5.5
-      armor_toughness: 0.34
+      armor: 1.65
+      max_health: 3.53
+      armor_toughness: 0.68
     rune-sockets: 1
     encounter-metadata:
       catalog-line: csontenyv
@@ -2569,11 +2569,11 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 20
-    base-armor: 2.66
+    base-armor: 3.64
     fixed-stats:
-      armor: 3.08
-      max_health: 6.6
-      armor_toughness: 0.28
+      armor: 2.32
+      max_health: 4.97
+      armor_toughness: 0.56
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -2601,11 +2601,11 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 19
-    base-armor: 1.8
+    base-armor: 2.47
     fixed-stats:
-      armor: 2.09
-      max_health: 4.48
-      armor_toughness: 0.19
+      armor: 1.57
+      max_health: 3.37
+      armor_toughness: 0.38
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -2633,11 +2633,11 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 20
-    base-armor: 1.8
+    base-armor: 2.47
     fixed-stats:
-      attack_damage: 1.25
-      movement_speed: 0.0091
-      armor_toughness: 0.19
+      attack_damage: 0.94
+      movement_speed: 0.0068
+      armor_toughness: 0.38
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -2665,11 +2665,11 @@ item-templates:
     slot: chest
     material: CHAINMAIL_CHESTPLATE
     level-requirement: 21
-    base-armor: 3.23
+    base-armor: 4.42
     fixed-stats:
-      attack_damage: 2.23
-      movement_speed: 0.0162
-      armor_toughness: 0.34
+      attack_damage: 1.68
+      movement_speed: 0.0122
+      armor_toughness: 0.68
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -2697,11 +2697,11 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 20
-    base-armor: 2.66
+    base-armor: 3.64
     fixed-stats:
-      attack_damage: 1.84
-      movement_speed: 0.0133
-      armor_toughness: 0.28
+      attack_damage: 1.38
+      movement_speed: 0.0101
+      armor_toughness: 0.56
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -2729,11 +2729,11 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 19
-    base-armor: 1.8
+    base-armor: 2.47
     fixed-stats:
-      attack_damage: 1.25
-      movement_speed: 0.0091
-      armor_toughness: 0.19
+      attack_damage: 0.94
+      movement_speed: 0.0068
+      armor_toughness: 0.38
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -2761,11 +2761,11 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 29
-    base-armor: 2.28
+    base-armor: 2.85
     fixed-stats:
-      ability_power: 4.09
-      armor: 1.8
-      armor_toughness: 0.47
+      ability_power: 3.21
+      armor: 1.41
+      armor_toughness: 0.76
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -2793,11 +2793,11 @@ item-templates:
     slot: chest
     material: CHAINMAIL_CHESTPLATE
     level-requirement: 30
-    base-armor: 4.08
+    base-armor: 5.1
     fixed-stats:
-      ability_power: 7.3
-      armor: 3.21
-      armor_toughness: 0.85
+      ability_power: 5.75
+      armor: 2.53
+      armor_toughness: 1.36
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -2825,11 +2825,11 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 29
-    base-armor: 3.36
+    base-armor: 4.2
     fixed-stats:
-      ability_power: 6.01
-      armor: 2.65
-      armor_toughness: 0.7
+      ability_power: 4.73
+      armor: 2.08
+      armor_toughness: 1.12
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -2857,11 +2857,11 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 28
-    base-armor: 2.28
+    base-armor: 2.85
     fixed-stats:
-      ability_power: 4.09
-      armor: 1.8
-      armor_toughness: 0.47
+      ability_power: 3.21
+      armor: 1.41
+      armor_toughness: 0.76
     rune-sockets: 1
     source-tags:
     - profession:enchanter
@@ -2889,11 +2889,11 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 38
-    base-armor: 2.75
+    base-armor: 3.23
     fixed-stats:
-      ability_power: 6.59
-      movement_speed: 0.0154
-      armor_toughness: 0.76
+      ability_power: 5.34
+      movement_speed: 0.0125
+      armor_toughness: 1.14
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -2921,11 +2921,11 @@ item-templates:
     slot: chest
     material: CHAINMAIL_CHESTPLATE
     level-requirement: 39
-    base-armor: 4.93
+    base-armor: 5.78
     fixed-stats:
-      ability_power: 11.78
-      movement_speed: 0.0275
-      armor_toughness: 1.36
+      ability_power: 9.56
+      movement_speed: 0.0223
+      armor_toughness: 2.04
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -2953,11 +2953,11 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 38
-    base-armor: 4.06
+    base-armor: 4.76
     fixed-stats:
-      ability_power: 9.7
-      movement_speed: 0.0226
-      armor_toughness: 1.12
+      ability_power: 7.87
+      movement_speed: 0.0184
+      armor_toughness: 1.68
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -2985,11 +2985,11 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 37
-    base-armor: 2.75
+    base-armor: 3.23
     fixed-stats:
-      ability_power: 6.59
-      movement_speed: 0.0154
-      armor_toughness: 0.76
+      ability_power: 5.34
+      movement_speed: 0.0125
+      armor_toughness: 1.14
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -3017,10 +3017,10 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 10
-    base-armor: 1.33
+    base-armor: 2.09
     fixed-stats:
-      attack_damage: 0.58
-      movement_speed: 0.0042
+      attack_damage: 0.32
+      movement_speed: 0.0024
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -3047,10 +3047,10 @@ item-templates:
     slot: chest
     material: CHAINMAIL_CHESTPLATE
     level-requirement: 11
-    base-armor: 2.38
+    base-armor: 3.74
     fixed-stats:
-      attack_damage: 1.04
-      movement_speed: 0.0076
+      attack_damage: 0.58
+      movement_speed: 0.0042
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -3077,10 +3077,10 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 10
-    base-armor: 1.96
+    base-armor: 3.08
     fixed-stats:
-      attack_damage: 0.86
-      movement_speed: 0.0062
+      attack_damage: 0.48
+      movement_speed: 0.0035
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -3107,10 +3107,10 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 9
-    base-armor: 1.33
+    base-armor: 2.09
     fixed-stats:
-      attack_damage: 0.58
-      movement_speed: 0.0042
+      attack_damage: 0.32
+      movement_speed: 0.0024
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -3137,10 +3137,10 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 10
-    base-armor: 1.33
+    base-armor: 2.09
     fixed-stats:
-      armor: 0.98
-      max_health: 2.09
+      armor: 0.54
+      max_health: 1.16
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -3167,10 +3167,10 @@ item-templates:
     slot: chest
     material: CHAINMAIL_CHESTPLATE
     level-requirement: 11
-    base-armor: 2.38
+    base-armor: 3.74
     fixed-stats:
-      armor: 1.75
-      max_health: 3.75
+      armor: 0.97
+      max_health: 2.08
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -3197,10 +3197,10 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 10
-    base-armor: 1.96
+    base-armor: 3.08
     fixed-stats:
-      armor: 1.44
-      max_health: 3.09
+      armor: 0.8
+      max_health: 1.71
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -3227,10 +3227,10 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 9
-    base-armor: 1.33
+    base-armor: 2.09
     fixed-stats:
-      armor: 0.98
-      max_health: 2.09
+      armor: 0.54
+      max_health: 1.16
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -3257,11 +3257,11 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 29
-    base-armor: 2.28
+    base-armor: 2.85
     fixed-stats:
-      ability_power: 5.69
-      movement_speed: 0.0133
-      armor_toughness: 0.47
+      ability_power: 4.47
+      movement_speed: 0.0104
+      armor_toughness: 0.76
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -3288,11 +3288,11 @@ item-templates:
     slot: chest
     material: CHAINMAIL_CHESTPLATE
     level-requirement: 30
-    base-armor: 4.08
+    base-armor: 5.1
     fixed-stats:
-      ability_power: 10.17
-      movement_speed: 0.0237
-      armor_toughness: 0.85
+      ability_power: 8.0
+      movement_speed: 0.0187
+      armor_toughness: 1.36
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -3319,11 +3319,11 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 29
-    base-armor: 3.36
+    base-armor: 4.2
     fixed-stats:
-      ability_power: 8.37
-      movement_speed: 0.0195
-      armor_toughness: 0.7
+      ability_power: 6.59
+      movement_speed: 0.0154
+      armor_toughness: 1.12
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -3350,11 +3350,11 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 28
-    base-armor: 2.28
+    base-armor: 2.85
     fixed-stats:
-      ability_power: 5.69
-      movement_speed: 0.0133
-      armor_toughness: 0.47
+      ability_power: 4.47
+      movement_speed: 0.0104
+      armor_toughness: 0.76
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -3372,11 +3372,11 @@ item-templates:
     rarity: legendary
     item-level: 42
     level-requirement: 38
-    base-armor: 2.75
+    base-armor: 3.23
     fixed-stats:
-      ability_power: 6.24
-      movement_speed: 0.0145
-      armor_toughness: 0.76
+      ability_power: 4.99
+      movement_speed: 0.0116
+      armor_toughness: 1.14
     rune-sockets: 2
     encounter-metadata:
       catalog-line: viharjaro
@@ -3391,11 +3391,11 @@ item-templates:
     rarity: legendary
     item-level: 43
     level-requirement: 39
-    base-armor: 4.93
+    base-armor: 5.78
     fixed-stats:
-      ability_power: 10.52
-      movement_speed: 0.0245
-      armor_toughness: 1.36
+      ability_power: 8.3
+      movement_speed: 0.0194
+      armor_toughness: 2.04
     rune-sockets: 2
     encounter-metadata:
       catalog-line: viharjaro
@@ -3410,11 +3410,11 @@ item-templates:
     rarity: legendary
     item-level: 42
     level-requirement: 38
-    base-armor: 4.06
+    base-armor: 4.76
     fixed-stats:
-      ability_power: 9.23
-      movement_speed: 0.0215
-      armor_toughness: 1.12
+      ability_power: 7.4
+      movement_speed: 0.0173
+      armor_toughness: 1.68
     rune-sockets: 2
     encounter-metadata:
       catalog-line: viharjaro
@@ -3429,11 +3429,11 @@ item-templates:
     rarity: legendary
     item-level: 41
     level-requirement: 37
-    base-armor: 2.75
+    base-armor: 3.23
     fixed-stats:
-      ability_power: 5.96
-      movement_speed: 0.0139
-      armor_toughness: 0.76
+      ability_power: 4.71
+      movement_speed: 0.011
+      armor_toughness: 1.14
     rune-sockets: 2
     encounter-metadata:
       catalog-line: viharjaro
@@ -3457,11 +3457,11 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 38
-    base-armor: 2.75
+    base-armor: 3.23
     fixed-stats:
-      ability_power: 4.73
-      armor: 2.08
-      armor_toughness: 0.76
+      ability_power: 3.84
+      armor: 1.69
+      armor_toughness: 1.14
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -3489,11 +3489,11 @@ item-templates:
     slot: chest
     material: CHAINMAIL_CHESTPLATE
     level-requirement: 39
-    base-armor: 4.93
+    base-armor: 5.78
     fixed-stats:
-      ability_power: 8.46
-      armor: 3.72
-      armor_toughness: 1.36
+      ability_power: 6.86
+      armor: 3.02
+      armor_toughness: 2.04
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -3521,11 +3521,11 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 38
-    base-armor: 4.06
+    base-armor: 4.76
     fixed-stats:
-      ability_power: 6.97
-      armor: 3.07
-      armor_toughness: 1.12
+      ability_power: 5.65
+      armor: 2.49
+      armor_toughness: 1.68
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -3553,11 +3553,11 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 37
-    base-armor: 2.75
+    base-armor: 3.23
     fixed-stats:
-      ability_power: 4.73
-      armor: 2.08
-      armor_toughness: 0.76
+      ability_power: 3.84
+      armor: 1.69
+      armor_toughness: 1.14
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -3585,11 +3585,11 @@ item-templates:
     slot: head
     material: CHAINMAIL_HELMET
     level-requirement: 38
-    base-armor: 2.75
+    base-armor: 3.23
     fixed-stats:
-      attack_damage: 1.72
-      movement_speed: 0.0125
-      armor_toughness: 0.76
+      attack_damage: 1.39
+      movement_speed: 0.0101
+      armor_toughness: 1.14
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -3616,11 +3616,11 @@ item-templates:
     slot: chest
     material: CHAINMAIL_CHESTPLATE
     level-requirement: 39
-    base-armor: 4.93
+    base-armor: 5.78
     fixed-stats:
-      attack_damage: 3.07
-      movement_speed: 0.0223
-      armor_toughness: 1.36
+      attack_damage: 2.49
+      movement_speed: 0.0181
+      armor_toughness: 2.04
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -3641,9 +3641,9 @@ item-templates:
         item-level: 47
         level-requirement: 43
         fixed-stats:
-          attack_damage: 3.3156
-          movement_speed: 0.0241
-          armor_toughness: 1.4688
+          attack_damage: 2.6892
+          movement_speed: 0.0195
+          armor_toughness: 2.2032
         rune-sockets: 2
         signature-tier: 0
         lore:
@@ -3661,11 +3661,11 @@ item-templates:
     slot: legs
     material: CHAINMAIL_LEGGINGS
     level-requirement: 38
-    base-armor: 4.06
+    base-armor: 4.76
     fixed-stats:
-      attack_damage: 2.53
-      movement_speed: 0.0184
-      armor_toughness: 1.12
+      attack_damage: 2.05
+      movement_speed: 0.0149
+      armor_toughness: 1.68
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -3692,11 +3692,11 @@ item-templates:
     slot: feet
     material: CHAINMAIL_BOOTS
     level-requirement: 37
-    base-armor: 2.75
+    base-armor: 3.23
     fixed-stats:
-      attack_damage: 1.72
-      movement_speed: 0.0125
-      armor_toughness: 0.76
+      attack_damage: 1.39
+      movement_speed: 0.0101
+      armor_toughness: 1.14
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -3723,10 +3723,10 @@ item-templates:
     slot: head
     material: IRON_HELMET
     level-requirement: 29
-    base-armor: 2.75
+    base-armor: 3.61
     fixed-stats:
-      armor_toughness: 2.39
-      ability_power: 2.38
+      armor_toughness: 2.17
+      ability_power: 1.43
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -3747,10 +3747,10 @@ item-templates:
     rarity: epic
     item-level: 34
     level-requirement: 30
-    base-armor: 4.93
+    base-armor: 6.46
     fixed-stats:
-      armor_toughness: 3.54
-      ability_power: 3.26
+      armor_toughness: 3.17
+      ability_power: 1.56
     rune-sockets: 1
     encounter-metadata:
       catalog-line: glatziendorfi
@@ -3774,10 +3774,10 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 29
-    base-armor: 4.06
+    base-armor: 5.32
     fixed-stats:
-      armor_toughness: 3.51
-      ability_power: 3.51
+      armor_toughness: 3.2
+      ability_power: 2.11
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -3805,10 +3805,10 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 28
-    base-armor: 2.75
+    base-armor: 3.61
     fixed-stats:
-      armor_toughness: 2.39
-      ability_power: 2.38
+      armor_toughness: 2.17
+      ability_power: 1.43
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -3836,11 +3836,11 @@ item-templates:
     slot: head
     material: IRON_HELMET
     level-requirement: 20
-    base-armor: 2.19
+    base-armor: 3.23
     fixed-stats:
-      armor: 1.85
-      max_health: 3.7
-      armor_toughness: 0.29
+      armor: 0.89
+      max_health: 1.79
+      armor_toughness: 0.76
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -3859,11 +3859,11 @@ item-templates:
     rarity: rare
     item-level: 25
     level-requirement: 21
-    base-armor: 3.91
+    base-armor: 5.78
     fixed-stats:
-      armor: 2.31
-      max_health: 4.62
-      armor_toughness: 0.51
+      armor: 0.59
+      max_health: 1.17
+      armor_toughness: 1.36
     rune-sockets: 1
     encounter-metadata:
       catalog-line: borostyan_tarna
@@ -3887,11 +3887,11 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 20
-    base-armor: 3.22
+    base-armor: 4.76
     fixed-stats:
-      armor: 2.74
-      max_health: 5.48
-      armor_toughness: 0.42
+      armor: 1.32
+      max_health: 2.64
+      armor_toughness: 1.12
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -3919,11 +3919,11 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 19
-    base-armor: 2.19
+    base-armor: 3.23
     fixed-stats:
-      armor: 1.85
-      max_health: 3.7
-      armor_toughness: 0.29
+      armor: 0.89
+      max_health: 1.79
+      armor_toughness: 0.76
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -3942,10 +3942,10 @@ item-templates:
     rarity: rare
     item-level: 24
     level-requirement: 20
-    base-armor: 2.19
+    base-armor: 3.23
     fixed-stats:
-      max_health: 2.15
-      ability_power: 1.29
+      max_health: 0.72
+      ability_power: 0.43
     rune-sockets: 1
     encounter-metadata:
       catalog-line: sarkfeny
@@ -3969,11 +3969,11 @@ item-templates:
     slot: chest
     material: IRON_CHESTPLATE
     level-requirement: 21
-    base-armor: 3.91
+    base-armor: 5.78
     fixed-stats:
-      max_health: 7.8
-      ability_power: 4.68
-      armor_toughness: 0.51
+      max_health: 3.75
+      ability_power: 2.25
+      armor_toughness: 1.36
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -4001,11 +4001,11 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 20
-    base-armor: 3.22
+    base-armor: 4.76
     fixed-stats:
-      max_health: 6.42
-      ability_power: 3.85
-      armor_toughness: 0.42
+      max_health: 3.09
+      ability_power: 1.85
+      armor_toughness: 1.12
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -4033,11 +4033,11 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 19
-    base-armor: 2.19
+    base-armor: 3.23
     fixed-stats:
-      max_health: 4.34
-      ability_power: 2.6
-      armor_toughness: 0.29
+      max_health: 2.1
+      ability_power: 1.26
+      armor_toughness: 0.76
     rune-sockets: 1
     source-tags:
     - profession:armorer
@@ -4065,10 +4065,10 @@ item-templates:
     slot: head
     material: IRON_HELMET
     level-requirement: 38
-    base-armor: 3.33
+    base-armor: 3.8
     fixed-stats:
-      armor_toughness: 3.02
-      ability_power: 2.61
+      armor_toughness: 2.96
+      ability_power: 1.99
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -4096,10 +4096,10 @@ item-templates:
     slot: chest
     material: IRON_CHESTPLATE
     level-requirement: 39
-    base-armor: 5.95
+    base-armor: 6.8
     fixed-stats:
-      armor_toughness: 5.42
-      ability_power: 4.67
+      armor_toughness: 5.29
+      ability_power: 3.56
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -4121,8 +4121,8 @@ item-templates:
         item-level: 47
         level-requirement: 43
         fixed-stats:
-          armor_toughness: 5.8536
-          ability_power: 5.0436
+          armor_toughness: 5.7132
+          ability_power: 3.8448
         rune-sockets: 2
         signature-tier: 0
         lore:
@@ -4140,10 +4140,10 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 38
-    base-armor: 4.9
+    base-armor: 5.6
     fixed-stats:
-      armor_toughness: 4.46
-      ability_power: 3.85
+      armor_toughness: 4.36
+      ability_power: 2.93
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -4171,10 +4171,10 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 37
-    base-armor: 3.33
+    base-armor: 3.8
     fixed-stats:
-      armor_toughness: 3.02
-      ability_power: 2.61
+      armor_toughness: 2.96
+      ability_power: 1.99
     rune-sockets: 2
     source-tags:
     - profession:enchanter
@@ -4202,10 +4202,11 @@ item-templates:
     slot: head
     material: IRON_HELMET
     level-requirement: 10
-    base-armor: 1.61
+    base-armor: 2.85
     fixed-stats:
-      max_health: 1.97
-      ability_power: 1.18
+      max_health: 0.0
+      ability_power: 0.0
+      armor_toughness: 0.38
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -4232,10 +4233,11 @@ item-templates:
     slot: chest
     material: IRON_CHESTPLATE
     level-requirement: 11
-    base-armor: 2.89
+    base-armor: 5.1
     fixed-stats:
-      max_health: 3.52
-      ability_power: 2.11
+      max_health: 0.0
+      ability_power: 0.0
+      armor_toughness: 0.68
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -4262,10 +4264,11 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 10
-    base-armor: 2.38
+    base-armor: 4.2
     fixed-stats:
-      max_health: 2.9
-      ability_power: 1.74
+      max_health: 0.0
+      ability_power: 0.0
+      armor_toughness: 0.56
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -4292,10 +4295,11 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 9
-    base-armor: 1.61
+    base-armor: 2.85
     fixed-stats:
-      max_health: 1.97
-      ability_power: 1.18
+      max_health: 0.0
+      ability_power: 0.0
+      armor_toughness: 0.38
     rune-sockets: 0
     source-tags:
     - combat:wilderness
@@ -4322,10 +4326,11 @@ item-templates:
     slot: head
     material: IRON_HELMET
     level-requirement: 10
-    base-armor: 1.61
+    base-armor: 2.85
     fixed-stats:
-      attack_damage: 0.39
-      armor: 0.46
+      attack_damage: 0.0
+      armor: 0.0
+      armor_toughness: 0.38
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -4352,10 +4357,11 @@ item-templates:
     slot: chest
     material: IRON_CHESTPLATE
     level-requirement: 11
-    base-armor: 2.89
+    base-armor: 5.1
     fixed-stats:
-      attack_damage: 0.69
-      armor: 0.83
+      attack_damage: 0.0
+      armor: 0.0
+      armor_toughness: 0.68
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -4382,10 +4388,11 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 10
-    base-armor: 2.38
+    base-armor: 4.2
     fixed-stats:
-      attack_damage: 0.57
-      armor: 0.68
+      attack_damage: 0.0
+      armor: 0.0
+      armor_toughness: 0.56
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -4412,10 +4419,11 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 9
-    base-armor: 1.61
+    base-armor: 2.85
     fixed-stats:
-      attack_damage: 0.39
-      armor: 0.46
+      attack_damage: 0.0
+      armor: 0.0
+      armor_toughness: 0.38
     rune-sockets: 0
     source-tags:
     - combat:veteran
@@ -4442,11 +4450,11 @@ item-templates:
     slot: head
     material: IRON_HELMET
     level-requirement: 29
-    base-armor: 2.75
+    base-armor: 3.61
     fixed-stats:
-      armor: 2.14
-      max_health: 4.27
-      armor_toughness: 0.67
+      armor: 1.29
+      max_health: 2.57
+      armor_toughness: 1.14
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -4473,11 +4481,11 @@ item-templates:
     slot: chest
     material: IRON_CHESTPLATE
     level-requirement: 30
-    base-armor: 4.93
+    base-armor: 6.46
     fixed-stats:
-      armor: 3.83
-      max_health: 7.65
-      armor_toughness: 1.19
+      armor: 2.3
+      max_health: 4.6
+      armor_toughness: 2.04
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -4504,11 +4512,11 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 29
-    base-armor: 4.06
+    base-armor: 5.32
     fixed-stats:
-      armor: 3.15
-      max_health: 6.3
-      armor_toughness: 0.98
+      armor: 1.89
+      max_health: 3.79
+      armor_toughness: 1.68
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -4535,11 +4543,11 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 28
-    base-armor: 2.75
+    base-armor: 3.61
     fixed-stats:
-      armor: 2.14
-      max_health: 4.27
-      armor_toughness: 0.67
+      armor: 1.29
+      max_health: 2.57
+      armor_toughness: 1.14
     rune-sockets: 1
     source-tags:
     - combat:elite
@@ -4557,11 +4565,11 @@ item-templates:
     rarity: legendary
     item-level: 42
     level-requirement: 38
-    base-armor: 3.33
+    base-armor: 3.8
     fixed-stats:
-      armor: 1.76
-      max_health: 3.51
-      armor_toughness: 1.14
+      armor: 1.2
+      max_health: 2.4
+      armor_toughness: 1.52
     rune-sockets: 2
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4576,11 +4584,11 @@ item-templates:
     rarity: legendary
     item-level: 43
     level-requirement: 39
-    base-armor: 5.95
+    base-armor: 6.8
     fixed-stats:
-      armor: 3.48
-      max_health: 6.96
-      armor_toughness: 2.04
+      armor: 2.48
+      max_health: 4.96
+      armor_toughness: 2.72
     rune-sockets: 2
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4595,11 +4603,11 @@ item-templates:
     rarity: legendary
     item-level: 42
     level-requirement: 38
-    base-armor: 4.9
+    base-armor: 5.6
     fixed-stats:
-      armor: 3.46
-      max_health: 6.92
-      armor_toughness: 0.68
+      armor: 2.64
+      max_health: 5.27
+      armor_toughness: 1.24
     rune-sockets: 2
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4614,11 +4622,11 @@ item-templates:
     rarity: legendary
     item-level: 41
     level-requirement: 37
-    base-armor: 3.33
+    base-armor: 3.8
     fixed-stats:
-      armor: 2.17
-      max_health: 4.34
-      armor_toughness: 1.14
+      armor: 1.61
+      max_health: 3.22
+      armor_toughness: 1.52
     rune-sockets: 2
     encounter-metadata:
       catalog-line: melyseg_orseg
@@ -4642,11 +4650,11 @@ item-templates:
     slot: head
     material: IRON_HELMET
     level-requirement: 38
-    base-armor: 3.33
+    base-armor: 3.8
     fixed-stats:
-      attack_damage: 1.08
-      armor: 1.29
-      armor_toughness: 1.14
+      attack_damage: 0.82
+      armor: 0.99
+      armor_toughness: 1.52
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -4665,11 +4673,11 @@ item-templates:
     rarity: legendary
     item-level: 43
     level-requirement: 39
-    base-armor: 5.95
+    base-armor: 6.8
     fixed-stats:
-      armor_toughness: 2.04
-      attack_damage: 1.35
-      armor: 1.62
+      armor_toughness: 2.72
+      attack_damage: 0.89
+      armor: 1.07
     rune-sockets: 2
     encounter-metadata:
       catalog-line: ostromtoro
@@ -4693,11 +4701,11 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 38
-    base-armor: 4.9
+    base-armor: 5.6
     fixed-stats:
-      attack_damage: 1.59
-      armor: 1.91
-      armor_toughness: 1.68
+      attack_damage: 1.21
+      armor: 1.45
+      armor_toughness: 2.24
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -4725,11 +4733,11 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 37
-    base-armor: 3.33
+    base-armor: 3.8
     fixed-stats:
-      attack_damage: 1.08
-      armor: 1.29
-      armor_toughness: 1.14
+      attack_damage: 0.82
+      armor: 0.99
+      armor_toughness: 1.52
     rune-sockets: 2
     source-tags:
     - combat:boss
@@ -4757,11 +4765,11 @@ item-templates:
     slot: head
     material: IRON_HELMET
     level-requirement: 38
-    base-armor: 3.33
+    base-armor: 3.8
     fixed-stats:
-      max_health: 5.5
-      ability_power: 3.3
-      armor_toughness: 1.14
+      max_health: 4.19
+      ability_power: 2.52
+      armor_toughness: 1.52
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -4788,11 +4796,11 @@ item-templates:
     slot: chest
     material: IRON_CHESTPLATE
     level-requirement: 39
-    base-armor: 5.95
+    base-armor: 6.8
     fixed-stats:
-      max_health: 9.85
-      ability_power: 5.91
-      armor_toughness: 2.04
+      max_health: 7.5
+      ability_power: 4.5
+      armor_toughness: 2.72
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -4819,11 +4827,11 @@ item-templates:
     slot: legs
     material: IRON_LEGGINGS
     level-requirement: 38
-    base-armor: 4.9
+    base-armor: 5.6
     fixed-stats:
-      max_health: 8.11
-      ability_power: 4.87
-      armor_toughness: 1.68
+      max_health: 6.18
+      ability_power: 3.71
+      armor_toughness: 2.24
     rune-sockets: 2
     source-tags:
     - combat:champion
@@ -4850,11 +4858,11 @@ item-templates:
     slot: feet
     material: IRON_BOOTS
     level-requirement: 37
-    base-armor: 3.33
+    base-armor: 3.8
     fixed-stats:
-      max_health: 5.5
-      ability_power: 3.3
-      armor_toughness: 1.14
+      max_health: 4.19
+      ability_power: 2.52
+      armor_toughness: 1.52
     rune-sockets: 2
     source-tags:
     - combat:champion

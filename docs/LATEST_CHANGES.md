@@ -1,5 +1,10 @@
 # Mi változott a július 12-i szerververzió óta?
 
+- A combat staging hardening a canonical armor fizikai védelmét újraosztott budgettel
+  Iron–Netherite viszonyításba emeli, a mobtechnikákat determinisztikus kontextuspontozással
+  választja, a Target HUD pedig két rövid raytrace hibát áthidal. A játékos HUD-ról az
+  archetype és belső FIGHT/DEFENSIVE/FLEE állapotok eltűntek; rank, disposition, HP és level marad.
+
 <!-- icesmp-doc-id: release.deployed-build-to-release -->
 
 > *A világ ugyanaz — de sokkal több módon válaszol arra, amit benne tesztek.*

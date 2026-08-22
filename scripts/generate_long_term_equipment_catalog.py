@@ -82,16 +82,16 @@ SLOT_SHARE = {"head": .19, "chest": .34, "legs": .28, "feet": .19}
 # netherite without treating any backing Material as the canonical source of stats.
 SET_BUDGET = {"early": 32.0, "mid": 60.0, "high": 76.0, "endgame": 92.0}
 SET_ARMOR = {
-    "CLOTH": {"early": 4.0, "mid": 5.5, "high": 7.0, "endgame": 8.5},
-    "LEATHER": {"early": 5.5, "mid": 7.5, "high": 9.5, "endgame": 11.5},
-    "MAIL": {"early": 7.0, "mid": 9.5, "high": 12.0, "endgame": 14.5},
-    "PLATE": {"early": 8.5, "mid": 11.5, "high": 14.5, "endgame": 17.5},
+    "CLOTH": {"early": 6.0, "mid": 7.5, "high": 9.0, "endgame": 10.5},
+    "LEATHER": {"early": 8.0, "mid": 10.0, "high": 11.5, "endgame": 13.0},
+    "MAIL": {"early": 11.0, "mid": 13.0, "high": 15.0, "endgame": 17.0},
+    "PLATE": {"early": 15.0, "mid": 17.0, "high": 19.0, "endgame": 20.0},
 }
 SET_TOUGHNESS = {
     "CLOTH": {"early": 0.0, "mid": 0.0, "high": 0.0, "endgame": 0.0},
     "LEATHER": {"early": 0.0, "mid": 0.0, "high": 1.0, "endgame": 2.0},
-    "MAIL": {"early": 0.0, "mid": 1.0, "high": 2.5, "endgame": 4.0},
-    "PLATE": {"early": 0.0, "mid": 1.5, "high": 3.5, "endgame": 6.0},
+    "MAIL": {"early": 0.0, "mid": 2.0, "high": 4.0, "endgame": 6.0},
+    "PLATE": {"early": 2.0, "mid": 4.0, "high": 6.0, "endgame": 8.0},
 }
 STAT_WEIGHTS = {
     "attack_damage": 5.0,
