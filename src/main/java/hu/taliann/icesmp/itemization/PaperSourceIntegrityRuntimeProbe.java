@@ -130,6 +130,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final org.bukkit.World world = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst();
         check(world != null, "authored PvE runtime world unavailable");
         hu.taliann.icesmp.pve.AuthoredPveContentValidator.validate(templates, abilities);
+        plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_VALIDATED");
         final org.bukkit.Location at = world.getSpawnLocation().clone().add(0.5D, 2.0D, 0.5D);
         plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
             plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_REGION_START");
@@ -141,18 +142,21 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                 "runtime_probe", "runtime:world_boss", "boss", "ring_warden", 75,
                                 AuthoredCreatureSpawnService.RewardOwner.NONE, true,
                                 1.2D, 1.0D, 240L));
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_WORLD_BOSS");
                 final Mob champion = spawns.spawn(at.clone(),
                         AuthoredCreatureSpawnService.Request.template(
                                 "runtime_probe", "runtime:invasion", "champion",
                                 "invasion_chaos_champion", 30,
                                 AuthoredCreatureSpawnService.RewardOwner.NONE, true,
                                 1.0D, 1.0D, 240L));
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_CHAMPION");
                 final Mob prologue = spawns.spawn(at.clone(),
                         AuthoredCreatureSpawnService.Request.template(
                                 "runtime_probe", "runtime:prologue", "boss",
                                 "prologue_finale_boss", 55,
                                 AuthoredCreatureSpawnService.RewardOwner.NONE, true,
                                 1.1D, 1.0D, 240L));
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_PROLOGUE");
                 check(worldBoss != null && champion != null && prologue != null,
                         "authored PvE runtime spawn returned null");
                 spawned.add(worldBoss); spawned.add(champion); spawned.add(prologue);
@@ -162,6 +166,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         EntityType.ZOMBIE.getEntityClass().asSubclass(Mob.class)));
                 controls.add((Mob) world.spawn(at.clone().add(7.0D, 0.0D, 0.0D),
                         EntityType.SKELETON.getEntityClass().asSubclass(Mob.class)));
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_CONTROLS");
                 check("ring_warden".equals(hu.taliann.icesmp.managers.MobScalingManager
                                 .templateIdOf(worldBoss))
                                 && "invasion_chaos_champion".equals(
@@ -178,6 +183,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 }
                 check(duplicateModifierRejected,
                         "encounter participant modifier accepted a duplicate application");
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_PROVENANCE");
                 spawns.pause(prologue);
                 prologue.getScheduler().runDelayed(plugin, resume -> spawns.resume(prologue), null, 60L);
                 final var maximumHealth = worldBoss.getAttribute(Attribute.MAX_HEALTH);
@@ -186,6 +192,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
                 worldBoss.damage(maximumHealth.getValue() * 0.20D);
                 worldBoss.damage(1.0D);
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_THRESHOLD_ARMED");
                 worldBoss.getScheduler().runDelayed(plugin, verify -> {
                     try {
                         final Map<String, Long> telemetry = CombatTelemetry.snapshot();
@@ -216,6 +223,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         Bukkit.shutdown();
                     }
                 }, null, 120L);
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_VERIFY_SCHEDULED");
             } catch (final Throwable failure) {
                 spawned.forEach(mob -> mob.getScheduler().run(plugin,
                         remove -> { if (mob.isValid()) mob.remove(); }, null));
