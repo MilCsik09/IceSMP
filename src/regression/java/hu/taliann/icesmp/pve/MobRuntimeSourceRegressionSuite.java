@@ -47,7 +47,8 @@ public final class MobRuntimeSourceRegressionSuite {
                         && !runtime.contains("Bukkit.getScheduler")
                         && !runtime.contains(".join()"),
                 "mob ability runtime violates Folia scheduling rules");
-        final int startCast = runtime.indexOf("private void startCast");
+        final int startCast = runtime.indexOf("private boolean startCast");
+        check(startCast >= 0, "common cast admission must report whether scheduling started");
         final int targetSnapshot = runtime.indexOf("private Location targetSnapshot", startCast);
         final String castLifecycle = runtime.substring(startCast, targetSnapshot);
         final int telegraph = castLifecycle.indexOf("telegraph(mob, chosen, target)");
