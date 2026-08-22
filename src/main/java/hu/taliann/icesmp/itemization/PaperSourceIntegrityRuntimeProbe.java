@@ -11,6 +11,7 @@ import hu.taliann.icesmp.pve.MobTemplateRegistry;
 import hu.taliann.icesmp.pve.AuthoredCreatureSpawnService;
 import hu.taliann.icesmp.pve.MobAbilityRuntime;
 import hu.taliann.icesmp.pve.CombatTelemetry;
+import hu.taliann.icesmp.managers.MobScalingManager;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import org.bukkit.Bukkit;
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @SuppressWarnings("UnstableApiUsage")
 public final class PaperSourceIntegrityRuntimeProbe {
     public static final String PROPERTY = "icesmp.source-integrity-runtime";
+    public static final String AUTHORED_PVE_PROPERTY = "icesmp.authored-pve-runtime";
     public static final String PASS_MARKER = "ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS";
 
     private PaperSourceIntegrityRuntimeProbe() { }
@@ -68,23 +70,38 @@ public final class PaperSourceIntegrityRuntimeProbe {
     }
 
     public static void maybeRun(final JavaPlugin plugin, final Object assembledCore) {
-        if (!Boolean.getBoolean(PROPERTY)) return;
+        final boolean authoredPve = Boolean.getBoolean(AUTHORED_PVE_PROPERTY);
+        if (!Boolean.getBoolean(PROPERTY) && !authoredPve) return;
+        final CreatureSpeciesRegistry creatureSpecies = readField(assembledCore,
+                "creatureSpeciesRegistry", CreatureSpeciesRegistry.class);
+        final MobAbilityRegistry mobAbilities = readField(assembledCore,
+                "mobAbilityRegistry", MobAbilityRegistry.class);
+        if (authoredPve) {
+            final MobTemplateRegistry mobTemplates = readField(assembledCore,
+                    "mobTemplateRegistry", MobTemplateRegistry.class);
+            final AuthoredCreatureSpawnService authoredSpawns = readField(assembledCore,
+                    "authoredCreatureSpawns", AuthoredCreatureSpawnService.class);
+            final MobScalingManager mobScaling = readField(assembledCore,
+                    "mobScalingManager", MobScalingManager.class);
+            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
+                try {
+                    startAuthoredPveRuntimeProof(plugin, mobTemplates, mobAbilities,
+                            authoredSpawns, creatureSpecies, mobScaling);
+                } catch (final Throwable failure) {
+                    plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
+                    failure.printStackTrace();
+                    Bukkit.shutdown();
+                }
+            }, 1L);
+            return;
+        }
         final ItemIdentityService identity = readField(assembledCore,
                 "itemIdentityService", ItemIdentityService.class);
         final ItemTemplateRegistry templates = readField(assembledCore,
                 "itemTemplateRegistry", ItemTemplateRegistry.class);
         final ProfessionRecipeCatalog catalog = readField(assembledCore,
                 "professionRecipeCatalog", ProfessionRecipeCatalog.class);
-        final CreatureSpeciesRegistry creatureSpecies = readField(assembledCore,
-                "creatureSpeciesRegistry", CreatureSpeciesRegistry.class);
-        final MobAbilityRegistry mobAbilities = readField(assembledCore,
-                "mobAbilityRegistry", MobAbilityRegistry.class);
-        final MobTemplateRegistry mobTemplates = readField(assembledCore,
-                "mobTemplateRegistry", MobTemplateRegistry.class);
-        final AuthoredCreatureSpawnService authoredSpawns = readField(assembledCore,
-                "authoredCreatureSpawns", AuthoredCreatureSpawnService.class);
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
-            boolean deferredShutdown = false;
             try {
                 writeVanillaRuntimeBenchmark();
                 verifyAttributeComponentSemantics();
@@ -94,29 +111,30 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 verifyMutationPhysicalState(identity);
                 verifyCatalogPositiveLoad(identity, catalog, templates);
                 verifyCreatureRuntime(creatureSpecies, mobAbilities);
-                deferredShutdown = startAuthoredPveRuntimeProof(plugin, mobTemplates,
-                        mobAbilities, authoredSpawns);
-                if (!deferredShutdown) plugin.getLogger().info(PASS_MARKER);
+                plugin.getLogger().info(PASS_MARKER);
             } catch (final Throwable failure) {
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
                 failure.printStackTrace();
             } finally {
-                if (!deferredShutdown) Bukkit.shutdown();
+                Bukkit.shutdown();
             }
         }, 1L);
     }
 
     /** Spawns three real authored roles and waits for a common timer technique to execute. */
-    private static boolean startAuthoredPveRuntimeProof(final JavaPlugin plugin,
-                                                        final MobTemplateRegistry templates,
-                                                        final MobAbilityRegistry abilities,
-                                                        final AuthoredCreatureSpawnService spawns) {
+    private static void startAuthoredPveRuntimeProof(final JavaPlugin plugin,
+                                                     final MobTemplateRegistry templates,
+                                                     final MobAbilityRegistry abilities,
+                                                     final AuthoredCreatureSpawnService spawns,
+                                                     final CreatureSpeciesRegistry species,
+                                                     final MobScalingManager scaling) {
         final org.bukkit.World world = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst();
-        if (world == null) return false;
+        check(world != null, "authored PvE runtime world unavailable");
         hu.taliann.icesmp.pve.AuthoredPveContentValidator.validate(templates, abilities);
         final org.bukkit.Location at = world.getSpawnLocation().clone().add(0.5D, 2.0D, 0.5D);
         plugin.getServer().getRegionScheduler().run(plugin, at, task -> {
             final java.util.ArrayList<Mob> spawned = new java.util.ArrayList<>();
+            final java.util.ArrayList<Mob> controls = new java.util.ArrayList<>();
             try {
                 final Mob worldBoss = spawns.spawn(at.clone(),
                         AuthoredCreatureSpawnService.Request.template(
@@ -138,6 +156,12 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 check(worldBoss != null && champion != null && prologue != null,
                         "authored PvE runtime spawn returned null");
                 spawned.add(worldBoss); spawned.add(champion); spawned.add(prologue);
+                controls.add((Mob) world.spawn(at.clone().add(3.0D, 0.0D, 0.0D),
+                        EntityType.COW.getEntityClass().asSubclass(Mob.class)));
+                controls.add((Mob) world.spawn(at.clone().add(5.0D, 0.0D, 0.0D),
+                        EntityType.ZOMBIE.getEntityClass().asSubclass(Mob.class)));
+                controls.add((Mob) world.spawn(at.clone().add(7.0D, 0.0D, 0.0D),
+                        EntityType.SKELETON.getEntityClass().asSubclass(Mob.class)));
                 check("ring_warden".equals(hu.taliann.icesmp.managers.MobScalingManager
                                 .templateIdOf(worldBoss))
                                 && "invasion_chaos_champion".equals(
@@ -159,7 +183,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 final var maximumHealth = worldBoss.getAttribute(Attribute.MAX_HEALTH);
                 check(maximumHealth != null && maximumHealth.getValue() > 0.0D,
                         "authored world boss lacks canonical maximum health");
-                worldBoss.damage(maximumHealth.getValue() * 0.70D);
+                worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
+                worldBoss.damage(maximumHealth.getValue() * 0.20D);
                 worldBoss.damage(1.0D);
                 worldBoss.getScheduler().runDelayed(plugin, verify -> {
                     try {
@@ -168,7 +193,17 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                 "real authored world-boss technique did not execute through MobAbilityRuntime");
                         check(telemetry.getOrDefault("boss_phase_transition:boss_enrage", 0L) == 1L,
                                 "health threshold was not one-shot in the common runtime");
-                        writeAuthoredPveRuntimeReport(spawned, telemetry, spawns);
+                        check(controls.stream().allMatch(control -> scaling.getLevel(control) > 0),
+                                "Cow/Zombie/Skeleton controls lack canonical stable levels");
+                        check(species.profile(EntityType.COW).disposition()
+                                        == CreatureSpeciesPolicy.Disposition.PASSIVE
+                                        && species.profile(EntityType.ZOMBIE).disposition()
+                                        == CreatureSpeciesPolicy.Disposition.HOSTILE
+                                        && species.profile(EntityType.SKELETON).disposition()
+                                        == CreatureSpeciesPolicy.Disposition.HOSTILE
+                                        && controls.getFirst().getTarget() == null,
+                                "#138 passive/hostile control policy regressed");
+                        writeAuthoredPveRuntimeReport(spawned, controls, telemetry, spawns, scaling);
                         plugin.getLogger().info(PASS_MARKER);
                     } catch (final Throwable failure) {
                         plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -176,23 +211,28 @@ public final class PaperSourceIntegrityRuntimeProbe {
                     } finally {
                         spawned.forEach(mob -> mob.getScheduler().run(plugin,
                                 remove -> { if (mob.isValid()) mob.remove(); }, null));
+                        controls.forEach(mob -> mob.getScheduler().run(plugin,
+                                remove -> { if (mob.isValid()) mob.remove(); }, null));
                         Bukkit.shutdown();
                     }
                 }, null, 120L);
             } catch (final Throwable failure) {
                 spawned.forEach(mob -> mob.getScheduler().run(plugin,
                         remove -> { if (mob.isValid()) mob.remove(); }, null));
+                controls.forEach(mob -> mob.getScheduler().run(plugin,
+                        remove -> { if (mob.isValid()) mob.remove(); }, null));
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
                 failure.printStackTrace();
                 Bukkit.shutdown();
             }
         });
-        return true;
     }
 
     private static void writeAuthoredPveRuntimeReport(final List<Mob> mobs,
+                                                      final List<Mob> controls,
                                                       final Map<String, Long> telemetry,
-                                                      final AuthoredCreatureSpawnService spawns)
+                                                      final AuthoredCreatureSpawnService spawns,
+                                                      final MobScalingManager scaling)
             throws java.io.IOException {
         final Path output = Path.of(System.getProperty("icesmp.combat-evidence-dir",
                 "../build/reports/combat-foundation")).toAbsolutePath().normalize()
@@ -205,6 +245,10 @@ public final class PaperSourceIntegrityRuntimeProbe {
         Files.writeString(output, "{\n  \"schema\": 1,\n"
                 + "  \"runtime\": \"Paper 1.21.11\",\n"
                 + "  \"templates\": " + templates + ",\n"
+                + "  \"controls\": [\"COW:PASSIVE\",\"ZOMBIE:HOSTILE\",\"SKELETON:HOSTILE\"],\n"
+                + "  \"control_levels\": [" + controls.stream().map(scaling::getLevel)
+                .map(String::valueOf).collect(java.util.stream.Collectors.joining(",")) + "],\n"
+                + "  \"passive_control_initial_target\": false,\n"
                 + "  \"common_runtime\": \"MobAbilityRuntime\",\n"
                 + "  \"boss_slam_executions\": "
                 + telemetry.getOrDefault("technique_execute:boss_slam", 0L) + ",\n"

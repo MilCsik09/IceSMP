@@ -92,7 +92,7 @@ jobs:
         timeout-minutes: 12
         env:
           JAVA_TOOL_OPTIONS: >-
-            -Dicesmp.source-integrity-runtime=true
+            -Dicesmp.authored-pve-runtime=true
             -Dicesmp.combat-evidence-dir=${{ github.workspace }}/build/reports/authored-pve
         run: |
           set -euo pipefail
@@ -100,7 +100,7 @@ jobs:
           mkdir -p run
           printf 'eula=true\n' > run/eula.txt
           set +e
-          timeout --signal=INT --kill-after=20s 420s ./gradlew --no-daemon --console=plain \
+          timeout --signal=INT --kill-after=20s 180s ./gradlew --no-daemon --console=plain \
             --init-script scripts/source_integrity_runtime.init.gradle runServer \
             2>&1 | tee paper-authored-pve.log
           status=${PIPESTATUS[0]}
@@ -124,6 +124,11 @@ jobs:
               "ring_warden", "invasion_chaos_champion", "prologue_finale_boss"
           }
           assert report["common_runtime"] == "MobAbilityRuntime"
+          assert set(report["controls"]) == {
+              "COW:PASSIVE", "ZOMBIE:HOSTILE", "SKELETON:HOSTILE"
+          }
+          assert all(level > 0 for level in report["control_levels"])
+          assert report["passive_control_initial_target"] is False
           assert report["boss_slam_executions"] > 0
           assert report["threshold_transitions"] == 1
           assert report["world_boss_stat_provenance"].startswith("runtime_probe:participants;")
