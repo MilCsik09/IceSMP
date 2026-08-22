@@ -160,12 +160,12 @@ public final class DamageIndicatorListener implements Listener {
                 "hud.icesmp-hud.target-frame.range", 24.0D));
         final RayTraceResult trace = viewer.getWorld().rayTrace(viewer.getEyeLocation(),
                 viewer.getEyeLocation().getDirection(), range, FluidCollisionMode.NEVER,
-                true, 0.2D,
+                true, 0.35D,
                 entity -> entity instanceof LivingEntity && !entity.equals(viewer)
                         && !(entity instanceof Display));
         final Entity target = trace == null ? null : trace.getHitEntity();
         if (!(target instanceof LivingEntity)) {
-            targetFrames.clear(viewer.getUniqueId());
+            targetFrames.retainOnMiss(viewer.getUniqueId(), System.currentTimeMillis(), 400L, 2);
             return;
         }
         final UUID viewerId = viewer.getUniqueId();
@@ -268,16 +268,7 @@ public final class DamageIndicatorListener implements Listener {
         if (entity instanceof Player) return "";
         final String affixes = entity.getPersistentDataContainer().get(
                 new NamespacedKey(plugin, "mob_affixes"), PersistentDataType.STRING);
-        final String affixStatus = TargetFrameMetadataPolicy.affixStatus(affixes);
-        if (!affixStatus.isBlank()) return affixStatus;
-        if (template != null) return TargetFrameMetadataPolicy.archetypeStatus(
-                template.archetype().name());
-        final String archetype = entity.getPersistentDataContainer().get(
-                new NamespacedKey(plugin, "mob_archetype"), PersistentDataType.STRING);
-        final String projected = TargetFrameMetadataPolicy.archetypeStatus(archetype);
-        if (!projected.isBlank()) return projected;
-        return entity instanceof LivingEntity living
-                ? CreatureProfileService.presentationStatus(living) : "";
+        return TargetFrameMetadataPolicy.affixStatus(affixes);
     }
 
     private static String targetName(final Entity victim) {
