@@ -226,6 +226,32 @@ public final class MobAbilityRuntime implements Listener {
                 chosen.abilityId());
     }
 
+    /**
+     * Deterministic authored-trigger seam for bounded encounter callbacks and runtime proof.
+     * The requested definition must already belong to the entity's canonical kit and declare
+     * the supplied typed trigger; callers cannot inject an arbitrary mechanic.
+     */
+    public boolean triggerTechnique(final Mob mob, final String abilityId,
+                                    final MobAbilityDefinition.Trigger trigger) {
+        if (mob == null || abilityId == null || trigger == null || !mob.isValid()) return false;
+        attach(mob);
+        final RuntimeState state = states.get(mob.getUniqueId());
+        if (state == null || !authoredTechniqueAllowed(mob, species.profile(mob.getType()))) {
+            return false;
+        }
+        final MobAbilityDefinition chosen = state.definitions.stream()
+                .filter(definition -> definition.abilityId().equals(abilityId))
+                .filter(definition -> definition.triggers().contains(trigger))
+                .filter(definition -> conditionsPass(mob, definition, state))
+                .findFirst().orElse(null);
+        if (chosen == null) return false;
+        final Location target = targetSnapshot(mob, chosen, state);
+        if (chosen.targetRule() != MobAbilityDefinition.TargetRule.SELF && target == null) return false;
+        final boolean started = startCast(mob, chosen, state, target);
+        if (started) CombatTelemetry.record("technique_typed_trigger", chosen.abilityId());
+        return started;
+    }
+
     public void disengageTarget(final UUID targetId) {
         if (targetId == null) return;
         for (final RuntimeState state : states.values()) {
@@ -298,10 +324,10 @@ public final class MobAbilityRuntime implements Listener {
         return null;
     }
 
-    private void startCast(final Mob mob, final MobAbilityDefinition chosen,
-                           final RuntimeState state, final Location target) {
+    private boolean startCast(final Mob mob, final MobAbilityDefinition chosen,
+                              final RuntimeState state, final Location target) {
         if (state.paused || state.casting || state.tick < state.recoveryUntilTick
-                || state.tick < state.readyAtTick.getOrDefault(chosen.abilityId(), 0L)) return;
+                || state.tick < state.readyAtTick.getOrDefault(chosen.abilityId(), 0L)) return false;
         state.casting = true;
         state.currentAbility = chosen;
         final long castEpoch = ++state.castEpoch;
@@ -325,10 +351,12 @@ public final class MobAbilityRuntime implements Listener {
                 }
                 states.remove(mob.getUniqueId(), state);
             }, Math.max(1L, chosen.telegraphTicks()));
+            return true;
         } catch (final RuntimeException rejected) {
             state.currentAbility = null;
             state.casting = false;
             states.remove(mob.getUniqueId(), state);
+            return false;
         }
     }
 
