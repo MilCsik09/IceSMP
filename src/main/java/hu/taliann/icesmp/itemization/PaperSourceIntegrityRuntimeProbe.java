@@ -135,7 +135,10 @@ public final class PaperSourceIntegrityRuntimeProbe {
         hu.taliann.icesmp.pve.AuthoredPveContentValidator.validate(templates, abilities);
         plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_VALIDATED");
         final org.bukkit.Location at = world.getSpawnLocation().clone().add(0.5D, 2.0D, 0.5D);
+        final int probeChunkX = at.getBlockX() >> 4;
+        final int probeChunkZ = at.getBlockZ() >> 4;
         plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
+            world.setChunkForceLoaded(probeChunkX, probeChunkZ, true);
             plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_REGION_START");
             final java.util.ArrayList<Mob> spawned = new java.util.ArrayList<>();
             final java.util.ArrayList<Mob> controls = new java.util.ArrayList<>();
@@ -212,6 +215,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                     } catch (final Throwable failure) {
                         plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
                         failure.printStackTrace();
+                        world.setChunkForceLoaded(probeChunkX, probeChunkZ, false);
                         Bukkit.shutdown();
                     }
                 }, 5L);
@@ -243,6 +247,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                 remove -> { if (mob.isValid()) mob.remove(); }, null));
                         controls.forEach(mob -> mob.getScheduler().run(plugin,
                                 remove -> { if (mob.isValid()) mob.remove(); }, null));
+                        world.setChunkForceLoaded(probeChunkX, probeChunkZ, false);
                         Bukkit.shutdown();
                     }
                 }, 120L);
@@ -252,6 +257,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         remove -> { if (mob.isValid()) mob.remove(); }, null));
                 controls.forEach(mob -> mob.getScheduler().run(plugin,
                         remove -> { if (mob.isValid()) mob.remove(); }, null));
+                world.setChunkForceLoaded(probeChunkX, probeChunkZ, false);
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
                 failure.printStackTrace();
                 Bukkit.shutdown();
