@@ -157,8 +157,6 @@ world-events:
     check-interval-minutes: 90
     chance-percent: 35
     lifetime-minutes: 20
-    health: 300.0
-    damage-multiplier: 2.0
     scaling:
       participant-radius: 128.0
       player-coefficient: 0.65
@@ -173,9 +171,6 @@ world-events:
       # A telegráf célpontjának sikeres kitérése csak már aktív résztvevőnek jár,
       # encounterenként bounded darabszámmal; AFK/előharc padding nem kvalifikál.
       maximum-objectives: 5
-    aura-radius: 12.0
-    special-damage: 6.0
-    add-lifespan-seconds: 25
     treasury-reward: 300.0
     season-points: 10
     buff-minutes: 10
@@ -188,7 +183,6 @@ world-events:
     radius: 8.0
     mini-boss-level-bonus: 6
     mob-lifespan-seconds: 600
-    champion-slam-damage: 5.0
   season:
     enabled: true
     length-days: 60

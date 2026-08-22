@@ -58,6 +58,7 @@ public final class MobScalingManager {
     private final NamespacedKey mobRankKey;
     private final NamespacedKey mobArchetypeKey;
     private final NamespacedKey mobAffixesKey;
+    private final NamespacedKey encounterModifierKey;
     private final NamespacedKey territoryBurnManagedKey;
     private final NamespacedKey territoryBurnBaselineKey;
     private final NamespacedKey territoryZombificationManagedKey;
@@ -89,6 +90,7 @@ public final class MobScalingManager {
         this.mobRankKey = new NamespacedKey(plugin, "mob_rank");
         this.mobArchetypeKey = new NamespacedKey(plugin, "mob_archetype");
         this.mobAffixesKey = new NamespacedKey(plugin, "mob_affixes");
+        this.encounterModifierKey = new NamespacedKey(plugin, "encounter_stat_modifier");
         this.territoryBurnManagedKey = new NamespacedKey(plugin, "territory_no_daylight_burn");
         this.territoryBurnBaselineKey = new NamespacedKey(plugin, "territory_no_daylight_burn_baseline");
         this.territoryZombificationManagedKey = new NamespacedKey(plugin, "territory_no_zombification");
@@ -197,6 +199,12 @@ public final class MobScalingManager {
     public void forceRankedLevel(final LivingEntity entity, final int level,
                                  final MobRank rank, final String templateId,
                                  final String archetypeId) {
+        forceRankedLevel(entity, level, rank, templateId, archetypeId, true);
+    }
+
+    public void forceRankedLevel(final LivingEntity entity, final int level,
+                                 final MobRank rank, final String templateId,
+                                 final String archetypeId, final boolean authoredRewardEligible) {
         if (entity == null || level < 1 || rank == null || entity.getPersistentDataContainer()
                 .has(mobLevelKey, PersistentDataType.INTEGER)) return;
         final MobTemplate template = templateId == null || templateId.isBlank()
@@ -210,7 +218,9 @@ public final class MobScalingManager {
         final List<EliteAffix> affixes = rank == MobRank.ELITE
                 ? rollAffixes(template) : List.of();
         applyLevel(entity, boundedLevel, rank, template, affixes);
-        hu.taliann.icesmp.pve.CreatureProfileService.markExplicitAuthoredReward(entity);
+        if (authoredRewardEligible) {
+            hu.taliann.icesmp.pve.CreatureProfileService.markExplicitAuthoredReward(entity);
+        }
         if (template == null && archetypeId != null && !archetypeId.isBlank()) {
             entity.getPersistentDataContainer().set(mobArchetypeKey,
                     PersistentDataType.STRING, archetypeId.trim().toUpperCase(Locale.ROOT));
@@ -220,6 +230,11 @@ public final class MobScalingManager {
     /** Applies one explicit authored template; boss overrides may display above level 70. */
     public void forceTemplate(final LivingEntity entity, final String templateId,
                               final Integer explicitLevel) {
+        forceTemplate(entity, templateId, explicitLevel, true);
+    }
+
+    public void forceTemplate(final LivingEntity entity, final String templateId,
+                              final Integer explicitLevel, final boolean authoredRewardEligible) {
         if (entity == null || entity.getPersistentDataContainer()
                 .has(mobLevelKey, PersistentDataType.INTEGER)) return;
         final MobTemplate template = mobTemplates.require(templateId);
@@ -229,7 +244,47 @@ public final class MobScalingManager {
                 requested, null, null, 1, 0, 0, 0, 0,
                 template.rank().bossLike()), progressionTuning).level();
         applyLevel(entity, level, template.rank(), template, List.of());
-        hu.taliann.icesmp.pve.CreatureProfileService.markExplicitAuthoredReward(entity);
+        if (authoredRewardEligible) {
+            hu.taliann.icesmp.pve.CreatureProfileService.markExplicitAuthoredReward(entity);
+        }
+    }
+
+    /**
+     * Applies the single encounter-context layer after canonical template/level/rank projection.
+     * The PDC guard makes participant scaling idempotent and exposes exact stat provenance.
+     */
+    public void applyEncounterModifier(final LivingEntity entity, final double healthMultiplier,
+                                       final double damageMultiplier, final String provenance) {
+        if (entity == null || !Double.isFinite(healthMultiplier) || !Double.isFinite(damageMultiplier)
+                || healthMultiplier < 1.0D || healthMultiplier > 16.0D
+                || damageMultiplier < 0.5D || damageMultiplier > 2.0D) {
+            throw new IllegalArgumentException("invalid encounter stat modifier");
+        }
+        final var pdc = entity.getPersistentDataContainer();
+        if (pdc.has(encounterModifierKey, PersistentDataType.STRING)) {
+            throw new IllegalStateException("encounter stat modifier already applied");
+        }
+        final AttributeInstance maximumHealth = entity.getAttribute(Attribute.MAX_HEALTH);
+        if (maximumHealth != null) {
+            final double value = Math.min(HARD_MAX_HEALTH,
+                    maximumHealth.getBaseValue() * healthMultiplier);
+            maximumHealth.setBaseValue(value);
+            entity.setHealth(Math.min(value, maximumHealth.getValue()));
+        }
+        final AttributeInstance damage = entity.getAttribute(Attribute.ATTACK_DAMAGE);
+        if (damage != null) {
+            damage.setBaseValue(Math.min(HARD_MAX_DAMAGE,
+                    damage.getBaseValue() * damageMultiplier));
+        }
+        final String source = provenance == null || provenance.isBlank()
+                ? "encounter" : provenance.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9._:-]", "_");
+        pdc.set(encounterModifierKey, PersistentDataType.STRING,
+                source + ";health=" + healthMultiplier + ";damage=" + damageMultiplier);
+    }
+
+    public String encounterStatProvenance(final LivingEntity entity) {
+        return entity == null ? null : entity.getPersistentDataContainer()
+                .get(encounterModifierKey, PersistentDataType.STRING);
     }
 
     /** Metadata-only seam for encounter engines that own their own dynamic attribute snapshot. */

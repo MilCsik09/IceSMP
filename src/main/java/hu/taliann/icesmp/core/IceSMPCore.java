@@ -224,6 +224,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.pve.MobTemplateRegistry mobTemplateRegistry;
     private final MobScalingManager mobScalingManager;
     private final hu.taliann.icesmp.pve.MobAbilityRuntime mobAbilityRuntime;
+    private final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService authoredCreatureSpawns;
     private final hu.taliann.icesmp.pve.CreatureProfileService creatureProfileService;
     private final InvasionManager invasionManager;
     private final CaptureItemFactory captureItemFactory;
@@ -426,6 +427,8 @@ public final class IceSMPCore {
         this.mobAbilityRuntime = new hu.taliann.icesmp.pve.MobAbilityRuntime(
                 plugin, configManager, mobScalingManager, mobTemplateRegistry, mobAbilityRegistry,
                 creatureSpeciesRegistry);
+        this.authoredCreatureSpawns = new hu.taliann.icesmp.pve.AuthoredCreatureSpawnService(
+                plugin, mobTemplateRegistry, mobScalingManager, mobAbilityRuntime);
         this.creatureProfileService = new hu.taliann.icesmp.pve.CreatureProfileService(
                 plugin, creatureSpeciesRegistry, mobScalingManager, mobAbilityRuntime);
         this.invasionManager = new InvasionManager(plugin, configManager, mobScalingManager, messageManager);
@@ -1026,6 +1029,12 @@ public final class IceSMPCore {
         mobAbilityRegistry.load();
         creatureSpeciesRegistry.load();
         mobTemplateRegistry.load();
+        final var authoredPveReport = hu.taliann.icesmp.pve.AuthoredPveContentValidator.validate(
+                mobTemplateRegistry, mobAbilityRegistry);
+        plugin.getLogger().info("Authored PvE authority validated: "
+                + authoredPveReport.worldBosses() + " world bosses, "
+                + authoredPveReport.invasionChampions() + " invasion champions, "
+                + authoredPveReport.prologueTemplates() + " Prologue templates.");
         mobScalingManager.load();
         craftingRestrictionManager.load();
         itemTemplateRegistry.load();
@@ -1721,6 +1730,8 @@ public final class IceSMPCore {
             mobAbilityRegistry.load();
             creatureSpeciesRegistry.load();
             mobTemplateRegistry.load();
+            hu.taliann.icesmp.pve.AuthoredPveContentValidator.validate(
+                    mobTemplateRegistry, mobAbilityRegistry);
             mobScalingManager.load();
             craftingRestrictionManager.load();
             itemTemplateRegistry.load();

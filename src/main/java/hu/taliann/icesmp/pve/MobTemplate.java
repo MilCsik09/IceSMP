@@ -18,7 +18,10 @@ public record MobTemplate(String mobId, int schemaVersion, String displayName, S
     public record StatProfile(double healthMultiplier, double damageMultiplier,
                               double movementMultiplier, double crowdControlResistance) {
         public StatProfile {
-            if (!bounded(healthMultiplier, 0.25D, 20.0D)
+            // Authored bosses can intentionally project a high-vanilla-HP carrier (for example a
+            // Warden) down to the encounter baseline before level/rank scaling. This is a bounded
+            // normalization layer, not a second raw-attribute owner.
+            if (!bounded(healthMultiplier, 0.02D, 20.0D)
                     || !bounded(damageMultiplier, 0.1D, 10.0D)
                     || !bounded(movementMultiplier, 0.25D, 3.0D)
                     || !bounded(crowdControlResistance, 0.0D, 1.0D)) {

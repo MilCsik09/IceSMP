@@ -33,6 +33,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +52,8 @@ public final class MobAbilityRuntime implements Listener {
         private final Mob mob;
         private final List<MobAbilityDefinition> definitions;
         private final Map<String, Long> readyAtTick = new LinkedHashMap<>();
+        private final ArrayDeque<MobAbilityDefinition> pendingThresholds = new ArrayDeque<>();
+        private final java.util.Set<String> consumedThresholds = new HashSet<>();
         private long tick;
         private long recoveryUntilTick;
         private long castEpoch;
@@ -58,6 +62,8 @@ public final class MobAbilityRuntime implements Listener {
         private Location targetLocation;
         private boolean authoredCombat;
         private boolean casting;
+        private boolean paused;
+        private int rotationCursor;
         private MobAbilityDefinition currentAbility;
         private ScheduledTask task;
 
@@ -249,28 +255,40 @@ public final class MobAbilityRuntime implements Listener {
         if (state.authoredCombat && state.tick >= state.combatUntilTick) {
             disengage(state);
         }
-        if (state.casting || state.tick < state.recoveryUntilTick || state.definitions.isEmpty()) return;
+        if (state.paused || state.casting || state.tick < state.recoveryUntilTick
+                || state.definitions.isEmpty()) return;
         final CreatureSpeciesPolicy policy = species.profile(mob.getType());
         if (!authoredTechniqueAllowed(mob, policy)) return;
         if (policy.disposition() == CreatureSpeciesPolicy.Disposition.PASSIVE
                 && !state.authoredCombat) return;
         if (policy.disposition() == CreatureSpeciesPolicy.Disposition.NEUTRAL
                 && !state.authoredCombat && mob.getTarget() == null) return;
-        final MobAbilityDefinition chosen = state.definitions.stream()
-                .filter(definition -> definition.triggers().contains(MobAbilityDefinition.Trigger.ON_TIMER))
-                .filter(definition -> state.tick >= state.readyAtTick
-                        .getOrDefault(definition.abilityId(), 0L))
-                .filter(definition -> conditionsPass(mob, definition, state))
-                .findFirst().orElse(null);
+        final MobAbilityDefinition threshold = state.pendingThresholds.pollFirst();
+        final MobAbilityDefinition chosen = threshold == null
+                ? nextTimerAbility(mob, state) : threshold;
         if (chosen == null) return;
         final Location target = targetSnapshot(mob, chosen, state);
         if (chosen.targetRule() != MobAbilityDefinition.TargetRule.SELF && target == null) return;
         startCast(mob, chosen, state, target);
     }
 
+    private MobAbilityDefinition nextTimerAbility(final Mob mob, final RuntimeState state) {
+        for (int offset = 0; offset < state.definitions.size(); offset++) {
+            final int index = (state.rotationCursor + offset) % state.definitions.size();
+            final MobAbilityDefinition candidate = state.definitions.get(index);
+            if (candidate.triggers().contains(MobAbilityDefinition.Trigger.ON_TIMER)
+                    && state.tick >= state.readyAtTick.getOrDefault(candidate.abilityId(), 0L)
+                    && conditionsPass(mob, candidate, state)) {
+                state.rotationCursor = (index + 1) % state.definitions.size();
+                return candidate;
+            }
+        }
+        return null;
+    }
+
     private void startCast(final Mob mob, final MobAbilityDefinition chosen,
                            final RuntimeState state, final Location target) {
-        if (state.casting || state.tick < state.recoveryUntilTick
+        if (state.paused || state.casting || state.tick < state.recoveryUntilTick
                 || state.tick < state.readyAtTick.getOrDefault(chosen.abilityId(), 0L)) return;
         state.casting = true;
         state.currentAbility = chosen;
@@ -379,6 +397,30 @@ public final class MobAbilityRuntime implements Listener {
             CreatureProfileService.setCombatState(state.mob, "IDLE");
         }
         CombatTelemetry.record("creature_disengage", state.mob.getType().name());
+    }
+
+    public void pause(final Mob mob) {
+        final RuntimeState state = mob == null ? null : states.get(mob.getUniqueId());
+        if (state == null) return;
+        state.paused = true;
+        state.castEpoch++;
+        state.casting = false;
+        state.currentAbility = null;
+        CombatTelemetry.record("technique_pause", scaling.getTemplateId(mob));
+    }
+
+    public void resume(final Mob mob) {
+        final RuntimeState state = mob == null ? null : states.get(mob.getUniqueId());
+        if (state == null) return;
+        state.paused = false;
+        CombatTelemetry.record("technique_resume", scaling.getTemplateId(mob));
+    }
+
+    public void detach(final Mob mob) {
+        final RuntimeState state = mob == null ? null : states.get(mob.getUniqueId());
+        if (state != null) detach(state);
+        final AuthoredCreatureSpawnService spawns = AuthoredCreatureSpawnService.current();
+        if (spawns != null && mob != null) spawns.cleanupSummons(mob.getUniqueId());
     }
 
     private void detach(final RuntimeState state) {
@@ -500,6 +542,66 @@ public final class MobAbilityRuntime implements Listener {
                                 action.parameter("duration_ticks", 100.0D)))),
                         Math.max(0, Math.min(2, (int) Math.round(
                                 action.parameter("amplifier", 0.0D)))), false, true, true));
+                case APPLY_EFFECT -> applyEffect(mob, definition, action);
+                case SUMMON_TEMPLATE -> summonTemplateAdds(mob, definition, action);
+            }
+        }
+    }
+
+    private void applyEffect(final Mob mob, final MobAbilityDefinition definition,
+                             final MobTechniqueAction action) {
+        final PotionEffectType effect = org.bukkit.Registry.EFFECT.get(
+                NamespacedKey.minecraft(action.reference()));
+        if (effect == null) return;
+        final int duration = Math.max(20, Math.min(1_200,
+                (int) Math.round(action.parameter("duration_ticks", 100.0D))));
+        final int amplifier = Math.max(0, Math.min(4,
+                (int) Math.round(action.parameter("amplifier", 0.0D))));
+        if (action.target() == MobTechniqueAction.Target.SELF) {
+            mob.addPotionEffect(new PotionEffect(effect, duration, amplifier, false, true, true));
+            return;
+        }
+        final Location center = mob.getLocation().clone();
+        final double radius = Math.max(0.5D, Math.min(definition.radius(),
+                action.parameter("radius", definition.radius())));
+        int affected = 0;
+        for (final Entity entity : mob.getNearbyEntities(radius, radius, radius)) {
+            if (!(entity instanceof Player player) || ++affected > 32) continue;
+            player.getScheduler().run(plugin, task -> {
+                if (survivor(player) && player.getWorld() == center.getWorld()
+                        && player.getLocation().distanceSquared(center) <= radius * radius) {
+                    player.addPotionEffect(new PotionEffect(effect, duration, amplifier,
+                            false, true, true));
+                }
+            }, null);
+        }
+    }
+
+    private void summonTemplateAdds(final Mob mob, final MobAbilityDefinition definition,
+                                    final MobTechniqueAction action) {
+        final AuthoredCreatureSpawnService spawns = AuthoredCreatureSpawnService.current();
+        if (spawns == null) return;
+        final int globalMaximum = Math.max(0, Math.min(8,
+                config.getInt("mob-scaling.abilities.maximum-summons-per-cast", 3)));
+        final int count = Math.min(globalMaximum, Math.max(1, Math.min(8,
+                (int) Math.round(action.parameter("count", definition.maxSummons())))));
+        final long lifespan = Math.max(40L, Math.min(1_200L,
+                (long) action.parameter("lifespan_ticks", config.getLong(
+                        "mob-scaling.abilities.summon-lifespan-ticks", 300L))));
+        for (int index = 0; index < count; index++) {
+            final Location at = mob.getLocation().clone().add(
+                    ThreadLocalRandom.current().nextDouble(-2.5D, 2.5D), 0.0D,
+                    ThreadLocalRandom.current().nextDouble(-2.5D, 2.5D));
+            try {
+                spawns.spawn(at, AuthoredCreatureSpawnService.Request.template(
+                        "ability_summon", "summon:" + mob.getUniqueId(), "add",
+                        action.reference(), Math.max(1, scaling.getLevel(mob)),
+                        AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                        1.0D, 1.0D, lifespan).summonedBy(mob.getUniqueId()));
+                CombatTelemetry.record("authored_summon", action.reference());
+            } catch (final RuntimeException invalid) {
+                plugin.getLogger().warning("Authored summon failed closed: " + action.reference()
+                        + " (" + invalid.getMessage() + ")");
             }
         }
     }
@@ -581,6 +683,7 @@ public final class MobAbilityRuntime implements Listener {
     public void onAffixHurt(final EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity mob)) return;
         final RuntimeState state = states.get(mob.getUniqueId());
+        if (state != null && state.paused) return;
         if (state != null && state.casting && state.currentAbility != null
                 && state.currentAbility.interruptible()
                 && event.getFinalDamage() >= state.currentAbility.tuning()
@@ -596,6 +699,17 @@ public final class MobAbilityRuntime implements Listener {
         final double projected = mob.getHealth() - event.getFinalDamage();
         final double maximum = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) == null
                 ? mob.getHealth() : mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
+        if (state != null && projected > 0.0D && maximum > 0.0D) {
+            final double fraction = projected / maximum;
+            for (final MobAbilityDefinition definition : state.definitions) {
+                if (!definition.triggers().contains(MobAbilityDefinition.Trigger.HEALTH_THRESHOLD)
+                        || state.consumedThresholds.contains(definition.abilityId())
+                        || !thresholdConditionsPass(mob, definition, state, fraction)) continue;
+                state.consumedThresholds.add(definition.abilityId());
+                state.pendingThresholds.addLast(definition);
+                CombatTelemetry.record("boss_phase_transition", definition.abilityId());
+            }
+        }
         if (affixes.contains(EliteAffix.FRENZIED) && projected > 0.0D
                 && projected <= maximum * 0.5D && !mob.getPersistentDataContainer()
                 .has(frenziedKey, PersistentDataType.BYTE)) {
@@ -610,6 +724,34 @@ public final class MobAbilityRuntime implements Listener {
             mob.getPersistentDataContainer().set(volatileArmedKey, PersistentDataType.BYTE, (byte) 1);
             armVolatile(mob.getLocation().clone());
         }
+    }
+
+    private boolean thresholdConditionsPass(final Mob mob, final MobAbilityDefinition definition,
+                                            final RuntimeState state, final double fraction) {
+        for (final MobTechniqueCondition condition : definition.conditions()) {
+            if (condition.type() == MobTechniqueCondition.Type.HEALTH_BELOW) {
+                if (fraction > condition.value()) return false;
+            } else if (!conditionPass(mob, condition, state)) return false;
+        }
+        return true;
+    }
+
+    private boolean conditionPass(final Mob mob, final MobTechniqueCondition condition,
+                                  final RuntimeState state) {
+        return switch (condition.type()) {
+            case COMBAT_ACTIVE -> state.authoredCombat || mob.getTarget() != null;
+            case ADULT -> !(mob instanceof Ageable ageable) || ageable.isAdult();
+            case UNTAMED -> !(mob instanceof Tameable tameable) || !tameable.isTamed();
+            case HEALTH_BELOW -> {
+                final var maximum = mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                final double max = maximum == null ? mob.getHealth() : maximum.getValue();
+                yield max > 0.0D && mob.getHealth() / max <= condition.value();
+            }
+            case DISTANCE_WITHIN -> state.targetLocation != null
+                    && state.targetLocation.getWorld() == mob.getWorld()
+                    && mob.getLocation().distanceSquared(state.targetLocation)
+                    <= condition.value() * condition.value();
+        };
     }
 
     private void armVolatile(final Location center) {
@@ -640,6 +782,8 @@ public final class MobAbilityRuntime implements Listener {
             state.castEpoch++;
             if (state.task != null) state.task.cancel();
         }
+        final AuthoredCreatureSpawnService spawns = AuthoredCreatureSpawnService.current();
+        if (spawns != null) spawns.cleanupSummons(event.getEntity().getUniqueId());
     }
 
     public void shutdown() {

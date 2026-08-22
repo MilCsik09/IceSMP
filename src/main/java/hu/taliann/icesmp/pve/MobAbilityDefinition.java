@@ -37,7 +37,8 @@ public record MobAbilityDefinition(String abilityId, Kind kind, long cooldownTic
         ON_TIMER,
         ON_COMBAT_ENTER,
         ON_PROVOKED,
-        ON_DAMAGED;
+        ON_DAMAGED,
+        HEALTH_THRESHOLD;
 
         public static Trigger parse(final String raw) {
             if (raw == null || raw.isBlank()) throw new IllegalArgumentException("ability trigger required");
@@ -90,7 +91,8 @@ public record MobAbilityDefinition(String abilityId, Kind kind, long cooldownTic
         }
         final boolean dangerous = dangerous(kind) || actions.stream().anyMatch(action ->
                 action.type() == MobTechniqueAction.Type.DAMAGE
-                        || action.type() == MobTechniqueAction.Type.DASH);
+                        || action.type() == MobTechniqueAction.Type.DASH
+                        || action.type() == MobTechniqueAction.Type.SUMMON_TEMPLATE);
         if (dangerous && telegraphTicks < 10L) {
             throw new IllegalArgumentException("dangerous ability requires a readable telegraph");
         }

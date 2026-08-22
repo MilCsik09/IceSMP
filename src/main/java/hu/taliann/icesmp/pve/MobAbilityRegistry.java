@@ -153,7 +153,8 @@ public final class MobAbilityRegistry {
                         parameters.put(String.valueOf(entry.getKey()), number.doubleValue());
                     }
                 }
-                result.add(new MobTechniqueAction(type, target, parameters));
+                result.add(new MobTechniqueAction(type, target, parameters,
+                        value.get("reference") == null ? "" : String.valueOf(value.get("reference"))));
             } catch (final RuntimeException invalid) {
                 throw new IllegalStateException("invalid ability action: " + abilityId, invalid);
             }
