@@ -704,7 +704,7 @@ public final class MobAbilityRuntime implements Listener {
             for (final MobAbilityDefinition definition : state.definitions) {
                 if (!definition.triggers().contains(MobAbilityDefinition.Trigger.HEALTH_THRESHOLD)
                         || state.consumedThresholds.contains(definition.abilityId())
-                        || !thresholdConditionsPass(mob, definition, state, fraction)) continue;
+                        || !thresholdConditionsPass(state.mob, definition, state, fraction)) continue;
                 state.consumedThresholds.add(definition.abilityId());
                 state.pendingThresholds.addLast(definition);
                 CombatTelemetry.record("boss_phase_transition", definition.abilityId());
