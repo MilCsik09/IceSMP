@@ -17,6 +17,7 @@ public final class MobRuntimeSourceRegressionSuite {
         final String invasion = read("src/main/java/hu/taliann/icesmp/managers/InvasionManager.java");
         final String cultists = read("src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java");
         final String wildHunt = read("src/main/java/hu/taliann/icesmp/managers/WildHuntManager.java");
+        final String authoredSpawns = read("src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java");
         final String content = read("src/main/resources/config/mob-templates.yml");
         final String profiles = read("src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java");
         final String species = read("src/main/java/hu/taliann/icesmp/pve/CreatureSpeciesRegistry.java");
@@ -92,14 +93,17 @@ public final class MobRuntimeSourceRegressionSuite {
                         && delivery.contains("operations.rollback("),
                 "restart does not abort exact-before contribution candidates");
         check(invasion.contains("MobRank.CHAMPION")
-                        && invasion.contains("forceRankedLevel")
-                        && cultists.contains("MobRank.VETERAN")
-                        && wildHunt.contains("MobRank.ELITE"),
-                "existing invasion, cultist and wild-hunt events bypass canonical ranks");
+                        && invasion.contains("Request.generic(")&&invasion.contains("Request.template(")
+                        && cultists.contains("MobRank.VETERAN")&&cultists.contains("Request.generic(")
+                        && wildHunt.contains("MobRank.ELITE")&&wildHunt.contains("Request.generic(")
+                        && authoredSpawns.contains("scaling.forceRankedLevel")
+                        && !invasion.contains("forceRankedLevel")&&!cultists.contains("forceRankedLevel")
+                        && !wildHunt.contains("forceRankedLevel"),
+                "existing invasion, cultist and wild-hunt events bypass the common canonical rank authority");
 
         final int templateCount = occurrences(content, "schema-version: 1");
-        check(templateCount >= 15 && templateCount <= 25,
-                "systemic content must stay inside the reviewed 15-25 MobTemplate scope");
+        check(templateCount >= 40 && templateCount <= 64,
+                "canonical creature and authored PvE content escaped the reviewed bounded template scope");
         check(occurrences(content, "kind:") >= 6
                         && content.contains("rank: VETERAN")
                         && content.contains("rank: CHAMPION")
