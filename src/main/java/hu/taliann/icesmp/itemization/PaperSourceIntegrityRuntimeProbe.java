@@ -209,6 +209,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 plugin.getServer().getRegionScheduler().runDelayed(plugin, at, verify -> {
                     try {
                         final Map<String, Long> telemetry = CombatTelemetry.snapshot();
+                        plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_TELEMETRY " + telemetry);
                         check(telemetry.getOrDefault("technique_execute:boss_slam", 0L) > 0L,
                                 "real authored world-boss technique did not execute through MobAbilityRuntime");
                         check(telemetry.getOrDefault("boss_phase_transition:boss_enrage", 0L) == 1L,
