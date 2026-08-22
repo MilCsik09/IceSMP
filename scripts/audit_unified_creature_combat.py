@@ -141,17 +141,20 @@ def main() -> None:
             require(len(actions) <= 8, f"unbounded action sequence: {ability_id}")
             for action in actions:
                 primitive = action.get("type")
-                require(primitive in {"DAMAGE", "KNOCKBACK", "DASH", "RETREAT", "GUARD"},
+                require(primitive in {"DAMAGE", "KNOCKBACK", "DASH", "RETREAT", "GUARD",
+                                      "APPLY_EFFECT", "SUMMON_TEMPLATE"},
                         f"unused/general-purpose primitive escaped bounded vocabulary: {primitive}")
                 primitive_usage[primitive].append(ability_id)
             require(len(ability.get("conditions", []) or []) <= 8,
                     f"unbounded condition list: {ability_id}")
         triggers = ability.get("triggers", ["ON_TIMER"]) or ["ON_TIMER"]
-        require(set(triggers) <= {"ON_TIMER", "ON_COMBAT_ENTER", "ON_PROVOKED", "ON_DAMAGED"},
+        require(set(triggers) <= {"ON_TIMER", "ON_COMBAT_ENTER", "ON_PROVOKED", "ON_DAMAGED",
+                                  "HEALTH_THRESHOLD"},
                 f"unsupported trigger escaped current scope: {ability_id}")
         dangerous = kind in {"LUNGE", "GROUND_SLAM", "PROJECTILE_BURST", "SUMMON",
                              "CLEAVE", "POISON_CLOUD", "DELAYED_RUNE"} or any(
-            action.get("type") in {"DAMAGE", "DASH"} for action in ability.get("actions", []) or [])
+            action.get("type") in {"DAMAGE", "DASH", "SUMMON_TEMPLATE"}
+            for action in ability.get("actions", []) or [])
         require(not dangerous or int(ability.get("telegraph-ticks", 0)) >= 10,
                 f"dangerous technique lacks telegraph: {ability_id}")
 

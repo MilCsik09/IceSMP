@@ -109,6 +109,25 @@ val unifiedCreatureCombatAudit by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_unified_creature_combat.py", "--check")
 }
 
+val authoredPveConsolidationAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates authored event spawn, template, ability, reward and lifecycle consolidation."
+    inputs.files(
+        "scripts/audit_authored_pve_consolidation.py",
+        "src/main/resources/config.yml",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/config/world.yml",
+        "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
+        "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java",
+        "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/InvasionManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/DarkUndeadAmbienceManager.java",
+        "src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java",
+    )
+    commandLine(pythonCommand, "scripts/audit_authored_pve_consolidation.py", "--check")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."

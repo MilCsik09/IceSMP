@@ -11682,6 +11682,78 @@
         "template_uses": 0
       },
       {
+        "ability_id": "boss_darkness_zone",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 30,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 32,
+        "template_uses": 1
+      },
+      {
+        "ability_id": "boss_enrage",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": false,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 20,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 20,
+        "template_uses": 11
+      },
+      {
+        "ability_id": "boss_frost_zone",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 30,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 30,
+        "template_uses": 1
+      },
+      {
+        "ability_id": "boss_slam",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 30,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 30,
+        "template_uses": 14
+      },
+      {
+        "ability_id": "boss_weakening_zone",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 30,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 30,
+        "template_uses": 4
+      },
+      {
+        "ability_id": "boss_wither_zone",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 30,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 32,
+        "template_uses": 2
+      },
+      {
         "ability_id": "call_frozen",
         "eligible_archetypes": [],
         "eligible_ranks": [],
@@ -11691,7 +11763,7 @@
         "status": "VERIFIED",
         "target_rule": "SELF",
         "telegraph_ticks": 30,
-        "template_uses": 2
+        "template_uses": 1
       },
       {
         "ability_id": "defensive_stomp",
@@ -11739,7 +11811,7 @@
         "status": "VERIFIED",
         "target_rule": "SELF",
         "telegraph_ticks": 30,
-        "template_uses": 4
+        "template_uses": 3
       },
       {
         "ability_id": "headbutt",
@@ -11767,7 +11839,7 @@
         "status": "VERIFIED",
         "target_rule": "CURRENT_TARGET",
         "telegraph_ticks": 15,
-        "template_uses": 0
+        "template_uses": 1
       },
       {
         "ability_id": "iceguard",
@@ -11779,7 +11851,7 @@
         "status": "VERIFIED",
         "target_rule": "SELF",
         "telegraph_ticks": 10,
-        "template_uses": 5
+        "template_uses": 10
       },
       {
         "ability_id": "panic_dash",
@@ -11806,6 +11878,30 @@
         "template_uses": 0
       },
       {
+        "ability_id": "prologue_call_adds",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 40,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 30,
+        "template_uses": 1
+      },
+      {
+        "ability_id": "prologue_hazard",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 24,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 24,
+        "template_uses": 1
+      },
+      {
         "ability_id": "rear_kick",
         "eligible_archetypes": [],
         "eligible_ranks": [],
@@ -11827,7 +11923,7 @@
         "status": "VERIFIED",
         "target_rule": "CURRENT_TARGET",
         "telegraph_ticks": 20,
-        "template_uses": 6
+        "template_uses": 13
       },
       {
         "ability_id": "shell_brace",
@@ -11854,6 +11950,54 @@
         "template_uses": 0
       },
       {
+        "ability_id": "summon_bone_adds",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 40,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 30,
+        "template_uses": 1
+      },
+      {
+        "ability_id": "summon_frozen_adds",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 40,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 30,
+        "template_uses": 2
+      },
+      {
+        "ability_id": "summon_piglin_adds",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 40,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 30,
+        "template_uses": 1
+      },
+      {
+        "ability_id": "summon_venom_adds",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 40,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 30,
+        "template_uses": 1
+      },
+      {
         "ability_id": "telegraphed_lunge",
         "eligible_archetypes": [],
         "eligible_ranks": [],
@@ -11863,7 +12007,7 @@
         "status": "VERIFIED",
         "target_rule": "CURRENT_TARGET",
         "telegraph_ticks": 20,
-        "template_uses": 9
+        "template_uses": 17
       },
       {
         "ability_id": "venom_cloud",
@@ -11881,7 +12025,7 @@
         "status": "VERIFIED",
         "target_rule": "SELF",
         "telegraph_ticks": 30,
-        "template_uses": 0
+        "template_uses": 3
       },
       {
         "ability_id": "veteran_cleave",
@@ -11900,7 +12044,7 @@
         "status": "VERIFIED",
         "target_rule": "NEAREST_PLAYER",
         "telegraph_ticks": 20,
-        "template_uses": 0
+        "template_uses": 14
       },
       {
         "ability_id": "war_cry",
@@ -11917,7 +12061,7 @@
         "status": "VERIFIED",
         "target_rule": "SELF",
         "telegraph_ticks": 20,
-        "template_uses": 0
+        "template_uses": 8
       },
       {
         "ability_id": "winter_mend",
@@ -11932,7 +12076,7 @@
         "template_uses": 1
       }
     ],
-    "ability_count": 19,
+    "ability_count": 31,
     "rank_defaults": {
       "BOSS": [
         "glacial_slam",
@@ -11967,7 +12111,7 @@
         "call_frozen"
       ]
     },
-    "template_count": 18
+    "template_count": 49
   },
   "wildlife_retaliation": {
     "authority": "creature-species",

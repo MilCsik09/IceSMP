@@ -1301,7 +1301,7 @@ anyagláncok és Equipment Resource Pack 2.0 nem részei ennek a változásnak.
 - Precedencia: encounter override → authored location → MobTemplate → wilderness
   distance, majd territory/biome-or-dimension/depth/event bónusz. A safe-zone ramp
   megmarad; claim önmagában nem tesz minden területet biztonságossá.
-- `mob-templates.yml`: ability-, loot-profile-, 18 MobTemplate- és 91 soros
+- `mob-templates.yml`: ability-, loot-profile-, 49 MobTemplate- és 91 soros
   `creature-species` authority. A Paper runtime living/spawnable `EntityType` készletéhez
   képest missing/extra row, invalid disposition/temperament/social/reward vagy missing
   technique startupkor fail-fast; lookup fallbackje NON_COMBAT/VANILLA_ONLY.
@@ -1311,7 +1311,14 @@ anyagláncok és Equipment Resource Pack 2.0 nem részei ennek a változásnak.
 - Az ability runtime globális scan helyett entity scheduler tickeket használ, legfeljebb
   2048 aktív state-tel. A legacy `Kind` definíciók kompatibilisek; a `COMPOSITE` ability
   typed trigger/condition/target/action listája legfeljebb 8+8 elem. A jelenlegi primitive
-  vocabulary öt elemű, a veszélyes action minimum 10 tick telegráfot igényel.
+  vocabulary hét elemű; az authored PvE migráció kizárólag az `APPLY_EFFECT` és
+  `SUMMON_TEMPLATE` primitive-et, valamint az egyszeri `HEALTH_THRESHOLD` triggert adta
+  hozzá. A veszélyes action minimum 10 tick telegráfot igényel.
+- World boss, Invasion Champion és Prologue creature spawnhoz az
+  `AuthoredCreatureSpawnService` az egyetlen template/level/rank/stat/runtime attachment
+  út. Az event manager csak roster-, placement-, időzítés-, contribution- és settlement
+  orchestrator. A tuning- és lifecycle-részletek:
+  `docs/development/AUTHORED_PVE_CREATURE_MODEL.md`.
 - `creature-species.*`: category/disposition, level/rank, allowed temperament + súly,
   stable fight-percent, provocation, base/rank technique, social cap, reward, baby és tame
   policy. Ez az egyetlen wildlife truth source; a régi `wildlife-retaliation.*` config és
