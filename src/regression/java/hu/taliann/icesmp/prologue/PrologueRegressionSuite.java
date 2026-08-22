@@ -208,10 +208,15 @@ public final class PrologueRegressionSuite {
             }
         }
         String encounter=source("src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java");
-        check(encounter.contains("getRegionScheduler().run")&&encounter.contains("getScheduler().runAtFixedRate")
-                        &&encounter.contains("Bukkit.isOwnedByCurrentRegion(p)")
-                        &&encounter.contains("p.getScheduler().run")&&encounter.contains("EventSpawnGuard.prepare"),
-                "encounter world/entity/player mutations lost Folia scheduler ownership");
+        String authoredSpawns=source("src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java");
+        check(encounter.contains("getRegionScheduler().run")&&encounter.contains("h.scheduler.run(plugin")
+                        &&encounter.contains("AuthoredCreatureSpawnService.current()")
+                        &&encounter.contains("spawnGuard.isBlocked")&&encounter.contains("spawns.spawn("),
+                "encounter orchestration lost region/entity ownership or bypasses the common spawn authority");
+        check(authoredSpawns.contains("spawn location's owning region thread")
+                        &&authoredSpawns.contains("mob.getScheduler().runDelayed")
+                        &&authoredSpawns.contains("add.getScheduler().run"),
+                "common authored creature mutations lost their Folia entity ownership contract");
         String runtime=source("src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java");
         check(runtime.contains("player.getScheduler().run")&&runtime.contains("getGlobalRegionScheduler().run"),
                 "runtime player aggregation is not region scheduled");
