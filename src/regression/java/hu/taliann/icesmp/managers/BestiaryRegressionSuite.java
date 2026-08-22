@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
  * B21 — bestiárium-mélység regressziók: nevezők, boss-archetípus lajstrom-kánon,
@@ -38,26 +39,29 @@ public final class BestiaryRegressionSuite {
         }
     }
 
-    /**
-     * A BossArchetype enum PotionEffectType-mezői registry-t igényelnek, ezért a roster
-     * headless csak FORRÁSBÓL olvasható; a registry-mentes plainArchetypeName viszont a
-     * valódi metóduson fut.
-     */
+    /** The event roster owns only template ids; display identity comes from mob-templates.yml. */
     private static void bossRosterExposesCanonicalIdsAndPlainNames() throws Exception {
         final String source = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java"));
         final java.util.LinkedHashMap<String, String> roster = new java.util.LinkedHashMap<>();
         final java.util.regex.Matcher rows = java.util.regex.Pattern.compile(
-                "([A-Z_]+)\\(EntityType\\.[A-Z_]+,\\s*\"([^\"]+)\"").matcher(source);
+                "([A-Z_]+)\\(\"([a-z0-9_]+)\",\\s*[0-9.]+D\\)").matcher(source);
         while (rows.find()) {
             roster.put(rows.group(1).toLowerCase(java.util.Locale.ROOT), rows.group(2));
         }
         check(roster.size() >= 10, "boss roster exposes every archetype");
-        check(roster.containsKey("ring_warden") && roster.containsKey("bone_king"),
-                "archetype ids are lowercase enum names");
-        check(WorldBossManager.plainArchetypeName(roster.get("ring_warden"))
+        check("ring_warden".equals(roster.get("ring_warden"))
+                        && "bone_king".equals(roster.get("bone_king")),
+                "archetype ids resolve to canonical template ids");
+        final YamlConfiguration templates = YamlConfiguration.loadConfiguration(
+                new java.io.File("src/main/resources/config/mob-templates.yml"));
+        final String ringName = templates.getString("mob-templates." + roster.get("ring_warden")
+                + ".display-name", "");
+        final String warlordName = templates.getString("mob-templates." + roster.get("piglin_warlord")
+                + ".display-name", "");
+        check(WorldBossManager.plainArchetypeName(ringName)
                 .equals("A Gyűrűk Őre"), "plain name strips codes, symbols and the tag");
-        check(WorldBossManager.plainArchetypeName(roster.get("piglin_warlord"))
+        check(WorldBossManager.plainArchetypeName(warlordName)
                 .equals("Pokoli Hadúr"), "plain name canonical for the last roster row");
         check(source.contains("archetypeDisplayNames()"),
                 "runtime roster accessor exists for the GUI/PAPI denominators");
