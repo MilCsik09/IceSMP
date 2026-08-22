@@ -88,8 +88,9 @@ public final class AuthoredCreatureSpawnService {
     private final NamespacedKey roleKey;
     private final NamespacedKey rewardOwnerKey;
     private final NamespacedKey summonOwnerKey;
-    private final ConcurrentHashMap<UUID, java.util.Set<UUID>> summons = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Mob> summonMobs = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, java.util.Set<UUID>> activeSummonIds =
+            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Mob> activeSummonMobs = new ConcurrentHashMap<>();
 
     public AuthoredCreatureSpawnService(final JavaPlugin plugin, final MobTemplateRegistry templates,
                                         final MobScalingManager scaling,
@@ -146,9 +147,10 @@ public final class AuthoredCreatureSpawnService {
         pdc.set(rewardOwnerKey, PersistentDataType.STRING, request.rewardOwner().name());
         if (request.summonOwner() != null) {
             pdc.set(summonOwnerKey, PersistentDataType.STRING, request.summonOwner().toString());
-            summons.computeIfAbsent(request.summonOwner(), ignored -> ConcurrentHashMap.newKeySet())
+            activeSummonIds.computeIfAbsent(request.summonOwner(),
+                            ignored -> ConcurrentHashMap.newKeySet())
                     .add(mob.getUniqueId());
-            summonMobs.put(mob.getUniqueId(), mob);
+            activeSummonMobs.put(mob.getUniqueId(), mob);
         }
         if (request.transientEntity()) {
             mob.setPersistent(false);
@@ -174,10 +176,10 @@ public final class AuthoredCreatureSpawnService {
     }
 
     public void cleanupSummons(final UUID owner) {
-        final java.util.Set<UUID> ids = summons.remove(owner);
+        final java.util.Set<UUID> ids = activeSummonIds.remove(owner);
         if (ids == null) return;
         for (final UUID id : java.util.Set.copyOf(ids)) {
-            summonMobs.remove(id);
+            activeSummonMobs.remove(id);
             TransientEntities.removeById(plugin, id);
         }
     }
@@ -197,10 +199,10 @@ public final class AuthoredCreatureSpawnService {
 
     private void setSummonsPaused(final Mob owner, final boolean paused) {
         if (owner == null) return;
-        final java.util.Set<UUID> ids = summons.get(owner.getUniqueId());
+        final java.util.Set<UUID> ids = activeSummonIds.get(owner.getUniqueId());
         if (ids == null) return;
         for (final UUID id : java.util.Set.copyOf(ids)) {
-            final Mob add = summonMobs.get(id);
+            final Mob add = activeSummonMobs.get(id);
             if (add == null) continue;
             add.getScheduler().run(plugin, task -> {
                 if (!add.isValid()) return;
@@ -208,7 +210,7 @@ public final class AuthoredCreatureSpawnService {
                 add.setInvulnerable(paused);
                 if (paused) add.setTarget(null);
                 if (paused) abilities.pause(add); else abilities.resume(add);
-            }, () -> summonMobs.remove(id, add));
+            }, () -> activeSummonMobs.remove(id, add));
         }
     }
 
@@ -227,15 +229,15 @@ public final class AuthoredCreatureSpawnService {
     }
 
     private void forget(final Mob mob) {
-        summonMobs.remove(mob.getUniqueId(), mob);
+        activeSummonMobs.remove(mob.getUniqueId(), mob);
         final String raw = mob.getPersistentDataContainer().get(summonOwnerKey, PersistentDataType.STRING);
         if (raw == null) return;
         try {
             final UUID owner = UUID.fromString(raw);
-            final java.util.Set<UUID> ids = summons.get(owner);
+            final java.util.Set<UUID> ids = activeSummonIds.get(owner);
             if (ids != null) {
                 ids.remove(mob.getUniqueId());
-                if (ids.isEmpty()) summons.remove(owner, ids);
+                if (ids.isEmpty()) activeSummonIds.remove(owner, ids);
             }
         } catch (final IllegalArgumentException ignored) { }
     }
