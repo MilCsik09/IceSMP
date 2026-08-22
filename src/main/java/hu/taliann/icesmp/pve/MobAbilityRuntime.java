@@ -812,6 +812,13 @@ public final class MobAbilityRuntime implements Listener {
 
     public int activeStateCount() { return states.size(); }
 
+    /** Read-only inspection seam; never exposes seeds, PDC internals or per-player data. */
+    public List<String> activeAbilityIds(final Mob mob) {
+        final RuntimeState state = mob == null ? null : states.get(mob.getUniqueId());
+        return state == null ? List.of() : state.definitions.stream()
+                .map(MobAbilityDefinition::abilityId).toList();
+    }
+
     private static void heal(final LivingEntity entity, final double amount) {
         if (!entity.isValid() || entity.isDead() || amount <= 0.0D) return;
         final var max = entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
