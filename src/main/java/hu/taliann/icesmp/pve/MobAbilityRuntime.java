@@ -847,6 +847,15 @@ public final class MobAbilityRuntime implements Listener {
                 .map(MobAbilityDefinition::abilityId).toList();
     }
 
+    /** Bounded lifecycle flags for admin/runtime diagnostics; contains no identity or PDC data. */
+    public String activeStateSummary(final Mob mob) {
+        final RuntimeState state = mob == null ? null : states.get(mob.getUniqueId());
+        if (state == null) return "detached";
+        return "paused=" + state.paused + ",casting=" + state.casting
+                + ",tick=" + state.tick + ",recovery=" + state.recoveryUntilTick
+                + ",ready=" + state.readyAtTick;
+    }
+
     private static void heal(final LivingEntity entity, final double amount) {
         if (!entity.isValid() || entity.isDead() || amount <= 0.0D) return;
         final var max = entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
