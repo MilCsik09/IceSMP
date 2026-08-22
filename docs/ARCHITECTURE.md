@@ -169,25 +169,57 @@ equipment polling. A set transient modifier stabil `NamespacedKey`-t használ, �
 eltávolítja az előző példányt az új hozzáadása előtt. Ez belső telemetry/snapshot input, nem
 publikus gear score és nem loot-authority.
 
-Az ability runtime eseményvezérelt, legfeljebb 2048 aktív state-et tart, minden mobot
-a saját entity schedulerén kezel, a location-hatásokat region schedulerre adja át.
-A registry 11 technikájának rank/archetype eligibilityje, célzási szabálya, castideje,
-recoveryje és interruptibilitása explicit. A rank legfeljebb Normal/Veteran/Elite/
-Champion/Boss vonalon 1/2/3/4/5 technikát enged; a veszélyes castot vanilla partikula/
-hang telegráf előzi meg. A cast epoch megakadályozza a stale callback executiont,
-a konfigurált sebzésküszöb megszakíthatja az interruptible castot. Summon, ally buff,
-herd/area traversal, projectile és state élettartam bounded; terrain-rombolás nincs.
-Az Elite spawnkor legfeljebb két valid affixet kap, kombinációs tiltással és
-despawn/death/disable cleanup-pal. A `CombatTelemetry` csak bounded aggregált
-cast/execute/interrupt/hit számlálókat tart, játékosazonosítót nem.
+Az ability authority továbbra is a `MobAbilityDefinition` → `MobAbilityRegistry` →
+`MobAbilityRuntime` lánc. A #137 tizenegy `Kind` technikája source-compatible maradt, mellette
+nyolc jelenleg használt `COMPOSITE` definíció typed triggerből, legfeljebb nyolc conditionből
+és legfeljebb nyolc actionből épül. A bounded vocabulary csak a jelenlegi contenthez szükséges
+`DAMAGE`, `KNOCKBACK`, `DASH`, `RETREAT`, `GUARD` primitive-eket, valamint `ON_TIMER`,
+`ON_COMBAT_ENTER`, `ON_PROVOKED`, `ON_DAMAGED` triggereket tartalmazza; nincs expression
+language, általános scripting DSL vagy speciesenkénti Java mechanic. A target rule és az action
+target külön typed mező. A registry hibás trigger/condition/action/ability referenciára fail-fast,
+a runtime pedig cooldown, telegraph, recovery, interrupt és cast epoch mellett hajt végre.
 
-A külön `WildlifeRetaliationService` nem promotion vagy loot alrendszer. Csak direkt
-`EntityDamageByEntityEvent` esetén, játékos vagy játékos által lőtt projectile forrásnál
-vizsgál valóban passzív `Animals` entitást. A temperament stabil UUID-hashből és validált
-species súlyokból születik; baby/tamed állat fail-closed kimarad. Warning után az állat
-owner schedulerén indul a bounded reakció, a játékosmutáció pedig player scheduleren fut.
-Az azonos fajú herd assist max. hat jelöltet jár be, nem láncol, és nincs rank-, XP- vagy
-extra-loot oldali hatása.
+A `CreatureSpeciesRegistry` a `mob-templates.yml` egyetlen `creature-species` matrixát atomikusan
+publikálja. Runtime teljességi authority a Paper 1.21.11 `EntityType.values()` azon halmaza, ahol
+`isAlive && isSpawnable`, player nélkül; minden típusnak pontosan egy explicit row kell. A 91 row
+közös level/rank/stat/ability authorityra vetít, és category, disposition, temperament,
+provocation, social, reward, baby és tame policy szerint különbözik. Hiányzó runtime lookup
+`NON_COMBAT/VANILLA_ONLY` fallback, invalid config pedig startup-hiba: random agresszió nincs.
+
+A `CreatureProfileService` spawnkor PDC-be rögzíti a profile verziót, spawn source-ot,
+dispositiont, temperamentet, stabil reakciót és reward profilt. A level/rankot ugyanaz a
+`MobScalingManager` számolja Cow, Wolf, Zombie és Skeleton esetén; chunk load/restart nem reroll,
+mert a meglévő PDC marker authoritative. PASSIVE soha nem kezdeményez player combatot pusztán
+level vagy rank miatt. Valid provocation csak direkt player, player projectile vagy player-owned
+tameable damage; környezeti sebzés, etetés, tenyésztés, fejés, nyírás, mount, tame és lead nem
+provokáció. A UUID-seeded temperament és reaction entitynként stabil: az outcome `FLEE`, vagy a
+config szerint `WARN/FIGHT`, nem hitenként új RNG.
+
+`FIGHT` esetén a passzív creature ugyanabba a `MobAbilityRuntime` target/cooldown/cast/telegraph/
+interrupt/cleanup életciklusba lép, mint a hostile mob. A korábbi `WildlifeRetaliationService` és
+`WildlifeRetaliationPolicy` megszűnt, ezért nincs legacy+új double damage vagy double assist.
+Timeout, invalid/logout target, death, unload, leash-szerű távolságvesztés és shutdown cast epoch
+invalidációval bontja az authored combatot. A runtime legfeljebb 2048 aktív state-et tart, nincs
+world scan vagy per-tick YAML parse. PASSIVE timer technique csak authored combatban, NEUTRAL
+timer technique csak vanilla target mellett futhat; így Enderman/Wolf/Bee/Piglin vanilla trigger
+identityje nem válik proximity aggróvá.
+
+A social policy relationt, sugarat (max. 16), jelöltet (max. 32), asszisztenst (max. 6), szükséges
+temperamentet és cooldown-t deklarál. A shipped Cow policy ennél szűkebb: 6 blokk, 12 jelölt,
+2 asszisztens. Nincs rekurzív propagáció; a remote ally kizárólag saját entity schedulerén kap
+state-et. Bee/Wolf/Goat/Llama vanilla social/AI authorityt tart meg. Baby alapból csak identityt,
+nem combat kitet kap; owner-safe tameable az owner ellen nem lép authored combatba.
+
+A combat profile és reward profile külön authority. A normal survival wildlife mindig
+`VANILLA_ONLY`, tehát Elite Cow sem kap canonical gear-, soulstone- vagy class-XP faucetet.
+Spawner, spawn egg, breeding, command és custom forrású hostile profile sem kap automatikus
+faucetet; explicit event/template út `EXPLICIT_AUTHORED` markert használ. Rank a stat- és
+technique-komplexitást növelheti, dispositiont nem. A `CombatTelemetry` csak bounded species,
+provocation, outcome, social assist és technique aggregate-eket tart, PII nélkül.
+
+Az engine szándékosan nem encounter DSL. Boss phase, wave, objective, branching, delay/repeat,
+richer targeter és teljes threat authority a későbbi „Composable Encounter & Boss Authoring
+Runtime” scope határa; új primitive csak konkrét IceSMP content use case miatt kerülhet ide.
 
 A világboss startkor immutable résztvevő-snapshotot készít. A HP létszámgörbéje
 `1 + 0.65×(n-1)^0.8` (configolt és capelt), a damage csak logaritmikusan, legfeljebb

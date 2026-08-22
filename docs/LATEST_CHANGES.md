@@ -23,6 +23,23 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 > köztes mainline commit. A JAR nem tartalmaz Git SHA-t, ezért ez
 > `HIGH_CONFIDENCE`, nem `EXACT` azonosítás.
 
+## Unified Creature Combat Profiles — stacked foundation
+
+- Cow, Wolf, Zombie és Skeleton ugyanabból a canonical species/profile, level/rank/stat és
+  ability runtime authorityból él. A 91 soros Paper 1.21.11 matrixban a disposition és
+  engagement/provocation policy különbözteti meg, mikor léphetnek harcba.
+- A passzív állat levelt, rankot és physical technique-et kaphat, de nem kezdeményez.
+  A reakció stable UUID-seeded temperamentből FLEE vagy WARN/FIGHT; nem minden ütésnél új RNG.
+- Nyolc physical/defensive composition az öt jelenleg szükséges reusable primitive-ből épül.
+  A #137 hostile `Kind` definíciói kompatibilisek maradtak; MythicMobs-szerű DSL nem készült.
+- A régi wildlife damage/herd listener megszűnt. Fight és assist a közös cooldown/cast epoch/
+  disengage lifecycle-on, bounded entity schedulereken fut; Rabbit flee-first, Cow legfeljebb
+  két segítőt admitál, Bee/Wolf/Goat vanilla identityje megmarad.
+- Rank nem aggression és nem reward: az Elite Cow továbbra is PASSIVE/VANILLA_ONLY. Baby,
+  owner-safe tameable, breeding/farm interakció és spawner/egg/command reward faucet fail-closed.
+- A source és Paper runtime evidence elkészült, de a creature feel, tame/breeding, multiplayer
+  Folia region boundary és 100+ állatos farm továbbra is `HUMAN_GAMEPLAY_STAGING_REQUIRED`.
+
 ## Combat & Encounter foundation — stacked recalibration
 
 - A 160 páncéldarab és a már létező 25 fegyver/pajzs közös normalizált combat budgetet
@@ -38,9 +55,9 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
   használ. A 11 reusable technique target rule-t, vanilla telegráfot, castot, recoveryt,
   opcionális interruptot és bounded summon/ally/area viselkedést kapott; nincs globális
   mob scan vagy terrain-rombolás.
-- Az opcionális wildlife retaliation stabil timid/defensive/aggressive temperamentet,
-  rövid figyelmeztetést és nem láncoló herd assistot ad. Baby/tamed állat, nem játékos
-  damage és reward/rank promotion kimarad.
+- A parent recalibration első wildlife retaliation pilotja stabil temperamentet és bounded
+  herd assistet adott; a fenti stacked foundation ezt a külön listenert már a közös creature
+  profile/ability lifecycle-ba konszolidálja.
 - Az exact-head workflow valódi Paper 1.21.11 default ItemStack benchmarkot, a 160+25
   item-reportot, level-gate/TTK/technique/wildlife evidence-t és SHA-256 manifestet csomagol.
   A forrásoldali szimuláció nem helyettesíti a productionközeli Folia-, 50–60 player-,

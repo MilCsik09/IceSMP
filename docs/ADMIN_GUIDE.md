@@ -1301,19 +1301,26 @@ anyagláncok és Equipment Resource Pack 2.0 nem részei ennek a változásnak.
 - Precedencia: encounter override → authored location → MobTemplate → wilderness
   distance, majd territory/biome-or-dimension/depth/event bónusz. A safe-zone ramp
   megmarad; claim önmagában nem tesz minden területet biztonságossá.
-- `mob-templates.yml`: ability-, loot-profile- és a 18 MobTemplate-authority.
-  Duplicate ID, invalid entity/rank/archetype, missing ability/loot vagy Bestiary ID
-  ütközés startupkor fail-fast. Vanilla fallbackhez nem kell minden mobot authoredolni.
+- `mob-templates.yml`: ability-, loot-profile-, 18 MobTemplate- és 91 soros
+  `creature-species` authority. A Paper runtime living/spawnable `EntityType` készletéhez
+  képest missing/extra row, invalid disposition/temperament/social/reward vagy missing
+  technique startupkor fail-fast; lookup fallbackje NON_COMBAT/VANILLA_ONLY.
 - A natural promotion csak `NATURAL` spawnnál sorsol Veteran/Elite rankot;
   protected-city selectorban nem. Mélység, Nether/End és Vérhold kis bounded bónuszt
   ad; Elite legfeljebb két valid affixet kap.
 - Az ability runtime globális scan helyett entity scheduler tickeket használ, legfeljebb
-  2048 aktív state-tel. A technikák rank/archetype eligibilityje, target rule-ja,
-  telegráfja, castja, recoveryje és interruptibilitása explicit. Cooldown, summon/ally
-  darabszám és lifespan bounded; disable/death/despawn cleanup kötelező, terrain damage nincs.
-- `world.yml` `wildlife-retaliation.*`: speciesenként stabil temperament-súlyok és
-  retaliation chance; baby/tamed kizárás, bounded warning/range/damage/knockback/cooldown,
-  valamint kis, nem láncoló same-species herd assist. Nem ad rankot vagy extra rewardot.
+  2048 aktív state-tel. A legacy `Kind` definíciók kompatibilisek; a `COMPOSITE` ability
+  typed trigger/condition/target/action listája legfeljebb 8+8 elem. A jelenlegi primitive
+  vocabulary öt elemű, a veszélyes action minimum 10 tick telegráfot igényel.
+- `creature-species.*`: category/disposition, level/rank, allowed temperament + súly,
+  stable fight-percent, provocation, base/rank technique, social cap, reward, baby és tame
+  policy. Ez az egyetlen wildlife truth source; a régi `wildlife-retaliation.*` config és
+  listener nincs használatban.
+- PASSIVE nem kezdeményez. Direkt player/player-projectile/player-owned damage után a
+  persisted reaction FLEE vagy WARN/FIGHT. Social felső korlát: 16 blokk, 32 jelölt,
+  6 asszisztens; shipped Cow: 6/12/2. Nincs recursive assist vagy cross-region direct mutation.
+- Reward audit: PASSIVE mindig VANILLA_ONLY; spawner/spawn egg/breeding/command/custom
+  hostile source sem automatikus faucet. Authored event/template explicit reward markert kap.
 - Világboss scaling: `1 + player-coefficient × (n-1)^player-exponent`, default
   `0.65`/`0.8`, max HP-szorzó `12`; damage per doubling `0.04`, max `1.18`.
   A snapshot startkor rögzül, late join nem skáláz újra. A power-inputot az
@@ -1325,13 +1332,17 @@ anyagláncok és Equipment Resource Pack 2.0 nem részei ennek a változásnak.
   operation receipt; full inventorynál nincs world drop. Restartkor COMMITTED
   eligibility kézbesíthető, PREPARED jelölt exact-before rollback.
 
-Mob 2.0 staging acceptance: (1) Lv. 1/10/25/50/70 és cap, (2) távolság + mélység +
+Mob 2.0 és unified creature staging acceptance — `HUMAN_GAMEPLAY_STAGING_REQUIRED`:
+(1) Lv. 1/10/25/50/70 és cap, (2) távolság + mélység +
 Deep Dark + territory + Vérhold, (3) Veteran/Elite max. két affix, (4) mind a 18 authored
 template és vanilla fallback, (5) telegráf/cast/caster death/target death/region hop/
 interrupt/recovery/disable, (6) 1/2/5/40 fős boss snapshot, late join/death/disconnect, (7) contribution,
 AFK és duplicate settlement, (8) tele inventory + reconnect/restart delivery, (9)
-timid/defensive/aggressive wildlife, baby/tamed/environmental damage és herd cap,
-(10) 50–60 online játékos melletti profiler-felvétel. Ments JAR SHA-256-ot, config snapshotot,
+Cow/Pig/Sheep population feel, Rabbit flee, Horse/Goat defense, Elite Passive no-auto-aggro,
+Wolf/Bee neutral control, baby/tamed/environmental/farm interaction és herd cap, (10)
+breeding/restart/chunk reload stabilitás, multiplayer Folia multi-region assist, (11) 100+
+állatos farm egy provokációval, (12) hostile Zombie/Skeleton/Spider/Creeper/Witch/Enderman
+control és (13) telegraph/counterplay. Ments JAR SHA-256-ot, config snapshotot,
 boss encounter ID-t és az érintett Profile operation receiptet.
 
 ### Üzenetfájlok

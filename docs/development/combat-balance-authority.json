@@ -11670,6 +11670,18 @@
   "technique_coverage": {
     "abilities": [
       {
+        "ability_id": "aquatic_ram",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 18,
+        "status": "VERIFIED",
+        "target_rule": "PROVOKER",
+        "telegraph_ticks": 18,
+        "template_uses": 0
+      },
+      {
         "ability_id": "call_frozen",
         "eligible_archetypes": [],
         "eligible_ranks": [],
@@ -11680,6 +11692,24 @@
         "target_rule": "SELF",
         "telegraph_ticks": 30,
         "template_uses": 2
+      },
+      {
+        "ability_id": "defensive_stomp",
+        "eligible_archetypes": [],
+        "eligible_ranks": [
+          "ELITE",
+          "CHAMPION",
+          "MINIBOSS",
+          "BOSS",
+          "WORLD_BOSS"
+        ],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 30,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 28,
+        "template_uses": 0
       },
       {
         "ability_id": "delayed_frost_rune",
@@ -11712,6 +11742,18 @@
         "template_uses": 4
       },
       {
+        "ability_id": "headbutt",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 20,
+        "status": "VERIFIED",
+        "target_rule": "PROVOKER",
+        "telegraph_ticks": 20,
+        "template_uses": 0
+      },
+      {
         "ability_id": "hunter_retreat",
         "eligible_archetypes": [
           "RANGED",
@@ -11740,6 +11782,42 @@
         "template_uses": 5
       },
       {
+        "ability_id": "panic_dash",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": false,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 10,
+        "status": "VERIFIED",
+        "target_rule": "PROVOKER",
+        "telegraph_ticks": 10,
+        "template_uses": 0
+      },
+      {
+        "ability_id": "panic_peck",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 15,
+        "status": "VERIFIED",
+        "target_rule": "PROVOKER",
+        "telegraph_ticks": 12,
+        "template_uses": 0
+      },
+      {
+        "ability_id": "rear_kick",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 22,
+        "status": "VERIFIED",
+        "target_rule": "PROVOKER",
+        "telegraph_ticks": 18,
+        "template_uses": 0
+      },
+      {
         "ability_id": "rime_burst",
         "eligible_archetypes": [],
         "eligible_ranks": [],
@@ -11750,6 +11828,30 @@
         "target_rule": "CURRENT_TARGET",
         "telegraph_ticks": 20,
         "template_uses": 6
+      },
+      {
+        "ability_id": "shell_brace",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": false,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 15,
+        "status": "VERIFIED",
+        "target_rule": "SELF",
+        "telegraph_ticks": 10,
+        "template_uses": 0
+      },
+      {
+        "ability_id": "short_charge",
+        "eligible_archetypes": [],
+        "eligible_ranks": [],
+        "interruptible": true,
+        "kind": "COMPOSITE",
+        "recovery_ticks": 24,
+        "status": "VERIFIED",
+        "target_rule": "PROVOKER",
+        "telegraph_ticks": 24,
+        "template_uses": 0
       },
       {
         "ability_id": "telegraphed_lunge",
@@ -11830,7 +11932,7 @@
         "template_uses": 1
       }
     ],
-    "ability_count": 11,
+    "ability_count": 19,
     "rank_defaults": {
       "BOSS": [
         "glacial_slam",
@@ -11868,167 +11970,1263 @@
     "template_count": 18
   },
   "wildlife_retaliation": {
+    "authority": "creature-species",
     "enabled": true,
-    "herd-assist": {
-      "enabled": true,
-      "maximum-allies": 2,
-      "radius": 6.0
-    },
+    "legacy-listener": "REMOVED",
     "species": {
-      "chicken": {
-        "cooldown-ticks": 220,
-        "damage": 0.5,
-        "enabled": true,
-        "knockback": 0.15,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 45.0,
-          "timid": 2.0
+      "ARMADILLO": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 180,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
         },
-        "retaliation-range": 2.5,
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "shell_brace"
+        ],
         "temperament": {
-          "aggressive": 1,
-          "defensive": 24,
-          "timid": 75
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "DEFENSIVE": 15,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 40,
+            "DEFENSIVE": 15,
+            "TIMID": 45
+          }
         }
       },
-      "cow": {
-        "cooldown-ticks": 160,
-        "damage": 2.0,
-        "enabled": true,
-        "knockback": 0.55,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 70.0,
-          "timid": 8.0
+      "AXOLOTL": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 180,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
         },
-        "retaliation-range": 4.0,
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "aquatic_ram"
+        ],
         "temperament": {
-          "aggressive": 15,
-          "defensive": 50,
-          "timid": 35
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 5,
+            "DEFENSIVE": 35,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 40,
+            "DEFENSIVE": 15,
+            "TIMID": 45
+          }
         }
       },
-      "donkey": {
-        "cooldown-ticks": 200,
-        "damage": 2.5,
-        "enabled": true,
-        "knockback": 0.7,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 75.0,
-          "timid": 10.0
+      "BAT": {
+        "archetype": "FLYING",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
         },
-        "retaliation-range": 4.5,
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
         "temperament": {
-          "aggressive": 15,
-          "defensive": 45,
-          "timid": 40
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 10,
+            "TIMID": 90
+          }
         }
       },
-      "goat": {
-        "cooldown-ticks": 180,
-        "damage": 3.0,
-        "enabled": true,
-        "knockback": 0.85,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 85.0,
-          "timid": 15.0
+      "CAMEL": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 220,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
         },
-        "retaliation-range": 5.0,
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "OWNER_SAFE",
+        "techniques": [
+          "rear_kick"
+        ],
         "temperament": {
-          "aggressive": 25,
-          "defensive": 45,
-          "timid": 30
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 5,
+            "DEFENSIVE": 45,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 55,
+            "DEFENSIVE": 20,
+            "TIMID": 25
+          }
         }
       },
-      "horse": {
-        "cooldown-ticks": 200,
-        "damage": 2.5,
-        "enabled": true,
-        "knockback": 0.7,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 70.0,
-          "timid": 10.0
+      "CAT": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
         },
-        "retaliation-range": 4.5,
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "OWNER_SAFE",
         "temperament": {
-          "aggressive": 10,
-          "defensive": 40,
-          "timid": 50
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 30,
+            "TIMID": 70
+          }
         }
       },
-      "mule": {
-        "cooldown-ticks": 200,
-        "damage": 3.0,
-        "enabled": true,
-        "knockback": 0.75,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 80.0,
-          "timid": 12.0
+      "CHICKEN": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
         },
-        "retaliation-range": 4.5,
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "panic_peck"
+        ],
         "temperament": {
-          "aggressive": 20,
-          "defensive": 45,
-          "timid": 35
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "DEFENSIVE": 35,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 20,
+            "DEFENSIVE": 5,
+            "TIMID": 75
+          }
         }
       },
-      "pig": {
-        "cooldown-ticks": 160,
-        "damage": 1.5,
-        "enabled": true,
-        "knockback": 0.45,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 65.0,
-          "timid": 8.0
+      "COD": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
         },
-        "retaliation-range": 3.5,
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
         "temperament": {
-          "aggressive": 10,
-          "defensive": 45,
-          "timid": 45
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 10,
+            "TIMID": 90
+          }
         }
       },
-      "rabbit": {
-        "cooldown-ticks": 220,
-        "damage": 0.5,
-        "enabled": true,
-        "knockback": 0.2,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 40.0,
-          "timid": 2.0
+      "COW": {
+        "archetype": "BRUISER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "rank-techniques": {
+          "ELITE": [
+            "defensive_stomp"
+          ],
+          "VETERAN": [
+            "short_charge"
+          ]
         },
-        "retaliation-range": 2.5,
+        "reaction": {
+          "combat-ticks": 240,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 240,
+          "maximum-assistants": 2,
+          "maximum-candidates": 12,
+          "radius": 6.0,
+          "relation": "SAME_SPECIES",
+          "required-temperaments": [
+            "DEFENSIVE",
+            "HERD_DEFENSIVE"
+          ]
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "headbutt"
+        ],
         "temperament": {
-          "aggressive": 1,
-          "defensive": 19,
-          "timid": 80
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE",
+            "HERD_DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 8,
+            "DEFENSIVE": 65,
+            "HERD_DEFENSIVE": 82,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 30,
+            "DEFENSIVE": 25,
+            "HERD_DEFENSIVE": 10,
+            "TIMID": 35
+          }
         }
       },
-      "sheep": {
-        "cooldown-ticks": 180,
-        "damage": 1.5,
-        "enabled": true,
-        "knockback": 0.45,
-        "retaliation-percent": {
-          "aggressive": 100.0,
-          "defensive": 60.0,
-          "timid": 5.0
+      "DOLPHIN": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 200,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
         },
-        "retaliation-range": 3.5,
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 260,
+          "maximum-assistants": 2,
+          "maximum-candidates": 12,
+          "radius": 8.0,
+          "relation": "SAME_SPECIES",
+          "required-temperaments": [
+            "PACK_DEFENSIVE"
+          ]
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "aquatic_ram"
+        ],
         "temperament": {
-          "aggressive": 5,
-          "defensive": 40,
-          "timid": 55
+          "allowed": [
+            "CALM",
+            "DEFENSIVE",
+            "PACK_DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 8,
+            "DEFENSIVE": 65,
+            "PACK_DEFENSIVE": 80
+          },
+          "weights": {
+            "CALM": 55,
+            "DEFENSIVE": 30,
+            "PACK_DEFENSIVE": 15
+          }
+        }
+      },
+      "DONKEY": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 220,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "OWNER_SAFE",
+        "techniques": [
+          "rear_kick"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 8,
+            "DEFENSIVE": 68,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 40,
+            "DEFENSIVE": 25,
+            "TIMID": 35
+          }
+        }
+      },
+      "FOX": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 140,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 25,
+            "TIMID": 75
+          }
+        }
+      },
+      "FROG": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 15,
+            "TIMID": 85
+          }
+        }
+      },
+      "GLOW_SQUID": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 10,
+            "TIMID": 90
+          }
+        }
+      },
+      "HORSE": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 220,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "OWNER_SAFE",
+        "techniques": [
+          "rear_kick"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 6,
+            "DEFENSIVE": 62,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 40,
+            "DEFENSIVE": 20,
+            "TIMID": 40
+          }
+        }
+      },
+      "MOOSHROOM": {
+        "archetype": "BRUISER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "rank-techniques": {
+          "ELITE": [
+            "defensive_stomp"
+          ],
+          "VETERAN": [
+            "short_charge"
+          ]
+        },
+        "reaction": {
+          "combat-ticks": 240,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 240,
+          "maximum-assistants": 2,
+          "maximum-candidates": 12,
+          "radius": 6.0,
+          "relation": "SAME_SPECIES",
+          "required-temperaments": [
+            "DEFENSIVE",
+            "HERD_DEFENSIVE"
+          ]
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "headbutt"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE",
+            "HERD_DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 8,
+            "DEFENSIVE": 65,
+            "HERD_DEFENSIVE": 82,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 30,
+            "DEFENSIVE": 25,
+            "HERD_DEFENSIVE": 10,
+            "TIMID": 35
+          }
+        }
+      },
+      "MULE": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 220,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "OWNER_SAFE",
+        "techniques": [
+          "rear_kick"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 10,
+            "DEFENSIVE": 72,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 40,
+            "DEFENSIVE": 30,
+            "TIMID": 30
+          }
+        }
+      },
+      "NAUTILUS": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 180,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "OWNER_SAFE",
+        "techniques": [
+          "shell_brace"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "DEFENSIVE": 25,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 50,
+            "DEFENSIVE": 15,
+            "TIMID": 35
+          }
+        }
+      },
+      "OCELOT": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 140,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 25,
+            "TIMID": 75
+          }
+        }
+      },
+      "PARROT": {
+        "archetype": "FLYING",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "OWNER_SAFE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 20,
+            "TIMID": 80
+          }
+        }
+      },
+      "PIG": {
+        "archetype": "CHARGER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "rank-techniques": {
+          "VETERAN": [
+            "short_charge"
+          ]
+        },
+        "reaction": {
+          "combat-ticks": 200,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "headbutt"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 7,
+            "DEFENSIVE": 58,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 35,
+            "DEFENSIVE": 20,
+            "TIMID": 45
+          }
+        }
+      },
+      "PUFFERFISH": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "VANILLA"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 20,
+            "TIMID": 80
+          }
+        }
+      },
+      "RABBIT": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 8,
+            "TIMID": 92
+          }
+        }
+      },
+      "SALMON": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 10,
+            "TIMID": 90
+          }
+        }
+      },
+      "SHEEP": {
+        "archetype": "CHARGER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "rank-techniques": {
+          "VETERAN": [
+            "short_charge"
+          ]
+        },
+        "reaction": {
+          "combat-ticks": 180,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 260,
+          "maximum-assistants": 1,
+          "maximum-candidates": 10,
+          "radius": 5.0,
+          "relation": "SAME_SPECIES",
+          "required-temperaments": [
+            "HERD_DEFENSIVE"
+          ]
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "headbutt"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE",
+            "HERD_DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 3,
+            "DEFENSIVE": 48,
+            "HERD_DEFENSIVE": 65,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 25,
+            "DEFENSIVE": 15,
+            "HERD_DEFENSIVE": 5,
+            "TIMID": 55
+          }
+        }
+      },
+      "SNIFFER": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 200,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "headbutt"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 2,
+            "DEFENSIVE": 32,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 60,
+            "DEFENSIVE": 15,
+            "TIMID": 25
+          }
+        }
+      },
+      "SQUID": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 10,
+            "TIMID": 90
+          }
+        }
+      },
+      "STRIDER": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 140,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 35,
+            "TIMID": 65
+          }
+        }
+      },
+      "TROPICAL_FISH": {
+        "archetype": "SKIRMISHER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 120,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 10,
+            "TIMID": 90
+          }
+        }
+      },
+      "TURTLE": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 160,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": false
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "NOT_TAMEABLE",
+        "techniques": [
+          "shell_brace"
+        ],
+        "temperament": {
+          "allowed": [
+            "TIMID",
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 0,
+            "DEFENSIVE": 10,
+            "TIMID": 0
+          },
+          "weights": {
+            "CALM": 45,
+            "DEFENSIVE": 10,
+            "TIMID": 45
+          }
+        }
+      },
+      "ZOMBIE_HORSE": {
+        "archetype": "DEFENDER",
+        "baby-policy": "IDENTITY_ONLY",
+        "category": "PASSIVE",
+        "disposition": "PASSIVE",
+        "level-enabled": true,
+        "provocation": "DIRECT_PLAYER",
+        "rank-enabled": true,
+        "reaction": {
+          "combat-ticks": 200,
+          "flee-technique": "panic_dash",
+          "warning-before-fight": true
+        },
+        "reward-profile": "VANILLA_ONLY",
+        "social": {
+          "cooldown-ticks": 200,
+          "maximum-assistants": 0,
+          "maximum-candidates": 0,
+          "radius": 0,
+          "relation": "NONE"
+        },
+        "tame-policy": "OWNER_SAFE",
+        "techniques": [
+          "rear_kick"
+        ],
+        "temperament": {
+          "allowed": [
+            "CALM",
+            "DEFENSIVE"
+          ],
+          "fight-percent": {
+            "CALM": 5,
+            "DEFENSIVE": 55
+          },
+          "weights": {
+            "CALM": 60,
+            "DEFENSIVE": 40
+          }
         }
       }
     },
-    "warning-ticks": 20
+    "species-count": 30
   }
 }

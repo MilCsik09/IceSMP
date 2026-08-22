@@ -1148,20 +1148,26 @@ encounter vagy authored hely, a MobTemplate, majd a territory/biome/mélység/t�
 és event állapot határozza meg. A HP gyorsabb, a damage lassabb, külön bounded görbén
 nő; 70 fölötti boss csak authored override, nem wilderness extrapoláció.
 
-A rendszer 18 canonical MobTemplate-et használ surface/night/deep/swamp/Nether/End/
-storm és meglévő event forrásokra, miközben a többi vanilla mob fallbackként
-helyes marad. A hét rank: Normal, Veteran, Elite, Champion, Miniboss, Boss és World
-Boss; a 12 archetype közös ability registryre épül. Tizenegy reusable technika rank-
-és archetype-engedélyt, célzási szabályt, telegráfot, castot, recoveryt és opcionális
-sebzés-interruptot kap. A magasabb rank armor- és óvatos mobility-karaktert is hordoz,
-nem pusztán több HP-t; az Elite spawnkor legfeljebb két biztonságos affixet kaphat.
-Az invasion hullámai/bajnoka, a kultisták és a Wild Hunt canonical rankot kapnak.
+A rendszer 18 canonical MobTemplate-et és egy 91 soros Paper 1.21.11 species matrixot
+használ. A hét rank és 12 archetype közös ability registryre épül. A #137 tizenegy legacy
+`Kind` technikája mellett nyolc authored composition használja az öt ténylegesen szükséges
+typed primitive-et (`DAMAGE`, `KNOCKBACK`, `DASH`, `RETREAT`, `GUARD`). Új Cow/Sheep/Pig/
+Horse kit authored paraméterekkel bővíthető, species-specific listener/service nélkül.
 
-Az opcionális `wildlife-retaliation` réteg a valóban passzív állatokhoz stabil,
-UUID-alapú timid/defensive/aggressive temperamentet rendel. Csak közvetlen játékos-
-vagy játékoslövedék-sebzés válthat ki rövid, előre jelzett és cooldownos visszavágást;
-baby és megszelídített állat kimarad. Az azonos fajú herd assist kis sugarú és darabszámú,
-nem láncol, és a rendszer nem ad mob rankot, extra lootot vagy reward-promóciót.
+PASSIVE, NEUTRAL, HOSTILE és NON_COMBAT elsősorban azt szabja meg, mikor nyílhat combat;
+level, rank, stat és technique ettől független. A passzív creature stable UUID-seeded
+TIMID/CALM/DEFENSIVE/TERRITORIAL/HERD_DEFENSIVE/PACK_DEFENSIVE policyból kap FLEE vagy
+WARN/FIGHT reakciót, így ugyanaz az entity nem dob új személyiséget minden ütésnél. Csak
+player, player projectile vagy player-owned valid damage provokál. Fight esetén ugyanaz a
+telegraph/cooldown/cast epoch/disengage runtime fut, mint hostile mobnál; a legacy wildlife
+damage listener megszűnt. Cow bounded herd defense-et, Rabbit flee-first identitást kap;
+Goat/Bee/Wolf/Llama és más neutral fajok vanilla trigger/social viselkedése megmarad.
+
+Minden combat-capable row canonical level/rank projectiont kap, de Elite vagy Lv40 PASSIVE
+nem auto-aggro. Baby alapból nem kap authored combatot, owner-safe tameable nem fordul a gazda
+ellen. A social query sugaras, jelölt- és asszisztens-capelt, nem rekurzív és entity-scheduleres.
+Passzív wildlife rewardja `VANILLA_ONLY`: a combat capability, level vagy rank önmagában nem
+ad gear-, soulstone-, encounter- vagy class-XP jutalmat.
 
 A világboss startkor stabil, csökkenő hozadékú player-count és élő equipped-CombatPower
 snapshotot készít. A power csak valid main/offhand+armor canonical itemek tényleges
@@ -1185,8 +1191,9 @@ reconnectig függőben marad, nem esik a földre.
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.yml` `mob-scaling.*`, `wildlife-retaliation.*` és `world-events.world-boss.*`,
-  `mob-templates.yml`, `loot.*`, `itemization.loot.*`, bestiary- (mérföldkövek,
+- Config: `world.yml` `mob-scaling.*` és `world-events.world-boss.*`,
+  `mob-templates.yml` `mob-abilities`, `creature-species`, `mob-templates`, `loot.*`,
+  `itemization.loot.*`, bestiary- (mérföldkövek,
   `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`) és miniondefiníciók.
 - Tartós állapot: Bestiárium progress, bounded authored-loot előzmény és egyes
   loot/event state-ek tartósak; mob/ability/ledger entity runtime. A személyes boss
