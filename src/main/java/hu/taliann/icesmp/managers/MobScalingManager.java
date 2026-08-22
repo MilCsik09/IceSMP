@@ -5,6 +5,8 @@ import hu.taliann.icesmp.pve.MobProgressionPolicy;
 import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.pve.MobTemplate;
 import hu.taliann.icesmp.pve.MobTemplateRegistry;
+import hu.taliann.icesmp.pve.CreatureSpeciesPolicy;
+import hu.taliann.icesmp.pve.CreatureSpeciesRegistry;
 import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -14,12 +16,10 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.EnumSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +52,7 @@ public final class MobScalingManager {
     private final BloodMoonManager bloodMoonManager;
     private final TerritoryManager territoryManager;
     private final MobTemplateRegistry mobTemplates;
+    private final CreatureSpeciesRegistry creatureSpecies;
     private final NamespacedKey mobLevelKey;
     private final NamespacedKey mobTemplateKey;
     private final NamespacedKey mobRankKey;
@@ -63,12 +64,10 @@ public final class MobScalingManager {
     private final NamespacedKey territoryZombificationBaselineKey;
     private final NamespacedKey eventBurnKey;
     private final NamespacedKey eventZombificationKey;
-    private final Set<SpawnReason> ignoredSpawnReasons = EnumSet.noneOf(SpawnReason.class);
 
     private boolean enabled;
     private double blocksPerLevel;
     private MobProgressionPolicy.Tuning progressionTuning = MobProgressionPolicy.Tuning.defaults();
-    private boolean hostileOnly;
     private boolean nameEnabled;
     private boolean nameVisible;
     private String namePrefix;
@@ -77,12 +76,14 @@ public final class MobScalingManager {
     public MobScalingManager(final JavaPlugin plugin, final ConfigManager configManager,
                              final BloodMoonManager bloodMoonManager,
                              final TerritoryManager territoryManager,
-                             final MobTemplateRegistry mobTemplates) {
+                             final MobTemplateRegistry mobTemplates,
+                             final CreatureSpeciesRegistry creatureSpecies) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.bloodMoonManager = bloodMoonManager;
         this.territoryManager = territoryManager;
         this.mobTemplates = mobTemplates;
+        this.creatureSpecies = creatureSpecies;
         this.mobLevelKey = new NamespacedKey(plugin, "mob_level");
         this.mobTemplateKey = new NamespacedKey(plugin, "mob_template");
         this.mobRankKey = new NamespacedKey(plugin, "mob_rank");
@@ -108,7 +109,6 @@ public final class MobScalingManager {
                 configManager.getDouble("mob-scaling.curves.damage-per-level", 0.025D),
                 configManager.getDouble("mob-scaling.curves.maximum-health-multiplier", 8.0D),
                 configManager.getDouble("mob-scaling.curves.maximum-damage-multiplier", 3.0D));
-        hostileOnly = configManager.getBoolean("mob-scaling.hostile-only", true);
         nameEnabled = configManager.getBoolean("mob-scaling.name.enabled", true);
         // Egyértelmű név: always-visible (true = falakon át/messziről is látszik; false =
         // csak ránézésre). A régi 'visible' kulcs legacy-fallbackként él tovább.
@@ -118,16 +118,6 @@ public final class MobScalingManager {
                 : configManager.getBoolean("mob-scaling.name.visible", true);
         namePrefix = configManager.getString("mob-scaling.name.prefix", "&7[Lvl %level%] ");
         nameColor = resolveColor(configManager.getString("mob-scaling.name.color", "WHITE"));
-
-        ignoredSpawnReasons.clear();
-        final List<String> rawReasons = configManager.getStringList("mob-scaling.ignored-spawn-reasons");
-        for (final String rawReason : rawReasons) {
-            try {
-                ignoredSpawnReasons.add(SpawnReason.valueOf(rawReason.trim().toUpperCase(Locale.ROOT)));
-            } catch (final IllegalArgumentException exception) {
-                plugin.getLogger().warning("Unknown spawn reason in 'mob-scaling.ignored-spawn-reasons': " + rawReason);
-            }
-        }
 
         if (enabled) {
             hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager,
@@ -151,13 +141,13 @@ public final class MobScalingManager {
      */
     public void applyScaling(final LivingEntity entity, final SpawnReason spawnReason) {
         reconcileTerritoryProtection(entity);
-        if (!enabled || entity == null || ignoredSpawnReasons.contains(spawnReason)) {
+        if (!enabled || entity == null
+                || spawnReason == SpawnReason.CUSTOM || spawnReason == SpawnReason.COMMAND) {
             return;
         }
 
-        if (hostileOnly && !(entity instanceof Monster)) {
-            return;
-        }
+        final CreatureSpeciesPolicy species = creatureSpecies.profile(entity.getType());
+        if (!species.levelEnabled()) return;
 
         if (entity.getPersistentDataContainer().has(mobLevelKey, PersistentDataType.INTEGER)) {
             return;
@@ -169,19 +159,21 @@ public final class MobScalingManager {
                 location.getBlock().getBiome().getKey(), naturalContext(location)).orElse(null);
         final Integer templateLevel = template == null ? null
                 : template.levelAt(java.util.concurrent.ThreadLocalRandom.current().nextDouble());
-        MobRank rank = template == null ? MobRank.NORMAL : template.rank();
-        if (rank == MobRank.NORMAL) rank = promotedRank(spawnReason, zoneSelectors, location);
+        MobRank rank = template == null || !species.rankEnabled() ? MobRank.NORMAL : template.rank();
+        if (species.rankEnabled() && rank == MobRank.NORMAL) {
+            rank = promotedRank(spawnReason, zoneSelectors, location);
+        }
         final MobProgressionPolicy.Resolution resolution = MobProgressionPolicy.resolve(
                 new MobProgressionPolicy.Context(null, null, templateLevel,
                         wildernessBaseLevel(location), zoneBonusLevels(zoneSelectors),
                         biomeBonusLevels(location), depthBonusLevels(location),
                         bloodMoonManager.getBonusMobLevels(), false), progressionTuning);
-        final List<EliteAffix> affixes = rank == MobRank.ELITE
+        final List<EliteAffix> affixes = rank == MobRank.ELITE && species.authoredRewardEligible()
                 ? rollAffixes(template) : List.of();
 
         // Ritka variáns sorsolása CSAK ténylegesen szintezett mobra (a szint-kapu
         // után, hogy a jelöletlen mob ne kapjon variáns-tageket).
-        maybeMakeRareVariant(entity);
+        if (species.authoredRewardEligible()) maybeMakeRareVariant(entity);
         applyLevel(entity, resolution.level(), rank, template, affixes);
     }
 
@@ -218,6 +210,7 @@ public final class MobScalingManager {
         final List<EliteAffix> affixes = rank == MobRank.ELITE
                 ? rollAffixes(template) : List.of();
         applyLevel(entity, boundedLevel, rank, template, affixes);
+        hu.taliann.icesmp.pve.CreatureProfileService.markExplicitAuthoredReward(entity);
         if (template == null && archetypeId != null && !archetypeId.isBlank()) {
             entity.getPersistentDataContainer().set(mobArchetypeKey,
                     PersistentDataType.STRING, archetypeId.trim().toUpperCase(Locale.ROOT));
@@ -236,6 +229,7 @@ public final class MobScalingManager {
                 requested, null, null, 1, 0, 0, 0, 0,
                 template.rank().bossLike()), progressionTuning).level();
         applyLevel(entity, level, template.rank(), template, List.of());
+        hu.taliann.icesmp.pve.CreatureProfileService.markExplicitAuthoredReward(entity);
     }
 
     /** Metadata-only seam for encounter engines that own their own dynamic attribute snapshot. */
@@ -246,6 +240,7 @@ public final class MobScalingManager {
         final var pdc = entity.getPersistentDataContainer();
         pdc.set(mobLevelKey, PersistentDataType.INTEGER, level);
         pdc.set(mobRankKey, PersistentDataType.STRING, rank.name());
+        hu.taliann.icesmp.pve.CreatureProfileService.markExplicitAuthoredReward(entity);
         if (templateId != null && !templateId.isBlank()) {
             final MobTemplate template = mobTemplates.require(templateId);
             pdc.set(mobTemplateKey, PersistentDataType.STRING, template.mobId());

@@ -220,9 +220,11 @@ public final class IceSMPCore {
     private final MinionManager minionManager;
     private final hu.taliann.icesmp.managers.TotemManager totemManager;
     private final hu.taliann.icesmp.pve.MobAbilityRegistry mobAbilityRegistry;
+    private final hu.taliann.icesmp.pve.CreatureSpeciesRegistry creatureSpeciesRegistry;
     private final hu.taliann.icesmp.pve.MobTemplateRegistry mobTemplateRegistry;
     private final MobScalingManager mobScalingManager;
     private final hu.taliann.icesmp.pve.MobAbilityRuntime mobAbilityRuntime;
+    private final hu.taliann.icesmp.pve.CreatureProfileService creatureProfileService;
     private final InvasionManager invasionManager;
     private final CaptureItemFactory captureItemFactory;
     private final PetManager petManager;
@@ -415,12 +417,17 @@ public final class IceSMPCore {
         this.worldBossManager = new WorldBossManager(plugin, configManager, messageManager, factionManager, factionTreasuryManager, seasonManager);
         this.introManager = new IntroManager(plugin, configManager);
         this.mobAbilityRegistry = new hu.taliann.icesmp.pve.MobAbilityRegistry(configManager);
+        this.creatureSpeciesRegistry = new hu.taliann.icesmp.pve.CreatureSpeciesRegistry(
+                configManager, mobAbilityRegistry);
         this.mobTemplateRegistry = new hu.taliann.icesmp.pve.MobTemplateRegistry(
                 configManager, mobAbilityRegistry);
         this.mobScalingManager = new MobScalingManager(plugin, configManager,
-                bloodMoonManager, territoryManager, mobTemplateRegistry);
+                bloodMoonManager, territoryManager, mobTemplateRegistry, creatureSpeciesRegistry);
         this.mobAbilityRuntime = new hu.taliann.icesmp.pve.MobAbilityRuntime(
-                plugin, configManager, mobScalingManager, mobTemplateRegistry, mobAbilityRegistry);
+                plugin, configManager, mobScalingManager, mobTemplateRegistry, mobAbilityRegistry,
+                creatureSpeciesRegistry);
+        this.creatureProfileService = new hu.taliann.icesmp.pve.CreatureProfileService(
+                plugin, creatureSpeciesRegistry, mobScalingManager, mobAbilityRuntime);
         this.invasionManager = new InvasionManager(plugin, configManager, mobScalingManager, messageManager);
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.professionRecipeManager = new ProfessionRecipeManager(plugin, configManager);
@@ -1017,6 +1024,7 @@ public final class IceSMPCore {
         sitManager.reload();
         // Config-derived (load-only) managers first, then every registered persistent store.
         mobAbilityRegistry.load();
+        creatureSpeciesRegistry.load();
         mobTemplateRegistry.load();
         mobScalingManager.load();
         craftingRestrictionManager.load();
@@ -1711,6 +1719,7 @@ public final class IceSMPCore {
             relicManager.load();
             classRelicService.reload();
             mobAbilityRegistry.load();
+            creatureSpeciesRegistry.load();
             mobTemplateRegistry.load();
             mobScalingManager.load();
             craftingRestrictionManager.load();
@@ -1947,9 +1956,8 @@ public final class IceSMPCore {
         clientBridge.register();
         pluginManager.registerEvents(totemManager, plugin);
         pluginManager.registerEvents(new MobScalingListener(mobScalingManager), plugin);
+        pluginManager.registerEvents(creatureProfileService, plugin);
         pluginManager.registerEvents(mobAbilityRuntime, plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.pve.WildlifeRetaliationService(
-                plugin, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.EquipmentProficiencyListener(
                 plugin, equipmentProficiencyService, itemIdentityService), plugin);
         pluginManager.registerEvents(equippedCombatPowerService, plugin);

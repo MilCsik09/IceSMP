@@ -123,6 +123,331 @@ mob-abilities:
     eligible-ranks: [ CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
     tuning: { duration-ticks: 120 }
 
+  # Bounded physical primitives used by the creature species matrix. These are authored
+  # compositions, not species-specific Java mechanics.
+  panic_dash:
+    kind: COMPOSITE
+    triggers: [ ON_PROVOKED ]
+    cooldown-ticks: 100
+    telegraph-ticks: 10
+    recovery-ticks: 10
+    target-rule: PROVOKER
+    interruptible: false
+    radius: 8.0
+    power: 1.05
+    max-summons: 0
+    conditions:
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+    actions:
+      - { type: RETREAT, target: PROVOKER, parameters: { strength: 1.05 } }
+  headbutt:
+    kind: COMPOSITE
+    triggers: [ ON_COMBAT_ENTER, ON_TIMER ]
+    cooldown-ticks: 120
+    telegraph-ticks: 20
+    recovery-ticks: 20
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 5.0
+    power: 2.0
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 6.0 }
+    actions:
+      - { type: DASH, target: PROVOKER, parameters: { strength: 0.72 } }
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 2.0, per-level: 0.008, maximum-level-multiplier: 1.45 } }
+      - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.48, per-level: 0.004, maximum-level-multiplier: 1.20 } }
+  short_charge:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 180
+    telegraph-ticks: 24
+    recovery-ticks: 24
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 7.0
+    power: 3.0
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 8.0 }
+    actions:
+      - { type: DASH, target: PROVOKER, parameters: { strength: 1.05 } }
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 3.0, per-level: 0.008, maximum-level-multiplier: 1.45 } }
+      - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.72, per-level: 0.004, maximum-level-multiplier: 1.20 } }
+  defensive_stomp:
+    kind: COMPOSITE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 220
+    telegraph-ticks: 28
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 3.5
+    power: 2.5
+    max-summons: 0
+    eligible-ranks: [ ELITE, CHAMPION, MINIBOSS, BOSS, WORLD_BOSS ]
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+      - { type: HEALTH_BELOW, value: 0.65 }
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 2.5, radius: 3.5, per-level: 0.008, maximum-level-multiplier: 1.45 } }
+      - { type: KNOCKBACK, target: NEARBY_PLAYERS, parameters: { strength: 0.70, radius: 3.5 } }
+  rear_kick:
+    kind: COMPOSITE
+    triggers: [ ON_COMBAT_ENTER, ON_TIMER ]
+    cooldown-ticks: 150
+    telegraph-ticks: 18
+    recovery-ticks: 22
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 4.5
+    power: 2.5
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: UNTAMED, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 5.0 }
+    actions:
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 2.5, per-level: 0.008, maximum-level-multiplier: 1.45 } }
+      - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.78, per-level: 0.004, maximum-level-multiplier: 1.20 } }
+  panic_peck:
+    kind: COMPOSITE
+    triggers: [ ON_COMBAT_ENTER, ON_TIMER ]
+    cooldown-ticks: 100
+    telegraph-ticks: 12
+    recovery-ticks: 15
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 2.5
+    power: 0.5
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 3.0 }
+    actions:
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 0.5, per-level: 0.006, maximum-level-multiplier: 1.30 } }
+  shell_brace:
+    kind: COMPOSITE
+    triggers: [ ON_DAMAGED ]
+    cooldown-ticks: 180
+    telegraph-ticks: 10
+    recovery-ticks: 15
+    target-rule: SELF
+    interruptible: false
+    radius: 2.0
+    power: 0.0
+    max-summons: 0
+    conditions:
+      - { type: ADULT, value: 0 }
+    actions:
+      - { type: GUARD, target: SELF, parameters: { duration-ticks: 100, amplifier: 0 } }
+  aquatic_ram:
+    kind: COMPOSITE
+    triggers: [ ON_COMBAT_ENTER, ON_TIMER ]
+    cooldown-ticks: 140
+    telegraph-ticks: 18
+    recovery-ticks: 18
+    target-rule: PROVOKER
+    interruptible: true
+    radius: 5.0
+    power: 1.5
+    max-summons: 0
+    conditions:
+      - { type: COMBAT_ACTIVE, value: 0 }
+      - { type: ADULT, value: 0 }
+      - { type: DISTANCE_WITHIN, value: 6.0 }
+    actions:
+      - { type: DASH, target: PROVOKER, parameters: { strength: 0.85 } }
+      - { type: DAMAGE, target: PROVOKER, parameters: { amount: 1.5, per-level: 0.006, maximum-level-multiplier: 1.35 } }
+      - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.40 } }
+
+# Paper 1.21.11 EntityType.values() is the runtime completeness authority. Every living,
+# spawnable, non-player type has exactly one explicit row; missing rows fail startup/CI closed.
+creature-species:
+  ALLAY: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SUPPORT, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: OWNER_SAFE }
+  ARMOR_STAND: { category: CIVILIAN, disposition: NON_COMBAT, archetype: DEFENDER, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  COPPER_GOLEM: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SUPPORT, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  HAPPY_GHAST: { category: CIVILIAN, disposition: NON_COMBAT, archetype: FLYING, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: OWNER_SAFE }
+  MANNEQUIN: { category: CIVILIAN, disposition: NON_COMBAT, archetype: DEFENDER, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  VILLAGER: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SUPPORT, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  WANDERING_TRADER: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SUPPORT, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+
+  ARMADILLO:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: DEFENDER
+    temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 45, CALM: 40, DEFENSIVE: 15 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 15 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: true, combat-ticks: 180, flee-technique: panic_dash }
+    techniques: [ shell_brace ]
+    social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  AXOLOTL:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: SKIRMISHER
+    temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 45, CALM: 40, DEFENSIVE: 15 }, fight-percent: { TIMID: 0, CALM: 5, DEFENSIVE: 35 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: false, combat-ticks: 180, flee-technique: panic_dash }
+    techniques: [ aquatic_ram ]
+    social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  BAT: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: FLYING, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  CAMEL: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 25, CALM: 55, DEFENSIVE: 20 }, fight-percent: { TIMID: 0, CALM: 5, DEFENSIVE: 45 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 220, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  CAT: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 70, CALM: 30 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  CHICKEN:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: SKIRMISHER
+    temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 75, CALM: 20, DEFENSIVE: 5 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 35 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }
+    techniques: [ panic_peck ]
+    social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  COD: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  COW:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: BRUISER
+    temperament: { allowed: [ TIMID, CALM, DEFENSIVE, HERD_DEFENSIVE ], weights: { TIMID: 35, CALM: 30, DEFENSIVE: 25, HERD_DEFENSIVE: 10 }, fight-percent: { TIMID: 0, CALM: 8, DEFENSIVE: 65, HERD_DEFENSIVE: 82 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: true, combat-ticks: 240, flee-technique: panic_dash }
+    techniques: [ headbutt ]
+    rank-techniques: { VETERAN: [ short_charge ], ELITE: [ defensive_stomp ] }
+    social: { relation: SAME_SPECIES, radius: 6.0, maximum-assistants: 2, required-temperaments: [ DEFENSIVE, HERD_DEFENSIVE ], cooldown-ticks: 240, maximum-candidates: 12 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  DOLPHIN:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: SKIRMISHER
+    temperament: { allowed: [ CALM, DEFENSIVE, PACK_DEFENSIVE ], weights: { CALM: 55, DEFENSIVE: 30, PACK_DEFENSIVE: 15 }, fight-percent: { CALM: 8, DEFENSIVE: 65, PACK_DEFENSIVE: 80 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: true, combat-ticks: 200, flee-technique: panic_dash }
+    techniques: [ aquatic_ram ]
+    social: { relation: SAME_SPECIES, radius: 8.0, maximum-assistants: 2, required-temperaments: [ PACK_DEFENSIVE ], cooldown-ticks: 260, maximum-candidates: 12 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  DONKEY: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 35, CALM: 40, DEFENSIVE: 25 }, fight-percent: { TIMID: 0, CALM: 8, DEFENSIVE: 68 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 220, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  FOX: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 75, CALM: 25 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 140, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  FROG: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 85, CALM: 15 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  GLOW_SQUID: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  HORSE: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 40, CALM: 40, DEFENSIVE: 20 }, fight-percent: { TIMID: 0, CALM: 6, DEFENSIVE: 62 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 220, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  MOOSHROOM: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: BRUISER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE, HERD_DEFENSIVE ], weights: { TIMID: 35, CALM: 30, DEFENSIVE: 25, HERD_DEFENSIVE: 10 }, fight-percent: { TIMID: 0, CALM: 8, DEFENSIVE: 65, HERD_DEFENSIVE: 82 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 240, flee-technique: panic_dash }, techniques: [ headbutt ], rank-techniques: { VETERAN: [ short_charge ], ELITE: [ defensive_stomp ] }, social: { relation: SAME_SPECIES, radius: 6.0, maximum-assistants: 2, required-temperaments: [ DEFENSIVE, HERD_DEFENSIVE ], cooldown-ticks: 240, maximum-candidates: 12 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  MULE: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 30, CALM: 40, DEFENSIVE: 30 }, fight-percent: { TIMID: 0, CALM: 10, DEFENSIVE: 72 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 220, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  NAUTILUS: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 35, CALM: 50, DEFENSIVE: 15 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 25 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 180, flee-technique: panic_dash }, techniques: [ shell_brace ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  OCELOT: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 75, CALM: 25 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 140, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  PARROT: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: FLYING, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 80, CALM: 20 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  PIG: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: CHARGER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 45, CALM: 35, DEFENSIVE: 20 }, fight-percent: { TIMID: 0, CALM: 7, DEFENSIVE: 58 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 200, flee-technique: panic_dash }, techniques: [ headbutt ], rank-techniques: { VETERAN: [ short_charge ] }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  PUFFERFISH: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 80, CALM: 20 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  RABBIT:
+    category: PASSIVE
+    disposition: PASSIVE
+    level-enabled: true
+    rank-enabled: true
+    archetype: SKIRMISHER
+    temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 92, CALM: 8 }, fight-percent: { TIMID: 0, CALM: 0 } }
+    provocation: DIRECT_PLAYER
+    reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }
+    social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }
+    reward-profile: VANILLA_ONLY
+    baby-policy: IDENTITY_ONLY
+    tame-policy: NOT_TAMEABLE
+  SALMON: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  SHEEP: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: CHARGER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE, HERD_DEFENSIVE ], weights: { TIMID: 55, CALM: 25, DEFENSIVE: 15, HERD_DEFENSIVE: 5 }, fight-percent: { TIMID: 0, CALM: 3, DEFENSIVE: 48, HERD_DEFENSIVE: 65 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 180, flee-technique: panic_dash }, techniques: [ headbutt ], rank-techniques: { VETERAN: [ short_charge ] }, social: { relation: SAME_SPECIES, radius: 5.0, maximum-assistants: 1, required-temperaments: [ HERD_DEFENSIVE ], cooldown-ticks: 260, maximum-candidates: 10 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  SNIFFER: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 25, CALM: 60, DEFENSIVE: 15 }, fight-percent: { TIMID: 0, CALM: 2, DEFENSIVE: 32 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 200, flee-technique: panic_dash }, techniques: [ headbutt ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  SQUID: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  STRIDER: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 65, CALM: 35 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 140, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  TADPOLE: { category: CIVILIAN, disposition: NON_COMBAT, archetype: SKIRMISHER, provocation: NONE, reward-profile: VANILLA_ONLY, baby-policy: NON_COMBAT, tame-policy: NOT_TAMEABLE }
+  TROPICAL_FISH: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ TIMID, CALM ], weights: { TIMID: 90, CALM: 10 }, fight-percent: { TIMID: 0, CALM: 0 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 120, flee-technique: panic_dash }, social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  TURTLE: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 45, CALM: 45, DEFENSIVE: 10 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 10 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: false, combat-ticks: 160, flee-technique: panic_dash }, techniques: [ shell_brace ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  ZOMBIE_HORSE: { category: PASSIVE, disposition: PASSIVE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ CALM, DEFENSIVE ], weights: { CALM: 60, DEFENSIVE: 40 }, fight-percent: { CALM: 5, DEFENSIVE: 55 } }, provocation: DIRECT_PLAYER, reaction: { warning-before-fight: true, combat-ticks: 200, flee-technique: panic_dash }, techniques: [ rear_kick ], social: { relation: NONE, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+
+  BEE: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: FLYING, temperament: { allowed: [ CALM, DEFENSIVE, PACK_DEFENSIVE ], weights: { CALM: 55, DEFENSIVE: 30, PACK_DEFENSIVE: 15 }, fight-percent: { CALM: 0, DEFENSIVE: 100, PACK_DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 200 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  ENDERMAN: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ CALM, TERRITORIAL ], weights: { CALM: 55, TERRITORIAL: 45 }, fight-percent: { CALM: 0, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 260 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  GOAT: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: CHARGER, temperament: { allowed: [ CALM, DEFENSIVE, TERRITORIAL ], weights: { CALM: 35, DEFENSIVE: 35, TERRITORIAL: 30 }, fight-percent: { CALM: 0, DEFENSIVE: 100, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  IRON_GOLEM: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ DEFENSIVE, TERRITORIAL ], weights: { DEFENSIVE: 65, TERRITORIAL: 35 }, fight-percent: { DEFENSIVE: 100, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 300 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  LLAMA: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: RANGED, temperament: { allowed: [ CALM, DEFENSIVE, TERRITORIAL ], weights: { CALM: 45, DEFENSIVE: 40, TERRITORIAL: 15 }, fight-percent: { CALM: 0, DEFENSIVE: 100, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  PANDA: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: BRUISER, temperament: { allowed: [ TIMID, CALM, DEFENSIVE ], weights: { TIMID: 20, CALM: 55, DEFENSIVE: 25 }, fight-percent: { TIMID: 0, CALM: 0, DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  PIGLIN: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ CALM, TERRITORIAL, PACK_DEFENSIVE ], weights: { CALM: 25, TERRITORIAL: 50, PACK_DEFENSIVE: 25 }, fight-percent: { CALM: 0, TERRITORIAL: 100, PACK_DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 260 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: HOSTILE, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  POLAR_BEAR: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: BRUISER, temperament: { allowed: [ CALM, DEFENSIVE, TERRITORIAL ], weights: { CALM: 30, DEFENSIVE: 35, TERRITORIAL: 35 }, fight-percent: { CALM: 0, DEFENSIVE: 100, TERRITORIAL: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 260 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: NOT_TAMEABLE }
+  SKELETON_HORSE: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: DEFENDER, temperament: { allowed: [ CALM, DEFENSIVE ], weights: { CALM: 60, DEFENSIVE: 40 }, fight-percent: { CALM: 0, DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 200 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  SNOW_GOLEM: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: RANGED, temperament: { allowed: [ DEFENSIVE ], weights: { DEFENSIVE: 100 }, fight-percent: { DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  TRADER_LLAMA: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: RANGED, temperament: { allowed: [ CALM, DEFENSIVE ], weights: { CALM: 45, DEFENSIVE: 55 }, fight-percent: { CALM: 0, DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 220 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  WOLF: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ CALM, DEFENSIVE, PACK_DEFENSIVE ], weights: { CALM: 45, DEFENSIVE: 30, PACK_DEFENSIVE: 25 }, fight-percent: { CALM: 0, DEFENSIVE: 100, PACK_DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 240 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: VANILLA_ONLY, baby-policy: IDENTITY_ONLY, tame-policy: OWNER_SAFE }
+  ZOMBIFIED_PIGLIN: { category: NEUTRAL, disposition: NEUTRAL, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, temperament: { allowed: [ CALM, PACK_DEFENSIVE ], weights: { CALM: 35, PACK_DEFENSIVE: 65 }, fight-percent: { CALM: 0, PACK_DEFENSIVE: 100 } }, provocation: VANILLA, reaction: { warning-before-fight: false, combat-ticks: 280 }, social: { relation: VANILLA, radius: 0, maximum-assistants: 0, cooldown-ticks: 200, maximum-candidates: 0 }, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+
+  BLAZE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  BOGGED: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  BREEZE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  CAMEL_HUSK: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  CAVE_SPIDER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ASSASSIN, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  CREAKING: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: DEFENDER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  CREEPER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ASSASSIN, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  DROWNED: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ELDER_GUARDIAN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ENDER_DRAGON: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: FLYING, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ENDERMITE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ASSASSIN, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  EVOKER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: SUMMONER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  GHAST: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ARTILLERY, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  GIANT: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  GUARDIAN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  HOGLIN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  HUSK: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ILLUSIONER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  MAGMA_CUBE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  PARCHED: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  PHANTOM: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: FLYING, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  PIGLIN_BRUTE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  PILLAGER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  RAVAGER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SHULKER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ARTILLERY, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SILVERFISH: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ASSASSIN, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SKELETON: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SLIME: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  SPIDER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: SKIRMISHER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  STRAY: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: RANGED, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  VEX: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: FLYING, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  VINDICATOR: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  WARDEN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  WITCH: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CONTROLLER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  WITHER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: ARTILLERY, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  WITHER_SKELETON: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ZOGLIN: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ZOMBIE: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ZOMBIE_NAUTILUS: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: CHARGER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+  ZOMBIE_VILLAGER: { category: HOSTILE, disposition: HOSTILE, level-enabled: true, rank-enabled: true, archetype: BRUISER, provocation: VANILLA, reward-profile: HOSTILE, baby-policy: FULL, tame-policy: NOT_TAMEABLE }
+
 # Source relevance is authoritative. Runtime loot may only choose rewards declared by the profile.
 mob-loot-profiles:
   frozen_wilderness:

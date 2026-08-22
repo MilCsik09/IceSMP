@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 
 /** Atomically published, config-backed canonical mob ability registry. */
 public final class MobAbilityRegistry {
@@ -50,7 +52,10 @@ public final class MobAbilityRegistry {
                     section.getBoolean("interruptible", false),
                     enums(section.getStringList("eligible-ranks"), MobRank.class, "rank", id),
                     enums(section.getStringList("eligible-archetypes"), MobArchetype.class, "archetype", id),
-                    tuning);
+                    tuning,
+                    triggers(section.getStringList("triggers"), id),
+                    conditions(section.getMapList("conditions"), id),
+                    actions(section.getMapList("actions"), id));
             parsed.put(id, definition);
         }
         if (parsed.size() < 4 || parsed.size() > 64) {
@@ -90,5 +95,69 @@ public final class MobAbilityRegistry {
             }
         }
         return Set.copyOf(result);
+    }
+
+    private static Set<MobAbilityDefinition.Trigger> triggers(final List<String> values,
+                                                               final String abilityId) {
+        if (values == null || values.isEmpty()) return Set.of(MobAbilityDefinition.Trigger.ON_TIMER);
+        final java.util.LinkedHashSet<MobAbilityDefinition.Trigger> result = new java.util.LinkedHashSet<>();
+        for (final String raw : values) {
+            try {
+                result.add(MobAbilityDefinition.Trigger.parse(raw));
+            } catch (final IllegalArgumentException invalid) {
+                throw new IllegalStateException("unknown ability trigger: " + abilityId + '/' + raw, invalid);
+            }
+        }
+        if (result.size() != values.size()) throw new IllegalStateException("duplicate ability trigger: " + abilityId);
+        return Set.copyOf(result);
+    }
+
+    private static List<MobTechniqueCondition> conditions(final List<Map<?, ?>> values,
+                                                           final String abilityId) {
+        if (values == null || values.isEmpty()) return List.of();
+        final ArrayList<MobTechniqueCondition> result = new ArrayList<>();
+        for (final Map<?, ?> value : values) {
+            try {
+                final MobTechniqueCondition.Type type = MobTechniqueCondition.parseType(
+                        String.valueOf(value.get("type")));
+                final Object raw = value.get("value");
+                final double parameter = raw instanceof Number number ? number.doubleValue() : 0.0D;
+                result.add(new MobTechniqueCondition(type, parameter));
+            } catch (final RuntimeException invalid) {
+                throw new IllegalStateException("invalid ability condition: " + abilityId, invalid);
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private static List<MobTechniqueAction> actions(final List<Map<?, ?>> values,
+                                                     final String abilityId) {
+        if (values == null || values.isEmpty()) return List.of();
+        final ArrayList<MobTechniqueAction> result = new ArrayList<>();
+        for (final Map<?, ?> value : values) {
+            try {
+                final MobTechniqueAction.Type type = MobTechniqueAction.Type.valueOf(
+                        String.valueOf(value.get("type")).trim().toUpperCase(Locale.ROOT).replace('-', '_'));
+                final Object targetRaw = value.get("target");
+                final MobTechniqueAction.Target target = targetRaw == null
+                        ? MobTechniqueAction.Target.CURRENT_TARGET
+                        : MobTechniqueAction.Target.valueOf(String.valueOf(targetRaw).trim()
+                        .toUpperCase(Locale.ROOT).replace('-', '_'));
+                final LinkedHashMap<String, Double> parameters = new LinkedHashMap<>();
+                final Object rawParameters = value.get("parameters");
+                if (rawParameters instanceof Map<?, ?> parameterMap) {
+                    for (final var entry : parameterMap.entrySet()) {
+                        if (!(entry.getValue() instanceof Number number)) {
+                            throw new IllegalArgumentException("non-numeric action parameter");
+                        }
+                        parameters.put(String.valueOf(entry.getKey()), number.doubleValue());
+                    }
+                }
+                result.add(new MobTechniqueAction(type, target, parameters));
+            } catch (final RuntimeException invalid) {
+                throw new IllegalStateException("invalid ability action: " + abilityId, invalid);
+            }
+        }
+        return List.copyOf(result);
     }
 }

@@ -64,99 +64,11 @@ mob-scaling:
   abilities:
     maximum-summons-per-cast: 3
     summon-lifespan-ticks: 300
-  hostile-only: true
-  ignored-spawn-reasons:
-    - "SPAWNER"
-    - "CUSTOM"
-    - "COMMAND"
   name:
     enabled: true
     always-visible: false
     prefix: "&7[Lvl %level%] "
     color: "WHITE"
-
-# Passive fauna can defend itself after direct player provocation. This is not a rank promotion,
-# encounter or loot source; baby and tamed animals are always excluded.
-wildlife-retaliation:
-  enabled: true
-  warning-ticks: 20
-  herd-assist:
-    enabled: true
-    radius: 6.0
-    maximum-allies: 2
-  species:
-    cow:
-      enabled: true
-      temperament: { timid: 35, defensive: 50, aggressive: 15 }
-      retaliation-percent: { timid: 8.0, defensive: 70.0, aggressive: 100.0 }
-      damage: 2.0
-      knockback: 0.55
-      retaliation-range: 4.0
-      cooldown-ticks: 160
-    sheep:
-      enabled: true
-      temperament: { timid: 55, defensive: 40, aggressive: 5 }
-      retaliation-percent: { timid: 5.0, defensive: 60.0, aggressive: 100.0 }
-      damage: 1.5
-      knockback: 0.45
-      retaliation-range: 3.5
-      cooldown-ticks: 180
-    pig:
-      enabled: true
-      temperament: { timid: 45, defensive: 45, aggressive: 10 }
-      retaliation-percent: { timid: 8.0, defensive: 65.0, aggressive: 100.0 }
-      damage: 1.5
-      knockback: 0.45
-      retaliation-range: 3.5
-      cooldown-ticks: 160
-    horse:
-      enabled: true
-      temperament: { timid: 50, defensive: 40, aggressive: 10 }
-      retaliation-percent: { timid: 10.0, defensive: 70.0, aggressive: 100.0 }
-      damage: 2.5
-      knockback: 0.70
-      retaliation-range: 4.5
-      cooldown-ticks: 200
-    donkey:
-      enabled: true
-      temperament: { timid: 40, defensive: 45, aggressive: 15 }
-      retaliation-percent: { timid: 10.0, defensive: 75.0, aggressive: 100.0 }
-      damage: 2.5
-      knockback: 0.70
-      retaliation-range: 4.5
-      cooldown-ticks: 200
-    mule:
-      enabled: true
-      temperament: { timid: 35, defensive: 45, aggressive: 20 }
-      retaliation-percent: { timid: 12.0, defensive: 80.0, aggressive: 100.0 }
-      damage: 3.0
-      knockback: 0.75
-      retaliation-range: 4.5
-      cooldown-ticks: 200
-    chicken:
-      enabled: true
-      temperament: { timid: 75, defensive: 24, aggressive: 1 }
-      retaliation-percent: { timid: 2.0, defensive: 45.0, aggressive: 100.0 }
-      damage: 0.5
-      knockback: 0.15
-      retaliation-range: 2.5
-      cooldown-ticks: 220
-    rabbit:
-      enabled: true
-      temperament: { timid: 80, defensive: 19, aggressive: 1 }
-      retaliation-percent: { timid: 2.0, defensive: 40.0, aggressive: 100.0 }
-      damage: 0.5
-      knockback: 0.20
-      retaliation-range: 2.5
-      cooldown-ticks: 220
-    goat:
-      enabled: true
-      temperament: { timid: 30, defensive: 45, aggressive: 25 }
-      retaliation-percent: { timid: 15.0, defensive: 85.0, aggressive: 100.0 }
-      damage: 3.0
-      knockback: 0.85
-      retaliation-range: 5.0
-      cooldown-ticks: 180
 
 # ===== Világesemények =====
 world-events:

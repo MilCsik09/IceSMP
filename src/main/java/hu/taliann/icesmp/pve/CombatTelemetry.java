@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 /** Bounded aggregate telemetry seam for future log-based combat tuning; no player data is kept. */
 public final class CombatTelemetry {
-    private static final int MAX_KEYS = 96;
+    private static final int MAX_KEYS = 512;
     private static final ConcurrentHashMap<String, LongAdder> COUNTERS = new ConcurrentHashMap<>();
 
     private CombatTelemetry() { }
