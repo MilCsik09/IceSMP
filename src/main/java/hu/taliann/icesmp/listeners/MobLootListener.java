@@ -112,9 +112,17 @@ public final class MobLootListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
-        if (!configManager.getBoolean("loot.enabled", true)) return;
         final LivingEntity entity = event.getEntity();
         if (entity instanceof Player || hu.taliann.icesmp.managers.MinionManager.isMinionTagged(entity)) return;
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner rewardOwner =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.rewardOwner(entity);
+        if (rewardOwner == hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.NONE) {
+            event.getDrops().clear();
+            event.setDroppedExp(0);
+            return;
+        }
+        if (!configManager.getBoolean("loot.enabled", true)
+                || rewardOwner != hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC) return;
 
         final hu.taliann.icesmp.managers.CultistEventManager cultists = this.cultistEventManagerRef;
         if (cultists != null && cultists.isCultist(entity)) {

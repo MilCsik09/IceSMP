@@ -181,6 +181,11 @@ public final class MobKillUtil {
         if (victim == null || killerId == null || kind == null) {
             return null;
         }
+        if (kind != RewardKind.TRACKING
+                && hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.rewardOwner(victim)
+                != hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC) {
+            return null;
+        }
         if (excludeMinions(configManager) && MinionManager.isMinionTagged(victim)) {
             return null;
         }

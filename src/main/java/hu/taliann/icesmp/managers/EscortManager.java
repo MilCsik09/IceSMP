@@ -362,15 +362,16 @@ public final class EscortManager {
                 continue;
             }
             final EntityType type = WAVE_POOL[ThreadLocalRandom.current().nextInt(WAVE_POOL.length)];
-            final Class<? extends Entity> entityClass = type.getEntityClass();
-            if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
-                continue;
-            }
-            final Mob mob = (Mob) world.spawn(waveSpot, entityClass.asSubclass(Mob.class));
-            EventSpawnGuard.prepare(mob);
-            mob.setRemoveWhenFarAway(false);
-            mob.setPersistent(false);
-            mobScalingManager.forceLevel(mob, level);
+            final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
+                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+            if (spawns == null) continue;
+            final Mob mob = spawns.spawn(waveSpot,
+                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
+                            "escort", "escort:active", "wave", type, level,
+                            hu.taliann.icesmp.pve.MobRank.NORMAL, "SKIRMISHER",
+                            hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
+                            true, 0L));
+            if (mob == null) continue;
             mob.setTarget(convoy);
             hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
             waveMobs.add(mob.getUniqueId());

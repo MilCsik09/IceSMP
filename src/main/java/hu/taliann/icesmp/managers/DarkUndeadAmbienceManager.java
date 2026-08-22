@@ -3,6 +3,8 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
+import hu.taliann.icesmp.pve.AuthoredCreatureSpawnService;
+import hu.taliann.icesmp.pve.MobRank;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -136,28 +138,30 @@ public final class DarkUndeadAmbienceManager {
                         remainingAttempts - 1);
                 return;
             }
-            final org.bukkit.entity.Entity spawned = world.spawnEntity(target, type);
-            if (!(spawned instanceof Mob mob)) {
-                spawned.remove();
+            final AuthoredCreatureSpawnService spawns = AuthoredCreatureSpawnService.current();
+            if (spawns == null) {
+                plugin.getLogger().warning("Dark-undead spawn aborted: authored creature authority unavailable.");
+                return;
+            }
+            final int level = ThreadLocalRandom.current().nextInt(minLevel, maxLevel + 1);
+            final long lifespanTicks = Math.min(72_000L, Math.max(40L, lifespanMillis / 50L));
+            final Mob mob;
+            try {
+                mob = spawns.spawn(target, AuthoredCreatureSpawnService.Request.generic(
+                        "dark_undead", "territory:" + territory.id(), "ambient_hostile",
+                        type, level, MobRank.NORMAL, "BRUISER",
+                        AuthoredCreatureSpawnService.RewardOwner.GENERIC, true, lifespanTicks));
+            } catch (final RuntimeException invalid) {
+                plugin.getLogger().warning("Dark-undead spawn failed closed: " + invalid.getMessage());
                 trySpawn(territory, pool, minLevel, maxLevel, lifespanMillis,
                         remainingAttempts - 1);
                 return;
             }
-            EventSpawnGuard.prepare(mob);
             mob.getPersistentDataContainer().set(markKey,
                     org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
-            mob.setPersistent(false);
             mob.setFallDistance(0.0F);
             mob.setVelocity(new org.bukkit.util.Vector(0.0D, 0.0D, 0.0D));
-            if (mobScalingManager != null) {
-                mobScalingManager.forceLevel(mob,
-                        ThreadLocalRandom.current().nextInt(minLevel, maxLevel + 1));
-            }
             population.put(mob.getUniqueId(), System.currentTimeMillis() + lifespanMillis);
-            mob.getScheduler().runDelayed(plugin, lifespanTask -> {
-                population.remove(mob.getUniqueId());
-                mob.remove();
-            }, null, lifespanMillis / 50L);
         });
     }
 

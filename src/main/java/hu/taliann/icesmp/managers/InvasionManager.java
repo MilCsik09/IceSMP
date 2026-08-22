@@ -24,33 +24,33 @@ public final class InvasionManager {
 
     private enum Horde {
         UNDEAD_TIDE("Élőhalott Áradat",
-                new EntityType[]{EntityType.ZOMBIE, EntityType.HUSK}, EntityType.WITHER_SKELETON),
+                new EntityType[]{EntityType.ZOMBIE, EntityType.HUSK}, "invasion_undead_champion"),
         BONE_LEGION("Csontlégió",
-                new EntityType[]{EntityType.SKELETON, EntityType.STRAY}, EntityType.WITHER_SKELETON),
+                new EntityType[]{EntityType.SKELETON, EntityType.STRAY}, "invasion_bone_champion"),
         SPIDER_NEST("Pókfészek",
-                new EntityType[]{EntityType.SPIDER, EntityType.CAVE_SPIDER}, EntityType.SPIDER),
+                new EntityType[]{EntityType.SPIDER, EntityType.CAVE_SPIDER}, "invasion_spider_champion"),
         CHAOS_HORDE("Káosz-horda",
                 new EntityType[]{EntityType.ZOMBIE, EntityType.SKELETON,
-                        EntityType.SPIDER, EntityType.PILLAGER}, EntityType.RAVAGER),
+                        EntityType.SPIDER, EntityType.PILLAGER}, "invasion_chaos_champion"),
         NETHER_RAID("Alvilági Roham",
                 new EntityType[]{EntityType.PIGLIN, EntityType.ZOMBIFIED_PIGLIN},
-                EntityType.PIGLIN_BRUTE),
+                "invasion_nether_champion"),
         ILLAGER_WARBAND("Zsivány Hadtest",
-                new EntityType[]{EntityType.PILLAGER, EntityType.VINDICATOR}, EntityType.RAVAGER),
+                new EntityType[]{EntityType.PILLAGER, EntityType.VINDICATOR}, "invasion_illager_champion"),
         WITCH_COVEN("Boszorkány Gyülekezet",
-                new EntityType[]{EntityType.WITCH, EntityType.VEX}, EntityType.EVOKER),
+                new EntityType[]{EntityType.WITCH, EntityType.VEX}, "invasion_witch_champion"),
         BLAZING_HOST("Lángoló Sereg",
-                new EntityType[]{EntityType.BLAZE, EntityType.MAGMA_CUBE}, EntityType.PIGLIN_BRUTE);
+                new EntityType[]{EntityType.BLAZE, EntityType.MAGMA_CUBE}, "invasion_blazing_champion");
 
         private final String displayName;
         private final EntityType[] pool;
-        private final EntityType miniBoss;
+        private final String championTemplate;
 
         Horde(final String displayName, final EntityType[] pool,
-              final EntityType miniBoss) {
+              final String championTemplate) {
             this.displayName = displayName;
             this.pool = pool;
-            this.miniBoss = miniBoss;
+            this.championTemplate = championTemplate;
         }
 
         private EntityType randomMob() {
@@ -231,17 +231,14 @@ public final class InvasionManager {
 
         final int bossBonus = Math.max(0, configManager.getInt(
                 "world-events.invasion.mini-boss-level-bonus", 6));
-        final String championTemplate = horde.miniBoss == EntityType.RAVAGER
-                ? "glacier_champion" : null;
         final Mob champion = spawnAt(topOf(world, center.getBlockX(),
-                center.getBlockZ()), horde.miniBoss, level + bossBonus, "invasion",
-                MobRank.CHAMPION, championTemplate, archetypeFor(horde.miniBoss));
+                center.getBlockZ()), null, level + bossBonus, "invasion",
+                MobRank.CHAMPION, horde.championTemplate, null);
         if (champion != null) {
             champion.customName(net.kyori.adventure.text.Component.text(
                     "☠ " + horde.displayName + " Bajnoka",
                     net.kyori.adventure.text.format.NamedTextColor.DARK_PURPLE));
             champion.setCustomNameVisible(true);
-            startChampionTick(champion);
         }
         launchGraceUntil = 0L;
         Bukkit.getGlobalRegionScheduler().run(plugin, task ->
@@ -259,9 +256,7 @@ public final class InvasionManager {
     private Mob spawnAt(final Location spot, final EntityType type,
                         final int level, final String eventKey, final MobRank rank,
                         final String templateId, final String archetypeId) {
-        final Class<? extends Entity> entityClass = type.getEntityClass();
-        if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)
-                || spot.getWorld() == null) {
+        if (spot.getWorld() == null) {
             return null;
         }
         final EventSpawnGuard guard = spawnGuard;
@@ -270,32 +265,28 @@ public final class InvasionManager {
                 spot.getBlockX(), spot.getBlockZ()))) {
             return null;
         }
-        final Mob mob = (Mob) spot.getWorld().spawn(
-                spot, entityClass.asSubclass(Mob.class));
-        EventSpawnGuard.prepare(mob);
-        mob.setGlowing(true);
-        mob.setRemoveWhenFarAway(false);
-        mob.setPersistent(false);
-        mobScalingManager.forceRankedLevel(mob, level, rank, templateId, archetypeId);
-        TransientEntities.register(plugin, mob);
-        activeMobs.add(mob.getUniqueId());
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+        if (spawns == null) return null;
         final long lifespanTicks = Math.max(0L, configManager.getLong(
                 "world-events.invasion.mob-lifespan-seconds", 600L)) * 20L;
-        if (lifespanTicks > 0L) {
-            mob.getScheduler().runDelayed(plugin, task -> {
-                if (mob.isValid()) {
-                    mob.getWorld().spawnParticle(org.bukkit.Particle.POOF,
-                            mob.getLocation().add(0.0D, 0.8D, 0.0D),
-                            8, 0.3D, 0.4D, 0.3D, 0.01D);
-                    mob.remove();
-                }
-                activeMobs.remove(mob.getUniqueId());
-                TransientEntities.markGone(mob.getUniqueId());
-            }, () -> {
-                activeMobs.remove(mob.getUniqueId());
-                TransientEntities.markGone(mob.getUniqueId());
-            }, lifespanTicks);
-        }
+        final var request = templateId == null
+                ? hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
+                "invasion", "invasion:active", rank == MobRank.CHAMPION ? "champion" : "wave",
+                type, level, rank, archetypeId,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
+                true, lifespanTicks)
+                : hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                "invasion", "invasion:active", "champion", templateId, level,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
+                true, 1.0D, 1.0D, lifespanTicks);
+        final Mob mob = spawns.spawn(spot, request);
+        if (mob == null) return null;
+        // Local registration is intentionally idempotent and keeps the event liveness contract
+        // auditable without reaching through the common spawn service implementation.
+        TransientEntities.register(plugin, mob);
+        mob.setGlowing(true);
+        activeMobs.add(mob.getUniqueId());
         return mob;
     }
 
@@ -307,65 +298,6 @@ public final class InvasionManager {
             case RAVAGER, PIGLIN_BRUTE -> "CHARGER";
             default -> "BRUISER";
         };
-    }
-
-    private void startChampionTick(final Mob champion) {
-        final double damage = Math.max(1.0D, configManager.getDouble(
-                "world-events.invasion.champion-slam-damage", 5.0D));
-        champion.getScheduler().runAtFixedRate(plugin, task -> {
-            if (!champion.isValid()) {
-                task.cancel();
-                return;
-            }
-            final Location center = champion.getLocation().clone();
-            final org.bukkit.World world = champion.getWorld();
-            world.spawnParticle(org.bukkit.Particle.ANGRY_VILLAGER,
-                    center.clone().add(0.0D, 1.0D, 0.0D),
-                    24, 3.0D, 0.3D, 3.0D, 0.02D);
-            world.playSound(center, org.bukkit.Sound.ENTITY_RAVAGER_ROAR,
-                    1.2F, 0.8F);
-            champion.getScheduler().runDelayed(plugin, delayed -> {
-                if (!champion.isValid()) {
-                    return;
-                }
-                hu.taliann.icesmp.utils.ParticleUtil.spawn(world,
-                        org.bukkit.Particle.FLASH,
-                        center.clone().add(0.0D, 1.0D, 0.0D), 1);
-                for (final Entity nearby : champion.getNearbyEntities(
-                        4.0D, 4.0D, 4.0D)) {
-                    if (!(nearby instanceof Player player)) {
-                        continue;
-                    }
-                    if (Bukkit.isOwnedByCurrentRegion(player)) {
-                        if (isSurvivor(player)) {
-                            player.damage(damage, champion);
-                            applySlamKnockback(player, center);
-                        }
-                    } else {
-                        player.getScheduler().run(plugin, playerTask -> {
-                            if (isSurvivor(player)) {
-                                player.damage(damage);
-                                applySlamKnockback(player, center);
-                            }
-                        }, null);
-                    }
-                }
-            }, null, 25L);
-        }, null, 120L, 120L);
-    }
-
-    private static boolean isSurvivor(final Player player) {
-        return player.getGameMode() == GameMode.SURVIVAL
-                || player.getGameMode() == GameMode.ADVENTURE;
-    }
-
-    private static void applySlamKnockback(final Player player,
-                                           final Location center) {
-        final org.bukkit.util.Vector knockback = player.getLocation().toVector()
-                .subtract(center.toVector());
-        if (knockback.lengthSquared() > 0.0D) {
-            player.setVelocity(knockback.normalize().setY(0.5D).multiply(0.7D));
-        }
     }
 
     private static double parseOr(final String raw, final double fallback) {

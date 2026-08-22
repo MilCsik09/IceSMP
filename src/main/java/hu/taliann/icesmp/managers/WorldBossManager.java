@@ -50,9 +50,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class WorldBossManager {
 
-    private static final double MAX_WORLD_BOSS_HEALTH = 4096.0D;
-    private static final double MAX_WORLD_BOSS_DAMAGE = 80.0D;
-
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
@@ -87,64 +84,25 @@ public final class WorldBossManager {
         this.equippedCombatPower = equippedCombatPower;
     }
 
-    /**
-     * The boss roster. Each archetype is a distinct mob with its own theme, stat
-     * multipliers (layered on the configured base health/damage), a self-buff applied
-     * at spawn, a signature aura debuff periodically applied to nearby players, and a
-     * reward multiplier. One is chosen at random on every spawn (rotation/variety).
-     */
+    /** Event selection data only; combat identity is resolved from the canonical template id. */
     private enum BossArchetype {
-        RING_WARDEN(EntityType.RAVAGER, "&4&l☠ A Gyűrűk Őre &c[Világboss]", 1.0D, 1.0D, 1.0D,
-                PotionEffectType.SLOWNESS, 1, null, Sound.ENTITY_RAVAGER_ROAR, Particle.CRIT, Special.SLAM),
-        MAGMA_BEHEMOTH(EntityType.BLAZE, "&6&l🔥 Lávakohó Behemót &c[Világboss]", 1.0D, 1.1D, 1.1D,
-                PotionEffectType.WEAKNESS, 0, PotionEffectType.FIRE_RESISTANCE, Sound.ENTITY_GENERIC_EXPLODE, Particle.FLAME, Special.ZONE),
-        FROST_KING(EntityType.STRAY, "&b&l❄ Fagyott Trón Királya &c[Világboss]", 1.1D, 1.0D, 1.0D,
-                PotionEffectType.SLOWNESS, 2, null, Sound.BLOCK_GLASS_BREAK, Particle.SNOWFLAKE, Special.ZONE),
-        BONE_KING(EntityType.WITHER_SKELETON, "&8&l☠ Csontkirály &c[Világboss]", 1.0D, 1.2D, 1.1D,
-                PotionEffectType.WITHER, 0, PotionEffectType.STRENGTH, Sound.ENTITY_WITHER_AMBIENT, Particle.SOUL, Special.SUMMON),
-        DEEP_HORROR(EntityType.WARDEN, "&3&l👁 Mélységi Rém &c[Világboss]", 1.0D, 1.0D, 1.5D,
-                PotionEffectType.DARKNESS, 0, null, Sound.ENTITY_WARDEN_LISTENING, Particle.SCULK_SOUL, Special.SLAM),
-        VENOM_BROODMOTHER(EntityType.CAVE_SPIDER, "&2&l🕷 Méreg Anyakirálynő &c[Világboss]", 1.0D, 1.0D, 1.1D,
-                PotionEffectType.POISON, 1, PotionEffectType.SPEED, Sound.ENTITY_PHANTOM_AMBIENT, Particle.SNEEZE, Special.ZONE),
-        STORM_HERALD(EntityType.VINDICATOR, "&e&l⚡ Vihar Hírnöke &c[Világboss]", 1.0D, 1.2D, 1.2D,
-                PotionEffectType.WEAKNESS, 0, PotionEffectType.SPEED, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, Particle.ELECTRIC_SPARK, Special.ZONE),
-        PLAGUE_TITAN(EntityType.HUSK, "&8&l☣ Dögvész Titán &c[Világboss]", 1.2D, 1.0D, 1.2D,
-                PotionEffectType.WITHER, 0, null, Sound.ENTITY_WITHER_AMBIENT, Particle.SQUID_INK, Special.SLAM),
-        GOLEM_SENTINEL(EntityType.IRON_GOLEM, "&7&l⚙ Vas Őrszem &c[Világboss]", 1.3D, 1.0D, 1.1D,
-                PotionEffectType.SLOWNESS, 1, PotionEffectType.RESISTANCE, Sound.ITEM_SHIELD_BLOCK, Particle.CRIT, Special.SLAM),
-        PIGLIN_WARLORD(EntityType.PIGLIN_BRUTE, "&6&l⚔ Pokoli Hadúr &c[Világboss]", 1.0D, 1.2D, 1.1D,
-                PotionEffectType.WEAKNESS, 0, PotionEffectType.STRENGTH, Sound.ENTITY_RAVAGER_ROAR, Particle.CRIT, Special.SUMMON);
+        RING_WARDEN("ring_warden", 1.0D),
+        MAGMA_BEHEMOTH("magma_behemoth", 1.1D),
+        FROST_KING("frost_king", 1.0D),
+        BONE_KING("bone_king", 1.1D),
+        DEEP_HORROR("deep_horror", 1.5D),
+        VENOM_BROODMOTHER("venom_broodmother", 1.1D),
+        STORM_HERALD("storm_herald", 1.2D),
+        PLAGUE_TITAN("plague_titan", 1.2D),
+        GOLEM_SENTINEL("golem_sentinel", 1.1D),
+        PIGLIN_WARLORD("piglin_warlord", 1.1D);
 
-        /** Signature special: an around-boss telegraphed slam, a targeted ground zone, or summoning adds. */
-        private enum Special { SLAM, ZONE, SUMMON }
-
-        private final EntityType entityType;
-        private final String displayName;
-        private final double healthMult;
-        private final double damageMult;
+        private final String templateId;
         private final double rewardMult;
-        private final PotionEffectType aura;
-        private final int auraAmplifier;
-        private final PotionEffectType selfBuff;
-        private final Sound sound;
-        private final Particle particle;
-        private final Special special;
 
-        BossArchetype(final EntityType entityType, final String displayName, final double healthMult,
-                      final double damageMult, final double rewardMult, final PotionEffectType aura,
-                      final int auraAmplifier, final PotionEffectType selfBuff, final Sound sound,
-                      final Particle particle, final Special special) {
-            this.entityType = entityType;
-            this.displayName = displayName;
-            this.healthMult = healthMult;
-            this.damageMult = damageMult;
+        BossArchetype(final String templateId, final double rewardMult) {
+            this.templateId = templateId;
             this.rewardMult = rewardMult;
-            this.aura = aura;
-            this.auraAmplifier = auraAmplifier;
-            this.selfBuff = selfBuff;
-            this.sound = sound;
-            this.particle = particle;
-            this.special = special;
         }
     }
 
@@ -224,8 +182,12 @@ public final class WorldBossManager {
     /** id → nyers (&-kódos) display-név; a sorrend a roster deklarációs sorrendje. */
     public static java.util.Map<String, String> archetypeDisplayNames() {
         final java.util.LinkedHashMap<String, String> names = new java.util.LinkedHashMap<>();
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
         for (final BossArchetype archetype : BossArchetype.values()) {
-            names.put(archetype.name().toLowerCase(java.util.Locale.ROOT), archetype.displayName);
+            final String display = spawns == null ? archetype.templateId
+                    : spawns.template(archetype.templateId).displayName();
+            names.put(archetype.templateId, display);
         }
         return names;
     }
@@ -299,6 +261,7 @@ public final class WorldBossManager {
         }
         final double projected = Math.max(0.0D, boss.getHealth() - Math.max(0.0D, incomingDamage));
         bossHealthFraction = (float) Math.max(0.0D, Math.min(1.0D, projected / maxHp));
+        bossEnraged = bossHealthFraction <= 0.5F;
     }
 
     public void recordBossDamage(final LivingEntity boss, final UUID playerId,
@@ -416,6 +379,9 @@ public final class WorldBossManager {
         if (id == null) {
             return;
         }
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+        if (spawns != null) spawns.cleanupSummons(id);
         hu.taliann.icesmp.utils.TransientEntities.removeOnShutdown(id);
     }
 
@@ -572,16 +538,27 @@ public final class WorldBossManager {
         }
 
         final BossArchetype archetype = BossArchetype.values()[ThreadLocalRandom.current().nextInt(BossArchetype.values().length)];
-
-        final Class<? extends Entity> entityClass = archetype.entityType.getEntityClass();
-        if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawnService =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+        if (spawnService == null) {
             spawnGraceUntil = 0L;
-            plugin.getLogger().warning("World boss archetype entity-type is not a mob; skipping spawn.");
+            plugin.getLogger().warning("World boss spawn authority is not initialized.");
             return;
         }
-
-        final Mob boss = (Mob) spawnLocation.getWorld().spawn(spawnLocation, entityClass.asSubclass(Mob.class));
-        EventSpawnGuard.prepare(boss);
+        final int displayLevel = Math.max(1, configManager.getInt(
+                "world-events.world-boss.display-level", 75));
+        final hu.taliann.icesmp.pve.MobTemplate bossTemplate =
+                spawnService.template(archetype.templateId);
+        final Mob boss = spawnService.spawn(spawnLocation,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                        "world_boss", "world-boss:" + UUID.randomUUID(), "boss",
+                        archetype.templateId, displayLevel,
+                        hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
+                        true, 1.0D, 1.0D, 0L));
+        if (boss == null) {
+            spawnGraceUntil = 0L;
+            return;
+        }
 
         // Build the immutable participant/power snapshot before publishing any active-boss state.
         // No arbitrary online-player fallback is allowed: a fixed/admin spawn without an eligible
@@ -597,9 +574,8 @@ public final class WorldBossManager {
         }
 
         activeBossName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-                .serialize(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-                        .legacyAmpersand().deserialize(archetype.displayName));
-        activeBossArchetype = archetype.name();
+                .serialize(net.kyori.adventure.text.Component.text(bossTemplate.displayName()));
+        activeBossArchetype = bossTemplate.bestiaryId();
         bossEnraged = false;
         bossHealthFraction = 1.0F;
         activeBossId = boss.getUniqueId();
@@ -610,63 +586,31 @@ public final class WorldBossManager {
         rewardCandidates.clear();
 
         boss.getPersistentDataContainer().set(worldBossKey, PersistentDataType.BYTE, (byte) 1);
-        boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING, archetype.name());
+        boss.getPersistentDataContainer().set(bossArchetypeKey, PersistentDataType.STRING,
+                bossTemplate.bestiaryId());
         if (finale) {
             boss.getPersistentDataContainer().set(finaleBossKey, PersistentDataType.BYTE, (byte) 1);
         }
-        boss.setPersistent(true);
+        boss.setPersistent(false);
         boss.setRemoveWhenFarAway(false);
         boss.setGlowing(true);
-        boss.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(
-                finale ? "&5&l📖 " + configManager.getString("world-events.season-finale.boss.name",
-                        "A Lapforduló Őre") + " &c[Szezonboss]" : archetype.displayName)));
-        boss.setCustomNameVisible(true);
-
-        final MobScalingManager mobScalingRef = mobScaling;
-        if (mobScalingRef != null) {
-            final int displayLevel = Math.max(1, configManager.getInt(
-                    "world-events.world-boss.display-level", 75));
-            mobScalingRef.markEncounterMetadata(boss, displayLevel, MobRank.WORLD_BOSS,
-                    archetype == BossArchetype.RING_WARDEN ? "ring_warden" : null,
-                    archetype.name());
+        if (finale) {
+            boss.customName(LegacyComponentSerializer.legacySection().deserialize(TextUtil.color(
+                    "&5&l📖 " + configManager.getString("world-events.season-finale.boss.name",
+                            bossTemplate.displayName()) + " &c[Szezonboss]")));
         }
+        boss.setCustomNameVisible(true);
 
         final double finaleHealthMult = finale
                 ? finiteBounded(configManager.getDouble("world-events.season-finale.boss.health-mult", 1.5D),
                 1.5D, 1.0D, 10.0D) : 1.0D;
-        final double baseHealth = finiteBounded(configManager.getDouble(
-                "world-events.world-boss.health", 300.0D), 300.0D, 20.0D, MAX_WORLD_BOSS_HEALTH);
-        final double health = Math.min(MAX_WORLD_BOSS_HEALTH,
-                baseHealth * archetype.healthMult * finaleHealthMult * scalingSnapshot.healthMultiplier());
-        final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHealth != null) {
-            maxHealth.setBaseValue(health);
-            boss.setHealth(health);
-        }
+        mobScaling.applyEncounterModifier(boss,
+                Math.min(16.0D, finaleHealthMult * scalingSnapshot.healthMultiplier()),
+                scalingSnapshot.damageMultiplier(), "world_boss:participants");
         bossHealthFraction = 1.0F;
 
-        final double configuredDamageMult = finiteBounded(configManager.getDouble(
-                "world-events.world-boss.damage-multiplier", 2.0D), 2.0D, 0.1D, 20.0D);
-        final double damageMultiplier = configuredDamageMult
-                * archetype.damageMult * scalingSnapshot.damageMultiplier();
-        final AttributeInstance attackDamage = boss.getAttribute(Attribute.ATTACK_DAMAGE);
-        if (attackDamage != null) {
-            attackDamage.setBaseValue(Math.min(MAX_WORLD_BOSS_DAMAGE,
-                    Math.max(0.0D, attackDamage.getBaseValue() * damageMultiplier)));
-        }
-
-        if (archetype.selfBuff != null) {
-            boss.addPotionEffect(new PotionEffect(archetype.selfBuff, (int) (lifetimeMinutes * 60L * 20L), 0, false, false, true));
-        }
-
         hu.taliann.icesmp.utils.ParticleUtil.spawn(spawnLocation.getWorld(), Particle.FLASH, spawnLocation, 1);
-        spawnLocation.getWorld().playSound(spawnLocation, archetype.sound, 2.0F, 0.6F);
-
-        startPhaseTick(boss, archetype);
-        final MobAbilityRuntime abilityRuntimeRef = mobAbilityRuntime;
-        if (abilityRuntimeRef != null && archetype == BossArchetype.RING_WARDEN) {
-            abilityRuntimeRef.attach(boss);
-        }
+        spawnLocation.getWorld().playSound(spawnLocation, Sound.ENTITY_WITHER_SPAWN, 2.0F, 0.6F);
 
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 finale ? "season-finale-boss-spawned" : "world-boss-spawned",
@@ -694,209 +638,9 @@ public final class WorldBossManager {
         }, null, lifetimeMinutes * 60L * 20L);
     }
 
-    /**
-     * Drives the boss's phases on its OWN region scheduler (Folia-correct).
-     */
-    private void startPhaseTick(final Mob boss, final BossArchetype archetype) {
-        final AtomicBoolean enraged = new AtomicBoolean(false);
-        final AtomicInteger ticks = new AtomicInteger();
-        final double radius = finiteBounded(configManager.getDouble(
-                "world-events.world-boss.aura-radius", 12.0D), 12.0D, 4.0D, 64.0D);
-        boss.getScheduler().runAtFixedRate(plugin, task -> {
-            if (!boss.isValid()) {
-                task.cancel();
-                return;
-            }
-
-            final AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
-            final double maxHp = maxHealth != null ? maxHealth.getValue() : boss.getHealth();
-            bossHealthFraction = maxHp > 0.0D
-                    ? (float) Math.max(0.0D, Math.min(1.0D, boss.getHealth() / maxHp)) : 0.0F;
-            if (!enraged.get() && boss.getHealth() < maxHp * 0.5D) {
-                enraged.set(true);
-                bossEnraged = true;
-                boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1, false, false, true));
-                boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false, true));
-                hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), Particle.FLASH, boss.getLocation().add(0.0D, 1.0D, 0.0D), 1);
-                boss.getWorld().playSound(boss.getLocation(), archetype.sound, 2.0F, 0.5F);
-                Bukkit.getServer().broadcast(messageManager.getMessage(
-                        "world-boss-enraged",
-                        "<dark_red>👹 A világboss feldühödött — második fázis!</dark_red>"));
-            }
-
-            for (final Entity nearby : boss.getNearbyEntities(radius, radius, radius)) {
-                if (nearby instanceof Player player) {
-                    final PotionEffect aura = new PotionEffect(archetype.aura, 4 * 20, archetype.auraAmplifier, true, false, true);
-                    if (Bukkit.isOwnedByCurrentRegion(player)) {
-                        if (isSurvivor(player)) {
-                            player.addPotionEffect(aura);
-                        }
-                    } else {
-                        player.getScheduler().run(plugin, t -> {
-                            if (isSurvivor(player)) {
-                                player.addPotionEffect(aura);
-                            }
-                        }, null);
-                    }
-                }
-            }
-            hu.taliann.icesmp.utils.ParticleUtil.spawn(boss.getWorld(), archetype.particle, boss.getLocation().add(0.0D, 1.0D, 0.0D), 12, 0.6D, 0.8D, 0.6D, 0.02D);
-
-            if (ticks.incrementAndGet() % 4 == 0) {
-                fireSpecial(boss, archetype, enraged.get());
-            }
-        }, null, 40L, 40L);
-    }
-
     /** A survivor (survival/adventure) — never debuff/hit creative or spectator players. */
     private static boolean isSurvivor(final Player player) {
         return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
-    }
-
-    /** A survivor standing inside the 3-block telegraphed ZONE spot (checked on the player's thread). */
-    private static boolean isInZone(final Player player, final Location spot) {
-        return isSurvivor(player) && player.getWorld().equals(spot.getWorld())
-                && player.getLocation().distanceSquared(spot) <= 9.0D;
-    }
-
-    /** Knocks the player away from the SLAM center (runs on the player's own region thread). */
-    private static void applySlamKnockback(final Player player, final Location center) {
-        final org.bukkit.util.Vector kb = player.getLocation().toVector().subtract(center.toVector());
-        if (kb.lengthSquared() > 0.0D) {
-            player.setVelocity(kb.normalize().setY(0.6D).multiply(0.9D));
-        }
-    }
-
-    private void fireSpecial(final Mob boss, final BossArchetype archetype, final boolean enraged) {
-        final org.bukkit.World world = boss.getWorld();
-        final double baseSpecialDamage = finiteBounded(configManager.getDouble(
-                "world-events.world-boss.special-damage", 6.0D), 6.0D, 1.0D, MAX_WORLD_BOSS_DAMAGE);
-        final double damage = Math.min(MAX_WORLD_BOSS_DAMAGE,
-                baseSpecialDamage * (enraged ? 1.5D : 1.0D));
-
-        switch (archetype.special) {
-            case SLAM -> {
-                final Location center = boss.getLocation().clone();
-                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, center.clone().add(0.0D, 0.2D, 0.0D), 80, 5.0D, 0.2D, 5.0D, 0.02D);
-                spawnTelegraphRing(world, archetype.particle, center, 5.0D);
-                telegraphFloor(center, 5.0D);
-                world.playSound(center, archetype.sound, 1.6F, 0.6F);
-                world.playSound(center, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.6F);
-                emitFx("boss-slam-telegraph", center, 5.0D, 30);
-                boss.getScheduler().runDelayed(plugin, t -> {
-                    if (!boss.isValid()) return;
-                    hu.taliann.icesmp.utils.ParticleUtil.spawn(world, Particle.FLASH, center.clone().add(0.0D, 1.0D, 0.0D), 1);
-                    for (final Entity nearby : boss.getNearbyEntities(5.0D, 5.0D, 5.0D)) {
-                        if (nearby instanceof Player player) {
-                            if (Bukkit.isOwnedByCurrentRegion(player)) {
-                                if (isSurvivor(player)) {
-                                    player.damage(damage, boss);
-                                    applySlamKnockback(player, center);
-                                }
-                            } else {
-                                player.getScheduler().run(plugin, t2 -> {
-                                    if (isSurvivor(player)) {
-                                        player.damage(damage);
-                                        applySlamKnockback(player, center);
-                                    }
-                                }, null);
-                            }
-                        }
-                    }
-                }, null, 30L);
-            }
-            case ZONE -> {
-                final java.util.List<Player> survivors = new java.util.ArrayList<>();
-                for (final Entity nearby : boss.getNearbyEntities(20.0D, 20.0D, 20.0D)) {
-                    if (nearby instanceof Player player && Bukkit.isOwnedByCurrentRegion(player)
-                            && isSurvivor(player)) {
-                        survivors.add(player);
-                    }
-                }
-                if (survivors.isEmpty()) return;
-                final Player zoneTarget = survivors.get(ThreadLocalRandom.current().nextInt(survivors.size()));
-                final UUID zoneTargetId = zoneTarget.getUniqueId();
-                final Location spot = zoneTarget.getLocation().clone();
-                hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 0.2D, 0.0D), 50, 1.6D, 0.2D, 1.6D, 0.02D);
-                spawnTelegraphRing(world, archetype.particle, spot, 3.0D);
-                telegraphFloor(spot, 3.0D);
-                world.playSound(spot, archetype.sound, 1.2F, 0.8F);
-                world.playSound(spot, Sound.ENTITY_WARDEN_SONIC_CHARGE, 2.0F, 0.8F);
-                emitFx("boss-zone-telegraph", spot, 3.0D, 30);
-                boss.getScheduler().runDelayed(plugin, t -> {
-                    if (!boss.isValid()) return;
-                    hu.taliann.icesmp.utils.ParticleUtil.spawn(world, archetype.particle, spot.clone().add(0.0D, 1.0D, 0.0D), 60, 1.6D, 0.6D, 1.6D, 0.05D);
-                    for (final Entity nearby : boss.getNearbyEntities(28.0D, 28.0D, 28.0D)) {
-                        if (nearby instanceof Player player) {
-                            final PotionEffect zoneDebuff = new PotionEffect(archetype.aura, 6 * 20, archetype.auraAmplifier + 1, true, false, true);
-                            if (Bukkit.isOwnedByCurrentRegion(player)) {
-                                if (isInZone(player, spot)) {
-                                    player.damage(damage, boss);
-                                    player.addPotionEffect(zoneDebuff);
-                                } else if (player.getUniqueId().equals(zoneTargetId)
-                                        && isSurvivor(player)) {
-                                    recordBossObjective(zoneTargetId);
-                                }
-                            } else {
-                                player.getScheduler().run(plugin, t2 -> {
-                                    if (isInZone(player, spot)) {
-                                        player.damage(damage);
-                                        player.addPotionEffect(zoneDebuff);
-                                    } else if (player.getUniqueId().equals(zoneTargetId)
-                                            && isSurvivor(player)) {
-                                        recordBossObjective(zoneTargetId);
-                                    }
-                                }, null);
-                            }
-                        }
-                    }
-                }, null, 30L);
-            }
-            case SUMMON -> {
-                final Location at = boss.getLocation();
-                final int count = Math.min(3, 2 + (enraged ? 1 : 0));
-                final long addLifespanTicks = Math.max(10L, configManager.getLong("world-events.world-boss.add-lifespan-seconds", 25L)) * 20L;
-                world.playSound(at, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1.5F, 1.0F);
-                emitFx("boss-summon", at, 0.0D, 40);
-                for (int i = 0; i < count; i++) {
-                    final Location spot = at.clone().add(
-                            ThreadLocalRandom.current().nextInt(-3, 4), 0.0D, ThreadLocalRandom.current().nextInt(-3, 4));
-                    final org.bukkit.entity.Skeleton add = world.spawn(spot, org.bukkit.entity.Skeleton.class);
-                    EventSpawnGuard.prepare(add);
-                    add.getPersistentDataContainer().set(
-                            hu.taliann.icesmp.factions.FactionCombatMarkers.EVENT_MOB,
-                            PersistentDataType.BYTE, (byte) 1);
-                    add.setGlowing(true);
-                    add.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, (int) addLifespanTicks, 0, false, false, false));
-                    add.getScheduler().runDelayed(plugin, task -> {
-                        if (add.isValid()) add.remove();
-                    }, null, addLifespanTicks);
-                }
-                world.playSound(at, archetype.sound, 1.5F, 0.8F);
-            }
-        }
-    }
-
-    private static final int TELEGRAPH_RING_POINTS = 24;
-
-    private static void spawnTelegraphRing(final org.bukkit.World world, final Particle particle,
-                                           final Location center, final double radius) {
-        for (int i = 0; i < TELEGRAPH_RING_POINTS; i++) {
-            final double angle = (Math.PI * 2.0D * i) / TELEGRAPH_RING_POINTS;
-            final Location point = center.clone().add(Math.cos(angle) * radius, 0.15D, Math.sin(angle) * radius);
-            hu.taliann.icesmp.utils.ParticleUtil.spawn(world, particle, point, 1);
-        }
-    }
-
-    private void telegraphFloor(final Location center, final double radius) {
-        if (!configManager.getBoolean("display-fx.boss-telegraph.enabled", true)) {
-            return;
-        }
-        final String name = configManager.getString("display-fx.boss-telegraph.material", "RED_STAINED_GLASS");
-        final org.bukkit.Material material = org.bukkit.Material.matchMaterial(name);
-        final org.bukkit.block.data.BlockData block =
-                (material != null && material.isBlock() ? material : org.bukkit.Material.RED_STAINED_GLASS).createBlockData();
-        hu.taliann.icesmp.utils.DisplayFxUtil.groundTelegraph(plugin, center, radius, 30, org.bukkit.Color.fromRGB(0xE23B3B), block);
     }
 
     /** Contribution-gated, personal and restart-idempotent world-boss settlement. */
@@ -933,8 +677,9 @@ public final class WorldBossManager {
         final String archetypeName = boss.getPersistentDataContainer().get(
                 bossArchetypeKey, PersistentDataType.STRING);
         if (archetypeName != null) {
-            try { rewardMultiplier = BossArchetype.valueOf(archetypeName).rewardMult; }
-            catch (final IllegalArgumentException ignored) { }
+            for (final BossArchetype candidate : BossArchetype.values()) {
+                if (candidate.templateId.equals(archetypeName)) rewardMultiplier = candidate.rewardMult;
+            }
         }
         final FactionType faction = factionManager.getChosenFaction(leaderId).orElse(null);
         final double treasuryReward = Math.max(0.0D, configManager.getDouble(
