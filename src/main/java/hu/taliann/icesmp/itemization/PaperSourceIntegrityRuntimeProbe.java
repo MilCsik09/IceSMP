@@ -200,11 +200,12 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                 "runtime boss left its bounded probe region before threshold exercise");
                         plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_ABILITIES "
                                 + runtime.activeAbilityIds(worldBoss));
-                        runtime.trigger(worldBoss, MobAbilityDefinition.Trigger.ON_TIMER,
-                                null, false);
                         worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
                         worldBoss.damage(maximumHealth.getValue() * 0.20D);
                         worldBoss.damage(1.0D);
+                        check(runtime.triggerTechnique(worldBoss, "boss_slam",
+                                        MobAbilityDefinition.Trigger.ON_TIMER),
+                                "typed timer trigger rejected the attached boss_slam technique");
                         plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_THRESHOLD_ARMED");
                     } catch (final Throwable failure) {
                         plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
