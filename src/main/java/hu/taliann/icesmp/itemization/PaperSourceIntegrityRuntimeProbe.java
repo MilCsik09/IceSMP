@@ -200,6 +200,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                 "runtime boss left its bounded probe region before threshold exercise");
                         plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_ABILITIES "
                                 + runtime.activeAbilityIds(worldBoss));
+                        plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_STATE "
+                                + runtime.activeStateSummary(worldBoss));
                         worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
                         worldBoss.damage(maximumHealth.getValue() * 0.20D);
                         worldBoss.damage(1.0D);
