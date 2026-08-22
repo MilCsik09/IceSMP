@@ -83,16 +83,15 @@ public final class PaperSourceIntegrityRuntimeProbe {
                     "authoredCreatureSpawns", AuthoredCreatureSpawnService.class);
             final MobScalingManager mobScaling = readField(assembledCore,
                     "mobScalingManager", MobScalingManager.class);
-            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
-                try {
-                    startAuthoredPveRuntimeProof(plugin, mobTemplates, mobAbilities,
-                            authoredSpawns, creatureSpecies, mobScaling);
-                } catch (final Throwable failure) {
-                    plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
-                    failure.printStackTrace();
-                    Bukkit.shutdown();
-                }
-            }, 1L);
+            plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_ARMED");
+            try {
+                startAuthoredPveRuntimeProof(plugin, mobTemplates, mobAbilities,
+                        authoredSpawns, creatureSpecies, mobScaling);
+            } catch (final Throwable failure) {
+                plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
+                failure.printStackTrace();
+                Bukkit.shutdown();
+            }
             return;
         }
         final ItemIdentityService identity = readField(assembledCore,
@@ -132,7 +131,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
         check(world != null, "authored PvE runtime world unavailable");
         hu.taliann.icesmp.pve.AuthoredPveContentValidator.validate(templates, abilities);
         final org.bukkit.Location at = world.getSpawnLocation().clone().add(0.5D, 2.0D, 0.5D);
-        plugin.getServer().getRegionScheduler().run(plugin, at, task -> {
+        plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
+            plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_REGION_START");
             final java.util.ArrayList<Mob> spawned = new java.util.ArrayList<>();
             final java.util.ArrayList<Mob> controls = new java.util.ArrayList<>();
             try {
@@ -225,7 +225,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 failure.printStackTrace();
                 Bukkit.shutdown();
             }
-        });
+        }, 1L);
     }
 
     private static void writeAuthoredPveRuntimeReport(final List<Mob> mobs,
