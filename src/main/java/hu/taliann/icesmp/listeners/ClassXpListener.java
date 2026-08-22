@@ -5,7 +5,6 @@ import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.TalentManager;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -47,7 +46,7 @@ public final class ClassXpListener implements Listener {
             return;
         }
 
-        if (configManager.getBoolean("classes.xp.hostile-only", true) && !(entity instanceof Monster)) {
+        if (!hu.taliann.icesmp.pve.CreatureProfileService.authoredRewardEligible(entity)) {
             return;
         }
 

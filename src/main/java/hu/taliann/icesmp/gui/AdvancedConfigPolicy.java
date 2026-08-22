@@ -4,7 +4,6 @@ import hu.taliann.icesmp.crates.CrateSoundResolver;
 import hu.taliann.icesmp.managers.ConfigManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 
 import java.util.HashSet;
 import java.util.List;
@@ -74,15 +73,6 @@ public final class AdvancedConfigPolicy {
         if (key.equals("hud.dynamic.combat-visible-sections")) {
             return requireAllowedList(value, HUD_SECTIONS,
                     "Ismeretlen HUD-szekció. Engedélyezett: " + String.join(", ", HUD_SECTIONS));
-        }
-        if (key.equals("mob-scaling.ignored-spawn-reasons")) {
-            for (final String raw : strings(value)) {
-                try {
-                    CreatureSpawnEvent.SpawnReason.valueOf(raw.toUpperCase(Locale.ROOT));
-                } catch (final IllegalArgumentException invalid) {
-                    return "Ismeretlen Bukkit spawn reason: " + raw;
-                }
-            }
         }
         if (key.equals("world-events.intro.lines")) {
             for (final String line : strings(value)) {

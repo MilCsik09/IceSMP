@@ -340,7 +340,18 @@ def build_report(config: dict[str, Any]) -> dict[str, Any]:
     builds = player_benchmark_builds(armor, combat)
     techniques = technique_report(config)
     ttk = ttk_matrix(config, builds)
-    passive = config.get("wildlife-retaliation", {}) or {}
+    creature_species = config.get("creature-species", {}) or {}
+    passive_rows = {
+        entity_type: policy for entity_type, policy in creature_species.items()
+        if (policy or {}).get("disposition") == "PASSIVE"
+    }
+    passive = {
+        "authority": "creature-species",
+        "enabled": bool(passive_rows),
+        "species-count": len(passive_rows),
+        "species": passive_rows,
+        "legacy-listener": "REMOVED",
+    }
     findings = [row["template_id"] for row in armor + combat if row["status"] != "VERIFIED"]
     findings.extend(f"TTK:{row['checkpoint']}:{row['player_family_orientation']}:{row['rank']}"
                     for row in ttk if row["status"] != "VERIFIED")

@@ -18,7 +18,11 @@ public final class MobRuntimeSourceRegressionSuite {
         final String cultists = read("src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java");
         final String wildHunt = read("src/main/java/hu/taliann/icesmp/managers/WildHuntManager.java");
         final String content = read("src/main/resources/config/mob-templates.yml");
-        final String wildlife = read("src/main/java/hu/taliann/icesmp/pve/WildlifeRetaliationService.java");
+        final String profiles = read("src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java");
+        final String species = read("src/main/java/hu/taliann/icesmp/pve/CreatureSpeciesRegistry.java");
+        final String loot = read("src/main/java/hu/taliann/icesmp/listeners/MobLootListener.java");
+        final String soulstone = read("src/main/java/hu/taliann/icesmp/listeners/SoulstoneListener.java");
+        final String classXp = read("src/main/java/hu/taliann/icesmp/listeners/ClassXpListener.java");
 
         check(scaling.contains("MobProgressionPolicy.resolve")
                         && scaling.contains("normalMaximum()")
@@ -104,15 +108,35 @@ public final class MobRuntimeSourceRegressionSuite {
                         && runtime.contains("maximumTechniques")
                         && runtime.contains("rank-abilities"),
                 "rank techniques lack recovery, interrupt counterplay or bounded rank defaults");
-        check(wildlife.contains("EntityDamageByEntityEvent")
-                        && wildlife.contains("instanceof Tameable")
-                        && wildlife.contains("!ageable.isAdult()")
-                        && wildlife.contains("maximum-allies")
-                        && wildlife.contains("player.getScheduler().run")
-                        && !wildlife.contains("MobRank")
-                        && !wildlife.contains("dropItem")
-                        && !wildlife.contains("Bukkit.getScheduler"),
-                "passive wildlife retaliation is not provocation-only, bounded, Folia-safe or reward-neutral");
+        check(profiles.contains("EntityDamageByEntityEvent")
+                        && profiles.contains("responsiblePlayer")
+                        && profiles.contains("instanceof Tameable")
+                        && profiles.contains("!ageable.isAdult()")
+                        && profiles.contains("maximumCandidates")
+                        && profiles.contains("maximumAssistants")
+                        && profiles.contains("ally.getScheduler().run")
+                        && !profiles.contains("Bukkit.getScheduler"),
+                "unified provocation is not player-owned, tame/baby-safe, bounded or Folia-safe");
+        check(profiles.contains("runtime.enterCombat")
+                        && profiles.contains("runtime.trigger")
+                        && runtime.contains("authoredCombat")
+                        && runtime.contains("castEpoch")
+                        && runtime.contains("disengage"),
+                "passive reactions bypass the common technique/cast/disengage lifecycle");
+        check(species.contains("EntityType.values()")
+                        && species.contains("type.isAlive()")
+                        && species.contains("type.isSpawnable()")
+                        && species.contains("nonCombatFallback"),
+                "species inventory is hardcoded or fails open on unknown Paper types");
+        check(loot.contains("CreatureProfileService")
+                        && soulstone.contains("authoredRewardEligible")
+                        && classXp.contains("authoredRewardEligible"),
+                "combat capability can still become an implicit gear, soulstone or XP faucet");
+        check(!Files.exists(Path.of(
+                        "src/main/java/hu/taliann/icesmp/pve/WildlifeRetaliationService.java"))
+                        && !Files.exists(Path.of(
+                        "src/main/java/hu/taliann/icesmp/pve/WildlifeRetaliationPolicy.java")),
+                "legacy wildlife retaliation remains a second active truth source");
 
         System.out.println("Mob runtime source regression suite passed. assertions=" + assertions);
     }

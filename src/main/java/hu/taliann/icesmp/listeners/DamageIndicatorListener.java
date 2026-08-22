@@ -8,6 +8,7 @@ import hu.taliann.icesmp.hud.TargetFrameMetadataPolicy;
 import hu.taliann.icesmp.hud.TargetHudState;
 import hu.taliann.icesmp.pve.MobTemplate;
 import hu.taliann.icesmp.pve.MobTemplateRegistry;
+import hu.taliann.icesmp.pve.CreatureProfileService;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -21,8 +22,6 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
-import org.bukkit.entity.Animals;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.TextDisplay;
@@ -275,7 +274,10 @@ public final class DamageIndicatorListener implements Listener {
                 template.archetype().name());
         final String archetype = entity.getPersistentDataContainer().get(
                 new NamespacedKey(plugin, "mob_archetype"), PersistentDataType.STRING);
-        return TargetFrameMetadataPolicy.archetypeStatus(archetype);
+        final String projected = TargetFrameMetadataPolicy.archetypeStatus(archetype);
+        if (!projected.isBlank()) return projected;
+        return entity instanceof LivingEntity living
+                ? CreatureProfileService.presentationStatus(living) : "";
     }
 
     private static String targetName(final Entity victim) {
@@ -292,9 +294,11 @@ public final class DamageIndicatorListener implements Listener {
 
     private static TargetHudState.Kind targetKind(final Entity victim) {
         if (victim instanceof Player) return TargetHudState.Kind.PLAYER;
-        if (victim instanceof Monster) return TargetHudState.Kind.HOSTILE;
-        if (victim instanceof Animals) return TargetHudState.Kind.PASSIVE;
-        return TargetHudState.Kind.NEUTRAL;
+        return switch (CreatureProfileService.disposition(victim)) {
+            case HOSTILE -> TargetHudState.Kind.HOSTILE;
+            case PASSIVE -> TargetHudState.Kind.PASSIVE;
+            case NEUTRAL, NON_COMBAT -> TargetHudState.Kind.NEUTRAL;
+        };
     }
 
     /** Owner-thread read of the last entity-owned target snapshot. */

@@ -131,6 +131,8 @@ public final class MobLootListener implements Listener {
         final boolean bossTier = worldBossManager.isWorldBoss(entity)
                 || invasionManager.isInvasionMob(entity.getUniqueId())
                 || wildHuntManager.isWildHunt(entity.getUniqueId());
+        if (!bossTier && !hu.taliann.icesmp.pve.CreatureProfileService
+                .authoredRewardEligible(entity)) return;
         final Player killer = entity.getKiller();
         if (killer != null && hu.taliann.icesmp.utils.MobKillUtil.isAfkRewardBlocked(
                 killer.getUniqueId(), configManager, afkManager)) return;

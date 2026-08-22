@@ -69,7 +69,7 @@ _mob_archetypes = {"BRUISER", "CHARGER", "SKIRMISHER", "RANGED", "ARTILLERY",
                    "CONTROLLER", "FLYING"}
 _mob_ability_kinds = {"LUNGE", "GROUND_SLAM", "PROJECTILE_BURST", "SHIELD",
                       "HEAL_PULSE", "SUMMON", "CLEAVE", "POISON_CLOUD",
-                      "DELAYED_RUNE", "RETREAT", "ALLY_BUFF"}
+                      "DELAYED_RUNE", "RETREAT", "ALLY_BUFF", "COMPOSITE"}
 if not 4 <= len(_mob_abilities) <= 64:
     fail(f"mob-abilities katalógus mérete {len(_mob_abilities)}; elvárt 4-64")
 if not 4 <= len(_mob_templates) <= 256:
@@ -83,6 +83,14 @@ for _aid, _ability in _mob_abilities.items():
                                                   "CLEAVE", "POISON_CLOUD", "DELAYED_RUNE"} \
             and int(_ability.get("telegraph-ticks", 0)) < 10:
         fail(f"mob-ability '{_aid}' veszélyes, de nincs olvasható telegraph")
+    if str(_ability.get("kind", "")).upper() == "COMPOSITE":
+        _actions = _ability.get("actions", []) or []
+        if not _actions or len(_actions) > 8:
+            fail(f"mob-ability '{_aid}' composable action-szekvenciája érvénytelen")
+        if any(str(_action.get("type", "")).upper() in {"DAMAGE", "DASH"}
+               for _action in _actions if isinstance(_action, dict)) \
+                and int(_ability.get("telegraph-ticks", 0)) < 10:
+            fail(f"mob-ability '{_aid}' veszélyes composition, de nincs olvasható telegraph")
 for _mid, _template in _mob_templates.items():
     _normalized = str(_mid).lower().replace("-", "_")
     if _normalized in _normalized_mob_ids:

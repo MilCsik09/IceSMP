@@ -2,12 +2,18 @@ package hu.taliann.icesmp.itemization;
 
 import hu.taliann.icesmp.items.ItemDataFactory;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
+import hu.taliann.icesmp.pve.CreatureSpeciesPolicy;
+import hu.taliann.icesmp.pve.CreatureSpeciesRegistry;
+import hu.taliann.icesmp.pve.MobAbilityDefinition;
+import hu.taliann.icesmp.pve.MobAbilityRegistry;
+import hu.taliann.icesmp.pve.MobRank;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -64,6 +70,10 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 "itemTemplateRegistry", ItemTemplateRegistry.class);
         final ProfessionRecipeCatalog catalog = readField(assembledCore,
                 "professionRecipeCatalog", ProfessionRecipeCatalog.class);
+        final CreatureSpeciesRegistry creatureSpecies = readField(assembledCore,
+                "creatureSpeciesRegistry", CreatureSpeciesRegistry.class);
+        final MobAbilityRegistry mobAbilities = readField(assembledCore,
+                "mobAbilityRegistry", MobAbilityRegistry.class);
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
             try {
                 writeVanillaRuntimeBenchmark();
@@ -73,6 +83,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 verifyActualInventoryAtomicity();
                 verifyMutationPhysicalState(identity);
                 verifyCatalogPositiveLoad(identity, catalog, templates);
+                verifyCreatureRuntime(creatureSpecies, mobAbilities);
                 plugin.getLogger().info(PASS_MARKER);
             } catch (final Throwable failure) {
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -139,6 +150,87 @@ public final class PaperSourceIntegrityRuntimeProbe {
 
     private static String number(final double value) {
         return String.format(java.util.Locale.ROOT, "%.6f", value);
+    }
+
+    /** Real Paper EntityType inventory joined to the startup-published creature authority. */
+    private static void verifyCreatureRuntime(final CreatureSpeciesRegistry registry,
+                                              final MobAbilityRegistry abilities)
+            throws java.io.IOException {
+        final var expected = CreatureSpeciesRegistry.supportedLivingTypes();
+        check(!expected.isEmpty() && expected.equals(registry.all().keySet()),
+                "Paper living EntityType inventory and creature species matrix must match exactly");
+        final CreatureSpeciesPolicy cow = registry.profile(EntityType.COW);
+        final CreatureSpeciesPolicy rabbit = registry.profile(EntityType.RABBIT);
+        final CreatureSpeciesPolicy goat = registry.profile(EntityType.GOAT);
+        final CreatureSpeciesPolicy bee = registry.profile(EntityType.BEE);
+        final CreatureSpeciesPolicy wolf = registry.profile(EntityType.WOLF);
+        final CreatureSpeciesPolicy zombie = registry.profile(EntityType.ZOMBIE);
+        final CreatureSpeciesPolicy skeleton = registry.profile(EntityType.SKELETON);
+        check(cow.disposition() == CreatureSpeciesPolicy.Disposition.PASSIVE
+                        && cow.levelEnabled() && cow.rankEnabled()
+                        && cow.rewardProfile() == CreatureSpeciesPolicy.RewardProfile.VANILLA_ONLY
+                        && cow.techniquesFor(MobRank.ELITE).containsAll(
+                        List.of("headbutt", "short_charge", "defensive_stomp"))
+                        && cow.socialPolicy().maximumAssistants() == 2,
+                "Cow runtime profile lost passive level/rank/technique/social/reward projection");
+        check(rabbit.disposition() == CreatureSpeciesPolicy.Disposition.PASSIVE
+                        && rabbit.temperamentPolicy().fightPercent().values().stream()
+                        .allMatch(percent -> percent == 0.0D),
+                "Rabbit runtime profile must remain deterministic flee-first wildlife");
+        check(goat.disposition() == CreatureSpeciesPolicy.Disposition.NEUTRAL
+                        && goat.socialPolicy().relation() == CreatureSpeciesPolicy.SocialRelation.VANILLA,
+                "Goat runtime profile must preserve vanilla territorial/ram authority");
+        check(bee.disposition() == CreatureSpeciesPolicy.Disposition.NEUTRAL
+                        && bee.socialPolicy().relation() == CreatureSpeciesPolicy.SocialRelation.VANILLA,
+                "Bee runtime profile must preserve vanilla swarm authority");
+        check(wolf.disposition() == CreatureSpeciesPolicy.Disposition.NEUTRAL
+                        && wolf.tamePolicy() == CreatureSpeciesPolicy.TamePolicy.OWNER_SAFE,
+                "Wolf runtime profile must preserve pack/tame owner safety");
+        check(zombie.disposition() == CreatureSpeciesPolicy.Disposition.HOSTILE
+                        && skeleton.disposition() == CreatureSpeciesPolicy.Disposition.HOSTILE,
+                "Zombie/Skeleton hostile controls lost common creature projection");
+        check(abilities.require("headbutt").kind() == MobAbilityDefinition.Kind.COMPOSITE
+                        && abilities.require("panic_dash").triggers()
+                        .contains(MobAbilityDefinition.Trigger.ON_PROVOKED),
+                "composable physical technique runtime was not published");
+
+        final StringBuilder json = new StringBuilder(24_000)
+                .append("{\n  \"schema\": 1,\n")
+                .append("  \"runtime\": \"Paper 1.21.11\",\n")
+                .append("  \"entity_type_authority\": \"EntityType.values/isAlive/isSpawnable\",\n")
+                .append("  \"supported_species_count\": ").append(expected.size()).append(",\n")
+                .append("  \"inventory_exact\": true,\n")
+                .append("  \"representative_profiles\": [\n");
+        final List<EntityType> representatives = List.of(EntityType.COW, EntityType.RABBIT,
+                EntityType.GOAT, EntityType.BEE, EntityType.WOLF,
+                EntityType.ZOMBIE, EntityType.SKELETON);
+        for (int index = 0; index < representatives.size(); index++) {
+            final EntityType type = representatives.get(index);
+            final CreatureSpeciesPolicy policy = registry.profile(type);
+            if (index > 0) json.append(",\n");
+            json.append("    {\"entity_type\":\"").append(type.name())
+                    .append("\",\"disposition\":\"").append(policy.disposition())
+                    .append("\",\"level_enabled\":").append(policy.levelEnabled())
+                    .append(",\"rank_enabled\":").append(policy.rankEnabled())
+                    .append(",\"reward_profile\":\"").append(policy.rewardProfile())
+                    .append("\",\"normal_techniques\":")
+                    .append(stringList(policy.techniquesFor(MobRank.NORMAL)))
+                    .append(",\"elite_techniques\":")
+                    .append(stringList(policy.techniquesFor(MobRank.ELITE)))
+                    .append('}');
+        }
+        json.append("\n  ],\n  \"status\": \"PAPER_RUNTIME_PROVED\"\n}\n");
+        final Path output = Path.of(System.getProperty("icesmp.combat-evidence-dir",
+                "../build/reports/combat-foundation")).toAbsolutePath().normalize()
+                .resolve("creature-runtime-report.json");
+        Files.createDirectories(output.getParent());
+        Files.writeString(output, json.toString());
+        check(Files.size(output) > 512L, "creature runtime evidence is unexpectedly empty");
+    }
+
+    private static String stringList(final List<String> values) {
+        return values.stream().map(value -> "\"" + value + "\"")
+                .collect(java.util.stream.Collectors.joining(",", "[", "]"));
     }
 
     private static <T> T readField(final Object target, final String name, final Class<T> type) {

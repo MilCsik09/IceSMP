@@ -96,6 +96,19 @@ val combatEncounterFoundationAudit by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_combat_encounter_foundation.py", "--check")
 }
 
+val unifiedCreatureCombatAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates the bounded creature species, technique, reaction, reward and social authority."
+    inputs.files(
+        "scripts/audit_unified_creature_combat.py",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
+        "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
+    )
+    commandLine(pythonCommand, "scripts/audit_unified_creature_combat.py", "--check")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -909,6 +922,7 @@ tasks.check {
     dependsOn(progressionBalanceRegressionTest)
     dependsOn(equipment2ReportRegressionTest)
     dependsOn(combatEncounterFoundationAudit)
+    dependsOn(unifiedCreatureCombatAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(

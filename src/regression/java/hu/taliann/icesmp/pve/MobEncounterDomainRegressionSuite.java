@@ -16,7 +16,9 @@ public final class MobEncounterDomainRegressionSuite {
         progressionCoversOneToSeventyWithSeparateCurves();
         hybridPrecedenceAndBonusesAreBounded();
         authoredTemplateAbilityAndAffixInvariantsHold();
-        wildlifeTemperamentIsStableAndBounded();
+        creatureReactionIdentityIsStableAndBounded();
+        elitePassiveRankDoesNotImplyAggressionOrRewards();
+        deterministicPopulationDistributionIsRepresentative();
         encounterSnapshotUsesDiminishingStableScaling();
         contributionIsBoundedMeaningfulAndIdempotent();
         combatPowerRemainsAContextEstimate();
@@ -25,24 +27,78 @@ public final class MobEncounterDomainRegressionSuite {
         System.out.println("Mob/Encounter behavioral domain regression suite passed. assertions=" + assertions);
     }
 
-    private static void wildlifeTemperamentIsStableAndBounded() {
+    private static void creatureReactionIdentityIsStableAndBounded() {
         final UUID animal = UUID.fromString("00000000-0000-0000-0000-00000000a11f");
-        final WildlifeRetaliationPolicy.Weights weights =
-                new WildlifeRetaliationPolicy.Weights(45, 40, 15);
-        final WildlifeRetaliationPolicy.Temperament first =
-                WildlifeRetaliationPolicy.stableTemperament(animal, weights);
-        check(first == WildlifeRetaliationPolicy.stableTemperament(animal, weights),
-                "wildlife temperament is stable for the entity UUID");
-        final WildlifeRetaliationPolicy.Chances chances =
-                new WildlifeRetaliationPolicy.Chances(0.0D, 70.0D, 100.0D);
-        check(!WildlifeRetaliationPolicy.retaliates(
-                        WildlifeRetaliationPolicy.Temperament.TIMID, chances, 0.0D),
-                "timid zero-chance animal can flee without retaliation");
-        check(WildlifeRetaliationPolicy.retaliates(
-                        WildlifeRetaliationPolicy.Temperament.AGGRESSIVE, chances, .999D),
-                "aggressive configured animal retaliates within the bounded window");
-        expectFailure(() -> new WildlifeRetaliationPolicy.Weights(0, 0, 0),
-                "empty temperament distribution is rejected");
+        final var policy = passivePolicy(Map.of(
+                CreatureSpeciesPolicy.Temperament.TIMID, 80,
+                CreatureSpeciesPolicy.Temperament.DEFENSIVE, 20));
+        final CreatureSpeciesPolicy.Temperament first = policy.temperamentPolicy()
+                .select(animal, policy.allowedTemperaments());
+        check(first == policy.temperamentPolicy().select(animal, policy.allowedTemperaments()),
+                "creature temperament is stable for the entity UUID");
+        final CreatureSpeciesPolicy.Reaction reaction = policy.temperamentPolicy().reaction(animal, first);
+        check(reaction == policy.temperamentPolicy().reaction(animal, first),
+                "one entity does not reroll its FLEE/FIGHT identity on every hit");
+        check(policy.disposition() == CreatureSpeciesPolicy.Disposition.PASSIVE,
+                "a stable combat reaction does not change passive disposition");
+        expectFailure(() -> new CreatureSpeciesPolicy.SocialPolicy(
+                        CreatureSpeciesPolicy.SocialRelation.SAME_SPECIES,
+                        32.0D, 80, Set.of(), 1L, 500),
+                "unbounded herd propagation is rejected");
+    }
+
+    private static void elitePassiveRankDoesNotImplyAggressionOrRewards() {
+        final CreatureSpeciesPolicy policy = passivePolicy(Map.of(
+                CreatureSpeciesPolicy.Temperament.DEFENSIVE, 100));
+        check(policy.techniquesFor(MobRank.NORMAL).equals(List.of("headbutt")),
+                "normal passive gets one authored physical technique");
+        check(policy.techniquesFor(MobRank.ELITE).containsAll(
+                        List.of("headbutt", "short_charge", "defensive_stomp")),
+                "elite passive gets bounded rank complexity after provocation");
+        check(policy.disposition() == CreatureSpeciesPolicy.Disposition.PASSIVE,
+                "elite rank cannot promote passive disposition to hostile");
+        check(!policy.authoredRewardEligible(),
+                "elite passive does not inherit hostile canonical rewards");
+    }
+
+    private static void deterministicPopulationDistributionIsRepresentative() {
+        final CreatureSpeciesPolicy policy = passivePolicy(Map.of(
+                CreatureSpeciesPolicy.Temperament.TIMID, 80,
+                CreatureSpeciesPolicy.Temperament.DEFENSIVE, 20));
+        int fights = 0;
+        for (int index = 0; index < 10_000; index++) {
+            final UUID entity = new UUID(0x1ce5L, index);
+            final CreatureSpeciesPolicy.Temperament temperament = policy.temperamentPolicy()
+                    .select(entity, policy.allowedTemperaments());
+            if (policy.temperamentPolicy().reaction(entity, temperament)
+                    == CreatureSpeciesPolicy.Reaction.FIGHT) fights++;
+        }
+        check(fights >= 1_750 && fights <= 2_250,
+                "seeded 20 percent defensive population stays within deterministic tolerance: " + fights);
+    }
+
+    private static CreatureSpeciesPolicy passivePolicy(
+            final Map<CreatureSpeciesPolicy.Temperament, Integer> weights) {
+        final Map<CreatureSpeciesPolicy.Temperament, Double> fight = new java.util.EnumMap<>(
+                CreatureSpeciesPolicy.Temperament.class);
+        weights.keySet().forEach(temperament -> fight.put(temperament,
+                temperament == CreatureSpeciesPolicy.Temperament.DEFENSIVE ? 100.0D : 0.0D));
+        return new CreatureSpeciesPolicy("cow", CreatureSpeciesPolicy.Category.PASSIVE,
+                CreatureSpeciesPolicy.Disposition.PASSIVE, true, true,
+                MobArchetype.BRUISER, weights.keySet(),
+                new CreatureSpeciesPolicy.TemperamentPolicy(weights, fight,
+                        false, 240L, "panic_dash"),
+                CreatureSpeciesPolicy.ProvocationPolicy.DIRECT_PLAYER,
+                List.of("headbutt"), Map.of(
+                        MobRank.VETERAN, List.of("short_charge"),
+                        MobRank.ELITE, List.of("defensive_stomp")),
+                new CreatureSpeciesPolicy.SocialPolicy(
+                        CreatureSpeciesPolicy.SocialRelation.SAME_SPECIES,
+                        6.0D, 2, Set.of(CreatureSpeciesPolicy.Temperament.DEFENSIVE),
+                        240L, 12),
+                CreatureSpeciesPolicy.RewardProfile.VANILLA_ONLY,
+                CreatureSpeciesPolicy.BabyPolicy.IDENTITY_ONLY,
+                CreatureSpeciesPolicy.TamePolicy.NOT_TAMEABLE);
     }
 
     private static void progressionCoversOneToSeventyWithSeparateCurves() {
