@@ -157,6 +157,18 @@ public final class MobAbilityRuntime implements Listener {
         }
     }
 
+    /**
+     * Rebuilds one entity's bounded technique projection after an authored spawner has finished
+     * applying template/rank metadata. This closes the spawn-event ordering window without
+     * creating a second combat lifecycle or retaining a stale generic ability kit.
+     */
+    public void refreshProfile(final Mob mob) {
+        if (mob == null || !mob.isValid()) return;
+        final RuntimeState current = states.get(mob.getUniqueId());
+        if (current != null) detach(current);
+        attach(mob);
+    }
+
     /** Serialises producer admission so concurrent Folia regions cannot overshoot the hard cap. */
     private boolean registerState(final UUID mobId, final RuntimeState state) {
         synchronized (states) {
