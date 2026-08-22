@@ -83,10 +83,12 @@ public final class PaperSourceIntegrityRuntimeProbe {
                     "authoredCreatureSpawns", AuthoredCreatureSpawnService.class);
             final MobScalingManager mobScaling = readField(assembledCore,
                     "mobScalingManager", MobScalingManager.class);
+            final MobAbilityRuntime mobAbilityRuntime = readField(assembledCore,
+                    "mobAbilityRuntime", MobAbilityRuntime.class);
             plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_ARMED");
             try {
                 startAuthoredPveRuntimeProof(plugin, mobTemplates, mobAbilities,
-                        authoredSpawns, creatureSpecies, mobScaling);
+                        authoredSpawns, creatureSpecies, mobScaling, mobAbilityRuntime);
             } catch (final Throwable failure) {
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
                 failure.printStackTrace();
@@ -126,7 +128,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                                      final MobAbilityRegistry abilities,
                                                      final AuthoredCreatureSpawnService spawns,
                                                      final CreatureSpeciesRegistry species,
-                                                     final MobScalingManager scaling) {
+                                                     final MobScalingManager scaling,
+                                                     final MobAbilityRuntime runtime) {
         final org.bukkit.World world = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst();
         check(world != null, "authored PvE runtime world unavailable");
         hu.taliann.icesmp.pve.AuthoredPveContentValidator.validate(templates, abilities);
@@ -166,7 +169,6 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         EntityType.ZOMBIE.getEntityClass().asSubclass(Mob.class)));
                 controls.add((Mob) world.spawn(at.clone().add(7.0D, 0.0D, 0.0D),
                         EntityType.SKELETON.getEntityClass().asSubclass(Mob.class)));
-                spawned.forEach(mob -> mob.setAI(false));
                 controls.forEach(mob -> mob.setAI(false));
                 plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_CONTROLS");
                 check("ring_warden".equals(hu.taliann.icesmp.managers.MobScalingManager
@@ -196,6 +198,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                     try {
                         check(Bukkit.isOwnedByCurrentRegion(worldBoss),
                                 "runtime boss left its bounded probe region before threshold exercise");
+                        runtime.trigger(worldBoss, MobAbilityDefinition.Trigger.ON_TIMER,
+                                null, false);
                         worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
                         worldBoss.damage(maximumHealth.getValue() * 0.20D);
                         worldBoss.damage(1.0D);
