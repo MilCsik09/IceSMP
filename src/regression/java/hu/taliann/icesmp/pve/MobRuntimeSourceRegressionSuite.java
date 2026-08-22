@@ -46,8 +46,12 @@ public final class MobRuntimeSourceRegressionSuite {
                         && !runtime.contains("Bukkit.getScheduler")
                         && !runtime.contains(".join()"),
                 "mob ability runtime violates Folia scheduling rules");
-        check(runtime.indexOf("telegraph(mob, chosen, target)")
-                        < runtime.indexOf("execute(mob, chosen, target)"),
+        final int startCast = runtime.indexOf("private void startCast");
+        final int targetSnapshot = runtime.indexOf("private Location targetSnapshot", startCast);
+        final String castLifecycle = runtime.substring(startCast, targetSnapshot);
+        final int telegraph = castLifecycle.indexOf("telegraph(mob, chosen, target)");
+        final int execution = castLifecycle.indexOf("execute(mob, chosen, target, state)");
+        check(telegraph >= 0 && execution >= 0 && telegraph < execution,
                 "dangerous ability executes before its vanilla telegraph");
         check(runtime.contains("MAX_ACTIVE_MOBS = 2048")
                         && runtime.contains("maximum-summons-per-cast")
