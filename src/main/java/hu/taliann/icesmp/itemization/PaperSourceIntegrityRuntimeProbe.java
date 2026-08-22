@@ -198,6 +198,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                     try {
                         check(Bukkit.isOwnedByCurrentRegion(worldBoss),
                                 "runtime boss left its bounded probe region before threshold exercise");
+                        plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_ABILITIES "
+                                + runtime.activeAbilityIds(worldBoss));
                         runtime.trigger(worldBoss, MobAbilityDefinition.Trigger.ON_TIMER,
                                 null, false);
                         worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
