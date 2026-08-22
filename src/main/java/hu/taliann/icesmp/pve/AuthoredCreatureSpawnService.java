@@ -164,9 +164,9 @@ public final class AuthoredCreatureSpawnService {
         plugin.getServer().getRegionScheduler().runDelayed(plugin, spawnOwner, task -> {
             if (!mob.isValid() || mob.isDead()) return;
             if (Bukkit.isOwnedByCurrentRegion(mob)) {
-                abilities.attach(mob);
+                abilities.refreshProfile(mob);
             } else {
-                mob.getScheduler().run(plugin, owned -> abilities.attach(mob), null);
+                mob.getScheduler().run(plugin, owned -> abilities.refreshProfile(mob), null);
             }
         }, 1L);
         CombatTelemetry.record("authored_template_spawn", template == null ? type.name() : template.mobId());
