@@ -4,6 +4,7 @@ import hu.taliann.icesmp.managers.EventSpawnGuard;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.utils.TransientEntities;
 import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -159,6 +160,15 @@ public final class AuthoredCreatureSpawnService {
                     request.lifespanTicks());
         }
         abilities.attach(mob);
+        final Location spawnOwner = location.clone();
+        plugin.getServer().getRegionScheduler().runDelayed(plugin, spawnOwner, task -> {
+            if (!mob.isValid() || mob.isDead()) return;
+            if (Bukkit.isOwnedByCurrentRegion(mob)) {
+                abilities.attach(mob);
+            } else {
+                mob.getScheduler().run(plugin, owned -> abilities.attach(mob), null);
+            }
+        }, 1L);
         CombatTelemetry.record("authored_template_spawn", template == null ? type.name() : template.mobId());
         return mob;
     }

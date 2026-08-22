@@ -192,10 +192,20 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 final var maximumHealth = worldBoss.getAttribute(Attribute.MAX_HEALTH);
                 check(maximumHealth != null && maximumHealth.getValue() > 0.0D,
                         "authored world boss lacks canonical maximum health");
-                worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
-                worldBoss.damage(maximumHealth.getValue() * 0.20D);
-                worldBoss.damage(1.0D);
-                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_THRESHOLD_ARMED");
+                plugin.getServer().getRegionScheduler().runDelayed(plugin, at, exercise -> {
+                    try {
+                        check(Bukkit.isOwnedByCurrentRegion(worldBoss),
+                                "runtime boss left its bounded probe region before threshold exercise");
+                        worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
+                        worldBoss.damage(maximumHealth.getValue() * 0.20D);
+                        worldBoss.damage(1.0D);
+                        plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_THRESHOLD_ARMED");
+                    } catch (final Throwable failure) {
+                        plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
+                        failure.printStackTrace();
+                        Bukkit.shutdown();
+                    }
+                }, 5L);
                 plugin.getServer().getRegionScheduler().runDelayed(plugin, at, verify -> {
                     try {
                         final Map<String, Long> telemetry = CombatTelemetry.snapshot();
