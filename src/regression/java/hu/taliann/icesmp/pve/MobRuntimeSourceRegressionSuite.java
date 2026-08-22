@@ -114,6 +114,8 @@ public final class MobRuntimeSourceRegressionSuite {
                 "rank techniques lack recovery, interrupt counterplay or bounded rank defaults");
         check(profiles.contains("EntityDamageByEntityEvent")
                         && profiles.contains("responsiblePlayer")
+                        && profiles.contains("SpawnReason.DEFAULT")
+                        && !profiles.contains("SpawnReason.CHUNK_GEN")
                         && profiles.contains("instanceof Tameable")
                         && profiles.contains("!ageable.isAdult()")
                         && profiles.contains("maximumCandidates")

@@ -70,7 +70,7 @@ public final class CreatureProfileService implements Listener {
                 || event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.COMMAND) {
             entity.getScheduler().runDelayed(plugin, task -> {
                 if (entity.isValid() && scaling.getLevel(entity) == 0) {
-                    scaling.applyScaling(entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN);
+                    scaling.applyScaling(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
                 }
             }, null, 1L);
         }
@@ -82,9 +82,9 @@ public final class CreatureProfileService implements Listener {
             if (!(raw instanceof LivingEntity living) || raw instanceof Player) continue;
             living.getScheduler().run(plugin, task -> {
                 if (!living.isValid()) return;
-                assign(living, CreatureSpawnEvent.SpawnReason.CHUNK_GEN);
+                assign(living, CreatureSpawnEvent.SpawnReason.DEFAULT);
                 if (scaling.getLevel(living) == 0) {
-                    scaling.applyScaling(living, CreatureSpawnEvent.SpawnReason.CHUNK_GEN);
+                    scaling.applyScaling(living, CreatureSpawnEvent.SpawnReason.DEFAULT);
                 }
                 runtime.attach(living);
             }, null);
