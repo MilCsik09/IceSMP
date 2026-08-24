@@ -298,8 +298,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                 "open-sky noon undead did not survive the proof window");
                         check(daytimeUndead.getFireTicks() <= 0,
                                 "authored daylight protection left the noon undead burning");
-                        check(daytimeUndead.getEquipment() != null
-                                        && daytimeUndead.getEquipment().getHelmet() == null,
+                        check(hasNoHelmet(daytimeUndead),
                                 "authored daylight protection used an equipment workaround");
                         check(daytimeUndead.hasAI(),
                                 "day-capable authored undead lost vanilla combat AI");
@@ -372,8 +371,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 + "  \"passive_control_initial_target\": false,\n"
                 + "  \"common_runtime\": \"MobAbilityRuntime\",\n"
                 + "  \"daylight_undead\": {\"open_sky_noon\":true,\"no_helmet\":"
-                + (daytimeUndead.getEquipment() != null
-                && daytimeUndead.getEquipment().getHelmet() == null)
+                + hasNoHelmet(daytimeUndead)
                 + ",\"no_fire\":" + (daytimeUndead.getFireTicks() <= 0)
                 + ",\"combat_ready\":" + (daytimeUndead.hasAI()
                 && !scaling.hasAuthoredDaylightProtection(nightUndead)) + "},\n"
@@ -388,6 +386,13 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 + "  \"duplicate_participant_modifier_rejected\": true,\n"
                 + "  \"pause_resume_exercised\": true,\n"
                 + "  \"status\": \"PAPER_RUNTIME_PROVED\"\n}\n");
+    }
+
+    /** Paper represents an empty equipment slot as either null or an AIR ItemStack. */
+    private static boolean hasNoHelmet(final Mob mob) {
+        if (mob == null || mob.getEquipment() == null) return false;
+        final org.bukkit.inventory.ItemStack helmet = mob.getEquipment().getHelmet();
+        return helmet == null || helmet.getType().isAir();
     }
 
     /**
