@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   authority-and-build:
-    name: Authority, parity and Java 21 build
+    name: CI build
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -50,8 +50,8 @@ jobs:
 
       - name: Validate resource-pack boundary
         run: |
-          python3 scripts/test_resource_pack.py
-          python3 scripts/validate_gui_icons.py
+          python3 scripts/resource_pack.py validate
+          python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 
       - uses: actions/setup-java@v4
         with:

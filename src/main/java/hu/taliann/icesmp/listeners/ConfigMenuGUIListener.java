@@ -476,14 +476,15 @@ public final class ConfigMenuGUIListener implements Listener {
         ConfigChatInputGate.close(player.getUniqueId());
         player.closeInventory();
         plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
-            final ConfigManager.BatchApplyResult result;
+            ConfigManager.BatchApplyResult attempted;
             try {
-                result = configManager.applyOverridesIfUnchanged(
+                attempted = configManager.applyOverridesIfUnchanged(
                         session.expectedGeneration(), session.expectedFingerprint(), changes);
             } catch (final RuntimeException failure) {
                 plugin.getLogger().severe("Config GUI transaction rejected and rolled back: " + failure);
-                result = ConfigManager.BatchApplyResult.REJECTED;
+                attempted = ConfigManager.BatchApplyResult.REJECTED;
             }
+            final ConfigManager.BatchApplyResult result = attempted;
             plugin.getServer().getGlobalRegionScheduler().run(plugin, global -> {
                 if (result == ConfigManager.BatchApplyResult.APPLIED) applyHooks(changes.keySet());
                 player.getScheduler().run(plugin, playerTask -> finishSave(player, result, changes.size()), null);
