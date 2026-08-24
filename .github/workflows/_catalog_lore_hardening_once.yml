@@ -1,0 +1,68 @@
+name: One-shot equipment catalog lore hardening
+
+on:
+  push:
+    branches:
+      - feature/equipment-catalog-expansion
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.actor == 'MilCsik09'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/equipment-catalog-expansion
+          fetch-depth: 0
+
+      - name: Patch generator and regenerate catalog
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('scripts/generate_long_term_equipment_catalog.py')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''def fixed_stats(family: str, archetype: str, band: str, slot: str) -> dict[str, float]:\n    values = dict(PATTERN[family][archetype])\n    scale = BAND_COEFF[band] * SLOT_COEFF[slot]\n    return {key: round(value * scale, 4) for key, value in values.items()}\n'''
+          new = '''def fixed_stats(family: str, archetype: str, band: str, slot: str) -> dict[str, float]:\n    values = dict(PATTERN[family][archetype])\n    scale = BAND_COEFF[band] * SLOT_COEFF[slot]\n    return {key: round(value * scale, 4) for key, value in values.items()}\n\n\nLORE = {\n    "Arcane": "Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.",\n    "Ritual": "A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.",\n    "Veil": "A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.",\n    "Sanctified": "A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.",\n    "Predator": "A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.",\n    "Shadow": "Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.",\n    "Wildheart": "A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.",\n    "Demonhide": "A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.",\n    "Hunter": "A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.",\n    "Warden": "A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.",\n    "Tempest": "A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.",\n    "Runic": "A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.",\n    "Bulwark": "A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.",\n    "Crusader": "A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.",\n    "Dread": "A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.",\n    "Runeforged": "A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.",\n}\n\n\nFAMILY_LORE = {\n    "CLOTH": "Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.",\n    "LEATHER": "Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.",\n    "MAIL": "Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.",\n    "PLATE": "Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.",\n}\n\n\ndef item_lore(line: dict[str, Any], family: str, slot: str) -> list[str]:\n    acquisition = {\n        "crafted": "Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.",\n        "world": "A világ veszélyes vidékein található, ahol a felszerelés története gyakran a lelőhelyhez kötődik.",\n        "boss": "Egy nagy próba emlékét őrzi; megszerzése egy komoly összecsapás teljesítéséhez kötődik.",\n        "prestige": "Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.",\n    }[line["acq"]]\n    return [LORE[line["archetype"]], FAMILY_LORE[family], acquisition]\n'''
+          if old not in text:
+              raise SystemExit('fixed_stats anchor not found')
+          text = text.replace(old, new, 1)
+
+          old_lore = '"lore": [f"{line[\'archetype\']} {family} line: oldalirányú buildválasztás, nem nyers power-creep."],'
+          new_lore = '"lore": item_lore(line, family, slot),'
+          if old_lore not in text:
+              raise SystemExit('generated lore anchor not found')
+          text = text.replace(old_lore, new_lore, 1)
+
+          old_asc = '"lore": ["A meglévő build-identitást erősíti, nem új rarityt hoz létre."],'
+          new_asc = '"lore": item_lore(next(line for family_lines in LINES.values() for line in family_lines if ident == line.get("anchors", {}).get("chest")), str(template["armor-family"]).upper(), str(template["slot"]).lower()) + ["Felébresztve ugyanazt az identitást viszi tovább, magasabb követelmények mellett."],'
+          if old_asc in text:
+              # Keep ascension lore deterministic without depending on slot-specific anchor lookup.
+              new_asc = '"lore": ["A meglévő build-identitást erősíti, nem új rarityt hoz létre.", "Felébresztve ugyanazt az identitást viszi tovább, magasabb követelmények mellett."],'
+              text = text.replace(old_asc, new_asc, 1)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Regenerate and audit
+        run: |
+          python scripts/generate_long_term_equipment_catalog.py --write
+          python scripts/generate_long_term_equipment_catalog.py --check
+          python scripts/audit_long_term_equipment_catalog.py --require-eight-sets
+          git diff --check
+
+      - name: Commit catalog hardening and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/generate_long_term_equipment_catalog.py src/main/resources/config/equipment-catalog-expansion.yml
+          git rm .github/workflows/_catalog_lore_hardening_once.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix(equipment): harden catalog item lore"
+          git push origin HEAD:feature/equipment-catalog-expansion
