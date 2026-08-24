@@ -258,6 +258,11 @@ public record ItemTemplate(
         return stage == null ? levelRequirement : stage.levelRequirement();
     }
 
+    public int itemLevelAt(final String stageId) {
+        final AscensionStage stage = stage(stageId);
+        return stage == null ? itemLevel : stage.itemLevel();
+    }
+
     public String itemModelAt(final String stageId) {
         final AscensionStage stage = stage(stageId);
         return stage == null || stage.itemModel().isBlank() ? itemModel : stage.itemModel();

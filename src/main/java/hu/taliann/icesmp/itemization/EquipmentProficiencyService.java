@@ -250,7 +250,10 @@ public final class EquipmentProficiencyService {
 
     private void reconcileSlot(final Player player, final ItemStack item,
                                final ItemTemplate.Slot slot, final Set<UUID> duplicateIds) {
-        final ItemIdentityService.Inspection inspection = identities.inspect(item);
+        ItemIdentityService.Inspection inspection = identities.inspect(item);
+        if (inspection.status() == ItemIdentityService.Status.TEMPLATE_VERSION_STALE) {
+            inspection = identities.migrateStaleTemplate(item, System.currentTimeMillis());
+        }
         if (inspection.status() == ItemIdentityService.Status.NOT_MANAGED) return;
         if (inspection.status() != ItemIdentityService.Status.VALID) {
             identities.suppressManagedInvalid(item);
@@ -272,7 +275,7 @@ public final class EquipmentProficiencyService {
         int count = 0;
         for (final Equipped equipped : equipped(player)) {
             final ItemIdentityService.Inspection inspection = identities.inspect(equipped.item());
-            if (inspection.status() == ItemIdentityService.Status.VALID
+            if (inspection.readable() && inspection.instance() != null
                     && itemId.equals(inspection.instance().itemId()) && ++count > 1) {
                 return true;
             }
@@ -284,7 +287,7 @@ public final class EquipmentProficiencyService {
         final java.util.LinkedHashMap<UUID, Integer> counts = new java.util.LinkedHashMap<>();
         for (final Equipped equipped : equipped(player)) {
             final ItemIdentityService.Inspection inspection = identities.inspect(equipped.item());
-            if (inspection.status() == ItemIdentityService.Status.VALID) {
+            if (inspection.readable() && inspection.instance() != null) {
                 counts.merge(inspection.instance().itemId(), 1, Integer::sum);
             }
         }

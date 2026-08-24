@@ -90,6 +90,7 @@ val equipment2ReportRegressionTest by tasks.registering(Exec::class) {
     inputs.files(
         "scripts/generate_equipment_2_report.py",
         "src/main/resources/config/item-templates.yml",
+        "src/main/resources/config/equipment-catalog-expansion.yml",
         "src/main/resources/config/profession-recipes.yml",
         "docs/development/equipment-2-handoff.json",
     )
@@ -101,7 +102,7 @@ val combatEncounterFoundationAudit by tasks.registering(Exec::class) {
     description = "Validates normalized equipment, level gates, enemy techniques, TTK and wildlife evidence."
     inputs.files(
         "scripts/audit_combat_encounter_foundation.py",
-        "scripts/generate_long_term_equipment_catalog.py",
+        "scripts/audit_long_term_equipment_catalog.py",
         "src/main/resources/config/item-templates.yml",
         "src/main/resources/config/equipment-catalog-expansion.yml",
         "src/main/resources/config/mob-templates.yml",

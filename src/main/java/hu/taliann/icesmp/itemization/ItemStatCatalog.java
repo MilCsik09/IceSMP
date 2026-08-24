@@ -38,6 +38,8 @@ public final class ItemStatCatalog {
                 "minecraft:generic.armor");
         register(definitions, "armor_toughness", "Páncél-szívósság", Group.DEFENSIVE,
                 "minecraft:generic.armor_toughness");
+        register(definitions, "knockback_resistance", "Visszalökés-ellenállás", Group.DEFENSIVE,
+                "minecraft:generic.knockback_resistance");
         register(definitions, "movement_speed", "Mozgási sebesség", Group.UTILITY,
                 "minecraft:generic.movement_speed");
         DEFINITIONS = Map.copyOf(definitions);

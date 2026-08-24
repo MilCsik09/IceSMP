@@ -16,6 +16,7 @@ public record ItemHistoryEvent(Type type, long occurredAt, String detail) {
         RUNE_REMOVED,
         RUNE_CHANGED,
         REROLLED,
+        TEMPLATE_MIGRATED,
         ASCENDED,
         SIGNATURE_UPGRADED,
         SALVAGED,

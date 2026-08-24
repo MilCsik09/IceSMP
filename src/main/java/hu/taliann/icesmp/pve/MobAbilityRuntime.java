@@ -64,6 +64,7 @@ public final class MobAbilityRuntime implements Listener {
         private boolean casting;
         private boolean paused;
         private int rotationCursor;
+        private String previousAbilityId = "";
         private MobAbilityDefinition currentAbility;
         private ScheduledTask task;
 
@@ -312,17 +313,49 @@ public final class MobAbilityRuntime implements Listener {
     }
 
     private MobAbilityDefinition nextTimerAbility(final Mob mob, final RuntimeState state) {
+        MobAbilityDefinition chosen = null;
+        double chosenScore = Double.NEGATIVE_INFINITY;
         for (int offset = 0; offset < state.definitions.size(); offset++) {
             final int index = (state.rotationCursor + offset) % state.definitions.size();
             final MobAbilityDefinition candidate = state.definitions.get(index);
             if (candidate.triggers().contains(MobAbilityDefinition.Trigger.ON_TIMER)
                     && state.tick >= state.readyAtTick.getOrDefault(candidate.abilityId(), 0L)
                     && conditionsPass(mob, candidate, state)) {
-                state.rotationCursor = (index + 1) % state.definitions.size();
-                return candidate;
+                final double score = techniqueScore(mob, candidate, state, offset);
+                if (score > chosenScore) {
+                    chosen = candidate;
+                    chosenScore = score;
+                }
             }
         }
-        return null;
+        if (chosen != null) {
+            state.rotationCursor = (state.definitions.indexOf(chosen) + 1) % state.definitions.size();
+            state.previousAbilityId = chosen.abilityId();
+        }
+        return chosen;
+    }
+
+    private static double techniqueScore(final Mob mob, final MobAbilityDefinition ability,
+                                         final RuntimeState state, final int rotationOffset) {
+        final double base = ability.tuning().getOrDefault("selection_weight", 1.0D);
+        final double health = Math.max(0.0D, Math.min(1.0D, mob.getHealth()
+                / Math.max(1.0D, mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) == null
+                ? 20.0D : mob.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue())));
+        final double distance = state.targetLocation == null ? ability.radius()
+                : Math.sqrt(Math.max(0.0D, state.targetLocation.distanceSquared(mob.getLocation())));
+        double context = switch (ability.kind()) {
+            case CLEAVE, GROUND_SLAM, POISON_CLOUD -> distance <= ability.radius() + 1.0D ? 1.25D : -0.75D;
+            case LUNGE -> distance > 3.0D ? 1.0D : -0.5D;
+            case PROJECTILE_BURST, DELAYED_RUNE -> distance >= 5.0D ? 1.0D : -0.5D;
+            case RETREAT -> distance <= 4.0D ? 1.25D : -0.5D;
+            case SHIELD, HEAL_PULSE -> (1.0D - health) * 1.5D;
+            default -> 0.0D;
+        };
+        if (ability.abilityId().equals(state.previousAbilityId)) context -= 2.0D;
+        final long mixed = mob.getUniqueId().getLeastSignificantBits()
+                ^ ability.abilityId().hashCode() ^ (state.castEpoch * 0x9E3779B97F4A7C15L);
+        final double jitter = ((mixed >>> 8) & 0xFFL) / 255.0D * 0.24D - 0.12D;
+        return base + context + jitter - rotationOffset * 0.01D;
     }
 
     private boolean startCast(final Mob mob, final MobAbilityDefinition chosen,

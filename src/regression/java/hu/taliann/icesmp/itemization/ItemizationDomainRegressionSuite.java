@@ -28,6 +28,7 @@ public final class ItemizationDomainRegressionSuite {
         diversityHistoryIsBoundedIdempotentAndNeverGuaranteesMythic();
         controlledRerollSupportsLockAmplifierStabilityAndIdempotence();
         ascensionPreservesIdentityProvenanceRunesAndRelativeQuality();
+        templateMigrationPreservesIdentityAndRollQuality();
         relativeQualityHandlesIntegerDecimalNegativeAndClamp();
         salvageIsConservativeBoundedAndLegacySafe();
         recoveryNeverGuessesAcrossAmbiguousSnapshots();
@@ -346,6 +347,33 @@ public final class ItemizationDomainRegressionSuite {
                 new ItemTemplate.StatRange(10.0D, 20.0D), 99.0D,
                 new ItemTemplate.StatRange(20.0D, 40.0D), false) == 40.0D,
                 "out-of-range legacy input clamps at the new authored maximum");
+    }
+
+    private static void templateMigrationPreservesIdentityAndRollQuality() {
+        final ItemTemplate oldTemplate = mutationTemplate();
+        final ItemInstance before = mutationInstance(oldTemplate, 0.90D, 0.50D)
+                .addRune("runa_fagy", 5L);
+        final Map<String, ItemInstance.Roll> migratedRolls = Map.of(
+                "attack_damage", new ItemInstance.Roll(28.0D, 0.90D),
+                "max_health", new ItemInstance.Roll(6.0D, 0.50D));
+        final ItemInstance after = before.migrateTemplate(2, 32, migratedRolls,
+                new ItemHistoryEvent(ItemHistoryEvent.Type.TEMPLATE_MIGRATED, 30L,
+                        "template:1->2"));
+        check(after.itemId().equals(before.itemId()) && after.templateVersion() == 2,
+                "template migration preserves UUID and advances only the authored version");
+        check(after.origin().equals(before.origin()) && after.runes().equals(before.runes())
+                        && after.ascension().equals(before.ascension()),
+                "template migration preserves provenance, runes and ascension");
+        check(close(after.rolls().get("attack_damage").quality(), 0.90D)
+                        && close(after.rolls().get("max_health").quality(), 0.50D),
+                "template migration carries normalized quality into the new authored roll set");
+        check(after.mutationRevision() == before.mutationRevision() + 1
+                        && after.history().get(after.history().size() - 1).type()
+                        == ItemHistoryEvent.Type.TEMPLATE_MIGRATED,
+                "template migration is auditable and increments revision exactly once");
+        expectFailure(() -> after.migrateTemplate(2, 32, migratedRolls,
+                        new ItemHistoryEvent(ItemHistoryEvent.Type.TEMPLATE_MIGRATED, 31L, "repeat")),
+                "template migration cannot replay the same or an older version");
     }
 
     private static void salvageIsConservativeBoundedAndLegacySafe() {

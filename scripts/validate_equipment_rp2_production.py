@@ -201,7 +201,7 @@ def validate_full(art_lines: list[dict[str, Any]], errors: list[str]) -> dict[st
     catalog = yaml.safe_load(CATALOG.read_text(encoding="utf-8"))
     templates = catalog.get("item-templates", catalog.get("templates", {}))
     if not isinstance(templates, dict):
-        errors.append("generated equipment catalog has no template map")
+        errors.append("authored equipment catalog has no template map")
     else:
         by_id = {piece["template_id"]: piece for piece in pieces}
         for template_id, piece in by_id.items():

@@ -1168,9 +1168,10 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 
 ### Equipment 2.0 üzemeltetés
 
-- Authority: `item-templates.yml` → `itemization.equipment.family-profiles` és az armor
-  sablonok `armor-family` mezője. Reload csak teljesen valid immutable snapshotot publikál;
-  hiba esetén az előző marad aktív.
+- Authority: `item-templates.yml` → `itemization.equipment.family-profiles`; a 160 armor
+  teljes leaf-authorityja az `equipment-catalog-expansion.yml`, benne az `armor-family`
+  mezővel. Reload csak teljesen valid immutable snapshotot publikál; hiba esetén az előző
+  marad aktív.
 - Canonical mapping: Priest/Warlock/Wizard=CLOTH; Monk/Demon Hunter/Druid/Assassin=LEATHER;
   Archer/Shaman/Evoker=MAIL; Warrior/Paladin/Death Knight=PLATE. Spec-váltás nem változtatja.
 - `/iceitem inspect [játékos]` a familyt, explicit class restrictiont, can-equip döntést
@@ -1178,13 +1179,19 @@ A részletes persistence-, recovery- és shutdown-folyamat:
   engedélyezett; a tényleges equip ugyanazon a kapun bukik.
 - Market family filter: `/market search @cloth|@leather|@mail|@plate`. Listázást és vételt
   az eladó/vevő proficiencyje nem tiltja.
-- A `scripts/generate_long_term_equipment_catalog.py --check` determinisztikusan védi a
-  160 armor leafet; az `audit_combat_encounter_foundation.py --check` mind a 160 armor +
-  25 meglévő weapon/offhand normalizált budgetjét, same-band mediánját, level gate-jét,
-  TTK-mátrixát, technikafedését és wildlife-policyját ellenőrzi. A követett authority:
+- Az `equipment-catalog-expansion.yml` közvetlenül authorolt authority: a 160 armor
+  fix `base-armor`, toughness és — ahol van — knockback resistance értékét, egyedi magyar
+  lore-ját és szűk, family-azonos secondary rolljait nem generátor állítja elő. Az
+  `audit_long_term_equipment_catalog.py --require-eight-sets` a Leather/Gold/Chain/Copper/
+  Iron/Diamond/Netherite benchmarkokat, a teljes szettek védelmi minimumát, a négy slotot,
+  a lore-egyediséget és a craft-varianciát ellenőrzi.
+- Az `audit_combat_encounter_foundation.py --check` mind a 160 armor + 25 meglévő
+  weapon/offhand normalizált összehasonlítását, level gate-jét, TTK-mátrixát,
+  technikafedését és wildlife-policyját ellenőrzi. A követett authority:
   `docs/development/combat-balance-authority.json`.
-- Template schema 2, de a template-version változatlan. ArmorFamily template property,
-  ezért a régi ItemInstance UUID/provenance/roll/rúna/ascension állapota nem íródik át.
+- Template schema 2 és a rebalance-olt armorok template-versionje 2. A migráció az
+  ItemInstance UUID/provenance/rollminőség/rúna/ascension állapotát megtartja, majd az
+  új authorolt stat- és lore-authorityt rendereli rá.
 
 Stagingen külön próbáld: click/shift/number-key/drag/right-click/replace/dispenser,
 invsee/admin mutation, reconnect, death/keepInventory, class reset/váltás, full inventory,

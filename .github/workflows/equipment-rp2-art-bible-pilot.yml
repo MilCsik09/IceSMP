@@ -15,7 +15,7 @@ on:
       - "src/main/java/hu/taliann/icesmp/itemization/PaperSourceIntegrityRuntimeProbe.java"
       - "src/regression/java/hu/taliann/icesmp/resourcepack/**"
       - "scripts/generate_equipment_rp2_*"
-      - "scripts/generate_long_term_equipment_catalog.py"
+      - "scripts/audit_long_term_equipment_catalog.py"
       - "scripts/validate_equipment_rp2_pilot.py"
       - "scripts/equipment_rp2_asset_audit.py"
       - "scripts/generate_equipment_rp2_manifests.py"
@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/generate_long_term_equipment_catalog.py --check
+          python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets
           python3 scripts/generate_equipment_rp2_art_bible.py --check \
             --collision-output build/reports/equipment-rp2-b/collision-audit.json
           python3 scripts/generate_equipment_rp2_pilot.py --check

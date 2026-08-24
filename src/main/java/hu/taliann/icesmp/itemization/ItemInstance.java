@@ -169,6 +169,20 @@ public record ItemInstance(
                 mutationRevision, history, nextMutation).appendHistory(event);
     }
 
+    public ItemInstance migrateTemplate(final int nextTemplateVersion, final int nextItemLevel,
+                                        final Map<String, Roll> nextRolls,
+                                        final ItemHistoryEvent event) {
+        if (nextTemplateVersion <= templateVersion) {
+            throw new IllegalArgumentException("template migration must increase the version");
+        }
+        final ArrayList<ItemHistoryEvent> nextHistory = new ArrayList<>(history);
+        nextHistory.add(Objects.requireNonNull(event, "event"));
+        while (nextHistory.size() > MAX_HISTORY) nextHistory.remove(0);
+        return new ItemInstance(itemId, CURRENT_SCHEMA, templateId, nextTemplateVersion,
+                nextItemLevel, nextRolls, runes, ascension, origin, states,
+                Math.addExact(mutationRevision, 1L), nextHistory, mutation);
+    }
+
     private static Map<String, Roll> rolls(final Map<String, Roll> source) {
         if (source == null || source.isEmpty()) return Map.of();
         if (source.size() > 32) throw new IllegalArgumentException("item rolls exceed limit");
