@@ -12737,7 +12737,7 @@
         "kind": "DELAYED_RUNE",
         "recovery_ticks": 42,
         "status": "VERIFIED",
-        "target_rule": "CURRENT_TARGET",
+        "target_rule": "SELF",
         "telegraph_ticks": 46,
         "template_uses": 6
       },
