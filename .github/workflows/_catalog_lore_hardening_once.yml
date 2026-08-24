@@ -1,0 +1,40 @@
+name: One-shot equipment catalog lore hardening
+on:
+  push:
+    branches: [feature/equipment-catalog-expansion]
+permissions:
+  contents: write
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/equipment-catalog-expansion
+          fetch-depth: 0
+      - name: Patch generator and regenerate catalog
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/generate_long_term_equipment_catalog.py')
+          s = p.read_text(encoding='utf-8')
+          marker = 'def render() -> str:\n'
+          insert = '''LORE = {\n    "Arcane": "Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.",\n    "Ritual": "A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.",\n    "Veil": "A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.",\n    "Sanctified": "A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.",\n    "Predator": "A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.",\n    "Shadow": "Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.",\n    "Wildheart": "A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.",\n    "Demonhide": "A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.",\n    "Hunter": "A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.",\n    "Warden": "A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.",\n    "Tempest": "A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.",\n    "Runic": "A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.",\n    "Bulwark": "A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.",\n    "Crusader": "A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.",\n    "Dread": "A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.",\n    "Runeforged": "A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.",\n}\nFAMILY_LORE = {\n    "CLOTH": "Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.",\n    "LEATHER": "Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.",\n    "MAIL": "Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.",\n    "PLATE": "Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.",\n}\nACQ_LORE = {\n    "crafted": "Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.",\n    "world": "A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.",\n    "boss": "Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.",\n    "prestige": "Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.",\n}\ndef item_lore(line: dict[str, Any], family: str) -> list[str]:\n    return [LORE[line["archetype"]], FAMILY_LORE[family], ACQ_LORE[line["acq"]]]\n\n\n'''
+          if 'def item_lore(' not in s:
+              s = s.replace(marker, insert + marker, 1)
+          old = '"lore": [f"{line[\'archetype\']} {family} line: oldalirányú buildválasztás, nem nyers power-creep."],'
+          s = s.replace(old, '"lore": item_lore(line, family),', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          python scripts/generate_long_term_equipment_catalog.py --write
+          python scripts/generate_long_term_equipment_catalog.py --check
+          python scripts/audit_long_term_equipment_catalog.py --require-eight-sets
+          git diff --check
+      - name: Commit and remove workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/generate_long_term_equipment_catalog.py src/main/resources/config/equipment-catalog-expansion.yml
+          git rm .github/workflows/_catalog_lore_hardening_once.yml
+          git commit -m 'fix(equipment): improve catalog item lore'
+          git push origin HEAD:feature/equipment-catalog-expansion
