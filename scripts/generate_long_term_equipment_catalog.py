@@ -157,6 +157,40 @@ def template_id(line: dict[str, Any], slot: str) -> str:
     return line.get("anchors", {}).get(slot, f"{line['id']}_{SUFFIX[slot]}")
 
 
+LORE = {
+    "Arcane": "Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.",
+    "Ritual": "A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.",
+    "Veil": "A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.",
+    "Sanctified": "A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.",
+    "Predator": "A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.",
+    "Shadow": "Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.",
+    "Wildheart": "A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.",
+    "Demonhide": "A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.",
+    "Hunter": "A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.",
+    "Warden": "A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.",
+    "Tempest": "A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.",
+    "Runic": "A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.",
+    "Bulwark": "A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.",
+    "Crusader": "A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.",
+    "Dread": "A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.",
+    "Runeforged": "A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.",
+}
+FAMILY_LORE = {
+    "CLOTH": "Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.",
+    "LEATHER": "Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.",
+    "MAIL": "Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.",
+    "PLATE": "Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.",
+}
+ACQ_LORE = {
+    "crafted": "Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.",
+    "world": "A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.",
+    "boss": "Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.",
+    "prestige": "Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.",
+}
+def item_lore(line: dict[str, Any], family: str) -> list[str]:
+    return [LORE[line["archetype"]], FAMILY_LORE[family], ACQ_LORE[line["acq"]]]
+
+
 def render() -> str:
     templates: dict[str, dict[str, Any]] = {}
     recipes: dict[str, dict[str, Any]] = {}
@@ -199,7 +233,7 @@ def render() -> str:
                         "schema": 2,
                         "version": 1,
                         "display-name": f"{line['name']} {SLOT_NAME[family][slot]}",
-                        "lore": [f"{line['archetype']} {family} line: oldalirányú buildválasztás, nem nyers power-creep."],
+                        "lore": item_lore(line, family),
                         "rarity": BAND_RARITY[line["band"]],
                         "item-level": item_level,
                         "family": "armor",

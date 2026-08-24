@@ -61,7 +61,9 @@ item-templates:
     version: 1
     display-name: Főnixszövet Csuklya
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 42
     family: armor
@@ -104,7 +106,9 @@ item-templates:
     version: 1
     display-name: Főnixszövet Nadrág
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 42
     family: armor
@@ -133,7 +137,9 @@ item-templates:
     version: 1
     display-name: Főnixszövet Sarú
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 41
     family: armor
@@ -162,7 +168,9 @@ item-templates:
     version: 1
     display-name: Holdlen Csuklya
     lore:
-    - 'Ritual CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -191,7 +199,9 @@ item-templates:
     version: 1
     display-name: Holdlen Köpeny
     lore:
-    - 'Ritual CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 25
     family: armor
@@ -220,7 +230,9 @@ item-templates:
     version: 1
     display-name: Holdlen Nadrág
     lore:
-    - 'Ritual CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -249,7 +261,9 @@ item-templates:
     version: 1
     display-name: Holdlen Sarú
     lore:
-    - 'Ritual CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 23
     family: armor
@@ -278,7 +292,9 @@ item-templates:
     version: 1
     display-name: Némakristály Csuklya
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 33
     family: armor
@@ -307,7 +323,9 @@ item-templates:
     version: 1
     display-name: Némakristály Köpeny
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 34
     family: armor
@@ -336,7 +354,9 @@ item-templates:
     version: 1
     display-name: Némakristály Nadrág
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 33
     family: armor
@@ -365,7 +385,9 @@ item-templates:
     version: 1
     display-name: Némakristály Sarú
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 32
     family: armor
@@ -394,7 +416,9 @@ item-templates:
     version: 1
     display-name: Alkimista Fátyol Csuklya
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -423,7 +447,9 @@ item-templates:
     version: 1
     display-name: Alkimista Fátyol Köpeny
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 25
     family: armor
@@ -452,7 +478,9 @@ item-templates:
     version: 1
     display-name: Alkimista Fátyol Nadrág
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -481,7 +509,9 @@ item-templates:
     version: 1
     display-name: Alkimista Fátyol Sarú
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 23
     family: armor
@@ -510,7 +540,9 @@ item-templates:
     version: 1
     display-name: Csontvarró Csuklya
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -545,7 +577,9 @@ item-templates:
     version: 1
     display-name: Csontvarró Nadrág
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -573,7 +607,9 @@ item-templates:
     version: 1
     display-name: Csontvarró Sarú
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 13
     family: armor
@@ -601,7 +637,9 @@ item-templates:
     version: 1
     display-name: Ködszövő Csuklya
     lore:
-    - 'Veil CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -629,7 +667,9 @@ item-templates:
     version: 1
     display-name: Ködszövő Köpeny
     lore:
-    - 'Veil CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 15
     family: armor
@@ -657,7 +697,9 @@ item-templates:
     version: 1
     display-name: Ködszövő Nadrág
     lore:
-    - 'Veil CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -685,7 +727,9 @@ item-templates:
     version: 1
     display-name: Ködszövő Sarú
     lore:
-    - 'Veil CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 13
     family: armor
@@ -713,7 +757,9 @@ item-templates:
     version: 1
     display-name: Mélységi Rítus Csuklya
     lore:
-    - 'Ritual CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 33
     family: armor
@@ -741,7 +787,9 @@ item-templates:
     version: 1
     display-name: Mélységi Rítus Köpeny
     lore:
-    - 'Ritual CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 34
     family: armor
@@ -769,7 +817,9 @@ item-templates:
     version: 1
     display-name: Mélységi Rítus Nadrág
     lore:
-    - 'Ritual CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 33
     family: armor
@@ -797,7 +847,9 @@ item-templates:
     version: 1
     display-name: Mélységi Rítus Sarú
     lore:
-    - 'Ritual CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rituálék szövetei a viselő fegyelmét és koncentrációját erősítik minden hosszú összecsapásban.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 32
     family: armor
@@ -825,7 +877,9 @@ item-templates:
     version: 1
     display-name: Csillagfátyol Csuklya
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -854,7 +908,9 @@ item-templates:
     version: 1
     display-name: Csillagfátyol Köpeny
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 43
     family: armor
@@ -896,7 +952,9 @@ item-templates:
     version: 1
     display-name: Csillagfátyol Nadrág
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -925,7 +983,9 @@ item-templates:
     version: 1
     display-name: Csillagfátyol Sarú
     lore:
-    - 'Arcane CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az ősi szálakba zárt mágia nem nyers erőt, hanem pontosabb és tisztább varázslatot szolgál.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 41
     family: armor
@@ -954,7 +1014,9 @@ item-templates:
     version: 1
     display-name: Szent Hamvak Csuklya
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -983,7 +1045,9 @@ item-templates:
     version: 1
     display-name: Szent Hamvak Köpeny
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 43
     family: armor
@@ -1012,7 +1076,9 @@ item-templates:
     version: 1
     display-name: Szent Hamvak Nadrág
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -1041,7 +1107,9 @@ item-templates:
     version: 1
     display-name: Szent Hamvak Sarú
     lore:
-    - 'Sanctified CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A megszentelt anyag védelmet ad a viselőjének anélkül, hogy elvenné tőle saját útját.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 41
     family: armor
@@ -1070,7 +1138,9 @@ item-templates:
     version: 1
     display-name: Aranyfüst Csuklya
     lore:
-    - 'Veil CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 42
     family: armor
@@ -1105,7 +1175,9 @@ item-templates:
     version: 1
     display-name: Aranyfüst Nadrág
     lore:
-    - 'Veil CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 42
     family: armor
@@ -1133,7 +1205,9 @@ item-templates:
     version: 1
     display-name: Aranyfüst Sarú
     lore:
-    - 'Veil CLOTH line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A fátyol könnyű anyaga a csendes mozgást és a megfelelő pillanat felismerését tanítja.
+    - Könnyű szövetből készült, a mágikus és támogató utakhoz hangolt felszerelés.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 41
     family: armor
@@ -1161,7 +1235,9 @@ item-templates:
     version: 1
     display-name: Vadőrző Maszk
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -1192,7 +1268,9 @@ item-templates:
     version: 1
     display-name: Vadőrző Vért
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 25
     family: armor
@@ -1221,7 +1299,9 @@ item-templates:
     version: 1
     display-name: Vadőrző Nadrág
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -1262,7 +1342,9 @@ item-templates:
     version: 1
     display-name: Vadbőr Maszk
     lore:
-    - 'Wildheart LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -1291,7 +1373,9 @@ item-templates:
     version: 1
     display-name: Vadbőr Vért
     lore:
-    - 'Wildheart LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 25
     family: armor
@@ -1320,7 +1404,9 @@ item-templates:
     version: 1
     display-name: Vadbőr Nadrág
     lore:
-    - 'Wildheart LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -1349,7 +1435,9 @@ item-templates:
     version: 1
     display-name: Vadbőr Csizma
     lore:
-    - 'Wildheart LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 23
     family: armor
@@ -1378,7 +1466,9 @@ item-templates:
     version: 1
     display-name: Vízbőr Maszk
     lore:
-    - 'Demonhide LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 33
     family: armor
@@ -1407,7 +1497,9 @@ item-templates:
     version: 1
     display-name: Vízbőr Vért
     lore:
-    - 'Demonhide LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 34
     family: armor
@@ -1436,7 +1528,9 @@ item-templates:
     version: 1
     display-name: Vízbőr Nadrág
     lore:
-    - 'Demonhide LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 33
     family: armor
@@ -1465,7 +1559,9 @@ item-templates:
     version: 1
     display-name: Vízbőr Csizma
     lore:
-    - 'Demonhide LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 32
     family: armor
@@ -1494,7 +1590,9 @@ item-templates:
     version: 1
     display-name: Kitinbőr Maszk
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 42
     family: armor
@@ -1523,7 +1621,9 @@ item-templates:
     version: 1
     display-name: Kitinbőr Vért
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 43
     family: armor
@@ -1552,7 +1652,9 @@ item-templates:
     version: 1
     display-name: Kitinbőr Nadrág
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 42
     family: armor
@@ -1581,7 +1683,9 @@ item-templates:
     version: 1
     display-name: Kitinbőr Csizma
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 41
     family: armor
@@ -1610,7 +1714,9 @@ item-templates:
     version: 1
     display-name: Útjáró Maszk
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -1638,7 +1744,9 @@ item-templates:
     version: 1
     display-name: Útjáró Vért
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 15
     family: armor
@@ -1666,7 +1774,9 @@ item-templates:
     version: 1
     display-name: Útjáró Nadrág
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -1701,7 +1811,9 @@ item-templates:
     version: 1
     display-name: Sötétmoha Maszk
     lore:
-    - 'Wildheart LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -1729,7 +1841,9 @@ item-templates:
     version: 1
     display-name: Sötétmoha Vért
     lore:
-    - 'Wildheart LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 15
     family: armor
@@ -1757,7 +1871,9 @@ item-templates:
     version: 1
     display-name: Sötétmoha Nadrág
     lore:
-    - 'Wildheart LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -1785,7 +1901,9 @@ item-templates:
     version: 1
     display-name: Sötétmoha Csizma
     lore:
-    - 'Wildheart LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A természethez hangolt bőr együtt mozog a viselőjével, és hosszú úton sem nehezíti el.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 13
     family: armor
@@ -1813,7 +1931,9 @@ item-templates:
     version: 1
     display-name: Vérszavanna Maszk
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 33
     family: armor
@@ -1841,7 +1961,9 @@ item-templates:
     version: 1
     display-name: Vérszavanna Vért
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 34
     family: armor
@@ -1869,7 +1991,9 @@ item-templates:
     version: 1
     display-name: Vérszavanna Nadrág
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 33
     family: armor
@@ -1897,7 +2021,9 @@ item-templates:
     version: 1
     display-name: Vérszavanna Csizma
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 32
     family: armor
@@ -1925,7 +2051,9 @@ item-templates:
     version: 1
     display-name: Predátor Karma Maszk
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -1954,7 +2082,9 @@ item-templates:
     version: 1
     display-name: Predátor Karma Vért
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 43
     family: armor
@@ -1983,7 +2113,9 @@ item-templates:
     version: 1
     display-name: Predátor Karma Nadrág
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -2012,7 +2144,9 @@ item-templates:
     version: 1
     display-name: Predátor Karma Csizma
     lore:
-    - 'Predator LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vadászok felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 41
     family: armor
@@ -2041,7 +2175,9 @@ item-templates:
     version: 1
     display-name: Démonbőr Maszk
     lore:
-    - 'Demonhide LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -2070,7 +2206,9 @@ item-templates:
     version: 1
     display-name: Démonbőr Vért
     lore:
-    - 'Demonhide LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 43
     family: armor
@@ -2112,7 +2250,9 @@ item-templates:
     version: 1
     display-name: Démonbőr Nadrág
     lore:
-    - 'Demonhide LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -2141,7 +2281,9 @@ item-templates:
     version: 1
     display-name: Démonbőr Csizma
     lore:
-    - 'Demonhide LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A démonbőr keménysége nyers ellenállást rejt, amelyet a vad erő kontrolláltan szabadít fel.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 41
     family: armor
@@ -2170,7 +2312,9 @@ item-templates:
     version: 1
     display-name: Holdárnyék Maszk
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 42
     family: armor
@@ -2198,7 +2342,9 @@ item-templates:
     version: 1
     display-name: Holdárnyék Vért
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 43
     family: armor
@@ -2226,7 +2372,9 @@ item-templates:
     version: 1
     display-name: Holdárnyék Nadrág
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 42
     family: armor
@@ -2254,7 +2402,9 @@ item-templates:
     version: 1
     display-name: Holdárnyék Csizma
     lore:
-    - 'Shadow LEATHER line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - Az árnyékban készült vért akkor a legerősebb, amikor a viselője észrevétlen marad.
+    - Rugalmas bőrvért, amely a mozgást és az ösztönös harci reakciókat hagyja érvényesülni.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 41
     family: armor
@@ -2282,7 +2432,9 @@ item-templates:
     version: 1
     display-name: Csontenyv Sisak
     lore:
-    - 'Warden MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -2321,7 +2473,9 @@ item-templates:
     version: 1
     display-name: Csontenyv Lábvért
     lore:
-    - 'Warden MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -2350,7 +2504,9 @@ item-templates:
     version: 1
     display-name: Csontenyv Bakancs
     lore:
-    - 'Warden MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 23
     family: armor
@@ -2379,7 +2535,9 @@ item-templates:
     version: 1
     display-name: Könnyű Ötvözet Sisak
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -2408,7 +2566,9 @@ item-templates:
     version: 1
     display-name: Könnyű Ötvözet Láncvért
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 25
     family: armor
@@ -2437,7 +2597,9 @@ item-templates:
     version: 1
     display-name: Könnyű Ötvözet Lábvért
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -2466,7 +2628,9 @@ item-templates:
     version: 1
     display-name: Könnyű Ötvözet Bakancs
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 23
     family: armor
@@ -2495,7 +2659,9 @@ item-templates:
     version: 1
     display-name: Rúnalánc Sisak
     lore:
-    - 'Runic MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 33
     family: armor
@@ -2524,7 +2690,9 @@ item-templates:
     version: 1
     display-name: Rúnalánc Láncvért
     lore:
-    - 'Runic MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 34
     family: armor
@@ -2553,7 +2721,9 @@ item-templates:
     version: 1
     display-name: Rúnalánc Lábvért
     lore:
-    - 'Runic MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 33
     family: armor
@@ -2582,7 +2752,9 @@ item-templates:
     version: 1
     display-name: Rúnalánc Bakancs
     lore:
-    - 'Runic MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 32
     family: armor
@@ -2611,7 +2783,9 @@ item-templates:
     version: 1
     display-name: Viharkvarc Rúnás Sisak
     lore:
-    - 'Tempest MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 42
     family: armor
@@ -2640,7 +2814,9 @@ item-templates:
     version: 1
     display-name: Viharkvarc Rúnás Láncvért
     lore:
-    - 'Tempest MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 43
     family: armor
@@ -2669,7 +2845,9 @@ item-templates:
     version: 1
     display-name: Viharkvarc Rúnás Lábvért
     lore:
-    - 'Tempest MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 42
     family: armor
@@ -2698,7 +2876,9 @@ item-templates:
     version: 1
     display-name: Viharkvarc Rúnás Bakancs
     lore:
-    - 'Tempest MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 41
     family: armor
@@ -2727,7 +2907,9 @@ item-templates:
     version: 1
     display-name: Vadvadász Sisak
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -2755,7 +2937,9 @@ item-templates:
     version: 1
     display-name: Vadvadász Láncvért
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 15
     family: armor
@@ -2783,7 +2967,9 @@ item-templates:
     version: 1
     display-name: Vadvadász Lábvért
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -2811,7 +2997,9 @@ item-templates:
     version: 1
     display-name: Vadvadász Bakancs
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 13
     family: armor
@@ -2839,7 +3027,9 @@ item-templates:
     version: 1
     display-name: Gyöngyház Őr Sisak
     lore:
-    - 'Warden MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -2867,7 +3057,9 @@ item-templates:
     version: 1
     display-name: Gyöngyház Őr Láncvért
     lore:
-    - 'Warden MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 15
     family: armor
@@ -2895,7 +3087,9 @@ item-templates:
     version: 1
     display-name: Gyöngyház Őr Lábvért
     lore:
-    - 'Warden MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -2923,7 +3117,9 @@ item-templates:
     version: 1
     display-name: Gyöngyház Őr Bakancs
     lore:
-    - 'Warden MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A gondosan egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 13
     family: armor
@@ -2951,7 +3147,9 @@ item-templates:
     version: 1
     display-name: Viharszél Sisak
     lore:
-    - 'Tempest MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 33
     family: armor
@@ -2979,7 +3177,9 @@ item-templates:
     version: 1
     display-name: Viharszél Láncvért
     lore:
-    - 'Tempest MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 34
     family: armor
@@ -3007,7 +3207,9 @@ item-templates:
     version: 1
     display-name: Viharszél Lábvért
     lore:
-    - 'Tempest MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 33
     family: armor
@@ -3035,7 +3237,9 @@ item-templates:
     version: 1
     display-name: Viharszél Bakancs
     lore:
-    - 'Tempest MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 32
     family: armor
@@ -3095,7 +3299,9 @@ item-templates:
     version: 1
     display-name: Rúnapajzs Sisak
     lore:
-    - 'Runic MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -3124,7 +3330,9 @@ item-templates:
     version: 1
     display-name: Rúnapajzs Láncvért
     lore:
-    - 'Runic MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 43
     family: armor
@@ -3153,7 +3361,9 @@ item-templates:
     version: 1
     display-name: Rúnapajzs Lábvért
     lore:
-    - 'Runic MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -3182,7 +3392,9 @@ item-templates:
     version: 1
     display-name: Rúnapajzs Bakancs
     lore:
-    - 'Runic MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A rúnák minden láncszembe egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 41
     family: armor
@@ -3211,7 +3423,9 @@ item-templates:
     version: 1
     display-name: Mélyvízi Vadász Sisak
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 42
     family: armor
@@ -3239,7 +3453,9 @@ item-templates:
     version: 1
     display-name: Mélyvízi Vadász Láncvért
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 43
     family: armor
@@ -3280,7 +3496,9 @@ item-templates:
     version: 1
     display-name: Mélyvízi Vadász Lábvért
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 42
     family: armor
@@ -3308,7 +3526,9 @@ item-templates:
     version: 1
     display-name: Mélyvízi Vadász Bakancs
     lore:
-    - 'Hunter MAIL line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A könnyű láncszemek a célra tartott figyelmet és a mozgás szabadságát szolgálják.
+    - Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 41
     family: armor
@@ -3336,7 +3556,9 @@ item-templates:
     version: 1
     display-name: Glatziendorfi Sisak
     lore:
-    - 'Runeforged PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 33
     family: armor
@@ -3375,7 +3597,9 @@ item-templates:
     version: 1
     display-name: Glatziendorfi Lábvért
     lore:
-    - 'Runeforged PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 33
     family: armor
@@ -3404,7 +3628,9 @@ item-templates:
     version: 1
     display-name: Glatziendorfi Csizma
     lore:
-    - 'Runeforged PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: epic
     item-level: 32
     family: armor
@@ -3433,7 +3659,9 @@ item-templates:
     version: 1
     display-name: Borostyán Tárna Sisak
     lore:
-    - 'Bulwark PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -3470,7 +3698,9 @@ item-templates:
     version: 1
     display-name: Borostyán Tárna Lábvért
     lore:
-    - 'Bulwark PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -3499,7 +3729,9 @@ item-templates:
     version: 1
     display-name: Borostyán Tárna Csizma
     lore:
-    - 'Bulwark PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 23
     family: armor
@@ -3536,7 +3768,9 @@ item-templates:
     version: 1
     display-name: Sarkfény Mellvért
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 25
     family: armor
@@ -3565,7 +3799,9 @@ item-templates:
     version: 1
     display-name: Sarkfény Lábvért
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 24
     family: armor
@@ -3594,7 +3830,9 @@ item-templates:
     version: 1
     display-name: Sarkfény Csizma
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: rare
     item-level: 23
     family: armor
@@ -3623,7 +3861,9 @@ item-templates:
     version: 1
     display-name: Rúnakovácsolt Sisak
     lore:
-    - 'Runeforged PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 42
     family: armor
@@ -3652,7 +3892,9 @@ item-templates:
     version: 1
     display-name: Rúnakovácsolt Mellvért
     lore:
-    - 'Runeforged PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 43
     family: armor
@@ -3694,7 +3936,9 @@ item-templates:
     version: 1
     display-name: Rúnakovácsolt Lábvért
     lore:
-    - 'Runeforged PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 42
     family: armor
@@ -3723,7 +3967,9 @@ item-templates:
     version: 1
     display-name: Rúnakovácsolt Csizma
     lore:
-    - 'Runeforged PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A kovácsolt rúnák a páncélt fegyelmezett erővé formálják, amely a viselő szándékát követi.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Műhelyben készül, és az alapanyagok mesterségbeli tudást kívánnak.
     rarity: legendary
     item-level: 41
     family: armor
@@ -3752,7 +3998,9 @@ item-templates:
     version: 1
     display-name: Határőr Sisak
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -3780,7 +4028,9 @@ item-templates:
     version: 1
     display-name: Határőr Mellvért
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 15
     family: armor
@@ -3808,7 +4058,9 @@ item-templates:
     version: 1
     display-name: Határőr Lábvért
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -3836,7 +4088,9 @@ item-templates:
     version: 1
     display-name: Határőr Csizma
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 13
     family: armor
@@ -3864,7 +4118,9 @@ item-templates:
     version: 1
     display-name: Salakfal Sisak
     lore:
-    - 'Dread PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -3892,7 +4148,9 @@ item-templates:
     version: 1
     display-name: Salakfal Mellvért
     lore:
-    - 'Dread PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 15
     family: armor
@@ -3920,7 +4178,9 @@ item-templates:
     version: 1
     display-name: Salakfal Lábvért
     lore:
-    - 'Dread PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 14
     family: armor
@@ -3948,7 +4208,9 @@ item-templates:
     version: 1
     display-name: Salakfal Csizma
     lore:
-    - 'Dread PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: uncommon
     item-level: 13
     family: armor
@@ -3976,7 +4238,9 @@ item-templates:
     version: 1
     display-name: Ősi Csarnok Sisak
     lore:
-    - 'Bulwark PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 33
     family: armor
@@ -4004,7 +4268,9 @@ item-templates:
     version: 1
     display-name: Ősi Csarnok Mellvért
     lore:
-    - 'Bulwark PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 34
     family: armor
@@ -4032,7 +4298,9 @@ item-templates:
     version: 1
     display-name: Ősi Csarnok Lábvért
     lore:
-    - 'Bulwark PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 33
     family: armor
@@ -4060,7 +4328,9 @@ item-templates:
     version: 1
     display-name: Ősi Csarnok Csizma
     lore:
-    - 'Bulwark PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat akkor is, amikor minden más széthullik.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - A világ veszélyes vidékein található, ahol a felszerelés története a lelőhelyhez kötődik.
     rarity: epic
     item-level: 32
     family: armor
@@ -4120,7 +4390,9 @@ item-templates:
     version: 1
     display-name: Ostromtörő Sisak
     lore:
-    - 'Dread PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -4157,7 +4429,9 @@ item-templates:
     version: 1
     display-name: Ostromtörő Lábvért
     lore:
-    - 'Dread PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 42
     family: armor
@@ -4186,7 +4460,9 @@ item-templates:
     version: 1
     display-name: Ostromtörő Csizma
     lore:
-    - 'Dread PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - 'A sötét kovácsolás súlya figyelmeztetés az ellenfélnek: ez a páncél nem hátrál meg könnyen.'
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.
     rarity: legendary
     item-level: 41
     family: armor
@@ -4215,7 +4491,9 @@ item-templates:
     version: 1
     display-name: Csillagacél Sisak
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 42
     family: armor
@@ -4243,7 +4521,9 @@ item-templates:
     version: 1
     display-name: Csillagacél Mellvért
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 43
     family: armor
@@ -4271,7 +4551,9 @@ item-templates:
     version: 1
     display-name: Csillagacél Lábvért
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 42
     family: armor
@@ -4299,7 +4581,9 @@ item-templates:
     version: 1
     display-name: Csillagacél Csizma
     lore:
-    - 'Crusader PLATE line: oldalirányú buildválasztás, nem nyers power-creep.'
+    - A lemezbe vert jelek az eskü és a kötelesség útját követik, nem a puszta fényűzést.
+    - Merev lemezekből kovácsolt vért, amely a frontvonal megtartására készült.
+    - Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.
     rarity: legendary
     item-level: 41
     family: armor
