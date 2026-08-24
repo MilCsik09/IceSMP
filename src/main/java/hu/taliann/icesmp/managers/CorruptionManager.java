@@ -201,6 +201,14 @@ public final class CorruptionManager implements PersistentStore {
         return List.copyOf(types);
     }
 
+    private List<String> configuredMobTemplates() {
+        final java.util.ArrayList<String> templates = new java.util.ArrayList<>();
+        for (final String raw : configManager.getStringList("corruption.mob-templates")) {
+            if (raw != null && !raw.isBlank()) templates.add(raw.trim().toLowerCase(java.util.Locale.ROOT));
+        }
+        return List.copyOf(templates);
+    }
+
     private boolean isLikelyLegacyCorruptMob(final Mob mob) {
         return mob.isGlowing()
                 && !mob.getRemoveWhenFarAway()
@@ -581,7 +589,7 @@ public final class CorruptionManager implements PersistentStore {
 
         final int cap = configuredMobCap();
         final int batch = configManager.getInt("corruption.spawn-batch", 0);
-        final List<EntityType> pool = configuredMobTypes();
+        final List<String> pool = configuredMobTemplates();
         if (cap <= 0 || batch <= 0 || pool.isEmpty()) {
             return;
         }
@@ -612,17 +620,16 @@ public final class CorruptionManager implements PersistentStore {
                         return;
                     }
 
-                    final EntityType type = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+                    final String templateId = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
                     final int level = configuredMobLevel(spot);
                     final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
                             hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
                     if (spawns == null || level < 1) return;
                     final Mob mob = spawns.spawn(spot,
-                            hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
-                                    "corruption", "corruption:active", "wave", type, level,
-                                    hu.taliann.icesmp.pve.MobRank.NORMAL, "BRUISER",
+                            hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                                    "corruption", "corruption:active", "wave", templateId, level,
                                     hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
-                                    true, 0L));
+                                    true, 1.0D, 1.0D, 0L));
                     if (mob == null) return;
                     trackCorruptMob(mob);
                 } finally {

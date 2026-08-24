@@ -1,17 +1,13 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TransientEntities;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -258,8 +254,7 @@ public final class CultistEventManager {
                 spawnCultist(world, site.clone().add(
                                 Math.cos(angle) * 3.0D, 0.0D,
                                 Math.sin(angle) * 3.0D),
-                        index == 0 ? EntityType.WITCH : EntityType.VINDICATOR,
-                        index == 0 ? "Kultista főpap" : "Kultista őrző");
+                        index == 0 ? "cultist_ritualist" : "cultist_blade");
             }
             world.playSound(site, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD,
                     1.5F, 0.6F);
@@ -284,8 +279,7 @@ public final class CultistEventManager {
                                 ThreadLocalRandom.current().nextDouble(-3.0D, 3.0D),
                                 0.0D,
                                 ThreadLocalRandom.current().nextDouble(-3.0D, 3.0D)),
-                        index == 0 ? EntityType.WITCH : EntityType.VINDICATOR,
-                        index == 0 ? "Kultista akolitus" : "Kultista penge");
+                        index == 0 ? "cultist_ritualist" : "cultist_blade");
             }
             world.playSound(site, Sound.ENTITY_VINDICATOR_CELEBRATE,
                     1.2F, 0.7F);
@@ -302,46 +296,43 @@ public final class CultistEventManager {
     }
 
     private void spawnCultist(final World world, final Location requested,
-                              final EntityType type, final String name) {
+                              final String templateId) {
         final Location where = spawnGuard.resolveSafeStandingLocation(
                 "cultists", world, requested.getBlockX(), requested.getBlockZ());
         if (where == null || spawnGuard.isBlocked("cultists", where)) {
             return;
         }
-        final Mob mob = spawnCultistMob(where, type);
+        final Mob mob = spawnCultistMob(where, templateId);
         if (mob == null) return;
-        prepareCultist(mob, name);
+        prepareCultist(mob);
     }
 
-    private Mob spawnCultistMob(final Location where, final EntityType type) {
+    private Mob spawnCultistMob(final Location where, final String templateId) {
         final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
                 hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
         return spawns == null ? null : spawns.spawn(where,
-                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
-                        "cultists", "cultists:active", "cultist", type,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                        "cultists", "cultists:active", "cultist", templateId,
                         Math.max(1, configManager.getInt("cultists.mob-level", 5)),
-                        MobRank.VETERAN, "SKIRMISHER",
                         hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
-                        true, 0L));
+                        true, 1.0D, 1.0D, 0L));
     }
 
-    private void prepareCultist(final Mob mob, final String name) {
+    private void prepareCultist(final Mob mob) {
         EventSpawnGuard.prepare(mob);
         mob.getPersistentDataContainer().set(
                 markKey, PersistentDataType.BYTE, (byte) 1);
         mob.setPersistent(false);
         mob.setRemoveWhenFarAway(false);
-        mob.customName(Component.text("🕯 " + name,
-                NamedTextColor.DARK_PURPLE));
         mob.setCustomNameVisible(true);
         TransientEntities.register(plugin, mob);
         cultists.add(mob.getUniqueId());
     }
 
     private void spawnCourier(final World world, final Location site) {
-        final Mob courier = spawnCultistMob(site, EntityType.VINDICATOR);
+        final Mob courier = spawnCultistMob(site, "cultist_courier");
         if (courier == null) return;
-        prepareCultist(courier, "Kultista hírvivő");
+        prepareCultist(courier);
         Location goal = null;
         double best = Double.MAX_VALUE;
         for (final hu.taliann.icesmp.data.Territory territory : territoryManager.all()) {
