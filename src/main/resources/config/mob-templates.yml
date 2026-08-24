@@ -614,7 +614,7 @@ mob-abilities:
     cooldown-ticks: 185
     telegraph-ticks: 46
     recovery-ticks: 42
-    target-rule: CURRENT_TARGET
+    target-rule: SELF
     interruptible: true
     radius: 6.0
     power: 7.0
