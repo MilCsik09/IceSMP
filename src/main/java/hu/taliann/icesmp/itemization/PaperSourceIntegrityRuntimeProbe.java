@@ -172,7 +172,10 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 check(worldBoss != null && champion != null && prologue != null,
                         "authored PvE runtime spawn returned null");
                 spawned.add(worldBoss); spawned.add(champion); spawned.add(prologue);
-                final Mob daytimeUndead = spawns.spawn(at.clone().add(-3.0D, 0.0D, 0.0D),
+                final Location daylightSpot = at.clone().add(-3.0D, 0.0D, 0.0D);
+                daylightSpot.setY(world.getHighestBlockYAt(daylightSpot.getBlockX(),
+                        daylightSpot.getBlockZ()) + 2.0D);
+                final Mob daytimeUndead = spawns.spawn(daylightSpot,
                         AuthoredCreatureSpawnService.Request.template(
                                 "runtime_probe", "runtime:natural", "day_undead",
                                 "sunscarred_wayfarer", 18,
@@ -220,7 +223,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         "day-capable authored undead lacks authored daylight source");
                 check(!scaling.hasAuthoredDaylightProtection(nightUndead),
                         "night-only undead received permanent authored daylight protection");
-                check(world.getHighestBlockYAt(at.getBlockX() - 3, at.getBlockZ())
+                check(world.getHighestBlockYAt(daylightSpot.getBlockX(), daylightSpot.getBlockZ())
                                 < daytimeUndead.getLocation().getBlockY(),
                         "daylight undead probe location is not open sky");
                 plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_VARIANTS");
