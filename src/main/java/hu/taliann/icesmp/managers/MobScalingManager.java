@@ -61,6 +61,7 @@ public final class MobScalingManager {
     private final NamespacedKey encounterModifierKey;
     private final NamespacedKey territoryBurnManagedKey;
     private final NamespacedKey territoryBurnBaselineKey;
+    private final NamespacedKey authoredBurnKey;
     private final NamespacedKey territoryZombificationManagedKey;
     private final NamespacedKey territoryZombificationBaselineKey;
     private final NamespacedKey eventBurnKey;
@@ -92,7 +93,9 @@ public final class MobScalingManager {
         this.mobAffixesKey = new NamespacedKey(plugin, "mob_affixes");
         this.encounterModifierKey = new NamespacedKey(plugin, "encounter_stat_modifier");
         this.territoryBurnManagedKey = new NamespacedKey(plugin, "territory_no_daylight_burn");
-        this.territoryBurnBaselineKey = new NamespacedKey(plugin, "territory_no_daylight_burn_baseline");
+        this.territoryBurnBaselineKey = new NamespacedKey(plugin,
+                EventSpawnGuard.DAYLIGHT_BURN_BASELINE_KEY);
+        this.authoredBurnKey = new NamespacedKey(plugin, "authored_no_daylight_burn");
         this.territoryZombificationManagedKey = new NamespacedKey(plugin, "territory_no_zombification");
         this.territoryZombificationBaselineKey = new NamespacedKey(plugin, "territory_no_zombification_baseline");
         this.eventBurnKey = new NamespacedKey(plugin, EventSpawnGuard.EVENT_NO_BURN_KEY);
@@ -157,10 +160,14 @@ public final class MobScalingManager {
 
         final Location location = entity.getLocation();
         final List<String> zoneSelectors = zoneRuleSelectors(location);
+        final int contextualLevel = resolveLevel(location);
         final MobTemplate template = mobTemplates.naturalTemplate(entity.getType(),
-                location.getBlock().getBiome().getKey(), naturalContext(location)).orElse(null);
+                location.getBlock().getBiome().getKey(), naturalContext(location, zoneSelectors),
+                entity.getUniqueId(), contextualLevel).orElse(null);
+        hu.taliann.icesmp.pve.CombatTelemetry.record("natural_template_selection",
+                template == null ? "vanilla_" + entity.getType().name() : template.mobId());
         final Integer templateLevel = template == null ? null
-                : template.levelAt(java.util.concurrent.ThreadLocalRandom.current().nextDouble());
+                : template.levelForBaseline(wildernessBaseLevel(location));
         MobRank rank = template == null || !species.rankEnabled() ? MobRank.NORMAL : template.rank();
         if (species.rankEnabled() && rank == MobRank.NORMAL) {
             rank = promotedRank(spawnReason, zoneSelectors, location);
@@ -308,6 +315,10 @@ public final class MobScalingManager {
 
     private void applyLevel(final LivingEntity entity, final int level, final MobRank rank,
                             final MobTemplate template, final List<EliteAffix> affixes) {
+        hu.taliann.icesmp.pve.CombatTelemetry.record("rank_distribution", rank.name());
+        if (template != null) {
+            hu.taliann.icesmp.pve.CombatTelemetry.record("template_spawn", template.mobId());
+        }
         entity.getPersistentDataContainer().set(mobLevelKey, PersistentDataType.INTEGER, level);
         entity.getPersistentDataContainer().set(mobRankKey, PersistentDataType.STRING, rank.name());
         if (template != null) {
@@ -315,6 +326,12 @@ public final class MobScalingManager {
                     template.mobId());
             entity.getPersistentDataContainer().set(mobArchetypeKey, PersistentDataType.STRING,
                     template.archetype().name());
+            if (template.naturalContext().noDaylightBurn()) {
+                entity.getPersistentDataContainer().set(authoredBurnKey,
+                        PersistentDataType.BYTE, (byte) 1);
+            } else {
+                entity.getPersistentDataContainer().remove(authoredBurnKey);
+            }
         }
         if (!affixes.isEmpty()) {
             entity.getPersistentDataContainer().set(mobAffixesKey, PersistentDataType.STRING,
@@ -360,6 +377,7 @@ public final class MobScalingManager {
         if (nameEnabled) {
             applyLevelName(entity, level, rank, template, affixes);
         }
+        reconcileBurnSources(entity);
     }
 
     /** @return the mob's stored level, or 0 if the entity is not scaled */
@@ -469,17 +487,41 @@ public final class MobScalingManager {
                 .has(territoryBurnManagedKey, PersistentDataType.BYTE);
     }
 
+    /** Read-only runtime/evidence seam; authored protection remains template-owned. */
+    public boolean hasAuthoredDaylightProtection(final LivingEntity entity) {
+        return entity != null && entity.getPersistentDataContainer()
+                .has(authoredBurnKey, PersistentDataType.BYTE);
+    }
+
     private void reconcileBurn(final LivingEntity entity, final boolean requested) {
         final Boolean current = shouldBurnInDay(entity);
         if (current == null) {
             return;
         }
         final var pdc = entity.getPersistentDataContainer();
-        final boolean managed = pdc.has(territoryBurnManagedKey, PersistentDataType.BYTE);
         if (requested) {
-            if (!managed) {
-                pdc.set(territoryBurnBaselineKey, PersistentDataType.BYTE, (byte) (current ? 1 : 0));
-                pdc.set(territoryBurnManagedKey, PersistentDataType.BYTE, (byte) 1);
+            pdc.set(territoryBurnManagedKey, PersistentDataType.BYTE, (byte) 1);
+        } else {
+            pdc.remove(territoryBurnManagedKey);
+        }
+        reconcileBurnSources(entity);
+    }
+
+    /** Authored, territory and event protection compose; removing one source cannot cancel another. */
+    private void reconcileBurnSources(final LivingEntity entity) {
+        final Boolean current = shouldBurnInDay(entity);
+        if (current == null) return;
+        final var pdc = entity.getPersistentDataContainer();
+        final boolean authored = pdc.has(authoredBurnKey, PersistentDataType.BYTE);
+        final boolean territory = pdc.has(territoryBurnManagedKey, PersistentDataType.BYTE);
+        final boolean event = pdc.has(eventBurnKey, PersistentDataType.BYTE);
+        final boolean protectedNow = hu.taliann.icesmp.pve.DaylightProtectionPolicy
+                .protectedNow(authored, territory, event);
+        if (protectedNow) {
+            if (!pdc.has(territoryBurnBaselineKey, PersistentDataType.BYTE)) {
+                // EventSpawnGuard may already have disabled burning before this reconciliation.
+                pdc.set(territoryBurnBaselineKey, PersistentDataType.BYTE,
+                        (byte) ((event || current) ? 1 : 0));
             }
             setShouldBurnInDay(entity, false);
             if (entity.getFireTicks() > 0 && locationHasOpenDaylight(entity.getLocation())) {
@@ -487,14 +529,13 @@ public final class MobScalingManager {
             }
             return;
         }
-        if (!managed) {
-            return;
+        if (pdc.has(territoryBurnBaselineKey, PersistentDataType.BYTE)) {
+            final boolean baseline = pdc.getOrDefault(territoryBurnBaselineKey,
+                    PersistentDataType.BYTE, (byte) 1) != 0;
+            setShouldBurnInDay(entity, hu.taliann.icesmp.pve.DaylightProtectionPolicy
+                    .shouldBurn(baseline, authored, territory, event));
+            pdc.remove(territoryBurnBaselineKey);
         }
-        final boolean eventProtected = pdc.has(eventBurnKey, PersistentDataType.BYTE);
-        final byte baseline = pdc.getOrDefault(territoryBurnBaselineKey, PersistentDataType.BYTE, (byte) 1);
-        setShouldBurnInDay(entity, eventProtected ? false : baseline != 0);
-        pdc.remove(territoryBurnManagedKey);
-        pdc.remove(territoryBurnBaselineKey);
     }
 
     private void reconcileZombification(final LivingEntity entity, final boolean requested) {
@@ -667,7 +708,8 @@ public final class MobScalingManager {
         return roll < eliteChance + veteranChance ? MobRank.VETERAN : MobRank.NORMAL;
     }
 
-    private static Set<String> naturalContext(final Location location) {
+    private Set<String> naturalContext(final Location location,
+                                       final List<String> zoneSelectors) {
         final java.util.LinkedHashSet<String> tags = new java.util.LinkedHashSet<>();
         final org.bukkit.World world = location.getWorld();
         tags.add("dimension:" + world.getEnvironment().name().toLowerCase(Locale.ROOT));
@@ -675,7 +717,11 @@ public final class MobScalingManager {
             tags.add("depth:deep");
         }
         if (!world.isDayTime()) tags.add("time:night");
+        else tags.add("time:day");
         if (world.hasStorm()) tags.add("weather:storm");
+        if (world.isThundering()) tags.add("weather:thunder");
+        if (bloodMoonManager.isActive()) tags.add("event:blood_moon");
+        zoneSelectors.forEach(selector -> tags.add("territory:" + selector.replace('-', '_')));
         return Set.copyOf(tags);
     }
 
