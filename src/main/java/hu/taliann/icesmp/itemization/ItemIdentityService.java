@@ -385,6 +385,49 @@ public final class ItemIdentityService {
         return inspection.readable() ? Optional.of(inspection.instance()) : Optional.empty();
     }
 
+    /** Owner-thread migration for an older authored template; identity and roll quality survive. */
+    public Inspection migrateStaleTemplate(final ItemStack item, final long occurredAt) {
+        final Inspection stale = inspectIdentity(item);
+        if (stale.status() != Status.TEMPLATE_VERSION_STALE) return stale;
+        final ItemTemplate template = stale.template();
+        final ItemInstance before = stale.instance();
+        if (template == null || before == null
+                || !template.matchesAscensionState(before.ascension().stageId(),
+                before.ascension().stageIndex())
+                || before.runes().size() > template.runeSocketCountAt(before.ascension().stageId())) {
+            return new Inspection(Status.TEMPLATE_MISMATCH, before, template,
+                    "template migration state mismatch");
+        }
+        final Map<String, ItemTemplate.StatRange> ranges =
+                template.rolledStatsAt(before.ascension().stageId());
+        final double averageQuality = before.rolls().isEmpty() ? Double.NaN
+                : before.rolls().values().stream().mapToDouble(ItemInstance.Roll::quality)
+                .average().orElse(Double.NaN);
+        final LinkedHashMap<String, ItemInstance.Roll> migratedRolls = new LinkedHashMap<>();
+        ranges.forEach((stat, range) -> {
+            final ItemInstance.Roll retained = before.rolls().get(stat);
+            final double quality = retained != null ? retained.quality()
+                    : Double.isFinite(averageQuality) ? averageQuality
+                    : stableMigrationQuality(before.itemId(), stat);
+            migratedRolls.put(stat, new ItemInstance.Roll(range.valueAt(quality), quality));
+        });
+        final ItemInstance migrated = before.migrateTemplate(template.templateVersion(),
+                template.itemLevelAt(before.ascension().stageId()), migratedRolls,
+                new ItemHistoryEvent(ItemHistoryEvent.Type.TEMPLATE_MIGRATED, occurredAt,
+                        "template:" + before.templateVersion() + "->" + template.templateVersion()));
+        final ItemStack rendered = render(template, migrated);
+        item.setType(rendered.getType());
+        item.setAmount(1);
+        item.setItemMeta(rendered.getItemMeta());
+        return inspect(item);
+    }
+
+    private static double stableMigrationQuality(final UUID itemId, final String statId) {
+        final long mixed = itemId.getMostSignificantBits() ^ Long.rotateLeft(
+                itemId.getLeastSignificantBits(), 17) ^ statId.hashCode();
+        return Math.floorMod(mixed, 10_001L) / 10_000.0D;
+    }
+
     private static String displayRune(final String runeId) {
         final String normalized = ItemStatCatalog.normalizeId(runeId);
         final String withoutPrefix = normalized.startsWith("runa_")

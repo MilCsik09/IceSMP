@@ -1,9 +1,11 @@
 # Mi változott a július 12-i szerververzió óta?
 
-- A combat staging hardening a canonical armor fizikai védelmét újraosztott budgettel
-  Iron–Netherite viszonyításba emeli, a mobtechnikákat determinisztikus kontextuspontozással
-  választja, a Target HUD pedig két rövid raytrace hibát áthidal. A játékos HUD-ról az
-  archetype és belső FIGHT/DEFENSIVE/FLEE állapotok eltűntek; rank, disposition, HP és level marad.
+- A combat staging hardening 160 páncéldarabját kézzel tervezett katalógus váltja fel:
+  minden darab fix armor/toughness értéket, family-azonos secondary rollt és két saját
+  magyar lore-sort kapott. A PLATE már korai szinten Diamond fölötti armorral indul, az
+  endgame PLATE pedig a Netherite toughness és knockback mércéjét is meghaladja. A
+  mobtechnikákat determinisztikus kontextuspontozás választja, a Target HUD két rövid
+  raytrace hibát áthidal; rank, disposition, HP és level marad látható.
 
 <!-- icesmp-doc-id: release.deployed-build-to-release -->
 
@@ -47,11 +49,12 @@ Folia-/26.2-portolási határokat és a későbbi adapterek stabil szerződései
 
 ## Combat & Encounter foundation — stacked recalibration
 
-- A 160 páncéldarab és a már létező 25 fegyver/pajzs közös normalizált combat budgetet
-  kapott. A generátor most a raw armor/toughness mellett a tényleges offense, defense és
-  utility statokat osztja; azonos bandben a négy family eltérő karaktert, nem automatikus
-  numerikus rangsort jelent. Az ID, template-version, visual, source, set, Signature,
-  rune és ascension kapcsolatok megmaradtak; új fegyverkatalógus nem készült.
+- A 160 páncéldarab közvetlen, kézzel authorolt stat- és lore-authorityt kapott. A fizikai
+  armor, toughness és knockback resistance fix; a szűk secondary rollok biztosítják, hogy
+  két azonos craft ne legyen szükségszerűen egyforma. A négy family saját vanilla mércét
+  ver meg és saját kasztidentitást tart, ezért nem egyetlen slot/rarity formula osztja a
+  statokat. Az ID, visual, source, set, Signature, rune és ascension kapcsolatok megmaradtak;
+  az armor template-version 2-re nőtt, új fegyverkatalógus nem készült.
 - A `level-requirement` központi runtime kapu lett armoron, mainhanden és offhanden.
   Underlevel canonical gear inert/suppressed, ACTIVE hozzájárulása nulla, de tele
   inventorynál sem vész el vagy esik a földre. Pontos szinten, level-up/relog/reload

@@ -13,6 +13,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 ITEMS = ROOT / "src/main/resources/config/item-templates.yml"
+AUTHORED_CATALOG = ROOT / "src/main/resources/config/equipment-catalog-expansion.yml"
 RECIPES = ROOT / "src/main/resources/config/profession-recipes.yml"
 OUTPUT = ROOT / "docs/development/equipment-2-handoff.json"
 ARMOR_SLOTS = {"head", "chest", "legs", "feet"}
@@ -29,6 +30,7 @@ STAT_WEIGHTS = {
     "max_health": 0.70,
     "armor": 2.0,
     "armor_toughness": 2.5,
+    "knockback_resistance": 30.0,
     "movement_speed": 120.0,
 }
 STAT_GROUPS = {
@@ -38,6 +40,7 @@ STAT_GROUPS = {
     "max_health": "defensive",
     "armor": "defensive",
     "armor_toughness": "defensive",
+    "knockback_resistance": "defensive",
     "movement_speed": "utility",
 }
 SLOT_SHARE = {"chest": 1.0, "legs": 0.82, "head": 0.62, "feet": 0.56}
@@ -94,6 +97,13 @@ def budget_row(template_id: str, template: dict[str, Any], profiles: dict[str, A
 def build_report() -> dict[str, Any]:
     item_config = load_yaml(ITEMS)
     templates = item_config["item-templates"]
+    authored = load_yaml(AUTHORED_CATALOG).get("item-templates", {})
+    templates = {
+        template_id: (authored[template_id]
+                      if template_id in authored and authored[template_id].get("armor-family")
+                      else template)
+        for template_id, template in templates.items()
+    }
     profiles = item_config["itemization"]["equipment"]["family-profiles"]
     recipes = load_yaml(RECIPES)["profession-recipes"]
     if len(templates) != 48:

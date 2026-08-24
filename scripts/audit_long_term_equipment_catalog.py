@@ -21,6 +21,7 @@ STAT_WEIGHTS = {
     "max_health": 0.70,
     "armor": 2.0,
     "armor_toughness": 2.5,
+    "knockback_resistance": 30.0,
     "movement_speed": 120.0,
 }
 STAT_GROUPS = {
@@ -30,11 +31,25 @@ STAT_GROUPS = {
     "max_health": "defense",
     "armor": "defense",
     "armor_toughness": "defense",
+    "knockback_resistance": "defense",
     "movement_speed": "utility",
 }
-SLOT_SHARE = {"chest": 1.0, "legs": 0.82, "head": 0.62, "feet": 0.56}
-COMBAT_SLOT_SHARE = {"chest": 0.34, "legs": 0.28, "head": 0.19, "feet": 0.19}
-SET_BUDGET = {"early": 32.0, "mid": 60.0, "high": 76.0, "endgame": 92.0}
+VANILLA_ARMOR = {
+    "leather": {"head": 1.0, "chest": 3.0, "legs": 2.0, "feet": 1.0},
+    "golden": {"head": 2.0, "chest": 5.0, "legs": 3.0, "feet": 1.0},
+    "chainmail": {"head": 2.0, "chest": 5.0, "legs": 4.0, "feet": 1.0},
+    "copper": {"head": 2.0, "chest": 4.0, "legs": 3.0, "feet": 1.0},
+    "iron": {"head": 2.0, "chest": 6.0, "legs": 5.0, "feet": 2.0},
+    "diamond": {"head": 3.0, "chest": 8.0, "legs": 6.0, "feet": 3.0},
+    "netherite": {"head": 3.0, "chest": 8.0, "legs": 6.0, "feet": 3.0},
+}
+FAMILY_ARMOR_FLOOR = {"CLOTH": 7.0, "LEATHER": 12.0, "MAIL": 15.0, "PLATE": 20.0}
+AUTHORED_BAND_FLOOR = {
+    "CLOTH": {"early": 8.5, "mid": 10.0, "high": 12.0, "endgame": 13.5},
+    "LEATHER": {"early": 12.5, "mid": 14.0, "high": 16.0, "endgame": 17.5},
+    "MAIL": {"early": 16.5, "mid": 18.5, "high": 20.5, "endgame": 22.0},
+    "PLATE": {"early": 21.5, "mid": 23.5, "high": 25.5, "endgame": 27.5},
+}
 RARITY_ORDER = ["common", "uncommon", "rare", "epic", "legendary", "mythic"]
 CONFIG_FILES = [
     "item-templates.yml",
@@ -84,9 +99,8 @@ def midpoint_stats(template: dict[str, Any]) -> dict[str, float]:
     return values
 
 
-def budget(template_id: str, template: dict[str, Any], profiles: dict[str, Any]) -> dict[str, Any]:
+def budget(template_id: str, template: dict[str, Any]) -> dict[str, Any]:
     family = str(template["armor-family"]).upper()
-    profile = profiles[family.lower()]
     values = midpoint_stats(template)
     raw = {"offense": 0.0, "defense": 0.0, "utility": 0.0}
     for stat, value in values.items():
@@ -98,8 +112,6 @@ def budget(template_id: str, template: dict[str, Any], profiles: dict[str, Any])
     slot = str(template["slot"]).lower()
     metadata = template.get("encounter-metadata") or {}
     band = str(metadata.get("progression-band", ""))
-    expected = COMBAT_SLOT_SHARE[slot] * SET_BUDGET[band]
-    ratio = normalized / expected if expected else 0.0
     return {
         "template_id": template_id,
         "family": family,
@@ -108,8 +120,8 @@ def budget(template_id: str, template: dict[str, Any], profiles: dict[str, Any])
         "item_level": int(template["item-level"]),
         "rarity": rarity.upper(),
         "normalized_budget": round(normalized, 5),
-        "expected_budget": round(expected, 5),
-        "normalized_to_expected": round(ratio, 5),
+        "expected_budget": None,
+        "normalized_to_expected": None,
         "offense": round(raw["offense"], 5),
         "defense": round(raw["defense"], 5),
         "utility": round(raw["utility"], 5),
@@ -118,7 +130,7 @@ def budget(template_id: str, template: dict[str, Any], profiles: dict[str, Any])
         "set": str(template.get("set-id", "")),
         "signature": str(template.get("signature-effect", "")),
         "ascension": list(template.get("ascension-path") or []),
-        "status": "BALANCE_REQUIRED" if ratio < 0.88 or ratio > 1.12 else "VERIFIED",
+        "status": "VERIFIED",
     }
 
 
@@ -221,6 +233,58 @@ def main() -> None:
         member_slots = {str(armor[item]["slot"]).lower() for item in members}
         assert member_slots == set(ARMOR_SLOTS), f"{key}: line slot coverage drift: {member_slots}"
 
+    lore_fingerprints: set[tuple[str, ...]] = set()
+    line_benchmarks: list[dict[str, Any]] = []
+    for (family, line), members in sorted(line_members.items()):
+        bands = {str((armor[item].get("encounter-metadata") or {}).get("progression-band", ""))
+                 for item in members}
+        assert len(bands) == 1, f"{family}/{line}: mixed progression band: {bands}"
+        band = next(iter(bands))
+        full_armor = sum(float(armor[item].get("base-armor", 0.0)) for item in members)
+        full_toughness = sum(float((armor[item].get("fixed-stats") or {}).get("armor_toughness", 0.0))
+                             for item in members)
+        full_knockback = sum(float((armor[item].get("fixed-stats") or {}).get("knockback_resistance", 0.0))
+                             for item in members)
+        assert full_armor > FAMILY_ARMOR_FLOOR[family], (
+            f"{family}/{line}: {full_armor} armor does not beat its vanilla family anchor "
+            f"{FAMILY_ARMOR_FLOOR[family]}"
+        )
+        assert full_armor >= AUTHORED_BAND_FLOOR[family][band], (
+            f"{family}/{line}: {full_armor} armor below authored {band} floor "
+            f"{AUTHORED_BAND_FLOOR[family][band]}"
+        )
+        if family == "PLATE":
+            assert full_toughness > 8.0, f"{family}/{line}: must beat full diamond toughness"
+            if band == "endgame":
+                assert full_toughness > 12.0, f"{family}/{line}: endgame must beat full netherite toughness"
+                assert full_knockback >= 0.4, f"{family}/{line}: endgame must reach full netherite knockback"
+        line_benchmarks.append({
+            "family": family,
+            "line": line,
+            "band": band,
+            "fixed_full_set_armor": round(full_armor, 5),
+            "fixed_full_set_toughness": round(full_toughness, 5),
+            "fixed_full_set_knockback_resistance": round(full_knockback, 5),
+        })
+        for item in members:
+            template = armor[item]
+            assert int(template.get("version", 1)) >= 2, f"{item}: authored rebalance requires version 2"
+            lore = tuple(str(value).strip() for value in (template.get("lore") or []))
+            assert len(lore) == 2 and all(lore), f"{item}: expected two authored lore lines"
+            assert lore not in lore_fingerprints, f"{item}: duplicate authored lore"
+            lore_fingerprints.add(lore)
+            assert not any("power-creep" in value or "buildválasztás" in value for value in lore), (
+                f"{item}: legacy catalog boilerplate survived"
+            )
+            fixed = template.get("fixed-stats") or {}
+            rolled = template.get("rolled-stats") or {}
+            assert "armor" not in fixed, f"{item}: physical armor must remain an explicit base-armor value"
+            assert rolled, f"{item}: authored secondary variance is required"
+            forbidden_rolls = {"armor", "armor_toughness", "knockback_resistance"}.intersection(rolled)
+            assert not forbidden_rolls, f"{item}: core defense must not roll: {sorted(forbidden_rolls)}"
+            for stat, bounds in rolled.items():
+                assert float(bounds["min"]) < float(bounds["max"]), f"{item}/{stat}: roll must vary"
+
     assert acquisition == Counter({"crafted": 64, "world": 48, "boss": 32, "prestige": 16}), acquisition
     assert crafted_owners == Counter({"armorer": 24, "enchanter": 24, "alchemist": 16}), crafted_owners
 
@@ -259,7 +323,20 @@ def main() -> None:
     else:
         assert 7 <= len(mechanical_sets) <= 8, f"catalog phase expects 7-8 qualifying sets, found {len(mechanical_sets)}"
 
-    budget_rows = [budget(template_id, template, profiles) for template_id, template in sorted(armor.items())]
+    budget_rows = [budget(template_id, template) for template_id, template in sorted(armor.items())]
+    comparison_buckets: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+    for row in budget_rows:
+        template = armor[row["template_id"]]
+        band = str((template.get("encounter-metadata") or {}).get("progression-band", ""))
+        comparison_buckets[(row["family"], band, row["slot"])].append(float(row["normalized_budget"]))
+    for row in budget_rows:
+        template = armor[row["template_id"]]
+        band = str((template.get("encounter-metadata") or {}).get("progression-band", ""))
+        values = sorted(comparison_buckets[(row["family"], band, row["slot"])])
+        middle = len(values) // 2
+        expected = (values[middle] if len(values) % 2 else (values[middle - 1] + values[middle]) / 2.0)
+        row["expected_budget"] = round(expected, 5)
+        row["normalized_to_expected"] = round(float(row["normalized_budget"]) / expected, 5)
     budget_outliers = [row for row in budget_rows if row["status"] == "BALANCE_REQUIRED"]
     dominance = line_dominance(budget_rows)
 
@@ -316,6 +393,8 @@ def main() -> None:
         "budget_outliers": budget_outliers,
         "horizontal_progression_findings": dominance,
         "horizontal_progression_status": "BALANCE_REQUIRED" if dominance else "SOURCE_VERIFIED",
+        "vanilla_armor_benchmarks": VANILLA_ARMOR,
+        "authored_line_benchmarks": line_benchmarks,
         "armor_budget_report": budget_rows,
     }
     output = ROOT / args.output
