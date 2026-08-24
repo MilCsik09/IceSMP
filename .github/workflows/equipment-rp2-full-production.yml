@@ -9,7 +9,7 @@ on:
       - feature/equipment-rp2-art-bible-pilot
     paths:
       - "resource-pack/**"
-      - "src/main/resources/config/equipment-catalog-expansion.yml"
+      - "src/main/resources/content/equipment/equipment.yml"
       - "src/main/resources/equipment-rp2-production.properties"
       - "src/main/java/hu/taliann/icesmp/items/WearablePresentation.java"
       - "src/main/java/hu/taliann/icesmp/itemization/PaperSourceIntegrityRuntimeProbe.java"

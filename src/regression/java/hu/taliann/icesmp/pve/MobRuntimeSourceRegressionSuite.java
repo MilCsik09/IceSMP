@@ -18,7 +18,7 @@ public final class MobRuntimeSourceRegressionSuite {
         final String cultists = read("src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java");
         final String wildHunt = read("src/main/java/hu/taliann/icesmp/managers/WildHuntManager.java");
         final String authoredSpawns = read("src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java");
-        final String content = read("src/main/resources/config/mob-templates.yml");
+        final String content = read("src/main/resources/content/pve/enemies.yml");
         final String profiles = read("src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java");
         final String species = read("src/main/java/hu/taliann/icesmp/pve/CreatureSpeciesRegistry.java");
         final String loot = read("src/main/java/hu/taliann/icesmp/listeners/MobLootListener.java");

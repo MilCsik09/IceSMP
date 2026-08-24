@@ -83,8 +83,8 @@ public final class ConfigStartupRegressionSuite {
     }
 
     private static void parsesEveryBundledProfessionIngredient() throws Exception {
-        final File recipeFile = Path.of("src/main/resources/config/profession-recipes.yml").toFile();
-        final File materialFile = Path.of("src/main/resources/config/profession-materials.yml").toFile();
+        final File recipeFile = Path.of("src/main/resources/content/professions/recipes.yml").toFile();
+        final File materialFile = Path.of("src/main/resources/content/professions/materials.yml").toFile();
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(recipeFile);
         final YamlConfiguration materialYaml = YamlConfiguration.loadConfiguration(materialFile);
         final ConfigurationSection root = yaml.getConfigurationSection("profession-recipes");
@@ -341,10 +341,20 @@ public final class ConfigStartupRegressionSuite {
         final String configManager = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java"));
         check(configManager.contains("baseConfiguration")
-                        && configManager.contains("mergePackagedDefaults")
+                        && configManager.contains("CONTENT_FILES")
+                        && configManager.contains("OPERATOR_CONFIG_FILES")
+                        && configManager.contains("migrateLegacyContentFiles")
+                        && configManager.contains("LOCKED_CANONICAL_CONTENT")
+                        && configManager.contains("RESTART_REQUIRED_OPERATOR_PATHS")
+                        && configManager.contains("operatorReloadPolicy")
                         && configManager.contains("resetOverride")
                         && configManager.contains("\"block-regen\""),
-                "base-value layering or reset support is incomplete");
+                "authority layering, migration or reset support is incomplete");
+        final String configRenderer = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/gui/ConfigMenuEntryRenderer.java"));
+        check(configRenderer.contains("configManager.reloadPolicyOf(entry.key())")
+                        && !configRenderer.contains("effectMode("),
+                "Config GUI must render the ConfigManager reload-policy authority");
 
         final String bridge = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/core/ConfigRuntimeReloadBridge.java"));

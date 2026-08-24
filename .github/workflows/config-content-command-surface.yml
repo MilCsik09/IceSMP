@@ -1,0 +1,115 @@
+name: Configuration Content Command Surface
+
+on:
+  pull_request:
+    branches:
+      - feature/enemy-worldboss-rework-2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: config-content-command-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  authority-and-build:
+    name: Authority, parity and Java 21 build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validation dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          'PyYAML>=6.0,<7.0'
+          'Pillow==11.3.0'
+
+      - name: Validate handcrafted authority and exact parent parity
+        run: |
+          python3 scripts/audit_config_content_command_surface.py --check
+          python3 scripts/check_consistency.py
+          python3 scripts/test_progression_balance.py
+          python3 scripts/test_professions_2_economy.py
+          python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets
+          python3 scripts/audit_long_term_equipment_economy.py
+          python3 scripts/audit_reward_discoverability_closure.py
+          python3 scripts/audit_professions_2_closure.py
+          python3 scripts/audit_professions_2_specialization_closure.py
+
+      - name: Validate resource-pack boundary
+        run: |
+          python3 scripts/test_resource_pack.py
+          python3 scripts/validate_gui_icons.py
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Clean Java 21 build and full regressions
+        run: ./gradlew clean build --console=plain --no-daemon --stacktrace
+
+  paper-runtime:
+    name: Paper 1.21.11 and Folia contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - name: Checkout exact tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare isolated runtime
+        run: |
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+          mkdir -p run/plugins/IceSMP/config
+          cp src/main/resources/content/pve/enemies.yml \
+            run/plugins/IceSMP/config/mob-templates.yml
+
+      - name: Run integrated Paper source-integrity probes
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.source-integrity-runtime=true
+        run: |
+          set -o pipefail
+          timeout 480s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            | tee paper-source-integrity.log
+
+      - name: Require runtime and Folia-safe probe markers
+        if: always()
+        run: |
+          grep -F 'ICESMP_PROFESSIONS_RUNTIME_PROBE_PASS' paper-source-integrity.log
+          grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS' paper-source-integrity.log
+          grep -F 'ICESMP_CONFIG_COMMAND_RUNTIME_PROBE_PASS' paper-source-integrity.log
+          ! grep -F 'ICESMP_PROFESSIONS_RUNTIME_PROBE_FAIL' paper-source-integrity.log
+          ! grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL' paper-source-integrity.log
+          test ! -e run/plugins/IceSMP/config/mob-templates.yml
+          migrated=$(find run/plugins/IceSMP/migration-backups/config-content-command-surface-2/config \
+            -maxdepth 1 -type f -name 'mob-templates-*.yml')
+          test -n "${migrated}"
+          cmp src/main/resources/content/pve/enemies.yml "${migrated}"

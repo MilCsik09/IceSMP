@@ -21,7 +21,7 @@ Ez az oldal az **egyetlen általános funkciótérkép**. A használat részlete
 - **Rollout-kapu alatt**: kódszinten és CI alapján jelen van, de productionközeli kézi próba kell.
 - **Tervezett**: lore- vagy kommunikációs irány; nem ígért, aktív gameplay.
 
-> **Leltár, nem olvasnivaló:** a 68 root parancs, 286 route, 79+93 alias,
+> **Leltár, nem olvasnivaló:** a 69 root parancs, 287 route, 79+93 alias,
 > 44 permission, 13 550 configútvonal és 545 production komponens teljes technikai
 > referenciáját a `Repository Docs Inventory` CI-artifact generálja. Itt csak az marad,
 > ami egy játékosnak vagy csapattagnak valóban segít megérteni a rendszert.
@@ -563,7 +563,7 @@ Regisztrált spellkatalógus, célzás, költség, cooldown, projectile/state ke
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
 Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz és szakmai GUI.
-A receptkatalógus 392 receptet tartalmaz, és minden recept kimondja a **fajtáját**
+A receptkatalógus 475 receptet tartalmaz, és minden recept kimondja a **fajtáját**
 (gyakorló / hozam / egyedi / lánc / ritkaság); a fajta szabja meg, mit adhat a
 vanília fölé, és ezt gépi kapu tartja fenn.
 
@@ -1199,8 +1199,9 @@ reconnectig függőben marad, nem esik a földre.
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: `world.yml` `mob-scaling.*` és `world-events.world-boss.*`,
-  `mob-templates.yml` `mob-abilities`, `creature-species`, `mob-templates`, `loot.*`,
+- Config/content: `config/world.yml` `mob-scaling.*` és `world-events.world-boss.*`,
+  `content/pve/enemies.yml` `mob-abilities`, `creature-species`, `mob-templates`,
+  valamint `content/pve/loot.yml` `loot.*`,
   `itemization.loot.*`, bestiary- (mérföldkövek,
   `bestiary.knowledge-tiers`, `bestiary.codex-notes.*`) és miniondefiníciók.
 - Tartós állapot: Bestiárium progress, bounded authored-loot előzmény és egyes
@@ -1480,7 +1481,7 @@ A vanilla mobmodell már nem egyenlő egyetlen ellenféllel. A jelenlegi build 8
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
-- Config: `config/mob-templates.yml`, `config/world.yml` event template-listák.
+- Content/config: `content/pve/enemies.yml`, `config/world.yml` event template-listák.
 - Authority: `MobTemplateRegistry`, `MobAbilityRuntime`, `AuthoredCreatureSpawnService`.
 - Evidence: `docs/development/enemy-worldboss-rework-2.json`.
 - Gate: `./gradlew enemyWorldBossReworkAudit`; Paper 1.21.11 exact-head és 30–60 perces több-biome/Folia multiplayer staging még kötelező.

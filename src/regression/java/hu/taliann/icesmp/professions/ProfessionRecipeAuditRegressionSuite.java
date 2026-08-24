@@ -33,12 +33,12 @@ public final class ProfessionRecipeAuditRegressionSuite {
     private ProfessionRecipeAuditRegressionSuite() { }
 
     public static void main(final String[] args) throws Exception {
-        final Path path = Path.of("src/main/resources/config/profession-recipes.yml");
+        final Path path = Path.of("src/main/resources/content/professions/recipes.yml");
         final String raw = Files.readString(path);
         check(!raw.contains("  kezdo_horgaszbot:"), "removed duplicate recipe must not remain craftable");
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(path.toFile());
         final YamlConfiguration materials = YamlConfiguration.loadConfiguration(
-                Path.of("src/main/resources/config/profession-materials.yml").toFile());
+                Path.of("src/main/resources/content/professions/materials.yml").toFile());
         final ConfigurationSection root = yaml.getConfigurationSection("profession-recipes");
         check(root != null, "profession recipe root exists");
         final Set<String> ids = new TreeSet<>(root.getKeys(false));

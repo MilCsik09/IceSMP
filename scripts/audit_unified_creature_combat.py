@@ -13,7 +13,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "src/main/resources/config/mob-templates.yml"
+CONFIG = ROOT / "src/main/resources/content/pve/enemies.yml"
 PROFILE_SOURCE = ROOT / "src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java"
 RUNTIME_SOURCE = ROOT / "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java"
 SCALING_SOURCE = ROOT / "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java"

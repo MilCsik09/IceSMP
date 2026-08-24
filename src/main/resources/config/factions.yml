@@ -550,7 +550,7 @@ territory:
   # + lockout-days napos pecsét kerül a játékosra (játékosonként — a party minden tagja
   # saját kulccsal lép). A bent lévő mobok erejét a mob-rules.dungeon sor adja; boss:
   # admin-eszközökkel telepíthető. Élőben olvasódik.
-  # Kulcs-recept minta (profession-recipes.yml alá):
+  # Kulcs-recept minta (content/professions/recipes.yml alá):
   #   melyseg_kulcsa:
   #     profession: enchanter
   #     level: 30

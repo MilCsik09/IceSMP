@@ -7,6 +7,8 @@ import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -15,9 +17,9 @@ import java.util.List;
  * {@code DatapackRegistrar} ({@code LifecycleEvents.DATAPACK_DISCOVERY}) horgán derít fel — ez a
  * támogatott, nem deprecated út, és resource pack sem kell hozzá.
  *
- * <p><b>A JSON-ok forrása a lenti {@code NODES} lista</b> — a két oldal nem drifthet szét: a
- * {@code scripts/check_consistency.py} FAIL-el, ha egy csomóponthoz nincs JSON, ha egy JSON
- * árva, vagy ha egy bejegyzéshez nincs valódi {@link #award} hívás (nincs holt bejegyzés).
+ * <p><b>A kézzel authorolt datapack JSON-ok a gameplay source of truth.</b> A lenti ID-lista
+ * kizárólag a runtime teljesség-ellenőrzésének bounded indexe. A repository consistency gate
+ * FAIL-el hiányzó/árva JSON, hibás parent vagy valódi {@link #award} hívás nélküli node esetén.
  *
  * <p><b>Tartalék út:</b> a {@link #load} azokra a csomópontokra, amiket a datapack nem hozott be,
  * még megpróbálja a régi, {@code @Deprecated Bukkit.getUnsafe().loadAdvancement} hívást (az a
@@ -40,76 +42,15 @@ import java.util.List;
  */
 public final class AdvancementService {
 
-    /** Egy advancement leíró: a JSON ebből épül. A parent null = gyökér (háttérrel). */
-    private record Node(String id, String parent, String title, String description,
-                        String icon, String frame, boolean hidden, String background) {
-    }
-
     private static final String NS = "icesmp";
 
-    // A fa root-tól lefelé rendezve — a loadAdvancement szülőt csak akkor fogad el, ha az
-    // MÁR betöltött, ezért a gyökér az első.
-    private static final List<Node> NODES = List.of(
-            new Node("root", null, "IceSMP", "A Fa árnyékában írt legendád.",
-                    "minecraft:beacon", "task", false, "minecraft:gui/advancements/backgrounds/stone"),
-
-            // --- Kaszt-ág ---
-            new Node("first_class", "root", "Elhivatás", "Kasztot választottál — az utad elkezdődött.",
-                    "minecraft:iron_sword", "task", false, null),
-            new Node("first_spec", "first_class", "Az út elágazik", "Specializációt választottál: a mesterséged elmélyült.",
-                    "minecraft:enchanted_book", "goal", false, null),
-            new Node("class_max", "first_spec", "A hivatás csúcsa", "Elérted a kasztod legmagasabb szintjét.",
-                    "minecraft:netherite_sword", "challenge", false, null),
-            new Node("capstone", "first_spec", "Zárókő", "Megvásároltad egy talent-fa capstone-jét.",
-                    "minecraft:amethyst_shard", "goal", false, null),
-
-            // --- Frakció-ág ---
-            // A világban NÉGY hatalom van, de a játékos csak HÁROM közül választhat: a
-            // Menedékben kezd (alapértelmezés), onnan a Lánghoz vagy a Fagyhoz állhat. A
-            // Kitaszítottak közé nem lépni lehet, hanem KERÜLNI — mindhárom út (bűn-küszöb,
-            // Suttogó-lelepleződés, önkéntes paktum) ugyanezt az „exiled" bejegyzést adja,
-            // és a „redeemed" annak a feloldása. A „whisperer" azért REJTETT és
-            // toast/chat-mentes, mert a Suttogó-státusz titkos: az álca a mechanika lényege.
-            new Node("faction_join", "root", "Hovatartozás", "Kikötöttél az egyik hatalom mellett.",
-                    "minecraft:white_banner", "task", false, null),
-            new Node("whisperer", "faction_join", "Akit a csend befogadott",
-                    "Éjjel, sculkon, magányosan — a Suttogás megszólalt hozzád. Őrizd a titkot.",
-                    "minecraft:sculk_catalyst", "goal", true, null),
-            new Node("exiled", "faction_join", "Kitaszítva",
-                    "Bűnök vezettek a Néma Királynő népe közé — és a paktum örök.",
-                    "minecraft:wither_skeleton_skull", "challenge", true, null),
-            new Node("crowned", "faction_join", "A korona súlya", "Megválasztottak a frakciód királyává.",
-                    "minecraft:golden_helmet", "challenge", false, null),
-            new Node("cursed_crown", "crowned", "Amit a Királynő számol", "Kitartottál a koronán a Néma Királynő teljes figyelméig.",
-                    "minecraft:soul_lantern", "challenge", true, null),
-            new Node("raid_win", "faction_join", "Hadizsákmány", "A frakciód megnyert egy raidet, és te ott voltál.",
-                    "minecraft:iron_axe", "goal", false, null),
-            new Node("redeemed", "exiled", "Vezeklés", "Megtörted a Kitaszítottak örök paktumát — visszatértél.",
-                    "minecraft:totem_of_undying", "challenge", true, null),
-
-            // --- Szakma-ág ---
-            new Node("profession_pick", "root", "Mesterség kezdete", "Beálltál egy szakma tanoncának.",
-                    "minecraft:crafting_table", "task", false, null),
-            new Node("profession_master", "profession_pick", "A mester keze", "Egy szakmát a legmagasabb szintre vittél.",
-                    "minecraft:smithing_table", "challenge", false, null),
-            new Node("masterwork", "profession_pick", "Mestermű", "Olyan tárgyat készítettél, amit a Vasművek Akadémiája is elismerne.",
-                    "minecraft:anvil", "goal", false, null),
-
-            // --- Világ-ág ---
-            new Node("cleanse", "root", "A rontás megtörve", "Megtörted egy rontás-góc magját — a Fa fellélegzik.",
-                    "minecraft:echo_shard", "challenge", true, null),
-            new Node("hidden_spot", "root", "Rejtett zug", "Rábukkantál a világ egyik titkos helyére.",
-                    "minecraft:spyglass", "goal", true, null),
-            new Node("world_boss", "root", "Világfaló", "Részt vettél egy világboss elejtésében.",
-                    "minecraft:dragon_head", "challenge", false, null),
-            new Node("first_relic", "root", "Ereklye a kezedben", "Megszereztél egy relikviát — a régi világ egy darabját.",
-                    "minecraft:heart_of_the_sea", "goal", false, null),
-            new Node("first_ritual", "first_relic", "Az oltár válaszol", "Végigvittél egy rituálét egy oltárnál.",
-                    "minecraft:enchanting_table", "goal", false, null),
-            new Node("pet_bond", "root", "Hű Társ", "Társad a te oldalán érte el a legmagasabb szintet.",
-                    "minecraft:bone", "goal", false, null),
-            new Node("parkour", "root", "Akrobata", "Teljesítettél egy ügyességi pályát.",
-                    "minecraft:feather", "task", false, null));
+    /** Runtime verification order; parent JSONs precede their children for deprecated fallback load. */
+    private static final List<String> ADVANCEMENT_IDS = List.of(
+            "root",
+            "first_class", "first_spec", "class_max", "capstone",
+            "faction_join", "whisperer", "exiled", "crowned", "cursed_crown", "raid_win", "redeemed",
+            "profession_pick", "profession_master", "masterwork",
+            "cleanse", "hidden_spot", "world_boss", "first_relic", "first_ritual", "pet_bond", "parkour");
 
     private static volatile AdvancementService instance;
 
@@ -140,41 +81,49 @@ public final class AdvancementService {
         int fromDatapack = 0;
         int fromFallback = 0;
         final List<String> missing = new java.util.ArrayList<>();
-        for (final Node node : NODES) {
-            final NamespacedKey key = new NamespacedKey(NS, node.id());
+        for (final String id : ADVANCEMENT_IDS) {
+            final NamespacedKey key = new NamespacedKey(NS, id);
             if (Bukkit.getAdvancement(key) != null) {
                 fromDatapack++;
                 continue;
             }
             try {
-                if (Bukkit.getUnsafe().loadAdvancement(key, buildJson(node)) != null) {
+                if (Bukkit.getUnsafe().loadAdvancement(key, authoredJson(id)) != null) {
                     fromFallback++;
                     continue;
                 }
             } catch (final Throwable throwable) {
-                plugin.getLogger().warning("Advancement tartalék-betöltés hiba (" + node.id() + "): "
+                plugin.getLogger().warning("Advancement tartalék-betöltés hiba (" + id + "): "
                         + throwable.getMessage());
             }
-            missing.add(node.id());
+            missing.add(id);
         }
         // TÉTELES állapot: egyetlen betöltött bejegyzés is „loaded"-nak számított, közben a
         // hiányzó node-ok award-jai NÉMÁN no-opoltak — a részleges pack sikeres indulásnak
         // látszott. Hiányos fa = a rendszer KIKAPCSOL, és a log megnevezi a hiányzókat.
-        loaded = missing.isEmpty() && fromDatapack + fromFallback == NODES.size();
+        loaded = missing.isEmpty() && fromDatapack + fromFallback == ADVANCEMENT_IDS.size();
         if (!missing.isEmpty()) {
-            plugin.getLogger().severe("IceSMP advancement-fa HIÁNYOS (" + (NODES.size() - missing.size())
-                    + "/" + NODES.size() + ") — a rendszer KIKAPCSOLT, hogy ne némán vesszenek el a "
+            plugin.getLogger().severe("IceSMP advancement-fa HIÁNYOS (" + (ADVANCEMENT_IDS.size() - missing.size())
+                    + "/" + ADVANCEMENT_IDS.size() + ") — a rendszer KIKAPCSOLT, hogy ne némán vesszenek el a "
                     + "bejegyzések. Hiányzó: " + String.join(", ", missing)
                     + ". A datapack a jar-ból telepítődik a világ datapack-könyvtárába.");
             return;
         }
         if (fromFallback > 0) {
             plugin.getLogger().warning("IceSMP advancement-fa: " + fromDatapack + " datapackből, "
-                    + fromFallback + " a DEPRECATED tartalék úton (" + NODES.size() + " összesen). "
+                    + fromFallback + " a DEPRECATED tartalék úton (" + ADVANCEMENT_IDS.size() + " összesen). "
                     + "A datapack-felderítés nem hozta be mindet — érdemes a szerver-logot megnézni.");
         } else {
-            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "IceSMP advancement-fa: " + fromDatapack + "/" + NODES.size()
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "IceSMP advancement-fa: " + fromDatapack + "/" + ADVANCEMENT_IDS.size()
                     + " bejegyzés a jar datapackjéből él.");
+        }
+    }
+
+    private String authoredJson(final String id) throws java.io.IOException {
+        final String path = "datapack/data/icesmp/advancement/" + id + ".json";
+        try (InputStream input = plugin.getResource(path)) {
+            if (input == null) throw new java.io.IOException("missing authored resource: " + path);
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 
@@ -209,37 +158,4 @@ public final class AdvancementService {
         }, null);
     }
 
-    /**
-     * A JSON az 1.21.11 advancement-formátumot követi: icon={id,count}, cím/leírás
-     * text-komponens, impossible-trigger + requirements. A gyökér háttér-textúrát kap.
-     *
-     * <p>A {@code show_toast:false} SZÁNDÉKOS és a datapack-JSON-okkal egyező: a fa-bejegyzések
-     * nem ugranak fel, a toast-réteg külön, célzott ({@code ToastUtil}) — e nélkül a tartalék
-     * úton betöltött csomópont máshogy viselkedne, mint a datapackből jövő ugyanaz.</p>
-     */
-    private static String buildJson(final Node node) {
-        final StringBuilder sb = new StringBuilder(256);
-        sb.append('{');
-        if (node.parent() != null) {
-            sb.append("\"parent\":\"").append(NS).append(':').append(node.parent()).append("\",");
-        }
-        sb.append("\"criteria\":{\"granted\":{\"trigger\":\"minecraft:impossible\"}},");
-        sb.append("\"requirements\":[[\"granted\"]],");
-        sb.append("\"display\":{");
-        sb.append("\"icon\":{\"id\":\"").append(node.icon()).append("\",\"count\":1},");
-        sb.append("\"title\":{\"text\":\"").append(escape(node.title())).append("\"},");
-        sb.append("\"description\":{\"text\":\"").append(escape(node.description())).append("\"},");
-        sb.append("\"frame\":\"").append(node.frame()).append("\",");
-        sb.append("\"show_toast\":false,\"announce_to_chat\":false,");
-        sb.append("\"hidden\":").append(node.hidden());
-        if (node.background() != null) {
-            sb.append(",\"background\":\"").append(node.background()).append('"');
-        }
-        sb.append("}}");
-        return sb.toString();
-    }
-
-    private static String escape(final String text) {
-        return text.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
 }

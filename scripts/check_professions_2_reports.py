@@ -71,8 +71,8 @@ salvage = (ROOT / 'src/main/java/hu/taliann/icesmp/itemization/ItemSalvageServic
 assert 'familyScrapId' in salvage
 assert 'ProfessionEconomyTelemetry.global().recordSalvage' not in salvage
 
-root_config = yaml.safe_load((ROOT / 'src/main/resources/config.yml').read_text(encoding='utf-8')) or {}
-delivery = (((root_config.get('itemization') or {}).get('salvage') or {}).get('output-map') or {})
+equipment_content = yaml.safe_load((ROOT / 'src/main/resources/content/equipment/equipment.yml').read_text(encoding='utf-8')) or {}
+delivery = (((equipment_content.get('itemization') or {}).get('salvage') or {}).get('output-map') or {})
 for scrap in expected_scraps:
     assert delivery.get(scrap) == scrap, (scrap, delivery.get(scrap))
 

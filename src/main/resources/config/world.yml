@@ -1,20 +1,13 @@
-# IceSMP konfiguráció — world
-
-# ===== Mob/Encounter 2.0 — hibrid survival szintezés =====
 mob-scaling:
   enabled: true
-  # Wilderness komponens: Lv. 1 a spawnnál, normál plafon Lv. 50.
   blocks-per-level: 500
   normal-max-level: 50
-  # Territory/biome/depth/event bónuszokkal elérhető általános survival plafon.
   hard-cap-level: 70
-  # Csak explicit authored boss/encounter override használhatja; wilderness soha.
   authored-boss-cap-level: 200
   zone-ramp:
     enabled: true
     blocks-per-level: 250
   curves:
-    # Level 1 baseline; a HP gyorsabban, a damage sokkal lassabban nő.
     health-per-level: 0.08
     damage-per-level: 0.025
     maximum-health-multiplier: 8.0
@@ -42,80 +35,164 @@ mob-scaling:
     blood-moon-elite-bonus-percent: 1.0
     danger-veteran-bonus-percent: 2.0
   ranks:
-    # HP is intentionally bounded: higher ranks gain readable techniques, armor and modest
-    # movement pressure instead of becoming health-only sponges.
-    normal: { health-multiplier: 1.0, damage-multiplier: 1.0, armor-bonus: 0.0, movement-multiplier: 1.0 }
-    veteran: { health-multiplier: 1.25, damage-multiplier: 1.08, armor-bonus: 1.0, movement-multiplier: 1.02 }
-    elite: { health-multiplier: 1.55, damage-multiplier: 1.14, armor-bonus: 2.0, movement-multiplier: 1.04 }
-    champion: { health-multiplier: 1.9, damage-multiplier: 1.20, armor-bonus: 3.0, movement-multiplier: 1.05 }
-    miniboss: { health-multiplier: 2.4, damage-multiplier: 1.25, armor-bonus: 4.0, movement-multiplier: 1.04 }
-    boss: { health-multiplier: 3.0, damage-multiplier: 1.30, armor-bonus: 5.0, movement-multiplier: 1.02 }
-    world_boss: { health-multiplier: 3.6, damage-multiplier: 1.32, armor-bonus: 6.0, movement-multiplier: 1.0 }
-  # Template abilities are evaluated first; these defaults guarantee promoted wilderness ranks
-  # have mechanics even without a matching authored template. Runtime rank caps remain authoritative.
+    normal:
+      health-multiplier: 1.0
+      damage-multiplier: 1.0
+      armor-bonus: 0.0
+      movement-multiplier: 1.0
+    veteran:
+      health-multiplier: 1.25
+      damage-multiplier: 1.08
+      armor-bonus: 1.0
+      movement-multiplier: 1.02
+    elite:
+      health-multiplier: 1.55
+      damage-multiplier: 1.14
+      armor-bonus: 2.0
+      movement-multiplier: 1.04
+    champion:
+      health-multiplier: 1.9
+      damage-multiplier: 1.2
+      armor-bonus: 3.0
+      movement-multiplier: 1.05
+    miniboss:
+      health-multiplier: 2.4
+      damage-multiplier: 1.25
+      armor-bonus: 4.0
+      movement-multiplier: 1.04
+    boss:
+      health-multiplier: 3.0
+      damage-multiplier: 1.3
+      armor-bonus: 5.0
+      movement-multiplier: 1.02
+    world_boss:
+      health-multiplier: 3.6
+      damage-multiplier: 1.32
+      armor-bonus: 6.0
+      movement-multiplier: 1.0
   rank-abilities:
     normal: []
-    veteran: [ "veteran_cleave" ]
-    elite: [ "veteran_cleave", "delayed_frost_rune" ]
-    champion: [ "veteran_cleave", "delayed_frost_rune", "war_cry" ]
-    miniboss: [ "veteran_cleave", "venom_cloud", "delayed_frost_rune", "war_cry" ]
-    boss: [ "glacial_slam", "venom_cloud", "delayed_frost_rune", "war_cry" ]
-    world_boss: [ "glacial_slam", "venom_cloud", "delayed_frost_rune", "war_cry", "call_frozen" ]
+    veteran:
+    - veteran_cleave
+    elite:
+    - veteran_cleave
+    - delayed_frost_rune
+    champion:
+    - veteran_cleave
+    - delayed_frost_rune
+    - war_cry
+    miniboss:
+    - veteran_cleave
+    - venom_cloud
+    - delayed_frost_rune
+    - war_cry
+    boss:
+    - glacial_slam
+    - venom_cloud
+    - delayed_frost_rune
+    - war_cry
+    world_boss:
+    - glacial_slam
+    - venom_cloud
+    - delayed_frost_rune
+    - war_cry
+    - call_frozen
   abilities:
     maximum-summons-per-cast: 3
     summon-lifespan-ticks: 300
   name:
     enabled: true
     always-visible: false
-    prefix: "&7[Lvl %level%] "
-    color: "WHITE"
-
-# ===== Világesemények =====
+    prefix: '&7[Lvl %level%] '
+    color: WHITE
 world-events:
   check-interval-seconds: 60
   spawn-rules-enabled: true
   safety:
     enabled: true
-    # Every relevant online player must be at least this far away horizontally.
-    min-horizontal-distance-blocks: 96.0
-    # 0 disables the optional full 3D distance check; horizontal safety still applies.
-    min-3d-distance-blocks: 0.0
-    ignore-spectators: true
-    ignore-vanished: true
-    ignore-admins: true
     min-world-spawn-distance-blocks: 128.0
     world-border-margin-blocks: 16.0
-    require-loaded-chunk: true
-    # Bounded search: no valid candidate means controlled abort, never a close fallback.
-    search-attempts: 24
-    search-min-radius-blocks: 96.0
-    search-max-radius-blocks: 256.0
-    # Prevent different events from selecting the same area concurrently.
     reservation-distance-blocks: 64.0
     reservation-seconds: 120
   spawn-rules:
-    world-boss: { territory: true, claim: true, region: true, water: true }
-    invasion: { territory: true, claim: true, region: true, water: true }
-    wild-hunt: { territory: true, claim: true, region: true, water: true }
-    treasure: { territory: true, claim: true, region: true, water: true }
-    meteor: { territory: true, claim: true, region: true }
-    corruption: { territory: true, claim: true, region: true, water: true }
-    dark-undead: { territory: false, claim: true, region: true, water: true }
-    escort: { territory: true, claim: true, region: true, water: true }
-    archeology: { territory: true, claim: true, region: true, water: true }
-    stranger: { territory: true, claim: true, region: true, water: true }
-    player-caravan: { territory: false, claim: false, region: false, water: false }
-    cultists: { territory: true, claim: true, region: true, water: true }
+    world-boss:
+      territory: true
+      claim: true
+      region: true
+      water: true
+    invasion:
+      territory: true
+      claim: true
+      region: true
+      water: true
+    wild-hunt:
+      territory: true
+      claim: true
+      region: true
+      water: true
+    treasure:
+      territory: true
+      claim: true
+      region: true
+      water: true
+    meteor:
+      territory: true
+      claim: true
+      region: true
+    corruption:
+      territory: true
+      claim: true
+      region: true
+      water: true
+    dark-undead:
+      territory: false
+      claim: true
+      region: true
+      water: true
+    escort:
+      territory: true
+      claim: true
+      region: true
+      water: true
+    archeology:
+      territory: true
+      claim: true
+      region: true
+      water: true
+    stranger:
+      territory: true
+      claim: true
+      region: true
+      water: true
+    player-caravan:
+      territory: false
+      claim: false
+      region: false
+      water: false
+    cultists:
+      territory: true
+      claim: true
+      region: true
+      water: true
   anchors:
     random-radius: 1500
-    world-boss: { mode: "player" }
-    escort: { mode: "player" }
-    caravan: { mode: "player" }
-    cultists: { mode: "player" }
+    world-boss:
+      mode: player
+    escort:
+      mode: player
+    caravan:
+      mode: player
+    cultists:
+      mode: player
   orchestration:
     enabled: true
     max-active-minutes: 60
-    major-events: [ "world-boss", "invasion", "wild-hunt", "escort", "cultists" ]
+    major-events:
+    - world-boss
+    - invasion
+    - wild-hunt
+    - escort
+    - cultists
   season-modifiers:
     enabled: true
     tel:
@@ -149,7 +226,6 @@ world-events:
     force-duration-minutes: 10
     force-night: true
   world-boss:
-    # Itemization 2.0: contribution-gated, PlayerProfile-receiptes személyes komponens.
     ascension-component: osi_ereklyeszilank
     ascension-component-amount: 1
     display-level: 75
@@ -160,16 +236,14 @@ world-events:
     scaling:
       participant-radius: 128.0
       player-coefficient: 0.65
-      player-exponent: 0.80
+      player-exponent: 0.8
       maximum-health-multiplier: 12.0
       damage-per-doubling: 0.04
       maximum-damage-multiplier: 1.18
-      combat-power-influence: 0.20
+      combat-power-influence: 0.2
       tier-reference-power: 250.0
     contribution:
       minimum-score: 25.0
-      # A telegráf célpontjának sikeres kitérése csak már aktív résztvevőnek jár,
-      # encounterenként bounded darabszámmal; AFK/előharc padding nem kvalifikál.
       maximum-objectives: 5
     treasury-reward: 300.0
     season-points: 10
@@ -190,17 +264,44 @@ world-events:
     champion-buff-minutes: 30
     champion-firework: true
     source-weights:
-      raid: { red: 1.0, blue: 1.0, neutral: 0.5, dark: 1.0 }
-      world-boss: { red: 1.0, blue: 1.0, neutral: 1.0, dark: 1.0 }
-      community: { red: 1.0, blue: 1.0, neutral: 1.5, dark: 0.75 }
-      cleanse: { red: 1.0, blue: 1.0, neutral: 1.5, dark: 0.5 }
-      duel: { red: 1.0, blue: 1.0, neutral: 1.0, dark: 1.5 }
-      spy: { red: 0.75, blue: 0.75, neutral: 0.75, dark: 1.5 }
-      cult: { dark: 1.0 }
-      war: { red: 1.0, blue: 1.0 }
+      raid:
+        red: 1.0
+        blue: 1.0
+        neutral: 0.5
+        dark: 1.0
+      world-boss:
+        red: 1.0
+        blue: 1.0
+        neutral: 1.0
+        dark: 1.0
+      community:
+        red: 1.0
+        blue: 1.0
+        neutral: 1.5
+        dark: 0.75
+      cleanse:
+        red: 1.0
+        blue: 1.0
+        neutral: 1.5
+        dark: 0.5
+      duel:
+        red: 1.0
+        blue: 1.0
+        neutral: 1.0
+        dark: 1.5
+      spy:
+        red: 0.75
+        blue: 0.75
+        neutral: 0.75
+        dark: 1.5
+      cult:
+        dark: 1.0
+      war:
+        red: 1.0
+        blue: 1.0
     champion-reward-items:
-      - "DIAMOND:8"
-      - "GOLDEN_APPLE:4"
+    - DIAMOND:8
+    - GOLDEN_APPLE:4
     transition-story:
       enabled: true
       line-delay-seconds: 4
@@ -215,36 +316,34 @@ world-events:
     league-point-mult-max: 2.0
     boss:
       enabled: true
-      name: "A Lapforduló Őre"
+      name: A Lapforduló Őre
       lifetime-minutes: 30
       wall-offset: 16
       health-mult: 1.5
       bonus-season-points: 15
       loot-rolls: 6
       loot:
-        - "DIAMOND:2:5"
-        - "NETHERITE_SCRAP:1:2"
-        - "GOLDEN_APPLE:1:3"
-        - "unique:emlekszilank:2"
-        - "unique:runapor:3"
+      - DIAMOND:2:5
+      - NETHERITE_SCRAP:1:2
+      - GOLDEN_APPLE:1:3
+      - unique:emlekszilank:2
+      - unique:runapor:3
   intro:
     enabled: true
-    first-join-spawn: ""
+    first-join-spawn: ''
     join-welcome:
       enabled: true
-      title: "<aqua>❄ IceSMP</aqua>"
-      subtitle: "<gray>Üdv újra a fagyott királyságok földjén!</gray>"
+      title: <aqua>❄ IceSMP</aqua>
+      subtitle: <gray>Üdv újra a fagyott királyságok földjén!</gray>
     stagger-seconds: 4
     lines:
-      - "&b&lIceSMP||&7Üdv a fagyott királyságok földjén"
-      - "&6Válaszd az utadat||&7A Menedékben kezdesz — a Láng vagy a Fagy hív"
-      - "&dKovácsold a sorsod||&7Kasztok, szakmák, relikviák várnak"
+    - '&b&lIceSMP||&7Üdv a fagyott királyságok földjén'
+    - '&6Válaszd az utadat||&7A Menedékben kezdesz — a Láng vagy a Fagy hív'
+    - '&dKovácsold a sorsod||&7Kasztok, szakmák, relikviák várnak'
     cinematic:
       enabled: false
       point-seconds: 3
       waypoints: []
-
-# ===== Hangulat-események =====
 ambient-events:
   enabled: true
   local-announce-radius: 192
@@ -262,8 +361,6 @@ ambient-events:
     spectral-wanderers: true
     animal-migration: true
     fireflies: true
-
-# ===== Gyűjtögető buff-események =====
 gathering-buffs:
   enabled: true
   interval-minutes: 90
@@ -277,8 +374,6 @@ gathering-buffs:
     harvest-hour: true
     fishing-frenzy: true
     xp-hour: true
-
-# ===== Felfedező kincs-események =====
 treasure-events:
   enabled: true
   runner-up-seconds: 45
@@ -290,16 +385,14 @@ treasure-events:
   spawn-radius: 80
   rolls: 3
   loot:
-    - "DIAMOND:2:5"
-    - "GOLD_INGOT:4:9"
-    - "IRON_INGOT:6:12"
-    - "EMERALD:2:6"
-    - "ENCHANTED_GOLDEN_APPLE:1"
-    - "EXPERIENCE_BOTTLE:8:16"
-    - "NETHERITE_SCRAP:1:2"
-    - "GOLDEN_APPLE:2:4"
-
-# ===== Vad Hajsza =====
+  - DIAMOND:2:5
+  - GOLD_INGOT:4:9
+  - IRON_INGOT:6:12
+  - EMERALD:2:6
+  - ENCHANTED_GOLDEN_APPLE:1
+  - EXPERIENCE_BOTTLE:8:16
+  - NETHERITE_SCRAP:1:2
+  - GOLDEN_APPLE:2:4
 wild-hunt:
   enabled: true
   participant-loot-ratio: 0.5
@@ -309,15 +402,13 @@ wild-hunt:
   beast-level: 8
   rolls: 4
   loot:
-    - "DIAMOND:3:7"
-    - "EMERALD:4:9"
-    - "NETHERITE_SCRAP:1:3"
-    - "ENCHANTED_GOLDEN_APPLE:1:2"
-    - "EXPERIENCE_BOTTLE:12:24"
-    - "GOLD_BLOCK:1:3"
-    - "DIAMOND_BLOCK:1"
-
-# ===== Bőség-idő =====
+  - DIAMOND:3:7
+  - EMERALD:4:9
+  - NETHERITE_SCRAP:1:3
+  - ENCHANTED_GOLDEN_APPLE:1:2
+  - EXPERIENCE_BOTTLE:12:24
+  - GOLD_BLOCK:1:3
+  - DIAMOND_BLOCK:1
 abundance:
   enabled: true
   interval-minutes: 80
@@ -327,8 +418,6 @@ abundance:
   twin-chance-percent: 25
   calm-spawn-chance-percent: 35
   regen-seconds: 8
-
-# ===== Kollektív szerver-kihívás =====
 server-challenge:
   enabled: true
   interval-minutes: 150
@@ -348,17 +437,15 @@ server-challenge:
   reward-haste-seconds: 45
   reward-rolls: 2
   reward-loot:
-    - "DIAMOND:1:3"
-    - "GOLD_INGOT:3:6"
-    - "EMERALD:1:4"
-    - "EXPERIENCE_BOTTLE:4:8"
-    - "IRON_INGOT:4:8"
+  - DIAMOND:1:3
+  - GOLD_INGOT:3:6
+  - EMERALD:1:4
+  - EXPERIENCE_BOTTLE:4:8
+  - IRON_INGOT:4:8
   types:
     slay: true
     mine: true
     harvest: true
-
-# ===== Karaván-kíséret =====
 escort:
   enabled: true
   interval-minutes: 120
@@ -369,18 +456,20 @@ escort:
   wave-interval-seconds: 60
   wave-size: 3
   wave-level: 3
-  wave-templates: [ "tollblade", "road_raider", "gallows_runner", "moss_trapper" ]
+  wave-templates:
+  - tollblade
+  - road_raider
+  - gallows_runner
+  - moss_trapper
   bonus-stock-minutes: 60
   reward-rolls: 4
   reward-loot:
-    - "DIAMOND:2:5"
-    - "EMERALD:3:7"
-    - "GOLD_INGOT:5:10"
-    - "EXPERIENCE_BOTTLE:8:16"
-    - "NETHERITE_SCRAP:1:2"
-    - "GOLDEN_APPLE:2:4"
-
-# ===== Meteor =====
+  - DIAMOND:2:5
+  - EMERALD:3:7
+  - GOLD_INGOT:5:10
+  - EXPERIENCE_BOTTLE:8:16
+  - NETHERITE_SCRAP:1:2
+  - GOLDEN_APPLE:2:4
 meteor:
   enabled: true
   interval-minutes: 85
@@ -390,8 +479,6 @@ meteor:
   crater-radius: 3
   crater-depth: 2
   ore-chance: 0.45
-
-# ===== Kultista esemény =====
 cultists:
   enabled: true
   interval-minutes: 100
@@ -408,28 +495,48 @@ cultists:
   rite-corruption-chance: 60
   rite-loot-rolls: 3
   rite-loot:
-    - "SCULK:2:6"
-    - "ECHO_SHARD:1:2"
-    - "GOLD_INGOT:2:5"
-    - "EXPERIENCE_BOTTLE:3:6"
-    - "unique:arnyekpor:2"
+  - SCULK:2:6
+  - ECHO_SHARD:1:2
+  - GOLD_INGOT:2:5
+  - EXPERIENCE_BOTTLE:3:6
+  - unique:arnyekpor:2
   courier-lifetime-minutes: 8
   loot:
     chance: 0.35
     table:
-      - { type: material, weight: 30, item: GOLD_NUGGET, min: 3, max: 8 }
-      - { type: material, weight: 20, item: EXPERIENCE_BOTTLE, min: 1, max: 3 }
-      - { type: unique, weight: 20, id: arnyekpor, min: 1, max: 2 }
-      - { type: material, weight: 15, item: SCULK, min: 1, max: 4 }
-      - { type: unique, weight: 10, id: emlekszilank, min: 1, max: 1 }
-      - { type: unique, weight: 5, id: suttogas_meghivo, min: 1, max: 1 }
+    - type: material
+      weight: 30
+      item: GOLD_NUGGET
+      min: 3
+      max: 8
+    - type: material
+      weight: 20
+      item: EXPERIENCE_BOTTLE
+      min: 1
+      max: 3
+    - type: unique
+      weight: 20
+      id: arnyekpor
+      min: 1
+      max: 2
+    - type: material
+      weight: 15
+      item: SCULK
+      min: 1
+      max: 4
+    - type: unique
+      weight: 10
+      id: emlekszilank
+      min: 1
+      max: 1
+    - type: unique
+      weight: 5
+      id: suttogas_meghivo
+      min: 1
+      max: 1
   whisper-suspicion-relief: 15.0
   whisper-loot-rolls: 1
   success-season-points: 3
-
-# ===== Terjedő rontás-góc =====
-# Nincs kódoldali abszolút plafon. Minden érték élőben konfigurálható.
-# A fajzat szintje: normál helyfüggő mob-szint + mob-level-bonus.
 corruption:
   enabled: true
   aura:
@@ -442,24 +549,31 @@ corruption:
   interval-minutes: 75
   chance-percent: 35
   spawn-offset: 96
-  min-world-spawn-distance: 384 # 0 = nincs spawn-kizárás
+  min-world-spawn-distance: 384
   spawn-grace-seconds: 10
   tracking-padding: 16.0
-  legacy-cleanup-seconds: 1800 # 0 = nincs marker nélküli legacy takarítási ablak
+  legacy-cleanup-seconds: 1800
   legacy-cleanup-padding: 32.0
   initial-radius: 12.0
-  radius-cap: 40.0 # 0 vagy negatív = korlátlan terjedési sugár
+  radius-cap: 40.0
   spread-per-night: 2.0
-  mob-cap: 6 # 0 vagy negatív = fajzat-spawn kikapcsolva
+  mob-cap: 6
   spawn-batch: 1
-  mob-types: [ "ZOMBIE", "SKELETON", "WITHER_SKELETON", "PHANTOM" ]
-  # Stable template roster; mob-types remains only for bounded legacy cleanup recognition.
-  mob-templates: [ "corruption_scabwalker", "corruption_hollowbow", "corruption_gloomvotary", "corruption_blackwing" ]
+  mob-types:
+  - ZOMBIE
+  - SKELETON
+  - WITHER_SKELETON
+  - PHANTOM
+  mob-templates:
+  - corruption_scabwalker
+  - corruption_hollowbow
+  - corruption_gloomvotary
+  - corruption_blackwing
   mob-level-bonus: 4
   mob-glowing: true
   mob-persistent: false
   mob-remove-when-far-away: true
-  mob-lifespan-seconds: 300 # 0 vagy negatív = nincs időzített despawn
+  mob-lifespan-seconds: 300
   purge-kills-required: 10
   reward-rolls: 4
   reward-buff-minutes: 5
@@ -469,14 +583,12 @@ corruption:
     min-edge-distance: 24
     max-edge-distance: 96
   loot:
-    - "SCULK:4:12"
-    - "ECHO_SHARD:1:3"
-    - "DIAMOND:2:5"
-    - "EXPERIENCE_BOTTLE:4:8"
-    - "NETHERITE_SCRAP:1:2"
-    - "ENCHANTED_GOLDEN_APPLE:1"
-
-# ===== Régészet =====
+  - SCULK:4:12
+  - ECHO_SHARD:1:3
+  - DIAMOND:2:5
+  - EXPERIENCE_BOTTLE:4:8
+  - NETHERITE_SCRAP:1:2
+  - ENCHANTED_GOLDEN_APPLE:1
 archeology:
   enabled: true
   interval-minutes: 50
@@ -488,37 +600,29 @@ archeology:
   share-max-players: 3
   expire-minutes: 20
   finds:
-    - "unique:emlekszilank:1"
-    - "unique:osi_ereklyeszilank:1"
-    - "unique:melysegi_borostyan:1"
-    - "AMETHYST_SHARD:2:4"
-    - "ECHO_SHARD:1:2"
-    - "EMERALD:2:5"
-    - "GOLD_INGOT:2:4"
-    - "BONE:4:8"
-
-# ===== Szezon-emlékmű =====
+  - unique:emlekszilank:1
+  - unique:osi_ereklyeszilank:1
+  - unique:melysegi_borostyan:1
+  - AMETHYST_SHARD:2:4
+  - ECHO_SHARD:1:2
+  - EMERALD:2:5
+  - GOLD_INGOT:2:4
+  - BONE:4:8
 season-monument:
   enabled: true
-  location: ""
+  location: ''
   max-lines: 12
-  header: "<gold>📖 A Korszakok Könyve</gold>"
-
+  header: <gold>📖 A Korszakok Könyve</gold>
 nether-portal:
   allow-creation: false
-
 end-portal:
   allow: false
-
-# ===== Felfedezhető titkos helyek =====
 hidden-spots:
   enabled: true
   check-seconds: 30
   first-finder-only: false
   repeat-reward-ratio: 0.5
   spots: {}
-
-# ===== Játékos-indított karaván =====
 player-caravan:
   enabled: true
   min-cargo: 100.0
@@ -528,90 +632,96 @@ player-caravan:
   convoy-hp: 120.0
   site-radius: 300
   cooldown-minutes: 90
-
-# ===== Bestiárium =====
 bestiary:
   enabled: true
   milestones:
-    mobs: [ "10:25", "25:60", "50:150:broadcast" ]
-    recipes: [ "10:25", "50:100", "100:250:broadcast" ]
-    territories: [ "5:30", "10:80:broadcast" ]
-    bosses: [ "1:50", "3:150:broadcast" ]
-  # Faj-szintű tudás-fokozatok: az i. érték az (i+1). fokozat kill-igénye.
-  # I. = név + kódex-jegyzet, II. = zsákmány-jegyzet, III. = mestervadász jelölés.
-  knowledge-tiers: [ "1", "10", "50" ]
-  # Kódex-konzisztens egy-mondatosok a lajstrom-bejegyzések lorejába (bővíthető;
-  # kulcs = lajstrom-id: mob-típus kisbetűvel, boss-archetípus, ritka variánsnál
-  # albino_/arnyek_ prefix). Hiányzó kulcsnál a sor egyszerűen elmarad.
+    mobs:
+    - '10:25'
+    - 25:60
+    - 50:150:broadcast
+    recipes:
+    - '10:25'
+    - 50:100
+    - 100:250:broadcast
+    territories:
+    - '5:30'
+    - 10:80:broadcast
+    bosses:
+    - '1:50'
+    - 3:150:broadcast
+  knowledge-tiers:
+  - '1'
+  - '10'
+  - '50'
   codex-notes:
-    ring_warden: "Körzáró törött eskükből kovácsolt börtönt von a párbaj köré."
-    magma_behemoth: "A Salakkohó Szíve távoli kohóesővel hevül túl."
-    frost_king: "Kallan Elárvult Trónja fehér ítélettel és dérkísérettel uralkodik."
-    bone_king: "A Koronátlan Csontúr sírkíséretét pajzsként vezényli."
-    deep_horror: "A Visszanéző Csend hangrobbanása előtt a mélység szíve felgyorsul."
-    venom_broodmother: "Selyemanya Vezhra mérgező ösvényekkel rajzolja át a csatateret."
-    storm_herald: "Orkánénekes Rael villámjelek közt cikázik."
-    plague_titan: "A Rothadás Hordozója lassan elfogyasztja a tiszta teret."
-    golem_sentinel: "A Jelszó Nélküli a kaput védi, nem a menekülőt üldözi."
-    piglin_warlord: "Varkhaz kaputörő rohama után testőrséget hív."
-    zombie: "A Néma Királynő első mondatának visszhangja — nincs lelke, csak parancsa."
-    skeleton: "A hetedik vérháború elesettje; kezében még mindig a régi fegyver."
-    creeper: "A rontás-járta vadon szülötte; a bölcsek szerint a Fa sebéből fakadt torzulás."
-    enderman: "Két világ határán jár — a krónikások az Első Csend futárának tartják."
-    wither_skeleton: "Thanaopolis csontkamráinak strázsája, a Csontkripta Urának szolgája."
-
-# ===== DARK undead-népesség =====
+    ring_warden: Körzáró törött eskükből kovácsolt börtönt von a párbaj köré.
+    magma_behemoth: A Salakkohó Szíve távoli kohóesővel hevül túl.
+    frost_king: Kallan Elárvult Trónja fehér ítélettel és dérkísérettel uralkodik.
+    bone_king: A Koronátlan Csontúr sírkíséretét pajzsként vezényli.
+    deep_horror: A Visszanéző Csend hangrobbanása előtt a mélység szíve felgyorsul.
+    venom_broodmother: Selyemanya Vezhra mérgező ösvényekkel rajzolja át a csatateret.
+    storm_herald: Orkánénekes Rael villámjelek közt cikázik.
+    plague_titan: A Rothadás Hordozója lassan elfogyasztja a tiszta teret.
+    golem_sentinel: A Jelszó Nélküli a kaput védi, nem a menekülőt üldözi.
+    piglin_warlord: Varkhaz kaputörő rohama után testőrséget hív.
+    zombie: A Néma Királynő első mondatának visszhangja — nincs lelke, csak parancsa.
+    skeleton: A hetedik vérháború elesettje; kezében még mindig a régi fegyver.
+    creeper: A rontás-járta vadon szülötte; a bölcsek szerint a Fa sebéből fakadt torzulás.
+    enderman: Két világ határán jár — a krónikások az Első Csend futárának tartják.
+    wither_skeleton: Thanaopolis csontkamráinak strázsája, a Csontkripta Urának szolgája.
 dark-undead:
   enabled: true
-  scope: "all"
-  territory-id: ""
+  scope: all
+  territory-id: ''
   max-population: 24
   spawn-batch: 4
   spawn-interval-seconds: 30
-  # Minden mob ennyi külön oszlopot próbál; nincs levegőben/közeli fallback.
   spawn-attempts-per-mob: 12
   min-level: 4
   max-level: 7
   lifespan-seconds: 600
-  types: [ "ZOMBIE", "SKELETON", "HUSK", "STRAY", "WITHER_SKELETON" ]
-  templates: [ "gallows_runner", "barrow_bulwark", "dune_titheman", "moonbone_archer", "blackiron_votary" ]
-
+  types:
+  - ZOMBIE
+  - SKELETON
+  - HUSK
+  - STRAY
+  - WITHER_SKELETON
+  templates:
+  - gallows_runner
+  - barrow_bulwark
+  - dune_titheman
+  - moonbone_archer
+  - blackiron_votary
 rare-variant:
   chance-percent: 1.5
   xp-multiplier: 2.0
   soul-chance-multiplier: 2.0
-
-# ===== Szezonális ünnepek =====
 seasonal-events-enabled: true
 seasonal-events:
   remej:
-    start: "10-25"
-    end: "11-02"
-    greeting: "Vérhold-virrasztás — a fátyol elvékonyodik: gyújtsatok fáklyát a küszöbön, és meséljetek hangosan!"
-    blood-moon-chance-mult: "2.0"
-    invasion-chance-mult: "1.5"
+    start: 10-25
+    end: 11-02
+    greeting: 'Vérhold-virrasztás — a fátyol elvékonyodik: gyújtsatok fáklyát a küszöbön, és meséljetek hangosan!'
+    blood-moon-chance-mult: '2.0'
+    invasion-chance-mult: '1.5'
   erkezes_napja:
-    start: "12-20"
-    end: "12-27"
-    greeting: "Az Érkezés Napja — a Fa alatt mécsesek gyúlnak a Felsők tiszteletére, s a kereskedők ajándék-kedvvel mérnek!"
+    start: 12-20
+    end: 12-27
+    greeting: Az Érkezés Napja — a Fa alatt mécsesek gyúlnak a Felsők tiszteletére, s a kereskedők ajándék-kedvvel mérnek!
   hasadas_napja:
-    start: "03-21"
-    end: "03-23"
-    greeting: "A Hasadás Napja — emlékezz: egykor egy világ voltunk."
+    start: 03-21
+    end: 03-23
+    greeting: 'A Hasadás Napja — emlékezz: egykor egy világ voltunk.'
   ultimatum_napja:
-    start: "06-21"
-    end: "06-22"
-    greeting: "Az Ultimátum Napja — a királyok ma keményebben alkusznak."
-
-# ===== Városi őrség =====
+    start: 06-21
+    end: 06-22
+    greeting: Az Ultimátum Napja — a királyok ma keményebben alkusznak.
 city-guards:
   enabled: true
   step-seconds: 2
   day-step-blocks: 1.5
   night-step-blocks: 3.0
   guards: {}
-
-# ===== Kazamata =====
 dungeon:
   loot:
     chest-cooldown-hours: 168
@@ -633,16 +743,64 @@ dungeon:
       respawn-hours: 24
   loot-tables:
     kazamata:
-      - { type: material, weight: 30, item: GOLD_INGOT, min: 2, max: 5 }
-      - { type: material, weight: 20, item: DIAMOND, min: 1, max: 2 }
-      - { type: material, weight: 15, item: EXPERIENCE_BOTTLE, min: 3, max: 6 }
-      - { type: unique, weight: 15, id: osi_ereklyeszilank, min: 1, max: 1 }
-      - { type: unique, weight: 10, id: szorny_mag, min: 1, max: 2 }
-      - { type: unique, weight: 10, id: emlekszilank, min: 1, max: 1 }
+    - type: material
+      weight: 30
+      item: GOLD_INGOT
+      min: 2
+      max: 5
+    - type: material
+      weight: 20
+      item: DIAMOND
+      min: 1
+      max: 2
+    - type: material
+      weight: 15
+      item: EXPERIENCE_BOTTLE
+      min: 3
+      max: 6
+    - type: unique
+      weight: 15
+      id: osi_ereklyeszilank
+      min: 1
+      max: 1
+    - type: unique
+      weight: 10
+      id: szorny_mag
+      min: 1
+      max: 2
+    - type: unique
+      weight: 10
+      id: emlekszilank
+      min: 1
+      max: 1
     kazamata-boss:
-      - { type: unique, weight: 25, id: osi_ereklyeszilank, min: 1, max: 2 }
-      - { type: unique, weight: 20, id: emlekszilank, min: 1, max: 2 }
-      - { type: unique, weight: 15, id: sarkanycsont_szilank, min: 1, max: 1 }
-      - { type: material, weight: 20, item: DIAMOND, min: 2, max: 4 }
-      - { type: material, weight: 12, item: NETHERITE_SCRAP, min: 1, max: 2 }
-      - { type: unique, weight: 8, id: karhozat_parazs, min: 1, max: 1 }
+    - type: unique
+      weight: 25
+      id: osi_ereklyeszilank
+      min: 1
+      max: 2
+    - type: unique
+      weight: 20
+      id: emlekszilank
+      min: 1
+      max: 2
+    - type: unique
+      weight: 15
+      id: sarkanycsont_szilank
+      min: 1
+      max: 1
+    - type: material
+      weight: 20
+      item: DIAMOND
+      min: 2
+      max: 4
+    - type: material
+      weight: 12
+      item: NETHERITE_SCRAP
+      min: 1
+      max: 2
+    - type: unique
+      weight: 8
+      id: karhozat_parazs
+      min: 1
+      max: 1

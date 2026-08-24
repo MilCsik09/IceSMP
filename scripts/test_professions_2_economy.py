@@ -5,14 +5,15 @@ from pathlib import Path
 import yaml
 ROOT=Path(__file__).resolve().parents[1]
 CFG=ROOT/'src/main/resources/config'
-base=yaml.safe_load((CFG/'profession-recipes.yml').read_text(encoding='utf-8'))['profession-recipes']
-overlay=yaml.safe_load((CFG/'professions-2.yml').read_text(encoding='utf-8'))['profession-recipes']
-templates=yaml.safe_load((CFG/'item-templates.yml').read_text(encoding='utf-8'))['item-templates']
-effective={k:dict(v) for k,v in base.items()}
-for rid,patch in overlay.items(): effective.setdefault(rid,{}).update(patch)
-processing=[(rid,r) for rid,r in effective.items() if str(r.get('economy-category','')).upper()=='PROCESSING']
-services=[(rid,r) for rid,r in effective.items() if str(r.get('economy-category','')).upper()=='UPGRADE_SERVICE']
-gear=[(rid,r) for rid,r in effective.items() if (r.get('result') or {}).get('template')]
+CONTENT=ROOT/'src/main/resources/content'
+effective=yaml.safe_load((CONTENT/'professions/recipes.yml').read_text(encoding='utf-8'))['profession-recipes']
+templates=yaml.safe_load((CONTENT/'equipment/equipment.yml').read_text(encoding='utf-8'))['item-templates']
+processing=[(rid,r) for rid,r in effective.items()
+            if rid.startswith('p2_') and str(r.get('economy-category','')).upper()=='PROCESSING']
+services=[(rid,r) for rid,r in effective.items()
+          if rid.startswith('p2_') and str(r.get('economy-category','')).upper()=='UPGRADE_SERVICE']
+gear=[(rid,r) for rid,r in effective.items()
+      if (r.get('result') or {}).get('template') and not rid.startswith('lte_')]
 families={str(templates[(r.get('result') or {})['template']].get('armor-family','')).upper()
           for _,r in gear if templates.get((r.get('result') or {})['template'],{}).get('armor-family')}
 assert families=={'CLOTH','LEATHER','MAIL','PLATE'}

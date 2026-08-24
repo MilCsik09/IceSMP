@@ -45,24 +45,9 @@ public final class ConfigMenuGUI {
             return new Entry(key, label, EntryType.CYCLE, 0, 0, 0, options);
         }
 
-        public ReloadMode reloadMode() {
-            if (key.equals("factions.tax.enabled") || key.equals("factions.tax.interval-minutes")) {
-                return ReloadMode.RESTART_REQUIRED;
-            }
-            if (key.equals("hud.icesmp-hud.survival.refresh-ticks")) {
-                return ReloadMode.RESTART_REQUIRED;
-            }
-            if (key.startsWith("motd.") || key.startsWith("sit.") || key.startsWith("crates.")
-                    || key.startsWith("resource-pack.") || key.startsWith("factions.passives.")
-                    || key.startsWith("factions.whisper.") || key.startsWith("professions.recipes.")) {
-                return ReloadMode.RELOAD_HOOK;
-            }
-            return ReloadMode.LIVE;
-        }
     }
 
     public enum EntryType { TOGGLE, NUMBER, INTEGER, CYCLE }
-    public enum ReloadMode { LIVE, RELOAD_HOOK, RESTART_REQUIRED }
 
 
     /** Egy kategória: cím, ikon és a kurátort kulcs-lista. */
@@ -248,7 +233,6 @@ public final class ConfigMenuGUI {
                 Entry.integer("world-events.season.length-days", "Szezon hossza (nap)", 5, 1, 3650),
                 Entry.integer("world-events.season-finale.top2-window-hours", "Nagydöntő-ablak (óra)", 6, 1, 720),
                 Entry.number("world-events.season-finale.top2-point-multiplier", "Nagydöntő pont-szorzó", 0.25, 1, 10),
-                Entry.integer("community-goals.season-points", "Közösségi cél pontja", 1, 0, 1000),
                 Entry.integer("corruption.season-points", "Rontás-tisztítás pontja", 1, 0, 1000),
                 Entry.integer("honor-duel.season-points", "Párbaj-győzelem pontja", 1, 0, 1000),
                 Entry.integer("spy.season-points", "Kém-küldetés pontja", 1, 0, 1000))));

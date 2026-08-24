@@ -1,46 +1,34 @@
-# Mind a 13 kaszt gameplay-v2 live balance-a. Nem generic mechanic DSL.
 classes:
   specialization:
-    # A második megtanult specializáció ezen a szinten nyílik a GameplayV2ClassPolicy
-    # allowlistjén; az aktuális katalógus mind a 13 kasztot tartalmazza.
     second-slot-level: 28
-    # Spec-váltás csak harcon kívül és közeli ellenségtől távol.
     switch-combat-grace-seconds: 8
     switch-safe-radius: 12.0
-
   warrior:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
-    # Kedvencek felülírják az alap készletet, de ugyanilyen plafonnal.
     active-kit:
       maximum: 7
       berserker:
-        - heroic_leap
-        - pommel_strike
-        - second_wind
-        - reckless_swing
-        - bloodbath
-        - whirlwind
-        - berserk
+      - heroic_leap
+      - pommel_strike
+      - second_wind
+      - reckless_swing
+      - bloodbath
+      - whirlwind
+      - berserk
       guardian:
-        - bulwark
-        - taunt
-        - fortify
-        - shield_charge
-        - aegis
-        - whirlwind
-        - last_stand
-
-    # 50+ specialization mastery; nem külön XP-engine, Profile v2 loadout mező.
+      - bulwark
+      - taunt
+      - fortify
+      - shield_charge
+      - aegis
+      - whirlwind
+      - last_stand
     mastery:
       experience-per-rank: 100
-      # A mastery kizárólag valós harci kontextusban gyűlik: ez az anti-AFK/dummy-farm tanú.
       combat-window-seconds: 10
       safe-dump-xp: 4
       intercept-xp: 4
       guard-spend-xp: 5
       capstone-protection-xp: 8
-
-    # Class core: Düh = spell cost, Csatatempó = külön döntési layer.
     battle-tempo:
       heated-threshold: 35
       overflowing-threshold: 75
@@ -52,12 +40,9 @@ classes:
       execution-gain: 12
       target-switch-gain: 10
       target-switch-cooldown-millis: 1500
-      # Rövid megszakítás nem nulláz: előbb türelmi ablak, utána lusta decay.
       decay-delay-millis: 5000
       decay-per-second: 8.0
-      # Túlcsorduló finisher után részben visszaenged, más fokozat teljesen levezet.
       overflow-finisher-retain: 25
-
     berserker:
       fury:
         high-threshold: 70
@@ -81,7 +66,6 @@ classes:
         max-starting-exhaustion: 70
         pve-damage-percent: 30.0
         pvp-damage-percent: 14.0
-      # Explicit PvE/PvP caps; nincs one-shotra skálázódó végtelen bonusz.
       pve-max-bonus-percent: 60.0
       pvp-max-bonus-percent: 25.0
       bloodlust:
@@ -95,16 +79,13 @@ classes:
         health-threshold: 0.25
         pve-damage-percent: 18.0
         pvp-damage-percent: 8.0
-      # Dacoló: nem szinkron lethal-cancel. Kritikus, de túlélhető találat után előbb durable
-      # cooldown-witness commitol, és csak ezután fut a region-thread recovery side effect.
       defiant:
         cooldown-seconds: 300
-        trigger-health-ratio: 0.20
+        trigger-health-ratio: 0.2
         heal-to-health-ratio: 0.35
       kallan:
         duration-millis: 8000
         aftermath-millis: 12000
-
     guardian:
       guard:
         damage-taken-gain: 7
@@ -137,29 +118,25 @@ classes:
         radius: 8.0
       last-stand:
         self-duration-ticks: 100
-
   evoker:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       devastation:
-        - living_flame
-        - azure_strike
-        - fire_breath
-        - disintegrate
-        - pyre
-        - eternity_surge
-        - eternity_breath
+      - living_flame
+      - azure_strike
+      - fire_breath
+      - disintegrate
+      - pyre
+      - eternity_surge
+      - eternity_breath
       preservation:
-        - emerald_blossom
-        - dream_breath
-        - spiritbloom
-        - reversion
-        - echo
-        - temporal_anomaly
-        - rewind
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - emerald_blossom
+      - dream_breath
+      - spiritbloom
+      - reversion
+      - echo
+      - temporal_anomaly
+      - rewind
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -167,16 +144,13 @@ classes:
       resonance-burst-xp: 5
       echo-heal-xp: 4
       imprint-restore-xp: 5
-
-    # Class core: Felerősítés — első kattintás tölt, második elenged; a tartás fokozatot ad.
-    # A találat megszakíthatja a töltést, a túl hosszú tartás elhalványul.
     empower:
       spells:
-        - fire_breath
-        - eternity_surge
-        - eternity_breath
-        - dream_breath
-        - spiritbloom
+      - fire_breath
+      - eternity_surge
+      - eternity_breath
+      - dream_breath
+      - spiritbloom
       rank2-hold-millis: 1200
       rank3-hold-millis: 2400
       fizzle-millis: 6000
@@ -184,71 +158,60 @@ classes:
       interrupt-damage: 4.0
       rank2-power-percent: 20.0
       rank3-power-percent: 40.0
-
-    # A Felerősítés + Izzás együttes plafonja; a globális spells.total-power-cap felette is véd.
     max-power-bonus-percent: 65.0
-
     devastation:
-      # Vörös–Kék Eszencia: váltogatott színek töltik az Izzást; azonos szín újraindítja.
       essence:
         red-spells:
-          - living_flame
-          - fire_breath
-          - pyre
-          - firestorm
-          - dragonrage
+        - living_flame
+        - fire_breath
+        - pyre
+        - firestorm
+        - dragonrage
         blue-spells:
-          - azure_strike
-          - disintegrate
-          - eternity_surge
-          - shattering_star
+        - azure_strike
+        - disintegrate
+        - eternity_surge
+        - shattering_star
         burst-threshold: 4
         burst-power-percent: 25.0
         overheat-extra-percent: 8.0
         ember-retention: 2
-
     preservation:
-      # Visszhang: az előkészített gyógyítás egyszer, késleltetve megismétlődik (jelölt társra is).
       echo:
         heal-spells:
-          - emerald_blossom
-          - dream_breath
-          - spiritbloom
-          - verdant_embrace
+        - emerald_blossom
+        - dream_breath
+        - spiritbloom
+        - verdant_embrace
         window-millis: 6000
         long-echo-extra-millis: 3000
         delay-millis: 2000
         heal-amount: 3.0
         deep-extra-heal: 2.0
-      # Időlenyomat: kizárólag életerő-visszaállítás (heal-only, egyszer használatos, ablak-korlátos).
       imprint:
         window-millis: 8000
         timeline-extra-millis: 4000
         anomaly-restore-cap-percent: 30.0
         rewind-restore-cap-percent: 60.0
-
   archer:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       sharpshooter:
-        - hunters_mark
-        - multishot
-        - piercing_bolt
-        - deadeye
-        - headshot
-        - perfect_focus
-        - masterful_shot
+      - hunters_mark
+      - multishot
+      - piercing_bolt
+      - deadeye
+      - headshot
+      - perfect_focus
+      - masterful_shot
       beast_master:
-        - hunters_mark
-        - multishot
-        - wolf_call
-        - primal_bond
-        - thick_hide
-        - stampede
-        - king_of_beasts
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - hunters_mark
+      - multishot
+      - wolf_call
+      - primal_bond
+      - thick_hide
+      - stampede
+      - king_of_beasts
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -256,27 +219,18 @@ classes:
       coordination-xp: 3
       bond-spend-xp: 4
       capstone-bond-xp: 8
-
-    # Class core: Szélolvasás — fegyelmezett (teljes felhúzású, ritmusban tartott, valós távú)
-    # találat olvassa a szelet; a következő fegyelmezett lövés erősebb. A spam töri az olvasást.
     wind:
       full-draw-force: 0.9
       shot-pacing-millis: 900
       minimum-distance: 12.0
-      # A repülő nyilak fegyelem-nyilvántartása korlátos és magától lejár: nincs durable
-      # állapot, nincs élő entitás-hivatkozás, és nincs ismétlődő takarító task.
       in-flight-maximum: 32
       in-flight-expiry-millis: 15000
       read-window-millis: 5000
       pve-bonus-percent: 18.0
       pvp-bonus-percent: 8.0
-
-    # Explicit PvE/PvP plafon a szél + gyenge pont együttesére; nincs one-shotra skálázódó bonusz.
     pve-max-bonus-percent: 45.0
     pvp-max-bonus-percent: 20.0
-
     precision:
-      # Mesterlövész: azonos prédán épülő teljes-felhúzású láncból gyenge pont nyílik.
       chain-window-millis: 6000
       calm-extra-millis: 3000
       maximum-chain: 5
@@ -285,9 +239,7 @@ classes:
       weak-point-pvp-percent: 12.0
       deep-shot-extra-percent: 6.0
       volley-retention: 2
-
     bond:
-      # Vadmester: a társsal közös célpont találatai építik a Köteléket; a spelljei költik.
       assist-gain: 7
       instinct-extra-gain: 3
       primal-cost: 40
@@ -298,37 +250,33 @@ classes:
       king-pet-regen-ticks: 200
       king-self-speed-ticks: 100
       death-retention: 50
-
   shaman:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       elemental:
-        - lightning_bolt
-        - flame_shock
-        - searing_totem
-        - healing_stream_totem
-        - lava_burst
-        - chain_lightning
-        - ascendance_flame
+      - lightning_bolt
+      - flame_shock
+      - searing_totem
+      - healing_stream_totem
+      - lava_burst
+      - chain_lightning
+      - ascendance_flame
       enhancement:
-        - stormstrike
-        - lava_lash
-        - windfury_totem
-        - crash_lightning
-        - feral_spirit
-        - searing_totem
-        - doom_winds
+      - stormstrike
+      - lava_lash
+      - windfury_totem
+      - crash_lightning
+      - feral_spirit
+      - searing_totem
+      - doom_winds
       tidal:
-        - healing_surge
-        - riptide
-        - healing_stream_totem
-        - chain_heal
-        - healing_rain
-        - spirit_link
-        - spirit_tide
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - healing_surge
+      - riptide
+      - healing_stream_totem
+      - chain_heal
+      - healing_rain
+      - spirit_link
+      - spirit_tide
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -336,38 +284,29 @@ classes:
       maelstrom-spend-xp: 4
       capstone-vent-xp: 8
       tide-xp: 4
-
-    # A Felerősítés/Izzás-hoz hasonlóan a bónuszok a közös power-pipeline-on mennek, kettős sapkával.
     max-power-bonus-percent: 40.0
-
-    # Class core: Totemkerék — a négy totemtípusból egyszerre egy fő + egy kísérő élhet;
-    # az azonos kategóriájú új totem a régit váltja. Elemi Rezonancia: a totempár elemeihez
-    # illő spellek töltik a Túltöltést.
     resonance:
       vihar-spells:
-        - lightning_bolt
-        - chain_lightning
-        - thunderstorm
-        - stormkeeper
-        - elemental_blast
+      - lightning_bolt
+      - chain_lightning
+      - thunderstorm
+      - stormkeeper
+      - elemental_blast
       tuz-spells:
-        - flame_shock
-        - lava_burst
-        - ascendance_flame
+      - flame_shock
+      - lava_burst
+      - ascendance_flame
       fold-spells:
-        - earth_shock
-        - earthquake
+      - earth_shock
+      - earthquake
       viz-spells:
-        - frost_shock
+      - frost_shock
       charge-gain: 1
       overload-threshold: 4
       overload-bonus-percent: 25.0
       overflow-extra-percent: 8.0
       echo-retention: 2
       favored-speed-ticks: 80
-
-    # Erősítő: a közelharci találatok ritmusa építi a Maelstromot; az ablakban landoló
-    # találat váltja a Fegyveráldás-oldalt (Vihar↔Föld) és bónuszt ad.
     maelstrom:
       hit-gain: 4
       rhythm-min-millis: 600
@@ -382,19 +321,16 @@ classes:
       doom-cost: 70
       capstone-retention: 25
       quake-strength-ticks: 60
-
-    # Hullámhívó: a közvetlen gyógyítás Dagály felé, a lánc-gyógyítás Apály felé tol;
-    # az elért oldal a másik család következő castját erősíti, majd visszaáramlik.
     tide:
       direct-heal-spells:
-        - healing_surge
-        - healing_wave
-        - riptide
+      - healing_surge
+      - healing_wave
+      - riptide
       chain-heal-spells:
-        - chain_heal
-        - healing_rain
-        - spirit_link
-        - ancestral_guidance
+      - chain_heal
+      - healing_rain
+      - spirit_link
+      - ancestral_guidance
       push: 20
       current-extra: 5
       threshold: 60
@@ -403,73 +339,61 @@ classes:
       lord-extra-percent: 8.0
       spring-retention-percent: 25
       life-vein-ticks: 100
-
   monk:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       windwalker:
-        - tiger_palm
-        - blackout_kick
-        - rising_sun_kick
-        - flying_kick
-        - fists_of_fury
-        - whirling_dragon_punch
-        - serenity
+      - tiger_palm
+      - blackout_kick
+      - rising_sun_kick
+      - flying_kick
+      - fists_of_fury
+      - whirling_dragon_punch
+      - serenity
       brewmaster:
-        - tiger_palm
-        - keg_smash
-        - breath_of_fire
-        - purifying_brew
-        - ironskin_brew
-        - fortifying_brew
-        - invoke_niuzao
+      - tiger_palm
+      - keg_smash
+      - breath_of_fire
+      - purifying_brew
+      - ironskin_brew
+      - fortifying_brew
+      - invoke_niuzao
       mistweaver:
-        - vivify
-        - soothing_mist
-        - renewing_mist
-        - enveloping_mist
-        - essence_font
-        - life_cocoon
-        - revival
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - vivify
+      - soothing_mist
+      - renewing_mist
+      - enveloping_mist
+      - essence_font
+      - life_cocoon
+      - revival
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
       finisher-xp: 5
       purify-xp: 4
       ripple-xp: 4
-
-    # Class core: Áramlás — a technika-változatosság épít; az ismételt spell semmit nem ad.
     flow:
       variety-gain: 12
       thousand-extra-gain: 4
       decay-delay-millis: 6000
       decay-per-second: 6.0
-
     max-power-bonus-percent: 40.0
-
-    # Szélfutó: explicit Harcművészeti Lánc — a lépések sorrendje számít, a befejező consume-ol.
     chain:
       steps:
-        - tiger_palm
-        - blackout_kick
-        - rising_sun_kick
+      - tiger_palm
+      - blackout_kick
+      - rising_sun_kick
       finishers:
-        - fists_of_fury
-        - whirling_dragon_punch
-        - touch_of_death
-        - serenity
+      - fists_of_fury
+      - whirling_dragon_punch
+      - touch_of_death
+      - serenity
       threshold: 3
       window-millis: 5000
       light-step-extra-millis: 2500
       finisher-bonus-percent: 22.0
       panther-extra-percent: 6.0
       dragon-speed-ticks: 80
-
-    # Sörfőző: a kapott sebzés korlátos része halasztva, közvetlen élet-lépésekben csorog le
-    # (fél szív a padló — a Stagger önmagában sosem öl); kilépés/spec-váltás azonnal lehívja.
     stagger:
       defer-percent: 35.0
       thick-extra-percent: 5.0
@@ -481,52 +405,46 @@ classes:
       quick-sip-extra-percent: 10.0
       breath-purify-percent: 15.0
       capstone-purify-percent: 60.0
-
-    # Ködszövő: legfeljebb három Ködszál; a gyógyítás a kapcsolt társakra hullámzik tovább.
     mist:
       maximum-links: 3
       heal-spells:
-        - vivify
-        - expel_harm
-        - soothing_mist
-        - renewing_mist
-        - enveloping_mist
-        - essence_font
-        - revival
+      - vivify
+      - expel_harm
+      - soothing_mist
+      - renewing_mist
+      - enveloping_mist
+      - essence_font
+      - revival
       ripple-heal: 3.0
       deep-extra-heal: 2.0
       weave-heal: 2.0
-
   paladin:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       holy:
-        - flash_heal
-        - holy_light
-        - beacon_of_light
-        - word_of_glory
-        - lay_on_hands
-        - divine_shield
-        - avenging_wrath
+      - flash_heal
+      - holy_light
+      - beacon_of_light
+      - word_of_glory
+      - lay_on_hands
+      - divine_shield
+      - avenging_wrath
       retribution:
-        - smite
-        - crusader_strike
-        - judgment
-        - blade_of_justice
-        - holy_fire
-        - divine_storm
-        - final_verdict
+      - smite
+      - crusader_strike
+      - judgment
+      - blade_of_justice
+      - holy_fire
+      - divine_storm
+      - final_verdict
       protection:
-        - consecration
-        - avengers_shield
-        - shield_of_the_righteous
-        - blessed_hammer
-        - consecrated_ground
-        - guardian_of_kings
-        - final_stand
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - consecration
+      - avengers_shield
+      - shield_of_the_righteous
+      - blessed_hammer
+      - consecrated_ground
+      - guardian_of_kings
+      - final_stand
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -534,43 +452,38 @@ classes:
       verdict-xp: 5
       ground-xp: 5
       capstone-ground-xp: 8
-
     max-power-bonus-percent: 40.0
-
-    # Class core: Meggyőződés és Eskü — a választott irányhoz illő cselekedet épít; magas
-    # Meggyőződésnél az irányba vágó castok erősebbek. Az Eskü ülésen belüli választás
-    # (/spec esku), alapértelmezése az aktív spec szerepe.
     conviction:
       mercy-spells:
-        - flash_heal
-        - radiance
-        - lay_on_hands
-        - holy_light
-        - beacon_of_light
-        - word_of_glory
-        - guardian_angel
+      - flash_heal
+      - radiance
+      - lay_on_hands
+      - holy_light
+      - beacon_of_light
+      - word_of_glory
+      - guardian_angel
       judgment-spells:
-        - smite
-        - hammer_of_justice
-        - holy_wrath
-        - crusader_strike
-        - judgment
-        - blade_of_justice
-        - holy_fire
-        - divine_storm
-        - wake_of_ashes
-        - final_verdict
+      - smite
+      - hammer_of_justice
+      - holy_wrath
+      - crusader_strike
+      - judgment
+      - blade_of_justice
+      - holy_fire
+      - divine_storm
+      - wake_of_ashes
+      - final_verdict
       protection-spells:
-        - devotion_aura
-        - divine_protection
-        - consecration
-        - avengers_shield
-        - shield_of_the_righteous
-        - blessed_hammer
-        - consecrated_ground
-        - ardent_defender
-        - guardian_of_kings
-        - final_stand
+      - devotion_aura
+      - divine_protection
+      - consecration
+      - avengers_shield
+      - shield_of_the_righteous
+      - blessed_hammer
+      - consecrated_ground
+      - ardent_defender
+      - guardian_of_kings
+      - final_stand
       cast-gain: 8
       hit-gain: 4
       blessing-extra-gain: 2
@@ -580,42 +493,35 @@ classes:
       bonus-percent: 12.0
       decay-delay-millis: 6000
       decay-per-second: 5.0
-
-    # Szentlélek: egy Fényjelző-célpont; a gyógyítás visszhangja egyetlen, korlátos heal.
     beacon:
       echo-spells:
-        - flash_heal
-        - holy_light
-        - word_of_glory
-        - lay_on_hands
-        - radiance
+      - flash_heal
+      - holy_light
+      - word_of_glory
+      - lay_on_hands
+      - radiance
       echo-heal: 3.0
       warm-extra-heal: 1.5
-
-    # Megtorló: Bűn (judgment) + Dac (blade_of_justice) + Kárhozat (holy_fire) → Verdict.
     verdict:
       finishers:
-        - final_verdict
-        - divine_storm
+      - final_verdict
+      - divine_storm
       mark-window-millis: 8000
       swift-extra-millis: 2500
       bonus-percent: 24.0
       wrath-extra-percent: 8.0
       weight-strength-ticks: 60
       holy-war-heal: 4.0
-
-    # Oltalmazó: védekező castok és elszenvedett találatok töltik a Pajzstöltetet;
-    # a költése Megszentelt Földet terít (egyszeri, korlátos sugarú védő-hullám).
     shield:
       charge-spells:
-        - devotion_aura
-        - divine_protection
-        - consecration
-        - avengers_shield
-        - blessed_hammer
-        - consecrated_ground
-        - hammer_of_the_righteous
-        - ardent_defender
+      - devotion_aura
+      - divine_protection
+      - consecration
+      - avengers_shield
+      - blessed_hammer
+      - consecrated_ground
+      - hammer_of_the_righteous
+      - ardent_defender
       cast-gain: 12
       hit-gain: 6
       steel-extra-gain: 3
@@ -628,29 +534,25 @@ classes:
       area-radius: 7.0
       extended-extra-radius: 2.0
       steadfast-extra-ticks: 40
-
   demon_hunter:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       havoc:
-        - demons_bite
-        - chaos_strike
-        - fel_rush
-        - blade_dance
-        - eye_beam
-        - vengeful_retreat
-        - the_hunt
+      - demons_bite
+      - chaos_strike
+      - fel_rush
+      - blade_dance
+      - eye_beam
+      - vengeful_retreat
+      - the_hunt
       vengeance:
-        - shear
-        - immolation_aura
-        - soul_cleave
-        - demon_spikes
-        - fiery_brand
-        - sigil_of_flame
-        - fel_blade
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - shear
+      - immolation_aura
+      - soul_cleave
+      - demon_spikes
+      - fiery_brand
+      - sigil_of_flame
+      - fel_blade
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -659,24 +561,19 @@ classes:
       sigil-xp: 4
       cleave-xp: 3
       capstone-xp: 8
-
     max-power-bonus-percent: 40.0
-
-    # Class core: Kárhozat-terhelés — a démoni castok terhelést építenek; az áthevült sáv erősít,
-    # a túlterhelt sáv többet ad, de minden kapott találat nagyobbat üt (olvasható, kontrollált
-    # kockázat, consume_magic-kel kiszellőztethető; nem random büntetés).
     load:
       demonic-spells:
-        - chaos_strike
-        - immolation_aura
-        - eye_beam
-        - fel_barrage
-        - essence_break
-        - metamorphosis_havoc
-        - metamorphosis_veng
-        - fel_devastation
-        - fel_blade
-        - the_hunt
+      - chaos_strike
+      - immolation_aura
+      - eye_beam
+      - fel_barrage
+      - essence_break
+      - metamorphosis_havoc
+      - metamorphosis_veng
+      - fel_devastation
+      - fel_blade
+      - the_hunt
       cast-gain: 9
       heated-threshold: 40
       overload-threshold: 80
@@ -686,35 +583,28 @@ classes:
       consume-vent: 40
       decay-delay-millis: 5000
       decay-per-second: 6.0
-
-    # Tombolás: a sebző castok könnyűsúlyú Lélektöredék-számlálót építenek (nincs item-entitás);
-    # a mobilitás-cast gyűjti be őket gyógyulásért és Momentumért.
     fragments:
       damage-spells:
-        - demons_bite
-        - chaos_strike
-        - throw_glaive
-        - blade_dance
-        - eye_beam
-        - fel_barrage
-        - essence_break
-        - the_hunt
+      - demons_bite
+      - chaos_strike
+      - throw_glaive
+      - blade_dance
+      - eye_beam
+      - fel_barrage
+      - essence_break
+      - the_hunt
       mobility-spells:
-        - fel_rush
-        - vengeful_retreat
+      - fel_rush
+      - vengeful_retreat
       cast-gain: 1
       maximum: 5
       heal-per-fragment: 1.0
       otherworld-extra-heal: 1.0
-
     momentum:
       window-millis: 4000
       master-extra-millis: 2000
       bonus-percent: 15.0
       dancer-extra-percent: 6.0
-
-    # Bosszú: a kapott sebzés Fájdalmat épít; a Sigilek és a lélekvágás ebből táplálkoznak.
-    # Egyszerre legfeljebb két Sigil állhat.
     pain:
       hit-gain: 7
       thick-extra-gain: 2
@@ -724,54 +614,49 @@ classes:
       cleave-heal: 4.0
       cutter-extra-heal: 2.0
       capstone-cost: 60
-
     sigil:
       spells:
-        - sigil_of_flame
-        - fiery_brand
-        - demon_spikes
+      - sigil_of_flame
+      - fiery_brand
+      - demon_spikes
       duration-millis: 8000
       searing-extra-millis: 2000
       spikes-resist-ticks: 60
-
   druid:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       feral:
-        - savage_claw
-        - maul
-        - feral_charge
-        - primal_roar
-        - survival_instincts
-        - druid_cat_form
-        - the_wild_hunt
+      - savage_claw
+      - maul
+      - feral_charge
+      - primal_roar
+      - survival_instincts
+      - druid_cat_form
+      - the_wild_hunt
       lunar:
-        - moonfire
-        - starsurge
-        - sunfire
-        - solar_beam
-        - starfall
-        - druid_moonkin_form
-        - celestial_alignment
+      - moonfire
+      - starsurge
+      - sunfire
+      - solar_beam
+      - starfall
+      - druid_moonkin_form
+      - celestial_alignment
       ironbark:
-        - mangle
-        - iron_bark
-        - thornguard
-        - entangling_roots
-        - frenzied_regen
-        - druid_bear_form
-        - incarnation_bear
+      - mangle
+      - iron_bark
+      - thornguard
+      - entangling_roots
+      - frenzied_regen
+      - druid_bear_form
+      - incarnation_bear
       restoration:
-        - rejuvenation
-        - regrowth
-        - swiftmend
-        - lifebloom
-        - wild_bloom
-        - druid_moonkin_form
-        - flourish
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - rejuvenation
+      - regrowth
+      - swiftmend
+      - lifebloom
+      - wild_bloom
+      - druid_moonkin_form
+      - flourish
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -780,48 +665,38 @@ classes:
       eclipse-xp: 6
       bark-xp: 4
       bloom-xp: 5
-
     max-power-bonus-percent: 40.0
-
-    # Másodlagos mechanika: Harmónia — a természet-castok ezt gyűjtik, az alakváltás (a MEGLÉVŐ
-    # formarendszer) pedig egy összegben szabadítja fel a formához kötött Évszakként.
-    # A külön elsődleges class resource neve Természeti Erő.
     harmony:
       nature-spells:
-        - regrowth
-        - sunfire
-        - thornlash
-        - entangling_roots
-        - barkskin
-        - wild_mushroom
-        - cyclone
-        - moonfire
-        - rejuvenation
-        - mangle
-        - savage_claw
+      - regrowth
+      - sunfire
+      - thornlash
+      - entangling_roots
+      - barkskin
+      - wild_mushroom
+      - cyclone
+      - moonfire
+      - rejuvenation
+      - mangle
+      - savage_claw
       cast-gain: 8
       release-threshold: 30
       decay-delay-millis: 6000
       decay-per-second: 4.0
-
-    # Évszakok: Tavasz=Holdforma, Nyár=Párducforma, Ősz=Utazóforma, Tél=Medveforma.
-    # A hatás erőssége a felszabadított Harmóniával skálázódik.
     seasons:
       base-duration-ticks: 100
       spring-heal: 6.0
       autumn-window-millis: 6000
       autumn-bonus-percent: 12.0
-
-    # Vadőr: egy zsákmány nyomán maradni fizet (Szagnyom); a kombópontokat a végzés viszi el.
     feral:
       claw-spells:
-        - savage_claw
-        - maul
-        - swipe
-        - mangle
+      - savage_claw
+      - maul
+      - swipe
+      - mangle
       finisher-spells:
-        - rampage
-        - the_wild_hunt
+      - rampage
+      - the_wild_hunt
       combo-per-cast: 1
       sharp-claw-power-percent: 8.0
       quick-rend-extra-combo: 1
@@ -835,18 +710,15 @@ classes:
       scent-master-extra-millis: 3000
       scent-pve-percent: 14.0
       scent-pvp-percent: 6.0
-
-    # Holdjós: a Nap↔Hold mérleg átbillentése nyitja az Eclipse-ablakot; a mérleg utána újraindul,
-    # így az együttállást mindig a váltogatás termeli ki, nem az egy helyben állás.
     lunar:
       solar-spells:
-        - sunfire
-        - solar_beam
-        - stellar_flare
+      - sunfire
+      - solar_beam
+      - stellar_flare
       lunar-spells:
-        - moonfire
-        - starsurge
-        - starfall
+      - moonfire
+      - starsurge
+      - starfall
       shift-per-cast: 25
       rising-shift-extra: 10
       balance-cap: 100
@@ -857,22 +729,18 @@ classes:
       long-alignment-extra-millis: 2000
       two-skies-extra-percent: 6.0
       eternal-restart-value: 20
-
-    # Védelmező: a kéregrétegek kizárólag a druidán ülnek (nincs célpont-index, nincs zóna-scan);
-    # a Gyökérháló a támadót lassítja, a támadó saját régió-szálán.
     ironbark:
       bark-spells:
-        - iron_bark
-        - thornguard
-        - bristling_fur
-        - incarnation_bear
+      - iron_bark
+      - thornguard
+      - bristling_fur
+      - incarnation_bear
       root-spells:
-        - entangling_roots
-        - guardian_swipe
+      - entangling_roots
+      - guardian_swipe
       maximum-layers: 3
       oak-extra-layers: 1
       layer-reduction-percent: 12.0
-      # Csipetnyi (koplalás, 1-tick tűz, kis esés) sebzés ne vigyen el egy teljes réteget.
       min-damage-to-crack: 2.0
       thick-extra-reduction-percent: 4.0
       roots-window-millis: 6000
@@ -882,19 +750,16 @@ classes:
       thorn-damage: 2.0
       root-master-amplifier: 1
       root-master-heal: 1.0
-
-    # Helyreállító: Mag → érés → Virágzás. A Magok tiszta számlálók (nincs világban maradó növény-entitás),
-    # és a Virágzás CSAK a beérett Magokat aratja le — a gyógyítás előkészítés-alapú.
     restoration:
       seed-spells:
-        - rejuvenation
-        - regrowth
-        - lifebloom
-        - swiftmend
+      - rejuvenation
+      - regrowth
+      - lifebloom
+      - swiftmend
       bloom-spells:
-        - wild_bloom
-        - tranquility
-        - flourish
+      - wild_bloom
+      - tranquility
+      - flourish
       maximum-seeds: 3
       rich-extra-seeds: 1
       ripen-millis: 4000
@@ -905,37 +770,33 @@ classes:
       heal-per-ripe-seed: 3.0
       worldtree-extra-heal: 2.0
       eternal-spring-regen-ticks-per-seed: 40
-
   priest:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       discipline:
-        - heal
-        - power_word_shield
-        - penance
-        - power_word_radiance
-        - atonement
-        - barrier
-        - evangelism
+      - heal
+      - power_word_shield
+      - penance
+      - power_word_radiance
+      - atonement
+      - barrier
+      - evangelism
       bone_priest:
-        - bone_mend
-        - leeching_ray
-        - bone_ward
-        - queens_lament
-        - blood_tithe
-        - silence_of_the_grave
-        - last_rites
+      - bone_mend
+      - leeching_ray
+      - bone_ward
+      - queens_lament
+      - blood_tithe
+      - silence_of_the_grave
+      - last_rites
       shadow:
-        - shadow_word_pain
-        - mind_blast
-        - mind_flay
-        - vampiric_touch
-        - shadow_word_death
-        - dispersion
-        - void_torrent
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - shadow_word_pain
+      - mind_blast
+      - mind_flay
+      - vampiric_touch
+      - shadow_word_death
+      - dispersion
+      - void_torrent
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -943,12 +804,7 @@ classes:
       atonement-xp: 3
       ossuary-xp: 5
       threshold-xp: 4
-
     max-power-bonus-percent: 40.0
-
-    # Class core: Litánia — a pap felvesz egy imát (/spec ima), és a hozzá illő tettek mondják el
-    # a verseit. A TELJES verssor elmondja az imát: egyszeri áldás + rövid ablak, majd a számláló
-    # nulláról indul. Nem lecsengő mérőóra: a jutalmat mindig újra ki kell érdemelni.
     litany:
       verses-required: 3
       window-millis: 6000
@@ -956,37 +812,33 @@ classes:
       blessing-ticks: 100
       solace-heal: 4.0
       vigasz-spells:
-        - heal
-        - renew
-        - power_word_shield
-        - power_word_radiance
-        - bone_mend
-        - bone_ward
-        - blood_tithe
+      - heal
+      - renew
+      - power_word_shield
+      - power_word_radiance
+      - bone_mend
+      - bone_ward
+      - blood_tithe
       ostor-spells:
-        - holy_smite
-        - shadow_word_pain
-        - mind_blast
-        - mind_flay
-        - shadow_word_death
-        - leeching_ray
-        - queens_lament
+      - holy_smite
+      - shadow_word_pain
+      - mind_blast
+      - mind_flay
+      - shadow_word_death
+      - leeching_ray
+      - queens_lament
       csend-spells:
-        - dispel
-        - fade
-        - levitate
-        - holy_nova
-        - dispersion
-        - silence_of_the_grave
-
-    # Fegyelem: az Engesztelés ablakában az OKOZOTT sebzés gyógyulássá és pajzshálóvá alakul.
-    # A konverzió explicit, nem-újrabelépő őr mögött fut: a belőle született gyógyítás SOHA nem
-    # indíthat újabb konverziót (a lista is kizárólag sebző/pajzs-nyitó spelleket tartalmaz).
+      - dispel
+      - fade
+      - levitate
+      - holy_nova
+      - dispersion
+      - silence_of_the_grave
     discipline:
       atonement-spells:
-        - atonement
-        - penance
-        - power_word_shield
+      - atonement
+      - penance
+      - power_word_shield
       window-millis: 8000
       lasting-extra-millis: 3000
       eternal-grace-extra-millis: 4000
@@ -998,18 +850,14 @@ classes:
       redeeming-shield: 4
       capstone-window-millis: 14000
       capstone-shield: 8
-
-    # Csontpap (DARK — a meglévő pecsét/kapu rendszer alatt): a KONTROLLÁLT áldozat (élet-költségű
-    # spellek) Velőt ad, a Velő Osszárium-töltetté sűrűsödik, a sötét gyógyítás ezt égeti el.
-    # Az áldozat élet-padló alatt már a cast előtt elutasításra kerül — sosem lehet halálos.
     bone:
       sacrifice-spells:
-        - blood_tithe
-        - leeching_ray
+      - blood_tithe
+      - leeching_ray
       mend-spells:
-        - bone_mend
-        - bone_ward
-        - last_rites
+      - bone_mend
+      - bone_ward
+      - last_rites
       marrow-per-sacrifice: 20
       deep-extra-marrow: 5
       marrow-maximum: 100
@@ -1022,23 +870,19 @@ classes:
       queen-extra-heal: 2.0
       wall-absorption-ticks: 100
       min-health-ratio: 0.35
-
-    # Árnyék: az Őrület a Küszöb körül a legerősebb. A Küszöbön TÚL minden árny-cast fix,
-    # élet-padlóval korlátozott vámot szed; a padló alatt a cast elutasításra kerül, nem öl.
-    # Nincs véletlenszerű, irányíthatatlan önpusztítás — a dispersion tudatos leeresztés.
     shadow:
       madness-spells:
-        - shadow_word_pain
-        - mind_blast
-        - mind_flay
-        - vampiric_touch
-        - shadow_word_death
-        - mind_sear
-        - void_eruption
-        - void_torrent
+      - shadow_word_pain
+      - mind_blast
+      - mind_flay
+      - vampiric_touch
+      - shadow_word_death
+      - mind_sear
+      - void_eruption
+      - void_torrent
       vent-spells:
-        - dispersion
-        - fade
+      - dispersion
+      - fade
       cast-gain: 12
       calm-reduction: 3
       threshold: 60
@@ -1053,50 +897,40 @@ classes:
       min-health-ratio: 0.25
       decay-delay-millis: 5000
       decay-per-second: 5.0
-
   death_knight:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       blood:
-        - heart_strike
-        - marrowrend
-        - death_strike
-        - rune_tap
-        - blood_boil
-        - vampiric_blood
-        - dancing_rune_weapon
+      - heart_strike
+      - marrowrend
+      - death_strike
+      - rune_tap
+      - blood_boil
+      - vampiric_blood
+      - dancing_rune_weapon
       frost:
-        - obliterate
-        - frost_strike
-        - howling_blast
-        - icy_touch
-        - frostscythe
-        - remorseless_winter
-        - breath_of_sindragosa
+      - obliterate
+      - frost_strike
+      - howling_blast
+      - icy_touch
+      - frostscythe
+      - remorseless_winter
+      - breath_of_sindragosa
       unholy:
-        - festering_strike
-        - outbreak
-        - unholy_coil
-        - raise_ghoul
-        - grip_of_the_dead
-        - epidemic
-        - army_of_the_dead
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - festering_strike
+      - outbreak
+      - unholy_coil
+      - raise_ghoul
+      - grip_of_the_dead
+      - epidemic
+      - army_of_the_dead
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
       memory-xp: 5
       crush-xp: 5
       burst-xp: 6
-
     max-power-bonus-percent: 40.0
-
-    # Class core: Rúnakör — a Vér és a Fagy rúna magától tölt vissza, a HALÁL rúna SOHA:
-    # az kizárólag ott keletkezik, ahol a lovag egy teli természetes rúnát átalakít. Így a kört
-    # ugyanolyan tudatosan kell tölteni, mint amilyen tudatosan költi. Ez a Halállovag saját
-    # rendszere — nem generic rune engine más classok számára.
     runes:
       natural-capacity: 2
       deep-extra: 1
@@ -1105,55 +939,48 @@ classes:
       recharge-millis: 6000
       quick-reduction-millis: 1500
       blood-spells:
-        - heart_strike
-        - marrowrend
-        - blood_boil
-        - rune_tap
+      - heart_strike
+      - marrowrend
+      - blood_boil
+      - rune_tap
       frost-spells:
-        - obliterate
-        - frost_strike
-        - howling_blast
-        - icy_touch
-        - frostscythe
+      - obliterate
+      - frost_strike
+      - howling_blast
+      - icy_touch
+      - frostscythe
       death-spells:
-        - dancing_rune_weapon
-        - breath_of_sindragosa
-        - army_of_the_dead
+      - dancing_rune_weapon
+      - breath_of_sindragosa
+      - army_of_the_dead
       transmute-spells:
-        - death_strike
-
-    # Vérlovag: a Vér Emlékezete FIX méretű gyűrű (nyolc bejegyzés) — sosem korlátlan damage log.
-    # A begyűjtött közelmúlt EGYBEN kerül elköltésre, és hogy gyógyítás vagy pajzs lesz-e belőle,
-    # azt a választott spell dönti el.
+      - death_strike
     blood:
       memory-window-millis: 8000
       long-memory-extra-millis: 4000
       heal-spells:
-        - death_strike
-        - vampiric_blood
+      - death_strike
+      - vampiric_blood
       shield-spells:
-        - rune_tap
-        - marrowrend
+      - rune_tap
+      - marrowrend
       heal-percent: 30.0
       thick-extra-percent: 8.0
       shield-percent: 30.0
       shield-step: 4.0
       shield-ticks: 120
       sea-extra-ticks: 60
-
-    # Fagylovag: a Fagyjelek részlegesen (frost_strike) vagy teljesen (Zúzás = obliterate)
-    # fogyaszthatók; a teljes consume a nagyobb kifizetés.
     frost:
       mark-spells:
-        - frost_strike
-        - howling_blast
-        - icy_touch
-        - frostscythe
-        - remorseless_winter
+      - frost_strike
+      - howling_blast
+      - icy_touch
+      - frostscythe
+      - remorseless_winter
       partial-spells:
-        - chill_streak
+      - chill_streak
       crush-spells:
-        - obliterate
+      - obliterate
       mark-per-cast: 1
       mark-maximum: 5
       armor-extra-mark: 2
@@ -1163,20 +990,15 @@ classes:
       crush-heal-per-mark: 0.5
       rime-extra-heal: 0.5
       breath-resist-ticks: 60
-
-    # Szentségtelen (DARK — a meglévő pecsét/kapu rendszer alatt): a Dögvész-bélyegek a robbanó
-    # spellekben sülnek el, és minden robbanás egy fokozatot léptet a ghúl mutációján.
-    # A ghúl megidézése a MEGLÉVŐ minion/summon rendszeren fut (unholy.ghoul companion-névtér) —
-    # ez nem a Nekromanta Soulforge, a két rendszert nem mossuk össze.
     unholy:
       plague-spells:
-        - festering_strike
-        - unholy_coil
-        - grip_of_the_dead
-        - frost_fever
+      - festering_strike
+      - unholy_coil
+      - grip_of_the_dead
+      - frost_fever
       burst-spells:
-        - outbreak
-        - epidemic
+      - outbreak
+      - epidemic
       plague-per-cast: 1
       plague-maximum: 6
       rich-extra-plague: 2
@@ -1187,37 +1009,33 @@ classes:
       ravage-extra-percent: 1.5
       per-mutation-percent: 4.0
       acid-heal-per-plague: 0.5
-
   assassin:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       poisoner:
-        - venom_strike
-        - toxin_dart
-        - acid_splash
-        - numbing_agent
-        - paralytic_strike
-        - contagion
-        - deathcap
+      - venom_strike
+      - toxin_dart
+      - acid_splash
+      - numbing_agent
+      - paralytic_strike
+      - contagion
+      - deathcap
       phantom:
-        - hide
-        - ghost_step
-        - phase_blink
-        - haunt
-        - cold_spot
-        - ethereal_form
-        - spectre
+      - hide
+      - ghost_step
+      - phase_blink
+      - haunt
+      - cold_spot
+      - ethereal_form
+      - spectre
       plaguebringer:
-        - plague_cut
-        - plague_contagion
-        - black_boils
-        - miasma
-        - festering_wounds
-        - plague_wind
-        - black_death
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - plague_cut
+      - plague_contagion
+      - black_boils
+      - miasma
+      - festering_wounds
+      - plague_wind
+      - black_death
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -1225,44 +1043,35 @@ classes:
       catalyse-xp: 6
       echo-xp: 4
       strain-xp: 5
-
     max-power-bonus-percent: 40.0
-
-    # Class core: Lehetőség — négy KÜLÖNBÖZŐ nyitány teremti meg (pozíció = hátbatámadás,
-    # kitérés = kivédett/megszakított ütés, interrupt = felsorolt megszakító spell, észrevétlen =
-    # rejtekből indított cast). Az ablak EGYET ér: a finisher egyben költi el, és a runtime
-    # megjegyzi, melyik nyitány fizetett érte.
     opportunity:
       window-millis: 5000
       long-extra-millis: 2000
       bonus-percent: 15.0
       unseen-extra-percent: 8.0
       finisher-spells:
-        - death_mark
-        - garrote
-        - deathcap
-        - spectre
-        - black_death
+      - death_mark
+      - garrote
+      - deathcap
+      - spectre
+      - black_death
       interrupt-spells:
-        - blackout
-        - hamstring
-        - phantom_grip
-
-    # Méregkeverő: PONTOSAN három toxin-hely, mindegyiken saját Dózissal. A negyedik toxin
-    # elutasításra kerül — előbb katalizálni kell. Ez három konkrét méreg, nem generic socket engine.
+      - blackout
+      - hamstring
+      - phantom_grip
     poisoner:
       benito-spells:
-        - numbing_agent
-        - debilitating_poison
+      - numbing_agent
+      - debilitating_poison
       marokod-spells:
-        - venom_strike
-        - paralytic_strike
+      - venom_strike
+      - paralytic_strike
       sorvaszto-spells:
-        - acid_splash
-        - toxic_cloud
+      - acid_splash
+      - toxic_cloud
       catalyst-spells:
-        - contagion
-        - deathcap
+      - contagion
+      - deathcap
       max-dose: 3
       deep-extra-dose: 1
       per-dose-percent: 4.0
@@ -1270,25 +1079,21 @@ classes:
       catalyse-ticks: 80
       wide-extra-ticks: 20
       quick-mix-heal: 2.0
-
-    # Fantom: az Észleltség minden hangos tettre nő és tétlenül cseng le. A rejtőzés IDŐKORLÁTOS,
-    # a küszöb feletti Észleltség azonnal megtöri, és minden ütés megtöri — sosem végtelen,
-    # célozhatatlan állapot.
     phantom:
       stealth-spells:
-        - hide
-        - ethereal_form
+      - hide
+      - ethereal_form
       trail-spells:
-        - ghost_step
-        - phase_blink
+      - ghost_step
+      - phase_blink
       echo-spells:
-        - haunt
-        - dread_whisper
+      - haunt
+      - dread_whisper
       quiet-spells:
-        - hide
-        - ghost_step
-        - ethereal_form
-        - cold_spot
+      - hide
+      - ghost_step
+      - ethereal_form
+      - cold_spot
       cast-detection: 12
       strike-detection: 25
       detection-break: 60
@@ -1302,21 +1107,12 @@ classes:
       ghost-detection-vent: 100
       decay-delay-millis: 4000
       decay-per-second: 8.0
-
-    # Pestishozó (DARK — a meglévő pecsét/kapu rendszer alatt). KÖTELEZŐ korlátok, mind kikényszerítve:
-    #  - entity cap: egyszerre legfeljebb ennyi élő fertőzött tartozhat egy játékoshoz;
-    #  - spread cap: a hordozó SOHA nem adja tovább a törzset — minden fertőzést a Pestishozó
-    #    saját ütése vet el, így mob→mob exponenciális terjedés szerkezetileg lehetetlen;
-    #  - cleanup: a bejegyzések lejárnak, a halott entitás azonnal kikerül, spec-váltás/kilépés törli;
-    #  - esemény-precedencia: aktív Vérhold alatt nincs új fertőzés;
-    #  - admin/szkriptelt immunitás: plugin-tulajdonú minionok és world-boss-jelölt entitások immunisak;
-    #  - boss/dungeon policy: az EventSpawnGuard („plague_spread") és az immune-types lista dönt.
     plague:
       allow-infection: true
       mutate-spells:
-        - miasma
-        - festering_wounds
-        - plague_wind
+      - miasma
+      - festering_wounds
+      - plague_wind
       strain-maximum: 3
       master-extra-stage: 1
       entity-cap: 6
@@ -1326,44 +1122,40 @@ classes:
       effect-ticks: 100
       deep-extra-ticks: 40
       immune-types:
-        - villager
-        - wandering_trader
-        - armor_stand
-        - iron_golem
-        - ender_dragon
-        - wither
-        - warden
-
+      - villager
+      - wandering_trader
+      - armor_stand
+      - iron_golem
+      - ender_dragon
+      - wither
+      - warden
   warlock:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       affliction:
-        - corruption
-        - agony
-        - unstable_affliction
-        - malefic_grasp
-        - siphon_life
-        - seed_of_corruption
-        - darkglare
+      - corruption
+      - agony
+      - unstable_affliction
+      - malefic_grasp
+      - siphon_life
+      - seed_of_corruption
+      - darkglare
       destruction:
-        - immolate
-        - incinerate
-        - conflagrate
-        - chaos_bolt
-        - rain_of_fire
-        - shadowfury
-        - summon_infernal
+      - immolate
+      - incinerate
+      - conflagrate
+      - chaos_bolt
+      - rain_of_fire
+      - shadowfury
+      - summon_infernal
       demonologist:
-        - fel_bolt
-        - imp_swarm
-        - magma_servant
-        - demon_skin
-        - chaos_flame
-        - sacrifice_pact
-        - legion
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - fel_bolt
+      - imp_swarm
+      - magma_servant
+      - demon_skin
+      - chaos_flame
+      - sacrifice_pact
+      - legion
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -1371,27 +1163,19 @@ classes:
       drain-xp: 4
       burst-xp: 6
       call-xp: 5
-
     max-power-bonus-percent: 40.0
-
-    # Class core: Paktum és Lélekadósság — a paktum-castok nagyobb erőt adnak, és KÖNYVELIK az
-    # adósságot, ami kifizette őket. Az adósság magától SOHA nem cseng le: kizárólag a felsorolt
-    # törlesztő tettek dolgozzák le. A plafonon minden paktum elutasításra kerül, a fél plafon
-    # felett pedig a kapott sebzés nagyobbat üt.
-    # FONTOS: ez tisztán HARCI mérőóra — nem pénztárca. Sem egyenleg, sem valuta, sem átutalás
-    # nem tartozik hozzá, és semmilyen gazdasági rendszerhez nem nyúl.
     pact:
       pact-spells:
-        - unstable_affliction
-        - chaos_bolt
-        - sacrifice_pact
-        - darkglare
-        - summon_infernal
-        - legion
+      - unstable_affliction
+      - chaos_bolt
+      - sacrifice_pact
+      - darkglare
+      - summon_infernal
+      - legion
       repay-spells:
-        - drain_life
-        - siphon_life
-        - malefic_grasp
+      - drain_life
+      - siphon_life
+      - malefic_grasp
       debt-per-pact: 20
       cheap-reduction: 5
       repay-per-cast: 12
@@ -1401,23 +1185,20 @@ classes:
       bonus-percent: 18.0
       deep-extra-percent: 6.0
       debt-taken-penalty-percent: 10.0
-
-    # Átok: háromhelyes Átokgrimoár (három konkrét átok, saját lejárattal) + egy Lélekfonal,
-    # ami mindig PONTOSAN egy áldozatot nevez meg, és új kötéssel átköthető.
     affliction:
       gyotrelem-spells:
-        - agony
-        - curse_of_agony
+      - agony
+      - curse_of_agony
       romlas-spells:
-        - corruption
-        - seed_of_corruption
+      - corruption
+      - seed_of_corruption
       aszaly-spells:
-        - curse_of_weakness
-        - soul_rot
+      - curse_of_weakness
+      - soul_rot
       drain-spells:
-        - drain_life
-        - siphon_life
-        - malefic_grasp
+      - drain_life
+      - siphon_life
+      - malefic_grasp
       curse-millis: 12000
       lasting-extra-millis: 4000
       thread-millis: 8000
@@ -1425,20 +1206,16 @@ classes:
       per-curse-percent: 6.0
       drain-heal-per-curse: 1.5
       thread-extra-heal: 2.0
-
-    # Pusztítás: az Izzó Parázs a tűz-castokból gyűlik, a burst EGYBEN égeti el. A kockázat
-    # kizárólag opt-in: csak a TELE parázzsal indított robbanás vásárolja meg a Túlhevülést,
-    # ami rövid, determinisztikus tűz-tiltás — nincs véletlen.
     destruction:
       ember-spells:
-        - immolate
-        - incinerate
-        - conflagrate
-        - rain_of_fire
+      - immolate
+      - incinerate
+      - conflagrate
+      - rain_of_fire
       burst-spells:
-        - chaos_bolt
-        - cataclysm
-        - summon_infernal
+      - chaos_bolt
+      - cataclysm
+      - summon_infernal
       ember-per-cast: 1
       ember-maximum: 4
       deep-extra-ember: 1
@@ -1448,57 +1225,47 @@ classes:
       cold-reduction-millis: 1500
       spark-repay: 2
       storm-heal-per-ember: 1.0
-
-    # Demonológus (DARK — a meglévő pecsét/kapu rendszer alatt): a roster HÁROM démon-FAJTÁT tart
-    # nyilván (nem élő entitás-listát), a tényleges megidézés a MEGLÉVŐ minion/summon úton fut a
-    # demonologist.roster companion-névtér alatt.
     demonologist:
       imp-spells:
-        - imp_swarm
+      - imp_swarm
       szolga-spells:
-        - magma_servant
+      - magma_servant
       infernal-spells:
-        - summon_infernal
-        - legion
+      - summon_infernal
+      - legion
       demonic-spells:
-        - fel_bolt
-        - chaos_flame
-        - demon_skin
+      - fel_bolt
+      - chaos_flame
+      - demon_skin
       dismiss-spells:
-        - sacrifice_pact
+      - sacrifice_pact
       per-demon-percent: 6.0
       hide-extra-percent: 2.0
-      # A paktum mérete: EGYETLEN igazságforrás a durable demonologist.roster companion névsor,
-      # ez a kulcs csak azt mondja meg, hány démon fér bele.
       roster-capacity: 3
       legion-extra-slot: 1
       dismiss-heal-per-demon: 2.0
       loyal-extra-heal: 1.0
       call-repay: 4
       order-heal: 2.0
-
   wizard:
-    # A nagyobb spellkönyvtárból egyszerre legfeljebb ennyi spell kerül a gyors harci készletbe.
     active-kit:
       maximum: 7
       elementalist:
-        - fireball
-        - frost_nova
-        - thunder_strike
-        - ember_storm
-        - gale_burst
-        - stone_skin
-        - elemental_overload
+      - fireball
+      - frost_nova
+      - thunder_strike
+      - ember_storm
+      - gale_burst
+      - stone_skin
+      - elemental_overload
       necromancer:
-        - life_drain
-        - bone_spear
-        - grave_grasp
-        - raise_horde
-        - bone_archers
-        - wraith_form
-        - soul_harvest
-
-    # 50+ specialization mastery; Profile v2 loadout mező, csak harci kontextusban gyűlik.
+      - life_drain
+      - bone_spear
+      - grave_grasp
+      - raise_horde
+      - bone_archers
+      - wraith_form
+      - soul_harvest
     mastery:
       experience-per-rank: 100
       combat-window-seconds: 10
@@ -1506,47 +1273,34 @@ classes:
       crown-xp: 8
       raise-xp: 5
       harvest-xp: 6
-
     max-power-bonus-percent: 40.0
-
-    # Class core: Rúnaszövés — a runtime KIZÁRÓLAG az utolsó két iskolát tartja számon, és egy
-    # rövid, TÉTELESEN felsorolt táblából adódik a rúnareakció. Öt konkrét, irányított pár van;
-    # nincs szabálymotor és nincs kombó-DSL. A reakció a KÖVETKEZŐ castot erősíti, egyszer.
-    #   Tűz → Fagy   = Gőzrobbanás
-    #   Fagy → Vihar = Jégvihar
-    #   Vihar → Tűz  = Kohó
-    #   Árny → Arkán = Árnyvisszhang
-    #   Arkán → Árny = Arkán Erősítés
     weave:
       tuz-spells:
-        - fireball
-        - ember_storm
-        - sun_dance
+      - fireball
+      - ember_storm
+      - sun_dance
       fagy-spells:
-        - frost_nova
-        - frost_touch
-        - bone_chill
+      - frost_nova
+      - frost_touch
+      - bone_chill
       vihar-spells:
-        - thunder_strike
-        - gale_burst
-        - riptide_pull
+      - thunder_strike
+      - gale_burst
+      - riptide_pull
       arny-spells:
-        - life_drain
-        - soul_siphon
-        - dread_aura
+      - life_drain
+      - soul_siphon
+      - dread_aura
       arkan-spells:
-        - mana_dart
-        - arcane_nova
-        - blink
-        - arcane_shield
+      - mana_dart
+      - arcane_nova
+      - blink
+      - arcane_shield
       reaction-window-millis: 5000
       long-extra-millis: 2000
       reaction-bonus-percent: 15.0
       deep-extra-percent: 5.0
       arcane-extra-percent: 5.0
-
-    # Elementalista: EGY háromelemű ráhangolódás-tömb (Tűz/Fagy/Vihar), két küszöb-ellenőrzéssel —
-    # Konvergencia (kettő a küszöbön) és Elemi Korona (mindhárom). Nem három külön alrendszer.
     elementalist:
       attunement-per-cast: 18
       quick-extra-gain: 5
@@ -1556,30 +1310,22 @@ classes:
       crown-bonus-percent: 22.0
       decay-delay-millis: 6000
       decay-per-second: 6.0
-
-    # Nekromanta (DARK — a meglévő pecsét/kapu rendszer alatt): a Holtak Udvara KORLÁTOS, és
-    # FAJTÁKAT tart nyilván (nem élő entitás-hivatkozásokat) a necromancer.court névtér alatt.
-    # A Lélekszilánk-gazdaságot NEM duplikáljuk: a CAS/nyugta/szilánk/refund authority marad a
-    # meglévő SoulforgeManageré — innen csak az udvar mérete olvas (LETSZAM ág extra slotjai).
     necromancer:
       zombi-spells:
-        - raise_horde
+      - raise_horde
       csontvaz-spells:
-        - bone_archers
+      - bone_archers
       lidercz-spells: []
       necrotic-spells:
-        - life_drain
-        - bone_spear
-        - grave_grasp
-        - plague_touch
-        - death_pact
+      - life_drain
+      - bone_spear
+      - grave_grasp
+      - plague_touch
+      - death_pact
       harvest-spells:
-        - soul_harvest
-      # Az udvar EGYETLEN igazságforrása a durable necromancer.court companion névsor. A fajta
-      # csak attribútum: ugyanaz a fajta ismételhető, ezért a felső korlát mindig elérhető.
+      - soul_harvest
       court-slots: 4
       court-capacity: 2
-      # A feltámasztott udvaroncok vanília teste — nincs új mobfaj, csak kötés a meglévőkhöz.
       zombi-entity: ZOMBIE
       csontvaz-entity: SKELETON
       lidercz-entity: VEX
@@ -1590,8 +1336,6 @@ classes:
       harvest-heal-per-court: 2.0
       loyal-extra-heal: 1.0
       eternal-kept-kind: csontvaz
-
-# A záróképességek 50-en jelennek meg, de csak a Profile v2 capstone COMPLETED állapota után grantolhatók.
 specializations:
   berserker:
     capstone-spell: berserk
@@ -1733,11 +1477,5 @@ specializations:
     capstone-spell: soul_harvest
     spell-unlocks:
       soul_harvest: 50
-
-# Gameplay-v2 classnál a személyes Lélekkapocs (Kürt/Fiola) a kötelező spellbook/fókusz.
-# A kód ezt fail-closed módon is érvényesíti; itt a normál melee-catalyst listából is kivesszük.
-# A Halállovag átállásával a kompatibilitási lista KIÜRÜLT: minden közelharci class a saját
-# Lélekkapcsán keresztül kasztol.
 spells:
-  melee-catalyst:
-    classes: []
+  melee-catalyst: {}

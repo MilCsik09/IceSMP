@@ -48,6 +48,7 @@ import java.util.function.Supplier;
 
 /** Config-driven quest definitions with PlayerProfile-backed player lifecycle state. */
 public final class QuestManager implements PersistentStore, PlayerStateCleanup {
+    private static final int CUSTOM_QUEST_SCHEMA_VERSION = 1;
 
     public static final Set<String> OBJECTIVE_TYPES = Set.of(
             "KILL_MOBS", "BREAK_BLOCKS", "CRAFT_ITEMS", "CATCH_FISH",
@@ -214,20 +215,28 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     public void load() {
         if (customQuestsFile.exists()) {
             try {
-                customQuests = YamlStore.loadTracked(customQuestsFile, plugin.getLogger());
+                final YamlConfiguration candidate = YamlStore.loadTracked(customQuestsFile, plugin.getLogger());
+                final int schemaVersion = candidate.getInt("schema-version", CUSTOM_QUEST_SCHEMA_VERSION);
+                if (schemaVersion != CUSTOM_QUEST_SCHEMA_VERSION) {
+                    throw new IllegalStateException("Unsupported custom-quests.yml schema-version: " + schemaVersion);
+                }
+                candidate.set("schema-version", CUSTOM_QUEST_SCHEMA_VERSION);
+                customQuests = candidate;
                 hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Loaded "
                         + getCustomQuestIds().size() + " admin-created quest(s).");
             } catch (final Exception failure) {
-                plugin.getLogger().severe("Failed to load custom-quests.yml: " + failure.getMessage());
+                throw new IllegalStateException("Failed to load versioned custom-quests.yml", failure);
             }
         } else {
             customQuests = new YamlConfiguration();
+            customQuests.set("schema-version", CUSTOM_QUEST_SCHEMA_VERSION);
         }
         reloadDefinitions();
     }
 
     @Override
     public synchronized void save() {
+        customQuests.set("schema-version", CUSTOM_QUEST_SCHEMA_VERSION);
         try { YamlStore.saveAtomic(customQuestsFile, customQuests); }
         catch (final IOException failure) {
             throw new java.io.UncheckedIOException("Failed to save custom-quests.yml", failure);

@@ -174,7 +174,7 @@ public final class SpellCastArchitectureRegressionSuite {
         require(!listener.contains("secondary.current()"),
                 "Assassin detection gating must not call a non-existent HUD metric accessor");
 
-        final String combos = read(root, "src/main/resources/config/spells.yml");
+        final String combos = read(root, "src/main/resources/content/progression/spells.yml");
         require(!combos.contains("soul-collapse:"),
                 "cross-spec Affliction/Destruction chain must stay removed");
         require(!combos.contains("way-of-hundred-fists:"),

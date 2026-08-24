@@ -29,7 +29,7 @@ public final class QuestNpcValidationRegressionSuite {
 
     private static void packagedQuestsReferenceTheExpectedNpcContract() throws Exception {
         final Set<String> referenced = collectYamlScalars(
-                Path.of("src/main/resources/config/quests.yml"),
+                Path.of("src/main/resources/content/progression/quests.yml"),
                 Set.of("giver-npc", "npc"),
                 -1
         );

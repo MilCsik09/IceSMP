@@ -12,7 +12,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "src/main/resources/config/mob-templates.yml"
+CONFIG = ROOT / "src/main/resources/content/pve/enemies.yml"
 ROOT_CONFIG = ROOT / "src/main/resources/config.yml"
 WORLD_CONFIG = ROOT / "src/main/resources/config/world.yml"
 JAVA = ROOT / "src/main/java/hu/taliann/icesmp"

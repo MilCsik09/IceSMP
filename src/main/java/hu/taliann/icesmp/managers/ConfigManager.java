@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -8,14 +9,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -54,16 +59,73 @@ public final class ConfigManager {
         }
     }
 
-    public enum BatchApplyResult { APPLIED, STALE, NO_CHANGES }
+    public enum BatchApplyResult { APPLIED, STALE, NO_CHANGES, LOCKED, REJECTED }
 
-    /** Bundled per-subsystem config files under config/. */
-    private static final String[] CONFIG_FILES = {
-            "general", "economy", "factions", "block-regen", "classes", "class-gameplay", "spells", "spells-balance",
-            "professions", "quests", "world", "event-spawn-safety", "relics", "pets", "crafting", "crates",
-            "afk", "moderation", "item-rarity", "item-templates", "mob-templates", "loot", "motd", "profession-materials",
-            "profession-recipes", "professions-2", "material-economy-expansion", "equipment-catalog-expansion",
-            "reward-discoverability-closure", "sit", "tablist", "dev-items", "client"
+    public enum Authority {
+        RUNTIME_OVERRIDE,
+        OPERATOR_TUNABLE,
+        LOCKED_CANONICAL_CONTENT,
+        UNKNOWN
+    }
+
+    public enum ReloadPolicy {
+        LIVE_RELOADABLE,
+        SAFE_RELOAD_WITH_RECONCILIATION,
+        RESTART_REQUIRED,
+        UNKNOWN
+    }
+
+    /** Deployed, schema-bounded server-owner settings. */
+    private static final String[] OPERATOR_CONFIG_FILES = {
+            "general", "economy", "factions", "block-regen", "class-gameplay", "spells-balance",
+            "professions", "world", "event-spawn-safety", "pets", "crafting", "crates", "afk",
+            "moderation", "motd", "professions-2", "sit", "tablist", "dev-items", "client"
     };
+
+    /** Packaged, Git-authored gameplay authorities. They are never copied into the server config folder. */
+    private static final String[] CONTENT_FILES = {
+            "content/progression/classes.yml",
+            "content/progression/spells.yml",
+            "content/progression/quests.yml",
+            "content/equipment/rarities.yml",
+            "content/equipment/equipment.yml",
+            "content/equipment/relics.yml",
+            "content/professions/materials.yml",
+            "content/professions/recipes.yml",
+            "content/pve/enemies.yml",
+            "content/pve/loot.yml",
+            "content/events/prologue.yml"
+    };
+
+    /** Old deployed files are preserved before locked packaged content takes ownership. */
+    private static final Set<String> LEGACY_CONTENT_FILES = Set.of(
+            "classes", "spells", "quests", "item-rarity", "item-templates", "relics",
+            "profession-materials", "profession-recipes", "mob-templates", "loot",
+            "material-economy-expansion", "equipment-catalog-expansion", "reward-discoverability-closure");
+
+    /** Explicit live tuning seams whose packaged defaults intentionally live beside authored definitions. */
+    private static final List<String> EXPLICIT_OPERATOR_PREFIXES = List.of(
+            "health.",
+            "itemization.stats.",
+            "itemization.loot.",
+            "relics.enabled",
+            "relics.inactivity.",
+            "relics.passive-death.",
+            "relics.wings.faction-locked-pickup",
+            "relics.pvp-transfer.enabled");
+    private static final Set<String> RESTART_REQUIRED_OPERATOR_PATHS = Set.of(
+            "factions.tax.enabled",
+            "factions.tax.interval-minutes",
+            "hud.icesmp-hud.survival.refresh-ticks");
+    private static final List<String> RECONCILIATION_PREFIXES = List.of(
+            "motd.", "sit.", "crates-settings.", "crates.", "resource-pack.",
+            "factions.passives.", "factions.whisper.", "professions.recipes.",
+            "moderation.", "hud.", "tablist.", "mob-scaling.");
+    private static final Set<String> RECONCILIATION_PATHS = Set.of(
+            "world-events.check-interval-seconds",
+            "settings.disable-locator-bar",
+            "pets.companion.tick-ticks",
+            "currency.economy-event.check-interval-minutes");
     private static final List<String> MANAGED_FAMILY_SALVAGE_OUTPUTS = List.of(
             "szovet_foszlany", "bor_hulladek", "lanc_toredek", "femhulladek");
 
@@ -72,6 +134,7 @@ public final class ConfigManager {
     private final JavaPlugin plugin;
     private final Map<String, Object> runtimeOverrides = new ConcurrentHashMap<>();
     private volatile ConfigSnapshot liveSnapshot = new ConfigSnapshot(null, null, Set.of(), 0L, "");
+    private volatile Set<String> operatorEditablePaths = Set.of();
 
     public ConfigManager(final JavaPlugin plugin) {
         this.plugin = plugin;
@@ -106,33 +169,34 @@ public final class ConfigManager {
         return Map.copyOf(runtimeOverrides);
     }
 
-    /**
-     * Loads packaged defaults first, then deployed subsystem files, then config.yml overrides.
-     * This keeps newly introduced keys available on older installations while preserving every
-     * explicit deployed value and the optimistic-concurrency fingerprint of the override file.
-     */
+    /** Loads one validated candidate and publishes it only after every authority check succeeds. */
     public synchronized void load() {
-        final YamlConfiguration base = loadBaseConfiguration();
-        final YamlConfiguration effective = mergedConfiguration(base, pluginRootConfiguration());
+        final BaseLoad baseLoad = loadBaseConfiguration();
+        final YamlConfiguration rootOverrides = loadRootOverrides(baseLoad.operatorPaths());
+        final YamlConfiguration effective = mergedConfiguration(baseLoad.configuration(), rootOverrides);
         validateManagedSalvageMappings(effective);
-
-        final Set<String> overridePaths = new HashSet<>();
-        for (final String key : plugin.getConfig().getKeys(true)) {
-            if (!plugin.getConfig().isConfigurationSection(key)) {
-                overridePaths.add(key);
-            }
-        }
 
         final long previousGeneration = liveSnapshot.generation();
         final long nextGeneration = previousGeneration == Long.MAX_VALUE
                 ? Long.MAX_VALUE : previousGeneration + 1L;
-        liveSnapshot = new ConfigSnapshot(effective, base, overridePaths,
+        operatorEditablePaths = Set.copyOf(baseLoad.operatorPaths());
+        liveSnapshot = new ConfigSnapshot(effective, baseLoad.configuration(), leafPaths(rootOverrides),
                 nextGeneration, overrideFingerprint());
     }
 
-    private FileConfiguration pluginRootConfiguration() {
+    private record BaseLoad(YamlConfiguration configuration, Set<String> operatorPaths) { }
+
+    private YamlConfiguration loadRootOverrides(final Set<String> allowedPaths) {
+        final File root = new File(plugin.getDataFolder(), "config.yml");
+        if (!root.exists()) {
+            plugin.saveDefaultConfig();
+        }
+        final YamlConfiguration deployed = loadStrict(root, "config.yml");
+        warnRejectedOverrides("config.yml", deployed, allowedPaths);
+        final YamlConfiguration filtered = new YamlConfiguration();
+        mergeSelected(filtered, deployed, allowedPaths);
         plugin.reloadConfig();
-        return plugin.getConfig();
+        return filtered;
     }
 
     /** Shared production merge seam; package-private so the regression gate exercises this logic. */
@@ -168,45 +232,125 @@ public final class ConfigManager {
         }
     }
 
-    private YamlConfiguration loadBaseConfiguration() {
+    private BaseLoad loadBaseConfiguration() {
         final YamlConfiguration base = new YamlConfiguration();
         final File dir = new File(plugin.getDataFolder(), "config");
-        dir.mkdirs();
-        for (final String name : CONFIG_FILES) {
-            mergePackagedDefaults(base, name);
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IllegalStateException("Cannot create operator config directory: " + dir);
+        }
+        migrateLegacyContentFiles(dir);
+
+        for (final String resource : CONTENT_FILES) {
+            mergeInto(base, loadResourceStrict(resource));
+        }
+
+        final LinkedHashSet<String> operatorPaths = new LinkedHashSet<>();
+        for (final String name : OPERATOR_CONFIG_FILES) {
+            final String resource = "config/" + name + ".yml";
+            final YamlConfiguration packaged = loadResourceStrict(resource);
+            operatorPaths.addAll(leafPaths(packaged));
+            mergeInto(base, packaged);
             if (!new File(dir, name + ".yml").exists()) {
-                plugin.saveResource("config/" + name + ".yml", false);
+                plugin.saveResource(resource, false);
             }
         }
-        for (final String name : CONFIG_FILES) {
+        final YamlConfiguration packagedRoot = loadResourceStrict("config.yml");
+        operatorPaths.addAll(leafPaths(packagedRoot));
+        mergeInto(base, packagedRoot);
+        for (final String prefix : EXPLICIT_OPERATOR_PREFIXES) {
+            for (final String path : leafPaths(base)) {
+                if (path.equals(prefix) || path.startsWith(prefix)) {
+                    operatorPaths.add(path);
+                }
+            }
+        }
+
+        for (final String name : OPERATOR_CONFIG_FILES) {
             final File file = new File(dir, name + ".yml");
             if (file.exists()) {
-                mergeInto(base, YamlConfiguration.loadConfiguration(file));
+                final YamlConfiguration deployed = loadStrict(file, "config/" + file.getName());
+                final Set<String> ownedPaths = leafPaths(loadResourceStrict("config/" + name + ".yml"));
+                warnRejectedOverrides("config/" + file.getName(), deployed, ownedPaths);
+                mergeSelected(base, deployed, ownedPaths);
             }
         }
         final File[] files = dir.listFiles((directory, fileName) -> fileName.endsWith(".yml"));
         if (files != null) {
             for (final File file : files) {
                 final String baseName = file.getName().substring(0, file.getName().length() - 4);
-                if (java.util.Arrays.stream(CONFIG_FILES).noneMatch(baseName::equals)) {
+                if (Arrays.stream(OPERATOR_CONFIG_FILES).noneMatch(baseName::equals)) {
                     plugin.getLogger().warning("Ismeretlen config-fájl kihagyva a merge-ből: config/"
-                            + file.getName() + " (csak a CONFIG_FILES lista töltődik be)");
+                            + file.getName() + " (csak a dokumentált operator configok töltődnek be)");
                 }
             }
         }
-        return base;
+        return new BaseLoad(base, Set.copyOf(operatorPaths));
     }
 
-    private void mergePackagedDefaults(final YamlConfiguration target, final String name) {
-        try (InputStream input = plugin.getResource("config/" + name + ".yml")) {
+    private YamlConfiguration loadResourceStrict(final String resource) {
+        try (InputStream input = plugin.getResource(resource)) {
             if (input == null) {
-                plugin.getLogger().warning("Hiányzó csomagolt config: config/" + name + ".yml");
-                return;
+                throw new IllegalStateException("Missing packaged authority: " + resource);
             }
-            mergeInto(target, YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(input, StandardCharsets.UTF_8)));
-        } catch (final Exception failure) {
-            plugin.getLogger().warning("Csomagolt config nem olvasható (" + name + "): " + failure);
+            final YamlConfiguration loaded = new YamlConfiguration();
+            loaded.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+            return loaded;
+        } catch (final IOException | InvalidConfigurationException failure) {
+            throw new IllegalStateException("Invalid packaged authority " + resource, failure);
+        }
+    }
+
+    private static YamlConfiguration loadStrict(final File file, final String label) {
+        final YamlConfiguration loaded = new YamlConfiguration();
+        try {
+            loaded.load(file);
+            return loaded;
+        } catch (final IOException | InvalidConfigurationException failure) {
+            throw new IllegalStateException("Invalid deployed operator configuration " + label, failure);
+        }
+    }
+
+    private void warnRejectedOverrides(final String source, final ConfigurationSection deployed,
+                                       final Set<String> allowedPaths) {
+        final List<String> rejected = leafPaths(deployed).stream()
+                .filter(path -> !allowedPaths.contains(path))
+                .sorted()
+                .toList();
+        if (!rejected.isEmpty()) {
+            plugin.getLogger().warning(source + ": " + rejected.size()
+                    + " locked/unknown key ignored; canonical gameplay is packaged under content/. First keys: "
+                    + String.join(", ", rejected.stream().limit(8).toList()));
+        }
+    }
+
+    private void migrateLegacyContentFiles(final File configDir) {
+        final Path backupDir = plugin.getDataFolder().toPath()
+                .resolve("migration-backups/config-content-command-surface-2/config");
+        for (final String name : new TreeSet<>(LEGACY_CONTENT_FILES)) {
+            final Path source = configDir.toPath().resolve(name + ".yml");
+            if (!Files.exists(source)) {
+                continue;
+            }
+            try {
+                Files.createDirectories(backupDir);
+                final String digest = java.util.HexFormat.of().formatHex(
+                        MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(source))).substring(0, 12);
+                final Path target = backupDir.resolve(name + "-" + digest + ".yml");
+                if (Files.exists(target) && Files.mismatch(source, target) == -1L) {
+                    Files.delete(source);
+                } else {
+                    try {
+                        Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+                    } catch (final java.nio.file.AtomicMoveNotSupportedException unsupported) {
+                        Files.move(source, target);
+                    }
+                }
+                plugin.getLogger().warning("Legacy gameplay config archived and locked canonical authority activated: config/"
+                        + name + ".yml -> " + plugin.getDataFolder().toPath().relativize(target));
+            } catch (final Exception failure) {
+                throw new IllegalStateException("Cannot preserve legacy content config before migration: " + source,
+                        failure);
+            }
         }
     }
 
@@ -218,12 +362,37 @@ public final class ConfigManager {
         }
     }
 
+    private static void mergeSelected(final YamlConfiguration target, final ConfigurationSection source,
+                                      final Set<String> allowedPaths) {
+        for (final String key : source.getKeys(true)) {
+            if (!source.isConfigurationSection(key) && allowedPaths.contains(key)) {
+                target.set(key, source.get(key));
+            }
+        }
+    }
+
+    private static Set<String> leafPaths(final ConfigurationSection source) {
+        if (source == null) {
+            return Set.of();
+        }
+        final LinkedHashSet<String> paths = new LinkedHashSet<>();
+        for (final String key : source.getKeys(true)) {
+            if (!source.isConfigurationSection(key)) {
+                paths.add(key);
+            }
+        }
+        return Set.copyOf(paths);
+    }
+
     public void reload() {
         load();
     }
 
     /** Serialized single-key compatibility path used by admin commands and focused adapters. */
     public synchronized boolean applyOverride(final String key, final Object value) {
+        if (!isOperatorEditable(key)) {
+            return false;
+        }
         final ConfigSnapshot snapshot = liveSnapshot;
         return applyOverridesIfUnchanged(snapshot.generation(), snapshot.sourceFingerprint(),
                 java.util.Collections.singletonMap(key, value)) == BatchApplyResult.APPLIED;
@@ -245,9 +414,20 @@ public final class ConfigManager {
         if (changes == null || changes.isEmpty()) {
             return BatchApplyResult.NO_CHANGES;
         }
+        if (changes.keySet().stream().anyMatch(key -> !isOperatorEditable(key))) {
+            return BatchApplyResult.LOCKED;
+        }
         if (liveSnapshot.generation() != expectedGeneration
                 || !java.util.Objects.equals(expectedFingerprint, overrideFingerprint())) {
             return BatchApplyResult.STALE;
+        }
+        final File overrideFile = new File(plugin.getDataFolder(), "config.yml");
+        final boolean overrideFileExisted = overrideFile.exists();
+        final byte[] previousOverrideBytes;
+        try {
+            previousOverrideBytes = overrideFileExisted ? Files.readAllBytes(overrideFile.toPath()) : new byte[0];
+        } catch (final IOException failure) {
+            throw new IllegalStateException("Cannot snapshot config.yml before operator update", failure);
         }
         plugin.reloadConfig();
         boolean changed = false;
@@ -264,9 +444,35 @@ public final class ConfigManager {
         if (!changed) {
             return BatchApplyResult.NO_CHANGES;
         }
-        plugin.saveConfig();
-        load();
-        return BatchApplyResult.APPLIED;
+        try {
+            plugin.saveConfig();
+            load();
+            return BatchApplyResult.APPLIED;
+        } catch (final RuntimeException failure) {
+            try {
+                restoreOverrideFile(overrideFile.toPath(), overrideFileExisted, previousOverrideBytes);
+                plugin.reloadConfig();
+            } catch (final Exception rollbackFailure) {
+                failure.addSuppressed(rollbackFailure);
+            }
+            throw failure;
+        }
+    }
+
+    private static void restoreOverrideFile(final Path target, final boolean existed,
+                                            final byte[] previousBytes) throws IOException {
+        if (!existed) {
+            Files.deleteIfExists(target);
+            return;
+        }
+        final Path temporary = target.resolveSibling(target.getFileName() + ".rollback.tmp");
+        Files.write(temporary, previousBytes);
+        try {
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (final java.nio.file.AtomicMoveNotSupportedException unsupported) {
+            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     private String overrideFingerprint() {
@@ -289,6 +495,41 @@ public final class ConfigManager {
     }
 
     public ConfigSnapshot snapshot() { return liveSnapshot; }
+    public boolean isOperatorEditable(final String path) {
+        return path != null && operatorEditablePaths.contains(path);
+    }
+    public Set<String> operatorEditablePaths() { return operatorEditablePaths; }
+    public Authority authorityOf(final String path) {
+        if (path == null || path.isBlank()) return Authority.UNKNOWN;
+        if (runtimeOverrides.containsKey(path)) return Authority.RUNTIME_OVERRIDE;
+        if (operatorEditablePaths.contains(path)) return Authority.OPERATOR_TUNABLE;
+        if (liveSnapshot.isSet(path)) return Authority.LOCKED_CANONICAL_CONTENT;
+        return Authority.UNKNOWN;
+    }
+    public ReloadPolicy reloadPolicyOf(final String path) {
+        return switch (authorityOf(path)) {
+            case RUNTIME_OVERRIDE -> ReloadPolicy.LIVE_RELOADABLE;
+            case OPERATOR_TUNABLE -> operatorReloadPolicy(path);
+            case LOCKED_CANONICAL_CONTENT -> ReloadPolicy.RESTART_REQUIRED;
+            case UNKNOWN -> ReloadPolicy.UNKNOWN;
+        };
+    }
+    private static ReloadPolicy operatorReloadPolicy(final String path) {
+        if (RESTART_REQUIRED_OPERATOR_PATHS.contains(path)) {
+            return ReloadPolicy.RESTART_REQUIRED;
+        }
+        if (RECONCILIATION_PATHS.contains(path)
+                || RECONCILIATION_PREFIXES.stream().anyMatch(path::startsWith)) {
+            return ReloadPolicy.SAFE_RELOAD_WITH_RECONCILIATION;
+        }
+        return ReloadPolicy.LIVE_RELOADABLE;
+    }
+    public synchronized void restoreSnapshot(final ConfigSnapshot snapshot) {
+        if (snapshot == null || snapshot.configuration() == null) {
+            throw new IllegalArgumentException("valid snapshot required");
+        }
+        liveSnapshot = snapshot;
+    }
     public FileConfiguration getConfiguration() { return liveSnapshot.configuration(); }
     public boolean contains(final String path) {
         return runtimeOverrides.containsKey(path) || liveSnapshot.isSet(path);
