@@ -487,6 +487,16 @@ public final class MobScalingManager {
                 .has(territoryBurnManagedKey, PersistentDataType.BYTE);
     }
 
+    /** All active daylight sources compose; combustion admission must observe the same OR rule. */
+    public boolean hasDaylightProtection(final LivingEntity entity) {
+        if (entity == null) return false;
+        final var pdc = entity.getPersistentDataContainer();
+        return hu.taliann.icesmp.pve.DaylightProtectionPolicy.protectedNow(
+                pdc.has(authoredBurnKey, PersistentDataType.BYTE),
+                pdc.has(territoryBurnManagedKey, PersistentDataType.BYTE),
+                pdc.has(eventBurnKey, PersistentDataType.BYTE));
+    }
+
     /** Read-only runtime/evidence seam; authored protection remains template-owned. */
     public boolean hasAuthoredDaylightProtection(final LivingEntity entity) {
         return entity != null && entity.getPersistentDataContainer()
