@@ -285,13 +285,26 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                 "real authored world-boss technique did not execute through MobAbilityRuntime");
                         check(telemetry.getOrDefault("boss_phase_transition:summon_frozen_adds", 0L) == 1L,
                                 "health threshold was not one-shot in the common runtime");
-                        check(daytimeUndead.isValid() && !daytimeUndead.isDead()
-                                        && daytimeUndead.getFireTicks() <= 0
-                                        && daytimeUndead.getEquipment() != null
-                                        && daytimeUndead.getEquipment().getHelmet() == null
-                                        && daytimeUndead.hasAI()
-                                        && !runtime.activeAbilityIds(daytimeUndead).isEmpty(),
-                                "open-sky noon undead daylight/combat contract failed");
+                        plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_DAYLIGHT_STATE "
+                                + "valid=" + daytimeUndead.isValid()
+                                + ",dead=" + daytimeUndead.isDead()
+                                + ",health=" + daytimeUndead.getHealth()
+                                + ",fire=" + daytimeUndead.getFireTicks()
+                                + ",helmet=" + (daytimeUndead.getEquipment() == null ? "none"
+                                : daytimeUndead.getEquipment().getHelmet())
+                                + ",ai=" + daytimeUndead.hasAI()
+                                + ",abilities=" + runtime.activeAbilityIds(daytimeUndead));
+                        check(daytimeUndead.isValid() && !daytimeUndead.isDead(),
+                                "open-sky noon undead did not survive the proof window");
+                        check(daytimeUndead.getFireTicks() <= 0,
+                                "authored daylight protection left the noon undead burning");
+                        check(daytimeUndead.getEquipment() != null
+                                        && daytimeUndead.getEquipment().getHelmet() == null,
+                                "authored daylight protection used an equipment workaround");
+                        check(daytimeUndead.hasAI(),
+                                "day-capable authored undead lost vanilla combat AI");
+                        check(!runtime.activeAbilityIds(daytimeUndead).isEmpty(),
+                                "day-capable authored undead lost its canonical technique kit");
                         check(!scaling.hasAuthoredDaylightProtection(nightUndead),
                                 "night-only variant gained authored daylight protection");
                         check(controls.stream().allMatch(control -> scaling.getLevel(control) > 0),
