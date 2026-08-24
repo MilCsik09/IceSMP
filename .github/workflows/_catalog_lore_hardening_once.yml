@@ -1,4 +1,5 @@
 name: One-shot equipment catalog lore hardening
+# Triggered once to materialize the canonical lore change, then removes itself.
 on:
   push:
     branches: [feature/equipment-catalog-expansion]
