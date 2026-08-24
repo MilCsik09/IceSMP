@@ -68,8 +68,7 @@ public record MobTemplate(String mobId, int schemaVersion, String displayName, S
             throw new IllegalArgumentException("invalid elite affix pool");
         }
         affixPool = List.copyOf(pool);
-        behavior = Objects.requireNonNullElseGet(behavior,
-                () -> MobBehaviorProfile.defaults(archetype));
+        behavior = behavior == null ? MobBehaviorProfile.defaults(archetype) : behavior;
         naturalContext = Objects.requireNonNullElse(naturalContext, MobNaturalContext.none());
         final java.util.EnumMap<MobRank, List<String>> unlocks =
                 new java.util.EnumMap<>(MobRank.class);
