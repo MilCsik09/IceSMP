@@ -2309,3 +2309,44 @@ Balance-változtatást a seedelt harness után is stagingen kell igazolni. Ne á
 
 ### Professions 2.0 hardening gate
 A `scripts/check_professions_2_reports.py` ellenőrzi a 392 baseline recept teljes kategorizálását, a 18 canonical recipe-t, a négy ArmorFamily craft-végpontot, a MAIL mixed dependencyt, a salvage scrap valódi sinkeket és a post-commit Masterwork advancement sorrendet.
+
+## Enemy & World Boss Rework 2.0 üzemeltetés
+
+Az authored enemy és technique truth source a `config/mob-templates.yml`. A natural template
+`natural-context` mezői csak a meglévő runtime inputokat használhatják: biome, dimension, depth,
+time, weather, Blood Moon, territory és spawn reason. A `weight` és az `affinities` relatív
+súlyok; a `required`/`excluded` hard eligibility. Koordinátalistát, world progressiont, kill heatet
+vagy persistent ecology state-et ide ne vezess be. A registry startupkor épül és cache-elt; hibás
+ID, bounds, ability reference, boss phase, duplicate kit vagy elérhetetlen natural identity esetén
+fail-closed validáció szükséges.
+
+Az eseményproducer configok canonical template ID-t várnak: `escort.wave-templates`,
+`corruption.mob-templates`, `dark-undead.templates` és `dungeon.minibosses.*.template`.
+Template átnevezés/törlés előtt a persistent ID migration/fallback és minden event-, bestiary- és
+reward-reference legyen explicit. A world boss stable ID-k reward compatibility miatt maradnak;
+a display név és gameplay identity szabadon változhat a template-ben.
+
+Nappali felszíni Zombie/Skeleton/Drowned/Stray/Bogged/Phantom alapú natural identity csak
+`natural-context.no-daylight-burn: true` beállítással publikálható. Ez nem felszerelés-hack: az
+authored, Doom Gate/territory és event védelem egymástól független forrás, az effektív állapot az
+OR-juk. Egy forrás eltűnése nem kapcsolhatja vissza az égést, amíg másik forrás aktív; az utolsó
+forrás után az entity rögzített vanilla baseline-ja áll vissza.
+
+Kiadás előtt futtatandó:
+
+```bash
+python3 scripts/audit_enemy_worldboss_rework.py --check
+python3 scripts/audit_authored_pve_consolidation.py --check
+python3 scripts/audit_unified_creature_combat.py --check
+python3 scripts/audit_combat_encounter_foundation.py --check
+python3 scripts/test_progression_balance.py
+python3 scripts/check_consistency.py
+./gradlew clean build enemyWorldBossReworkAudit mobEncounterDomainRegressionTest \
+  mobRuntimeSourceRegressionTest --no-daemon --console=plain
+```
+
+Az exact-head workflow Paper 1.21.11-en ellenőrzi a boss signature/threshold runtime-ot, a több
+carrier-variánst és a sisak nélküli nappali undeadet. Ettől függetlenül merge előtt kötelező a
+`HUMAN_GAMEPLAY_STAGING_REQUIRED`: 30–60 perc wilderness több biomban, nappal/éjjel/barlangban;
+azonos carrier több változata; archetype, telegraph, hang és particle olvashatóság; ranklépcsők;
+több világboss; invasion; Prologue; multiplayer és Folia multi-region/performance próba.

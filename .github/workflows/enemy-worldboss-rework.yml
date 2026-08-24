@@ -1,0 +1,189 @@
+name: Enemy and World Boss Rework 2.0
+
+on:
+  push:
+    branches:
+      - feature/enemy-worldboss-rework-2
+  pull_request:
+    branches:
+      - feature/combat-staging-hardening
+
+permissions:
+  contents: read
+
+jobs:
+  exact-head-enemy-worldboss:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Checkout exact stacked child head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 256
+          persist-credentials: false
+
+      - name: Verify immutable combat-hardening parent
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PARENT_BRANCH: feature/combat-staging-hardening
+          PARENT_SHA: 4a24ee49949b99d410455a990e59a59025d2242b
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HEAD}"
+          git fetch --no-tags --depth=256 origin \
+            "${PARENT_BRANCH}:refs/remotes/origin/${PARENT_BRANCH}"
+          test "$(git rev-parse refs/remotes/origin/${PARENT_BRANCH})" = "${PARENT_SHA}"
+          merge_base=$(git merge-base HEAD "${PARENT_SHA}")
+          read behind ahead < <(git rev-list --left-right --count "${PARENT_SHA}...HEAD")
+          test "${merge_base}" = "${PARENT_SHA}"
+          test "${behind}" = "0"
+          test "${ahead}" -gt "0"
+          mkdir -p build/reports/enemy-worldboss-rework
+          printf '{"child":"%s","parent":"%s","merge_base":"%s","behind":0,"ahead":%s}\n' \
+            "${EXPECTED_HEAD}" "${PARENT_SHA}" "${merge_base}" "${ahead}" \
+            > build/reports/enemy-worldboss-rework/final-topology.json
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install evidence dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
+
+      - name: Validate roster, abilities, contexts and repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_enemy_worldboss_rework.py --check
+          python3 scripts/audit_authored_pve_consolidation.py --check \
+            --output build/reports/enemy-worldboss-rework
+          python3 scripts/audit_unified_creature_combat.py --check \
+            --output build/reports/enemy-worldboss-rework
+          python3 scripts/audit_combat_encounter_foundation.py --check \
+            --output build/reports/enemy-worldboss-rework
+          python3 scripts/test_progression_balance.py
+          python3 scripts/check_consistency.py
+          python3 scripts/check_documentation_coverage.py
+          python3 scripts/check_markdown_links.py
+          python3 scripts/resource_pack.py validate --source resource-pack
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Full build and cumulative regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew clean build enemyWorldBossReworkAudit authoredPveConsolidationAudit \
+            unifiedCreatureCombatAudit combatEncounterFoundationAudit \
+            mobEncounterDomainRegressionTest mobRuntimeSourceRegressionTest \
+            itemizationDomainRegressionTest equipmentDomainRegressionTest \
+            targetFrameRegressionTest resourcePackRegressionTest \
+            --no-daemon --console=plain | tee gradle-enemy-worldboss.log
+
+      - name: Paper 1.21.11 enemy and boss runtime proof
+        shell: bash
+        timeout-minutes: 12
+        env:
+          JAVA_TOOL_OPTIONS: >-
+            -Dicesmp.authored-pve-runtime=true
+            -Dicesmp.combat-evidence-dir=${{ github.workspace }}/build/reports/enemy-worldboss-rework
+        run: |
+          set -euo pipefail
+          rm -rf run
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+          set +e
+          timeout --signal=INT --kill-after=20s 180s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            2>&1 | tee paper-enemy-worldboss.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [[ ${status} -ne 0 && ${status} -ne 124 && ${status} -ne 130 ]]; then
+            exit "${status}"
+          fi
+          grep -E "Running the server|Starting minecraft server version 1\.21\.11|Done \(" \
+            paper-enemy-worldboss.log
+          grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS' paper-enemy-worldboss.log
+          ! grep -F 'ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL' paper-enemy-worldboss.log
+          ! grep -E "Could not load.*IceSMP|Error occurred while enabling IceSMP|Exception.*IceSMP" \
+            paper-enemy-worldboss.log
+          test -s build/reports/enemy-worldboss-rework/authored-pve-runtime-report.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path(
+              "build/reports/enemy-worldboss-rework/authored-pve-runtime-report.json"
+          ).read_text())
+          assert report["runtime"] == "Paper 1.21.11"
+          assert set(report["templates"]) >= {
+              "ring_warden", "invasion_chaos_champion", "prologue_finale_boss",
+              "sunscarred_wayfarer", "gallows_runner", "barrow_bulwark",
+              "moss_trapper", "mire_hexer"
+          }
+          assert report["common_runtime"] == "MobAbilityRuntime"
+          assert report["signature_executions"] > 0
+          assert report["threshold_transitions"] == 1
+          assert report["daylight_undead"]["open_sky_noon"] is True
+          assert report["daylight_undead"]["no_helmet"] is True
+          assert report["daylight_undead"]["no_fire"] is True
+          assert report["night_only_authored_protection"] is False
+          assert report["pause_resume_exercised"] is True
+          PY
+          cp paper-enemy-worldboss.log \
+            build/reports/enemy-worldboss-rework/runtime-proof.log
+
+      - name: Recheck exact-head closure
+        shell: bash
+        env:
+          PARENT_SHA: 4a24ee49949b99d410455a990e59a59025d2242b
+        run: |
+          set -euo pipefail
+          child_sha=$(git rev-parse HEAD)
+          merge_base=$(git merge-base HEAD "${PARENT_SHA}")
+          read behind ahead < <(git rev-list --left-right --count "${PARENT_SHA}...HEAD")
+          test "${merge_base}" = "${PARENT_SHA}"
+          test "${behind}" = "0"
+          printf '{"child":"%s","parent":"%s","merge_base":"%s","behind":0,"ahead":%s}\n' \
+            "${child_sha}" "${PARENT_SHA}" "${merge_base}" "${ahead}" \
+            > build/reports/enemy-worldboss-rework/final-topology.json
+          python3 scripts/audit_enemy_worldboss_rework.py --check
+          python3 scripts/check_consistency.py
+          git diff --check
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Assemble immutable evidence bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle=build/reports/enemy-worldboss-rework/bundle
+          mkdir -p "${bundle}"
+          cp docs/development/enemy-worldboss-rework-2.json "${bundle}/"
+          cp docs/development/combat-balance-authority.json "${bundle}/"
+          cp build/reports/enemy-worldboss-rework/*.json "${bundle}/"
+          cp build/reports/enemy-worldboss-rework/runtime-proof.log "${bundle}/"
+          cp gradle-enemy-worldboss.log "${bundle}/"
+          find "${bundle}" -type f -print0 | sort -z | xargs -0 sha256sum \
+            > "${bundle}/SHA256SUMS"
+
+      - name: Upload exact-head evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: enemy-worldboss-rework-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/reports/enemy-worldboss-rework/bundle
+          if-no-files-found: error
+          retention-days: 30

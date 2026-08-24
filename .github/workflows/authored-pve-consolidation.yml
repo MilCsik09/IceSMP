@@ -129,7 +129,7 @@ jobs:
           }
           assert all(level > 0 for level in report["control_levels"])
           assert report["passive_control_initial_target"] is False
-          assert report["boss_slam_executions"] > 0
+          assert report["signature_executions"] > 0
           assert report["threshold_transitions"] == 1
           assert report["world_boss_stat_provenance"].startswith("runtime_probe:participants;")
           assert report["duplicate_participant_modifier_rejected"] is True

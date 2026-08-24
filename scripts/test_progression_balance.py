@@ -70,9 +70,10 @@ for resource in mining["resources"].values():
 require(max(by_block.values()) <= 0.02, "one mining block has an exploitably high rare yield")
 require(1 <= mining["daily-cap"] <= 12, "rare mining daily budget is not conservative")
 
-require(15 <= len(mobs["mob-templates"]) <= 64,
-        "MobTemplate roster must stay in the bounded natural + authored PvE gate")
-require(len(mobs["mob-abilities"]) >= 4, "reusable ability registry is too small")
+require(40 <= len(mobs["mob-templates"]) <= 128,
+        "MobTemplate roster must stay in the bounded enemy-rework PvE gate")
+require(16 <= len(mobs["mob-abilities"]) <= 128,
+        "reusable ability registry is outside its bounded gate")
 require(len({row["archetype"] for row in mobs["mob-templates"].values()}) >= 6,
         "mob roster lacks archetype variety")
 

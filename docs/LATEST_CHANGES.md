@@ -1,5 +1,22 @@
 # Mi változott a július 12-i szerververzió óta?
 
+- Az Enemy & World Boss Rework 2.0 a #140 combat-hardening branchre stackelve 89 stabil
+  `MobTemplate` identityre és 61 bounded technique-re dolgozza át az authored PvE rostert.
+  A natural világban 38 elérhető identity közül választ az EntityType mellett biome, dimenzió,
+  mélység, napszak, időjárás, meglévő territory és eseménycontext alapján; Zombie és Skeleton
+  carrierből hat-hat, Spiderből három eltérő viselkedésű változat létezik. A variant nem rank:
+  Veteran/Elite/Champion fokozaton a saját fantasyhoz illő utility és tactical problem nyílik meg.
+- A tíz világboss stable ID-ja és reward authorityja megmaradt, de új neveket, külön technique
+  kiteket, threshold-eszkalációt, positioning problémát, weakness/resistance párt és vanilla
+  kliensen is érthető particle/hang telegráfot kaptak. Az inváziók nyolc authored vegyes
+  kompozíciót, a Cultist, Corruption, Wild Hunt, Escort, Dungeon és Prologue producerek pedig
+  canonical template-hivatkozásokat használnak a nyers EntityType-spawn helyett.
+- A nappali felszíni authored undeadek template-specifikus, sisak nélküli napvédelmét az authored,
+  territory és event források OR-kompozíciója kezeli. A feature nem vezet be world progressiont,
+  local dangert, kill pressure-t, új combat/AI engine-t, geardizájnt vagy resource-pack scope-ot.
+  A forrás- és Paper CI-proof mellett a 30–60 perces több-biomos, multiplayer Folia gameplay pass
+  továbbra is `HUMAN_GAMEPLAY_STAGING_REQUIRED`.
+
 - A combat staging hardening 160 páncéldarabját kézzel tervezett katalógus váltja fel:
   minden darab fix armor/toughness értéket, family-azonos secondary rollt és két saját
   magyar lore-sort kapott. A PLATE már korai szinten Diamond fölötti armorral indul, az

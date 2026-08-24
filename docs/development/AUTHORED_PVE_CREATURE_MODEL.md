@@ -40,20 +40,23 @@ Legacy reusable ability kinds remain compatible. Migrated content adds only two 
 - `APPLY_EFFECT`: bounded self or nearby-player potion effect;
 - `SUMMON_TEMPLATE`: bounded canonical template add with owner, lifespan and cleanup.
 
-`HEALTH_THRESHOLD` is the only new trigger. Each ability ID is consumed once per entity runtime,
-queued deterministically when multiple thresholds are crossed by one hit, and executed through the
-normal telegraph, cooldown, recovery, interrupt and cast-epoch path. `boss_enrage` and
-`prologue_call_adds` are the concrete uses. There is no variable language, phase graph or encounter
-DSL. Timer abilities rotate deterministically so a multi-technique boss cannot starve later entries.
+`HEALTH_THRESHOLD` is the only additional boss trigger. Each ability ID is consumed once per entity
+runtime, queued deterministically when multiple thresholds are crossed by one hit, and executed
+through the normal telegraph, cooldown, recovery, interrupt and cast-epoch path. Boss-specific
+threshold techniques and `prologue_call_adds` are the concrete uses; the old global `boss_enrage`
+and `boss_slam` identities were retired. There is no variable language, phase graph or encounter
+DSL. Timer techniques use the common contextual selector, so distance, health, cooldown and repeat
+penalty influence the next fair, bounded choice instead of a fixed rotation.
 
 ## World boss authority
 
-The ten current world bosses have stable templates: Ring Warden, Magma Behemoth, Frost King, Bone
-King, Deep Horror, Venom Broodmother, Storm Herald, Plague Titan, Golem Sentinel and Piglin
-Warlord. The Java roster contains only template selection identity and the existing event reward
-multiplier; authored display/bestiary identity comes from the template. Template parameters,
-sequences, cooldowns, effects, summons,
-resistances, weaknesses, rank and bestiary ID distinguish the bosses.
+The ten current world bosses keep migration-safe template IDs while their shipped identities are
+Körzáró, Salakkohó Szíve, Kallan Elárvult Trónja, Koronátlan Csontúr, A Visszanéző Csend,
+Selyemanya Vezhra, Orkánénekes Rael, Rothadás Hordozója, A Jelszó Nélküli and Varkhaz, a
+Kaputörő. The Java roster contains only template selection identity and the existing event reward
+multiplier; authored display/bestiary identity comes from the template. Each boss has a distinct
+positioning problem, exact kit, threshold escalation, presentation language, resistance/weakness
+pair and counterplay rather than sharing a generic slam/enrage package.
 
 Major counterplay remains readable: slam telegraphs invite disengage/dodge; zones require moving
 out; projectile bursts reward lateral movement; summon casts can be interrupted and make adds a
@@ -61,9 +64,9 @@ priority; enrage is a visible threshold escalation.
 
 ## Invasion and Prologue
 
-Generic invasion waves use an explicit VETERAN event profile. Every horde champion resolves one
-of eight CHAMPION templates and uses common slam/cleave/zone/buff abilities. Horde choice, count,
-safe placement, announcements and timeout remain invasion orchestration.
+Invasion waves resolve one of eight authored frontline/ranged/control compositions. Every horde
+champion resolves one of eight CHAMPION templates whose kit supports that composition. Horde
+choice, count, safe placement, announcements and timeout remain invasion orchestration.
 
 Prologue has canonical templates for all five breach species, the ELITE Hasadékbajnok, the finale
 boss and three add identities. Pause increments the runtime cast epoch, blocks new casts, cancels
