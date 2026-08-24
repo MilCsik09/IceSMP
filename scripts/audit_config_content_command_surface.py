@@ -513,7 +513,9 @@ def build_report(baseline: str) -> dict[str, Any]:
             "pr_140_start_head": "4a24ee49949b99d410455a990e59a59025d2242b",
             "pr_141_parent_head": baseline,
             "feature_head": "REPORT_COMMIT_SELF",
-            "feature_branch": git("branch", "--show-current"),
+            # Actions checks out the exact PR head in detached mode. This is
+            # branch-topology evidence, not a description of checkout state.
+            "feature_branch": "feature/config-content-command-surface-2",
             "merge_base_with_pr_141": merge_base,
             "stack_parent_exact": merge_base == baseline,
         },
