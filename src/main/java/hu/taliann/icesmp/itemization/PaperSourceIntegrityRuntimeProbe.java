@@ -155,8 +155,12 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 hu.taliann.icesmp.core.Permissions.INSPECT,
                 hu.taliann.icesmp.core.Permissions.CLIENT)) {
             denied.setPermission(permission, false);
-            check(!allowed.hasPermission(permission), "console permission override was not applied: " + permission);
         }
+        check(!allowed.hasPermission(hu.taliann.icesmp.core.Permissions.RELOAD)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.CONFIG)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.INSPECT)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.CLIENT),
+                "console permission overrides were not applied");
         try {
             check(Bukkit.dispatchCommand(allowed, "icesmp reload status"),
                     "permission-denied /icesmp command did not route through Paper");
