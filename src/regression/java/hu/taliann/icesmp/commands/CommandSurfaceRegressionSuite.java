@@ -55,7 +55,7 @@ public final class CommandSurfaceRegressionSuite {
 
         final String contract = read("Subcommand.java");
         require(contract, "default String permission()", "subcommand permission contract");
-        require(contract, "sender.hasPermission(node)", "subcommand visibility permission");
+        require(contract, "sender.hasPermission(permission())", "subcommand visibility permission");
     }
 
     private static void verifiesAdminSubcommandsDeclarePermissions() throws Exception {
