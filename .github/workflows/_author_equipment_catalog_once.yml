@@ -1,0 +1,154 @@
+name: One-shot authored equipment catalog migration
+
+on:
+  push:
+    branches: [feature/equipment-catalog-expansion]
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor == 'MilCsik09'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/equipment-catalog-expansion
+          fetch-depth: 0
+
+      - name: Materialize authored equipment catalog
+        shell: python
+        run: |
+          from pathlib import Path
+          import yaml
+
+          p = Path('src/main/resources/config/equipment-catalog-expansion.yml')
+          data = yaml.safe_load(p.read_text(encoding='utf-8'))
+          templates = data.get('item-templates', {})
+          if len(templates) != 160:
+              raise SystemExit(f'expected 160 templates, found {len(templates)}')
+
+          VANILLA = {
+              'leather': {'head': 1.0, 'chest': 3.0, 'legs': 2.0, 'feet': 1.0},
+              'golden': {'head': 2.0, 'chest': 5.0, 'legs': 3.0, 'feet': 1.0},
+              'chainmail': {'head': 2.0, 'chest': 5.0, 'legs': 4.0, 'feet': 1.0},
+              'copper': {'head': 2.0, 'chest': 4.0, 'legs': 3.0, 'feet': 1.0},
+              'iron': {'head': 2.0, 'chest': 6.0, 'legs': 5.0, 'feet': 2.0},
+              'diamond': {'head': 3.0, 'chest': 8.0, 'legs': 6.0, 'feet': 3.0},
+              'netherite': {'head': 3.0, 'chest': 8.0, 'legs': 6.0, 'feet': 3.0},
+          }
+          # Canonical IceSMP family baselines. Crafted gear is intentionally above
+          # its vanilla survival analogue; progression bands add further budget.
+          FAMILY = {
+              'cloth': {'base': {'head': 1.5, 'chest': 4.0, 'legs': 3.0, 'feet': 1.5}, 'toughness': 0.5},
+              'leather': {'base': {'head': 2.0, 'chest': 5.5, 'legs': 4.0, 'feet': 2.0}, 'toughness': 1.0},
+              'mail': {'base': {'head': 2.5, 'chest': 6.5, 'legs': 5.5, 'feet': 2.5}, 'toughness': 2.0},
+              'plate': {'base': {'head': 3.5, 'chest': 9.0, 'legs': 7.0, 'feet': 3.5}, 'toughness': 2.5},
+          }
+          BAND_MULT = {'early': 1.00, 'mid': 1.08, 'high': 1.16, 'endgame': 1.25}
+          SLOT = {'head':'head','chest':'chest','legs':'legs','feet':'feet'}
+
+          ARCHETYPE_LORE = {
+              'Arcane': 'A szövetbe zárt erő a varázslat pontosságát és tisztaságát szolgálja.',
+              'Ritual': 'A rituális öltözet a koncentrációt őrzi, amikor a harc hosszúra nyúlik.',
+              'Veil': 'A könnyű rétegek a csendes mozgást és a megfelelő pillanat felismerését segítik.',
+              'Sanctified': 'A megszentelt anyag védelmet ad anélkül, hogy elnyomná viselője saját erejét.',
+              'Predator': 'A vadász felszerelése a gyors döntést, a pontos csapást és az üldözés ritmusát követi.',
+              'Shadow': 'Az árnyékban készült vért akkor mutatja meg valódi értékét, amikor a viselője észrevétlen marad.',
+              'Wildheart': 'A természethez hangolt bőr együtt mozog viselőjével, és hosszú úton sem válik teherré.',
+              'Demonhide': 'A démonbőr keménysége nyers ellenállást ad, amelyet fegyelmezett erő irányít.',
+              'Hunter': 'A láncszemek könnyedsége a célra tartott figyelmet és a szabad mozgást szolgálja.',
+              'Warden': 'Az egymásba fűzött szemek az őrök állhatatosságát és a frontvonal megtartását jelképezik.',
+              'Tempest': 'A vihar ereje a gyorsaság és a mágikus lendület között tart egyensúlyt.',
+              'Runic': 'A rúnák minden darabba egy apró parancsot írnak, hogy a páncél együtt dolgozzon viselőjével.',
+              'Bulwark': 'A vastag lemezek egyetlen célt szolgálnak: megtartani a vonalat, amikor minden más széthullik.',
+              'Crusader': 'A lemezbe vert jelek az eskü és a kötelesség útját követik.',
+              'Dread': 'A sötét kovácsolás súlya már önmagában figyelmeztetés: ez a páncél nem hátrál meg könnyen.',
+              'Runeforged': 'A kovácsolt rúnák fegyelmezett erővé formálják a lemezt, amely a viselő szándékát követi.',
+          }
+          FAMILY_LORE = {
+              'cloth': 'Könnyű szövetből készült felszerelés, amely a mágikus és támogató utakhoz igazodik.',
+              'leather': 'Rugalmas bőrvért, amely teret hagy a mozgásnak és az ösztönös harci reakcióknak.',
+              'mail': 'Egymásba kapcsolt szemekből épített vért, amely egyensúlyt tart mozgás és védelem között.',
+              'plate': 'Merev lemezekből kovácsolt vért, amelyet a frontvonal megtartására terveztek.',
+          }
+          ACQ_LORE = {
+              'crafted': 'Műhelyben készül; elkészítése mesterségbeli tudást és válogatott alapanyagokat kíván.',
+              'world': 'A világ veszélyes vidékein található, története a lelőhelyéhez kötődik.',
+              'boss': 'Egy nagy próba emlékét őrzi; megszerzése komoly összecsapás teljesítéséhez kötődik.',
+              'prestige': 'Ritka elismeréshez kötött darab, amelyet nem pusztán a harci ereje miatt viselnek.',
+          }
+          SLOT_LORE = {
+              'head': 'A fej védelmét szolgáló darab a viselő első vonalát őrzi.',
+              'chest': 'A készlet központi darabja a törzs védelmét és a felszerelés súlypontját adja.',
+              'legs': 'A lábvért a mozgás közben is megtartja a felszerelés védelmi ritmusát.',
+              'feet': 'A lábbeli a biztos lépést és a felszerelés egészének mozgását tartja egyben.',
+          }
+
+          def archetype(item):
+              return str((item.get('encounter-metadata') or {}).get('catalog-archetype', ''))
+          def family(item):
+              return str(item.get('armor-family', '')).lower()
+          def slot(item):
+              return str(item.get('slot', '')).lower()
+          def band(item):
+              return str((item.get('encounter-metadata') or {}).get('progression-band', 'early')).lower()
+          def acq(item):
+              return str((item.get('encounter-metadata') or {}).get('catalog-acquisition', 'world')).lower()
+
+          for item_id, item in templates.items():
+              fam, sl, bd = family(item), slot(item), band(item)
+              if fam not in FAMILY or sl not in SLOT:
+                  raise SystemExit(f'bad armor identity: {item_id}')
+              mult = BAND_MULT[bd]
+              item['base-armor'] = round(FAMILY[fam]['base'][SLOT[sl]] * mult, 2)
+              fixed = dict(item.get('fixed-stats') or {})
+              fixed['armor_toughness'] = round(FAMILY[fam]['toughness'] * mult, 2)
+              item['fixed-stats'] = fixed
+              line = str((item.get('encounter-metadata') or {}).get('catalog-line', item_id))
+              piece = {'head':'Sisak','chest':'Mellvért','legs':'Lábvért','feet':'Csizma'}[sl]
+              item['lore'] = [
+                  f'{line.replace("_", " ").title()} — {piece}.',
+                  ARCHETYPE_LORE[archetype(item)],
+                  FAMILY_LORE[fam],
+                  SLOT_LORE[sl],
+                  ACQ_LORE[acq(item)],
+              ]
+
+          header = '# AUTHORED canonical equipment catalog.\n# This file is production source data; do not regenerate it from a catalog generator.\n'
+          p.write_text(header + yaml.safe_dump(data, allow_unicode=True, sort_keys=False, width=120), encoding='utf-8')
+
+      - name: Remove generator production path
+        shell: bash
+        run: |
+          rm -f scripts/generate_long_term_equipment_catalog.py
+          rm -f .github/workflows/_catalog_lore_hardening_once.yml
+          git grep -n "generate_long_term_equipment_catalog" -- . ':!build' ':!.git' || true
+          git diff --check
+
+      - name: Validate authored catalog
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          p=Path('src/main/resources/config/equipment-catalog-expansion.yml')
+          d=yaml.safe_load(p.read_text(encoding='utf-8'))
+          t=d.get('item-templates',{})
+          assert len(t)==160, len(t)
+          for k,v in t.items():
+              assert v.get('lore') and len(v['lore']) >= 4, k
+              assert v.get('base-armor') is not None, k
+              assert 'armor_toughness' in (v.get('fixed-stats') or {}), k
+          print('AUTHORED_CATALOG_OK', len(t))
+          PY
+
+      - name: Commit authored catalog
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/resources/config/equipment-catalog-expansion.yml scripts/generate_long_term_equipment_catalog.py .github/workflows/_catalog_lore_hardening_once.yml
+          git commit -m 'refactor(equipment): make catalog authored canonical data'
+          git push origin HEAD:feature/equipment-catalog-expansion
