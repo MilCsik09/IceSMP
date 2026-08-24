@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /** Canonical authored MobTemplate catalog with vanilla-wilderness fallback. */
 public final class MobTemplateRegistry {
@@ -70,20 +71,28 @@ public final class MobTemplateRegistry {
             }
             final ArrayList<EliteAffix> affixes = new ArrayList<>();
             for (final String raw : section.getStringList("affix-pool")) affixes.add(EliteAffix.parse(raw));
+            final MobArchetype archetype = MobArchetype.parse(section.getString("archetype", ""));
+            final Map<MobRank, List<String>> rankAbilities = rankAbilities(section, id);
+            rankAbilities.values().forEach(ids -> ids.forEach(abilities::require));
+            final Set<String> sourceTags = normalizedSet(section.getStringList("source-tags"));
             final MobTemplate template = new MobTemplate(id,
                     section.getInt("schema-version", 0), section.getString("display-name", ""),
                     entityType.name(), section.getString("model", ""),
                     section.getInt("level.minimum", 0), section.getInt("level.maximum", 0),
                     MobRank.parse(section.getString("rank", "")),
-                    MobArchetype.parse(section.getString("archetype", "")),
+                    archetype,
                     new MobTemplate.StatProfile(stats.getDouble("health-multiplier", 1.0D),
                             stats.getDouble("damage-multiplier", 1.0D),
                             stats.getDouble("movement-multiplier", 1.0D),
                             stats.getDouble("cc-resistance", 0.0D)),
                     abilityIds, normalizedSet(section.getStringList("resistances")),
                     normalizedSet(section.getStringList("weaknesses")), lootProfile,
-                    normalizedSet(section.getStringList("source-tags")), spawnPolicy,
-                    section.getString("bestiary-id", ""), affixes);
+                    sourceTags, spawnPolicy,
+                    section.getString("bestiary-id", ""), affixes,
+                    behavior(section.getConfigurationSection("behavior"), archetype),
+                    naturalContext(section.getConfigurationSection("natural-context"), sourceTags),
+                    rankAbilities, section.getString("bestiary-summary", ""),
+                    section.getString("counterplay-hint", ""));
             if (!bestiaryIds.add(template.bestiaryId())) {
                 throw new IllegalStateException("duplicate MobTemplate bestiary id: " + template.bestiaryId());
             }
@@ -118,6 +127,18 @@ public final class MobTemplateRegistry {
     public Optional<MobTemplate> naturalTemplate(final EntityType type,
                                                  final NamespacedKey biomeKey,
                                                  final Set<String> rawContextTags) {
+        return naturalTemplate(type, biomeKey, rawContextTags, new UUID(0L, 0L), 1);
+    }
+
+    /**
+     * Eligibility -> contextual affinity -> stable weighted selection. The entity UUID keeps a
+     * natural identity stable across target changes and reloads without persistent world state.
+     */
+    public Optional<MobTemplate> naturalTemplate(final EntityType type,
+                                                 final NamespacedKey biomeKey,
+                                                 final Set<String> rawContextTags,
+                                                 final UUID entityId,
+                                                 final int localLevel) {
         final List<MobTemplate> candidates = byEntityType.getOrDefault(type, List.of()).stream()
                 .filter(template -> template.spawnPolicy().equals("natural")
                         || template.spawnPolicy().equals("natural_or_authored"))
@@ -125,20 +146,79 @@ public final class MobTemplateRegistry {
         if (candidates.isEmpty()) return Optional.empty();
         final String biomeTag = biomeKey == null ? "" : "biome:" + biomeKey.getKey();
         final LinkedHashSet<String> contextTags = new LinkedHashSet<>();
-        contextTags.add(biomeTag);
+        if (!biomeTag.isBlank()) contextTags.add(normalize(biomeTag));
         if (rawContextTags != null) rawContextTags.forEach(tag -> contextTags.add(normalize(tag)));
-        return candidates.stream()
-                .filter(template -> contextualTags(template).stream().allMatch(contextTags::contains))
-                .max(java.util.Comparator.comparingInt(template -> contextualTags(template).size()));
+        final List<MobTemplate> eligible = candidates.stream()
+                .filter(template -> template.naturalContext().eligible(contextTags))
+                .filter(template -> template.levelSuitable(localLevel))
+                .sorted(java.util.Comparator.comparing(MobTemplate::mobId))
+                .toList();
+        if (eligible.isEmpty()) return Optional.empty();
+        final List<ContextualWeightedSelector.Candidate<MobTemplate>> weighted = eligible.stream()
+                .map(template -> new ContextualWeightedSelector.Candidate<>(template.mobId(), template,
+                        template.naturalContext().effectiveWeight(contextTags)))
+                .toList();
+        return Optional.of(ContextualWeightedSelector.select(weighted, entityId,
+                type.name().hashCode() ^ contextTags.hashCode()));
     }
 
     public Map<String, MobTemplate> all() { return templates; }
 
-    private static Set<String> contextualTags(final MobTemplate template) {
-        return template.sourceTags().stream().filter(tag -> tag.startsWith("biome:")
-                || tag.startsWith("dimension:") || tag.startsWith("depth:")
-                || tag.startsWith("time:") || tag.startsWith("weather:"))
-                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    private Map<MobRank, List<String>> rankAbilities(final ConfigurationSection section,
+                                                      final String templateId) {
+        final ConfigurationSection root = section.getConfigurationSection("rank-abilities");
+        if (root == null) return Map.of();
+        final java.util.EnumMap<MobRank, List<String>> result = new java.util.EnumMap<>(MobRank.class);
+        for (final String rawRank : root.getKeys(false)) {
+            final MobRank rank;
+            try {
+                rank = MobRank.parse(rawRank);
+            } catch (final IllegalArgumentException invalid) {
+                throw new IllegalStateException("invalid template rank ability: "
+                        + templateId + '/' + rawRank, invalid);
+            }
+            result.put(rank, root.getStringList(rawRank).stream().map(MobTemplateRegistry::normalize).toList());
+        }
+        return Map.copyOf(result);
+    }
+
+    private static MobBehaviorProfile behavior(final ConfigurationSection section,
+                                               final MobArchetype archetype) {
+        final MobBehaviorProfile fallback = MobBehaviorProfile.defaults(archetype);
+        if (section == null) return fallback;
+        return new MobBehaviorProfile(
+                section.getDouble("preferred-range", fallback.preferredRange()),
+                section.getDouble("minimum-comfort-range", fallback.minimumComfortRange()),
+                section.getDouble("maximum-pursuit-range", fallback.maximumPursuitRange()),
+                section.getDouble("retreat-tendency", fallback.retreatTendency()),
+                section.getDouble("reposition-tendency", fallback.repositionTendency()),
+                section.getDouble("strafe-tendency", fallback.strafeTendency()),
+                section.getDouble("aggression-cadence", fallback.aggressionCadence()),
+                section.getDouble("chase-pressure", fallback.chasePressure()));
+    }
+
+    private static MobNaturalContext naturalContext(final ConfigurationSection section,
+                                                    final Set<String> sourceTags) {
+        if (section == null) {
+            final Set<String> contextual = sourceTags.stream().filter(tag ->
+                    tag.startsWith("biome:") || tag.startsWith("dimension:")
+                            || tag.startsWith("depth:") || tag.startsWith("time:")
+                            || tag.startsWith("weather:") || tag.startsWith("territory:"))
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+            return new MobNaturalContext(1.0D, contextual, Set.of(), Map.of(), 0, false);
+        }
+        final LinkedHashMap<String, Double> affinities = new LinkedHashMap<>();
+        final ConfigurationSection affinitySection = section.getConfigurationSection("affinities");
+        if (affinitySection != null) {
+            for (final String raw : affinitySection.getKeys(false)) {
+                affinities.put(raw, affinitySection.getDouble(raw));
+            }
+        }
+        return new MobNaturalContext(section.getDouble("weight", 1.0D),
+                normalizedSet(section.getStringList("required")),
+                normalizedSet(section.getStringList("excluded")), affinities,
+                section.getInt("level-offset", 0),
+                section.getBoolean("no-daylight-burn", false));
     }
 
     /**

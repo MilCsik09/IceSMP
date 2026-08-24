@@ -1463,6 +1463,30 @@ a vanilla kliens + kötelező resource pack teljes értékű marad.
 
 </details>
 
+### Authored enemy roster és world boss 2.0
+
+<!-- icesmp-doc-id: feature.combat.enemy-roster-2 -->
+
+> **Rollout-kapu alatt** · Source/CI authority kész, emberi gameplay staging szükséges
+
+A vanilla mobmodell már nem egyenlő egyetlen ellenféllel. A jelenlegi build 89 stable authored template-et, 61 bounded technique-et és 38 natural template-et tartalmaz. Zombie és Skeleton carrierből legalább három, Spiderből több eltérő spacing/kit identity kerülhet ugyanabba a világba. A natural választás biome, dimension, mélység, időjárás, napszak, meglévő Territory és Blood Moon contextet használ.
+
+- **Így találkozol vele:** wilderness, barlang, Nether/End, invasion, corruption, Cultist, Wild Hunt, Escort, dungeon, Prologue és world boss esemény.
+- **Mitől más:** bruiser üldöz, skirmisher cikázik, ranged távolságot tart, defender pontot fog, controller teret zár, summoner add-prioritást teremt.
+- **Olvashatóság:** a major technique külön hangot, előjelet és recovery ablakot kap; vanilla kliensen is érthető.
+- **World boss:** mind a tíz boss egyedi kit + HEALTH_THRESHOLD fázis + explicit counterplay; nem azonos slam más particle-lel.
+- **Határ:** nincs új world progression, local danger, kill pressure, custom modell, gear vagy economy rendszer.
+
+<details>
+<summary>Admin- és technikai jegyzet</summary>
+
+- Config: `config/mob-templates.yml`, `config/world.yml` event template-listák.
+- Authority: `MobTemplateRegistry`, `MobAbilityRuntime`, `AuthoredCreatureSpawnService`.
+- Evidence: `docs/development/enemy-worldboss-rework-2.json`.
+- Gate: `./gradlew enemyWorldBossReworkAudit`; Paper 1.21.11 exact-head és 30–60 perces több-biome/Folia multiplayer staging még kötelező.
+
+</details>
+
 ## Tervezett, de nem aktív tartalom
 
 A lore több ajtót mutat, mint amennyi ma kinyitható. Ez a rész választja el a kánont és a kommunikációs ötleteket a ténylegesen elérhető játékrendszerektől.

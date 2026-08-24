@@ -93,17 +93,20 @@ public final class MobRuntimeSourceRegressionSuite {
                         && delivery.contains("ELIGIBILITY_TYPE")
                         && delivery.contains("operations.rollback("),
                 "restart does not abort exact-before contribution candidates");
-        check(invasion.contains("MobRank.CHAMPION")
-                        && invasion.contains("Request.generic(")&&invasion.contains("Request.template(")
-                        && cultists.contains("MobRank.VETERAN")&&cultists.contains("Request.generic(")
-                        && wildHunt.contains("MobRank.ELITE")&&wildHunt.contains("Request.generic(")
+        check(invasion.contains("Request.template(")
+                        && cultists.contains("Request.template(")
+                        && wildHunt.contains("Request.template(")
+                        && !invasion.contains("Request.generic(")
+                        && !cultists.contains("Request.generic(")
+                        && !wildHunt.contains("Request.generic(")
+                        && authoredSpawns.contains("scaling.forceTemplate")
                         && authoredSpawns.contains("scaling.forceRankedLevel")
                         && !invasion.contains("forceRankedLevel")&&!cultists.contains("forceRankedLevel")
                         && !wildHunt.contains("forceRankedLevel"),
                 "existing invasion, cultist and wild-hunt events bypass the common canonical rank authority");
 
-        final int templateCount = occurrences(content, "schema-version: 1");
-        check(templateCount >= 40 && templateCount <= 64,
+        final int templateCount = occurrences(content, "schema-version: 2");
+        check(templateCount >= 55 && templateCount <= 100,
                 "canonical creature and authored PvE content escaped the reviewed bounded template scope");
         check(occurrences(content, "kind:") >= 6
                         && content.contains("rank: VETERAN")

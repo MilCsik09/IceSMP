@@ -12,10 +12,13 @@ import hu.taliann.icesmp.pve.AuthoredCreatureSpawnService;
 import hu.taliann.icesmp.pve.MobAbilityRuntime;
 import hu.taliann.icesmp.pve.CombatTelemetry;
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.managers.EventSpawnGuard;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.EntityType;
@@ -122,7 +125,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         }, 1L);
     }
 
-    /** Spawns three real authored roles and waits for a common timer technique to execute. */
+    /** Spawns authored roles/carrier variants and waits for common-runtime techniques to execute. */
     private static void startAuthoredPveRuntimeProof(final JavaPlugin plugin,
                                                      final MobTemplateRegistry templates,
                                                      final MobAbilityRegistry abilities,
@@ -137,7 +140,11 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final org.bukkit.Location at = world.getSpawnLocation().clone().add(0.5D, 2.0D, 0.5D);
         final int probeChunkX = at.getBlockX() >> 4;
         final int probeChunkZ = at.getBlockZ() >> 4;
-        plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
+        Bukkit.getGlobalRegionScheduler().run(plugin, global -> {
+            world.setTime(6000L);
+            world.setStorm(false);
+            world.setThundering(false);
+            plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
             world.setChunkForceLoaded(probeChunkX, probeChunkZ, true);
             plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_REGION_START");
             final java.util.ArrayList<Mob> spawned = new java.util.ArrayList<>();
@@ -166,6 +173,61 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 check(worldBoss != null && champion != null && prologue != null,
                         "authored PvE runtime spawn returned null");
                 spawned.add(worldBoss); spawned.add(champion); spawned.add(prologue);
+                final Location daylightSpot = at.clone().add(-3.0D, 0.0D, 0.0D);
+                daylightSpot.setY(world.getHighestBlockYAt(daylightSpot.getBlockX(),
+                        daylightSpot.getBlockZ()) + 2.0D);
+                final Mob daytimeUndead = spawns.spawn(daylightSpot,
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "day_undead",
+                                "sunscarred_wayfarer", 18,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                final Mob nightUndead = spawns.spawn(at.clone().add(-5.0D, 0.0D, 0.0D),
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "night_undead",
+                                "gallows_runner", 18,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                final Mob skeletonVariant = spawns.spawn(at.clone().add(-7.0D, 0.0D, 0.0D),
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "defender",
+                                "barrow_bulwark", 22,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                final Mob spiderVariant = spawns.spawn(at.clone().add(-9.0D, 0.0D, 0.0D),
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "controller",
+                                "moss_trapper", 20,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                final Mob casterVariant = spawns.spawn(at.clone().add(-11.0D, 0.0D, 0.0D),
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "caster",
+                                "mire_hexer", 24,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                check(daytimeUndead != null && nightUndead != null && skeletonVariant != null
+                                && spiderVariant != null && casterVariant != null,
+                        "representative carrier variant spawn returned null");
+                spawned.add(daytimeUndead); spawned.add(nightUndead); spawned.add(skeletonVariant);
+                spawned.add(spiderVariant); spawned.add(casterVariant);
+                daytimeUndead.getPersistentDataContainer().remove(new NamespacedKey(
+                        "icesmp", EventSpawnGuard.EVENT_NO_BURN_KEY));
+                nightUndead.getPersistentDataContainer().remove(new NamespacedKey(
+                        "icesmp", EventSpawnGuard.EVENT_NO_BURN_KEY));
+                scaling.reconcileTerritoryProtection(daytimeUndead);
+                scaling.reconcileTerritoryProtection(nightUndead);
+                check(daytimeUndead.getEquipment() != null,
+                        "daytime undead lacks equipment carrier");
+                daytimeUndead.getEquipment().setHelmet(null);
+                check(scaling.hasAuthoredDaylightProtection(daytimeUndead),
+                        "day-capable authored undead lacks authored daylight source");
+                check(!scaling.hasAuthoredDaylightProtection(nightUndead),
+                        "night-only undead received permanent authored daylight protection");
+                check(world.getHighestBlockYAt(daylightSpot.getBlockX(), daylightSpot.getBlockZ())
+                                < daytimeUndead.getLocation().getBlockY(),
+                        "daylight undead probe location is not open sky");
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_VARIANTS");
                 controls.add((Mob) world.spawn(at.clone().add(3.0D, 0.0D, 0.0D),
                         EntityType.COW.getEntityClass().asSubclass(Mob.class)));
                 controls.add((Mob) world.spawn(at.clone().add(5.0D, 0.0D, 0.0D),
@@ -208,9 +270,9 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
                         worldBoss.damage(maximumHealth.getValue() * 0.20D);
                         worldBoss.damage(1.0D);
-                        check(runtime.triggerTechnique(worldBoss, "boss_slam",
+                        check(runtime.triggerTechnique(worldBoss, "ring_lock",
                                         MobAbilityDefinition.Trigger.ON_TIMER),
-                                "typed timer trigger rejected the attached boss_slam technique");
+                                "typed timer trigger rejected the attached ring_lock technique");
                         plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_THRESHOLD_ARMED");
                     } catch (final Throwable failure) {
                         plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -223,10 +285,31 @@ public final class PaperSourceIntegrityRuntimeProbe {
                     try {
                         final Map<String, Long> telemetry = CombatTelemetry.snapshot();
                         plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_TELEMETRY " + telemetry);
-                        check(telemetry.getOrDefault("technique_execute:boss_slam", 0L) > 0L,
+                        check(telemetry.getOrDefault("technique_execute:ring_lock", 0L) > 0L,
                                 "real authored world-boss technique did not execute through MobAbilityRuntime");
-                        check(telemetry.getOrDefault("boss_phase_transition:boss_enrage", 0L) == 1L,
+                        check(telemetry.getOrDefault("boss_phase_transition:summon_frozen_adds", 0L) == 1L,
                                 "health threshold was not one-shot in the common runtime");
+                        plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_DAYLIGHT_STATE "
+                                + "valid=" + daytimeUndead.isValid()
+                                + ",dead=" + daytimeUndead.isDead()
+                                + ",health=" + daytimeUndead.getHealth()
+                                + ",fire=" + daytimeUndead.getFireTicks()
+                                + ",helmet=" + (daytimeUndead.getEquipment() == null ? "none"
+                                : daytimeUndead.getEquipment().getHelmet())
+                                + ",ai=" + daytimeUndead.hasAI()
+                                + ",abilities=" + runtime.activeAbilityIds(daytimeUndead));
+                        check(daytimeUndead.isValid() && !daytimeUndead.isDead(),
+                                "open-sky noon undead did not survive the proof window");
+                        check(daytimeUndead.getFireTicks() <= 0,
+                                "authored daylight protection left the noon undead burning");
+                        check(hasNoHelmet(daytimeUndead),
+                                "authored daylight protection used an equipment workaround");
+                        check(daytimeUndead.hasAI(),
+                                "day-capable authored undead lost vanilla combat AI");
+                        check(!runtime.activeAbilityIds(daytimeUndead).isEmpty(),
+                                "day-capable authored undead lost its canonical technique kit");
+                        check(!scaling.hasAuthoredDaylightProtection(nightUndead),
+                                "night-only variant gained authored daylight protection");
                         check(controls.stream().allMatch(control -> scaling.getLevel(control) > 0),
                                 "Cow/Zombie/Skeleton controls lack canonical stable levels");
                         check(species.profile(EntityType.COW).disposition()
@@ -237,7 +320,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                         == CreatureSpeciesPolicy.Disposition.HOSTILE
                                         && controls.getFirst().getTarget() == null,
                                 "#138 passive/hostile control policy regressed");
-                        writeAuthoredPveRuntimeReport(spawned, controls, telemetry, spawns, scaling);
+                        writeAuthoredPveRuntimeReport(spawned, controls, telemetry, spawns, scaling,
+                                daytimeUndead, nightUndead);
                         plugin.getLogger().info(PASS_MARKER);
                     } catch (final Throwable failure) {
                         plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -262,14 +346,17 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 failure.printStackTrace();
                 Bukkit.shutdown();
             }
-        }, 1L);
+            }, 1L);
+        });
     }
 
     private static void writeAuthoredPveRuntimeReport(final List<Mob> mobs,
                                                       final List<Mob> controls,
                                                       final Map<String, Long> telemetry,
                                                       final AuthoredCreatureSpawnService spawns,
-                                                      final MobScalingManager scaling)
+                                                      final MobScalingManager scaling,
+                                                      final Mob daytimeUndead,
+                                                      final Mob nightUndead)
             throws java.io.IOException {
         final Path output = Path.of(System.getProperty("icesmp.combat-evidence-dir",
                 "../build/reports/combat-foundation")).toAbsolutePath().normalize()
@@ -287,15 +374,29 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 .map(String::valueOf).collect(java.util.stream.Collectors.joining(",")) + "],\n"
                 + "  \"passive_control_initial_target\": false,\n"
                 + "  \"common_runtime\": \"MobAbilityRuntime\",\n"
-                + "  \"boss_slam_executions\": "
-                + telemetry.getOrDefault("technique_execute:boss_slam", 0L) + ",\n"
+                + "  \"daylight_undead\": {\"open_sky_noon\":true,\"no_helmet\":"
+                + hasNoHelmet(daytimeUndead)
+                + ",\"no_fire\":" + (daytimeUndead.getFireTicks() <= 0)
+                + ",\"combat_ready\":" + (daytimeUndead.hasAI()
+                && !scaling.hasAuthoredDaylightProtection(nightUndead)) + "},\n"
+                + "  \"night_only_authored_protection\": "
+                + scaling.hasAuthoredDaylightProtection(nightUndead) + ",\n"
+                + "  \"signature_executions\": "
+                + telemetry.getOrDefault("technique_execute:ring_lock", 0L) + ",\n"
                 + "  \"threshold_transitions\": "
-                + telemetry.getOrDefault("boss_phase_transition:boss_enrage", 0L) + ",\n"
+                + telemetry.getOrDefault("boss_phase_transition:summon_frozen_adds", 0L) + ",\n"
                 + "  \"world_boss_stat_provenance\": \""
                 + String.valueOf(spawns.statProvenance(mobs.getFirst())) + "\",\n"
                 + "  \"duplicate_participant_modifier_rejected\": true,\n"
                 + "  \"pause_resume_exercised\": true,\n"
                 + "  \"status\": \"PAPER_RUNTIME_PROVED\"\n}\n");
+    }
+
+    /** Paper represents an empty equipment slot as either null or an AIR ItemStack. */
+    private static boolean hasNoHelmet(final Mob mob) {
+        if (mob == null || mob.getEquipment() == null) return false;
+        final org.bukkit.inventory.ItemStack helmet = mob.getEquipment().getHelmet();
+        return helmet == null || helmet.getType().isAir();
     }
 
     /**

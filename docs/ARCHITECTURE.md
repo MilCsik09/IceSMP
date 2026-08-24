@@ -1864,3 +1864,45 @@ The execution boundary is owner-thread inventory state: `ProfessionCraftTransact
 
 ### Professions 2.0 family closure
 A végső canonical páncél-összeállítás az Armorer gazdasági szerepe. CLOTH-hoz az Enchanter textil-feldolgozása, LEATHER-höz az Alchemist bőrkezelése kell; MAIL explicit bőr + könnyű fém dependency. Ez crafting expertise, nem class proficiency. A family scrap csak veszteséges reclamation útvonalon kerül vissza köztes anyagba.
+
+## Enemy & World Boss Rework 2.0
+
+### Enemy Design Philosophy
+
+Az authored enemy gameplay-identity, nem megnövelt vanilla statcsomag. Minden fontos template fantasyból levezetett szerepet, spacinget, rövid technique-kitet, counterplayt, weakness/resistance párt és vanilla-kliensen is olvasható hang/particle nyelvet kap. A teljes gépi evidence a `docs/development/enemy-worldboss-rework-2.json`; a generáló/fail gate a `scripts/audit_enemy_worldboss_rework.py`.
+
+### EntityType vs Enemy Identity
+
+Az `EntityType` csak vanilla carrier. A stable identity továbbra is a `MobTemplate`; egy Zombie, Skeleton vagy Spider több külön template-et hordozhat. Spawn után a template ID PDC-ben marad, ezért targetváltás, chunk reload és restart nem sorsol új variánst. A régi 49 ID megmaradt migrációs kulcsként, de mindegyik contentje design review-n és redesignon ment át.
+
+### Archetype Behavior
+
+A meglévő `MobArchetype` vocabulary változatlan. A `MobBehaviorProfile` ennek bounded spacing-projekciója: preferred/minimum range, pursuit cap, retreat/reposition/strafe hajlam, cadence és chase pressure. A `MobAbilityRuntime` 40 tickenként alkalmazza az olcsó pozicionálási döntést a vanilla AI fölött, és ugyanaz a profil súlyozza a contextual technique-választót. Ez nem behavior tree, GOAP vagy második AI engine.
+
+### Rank Complexity
+
+Variant és rank külön authority. A template `rank-abilities` mezője Veteran/Elite complexityt nyit; authored template-re nem kerül rá a globális generic rank-kit. Template nélküli vanilla fallback továbbra is használhatja a species/rank defaultot. Az EliteAffix plusz variáció, a template core kitjét a technique cap miatt nem írhatja felül.
+
+### Natural Variant Selection és Existing Context Inputs
+
+A `MobTemplateRegistry.naturalTemplate` pipeline-ja: eligibility → affinity score → UUID- és kontextus-seeded bounded weighted choice. Input kizárólag a meglévő biome, dimension, Y/depth, day/night, weather/thunder, Territory selector, Blood Moon és spawn reason környezet. `MobNaturalContext` required/excluded tagot, opcionális affinityt, relatív weightet és ±12 level offsetet tárol. Nincs koordináta-roster, world progression, local danger, kill heat vagy ecology memory.
+
+### Daylight Undead
+
+A nappali felszíni natural undead template explicit `no-daylight-burn` forrást kap; night/deep-only undead nem. A `DaylightProtectionPolicy` az authored, territory és event forrást OR-semantikával kompozálja. Az első védelem előtt rögzített carrier baseline csak az utolsó forrás megszűnésekor áll vissza; nincs helmet/equipment workaround.
+
+### Technique Design és Telegraph / FX Language
+
+A registry fizikai és mágikus technique-et ugyanabban a common runtime-ban kezel. A veszélyes cast anticipation/telegraph → execution → impact/recovery ciklust kap. Az authorolt `Presentation` particle- és sound cue-ja castonként legfeljebb 64 particle; hiányakor kind-default lép életbe. A vanilla cue gameplay-authority, az optional Client FX csak enhancement. Pontosan azonos full identity/kit fail gate-et kap.
+
+### World Boss Design
+
+A tíz stable boss ID teljesen új, egyedi kitet kapott. Minden boss kitje tartalmaz HEALTH_THRESHOLD fázist, positioning problémát és bestiary counterplayt. A Warden carrier különösen alacsony template HP-multiplierrel normalizálódik, így a vanilla Warden alapstat és a rank/encounter scaling nem robban össze. Phase graph vagy új encounter DSL nem készült.
+
+### Event Enemy Design
+
+Invasion, Prologue, Cultist, Corruption, Wild Hunt, Escort és dungeon producer `AuthoredCreatureSpawnService.Request.template` kérést ad le. Az invasion hullámok determinisztikusan váltanak frontline/ranged/control szerepeket; nincs raw compatible EntityType casino. Summoned add egyszerűbb marad a bossnál, de stable template identityt visel.
+
+### Future Boundaries
+
+Nem része ennek a rendszernek: persistent world progression, local pressure/heat/ecology, custom model vagy texture pack, új weapon/off-hand tartalom és economy rewrite. Ezek csak külön, a gameplay staging elfogadása utáni scope-ok lehetnek.

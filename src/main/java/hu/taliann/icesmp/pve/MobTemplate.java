@@ -3,6 +3,7 @@ package hu.taliann.icesmp.pve;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -12,8 +13,11 @@ public record MobTemplate(String mobId, int schemaVersion, String displayName, S
                           MobArchetype archetype, StatProfile stats, List<String> abilityIds,
                           Set<String> resistances, Set<String> weaknesses, String lootProfile,
                           Set<String> sourceTags, String spawnPolicy, String bestiaryId,
-                          List<EliteAffix> affixPool) {
-    public static final int CURRENT_SCHEMA = 1;
+                          List<EliteAffix> affixPool, MobBehaviorProfile behavior,
+                          MobNaturalContext naturalContext,
+                          Map<MobRank, List<String>> rankAbilities,
+                          String bestiarySummary, String counterplayHint) {
+    public static final int CURRENT_SCHEMA = 2;
 
     public record StatProfile(double healthMultiplier, double damageMultiplier,
                               double movementMultiplier, double crowdControlResistance) {
@@ -36,7 +40,9 @@ public record MobTemplate(String mobId, int schemaVersion, String displayName, S
 
     public MobTemplate {
         mobId = MobAbilityDefinition.id(mobId, "mob id");
-        if (schemaVersion != CURRENT_SCHEMA) throw new IllegalArgumentException("unsupported mob schema");
+        if (schemaVersion < 1 || schemaVersion > CURRENT_SCHEMA) {
+            throw new IllegalArgumentException("unsupported mob schema");
+        }
         displayName = requireText(displayName, "display name", 128);
         entityType = requireText(entityType, "entity type", 64).toUpperCase(Locale.ROOT);
         modelId = Objects.requireNonNullElse(modelId, "").trim();
@@ -62,12 +68,61 @@ public record MobTemplate(String mobId, int schemaVersion, String displayName, S
             throw new IllegalArgumentException("invalid elite affix pool");
         }
         affixPool = List.copyOf(pool);
+        behavior = behavior == null ? MobBehaviorProfile.defaults(archetype) : behavior;
+        naturalContext = Objects.requireNonNullElse(naturalContext, MobNaturalContext.none());
+        final java.util.EnumMap<MobRank, List<String>> unlocks =
+                new java.util.EnumMap<>(MobRank.class);
+        if (rankAbilities != null) rankAbilities.forEach((unlockRank, values) -> {
+            if (unlockRank == null) throw new IllegalArgumentException("rank ability rank required");
+            unlocks.put(unlockRank, ids(values, 5, "rank ability"));
+        });
+        rankAbilities = Map.copyOf(unlocks);
+        bestiarySummary = requireText(bestiarySummary == null || bestiarySummary.isBlank()
+                ? displayName : bestiarySummary, "bestiary summary", 220);
+        counterplayHint = requireText(counterplayHint == null || counterplayHint.isBlank()
+                ? "Figyeld a támadás előjelét." : counterplayHint, "counterplay hint", 180);
+    }
+
+    /** Compatibility constructor retained for focused fixtures and legacy adapters. */
+    public MobTemplate(final String mobId, final int schemaVersion, final String displayName,
+                       final String entityType, final String modelId, final int minimumLevel,
+                       final int maximumLevel, final MobRank rank, final MobArchetype archetype,
+                       final StatProfile stats, final List<String> abilityIds,
+                       final Set<String> resistances, final Set<String> weaknesses,
+                       final String lootProfile, final Set<String> sourceTags,
+                       final String spawnPolicy, final String bestiaryId,
+                       final List<EliteAffix> affixPool) {
+        this(mobId, schemaVersion, displayName, entityType, modelId, minimumLevel,
+                maximumLevel, rank, archetype, stats, abilityIds, resistances, weaknesses,
+                lootProfile, sourceTags, spawnPolicy, bestiaryId, affixPool,
+                MobBehaviorProfile.defaults(archetype), MobNaturalContext.none(), Map.of(),
+                displayName, "Figyeld a támadás előjelét.");
     }
 
     public int levelAt(final double normalizedQuality) {
         final double quality = Math.max(0.0D, Math.min(1.0D,
                 Double.isFinite(normalizedQuality) ? normalizedQuality : 0.0D));
         return minimumLevel + (int) Math.round((maximumLevel - minimumLevel) * quality);
+    }
+
+    public int levelForBaseline(final int localBaseline) {
+        return Math.max(minimumLevel, Math.min(maximumLevel,
+                localBaseline + naturalContext.levelOffset()));
+    }
+
+    public boolean levelSuitable(final int localLevel) {
+        return localLevel >= Math.max(1, minimumLevel - 6)
+                && localLevel <= Math.min(200, maximumLevel + 6);
+    }
+
+    public List<String> abilityIdsFor(final MobRank effectiveRank) {
+        final LinkedHashSet<String> result = new LinkedHashSet<>(abilityIds);
+        for (final MobRank unlock : MobRank.values()) {
+            if (unlock.ordinal() <= effectiveRank.ordinal()) {
+                result.addAll(rankAbilities.getOrDefault(unlock, List.of()));
+            }
+        }
+        return List.copyOf(result);
     }
 
     private static List<String> ids(final List<String> source, final int maximum,

@@ -17,7 +17,47 @@ public record MobAbilityDefinition(String abilityId, Kind kind, long cooldownTic
                                    Map<String, Double> tuning,
                                    Set<Trigger> triggers,
                                    List<MobTechniqueCondition> conditions,
-                                   List<MobTechniqueAction> actions) {
+                                   List<MobTechniqueAction> actions,
+                                   Presentation presentation) {
+    public record Presentation(String telegraphParticle, String telegraphSound,
+                               String impactParticle, String impactSound,
+                               int particleCount, float volume, float pitch) {
+        public Presentation {
+            telegraphParticle = id(telegraphParticle, "telegraph particle");
+            telegraphSound = soundId(telegraphSound, "telegraph sound");
+            impactParticle = id(impactParticle, "impact particle");
+            impactSound = soundId(impactSound, "impact sound");
+            if (particleCount < 1 || particleCount > 64 || !Float.isFinite(volume)
+                    || volume < 0.1F || volume > 3.0F || !Float.isFinite(pitch)
+                    || pitch < 0.5F || pitch > 2.0F) {
+                throw new IllegalArgumentException("invalid ability presentation");
+            }
+        }
+
+        public static Presentation defaults(final Kind kind) {
+            return switch (kind) {
+                case PROJECTILE_BURST -> new Presentation("electric_spark", "entity.warden.sonic_charge",
+                        "crit", "entity.arrow.hit_player", 20, 0.9F, 1.25F);
+                case GROUND_SLAM, CLEAVE -> new Presentation("cloud", "entity.goat.prepare_ram",
+                        "poof", "entity.generic.explode", 24, 1.0F, 0.8F);
+                case POISON_CLOUD -> new Presentation("spore_blossom_air", "entity.witch.celebrate",
+                        "entity_effect", "entity.witch.throw", 22, 0.8F, 0.8F);
+                case SUMMON -> new Presentation("soul", "block.portal.trigger",
+                        "reverse_portal", "entity.evoker.prepare_summon", 28, 1.0F, 0.8F);
+                default -> new Presentation("crit", "entity.goat.prepare_ram",
+                        "poof", "entity.player.attack.strong", 18, 0.8F, 1.1F);
+            };
+        }
+
+        private static String soundId(final String raw, final String field) {
+            final String value = Objects.requireNonNull(raw, field).trim().toLowerCase(Locale.ROOT)
+                    .replace(':', '.').replaceAll("[^a-z0-9._-]", "_");
+            if (value.isBlank() || value.length() > 96) {
+                throw new IllegalArgumentException(field + " invalid");
+            }
+            return value;
+        }
+    }
     public enum Kind {
         LUNGE,
         GROUND_SLAM,
@@ -96,6 +136,7 @@ public record MobAbilityDefinition(String abilityId, Kind kind, long cooldownTic
         if (dangerous && telegraphTicks < 10L) {
             throw new IllegalArgumentException("dangerous ability requires a readable telegraph");
         }
+        presentation = presentation == null ? Presentation.defaults(kind) : presentation;
     }
 
     /** Compatibility constructor for the #137 Kind-authored model. */
@@ -108,7 +149,8 @@ public record MobAbilityDefinition(String abilityId, Kind kind, long cooldownTic
                                 final Map<String, Double> tuning) {
         this(abilityId, kind, cooldownTicks, telegraphTicks, recoveryTicks, radius, power,
                 maxSummons, targetRule, interruptible, eligibleRanks, eligibleArchetypes,
-                tuning, Set.of(Trigger.ON_TIMER), List.of(), List.of());
+                tuning, Set.of(Trigger.ON_TIMER), List.of(), List.of(),
+                Presentation.defaults(kind));
     }
 
     /** Source-compatible constructor for focused fixtures and older authored adapters. */
@@ -117,7 +159,7 @@ public record MobAbilityDefinition(String abilityId, Kind kind, long cooldownTic
                                 final int maxSummons, final Map<String, Double> tuning) {
         this(abilityId, kind, cooldownTicks, telegraphTicks, 0L, radius, power, maxSummons,
                 TargetRule.CURRENT_TARGET, false, Set.of(), Set.of(), tuning,
-                Set.of(Trigger.ON_TIMER), List.of(), List.of());
+                Set.of(Trigger.ON_TIMER), List.of(), List.of(), Presentation.defaults(kind));
     }
 
     public boolean eligible(final MobRank rank, final MobArchetype archetype) {

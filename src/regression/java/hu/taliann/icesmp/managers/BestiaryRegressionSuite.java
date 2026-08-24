@@ -60,9 +60,9 @@ public final class BestiaryRegressionSuite {
         final String warlordName = templates.getString("mob-templates." + roster.get("piglin_warlord")
                 + ".display-name", "");
         check(WorldBossManager.plainArchetypeName(ringName)
-                .equals("A Gyűrűk Őre"), "plain name strips codes, symbols and the tag");
+                .equals("Körzáró, a Törött Eskü"), "plain name strips codes, symbols and the tag");
         check(WorldBossManager.plainArchetypeName(warlordName)
-                .equals("Pokoli Hadúr"), "plain name canonical for the last roster row");
+                .equals("Varkhaz, a Kaputörő"), "plain name canonical for the last roster row");
         check(source.contains("archetypeDisplayNames()"),
                 "runtime roster accessor exists for the GUI/PAPI denominators");
     }

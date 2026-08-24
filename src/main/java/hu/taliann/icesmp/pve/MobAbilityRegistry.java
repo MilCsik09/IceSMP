@@ -42,8 +42,13 @@ public final class MobAbilityRegistry {
                     tuning.put(key, value.doubleValue());
                 }
             }
+            final MobAbilityDefinition.Kind kind = MobAbilityDefinition.parseKind(
+                    section.getString("kind", ""));
+            final MobAbilityDefinition.Presentation presentation = presentation(
+                    section.getConfigurationSection("presentation"), kind);
+            validatePresentation(presentation, id);
             final MobAbilityDefinition definition = new MobAbilityDefinition(id,
-                    MobAbilityDefinition.parseKind(section.getString("kind", "")),
+                    kind,
                     section.getLong("cooldown-ticks"), section.getLong("telegraph-ticks"),
                     section.getLong("recovery-ticks", 0L),
                     section.getDouble("radius"), section.getDouble("power"),
@@ -55,11 +60,11 @@ public final class MobAbilityRegistry {
                     tuning,
                     triggers(section.getStringList("triggers"), id),
                     conditions(section.getMapList("conditions"), id),
-                    actions(section.getMapList("actions"), id));
+                    actions(section.getMapList("actions"), id), presentation);
             parsed.put(id, definition);
         }
-        if (parsed.size() < 4 || parsed.size() > 64) {
-            throw new IllegalStateException("mob ability registry must contain 4-64 entries");
+        if (parsed.size() < 4 || parsed.size() > 128) {
+            throw new IllegalStateException("mob ability registry must contain 4-128 entries");
         }
         abilities = Map.copyOf(parsed);
     }
@@ -75,6 +80,37 @@ public final class MobAbilityRegistry {
     }
 
     public Map<String, MobAbilityDefinition> all() { return abilities; }
+
+    private static MobAbilityDefinition.Presentation presentation(
+            final ConfigurationSection section, final MobAbilityDefinition.Kind kind) {
+        final MobAbilityDefinition.Presentation fallback =
+                MobAbilityDefinition.Presentation.defaults(kind);
+        if (section == null) return fallback;
+        return new MobAbilityDefinition.Presentation(
+                section.getString("telegraph-particle", fallback.telegraphParticle()),
+                section.getString("telegraph-sound", fallback.telegraphSound()),
+                section.getString("impact-particle", fallback.impactParticle()),
+                section.getString("impact-sound", fallback.impactSound()),
+                section.getInt("particle-count", fallback.particleCount()),
+                (float) section.getDouble("volume", fallback.volume()),
+                (float) section.getDouble("pitch", fallback.pitch()));
+    }
+
+    private static void validatePresentation(final MobAbilityDefinition.Presentation value,
+                                             final String abilityId) {
+        try {
+            org.bukkit.Particle.valueOf(value.telegraphParticle().toUpperCase(Locale.ROOT));
+            org.bukkit.Particle.valueOf(value.impactParticle().toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException invalid) {
+            throw new IllegalStateException("unknown ability particle: " + abilityId, invalid);
+        }
+        if (org.bukkit.Registry.SOUNDS.get(org.bukkit.NamespacedKey.minecraft(
+                value.telegraphSound())) == null
+                || org.bukkit.Registry.SOUNDS.get(org.bukkit.NamespacedKey.minecraft(
+                value.impactSound())) == null) {
+            throw new IllegalStateException("unknown ability sound: " + abilityId);
+        }
+    }
 
     private static String normalize(final String raw) {
         return raw.trim().toLowerCase(Locale.ROOT);

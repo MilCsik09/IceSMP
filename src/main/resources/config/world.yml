@@ -369,6 +369,7 @@ escort:
   wave-interval-seconds: 60
   wave-size: 3
   wave-level: 3
+  wave-templates: [ "tollblade", "road_raider", "gallows_runner", "moss_trapper" ]
   bonus-stock-minutes: 60
   reward-rolls: 4
   reward-loot:
@@ -452,6 +453,8 @@ corruption:
   mob-cap: 6 # 0 vagy negatív = fajzat-spawn kikapcsolva
   spawn-batch: 1
   mob-types: [ "ZOMBIE", "SKELETON", "WITHER_SKELETON", "PHANTOM" ]
+  # Stable template roster; mob-types remains only for bounded legacy cleanup recognition.
+  mob-templates: [ "corruption_scabwalker", "corruption_hollowbow", "corruption_gloomvotary", "corruption_blackwing" ]
   mob-level-bonus: 4
   mob-glowing: true
   mob-persistent: false
@@ -541,16 +544,16 @@ bestiary:
   # kulcs = lajstrom-id: mob-típus kisbetűvel, boss-archetípus, ritka variánsnál
   # albino_/arnyek_ prefix). Hiányzó kulcsnál a sor egyszerűen elmarad.
   codex-notes:
-    ring_warden: "A lezáruló fejezetek haragja gyűrűbe zárva — a krónikák szerint a Lapforduló Őrének kisebb visszhangja."
-    magma_behemoth: "A Vérszavanna kohóinak szökött szelleme; lépte nyomán megolvad a homok."
-    frost_king: "A Jégmezők trónbitorlója — Kallan öröksége nélkül, annak minden hidegével."
-    bone_king: "A sírba szállt nemesség csontjaiból emelt korona; a Királynő átka táplálja."
-    deep_horror: "A törp-tárnák mélyéről felszivárgott iszonyat — a csend, amely visszanézett."
-    venom_broodmother: "A Káoszkor fészekrakója; ivadékai a világ minden repedésében várnak."
-    storm_herald: "Kallan viharának elszabadult visszhangja, gazdátlan égzengés."
-    plague_titan: "Eleftheria mérgének járványhordozója; amerre jár, a föld is beteg."
-    golem_sentinel: "A Vasművek Akadémiájának őrszeme, amely túlélte az alkotóit — s már nem ismer jelszót."
-    piglin_warlord: "A Kárhozat Kapuján átszivárgott hadúr; a Senkiföldje az ő portyaterülete."
+    ring_warden: "Körzáró törött eskükből kovácsolt börtönt von a párbaj köré."
+    magma_behemoth: "A Salakkohó Szíve távoli kohóesővel hevül túl."
+    frost_king: "Kallan Elárvult Trónja fehér ítélettel és dérkísérettel uralkodik."
+    bone_king: "A Koronátlan Csontúr sírkíséretét pajzsként vezényli."
+    deep_horror: "A Visszanéző Csend hangrobbanása előtt a mélység szíve felgyorsul."
+    venom_broodmother: "Selyemanya Vezhra mérgező ösvényekkel rajzolja át a csatateret."
+    storm_herald: "Orkánénekes Rael villámjelek közt cikázik."
+    plague_titan: "A Rothadás Hordozója lassan elfogyasztja a tiszta teret."
+    golem_sentinel: "A Jelszó Nélküli a kaput védi, nem a menekülőt üldözi."
+    piglin_warlord: "Varkhaz kaputörő rohama után testőrséget hív."
     zombie: "A Néma Királynő első mondatának visszhangja — nincs lelke, csak parancsa."
     skeleton: "A hetedik vérháború elesettje; kezében még mindig a régi fegyver."
     creeper: "A rontás-járta vadon szülötte; a bölcsek szerint a Fa sebéből fakadt torzulás."
@@ -571,6 +574,7 @@ dark-undead:
   max-level: 7
   lifespan-seconds: 600
   types: [ "ZOMBIE", "SKELETON", "HUSK", "STRAY", "WITHER_SKELETON" ]
+  templates: [ "gallows_runner", "barrow_bulwark", "dune_titheman", "moonbone_archer", "blackiron_votary" ]
 
 rare-variant:
   chance-percent: 1.5
@@ -618,14 +622,12 @@ dungeon:
     table: kazamata
   minibosses:
     melyseg:
-      type: WITHER_SKELETON
-      name: "A Mélység Őrzője"
+      template: dungeon_depth_jailer
       level: 12
       health-multiplier: 4.0
       respawn-hours: 24
     csontkripta:
-      type: SKELETON
-      name: "A Csontkripta Ura"
+      template: dungeon_ossuary_lord
       level: 12
       health-multiplier: 4.0
       respawn-hours: 24

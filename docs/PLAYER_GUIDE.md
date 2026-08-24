@@ -804,6 +804,25 @@ A nagy harci események alapból nem torlódnak egymásra.
 |---|---|
 | Vérhold | erősebb éjszakai ellenfelek, nagyobb kockázat és jutalom |
 | Világboss | közösségi nagy ellenfél, jelzett támadásokkal és személyes contribution-jutalommal |
+
+### Az authored ellenfelek olvasása
+
+Az azonos kinézet már nem jelent azonos harcot. Egy Zombie lehet közvetlenül üldöző zúzó,
+csapás után oldalra törő portyázó, területet tartó védő vagy fertőző controller; a végleges név,
+szint, rank és életerő a Target HUD-on látható. A `Veterán`, `Elit` és `Bajnok` nem új fajta,
+hanem ugyanannak az identitynek összetettebb változata: utilityt, új támadási ablakot vagy új
+tactical problémát kaphat, nem pusztán több HP-t.
+
+A nagy technique előtt figyeld a földjelet, az irányjelző részecskét és a külön hangcue-t. A
+lassú, erős jelzés általában kitérést vagy zónaelhagyást kér; a summon előkészítése megszakítható
+ablakot vagy sürgős add-prioritást adhat; egy charge után rövid recovery következhet. A Bestiárium
+röviden leírja az ellenfél szerepét, a weakness/resistance identitását és egy használható
+counterplay-tippet, de a világboss teljes mechanikáját nem spoilerezi el.
+
+A biom és a helyzet számít. Hóvidéken fagyos, mocsárban méreg/control, mélyen föld alatti,
+esőben vagy Vérholdkor pedig más súlyozású rosterrel találkozhatsz. Ez nem játékosszinthez igazodó
+automatikus scaling és nem tartós helyi „harag”: a meglévő világ-, territory- és eventcontext
+választ a környezethez illő, spawn után stabil template-ek közül.
 | Invázió | hullámokban érkező, megerősített szörnyek |
 | Vad Hajsza | kóbor elit fenevad és személyes jutalom |
 | Kereskedő-karaván | időleges, rotáló ritka kínálat |

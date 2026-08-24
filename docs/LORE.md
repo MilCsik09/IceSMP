@@ -641,26 +641,26 @@ megtagadták őket, s tudásuk ma már csak a Kitaszítottak útján szerezhető
 világban. A krónikások tíz Nagyot jegyeztek fel eddig; ledöntésük a birodalmak közös dicsősége,
 s aki elsőként ejti el őket, azt a lajstromok külön említik.*
 
-- **A Gyűrűk Őre** — gyűrűbe zárt harag, amely megelőzi a rengést; a vének szerint a Lapforduló
-  Őrének kisebb visszhangja, amely nem várja meg a fejezet végét.
-- **Lávakohó Behemót** — a Vérszavanna kohóinak szökött szelleme; lépte nyomán megolvad a homok,
-  s a levegő maga is perzsel körülötte.
-- **Fagyott Trón Királya** — bitorló a Jégmezők jegén: Kallan öröksége nélkül való, de annak
-  minden hidegével; ahol megáll, ott a föld trónussá fagy alatta.
-- **Csontkirály** — a sírba szállt nemesség csontjaiból emelt korona; a Királynő átka táplálja,
-  s hívó szavára a holtak sorfalat állnak.
-- **Mélységi Rém** — a törp-tárnák mélyéről felszivárgott iszonyat; a sötétje nem árnyék, hanem
-  a csend maga, amely egyszer visszanézett.
-- **Méreg Anyakirálynő** — a Káoszkor fészekrakója; ivadékai ott várnak a világ minden
-  repedésében, s a marása lassabban öl, mint ahogy felejt.
-- **Vihar Hírnöke** — Kallan viharának elszabadult, gazdátlan visszhangja; égzengés, amely már
-  nem hallgat senkire.
-- **Dögvész Titán** — Eleftheria mérgének járványhordozója; amerre elvonul, a föld is beteg
-  marad utána.
-- **Vas Őrszem** — a Vasművek Akadémiájának őrszeme, amely túlélte az alkotóit — s már nem
-  ismer jelszót, csak betolakodót.
-- **Pokoli Hadúr** — a Kárhozat Kapuján átszivárgott hadúr; a Senkiföldje az ő portyaterülete,
-  s hadizsákmánya minden, ami él.
+- **Körzáró, a Törött Eskü** — elfeledett fogadalmakból kovácsolt börtönt von a párbaj köré;
+  a gyűrűn kívüli biztonságot és a gyűrűn belüli vakmerőséget egyaránt bünteti.
+- **Salakkohó Szíve** — a Vérszavanna kohóinak szökött magja; távoli kohóesővel hevül túl,
+  majd izzó útvonalat tör magának a homokban.
+- **Kallan Elárvult Trónja** — uralkodó nélküli jégakarat, amely fehér ítélettel fagyasztja
+  át a talajt, és dérkíséret mögött rendezi újra a csatateret.
+- **Koronátlan Csontúr** — a sírba szállt nemesség csontjaiból emelt hadrend; kíséretét
+  pajzsként vezényli, és csak a sorfal megtörése után válik igazán sebezhetővé.
+- **A Visszanéző Csend** — a törp-tárnák mélyéről felszivárgott figyelem; szívverése
+  felgyorsul, mielőtt a csend hangrobbanássá szakad.
+- **Selyemanya Vezhra** — a Káoszkor fészekrajzolója; mérgező ösvényekkel szabja át a teret,
+  és ivadékai mögé húzódva kényszeríti rossz lépésre a vadászokat.
+- **Orkánénekes Rael** — Kallan viharának gazdátlan hangja; villámjeleket köt össze,
+  majd a biztonságosnak hitt vonalakon cikázik végig.
+- **A Rothadás Hordozója** — Eleftheria mérgének járványteste; nem siet, hanem lassan
+  elfogyasztja a tiszta teret, míg csak a veszélyes közelség marad.
+- **A Jelszó Nélküli** — a Vasművek Akadémiájának őrszeme, amely túlélte alkotóit; a kaput
+  védi, visszaver és lezár, de a menekülőt nem üldözi a világ végéig.
+- **Varkhaz, a Kaputörő** — a Kárhozat Kapuján átszivárgott hadúr; rohamával szétszakítja
+  a rendet, majd testőrséget hív a rövid helyreállási ablaka köré.
 
 ---
 

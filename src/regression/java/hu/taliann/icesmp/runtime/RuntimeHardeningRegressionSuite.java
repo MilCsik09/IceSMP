@@ -179,8 +179,10 @@ public final class RuntimeHardeningRegressionSuite {
         check(mobListener.contains("EntitiesLoadEvent") && mobListener.contains("EntityMoveEvent")
                         && mobListener.contains("EntityTeleportEvent"),
                 "DARK protection covers load/move/teleport");
-        check(mobListener.contains("event.getClass() == EntityCombustEvent.class"),
-                "only daylight combustion is cancelled");
+        check(mobListener.contains("event.getClass() == EntityCombustEvent.class")
+                        && mobListener.contains("hasDaylightProtection(living)")
+                        && mobs.contains("DaylightProtectionPolicy.protectedNow("),
+                "daylight combustion must be source-composed while non-daylight fire stays vanilla");
 
         final String display = source("src/main/java/hu/taliann/icesmp/utils/DisplayFxUtil.java");
         check(display.contains("claimedWallColumn")

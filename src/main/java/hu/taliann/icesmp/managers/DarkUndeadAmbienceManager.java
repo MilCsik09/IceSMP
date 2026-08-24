@@ -4,16 +4,13 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
 import hu.taliann.icesmp.pve.AuthoredCreatureSpawnService;
-import hu.taliann.icesmp.pve.MobRank;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,10 +76,10 @@ public final class DarkUndeadAmbienceManager {
         if (batch <= 0) {
             return;
         }
-        final List<String> configuredTypes = configManager.getStringList("dark-undead.types");
-        final List<String> pool = configuredTypes.isEmpty()
-                ? List.of("ZOMBIE", "SKELETON", "HUSK", "STRAY", "WITHER_SKELETON")
-                : List.copyOf(configuredTypes);
+        final List<String> configuredTemplates = configManager.getStringList("dark-undead.templates");
+        final List<String> pool = configuredTemplates.isEmpty()
+                ? List.of("gallows_runner", "barrow_bulwark", "dune_titheman",
+                "moonbone_archer", "blackiron_votary") : List.copyOf(configuredTemplates);
         final int minLevel = Math.max(1, configManager.getInt("dark-undead.min-level", 4));
         final int maxLevel = Math.max(minLevel, configManager.getInt("dark-undead.max-level", 7));
         final long lifespanMillis = Math.max(60,
@@ -132,8 +129,8 @@ public final class DarkUndeadAmbienceManager {
                 return;
             }
 
-            final EntityType type = randomMobType(pool);
-            if (type == null) {
+            final String templateId = randomTemplate(pool);
+            if (templateId == null) {
                 trySpawn(territory, pool, minLevel, maxLevel, lifespanMillis,
                         remainingAttempts - 1);
                 return;
@@ -147,10 +144,10 @@ public final class DarkUndeadAmbienceManager {
             final long lifespanTicks = Math.min(72_000L, Math.max(40L, lifespanMillis / 50L));
             final Mob mob;
             try {
-                mob = spawns.spawn(target, AuthoredCreatureSpawnService.Request.generic(
+                mob = spawns.spawn(target, AuthoredCreatureSpawnService.Request.template(
                         "dark_undead", "territory:" + territory.id(), "ambient_hostile",
-                        type, level, MobRank.NORMAL, "BRUISER",
-                        AuthoredCreatureSpawnService.RewardOwner.GENERIC, true, lifespanTicks));
+                        templateId, level, AuthoredCreatureSpawnService.RewardOwner.GENERIC,
+                        true, 1.0D, 1.0D, lifespanTicks));
             } catch (final RuntimeException invalid) {
                 plugin.getLogger().warning("Dark-undead spawn failed closed: " + invalid.getMessage());
                 trySpawn(territory, pool, minLevel, maxLevel, lifespanMillis,
@@ -180,16 +177,10 @@ public final class DarkUndeadAmbienceManager {
         return null;
     }
 
-    private static EntityType randomMobType(final List<String> pool) {
-        if (pool.isEmpty()) {
-            return null;
-        }
-        try {
-            return EntityType.valueOf(pool.get(ThreadLocalRandom.current().nextInt(pool.size()))
-                    .toUpperCase(Locale.ROOT));
-        } catch (final IllegalArgumentException invalid) {
-            return null;
-        }
+    private static String randomTemplate(final List<String> pool) {
+        if (pool.isEmpty()) return null;
+        final String value = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+        return value == null || value.isBlank() ? null : value.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private List<Territory> targetTerritories() {

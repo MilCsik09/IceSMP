@@ -219,9 +219,11 @@ public final class BestiaryGUI {
             if (template != null && tier >= 1) {
                 lore.add(GuiUtil.grey("Rang: " + template.rank().name()
                         + " • Archetípus: " + template.archetype().name()));
+                lore.add(GuiUtil.grey(template.bestiarySummary()));
             }
             if (template != null && tier >= 2) {
-                lore.add(GuiUtil.grey("Képességjelek: " + String.join(", ", template.abilityIds())));
+                lore.add(Component.text("Taktikai jegyzet: " + template.counterplayHint(),
+                        NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
                 if (!template.resistances().isEmpty()) {
                     lore.add(GuiUtil.grey("Ellenállás: " + String.join(", ", template.resistances())));
                 }

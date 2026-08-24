@@ -3,6 +3,7 @@ package hu.taliann.icesmp.pve;
 import org.bukkit.NamespacedKey;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +24,14 @@ public final class AuthoredPveContentValidator {
             "prologue_breach_blaze", "prologue_breach_skeleton", "prologue_breach_elite",
             "prologue_finale_boss", "prologue_flame_add", "prologue_brute_add",
             "prologue_bone_add");
+    public static final List<String> EVENT_ROSTER = List.of(
+            "cultist_ritualist", "cultist_blade", "cultist_courier",
+            "corruption_scabwalker", "corruption_hollowbow", "corruption_gloomvotary",
+            "corruption_blackwing", "road_raider", "tollblade", "coven_wisp",
+            "hunt_ancient_ravager", "hunt_bone_hunter", "hunt_elder_mage",
+            "hunt_infernal_brute", "dungeon_depth_jailer", "dungeon_ossuary_lord");
+    private static final Set<String> DAYLIGHT_SENSITIVE = Set.of(
+            "ZOMBIE", "ZOMBIE_VILLAGER", "DROWNED", "SKELETON", "STRAY", "BOGGED", "PHANTOM");
 
     private AuthoredPveContentValidator() { }
 
@@ -43,6 +52,13 @@ public final class AuthoredPveContentValidator {
             }
             owners.put(id, "prologue");
         }
+        EVENT_ROSTER.forEach(id -> {
+            final MobTemplate template = templates.require(id);
+            if (!Set.of("event", "boss").contains(template.spawnPolicy())) {
+                throw new IllegalStateException("event roster template has invalid spawn policy: " + id);
+            }
+            owners.put(id, "event_roster");
+        });
         int summonReferences = 0;
         int thresholdAbilities = 0;
         final java.util.Set<MobTechniqueAction.Type> usedActions = new java.util.LinkedHashSet<>();
@@ -73,8 +89,59 @@ public final class AuthoredPveContentValidator {
                 MobTechniqueAction.Type.SUMMON_TEMPLATE))) {
             throw new IllegalStateException("authored PvE primitive was introduced without a use case");
         }
+        final Set<List<String>> bossKits = new LinkedHashSet<>();
+        for (final String id : WORLD_BOSSES) {
+            final MobTemplate boss = templates.require(id);
+            if (!bossKits.add(boss.abilityIds())) {
+                throw new IllegalStateException("duplicate world-boss kit: " + id);
+            }
+            if (boss.abilityIds().stream().map(abilities::require).noneMatch(definition ->
+                    definition.triggers().contains(MobAbilityDefinition.Trigger.HEALTH_THRESHOLD))) {
+                throw new IllegalStateException("world boss lacks threshold phase: " + id);
+            }
+        }
+        final LinkedHashMap<String, String> identityOwners = new LinkedHashMap<>();
+        int naturalTemplates = 0;
+        int daylightProtected = 0;
+        final Map<String, Integer> carrierVariants = new java.util.HashMap<>();
+        for (final MobTemplate template : templates.all().values()) {
+            final String identity = template.entityType() + '|' + template.archetype() + '|'
+                    + template.stats() + '|' + template.abilityIdsFor(template.rank()) + '|'
+                    + template.behavior() + '|' + template.naturalContext() + '|'
+                    + template.sourceTags();
+            final String previous = identityOwners.putIfAbsent(identity, template.mobId());
+            if (previous != null) {
+                throw new IllegalStateException("duplicate authored combat identity: "
+                        + previous + '/' + template.mobId());
+            }
+            if (!Set.of("natural", "natural_or_authored").contains(template.spawnPolicy())) continue;
+            naturalTemplates++;
+            carrierVariants.merge(template.entityType(), 1, Integer::sum);
+            final Set<String> required = template.naturalContext().requiredTags();
+            final boolean surfaceDayEligible = !required.contains("time:night")
+                    && !required.contains("depth:deep")
+                    && !required.contains("dimension:nether")
+                    && !required.contains("dimension:the_end");
+            if (surfaceDayEligible && DAYLIGHT_SENSITIVE.contains(template.entityType())) {
+                if (!template.naturalContext().noDaylightBurn()) {
+                    throw new IllegalStateException("daylight-eligible undead lacks protection: "
+                            + template.mobId());
+                }
+                daylightProtected++;
+            }
+        }
+        for (final String carrier : List.of("ZOMBIE", "SKELETON")) {
+            if (carrierVariants.getOrDefault(carrier, 0) < 3) {
+                throw new IllegalStateException("representative carrier lacks three variants: " + carrier);
+            }
+        }
+        if (carrierVariants.getOrDefault("SPIDER", 0) < 2) {
+            throw new IllegalStateException("Spider carrier lacks multiple natural variants");
+        }
         return new Report(Map.copyOf(owners), WORLD_BOSSES.size(), INVASION_CHAMPIONS.size(),
-                PROLOGUE.size(), summonReferences, thresholdAbilities, Set.copyOf(usedActions));
+                PROLOGUE.size(), EVENT_ROSTER.size(), naturalTemplates, daylightProtected,
+                summonReferences, thresholdAbilities, Set.copyOf(usedActions),
+                Map.copyOf(carrierVariants));
     }
 
     private static void validateTemplate(final MobTemplate template, final MobRank rank,
@@ -89,6 +156,9 @@ public final class AuthoredPveContentValidator {
 
     public record Report(Map<String, String> templateOwners, int worldBosses,
                          int invasionChampions, int prologueTemplates,
+                         int eventRosterTemplates, int naturalTemplates,
+                         int daylightProtectedTemplates,
                          int summonReferences, int thresholdAbilities,
-                         Set<MobTechniqueAction.Type> usedActions) { }
+                         Set<MobTechniqueAction.Type> usedActions,
+                         Map<String, Integer> carrierVariants) { }
 }

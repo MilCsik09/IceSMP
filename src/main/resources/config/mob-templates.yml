@@ -2,16 +2,6 @@
 # Natural vanilla mobs without a matching entry stay on the safe fallback path.
 
 mob-abilities:
-  telegraphed_lunge:
-    kind: LUNGE
-    cooldown-ticks: 120
-    telegraph-ticks: 20
-    recovery-ticks: 15
-    target-rule: CURRENT_TARGET
-    interruptible: true
-    radius: 10.0
-    power: 1.15
-    max-summons: 0
   glacial_slam:
     kind: GROUND_SLAM
     cooldown-ticks: 180
@@ -124,20 +114,6 @@ mob-abilities:
     tuning: { duration-ticks: 120 }
 
   # Authored PvE primitives introduced only for migrated world-boss/event content.
-  boss_slam:
-    kind: COMPOSITE
-    triggers: [ ON_TIMER ]
-    cooldown-ticks: 160
-    telegraph-ticks: 30
-    recovery-ticks: 30
-    target-rule: SELF
-    interruptible: true
-    radius: 5.0
-    power: 6.0
-    max-summons: 0
-    actions:
-      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 6.0, radius: 5.0, per-level: 0.002, maximum-level-multiplier: 1.15 } }
-      - { type: KNOCKBACK, target: NEARBY_PLAYERS, parameters: { strength: 0.85, radius: 5.0 } }
   boss_frost_zone:
     kind: COMPOSITE
     triggers: [ ON_TIMER ]
@@ -194,26 +170,10 @@ mob-abilities:
     actions:
       - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 5.0, radius: 7.0 } }
       - { type: APPLY_EFFECT, target: NEARBY_PLAYERS, reference: darkness, parameters: { radius: 7.0, duration-ticks: 100, amplifier: 0 } }
-  boss_enrage:
+  summon_frozen_adds:
     kind: COMPOSITE
     triggers: [ HEALTH_THRESHOLD ]
     cooldown-ticks: 12000
-    telegraph-ticks: 20
-    recovery-ticks: 20
-    target-rule: SELF
-    interruptible: false
-    radius: 3.0
-    power: 0.0
-    max-summons: 0
-    conditions:
-      - { type: HEALTH_BELOW, value: 0.50 }
-    actions:
-      - { type: APPLY_EFFECT, target: SELF, reference: strength, parameters: { duration-ticks: 1200, amplifier: 1 } }
-      - { type: APPLY_EFFECT, target: SELF, reference: speed, parameters: { duration-ticks: 1200, amplifier: 0 } }
-  summon_frozen_adds:
-    kind: COMPOSITE
-    triggers: [ ON_TIMER ]
-    cooldown-ticks: 300
     telegraph-ticks: 30
     recovery-ticks: 40
     target-rule: SELF
@@ -221,12 +181,14 @@ mob-abilities:
     radius: 5.0
     power: 0.0
     max-summons: 3
+    conditions:
+      - { type: HEALTH_BELOW, value: 0.66 }
     actions:
       - { type: SUMMON_TEMPLATE, target: SELF, reference: frozen_boss_add, parameters: { count: 3, lifespan-ticks: 500 } }
   summon_bone_adds:
     kind: COMPOSITE
-    triggers: [ ON_TIMER ]
-    cooldown-ticks: 300
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
     telegraph-ticks: 30
     recovery-ticks: 40
     target-rule: SELF
@@ -234,12 +196,14 @@ mob-abilities:
     radius: 5.0
     power: 0.0
     max-summons: 3
+    conditions:
+      - { type: HEALTH_BELOW, value: 0.66 }
     actions:
       - { type: SUMMON_TEMPLATE, target: SELF, reference: bone_boss_add, parameters: { count: 3, lifespan-ticks: 500 } }
   summon_venom_adds:
     kind: COMPOSITE
-    triggers: [ ON_TIMER ]
-    cooldown-ticks: 320
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
     telegraph-ticks: 30
     recovery-ticks: 40
     target-rule: SELF
@@ -247,12 +211,14 @@ mob-abilities:
     radius: 5.0
     power: 0.0
     max-summons: 3
+    conditions:
+      - { type: HEALTH_BELOW, value: 0.58 }
     actions:
       - { type: SUMMON_TEMPLATE, target: SELF, reference: venom_boss_add, parameters: { count: 3, lifespan-ticks: 500 } }
   summon_piglin_adds:
     kind: COMPOSITE
-    triggers: [ ON_TIMER ]
-    cooldown-ticks: 300
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
     telegraph-ticks: 30
     recovery-ticks: 40
     target-rule: SELF
@@ -260,6 +226,8 @@ mob-abilities:
     radius: 5.0
     power: 0.0
     max-summons: 3
+    conditions:
+      - { type: HEALTH_BELOW, value: 0.60 }
     actions:
       - { type: SUMMON_TEMPLATE, target: SELF, reference: piglin_boss_add, parameters: { count: 3, lifespan-ticks: 500 } }
   prologue_call_adds:
@@ -442,6 +410,375 @@ mob-abilities:
       - { type: DASH, target: PROVOKER, parameters: { strength: 0.85 } }
       - { type: DAMAGE, target: PROVOKER, parameters: { amount: 1.5, per-level: 0.006, maximum-level-multiplier: 1.35 } }
       - { type: KNOCKBACK, target: PROVOKER, parameters: { strength: 0.40 } }
+
+  # Enemy roster 2.0: a small Minecraft-native vocabulary composed per fantasy.
+  grave_hook:
+    kind: LUNGE
+    cooldown-ticks: 130
+    telegraph-ticks: 18
+    recovery-ticks: 24
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 9.0
+    power: 1.05
+    presentation: { telegraph-particle: SOUL, telegraph-sound: entity.zombie.attack_wooden_door, impact-particle: DUST_PLUME, impact-sound: block.chain.place, particle-count: 18, volume: 0.8, pitch: 0.75 }
+  rot_bloom:
+    kind: POISON_CLOUD
+    cooldown-ticks: 210
+    telegraph-ticks: 32
+    recovery-ticks: 34
+    target-rule: SELF
+    interruptible: true
+    radius: 4.5
+    power: 1.5
+    tuning: { duration-ticks: 70, amplifier: 0 }
+    presentation: { telegraph-particle: SPORE_BLOSSOM_AIR, telegraph-sound: entity.zombie_villager.converted, impact-particle: ENTITY_EFFECT, impact-sound: block.mud.break, particle-count: 22, volume: 0.85, pitch: 0.65 }
+  ossuary_guard:
+    kind: SHIELD
+    cooldown-ticks: 220
+    telegraph-ticks: 16
+    recovery-ticks: 22
+    target-rule: SELF
+    interruptible: false
+    radius: 2.5
+    power: 0.42
+    presentation: { telegraph-particle: SOUL, telegraph-sound: entity.skeleton.converted_to_stray, impact-particle: DUST_PLUME, impact-sound: block.bone_block.place, particle-count: 16, volume: 0.8, pitch: 0.8 }
+  marrow_volley:
+    kind: PROJECTILE_BURST
+    cooldown-ticks: 145
+    telegraph-ticks: 24
+    recovery-ticks: 25
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 18.0
+    power: 2.7
+    tuning: { projectiles: 3 }
+    presentation: { telegraph-particle: SOUL, telegraph-sound: entity.skeleton.shoot, impact-particle: CRIT, impact-sound: block.bone_block.break, particle-count: 18, volume: 0.9, pitch: 0.9 }
+  scatter_step:
+    kind: RETREAT
+    cooldown-ticks: 120
+    telegraph-ticks: 12
+    recovery-ticks: 16
+    target-rule: CURRENT_TARGET
+    interruptible: false
+    radius: 8.0
+    power: 0.9
+    presentation: { telegraph-particle: CLOUD, telegraph-sound: entity.skeleton.step, impact-particle: POOF, impact-sound: entity.player.attack.sweep, particle-count: 12, volume: 0.65, pitch: 1.35 }
+  webspring:
+    kind: LUNGE
+    cooldown-ticks: 115
+    telegraph-ticks: 16
+    recovery-ticks: 25
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 10.0
+    power: 1.18
+    presentation: { telegraph-particle: WHITE_ASH, telegraph-sound: entity.spider.step, impact-particle: CLOUD, impact-sound: block.cobweb.place, particle-count: 16, volume: 0.75, pitch: 1.2 }
+  silk_snare:
+    kind: DELAYED_RUNE
+    cooldown-ticks: 190
+    telegraph-ticks: 38
+    recovery-ticks: 28
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 3.5
+    power: 4.0
+    presentation: { telegraph-particle: WHITE_ASH, telegraph-sound: block.cobweb.place, impact-particle: CLOUD, impact-sound: entity.spider.hurt, particle-count: 24, volume: 0.9, pitch: 0.8 }
+  mire_miasma:
+    kind: POISON_CLOUD
+    cooldown-ticks: 190
+    telegraph-ticks: 28
+    recovery-ticks: 28
+    target-rule: SELF
+    interruptible: true
+    radius: 5.0
+    power: 1.8
+    tuning: { duration-ticks: 80, amplifier: 0 }
+    presentation: { telegraph-particle: SPORE_BLOSSOM_AIR, telegraph-sound: entity.witch.drink, impact-particle: ENTITY_EFFECT, impact-sound: entity.witch.throw, particle-count: 22, volume: 0.9, pitch: 0.7 }
+  mire_hex:
+    kind: DELAYED_RUNE
+    cooldown-ticks: 175
+    telegraph-ticks: 34
+    recovery-ticks: 24
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 4.0
+    power: 4.5
+    presentation: { telegraph-particle: WITCH, telegraph-sound: entity.evoker.prepare_attack, impact-particle: ENTITY_EFFECT, impact-sound: entity.witch.celebrate, particle-count: 24, volume: 0.9, pitch: 0.9 }
+  fuse_feint:
+    kind: RETREAT
+    cooldown-ticks: 175
+    telegraph-ticks: 20
+    recovery-ticks: 22
+    target-rule: CURRENT_TARGET
+    interruptible: false
+    radius: 7.0
+    power: 0.82
+    presentation: { telegraph-particle: SMOKE, telegraph-sound: entity.creeper.primed, impact-particle: CLOUD, impact-sound: block.fire.extinguish, particle-count: 14, volume: 0.8, pitch: 1.25 }
+  tide_hook:
+    kind: LUNGE
+    cooldown-ticks: 140
+    telegraph-ticks: 22
+    recovery-ticks: 24
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 11.0
+    power: 1.05
+    presentation: { telegraph-particle: SPLASH, telegraph-sound: entity.drowned.shoot, impact-particle: BUBBLE, impact-sound: entity.drowned.hurt_water, particle-count: 20, volume: 0.85, pitch: 0.85 }
+  cinder_barrage:
+    kind: PROJECTILE_BURST
+    cooldown-ticks: 155
+    telegraph-ticks: 26
+    recovery-ticks: 30
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 20.0
+    power: 3.1
+    tuning: { projectiles: 4 }
+    presentation: { telegraph-particle: FLAME, telegraph-sound: entity.blaze.shoot, impact-particle: LAVA, impact-sound: block.fire.ambient, particle-count: 22, volume: 0.9, pitch: 0.85 }
+  ember_surge:
+    kind: GROUND_SLAM
+    cooldown-ticks: 185
+    telegraph-ticks: 30
+    recovery-ticks: 34
+    target-rule: SELF
+    interruptible: true
+    radius: 4.5
+    power: 5.0
+    presentation: { telegraph-particle: ASH, telegraph-sound: block.lava.pop, impact-particle: FLAME, impact-sound: entity.magma_cube.squish, particle-count: 24, volume: 1.0, pitch: 0.75 }
+  void_afterstep:
+    kind: RETREAT
+    cooldown-ticks: 105
+    telegraph-ticks: 12
+    recovery-ticks: 14
+    target-rule: CURRENT_TARGET
+    interruptible: false
+    radius: 10.0
+    power: 1.1
+    presentation: { telegraph-particle: PORTAL, telegraph-sound: entity.enderman.teleport, impact-particle: REVERSE_PORTAL, impact-sound: entity.enderman.stare, particle-count: 18, volume: 0.75, pitch: 1.25 }
+  phantom_shear:
+    kind: LUNGE
+    cooldown-ticks: 125
+    telegraph-ticks: 20
+    recovery-ticks: 28
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 15.0
+    power: 1.25
+    presentation: { telegraph-particle: SCULK_SOUL, telegraph-sound: entity.phantom.swoop, impact-particle: SOUL, impact-sound: entity.phantom.bite, particle-count: 18, volume: 0.9, pitch: 0.85 }
+  storm_brand:
+    kind: DELAYED_RUNE
+    cooldown-ticks: 205
+    telegraph-ticks: 42
+    recovery-ticks: 32
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 4.5
+    power: 6.0
+    presentation: { telegraph-particle: ELECTRIC_SPARK, telegraph-sound: entity.lightning_bolt.thunder, impact-particle: FLASH, impact-sound: entity.lightning_bolt.impact, particle-count: 26, volume: 1.15, pitch: 1.15 }
+  slime_rebound:
+    kind: LUNGE
+    cooldown-ticks: 120
+    telegraph-ticks: 18
+    recovery-ticks: 30
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 8.0
+    power: 1.0
+    presentation: { telegraph-particle: DRIPPING_HONEY, telegraph-sound: block.slime_block.step, impact-particle: DRIPPING_HONEY, impact-sound: block.slime_block.hit, particle-count: 16, volume: 0.8, pitch: 1.0 }
+  blackiron_bash:
+    kind: CLEAVE
+    cooldown-ticks: 155
+    telegraph-ticks: 22
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 3.2
+    power: 4.2
+    presentation: { telegraph-particle: SCRAPE, telegraph-sound: item.shield.block, impact-particle: DUST_PLUME, impact-sound: block.anvil.land, particle-count: 20, volume: 0.95, pitch: 0.75 }
+  cultist_reposition:
+    kind: RETREAT
+    cooldown-ticks: 135
+    telegraph-ticks: 14
+    recovery-ticks: 18
+    target-rule: CURRENT_TARGET
+    interruptible: false
+    radius: 9.0
+    power: 0.95
+    presentation: { telegraph-particle: ENCHANT, telegraph-sound: entity.illusioner.mirror_move, impact-particle: PORTAL, impact-sound: entity.illusioner.cast_spell, particle-count: 16, volume: 0.75, pitch: 1.15 }
+
+  # Boss signatures. Each creates a different spacing or target-priority problem.
+  ring_lock:
+    kind: DELAYED_RUNE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 185
+    telegraph-ticks: 46
+    recovery-ticks: 42
+    target-rule: SELF
+    interruptible: true
+    radius: 6.0
+    power: 7.0
+    presentation: { telegraph-particle: ENCHANT, telegraph-sound: block.bell.resonate, impact-particle: SCRAPE, impact-sound: block.iron_door.close, particle-count: 34, volume: 1.1, pitch: 0.8 }
+  forgefall:
+    kind: PROJECTILE_BURST
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 170
+    telegraph-ticks: 38
+    recovery-ticks: 38
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 24.0
+    power: 4.3
+    tuning: { projectiles: 5 }
+    presentation: { telegraph-particle: LAVA, telegraph-sound: entity.blaze.ambient, impact-particle: FLAME, impact-sound: block.lava.extinguish, particle-count: 34, volume: 1.1, pitch: 0.7 }
+  whiteout_sentence:
+    kind: DELAYED_RUNE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 200
+    telegraph-ticks: 50
+    recovery-ticks: 35
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 5.0
+    power: 8.0
+    presentation: { telegraph-particle: SNOWFLAKE, telegraph-sound: entity.stray.ambient, impact-particle: SNOWFLAKE, impact-sound: block.glass.break, particle-count: 36, volume: 1.0, pitch: 0.65 }
+  echo_rupture:
+    kind: GROUND_SLAM
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 215
+    telegraph-ticks: 54
+    recovery-ticks: 48
+    target-rule: SELF
+    interruptible: true
+    radius: 8.0
+    power: 8.0
+    presentation: { telegraph-particle: SCULK_SOUL, telegraph-sound: entity.warden.sonic_charge, impact-particle: SONIC_BOOM, impact-sound: entity.warden.sonic_boom, particle-count: 30, volume: 1.2, pitch: 0.75 }
+  broodtrail:
+    kind: POISON_CLOUD
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 165
+    telegraph-ticks: 34
+    recovery-ticks: 30
+    target-rule: SELF
+    interruptible: true
+    radius: 6.5
+    power: 2.4
+    tuning: { duration-ticks: 100, amplifier: 0 }
+    presentation: { telegraph-particle: WHITE_ASH, telegraph-sound: entity.spider.ambient, impact-particle: SPORE_BLOSSOM_AIR, impact-sound: entity.spider.death, particle-count: 32, volume: 1.0, pitch: 0.7 }
+  tempest_circuit:
+    kind: LUNGE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 135
+    telegraph-ticks: 28
+    recovery-ticks: 30
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 16.0
+    power: 1.35
+    presentation: { telegraph-particle: ELECTRIC_SPARK, telegraph-sound: entity.breeze.charge, impact-particle: FLASH, impact-sound: entity.lightning_bolt.impact, particle-count: 28, volume: 1.0, pitch: 1.25 }
+  plague_toll:
+    kind: POISON_CLOUD
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
+    telegraph-ticks: 52
+    recovery-ticks: 45
+    target-rule: SELF
+    interruptible: true
+    radius: 8.0
+    power: 3.0
+    conditions: [ { type: HEALTH_BELOW, value: 0.55 } ]
+    tuning: { duration-ticks: 120, amplifier: 1 }
+    presentation: { telegraph-particle: SPORE_BLOSSOM_AIR, telegraph-sound: block.bell.resonate, impact-particle: ENTITY_EFFECT, impact-sound: entity.zombie_villager.cure, particle-count: 38, volume: 1.15, pitch: 0.55 }
+  sentinel_counter:
+    kind: SHIELD
+    triggers: [ ON_DAMAGED ]
+    cooldown-ticks: 190
+    telegraph-ticks: 18
+    recovery-ticks: 38
+    target-rule: SELF
+    interruptible: false
+    radius: 4.0
+    power: 0.6
+    presentation: { telegraph-particle: SCRAPE, telegraph-sound: entity.iron_golem.repair, impact-particle: ELECTRIC_SPARK, impact-sound: entity.iron_golem.damage, particle-count: 28, volume: 1.0, pitch: 0.85 }
+  gatebreaker_charge:
+    kind: LUNGE
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 155
+    telegraph-ticks: 36
+    recovery-ticks: 52
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 15.0
+    power: 1.45
+    presentation: { telegraph-particle: ASH, telegraph-sound: entity.piglin_brute.angry, impact-particle: FLAME, impact-sound: entity.hoglin.attack, particle-count: 30, volume: 1.1, pitch: 0.72 }
+  sovereign_recovery:
+    kind: RETREAT
+    triggers: [ ON_TIMER ]
+    cooldown-ticks: 210
+    telegraph-ticks: 20
+    recovery-ticks: 46
+    target-rule: CURRENT_TARGET
+    interruptible: false
+    radius: 10.0
+    power: 1.05
+    presentation: { telegraph-particle: CLOUD, telegraph-sound: entity.ravager.stunned, impact-particle: DUST_PLUME, impact-sound: entity.ravager.roar, particle-count: 24, volume: 1.0, pitch: 0.75 }
+  forge_overheat:
+    kind: COMPOSITE
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
+    telegraph-ticks: 48
+    recovery-ticks: 42
+    target-rule: SELF
+    interruptible: true
+    radius: 7.0
+    power: 6.0
+    conditions: [ { type: HEALTH_BELOW, value: 0.50 } ]
+    actions:
+      - { type: DAMAGE, target: NEARBY_PLAYERS, parameters: { amount: 6.0, radius: 7.0 } }
+      - { type: APPLY_EFFECT, target: SELF, reference: speed, parameters: { duration-ticks: 1000, amplifier: 0 } }
+    presentation: { telegraph-particle: LAVA, telegraph-sound: block.furnace.fire_crackle, impact-particle: FLAME, impact-sound: entity.generic.explode, particle-count: 38, volume: 1.15, pitch: 0.65 }
+  unheard_phase:
+    kind: COMPOSITE
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
+    telegraph-ticks: 58
+    recovery-ticks: 48
+    target-rule: SELF
+    interruptible: true
+    radius: 9.0
+    power: 5.0
+    conditions: [ { type: HEALTH_BELOW, value: 0.55 } ]
+    actions:
+      - { type: APPLY_EFFECT, target: NEARBY_PLAYERS, reference: darkness, parameters: { radius: 9.0, duration-ticks: 120, amplifier: 0 } }
+      - { type: KNOCKBACK, target: NEARBY_PLAYERS, parameters: { radius: 9.0, strength: 0.9 } }
+    presentation: { telegraph-particle: SCULK_SOUL, telegraph-sound: entity.warden.heartbeat, impact-particle: SONIC_BOOM, impact-sound: entity.warden.roar, particle-count: 36, volume: 1.2, pitch: 0.65 }
+  storm_eye:
+    kind: DELAYED_RUNE
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
+    telegraph-ticks: 52
+    recovery-ticks: 34
+    target-rule: CURRENT_TARGET
+    interruptible: true
+    radius: 7.0
+    power: 9.0
+    conditions: [ { type: HEALTH_BELOW, value: 0.50 } ]
+    presentation: { telegraph-particle: ELECTRIC_SPARK, telegraph-sound: entity.lightning_bolt.thunder, impact-particle: FLASH, impact-sound: entity.lightning_bolt.impact, particle-count: 38, volume: 1.2, pitch: 0.75 }
+  sentinel_protocol:
+    kind: COMPOSITE
+    triggers: [ HEALTH_THRESHOLD ]
+    cooldown-ticks: 12000
+    telegraph-ticks: 44
+    recovery-ticks: 50
+    target-rule: SELF
+    interruptible: true
+    radius: 6.0
+    power: 4.0
+    conditions: [ { type: HEALTH_BELOW, value: 0.45 } ]
+    actions:
+      - { type: GUARD, target: SELF, parameters: { duration-ticks: 140, amplifier: 1 } }
+      - { type: KNOCKBACK, target: NEARBY_PLAYERS, parameters: { radius: 6.0, strength: 1.0 } }
+    presentation: { telegraph-particle: SCRAPE, telegraph-sound: entity.iron_golem.repair, impact-particle: ELECTRIC_SPARK, impact-sound: block.anvil.land, particle-count: 34, volume: 1.15, pitch: 0.7 }
 
 # Paper 1.21.11 EntityType.values() is the runtime completeness authority. Every living,
 # spawnable, non-player type has exactly one explicit row; missing rows fail startup/CI closed.
@@ -660,14 +997,15 @@ mob-loot-profiles:
 
 mob-templates:
   frozen_husk:
-    schema-version: 1
-    display-name: "Dermedt Kóborló"
+    schema-version: 2
+    display-name: "Jégkéreg Vánszorgó"
     entity-type: ZOMBIE
     level: { minimum: 6, maximum: 16 }
     rank: NORMAL
-    archetype: BRUISER
+    archetype: DEFENDER
     stats: { health-multiplier: 1.10, damage-multiplier: 0.90, movement-multiplier: 0.90, cc-resistance: 0.10 }
-    abilities: [ "iceguard" ]
+    abilities: [ "ossuary_guard" ]
+    rank-abilities: { VETERAN: [ "glacial_slam" ], ELITE: [ "grave_hook" ] }
     resistances: [ "frost" ]
     weaknesses: [ "fire" ]
     loot-profile: frozen_wilderness
@@ -675,15 +1013,19 @@ mob-templates:
     spawn-policy: natural_or_authored
     bestiary-id: frozen_husk
     affix-pool: [ "VOLATILE", "SHIELDED", "FROSTBOUND", "FRENZIED" ]
+    natural-context: { weight: 1.1, required: [ "dimension:normal" ], level-offset: 0, no-daylight-burn: true, affinities: { "biome:snowy_plains": 4.0, "biome:snowy_taiga": 3.0, "biome:ice_spikes": 4.5 } }
+    bestiary-summary: "Jégpáncélban tartja a havas ösvényt; veteránként körkörös fagyütést nyit."
+    counterplay-hint: "Tűzzel törd meg a páncélt, és ne állj a kék gyűrűben."
   frostbound_stray:
-    schema-version: 1
-    display-name: "Fagybilincs Íjász"
+    schema-version: 2
+    display-name: "Dérbilincs Lövész"
     entity-type: STRAY
     level: { minimum: 14, maximum: 26 }
     rank: NORMAL
     archetype: RANGED
     stats: { health-multiplier: 0.95, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.15 }
-    abilities: [ "rime_burst" ]
+    abilities: [ "rime_burst", "scatter_step" ]
+    rank-abilities: { ELITE: [ "delayed_frost_rune" ] }
     resistances: [ "frost" ]
     weaknesses: [ "fire" ]
     loot-profile: frozen_wilderness
@@ -691,15 +1033,18 @@ mob-templates:
     spawn-policy: natural_or_authored
     bestiary-id: frostbound_stray
     affix-pool: [ "VOLATILE", "SHIELDED", "FROSTBOUND", "ARCANE" ]
+    natural-context: { weight: 1.0, required: [ "dimension:normal" ], level-offset: 2, no-daylight-burn: true, affinities: { "biome:snowy_taiga": 4.0, "biome:ice_spikes": 3.0 } }
+    bestiary-summary: "Fagyos sortűz után oldalra hátrál, elitként késleltetett dérjelet rak."
+    counterplay-hint: "A sorozat után zárj rá; tűzzel rövidítsd le a párbajt."
   deep_vein_stalker:
-    schema-version: 1
-    display-name: "Érjáró Leselkedő"
+    schema-version: 2
+    display-name: "Érvágó Leselkedő"
     entity-type: CAVE_SPIDER
     level: { minimum: 24, maximum: 40 }
     rank: NORMAL
     archetype: ASSASSIN
     stats: { health-multiplier: 0.90, damage-multiplier: 1.10, movement-multiplier: 1.15, cc-resistance: 0.10 }
-    abilities: [ "telegraphed_lunge" ]
+    abilities: [ "webspring", "silk_snare" ]
     resistances: [ "poison" ]
     weaknesses: [ "arcane" ]
     loot-profile: deep_mine
@@ -707,15 +1052,18 @@ mob-templates:
     spawn-policy: natural_or_authored
     bestiary-id: deep_vein_stalker
     affix-pool: [ "VOLATILE", "VAMPIRIC", "FRENZIED", "FROSTBOUND" ]
+    natural-context: { weight: 1.0, required: [ "dimension:normal", "depth:deep" ], level-offset: 4, affinities: { "territory:dungeon": 2.5 } }
+    bestiary-summary: "Selyemjelbe ugrik, majd a barlangfalak mentén keres új támadási szöget."
+    counterplay-hint: "Előbb a jelből lépj ki, aztán a landolást büntesd."
   rime_cultist:
-    schema-version: 1
-    display-name: "Zúzmara Kultista"
+    schema-version: 2
+    display-name: "Dérige Acolitusa"
     entity-type: PILLAGER
     level: { minimum: 22, maximum: 38 }
     rank: VETERAN
     archetype: SKIRMISHER
     stats: { health-multiplier: 1.10, damage-multiplier: 1.05, movement-multiplier: 1.05, cc-resistance: 0.20 }
-    abilities: [ "telegraphed_lunge", "rime_burst" ]
+    abilities: [ "rime_burst", "cultist_reposition" ]
     resistances: [ "frost" ]
     weaknesses: [ "holy" ]
     loot-profile: cultist
@@ -723,15 +1071,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: rime_cultist
     affix-pool: [ "VOLATILE", "SHIELDED", "ARCANE", "SUMMONER" ]
+    bestiary-summary: "Fagyos röptét fátyollépéssel váltogatja a kultista vonal mögött."
+    counterplay-hint: "A teleporthang után fordulj az új pozícióra és zárd le a középtávot."
   glacier_champion:
-    schema-version: 1
-    display-name: "Jégfal Bajnoka"
+    schema-version: 2
+    display-name: "Jégfal Ökle"
     entity-type: RAVAGER
     level: { minimum: 42, maximum: 50 }
     rank: CHAMPION
     archetype: CHARGER
     stats: { health-multiplier: 1.55, damage-multiplier: 1.10, movement-multiplier: 1.0, cc-resistance: 0.55 }
-    abilities: [ "telegraphed_lunge", "glacial_slam", "iceguard" ]
+    abilities: [ "gatebreaker_charge", "glacial_slam", "iceguard" ]
     resistances: [ "frost", "knockback" ]
     weaknesses: [ "fire" ]
     loot-profile: champion
@@ -739,15 +1089,17 @@ mob-templates:
     spawn-policy: authored
     bestiary-id: glacier_champion
     affix-pool: [ "SHIELDED", "FRENZIED", "FROSTBOUND", "VOLATILE" ]
+    bestiary-summary: "Hosszú roham után fagyütéssel tartja távol a visszatámadókat."
+    counterplay-hint: "A rohamot oldalazd ki, a kék gyűrűt hagyd el, majd tűzzel támadj."
   ring_warden:
-    schema-version: 1
-    display-name: "A Gyűrűk Őre"
+    schema-version: 2
+    display-name: "Körzáró, a Törött Eskü"
     entity-type: RAVAGER
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
     archetype: DEFENDER
     stats: { health-multiplier: 0.12, damage-multiplier: 0.51, movement-multiplier: 0.95, cc-resistance: 0.80 }
-    abilities: [ "boss_slam", "iceguard", "summon_frozen_adds", "boss_enrage" ]
+    abilities: [ "ring_lock", "blackiron_bash", "sovereign_recovery", "summon_frozen_adds" ]
     resistances: [ "frost", "knockback" ]
     weaknesses: [ "arcane" ]
     loot-profile: world_boss
@@ -755,15 +1107,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: ring_warden
     affix-pool: []
+    behavior: { preferred-range: 3.0, minimum-comfort-range: 0.0, maximum-pursuit-range: 14.0, retreat-tendency: 0.04, reposition-tendency: 0.15, strafe-tendency: 0.05, aggression-cadence: 0.84, chase-pressure: 0.35 }
+    bestiary-summary: "Törött eskükből kovácsolt körökkel lezárja a teret, majd pajzséllel bontja a formációt."
+    counterplay-hint: "Lépj ki a csengő rúnából, és a kihagyott pajzsütés recoveryjében támadj."
   magma_behemoth:
-    schema-version: 1
-    display-name: "Lávakohó Behemót"
+    schema-version: 2
+    display-name: "Salakkohó Szíve"
     entity-type: BLAZE
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
     archetype: ARTILLERY
     stats: { health-multiplier: 0.60, damage-multiplier: 0.56, movement-multiplier: 0.9, cc-resistance: 0.75 }
-    abilities: [ "rime_burst", "boss_weakening_zone", "war_cry", "boss_enrage" ]
+    abilities: [ "forgefall", "ember_surge", "hunter_retreat", "forge_overheat" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: world_boss
@@ -771,15 +1126,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: magma_behemoth
     affix-pool: []
+    behavior: { preferred-range: 16.0, minimum-comfort-range: 7.0, maximum-pursuit-range: 28.0, retreat-tendency: 0.84, reposition-tendency: 0.48, strafe-tendency: 0.2, aggression-cadence: 0.72, chase-pressure: 0.25 }
+    bestiary-summary: "Távoli salakesőt lő, közelre hőhullámot vet; fél életen túlhevül."
+    counterplay-hint: "Fedezékből közelíts, a salakzápor után támadj, túlhevüléskor tarts távolságot."
   frost_king:
-    schema-version: 1
-    display-name: "Fagyott Trón Királya"
+    schema-version: 2
+    display-name: "Kallan Elárvult Trónja"
     entity-type: STRAY
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
     archetype: RANGED
     stats: { health-multiplier: 0.66, damage-multiplier: 0.51, movement-multiplier: 1.0, cc-resistance: 0.8 }
-    abilities: [ "rime_burst", "boss_frost_zone", "summon_frozen_adds", "boss_enrage" ]
+    abilities: [ "whiteout_sentence", "rime_burst", "boss_frost_zone", "summon_frozen_adds" ]
     resistances: [ "frost" ]
     weaknesses: [ "fire" ]
     loot-profile: world_boss
@@ -787,15 +1145,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: frost_king
     affix-pool: []
+    behavior: { preferred-range: 13.0, minimum-comfort-range: 6.0, maximum-pursuit-range: 27.0, retreat-tendency: 0.76, reposition-tendency: 0.7, strafe-tendency: 0.58, aggression-cadence: 0.82, chase-pressure: 0.4 }
+    bestiary-summary: "A fehér ítélet jelét fagymezővel fedi, majd dérszolgákkal zárja a kijáratot."
+    counterplay-hint: "A hókörből azonnal lépj ki; az idézett szolgákat bontsd le a következő sortűz előtt."
   bone_king:
-    schema-version: 1
-    display-name: "Csontkirály"
+    schema-version: 2
+    display-name: "Koronátlan Csontúr"
     entity-type: WITHER_SKELETON
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
     archetype: SUMMONER
     stats: { health-multiplier: 0.60, damage-multiplier: 0.61, movement-multiplier: 1.0, cc-resistance: 0.8 }
-    abilities: [ "veteran_cleave", "boss_wither_zone", "summon_bone_adds", "boss_enrage" ]
+    abilities: [ "marrow_volley", "boss_wither_zone", "summon_bone_adds", "ossuary_guard" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: world_boss
@@ -803,15 +1164,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: bone_king
     affix-pool: []
+    behavior: { preferred-range: 11.0, minimum-comfort-range: 5.5, maximum-pursuit-range: 25.0, retreat-tendency: 0.74, reposition-tendency: 0.64, strafe-tendency: 0.32, aggression-cadence: 0.78, chase-pressure: 0.36 }
+    bestiary-summary: "Csontsortűz és hervasztó udvar mögül vezényli elő saját sírkíséretét."
+    counterplay-hint: "Az idézés megszakítható; különben előbb a kíséretet öld meg, majd kerüld meg a csontpajzsot."
   deep_horror:
-    schema-version: 1
-    display-name: "Mélységi Rém"
+    schema-version: 2
+    display-name: "A Visszanéző Csend"
     entity-type: WARDEN
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
-    archetype: BRUISER
+    archetype: CONTROLLER
     stats: { health-multiplier: 0.024, damage-multiplier: 0.51, movement-multiplier: 0.9, cc-resistance: 0.9 }
-    abilities: [ "boss_slam", "boss_darkness_zone", "iceguard", "boss_enrage" ]
+    abilities: [ "echo_rupture", "boss_darkness_zone", "unheard_phase", "iceguard" ]
     resistances: [ "dark", "knockback" ]
     weaknesses: [ "arcane" ]
     loot-profile: world_boss
@@ -819,15 +1183,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: deep_horror
     affix-pool: []
+    behavior: { preferred-range: 7.0, minimum-comfort-range: 2.5, maximum-pursuit-range: 24.0, retreat-tendency: 0.18, reposition-tendency: 0.42, strafe-tendency: 0.18, aggression-cadence: 0.7, chase-pressure: 0.68 }
+    bestiary-summary: "A Warden erejét lefelé normalizált, de hangrobbanással és sötétségfázissal teret uraló találkozás."
+    counterplay-hint: "Az emelkedő szívhangnál távolodj; a hangrobbanás után hosszú támadási ablak nyílik."
   venom_broodmother:
-    schema-version: 1
-    display-name: "Méreg Anyakirálynő"
+    schema-version: 2
+    display-name: "Selyemanya Vezhra"
     entity-type: CAVE_SPIDER
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
     archetype: ASSASSIN
     stats: { health-multiplier: 1.0, damage-multiplier: 0.51, movement-multiplier: 1.2, cc-resistance: 0.7 }
-    abilities: [ "telegraphed_lunge", "venom_cloud", "summon_venom_adds", "boss_enrage" ]
+    abilities: [ "webspring", "broodtrail", "summon_venom_adds", "scatter_step" ]
     resistances: [ "poison" ]
     weaknesses: [ "fire" ]
     loot-profile: world_boss
@@ -835,15 +1202,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: venom_broodmother
     affix-pool: []
+    behavior: { preferred-range: 4.0, minimum-comfort-range: 1.4, maximum-pursuit-range: 27.0, retreat-tendency: 0.54, reposition-tendency: 0.9, strafe-tendency: 0.7, aggression-cadence: 1.18, chase-pressure: 0.82 }
+    bestiary-summary: "Mérgező ösvényt rajzol ugrásai közé, majd ivadékokkal zárja a tiszta útvonalakat."
+    counterplay-hint: "Ne kövesd az ösvényén; az ivadékokat ritkítsd, és a landoláskor üss vissza."
   storm_herald:
-    schema-version: 1
-    display-name: "Vihar Hírnöke"
+    schema-version: 2
+    display-name: "Orkánénekes Rael"
     entity-type: VINDICATOR
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
     archetype: SKIRMISHER
     stats: { health-multiplier: 0.50, damage-multiplier: 0.61, movement-multiplier: 1.15, cc-resistance: 0.75 }
-    abilities: [ "rime_burst", "boss_weakening_zone", "boss_slam", "boss_enrage" ]
+    abilities: [ "tempest_circuit", "storm_brand", "storm_eye", "scatter_step" ]
     resistances: [ "lightning" ]
     weaknesses: [ "frost" ]
     loot-profile: world_boss
@@ -851,15 +1221,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: storm_herald
     affix-pool: []
+    behavior: { preferred-range: 6.0, minimum-comfort-range: 2.5, maximum-pursuit-range: 28.0, retreat-tendency: 0.4, reposition-tendency: 0.92, strafe-tendency: 0.8, aggression-cadence: 1.16, chase-pressure: 0.74 }
+    bestiary-summary: "Villámjeleket rak le, majd átcikázik rajtuk; fél életen összehúzza a vihar szemét."
+    counterplay-hint: "A jelek közti biztonságos sávot keresd, ne a boss egyenes üldözését válaszd."
   plague_titan:
-    schema-version: 1
-    display-name: "Dögvész Titán"
+    schema-version: 2
+    display-name: "Rothadás Hordozója"
     entity-type: HUSK
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
-    archetype: BRUISER
+    archetype: CONTROLLER
     stats: { health-multiplier: 0.72, damage-multiplier: 0.51, movement-multiplier: 0.9, cc-resistance: 0.85 }
-    abilities: [ "boss_slam", "boss_wither_zone", "venom_cloud", "boss_enrage" ]
+    abilities: [ "rot_bloom", "boss_weakening_zone", "plague_toll", "grave_hook" ]
     resistances: [ "poison" ]
     weaknesses: [ "holy" ]
     loot-profile: world_boss
@@ -867,15 +1240,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: plague_titan
     affix-pool: []
+    behavior: { preferred-range: 5.5, minimum-comfort-range: 1.5, maximum-pursuit-range: 22.0, retreat-tendency: 0.12, reposition-tendency: 0.46, strafe-tendency: 0.18, aggression-cadence: 0.78, chase-pressure: 0.62 }
+    bestiary-summary: "Lassan mozgó járványfront: gyengítő és mérgező zónákkal fogyasztja a tiszta teret."
+    counterplay-hint: "Folyamatosan forgasd a pályát; a harangszónál hagyd el a belső zónát."
   golem_sentinel:
-    schema-version: 1
-    display-name: "Vas Őrszem"
+    schema-version: 2
+    display-name: "A Jelszó Nélküli"
     entity-type: IRON_GOLEM
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
     archetype: DEFENDER
     stats: { health-multiplier: 0.16, damage-multiplier: 0.51, movement-multiplier: 0.85, cc-resistance: 0.95 }
-    abilities: [ "boss_slam", "iceguard", "war_cry", "boss_enrage" ]
+    abilities: [ "blackiron_bash", "sentinel_counter", "sentinel_protocol", "glacial_slam" ]
     resistances: [ "stone", "knockback" ]
     weaknesses: [ "lightning" ]
     loot-profile: world_boss
@@ -883,15 +1259,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: golem_sentinel
     affix-pool: []
+    behavior: { preferred-range: 3.0, minimum-comfort-range: 0.0, maximum-pursuit-range: 13.0, retreat-tendency: 0.0, reposition-tendency: 0.08, strafe-tendency: 0.0, aggression-cadence: 0.72, chase-pressure: 0.28 }
+    bestiary-summary: "Nem üldöz messz: a kaput tartja, sebzésre ellenpajzsot emel, végül vészprotokollra vált."
+    counterplay-hint: "Ne pazarold a burstöt az ellenpajzsra; villámmal törd meg, majd a lassú ütés után támadj."
   piglin_warlord:
-    schema-version: 1
-    display-name: "Pokoli Hadúr"
+    schema-version: 2
+    display-name: "Varkhaz, a Kaputörő"
     entity-type: PIGLIN_BRUTE
     level: { minimum: 75, maximum: 75 }
     rank: WORLD_BOSS
     archetype: CHARGER
     stats: { health-multiplier: 0.24, damage-multiplier: 0.61, movement-multiplier: 1.05, cc-resistance: 0.8 }
-    abilities: [ "veteran_cleave", "war_cry", "summon_piglin_adds", "boss_enrage" ]
+    abilities: [ "gatebreaker_charge", "war_cry", "summon_piglin_adds", "sovereign_recovery" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: world_boss
@@ -899,15 +1278,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: piglin_warlord
     affix-pool: []
+    behavior: { preferred-range: 8.0, minimum-comfort-range: 2.5, maximum-pursuit-range: 29.0, retreat-tendency: 0.12, reposition-tendency: 0.54, strafe-tendency: 0.12, aggression-cadence: 0.98, chase-pressure: 0.9 }
+    bestiary-summary: "Hosszú rohammal töri szét a sort, csatakiáltással erősít, majd testőrséget hív."
+    counterplay-hint: "Vezesd falnak a rohamot; a testőrséget bontsd le, mielőtt újra csatakiált."
   frozen_boss_add:
-    schema-version: 1
-    display-name: "Dermedt Szolga"
+    schema-version: 2
+    display-name: "Dértrón Apródja"
     entity-type: STRAY
     level: { minimum: 30, maximum: 75 }
     rank: VETERAN
     archetype: RANGED
     stats: { health-multiplier: 0.9, damage-multiplier: 0.8, movement-multiplier: 1.0, cc-resistance: 0.2 }
-    abilities: [ "rime_burst" ]
+    abilities: [ "rime_burst", "scatter_step" ]
     resistances: [ "frost" ]
     weaknesses: [ "fire" ]
     loot-profile: world_boss
@@ -915,15 +1297,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: frozen_boss_add
     affix-pool: []
+    bestiary-summary: "Egyszerű boss-add: sorozattal nyomást ad, majd visszalép a fehér ítélet mögé."
+    counterplay-hint: "Gyorsan bontsd le a sortűz után."
   bone_boss_add:
-    schema-version: 1
-    display-name: "Csontkirály Szolgája"
+    schema-version: 2
+    display-name: "Koronátlan Lándzsás"
     entity-type: SKELETON
     level: { minimum: 30, maximum: 75 }
     rank: VETERAN
-    archetype: RANGED
+    archetype: DEFENDER
     stats: { health-multiplier: 1.0, damage-multiplier: 0.8, movement-multiplier: 1.0, cc-resistance: 0.2 }
-    abilities: [ "veteran_cleave" ]
+    abilities: [ "blackiron_bash", "ossuary_guard" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: world_boss
@@ -931,15 +1315,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: bone_boss_add
     affix-pool: []
+    bestiary-summary: "A Csontúr egyszerű pajzs-addja, amely a fő célpont elé áll."
+    counterplay-hint: "Kerüld meg vagy kontrolláld, mielőtt a bosst támadod."
   venom_boss_add:
-    schema-version: 1
-    display-name: "Méregivadék"
+    schema-version: 2
+    display-name: "Vezhra Ivadéka"
     entity-type: CAVE_SPIDER
     level: { minimum: 30, maximum: 75 }
     rank: VETERAN
     archetype: ASSASSIN
     stats: { health-multiplier: 0.8, damage-multiplier: 0.8, movement-multiplier: 1.1, cc-resistance: 0.15 }
-    abilities: [ "telegraphed_lunge" ]
+    abilities: [ "webspring" ]
     resistances: [ "poison" ]
     weaknesses: [ "fire" ]
     loot-profile: world_boss
@@ -947,15 +1333,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: venom_boss_add
     affix-pool: []
+    bestiary-summary: "Egyetlen olvasható ugrással zavaró, törékeny boss-add."
+    counterplay-hint: "A landoláskor egy gyors fókusz elég."
   piglin_boss_add:
-    schema-version: 1
-    display-name: "Hadúri Rohamosztagos"
+    schema-version: 2
+    display-name: "Varkhaz Testőre"
     entity-type: PIGLIN
     level: { minimum: 30, maximum: 75 }
     rank: VETERAN
     archetype: BRUISER
     stats: { health-multiplier: 1.0, damage-multiplier: 0.85, movement-multiplier: 1.0, cc-resistance: 0.2 }
-    abilities: [ "veteran_cleave" ]
+    abilities: [ "blackiron_bash", "war_cry" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: world_boss
@@ -963,15 +1351,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: piglin_boss_add
     affix-pool: []
+    bestiary-summary: "A hadúr közelében maradó testőr, amely rövid erősítő ablakot nyit."
+    counterplay-hint: "Szakítsd meg a csatakiáltását, majd válaszd le Varkhazról."
   invasion_undead_champion:
-    schema-version: 1
-    display-name: "Élőhalott Áradat Bajnoka"
+    schema-version: 2
+    display-name: "Dögkürt Hordozó"
     entity-type: WITHER_SKELETON
     level: { minimum: 10, maximum: 70 }
     rank: CHAMPION
     archetype: BRUISER
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.45 }
-    abilities: [ "veteran_cleave", "boss_slam", "war_cry" ]
+    abilities: [ "grave_hook", "rot_bloom", "war_cry" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: champion
@@ -979,15 +1369,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: invasion_undead_champion
     affix-pool: []
+    bestiary-summary: "Kürtszóval gyorsítja az áradatot, majd rothadó rántással szétszedi a hátsó sort."
+    counterplay-hint: "A kürt előjelét szakítsd meg, vagy válaszd le a hordáról."
   invasion_bone_champion:
-    schema-version: 1
-    display-name: "Csontlégió Bajnoka"
+    schema-version: 2
+    display-name: "Menetoszlop Prefektusa"
     entity-type: WITHER_SKELETON
     level: { minimum: 10, maximum: 70 }
     rank: CHAMPION
     archetype: DEFENDER
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 0.95, cc-resistance: 0.5 }
-    abilities: [ "veteran_cleave", "boss_slam", "iceguard" ]
+    abilities: [ "blackiron_bash", "ossuary_guard", "marrow_volley" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: champion
@@ -995,15 +1387,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: invasion_bone_champion
     affix-pool: []
+    bestiary-summary: "Pajzsként áll a csontíjászok előtt, közelre üt, távolra sortüzet vezényel."
+    counterplay-hint: "Kerüld meg a frontját, és ne üss bele a felhúzott őrpajzsba."
   invasion_spider_champion:
-    schema-version: 1
-    display-name: "Pókfészek Bajnoka"
+    schema-version: 2
+    display-name: "Fészekmetsző Khera"
     entity-type: SPIDER
     level: { minimum: 10, maximum: 70 }
     rank: CHAMPION
     archetype: ASSASSIN
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.15, cc-resistance: 0.35 }
-    abilities: [ "telegraphed_lunge", "venom_cloud", "boss_slam" ]
+    abilities: [ "webspring", "broodtrail", "silk_snare" ]
     resistances: [ "poison" ]
     weaknesses: [ "fire" ]
     loot-profile: champion
@@ -1011,15 +1405,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: invasion_spider_champion
     affix-pool: []
+    bestiary-summary: "Selyemjellel lezárja a kijáratot, majd méregösvényen ugrik a célra."
+    counterplay-hint: "A fehér körből előbb lépj ki, csak utána kövesd a landolását."
   invasion_chaos_champion:
-    schema-version: 1
-    display-name: "Káosz-horda Bajnoka"
+    schema-version: 2
+    display-name: "Négyjelű Ostromvad"
     entity-type: RAVAGER
     level: { minimum: 10, maximum: 70 }
     rank: CHAMPION
     archetype: CHARGER
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.55 }
-    abilities: [ "telegraphed_lunge", "boss_slam", "war_cry" ]
+    abilities: [ "gatebreaker_charge", "ring_lock", "war_cry" ]
     resistances: [ "knockback" ]
     weaknesses: [ "arcane" ]
     loot-profile: champion
@@ -1027,15 +1423,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: invasion_chaos_champion
     affix-pool: []
+    bestiary-summary: "Rúnával rögzíti a célpontot, majd hosszú rohammal töri át a vegyes horda frontját."
+    counterplay-hint: "A rúnából kifelé, a rohamra oldalra mozogj; a recovery alatt fókuszáld."
   invasion_nether_champion:
-    schema-version: 1
-    display-name: "Alvilági Roham Bajnoka"
+    schema-version: 2
+    display-name: "Parázskapu Rohamosa"
     entity-type: PIGLIN_BRUTE
     level: { minimum: 10, maximum: 70 }
     rank: CHAMPION
     archetype: CHARGER
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.05, cc-resistance: 0.45 }
-    abilities: [ "veteran_cleave", "boss_slam", "war_cry" ]
+    abilities: [ "gatebreaker_charge", "ember_surge", "war_cry" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: champion
@@ -1043,15 +1441,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: invasion_nether_champion
     affix-pool: []
+    bestiary-summary: "Kaputörő rohama után parázshullámmal tiltja le a közvetlen visszatámadást."
+    counterplay-hint: "Csald üres térbe a rohamot, majd a hamugyűrűn kívülről üss vissza."
   invasion_illager_champion:
-    schema-version: 1
-    display-name: "Zsivány Hadtest Bajnoka"
+    schema-version: 2
+    display-name: "Zálogszedő Kosh"
     entity-type: RAVAGER
     level: { minimum: 10, maximum: 70 }
     rank: CHAMPION
-    archetype: CHARGER
+    archetype: DEFENDER
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.55 }
-    abilities: [ "telegraphed_lunge", "boss_slam", "iceguard" ]
+    abilities: [ "blackiron_bash", "ring_lock", "iceguard" ]
     resistances: [ "knockback" ]
     weaknesses: [ "arcane" ]
     loot-profile: champion
@@ -1059,15 +1459,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: invasion_illager_champion
     affix-pool: []
+    bestiary-summary: "A lövészek előtt tartja a teret, és zárórúnával bünteti a frontális rohamot."
+    counterplay-hint: "Oldalról bontsd a kíséretét; a pajzs lejárta után lassú."
   invasion_witch_champion:
-    schema-version: 1
-    display-name: "Boszorkány Gyülekezet Bajnoka"
+    schema-version: 2
+    display-name: "Üstcsillag Matrona"
     entity-type: EVOKER
     level: { minimum: 10, maximum: 70 }
     rank: CHAMPION
     archetype: CONTROLLER
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.45 }
-    abilities: [ "rime_burst", "boss_weakening_zone", "war_cry" ]
+    abilities: [ "mire_hex", "mire_miasma", "winter_mend" ]
     resistances: [ "arcane" ]
     weaknesses: [ "holy" ]
     loot-profile: champion
@@ -1075,15 +1477,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: invasion_witch_champion
     affix-pool: []
+    bestiary-summary: "Rontójelet és mérgező védőfelhőt váltogat, miközben visszagyógyítja a kört."
+    counterplay-hint: "Szakítsd meg a gyógyítást, majd kényszerítsd ki a felhőből."
   invasion_blazing_champion:
-    schema-version: 1
-    display-name: "Lángoló Sereg Bajnoka"
+    schema-version: 2
+    display-name: "Kohóénekes Drazh"
     entity-type: PIGLIN_BRUTE
     level: { minimum: 10, maximum: 70 }
     rank: CHAMPION
     archetype: BRUISER
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.45 }
-    abilities: [ "veteran_cleave", "boss_weakening_zone", "war_cry" ]
+    abilities: [ "cinder_barrage", "ember_surge", "war_cry" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: champion
@@ -1091,15 +1495,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: invasion_blazing_champion
     affix-pool: []
+    bestiary-summary: "Salaksortűzzel takarja a seregét, közelre hőhullámmal és csatadallal válaszol."
+    counterplay-hint: "Fedezékből szakítsd meg a dalt, és fagysebzéssel lassítsd a ritmust."
   prologue_breach_piglin:
-    schema-version: 1
-    display-name: "Hasadék Fosztogató"
+    schema-version: 2
+    display-name: "Repedésjáró"
     entity-type: PIGLIN
     level: { minimum: 10, maximum: 40 }
     rank: VETERAN
-    archetype: BRUISER
+    archetype: SKIRMISHER
     stats: { health-multiplier: 1.1, damage-multiplier: 1.0, movement-multiplier: 1.0, cc-resistance: 0.2 }
-    abilities: [ "veteran_cleave" ]
+    abilities: [ "grave_hook", "scatter_step" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: cultist
@@ -1107,15 +1513,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: prologue_breach_piglin
     affix-pool: []
+    bestiary-summary: "A hasadék széléről rövid rajtaütéssel próbálja széthúzni a védőket."
+    counterplay-hint: "Fogd el a visszalépési útját a láncrántás után."
   prologue_breach_brute:
-    schema-version: 1
-    display-name: "Hasadék Rohamosztagos"
+    schema-version: 2
+    display-name: "Repedés Törője"
     entity-type: PIGLIN_BRUTE
     level: { minimum: 10, maximum: 40 }
     rank: VETERAN
     archetype: CHARGER
     stats: { health-multiplier: 1.2, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.3 }
-    abilities: [ "telegraphed_lunge", "veteran_cleave" ]
+    abilities: [ "gatebreaker_charge", "blackiron_bash" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: cultist
@@ -1123,15 +1531,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: prologue_breach_brute
     affix-pool: []
+    bestiary-summary: "Hosszú, jól hallható rohamával nyit rést a breach frontján."
+    counterplay-hint: "Oldalazz a rohamra, majd üss a nehéz megállás alatt."
   prologue_breach_hoglin:
-    schema-version: 1
-    display-name: "Hasadék Vadkan"
+    schema-version: 2
+    display-name: "Salakagyar"
     entity-type: HOGLIN
     level: { minimum: 10, maximum: 40 }
     rank: VETERAN
     archetype: CHARGER
     stats: { health-multiplier: 1.2, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.3 }
-    abilities: [ "telegraphed_lunge", "boss_slam" ]
+    abilities: [ "short_charge", "defensive_stomp" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: cultist
@@ -1139,15 +1549,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: prologue_breach_hoglin
     affix-pool: []
+    bestiary-summary: "Rövid rohammal lök a veszélyes zónába, sérülten védekező taposást használ."
+    counterplay-hint: "Ne állj a hasadéknak háttal; a taposás köréből lépj ki."
   prologue_breach_blaze:
-    schema-version: 1
-    display-name: "Hasadékláng"
+    schema-version: 2
+    display-name: "Réspernye"
     entity-type: BLAZE
     level: { minimum: 10, maximum: 40 }
     rank: VETERAN
     archetype: ARTILLERY
     stats: { health-multiplier: 1.0, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.2 }
-    abilities: [ "rime_burst", "hunter_retreat" ]
+    abilities: [ "cinder_barrage", "hunter_retreat" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: cultist
@@ -1155,15 +1567,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: prologue_breach_blaze
     affix-pool: []
+    bestiary-summary: "A breach hátsó sorából salaksortűzzel kényszerít fedezékbe."
+    counterplay-hint: "A négyes sorozat után zárkózz fel, mielőtt visszahúzódik."
   prologue_breach_skeleton:
-    schema-version: 1
-    display-name: "Hasadék Csontőr"
+    schema-version: 2
+    display-name: "Eskücsont"
     entity-type: WITHER_SKELETON
     level: { minimum: 10, maximum: 40 }
     rank: VETERAN
     archetype: DEFENDER
     stats: { health-multiplier: 1.15, damage-multiplier: 1.0, movement-multiplier: 0.95, cc-resistance: 0.3 }
-    abilities: [ "veteran_cleave", "iceguard" ]
+    abilities: [ "blackiron_bash", "ossuary_guard" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: cultist
@@ -1171,15 +1585,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: prologue_breach_skeleton
     affix-pool: []
+    bestiary-summary: "Helytartó védő, amely pajzzsal fogja meg a breach körüli közelharcot."
+    counterplay-hint: "Kerüld meg; a pajzsütés után lassan rendeződik vissza."
   prologue_breach_elite:
-    schema-version: 1
-    display-name: "Hasadékbajnok"
+    schema-version: 2
+    display-name: "Kharveth Elővágója"
     entity-type: PIGLIN_BRUTE
     level: { minimum: 20, maximum: 50 }
     rank: ELITE
     archetype: CHARGER
     stats: { health-multiplier: 0.33, damage-multiplier: 0.65, movement-multiplier: 1.05, cc-resistance: 0.45 }
-    abilities: [ "telegraphed_lunge", "veteran_cleave", "boss_slam" ]
+    abilities: [ "gatebreaker_charge", "ember_surge", "war_cry" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: champion
@@ -1187,15 +1603,17 @@ mob-templates:
     spawn-policy: event
     bestiary-id: prologue_breach_elite
     affix-pool: []
+    bestiary-summary: "Rohammal bontja a sort, majd parázshullámmal védi a csatakiáltás ablakát."
+    counterplay-hint: "A roham recoveryjében szakítsd meg a csatakiáltást."
   prologue_finale_boss:
-    schema-version: 1
-    display-name: "A Hasadék Őre"
+    schema-version: 2
+    display-name: "Kharveth, Hasadékbíró"
     entity-type: WITHER_SKELETON
     level: { minimum: 55, maximum: 55 }
     rank: BOSS
     archetype: SUMMONER
     stats: { health-multiplier: 1.57, damage-multiplier: 0.74, movement-multiplier: 1.0, cc-resistance: 0.8 }
-    abilities: [ "boss_slam", "prologue_call_adds", "prologue_hazard", "boss_enrage" ]
+    abilities: [ "ring_lock", "prologue_call_adds", "prologue_hazard", "gatebreaker_charge" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: world_boss
@@ -1203,15 +1621,18 @@ mob-templates:
     spawn-policy: boss
     bestiary-id: prologue_finale_boss
     affix-pool: []
+    behavior: { preferred-range: 10.0, minimum-comfort-range: 4.5, maximum-pursuit-range: 25.0, retreat-tendency: 0.55, reposition-tendency: 0.68, strafe-tendency: 0.28, aggression-cadence: 0.82, chase-pressure: 0.52 }
+    bestiary-summary: "Rúnával zárja le a menekülést, csontszolgákat hív, végül a hasadék peremére kényszerít."
+    counterplay-hint: "Szakítsd meg az idézést, lépj ki a gyengítő zónából, és oldalazz a rohamra."
   prologue_flame_add:
-    schema-version: 1
-    display-name: "Hasadékláng Szolga"
+    schema-version: 2
+    display-name: "Pernyeszolga"
     entity-type: BLAZE
     level: { minimum: 20, maximum: 55 }
     rank: VETERAN
     archetype: ARTILLERY
     stats: { health-multiplier: 0.8, damage-multiplier: 0.8, movement-multiplier: 1.0, cc-resistance: 0.15 }
-    abilities: [ "rime_burst" ]
+    abilities: [ "cinder_barrage" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: world_boss
@@ -1220,14 +1641,14 @@ mob-templates:
     bestiary-id: prologue_flame_add
     affix-pool: []
   prologue_brute_add:
-    schema-version: 1
-    display-name: "Hasadék Rohamosztagos"
+    schema-version: 2
+    display-name: "Bíró Ökle"
     entity-type: PIGLIN_BRUTE
     level: { minimum: 20, maximum: 55 }
     rank: VETERAN
     archetype: BRUISER
     stats: { health-multiplier: 0.9, damage-multiplier: 0.85, movement-multiplier: 1.0, cc-resistance: 0.2 }
-    abilities: [ "veteran_cleave" ]
+    abilities: [ "blackiron_bash" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: world_boss
@@ -1236,14 +1657,14 @@ mob-templates:
     bestiary-id: prologue_brute_add
     affix-pool: []
   prologue_bone_add:
-    schema-version: 1
-    display-name: "Hasadék Csontszolga"
+    schema-version: 2
+    display-name: "Ítéletcsont"
     entity-type: WITHER_SKELETON
     level: { minimum: 20, maximum: 55 }
     rank: VETERAN
     archetype: BRUISER
     stats: { health-multiplier: 0.9, damage-multiplier: 0.85, movement-multiplier: 1.0, cc-resistance: 0.2 }
-    abilities: [ "veteran_cleave" ]
+    abilities: [ "grave_hook" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: world_boss
@@ -1252,14 +1673,15 @@ mob-templates:
     bestiary-id: prologue_bone_add
     affix-pool: []
   frontier_shambler:
-    schema-version: 1
-    display-name: "Határvidéki Kóborló"
+    schema-version: 2
+    display-name: "Sírárok Gyalogos"
     entity-type: ZOMBIE
     level: { minimum: 1, maximum: 18 }
     rank: NORMAL
     archetype: BRUISER
     stats: { health-multiplier: 1.0, damage-multiplier: 0.95, movement-multiplier: 0.95, cc-resistance: 0.05 }
-    abilities: [ "telegraphed_lunge" ]
+    abilities: [ "grave_hook" ]
+    rank-abilities: { VETERAN: [ "veteran_cleave" ], ELITE: [ "rot_bloom" ] }
     resistances: [ "poison" ]
     weaknesses: [ "holy" ]
     loot-profile: surface_survival
@@ -1267,15 +1689,18 @@ mob-templates:
     spawn-policy: natural
     bestiary-id: frontier_shambler
     affix-pool: [ "VOLATILE", "VAMPIRIC", "FRENZIED", "SHIELDED" ]
+    natural-context: { weight: 1.6, required: [ "dimension:normal", "time:night" ], level-offset: 0, no-daylight-burn: false, affinities: { "biome:plains": 1.6, "biome:forest": 1.4 } }
+    bestiary-summary: "Egyenes nyomással és jól jelzett síri rántással harcoló alap élőhalott."
+    counterplay-hint: "Oldalazz a rántásra; a kihagyás után rövid időre nyitott."
   moonbone_archer:
-    schema-version: 1
-    display-name: "Holdcsont Íjász"
+    schema-version: 2
+    display-name: "Holdcsont Rovó"
     entity-type: SKELETON
     level: { minimum: 8, maximum: 28 }
     rank: NORMAL
     archetype: RANGED
     stats: { health-multiplier: 0.9, damage-multiplier: 1.05, movement-multiplier: 1.0, cc-resistance: 0.08 }
-    abilities: [ "rime_burst" ]
+    abilities: [ "marrow_volley", "scatter_step" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: night_hunt
@@ -1283,15 +1708,19 @@ mob-templates:
     spawn-policy: natural
     bestiary-id: moonbone_archer
     affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "FROSTBOUND" ]
+    natural-context: { weight: 1.4, required: [ "dimension:normal", "time:night" ], level-offset: 1, no-daylight-burn: false, affinities: { "event:blood_moon": 2.2 } }
+    bestiary-summary: "Hármas csontsortűz után hátralép, hogy újra felépítse a lőtávot."
+    counterplay-hint: "A sorozat után azonnal zárj rá."
   dusk_weaver:
-    schema-version: 1
+    schema-version: 2
     display-name: "Alkonyszövő"
     entity-type: SPIDER
     level: { minimum: 10, maximum: 30 }
     rank: NORMAL
     archetype: ASSASSIN
     stats: { health-multiplier: 0.9, damage-multiplier: 1.1, movement-multiplier: 1.15, cc-resistance: 0.10 }
-    abilities: [ "telegraphed_lunge" ]
+    abilities: [ "webspring", "scatter_step" ]
+    rank-abilities: { ELITE: [ "silk_snare" ] }
     resistances: [ "poison" ]
     weaknesses: [ "fire" ]
     loot-profile: night_hunt
@@ -1299,15 +1728,18 @@ mob-templates:
     spawn-policy: natural
     bestiary-id: dusk_weaver
     affix-pool: [ "VAMPIRIC", "VOLATILE", "FRENZIED", "FROSTBOUND" ]
+    natural-context: { weight: 1.5, required: [ "dimension:normal", "time:night" ], level-offset: 1, affinities: { "biome:dark_forest": 2.2 } }
+    bestiary-summary: "Ugrik, visszahúzódik, majd elitként selyemjellel zárja az oldalazást."
+    counterplay-hint: "A landolás után üss, ne a visszalépését üldözd."
   mire_hexer:
-    schema-version: 1
-    display-name: "Lápi Rontó"
+    schema-version: 2
+    display-name: "Békanyelv Rontó"
     entity-type: WITCH
     level: { minimum: 18, maximum: 36 }
     rank: VETERAN
     archetype: CONTROLLER
     stats: { health-multiplier: 1.1, damage-multiplier: 0.95, movement-multiplier: 0.95, cc-resistance: 0.25 }
-    abilities: [ "rime_burst", "winter_mend" ]
+    abilities: [ "mire_hex", "mire_miasma" ]
     resistances: [ "poison" ]
     weaknesses: [ "arcane" ]
     loot-profile: swamp_survival
@@ -1315,15 +1747,18 @@ mob-templates:
     spawn-policy: natural_or_authored
     bestiary-id: mire_hexer
     affix-pool: [ "ARCANE", "VAMPIRIC", "SUMMONER", "SHIELDED" ]
+    natural-context: { weight: 0.8, required: [ "dimension:normal" ], level-offset: 4, affinities: { "biome:swamp": 4.0, "biome:mangrove_swamp": 4.5, "weather:storm": 1.8 } }
+    bestiary-summary: "Rontójelbe terel, majd méregfelhő mögé húzódik."
+    counterplay-hint: "A lila jelből lépj ki, aztán kényszerítsd el a felhőtől."
   bog_warden:
-    schema-version: 1
-    display-name: "Iszapőr"
+    schema-version: 2
+    display-name: "Sártorlasz"
     entity-type: SLIME
     level: { minimum: 14, maximum: 32 }
     rank: NORMAL
     archetype: DEFENDER
     stats: { health-multiplier: 1.25, damage-multiplier: 0.9, movement-multiplier: 0.9, cc-resistance: 0.35 }
-    abilities: [ "iceguard" ]
+    abilities: [ "iceguard", "slime_rebound" ]
     resistances: [ "poison" ]
     weaknesses: [ "frost" ]
     loot-profile: swamp_survival
@@ -1331,15 +1766,18 @@ mob-templates:
     spawn-policy: natural
     bestiary-id: bog_warden
     affix-pool: [ "SHIELDED", "VAMPIRIC", "VOLATILE", "FRENZIED" ]
+    natural-context: { weight: 1.0, required: [ "dimension:normal" ], level-offset: 2, affinities: { "biome:mangrove_swamp": 4.5, "biome:swamp": 2.5 } }
+    bestiary-summary: "Pajzsot tart a láp szűk ösvényén, majd rugalmas ütközéssel tol vissza."
+    counterplay-hint: "Várd ki a pajzsot, és fagysebzéssel fogd meg az ugrását."
   ember_brute:
-    schema-version: 1
-    display-name: "Parázsverő"
+    schema-version: 2
+    display-name: "Kohóváll"
     entity-type: PIGLIN_BRUTE
     level: { minimum: 28, maximum: 48 }
     rank: VETERAN
     archetype: BRUISER
     stats: { health-multiplier: 1.25, damage-multiplier: 1.08, movement-multiplier: 1.0, cc-resistance: 0.30 }
-    abilities: [ "telegraphed_lunge", "glacial_slam" ]
+    abilities: [ "gatebreaker_charge", "blackiron_bash" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: nether_survival
@@ -1347,15 +1785,18 @@ mob-templates:
     spawn-policy: natural_or_authored
     bestiary-id: ember_brute
     affix-pool: [ "FRENZIED", "VOLATILE", "SHIELDED", "VAMPIRIC" ]
+    natural-context: { weight: 0.8, required: [ "dimension:nether" ], level-offset: 5, affinities: { "biome:crimson_forest": 2.2, "territory:doom_gate": 2.5 } }
+    bestiary-summary: "Kaputörő rohammal zár fel, közelre feketevas ütéssel válaszol."
+    counterplay-hint: "Oldalazz, majd fagysebzéssel büntesd a recoveryt."
   ash_artillery:
-    schema-version: 1
+    schema-version: 2
     display-name: "Hamuzápor"
     entity-type: BLAZE
     level: { minimum: 26, maximum: 46 }
     rank: NORMAL
     archetype: ARTILLERY
     stats: { health-multiplier: 0.95, damage-multiplier: 1.08, movement-multiplier: 1.0, cc-resistance: 0.18 }
-    abilities: [ "rime_burst" ]
+    abilities: [ "cinder_barrage", "hunter_retreat" ]
     resistances: [ "fire" ]
     weaknesses: [ "frost" ]
     loot-profile: nether_survival
@@ -1363,15 +1804,18 @@ mob-templates:
     spawn-policy: natural
     bestiary-id: ash_artillery
     affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "SUMMONER" ]
+    natural-context: { weight: 1.0, required: [ "dimension:nether" ], level-offset: 3, affinities: { "biome:nether_wastes": 2.0, "biome:basalt_deltas": 2.0 } }
+    bestiary-summary: "Nagy lőtávról négyes salaksortűzzel uralja a nyílt teret."
+    counterplay-hint: "Fedezékből közelíts; a sorozat után ne engedd visszahátrálni."
   soul_valley_sentinel:
-    schema-version: 1
-    display-name: "Lélek-völgyi Őr"
+    schema-version: 2
+    display-name: "Lélekhomok Cöveke"
     entity-type: WITHER_SKELETON
     level: { minimum: 34, maximum: 54 }
     rank: VETERAN
     archetype: DEFENDER
     stats: { health-multiplier: 1.2, damage-multiplier: 1.05, movement-multiplier: 0.95, cc-resistance: 0.40 }
-    abilities: [ "iceguard", "glacial_slam" ]
+    abilities: [ "ossuary_guard", "blackiron_bash" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: nether_survival
@@ -1379,15 +1823,19 @@ mob-templates:
     spawn-policy: natural
     bestiary-id: soul_valley_sentinel
     affix-pool: [ "SHIELDED", "VAMPIRIC", "FRENZIED", "ARCANE" ]
+    natural-context: { weight: 0.75, required: [ "dimension:nether" ], level-offset: 6, affinities: { "biome:soul_sand_valley": 5.0 } }
+    bestiary-summary: "Alacsony üldözésű helyőrző, amely a lélekhomok útvonalait zárja."
+    counterplay-hint: "Csald ki a védett pontból, majd kerüld meg a csontpajzsot."
   void_skirmisher:
-    schema-version: 1
-    display-name: "Ürességi Portyázó"
+    schema-version: 2
+    display-name: "Üresköz Járó"
     entity-type: ENDERMAN
     level: { minimum: 38, maximum: 58 }
     rank: NORMAL
     archetype: SKIRMISHER
     stats: { health-multiplier: 1.1, damage-multiplier: 1.05, movement-multiplier: 1.1, cc-resistance: 0.30 }
-    abilities: [ "telegraphed_lunge" ]
+    abilities: [ "void_afterstep" ]
+    rank-abilities: { VETERAN: [ "grave_hook" ], ELITE: [ "storm_brand" ] }
     resistances: [ "arcane" ]
     weaknesses: [ "holy" ]
     loot-profile: end_survival
@@ -1395,15 +1843,18 @@ mob-templates:
     spawn-policy: natural
     bestiary-id: void_skirmisher
     affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED", "VAMPIRIC" ]
+    natural-context: { weight: 1.2, required: [ "dimension:the_end" ], level-offset: 4, affinities: { "biome:end_highlands": 2.4 } }
+    bestiary-summary: "Megőrzi a teleport és nézés identityt, de ütés után tudatosan új szöget keres."
+    counterplay-hint: "A teleporthang után fordulj, ne üldözd vakon a portálrészecskét."
   storm_charged_creeper:
-    schema-version: 1
-    display-name: "Vihartöltött Kúszó"
+    schema-version: 2
+    display-name: "Mennydörgő Kanóc"
     entity-type: CREEPER
     level: { minimum: 20, maximum: 44 }
     rank: NORMAL
     archetype: CHARGER
     stats: { health-multiplier: 1.05, damage-multiplier: 1.0, movement-multiplier: 1.05, cc-resistance: 0.15 }
-    abilities: [ "telegraphed_lunge" ]
+    abilities: [ "fuse_feint", "storm_brand" ]
     resistances: [ "lightning" ]
     weaknesses: [ "frost" ]
     loot-profile: storm_survival
@@ -1411,31 +1862,37 @@ mob-templates:
     spawn-policy: natural
     bestiary-id: storm_charged_creeper
     affix-pool: [ "VOLATILE", "ARCANE", "FRENZIED", "FROSTBOUND" ]
+    natural-context: { weight: 0.7, required: [ "dimension:normal", "weather:storm" ], level-offset: 4, affinities: { "weather:thunder": 3.0 } }
+    bestiary-summary: "Megőrzi a vanilla gyújtás olvashatóságát; hamis kanóccal helyezkedik, villámjelet hagy."
+    counterplay-hint: "A hamis gyújtást ne üldözd; a valódi sistergésnél azonnal tarts távolságot."
   deepstone_brood:
-    schema-version: 1
-    display-name: "Mélyszikla Raj"
+    schema-version: 2
+    display-name: "Kőér Rajmag"
     entity-type: SILVERFISH
     level: { minimum: 24, maximum: 44 }
     rank: NORMAL
-    archetype: SUMMONER
+    archetype: CONTROLLER
     stats: { health-multiplier: 1.0, damage-multiplier: 1.0, movement-multiplier: 1.1, cc-resistance: 0.12 }
-    abilities: [ "call_frozen" ]
+    abilities: [ "silk_snare", "slime_rebound" ]
     resistances: [ "stone" ]
     weaknesses: [ "fire" ]
     loot-profile: deep_mine
     source-tags: [ "dimension:normal", "depth:deep" ]
     spawn-policy: natural
     bestiary-id: deepstone_brood
-    affix-pool: [ "SUMMONER", "FRENZIED", "FROSTBOUND", "VOLATILE" ]
+    affix-pool: [ "FRENZIED", "FROSTBOUND", "VOLATILE" ]
+    natural-context: { weight: 0.8, required: [ "dimension:normal", "depth:deep" ], level-offset: 5, affinities: { "territory:dungeon": 2.5 } }
+    bestiary-summary: "Apró testével csapdajelet rak, majd rugalmasan vált oldalt a járatban."
+    counterplay-hint: "A jelből kifelé mozogj, ne a rajmag kis testét kövesd."
   wild_hunt_hound:
-    schema-version: 1
-    display-name: "Vad Hajtóeb"
+    schema-version: 2
+    display-name: "Ködfog Hajtóeb"
     entity-type: WOLF
     level: { minimum: 34, maximum: 50 }
     rank: ELITE
     archetype: ASSASSIN
     stats: { health-multiplier: 1.3, damage-multiplier: 1.08, movement-multiplier: 1.2, cc-resistance: 0.25 }
-    abilities: [ "telegraphed_lunge", "rime_burst" ]
+    abilities: [ "webspring", "grave_hook" ]
     resistances: [ "dark" ]
     weaknesses: [ "holy" ]
     loot-profile: wild_hunt
@@ -1443,3 +1900,779 @@ mob-templates:
     spawn-policy: event
     bestiary-id: wild_hunt_hound
     affix-pool: [ "VAMPIRIC", "FRENZIED", "FROSTBOUND", "VOLATILE" ]
+    bestiary-summary: "A Vad Hajsza egyszerűbb terelő addja: ugrással és rántással tartja a prédát mozgásban."
+    counterplay-hint: "Előbb az ebeket ritkítsd, hogy a fővadász ellen legyen tiszta útvonalad."
+
+  # Natural carrier matrix. Variant is identity; rank remains an independent projection.
+  sunscarred_wayfarer:
+    schema-version: 2
+    display-name: "Napperzselt Vándor"
+    entity-type: ZOMBIE
+    level: { minimum: 1, maximum: 26 }
+    rank: NORMAL
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.18, damage-multiplier: 0.88, movement-multiplier: 0.88, cc-resistance: 0.25 }
+    abilities: [ "ossuary_guard" ]
+    rank-abilities: { VETERAN: [ "blackiron_bash" ], ELITE: [ "rot_bloom" ] }
+    resistances: [ "physical" ]
+    weaknesses: [ "holy" ]
+    loot-profile: surface_survival
+    source-tags: [ "region:wilderness", "role:day_undead" ]
+    spawn-policy: natural
+    bestiary-id: sunscarred_wayfarer
+    affix-pool: [ "SHIELDED", "VAMPIRIC", "FRENZIED" ]
+    behavior: { preferred-range: 2.5, minimum-comfort-range: 0.0, maximum-pursuit-range: 15.0, retreat-tendency: 0.02, reposition-tendency: 0.08, strafe-tendency: 0.02, aggression-cadence: 0.82, chase-pressure: 0.38 }
+    natural-context: { weight: 1.2, required: [ "dimension:normal", "time:day" ], level-offset: -1, no-daylight-burn: true, affinities: { "biome:plains": 2.2, "biome:savanna": 1.7 } }
+    bestiary-summary: "Nappal is járó, láncokkal erősített élőhalott, amely szűk területet tart."
+    counterplay-hint: "Kerüld meg a védekezését; a csapása után lassan fordul vissza."
+  gallows_runner:
+    schema-version: 2
+    display-name: "Bitó Futára"
+    entity-type: ZOMBIE
+    level: { minimum: 5, maximum: 34 }
+    rank: NORMAL
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 0.82, damage-multiplier: 1.08, movement-multiplier: 1.24, cc-resistance: 0.05 }
+    abilities: [ "grave_hook" ]
+    rank-abilities: { VETERAN: [ "scatter_step" ], ELITE: [ "rot_bloom" ] }
+    resistances: [ "poison" ]
+    weaknesses: [ "frost" ]
+    loot-profile: night_hunt
+    source-tags: [ "time:night", "role:skirmisher" ]
+    spawn-policy: natural
+    bestiary-id: gallows_runner
+    affix-pool: [ "FRENZIED", "VAMPIRIC", "FROSTBOUND" ]
+    natural-context: { weight: 1.45, required: [ "dimension:normal", "time:night" ], level-offset: 1, no-daylight-burn: false, affinities: { "biome:forest": 1.8, "event:blood_moon": 2.5 } }
+    bestiary-summary: "Hirtelen rántással közelítő, majd oldalra kitörő éjjeli hajszoló."
+    counterplay-hint: "A láncrántást oldalazd ki; a sikertelen roham után rövid ideig nyitott."
+  fen_plaguebearer:
+    schema-version: 2
+    display-name: "Sárláz Hordozója"
+    entity-type: ZOMBIE
+    level: { minimum: 12, maximum: 42 }
+    rank: NORMAL
+    archetype: CONTROLLER
+    stats: { health-multiplier: 1.05, damage-multiplier: 0.82, movement-multiplier: 0.88, cc-resistance: 0.18 }
+    abilities: [ "rot_bloom" ]
+    rank-abilities: { VETERAN: [ "grave_hook" ], ELITE: [ "mire_hex" ] }
+    resistances: [ "poison" ]
+    weaknesses: [ "fire" ]
+    loot-profile: swamp_survival
+    source-tags: [ "region:swamp", "role:controller" ]
+    spawn-policy: natural
+    bestiary-id: fen_plaguebearer
+    affix-pool: [ "VAMPIRIC", "ARCANE", "SHIELDED" ]
+    natural-context: { weight: 1.05, required: [ "dimension:normal" ], level-offset: 3, no-daylight-burn: true, affinities: { "biome:swamp": 4.0, "biome:mangrove_swamp": 4.5, "weather:storm": 1.6 } }
+    bestiary-summary: "Mérgező rothadást lélegez ki, és kimozdít a biztos közelharci helyzetből."
+    counterplay-hint: "Csald ki a felhőt, majd válts oldalt; tűzzel gyorsan megtörhető."
+  barrow_bulwark:
+    schema-version: 2
+    display-name: "Sírdomb Pajzsa"
+    entity-type: SKELETON
+    level: { minimum: 8, maximum: 38 }
+    rank: NORMAL
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.22, damage-multiplier: 0.9, movement-multiplier: 0.85, cc-resistance: 0.35 }
+    abilities: [ "ossuary_guard", "blackiron_bash" ]
+    rank-abilities: { ELITE: [ "marrow_volley" ] }
+    resistances: [ "dark", "knockback" ]
+    weaknesses: [ "holy" ]
+    loot-profile: deep_mine
+    source-tags: [ "depth:deep", "role:defender" ]
+    spawn-policy: natural
+    bestiary-id: barrow_bulwark
+    affix-pool: [ "SHIELDED", "FROSTBOUND", "VAMPIRIC" ]
+    natural-context: { weight: 1.1, required: [ "dimension:normal", "depth:deep" ], level-offset: 2, affinities: { "territory:dungeon": 2.4, "territory:doom_gate": 2.0 } }
+    bestiary-summary: "A járatot őrzi, közelre csalogat, majd pajzsütéssel nyit távolságot."
+    counterplay-hint: "Ne üsd a csontpajzsot; várd meg a nehéz ütés utáni helyreállást."
+  gale_fletcher:
+    schema-version: 2
+    display-name: "Szélrovó"
+    entity-type: SKELETON
+    level: { minimum: 14, maximum: 44 }
+    rank: NORMAL
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 0.86, damage-multiplier: 1.12, movement-multiplier: 1.12, cc-resistance: 0.08 }
+    abilities: [ "marrow_volley", "scatter_step" ]
+    rank-abilities: { ELITE: [ "storm_brand" ] }
+    resistances: [ "lightning" ]
+    weaknesses: [ "frost" ]
+    loot-profile: storm_survival
+    source-tags: [ "weather:storm", "role:ranged_skirmisher" ]
+    spawn-policy: natural
+    bestiary-id: gale_fletcher
+    affix-pool: [ "ARCANE", "FRENZIED", "VOLATILE" ]
+    natural-context: { weight: 0.8, required: [ "dimension:normal" ], level-offset: 3, no-daylight-burn: true, affinities: { "weather:storm": 4.5, "weather:thunder": 2.0, "biome:windswept_hills": 2.2 } }
+    bestiary-summary: "Sorozatot lő, majd azonnal új szöget keres a következő röptéhez."
+    counterplay-hint: "Zárd rá a távolságot a sorozat után, mielőtt visszalép."
+  moss_trapper:
+    schema-version: 2
+    display-name: "Mohacsapdás"
+    entity-type: SPIDER
+    level: { minimum: 10, maximum: 38 }
+    rank: NORMAL
+    archetype: CONTROLLER
+    stats: { health-multiplier: 1.0, damage-multiplier: 0.92, movement-multiplier: 1.0, cc-resistance: 0.12 }
+    abilities: [ "silk_snare" ]
+    rank-abilities: { VETERAN: [ "webspring" ], ELITE: [ "mire_miasma" ] }
+    resistances: [ "poison" ]
+    weaknesses: [ "fire" ]
+    loot-profile: swamp_survival
+    source-tags: [ "region:wetland", "role:controller" ]
+    spawn-policy: natural
+    bestiary-id: moss_trapper
+    affix-pool: [ "VAMPIRIC", "ARCANE", "FRENZIED" ]
+    natural-context: { weight: 1.0, required: [ "dimension:normal" ], level-offset: 1, affinities: { "biome:swamp": 3.0, "biome:mangrove_swamp": 3.5, "biome:jungle": 2.2 } }
+    bestiary-summary: "Előre jelzett selyemcsapdával zárja le a menekülési útvonalat."
+    counterplay-hint: "A fehér kör megjelenésekor lépj ki oldalra; utána közelről gyenge."
+  broodneedle:
+    schema-version: 2
+    display-name: "Rajszúró"
+    entity-type: CAVE_SPIDER
+    level: { minimum: 20, maximum: 52 }
+    rank: NORMAL
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.78, damage-multiplier: 1.18, movement-multiplier: 1.28, cc-resistance: 0.08 }
+    abilities: [ "webspring" ]
+    rank-abilities: { VETERAN: [ "mire_miasma" ], ELITE: [ "scatter_step" ] }
+    resistances: [ "poison" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: deep_mine
+    source-tags: [ "depth:deep", "role:assassin" ]
+    spawn-policy: natural
+    bestiary-id: broodneedle
+    affix-pool: [ "FRENZIED", "VAMPIRIC", "VOLATILE" ]
+    natural-context: { weight: 1.15, required: [ "dimension:normal", "depth:deep" ], level-offset: 4, affinities: { "territory:dungeon": 2.8 } }
+    bestiary-summary: "Rövid, nagy sebzésű ugrások között eltűnik a járat falai mellett."
+    counterplay-hint: "Tartsd szem előtt és büntesd a landolási szünetben."
+  mire_apothecary:
+    schema-version: 2
+    display-name: "Nádpatikus"
+    entity-type: WITCH
+    level: { minimum: 18, maximum: 46 }
+    rank: VETERAN
+    archetype: SUPPORT
+    stats: { health-multiplier: 0.96, damage-multiplier: 0.78, movement-multiplier: 0.9, cc-resistance: 0.22 }
+    abilities: [ "winter_mend", "mire_miasma" ]
+    rank-abilities: { ELITE: [ "war_cry" ] }
+    resistances: [ "poison" ]
+    weaknesses: [ "physical" ]
+    loot-profile: swamp_survival
+    source-tags: [ "region:swamp", "role:support" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: mire_apothecary
+    affix-pool: [ "ARCANE", "SHIELDED", "SUMMONER" ]
+    natural-context: { weight: 0.55, required: [ "dimension:normal" ], level-offset: 4, affinities: { "biome:swamp": 4.0, "weather:storm": 2.2 } }
+    bestiary-summary: "Társait gyógyítja és mérgező palást mögé vonul vissza."
+    counterplay-hint: "Válaszd le a csoportról és szakítsd meg a gyógyító előjelet."
+  hushfuse:
+    schema-version: 2
+    display-name: "Csendkanóc"
+    entity-type: CREEPER
+    level: { minimum: 8, maximum: 40 }
+    rank: NORMAL
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.92, damage-multiplier: 1.0, movement-multiplier: 1.12, cc-resistance: 0.05 }
+    abilities: [ "fuse_feint" ]
+    rank-abilities: { ELITE: [ "void_afterstep" ] }
+    resistances: [ "dark" ]
+    weaknesses: [ "lightning" ]
+    loot-profile: night_hunt
+    source-tags: [ "time:night", "role:assassin" ]
+    spawn-policy: natural
+    bestiary-id: hushfuse
+    affix-pool: [ "FRENZIED", "FROSTBOUND", "VAMPIRIC" ]
+    natural-context: { weight: 1.0, required: [ "dimension:normal", "time:night" ], level-offset: 1, affinities: { "depth:deep": 2.5, "biome:dark_forest": 2.0 } }
+    bestiary-summary: "Megőrzi a vanilla robbanás előjelét, de hamis gyújtással új pozíciót keres."
+    counterplay-hint: "Ne üldözd vakon a visszalépés után; várd meg az új, jól hallható gyújtást."
+  dune_titheman:
+    schema-version: 2
+    display-name: "Homokdézsmas"
+    entity-type: HUSK
+    level: { minimum: 6, maximum: 38 }
+    rank: NORMAL
+    archetype: BRUISER
+    stats: { health-multiplier: 1.25, damage-multiplier: 1.0, movement-multiplier: 0.92, cc-resistance: 0.28 }
+    abilities: [ "blackiron_bash" ]
+    rank-abilities: { VETERAN: [ "grave_hook" ], ELITE: [ "rot_bloom" ] }
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: surface_survival
+    source-tags: [ "region:desert", "role:bruiser" ]
+    spawn-policy: natural
+    bestiary-id: dune_titheman
+    affix-pool: [ "SHIELDED", "FRENZIED", "VOLATILE" ]
+    natural-context: { weight: 1.3, required: [ "dimension:normal" ], level-offset: 2, affinities: { "biome:desert": 4.0, "biome:badlands": 3.0 } }
+    bestiary-summary: "Lassan szorít sarokba, majd széles vasütéssel bünteti a kapkodást."
+    counterplay-hint: "Maradj a fegyveríven kívül és fagyhatással törd meg az üldözését."
+  undertow_reaver:
+    schema-version: 2
+    display-name: "Visszár Martalóc"
+    entity-type: DROWNED
+    level: { minimum: 10, maximum: 44 }
+    rank: NORMAL
+    archetype: CHARGER
+    stats: { health-multiplier: 1.08, damage-multiplier: 1.06, movement-multiplier: 1.08, cc-resistance: 0.18 }
+    abilities: [ "tide_hook" ]
+    rank-abilities: { VETERAN: [ "aquatic_ram" ], ELITE: [ "mire_miasma" ] }
+    resistances: [ "frost" ]
+    weaknesses: [ "lightning" ]
+    loot-profile: surface_survival
+    source-tags: [ "region:coast", "role:charger" ]
+    spawn-policy: natural
+    bestiary-id: undertow_reaver
+    affix-pool: [ "FRENZIED", "VAMPIRIC", "FROSTBOUND" ]
+    natural-context: { weight: 1.15, required: [ "dimension:normal" ], level-offset: 2, no-daylight-burn: true, affinities: { "biome:ocean": 3.5, "biome:river": 2.5, "weather:storm": 1.7 } }
+    bestiary-summary: "Vízből indított kampós rohammal töri meg a partvonal biztonságát."
+    counterplay-hint: "Oldalazz a csobbanó előjelnél; villám ellen különösen sérülékeny."
+  rime_outrider:
+    schema-version: 2
+    display-name: "Dérkerülő"
+    entity-type: STRAY
+    level: { minimum: 14, maximum: 48 }
+    rank: NORMAL
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 0.88, damage-multiplier: 1.08, movement-multiplier: 1.12, cc-resistance: 0.12 }
+    abilities: [ "rime_burst", "scatter_step" ]
+    rank-abilities: { ELITE: [ "delayed_frost_rune" ] }
+    resistances: [ "frost" ]
+    weaknesses: [ "fire" ]
+    loot-profile: frozen_wilderness
+    source-tags: [ "region:frozen", "role:skirmisher" ]
+    spawn-policy: natural
+    bestiary-id: rime_outrider
+    affix-pool: [ "FROSTBOUND", "FRENZIED", "ARCANE" ]
+    natural-context: { weight: 1.15, required: [ "dimension:normal" ], level-offset: 2, no-daylight-burn: true, affinities: { "biome:snowy_plains": 3.5, "biome:snowy_taiga": 3.5, "biome:ice_spikes": 4.5 } }
+    bestiary-summary: "Fagyos sorozatok közt szétszóródva tartja a középtávot."
+    counterplay-hint: "A lövéssor után zárkózz fel; tűzzel megállítható a visszalépése."
+  cinder_spitter:
+    schema-version: 2
+    display-name: "Salakköpő"
+    entity-type: BLAZE
+    level: { minimum: 24, maximum: 58 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.92, damage-multiplier: 1.12, movement-multiplier: 1.02, cc-resistance: 0.18 }
+    abilities: [ "cinder_barrage" ]
+    rank-abilities: { VETERAN: [ "hunter_retreat" ], ELITE: [ "ember_surge" ] }
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether", "role:ranged" ]
+    spawn-policy: natural
+    bestiary-id: cinder_spitter
+    affix-pool: [ "ARCANE", "VOLATILE", "FRENZIED" ]
+    natural-context: { weight: 1.15, required: [ "dimension:nether" ], level-offset: 3, affinities: { "biome:basalt_deltas": 2.5 } }
+    bestiary-summary: "Négyes salaksorozattal kényszerít fedezékbe, közelről hátrál."
+    counterplay-hint: "A töltőhang alatt keress fedezéket, majd rohand le a recoveryben."
+  slagheart:
+    schema-version: 2
+    display-name: "Salakszív"
+    entity-type: MAGMA_CUBE
+    level: { minimum: 26, maximum: 58 }
+    rank: NORMAL
+    archetype: BRUISER
+    stats: { health-multiplier: 1.28, damage-multiplier: 1.04, movement-multiplier: 0.9, cc-resistance: 0.4 }
+    abilities: [ "ember_surge" ]
+    rank-abilities: { VETERAN: [ "slime_rebound" ], ELITE: [ "iceguard" ] }
+    resistances: [ "fire", "knockback" ]
+    weaknesses: [ "frost" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether", "role:bruiser" ]
+    spawn-policy: natural
+    bestiary-id: slagheart
+    affix-pool: [ "SHIELDED", "FRENZIED", "VOLATILE" ]
+    natural-context: { weight: 1.2, required: [ "dimension:nether" ], level-offset: 4, affinities: { "biome:basalt_deltas": 3.2 } }
+    bestiary-summary: "Nehéz ugrásai után körkörös hőhullámmal zárja a közelharci teret."
+    counterplay-hint: "Távolodj a hamugyűrűtől, majd támadj a hosszú összerendeződés alatt."
+  fen_rebounder:
+    schema-version: 2
+    display-name: "Iszapvisszhang"
+    entity-type: SLIME
+    level: { minimum: 10, maximum: 36 }
+    rank: NORMAL
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 0.98, damage-multiplier: 0.95, movement-multiplier: 1.12, cc-resistance: 0.22 }
+    abilities: [ "slime_rebound" ]
+    rank-abilities: { VETERAN: [ "mire_miasma" ], ELITE: [ "scatter_step" ] }
+    resistances: [ "poison" ]
+    weaknesses: [ "frost" ]
+    loot-profile: swamp_survival
+    source-tags: [ "region:swamp", "role:skirmisher" ]
+    spawn-policy: natural
+    bestiary-id: fen_rebounder
+    affix-pool: [ "FRENZIED", "VAMPIRIC", "FROSTBOUND" ]
+    natural-context: { weight: 1.15, required: [ "dimension:normal" ], level-offset: 0, affinities: { "biome:swamp": 3.0, "biome:mangrove_swamp": 3.4 } }
+    bestiary-summary: "Rugalmas becsapódás után hátraugrik, így ritmust vált a közelharcban."
+    counterplay-hint: "Ne üldözd egyenes vonalban; vágd el a következő ugrás irányát."
+  blackiron_votary:
+    schema-version: 2
+    display-name: "Feketevas Fogadalmas"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 30, maximum: 64 }
+    rank: VETERAN
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.24, damage-multiplier: 1.05, movement-multiplier: 0.9, cc-resistance: 0.46 }
+    abilities: [ "ossuary_guard", "blackiron_bash" ]
+    rank-abilities: { ELITE: [ "boss_wither_zone" ] }
+    resistances: [ "dark", "fire" ]
+    weaknesses: [ "holy" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether", "role:defender" ]
+    spawn-policy: natural
+    bestiary-id: blackiron_votary
+    affix-pool: [ "SHIELDED", "VAMPIRIC", "FRENZIED" ]
+    natural-context: { weight: 0.72, required: [ "dimension:nether" ], level-offset: 6, affinities: { "biome:soul_sand_valley": 2.4, "territory:doom_gate": 2.8 } }
+    bestiary-summary: "Alacsony üldözésű kapuőr, aki pajzzsal fogja meg a rohamot."
+    counterplay-hint: "Kerüld meg vagy kényszerítsd el az őrzött ponttól; szent sebzésre gyenge."
+  goldfang_raider:
+    schema-version: 2
+    display-name: "Aranyfog Portyázó"
+    entity-type: PIGLIN
+    level: { minimum: 24, maximum: 56 }
+    rank: NORMAL
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 0.96, damage-multiplier: 1.08, movement-multiplier: 1.16, cc-resistance: 0.12 }
+    abilities: [ "grave_hook", "scatter_step" ]
+    rank-abilities: { ELITE: [ "cinder_barrage" ] }
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether", "role:skirmisher" ]
+    spawn-policy: natural
+    bestiary-id: goldfang_raider
+    affix-pool: [ "FRENZIED", "VOLATILE", "VAMPIRIC" ]
+    natural-context: { weight: 1.1, required: [ "dimension:nether" ], level-offset: 2, affinities: { "biome:crimson_forest": 2.8 } }
+    bestiary-summary: "Rövid rajtaütések után visszalép, és új szöget keres a csapat körül."
+    counterplay-hint: "Őrizd a menekülési oldalát; a kampós belépés kihagyása után törékeny."
+  ash_gate_brute:
+    schema-version: 2
+    display-name: "Hamukapu Törője"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 32, maximum: 66 }
+    rank: VETERAN
+    archetype: CHARGER
+    stats: { health-multiplier: 1.2, damage-multiplier: 1.12, movement-multiplier: 1.03, cc-resistance: 0.4 }
+    abilities: [ "gatebreaker_charge" ]
+    rank-abilities: { ELITE: [ "blackiron_bash" ] }
+    resistances: [ "fire", "knockback" ]
+    weaknesses: [ "frost" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether", "role:charger" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: ash_gate_brute
+    affix-pool: [ "FRENZIED", "SHIELDED", "VOLATILE" ]
+    natural-context: { weight: 0.55, required: [ "dimension:nether" ], level-offset: 6, affinities: { "territory:doom_gate": 3.5, "biome:basalt_deltas": 2.0 } }
+    bestiary-summary: "Hosszú előjelű kaputörő rohammal szétszakítja a rendezett frontot."
+    counterplay-hint: "Lépj oldalra, majd büntesd a falnak vagy üres térbe futó recoveryt."
+  grave_cohort:
+    schema-version: 2
+    display-name: "Parázssír Kohorsz"
+    entity-type: ZOMBIFIED_PIGLIN
+    level: { minimum: 24, maximum: 58 }
+    rank: NORMAL
+    archetype: BRUISER
+    stats: { health-multiplier: 1.16, damage-multiplier: 1.02, movement-multiplier: 0.96, cc-resistance: 0.28 }
+    abilities: [ "veteran_cleave" ]
+    rank-abilities: { VETERAN: [ "ossuary_guard" ], ELITE: [ "ember_surge" ] }
+    resistances: [ "fire", "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: nether_survival
+    source-tags: [ "dimension:nether", "role:bruiser" ]
+    spawn-policy: natural
+    bestiary-id: grave_cohort
+    affix-pool: [ "VAMPIRIC", "SHIELDED", "FRENZIED" ]
+    natural-context: { weight: 0.85, required: [ "dimension:nether" ], level-offset: 3, affinities: { "biome:nether_wastes": 2.3 } }
+    bestiary-summary: "Egyenletesen nyomuló, széles csapású kohorszharcos."
+    counterplay-hint: "Ne harcolj vele szűk kapuban; szakítsd szét a csoportját."
+  banner_marksman:
+    schema-version: 2
+    display-name: "Lobogó Lövésze"
+    entity-type: PILLAGER
+    level: { minimum: 12, maximum: 44 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.94, damage-multiplier: 1.1, movement-multiplier: 1.0, cc-resistance: 0.14 }
+    abilities: [ "marrow_volley", "hunter_retreat" ]
+    rank-abilities: { ELITE: [ "war_cry" ] }
+    resistances: [ "physical" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: surface_survival
+    source-tags: [ "region:wilderness", "role:ranged" ]
+    spawn-policy: natural
+    bestiary-id: banner_marksman
+    affix-pool: [ "ARCANE", "FRENZIED", "SHIELDED" ]
+    natural-context: { weight: 0.55, required: [ "dimension:normal" ], excluded: [ "territory:protected_city", "territory:capital" ], level-offset: 3, affinities: { "territory:faction": 1.7, "territory:doom_gate": 2.3 } }
+    bestiary-summary: "Távolságot tartó sorozatlövész, aki veteránként a vonalat is erősíti."
+    counterplay-hint: "Használd a terepet a sorozat ellen, majd ne engedd újra távolra."
+  nightgale:
+    schema-version: 2
+    display-name: "Éjhasító"
+    entity-type: PHANTOM
+    level: { minimum: 18, maximum: 50 }
+    rank: NORMAL
+    archetype: FLYING
+    stats: { health-multiplier: 0.9, damage-multiplier: 1.14, movement-multiplier: 1.12, cc-resistance: 0.1 }
+    abilities: [ "phantom_shear" ]
+    rank-abilities: { VETERAN: [ "void_afterstep" ], ELITE: [ "storm_brand" ] }
+    resistances: [ "dark" ]
+    weaknesses: [ "lightning" ]
+    loot-profile: night_hunt
+    source-tags: [ "time:night", "role:flying" ]
+    spawn-policy: natural
+    bestiary-id: nightgale
+    affix-pool: [ "FRENZIED", "ARCANE", "FROSTBOUND" ]
+    natural-context: { weight: 1.0, required: [ "dimension:normal", "time:night" ], level-offset: 3, affinities: { "weather:storm": 2.0, "event:blood_moon": 2.5 } }
+    bestiary-summary: "Hangjel után meredeken hasít át a csatatéren, majd új magasságot vesz."
+    counterplay-hint: "A vijjogásra oldalazz, és a fordulóív alatt támadj."
+  pale_oathwood:
+    schema-version: 2
+    display-name: "Sápadt Esküfa"
+    entity-type: CREAKING
+    level: { minimum: 20, maximum: 50 }
+    rank: NORMAL
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.22, damage-multiplier: 0.96, movement-multiplier: 0.82, cc-resistance: 0.5 }
+    abilities: [ "ossuary_guard", "grave_hook" ]
+    rank-abilities: { ELITE: [ "silk_snare" ] }
+    resistances: [ "dark", "physical" ]
+    weaknesses: [ "fire" ]
+    loot-profile: night_hunt
+    source-tags: [ "region:pale_garden", "role:defender" ]
+    spawn-policy: natural
+    bestiary-id: pale_oathwood
+    affix-pool: [ "SHIELDED", "VAMPIRIC", "FROSTBOUND" ]
+    natural-context: { weight: 1.0, required: [ "dimension:normal", "time:night" ], level-offset: 4, affinities: { "biome:pale_garden": 6.0 } }
+    bestiary-summary: "Az erdei átjárót tartja, és gyökérszerű rántással húz vissza."
+    counterplay-hint: "Ne állj vele egy vonalban; tűzzel törd meg a helyőrzését."
+  fen_quill:
+    schema-version: 2
+    display-name: "Lápi Tüskelövő"
+    entity-type: BOGGED
+    level: { minimum: 14, maximum: 46 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.96, damage-multiplier: 1.06, movement-multiplier: 0.94, cc-resistance: 0.18 }
+    abilities: [ "marrow_volley", "mire_miasma" ]
+    rank-abilities: { ELITE: [ "silk_snare" ] }
+    resistances: [ "poison" ]
+    weaknesses: [ "fire" ]
+    loot-profile: swamp_survival
+    source-tags: [ "region:swamp", "role:ranged" ]
+    spawn-policy: natural
+    bestiary-id: fen_quill
+    affix-pool: [ "ARCANE", "VAMPIRIC", "FRENZIED" ]
+    natural-context: { weight: 1.2, required: [ "dimension:normal" ], level-offset: 2, no-daylight-burn: true, affinities: { "biome:swamp": 3.8, "biome:mangrove_swamp": 3.8 } }
+    bestiary-summary: "Mérgezett sorozattal fedezi a láp felhőit."
+    counterplay-hint: "Kerüld a felhőt és közelíts a sorozat töltése alatt."
+  vault_crosswind:
+    schema-version: 2
+    display-name: "Boltozati Oldalszél"
+    entity-type: BREEZE
+    level: { minimum: 24, maximum: 56 }
+    rank: VETERAN
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 0.94, damage-multiplier: 1.04, movement-multiplier: 1.18, cc-resistance: 0.2 }
+    abilities: [ "scatter_step", "storm_brand" ]
+    rank-abilities: { ELITE: [ "tempest_circuit" ] }
+    resistances: [ "lightning", "knockback" ]
+    weaknesses: [ "frost" ]
+    loot-profile: deep_mine
+    source-tags: [ "territory:dungeon", "role:skirmisher" ]
+    spawn-policy: natural_or_authored
+    bestiary-id: vault_crosswind
+    affix-pool: [ "ARCANE", "FRENZIED", "FROSTBOUND" ]
+    natural-context: { weight: 0.65, required: [ "dimension:normal", "territory:dungeon" ], level-offset: 5, affinities: { "depth:deep": 2.2 } }
+    bestiary-summary: "Oldalazó szélrohamokkal terel a késleltetett viharrúna felé."
+    counterplay-hint: "Ne a mobot kövesd: a villámjel és a kifutási irány együtt árulja el a csapdát."
+  coven_wisp:
+    schema-version: 2
+    display-name: "Üstlidérc"
+    entity-type: VEX
+    level: { minimum: 16, maximum: 58 }
+    rank: VETERAN
+    archetype: FLYING
+    stats: { health-multiplier: 0.72, damage-multiplier: 0.9, movement-multiplier: 1.18, cc-resistance: 0.08 }
+    abilities: [ "void_afterstep", "mire_hex" ]
+    resistances: [ "arcane" ]
+    weaknesses: [ "holy" ]
+    loot-profile: champion
+    source-tags: [ "event:invasion", "role:support_add" ]
+    spawn-policy: event
+    bestiary-id: coven_wisp
+    affix-pool: []
+    bestiary-summary: "Törékeny repülő rontásközvetítő, amely a boszorkánykörnek nyit támadási ablakot."
+    counterplay-hint: "Gyorsan fókuszáld; a teleporthang után ne maradj a lila jelben."
+
+  # Event producers use these stable template identities instead of shadow EntityType profiles.
+  cultist_ritualist:
+    schema-version: 2
+    display-name: "Néma Igevivő"
+    entity-type: WITCH
+    level: { minimum: 5, maximum: 58 }
+    rank: VETERAN
+    archetype: CONTROLLER
+    stats: { health-multiplier: 1.08, damage-multiplier: 0.92, movement-multiplier: 0.9, cc-resistance: 0.24 }
+    abilities: [ "mire_hex", "winter_mend" ]
+    resistances: [ "arcane" ]
+    weaknesses: [ "holy" ]
+    loot-profile: cultist
+    source-tags: [ "event:cultist", "role:ritualist" ]
+    spawn-policy: event
+    bestiary-id: cultist_ritualist
+    affix-pool: [ "ARCANE", "SHIELDED", "SUMMONER" ]
+    bestiary-summary: "Rontójelet tart fenn és saját rítuskörét gyógyítja."
+    counterplay-hint: "Az igemondást szakítsd meg, mielőtt a pengékkel foglalkozol."
+  cultist_blade:
+    schema-version: 2
+    display-name: "Fátyolpenge"
+    entity-type: VINDICATOR
+    level: { minimum: 5, maximum: 58 }
+    rank: VETERAN
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.94, damage-multiplier: 1.12, movement-multiplier: 1.14, cc-resistance: 0.16 }
+    abilities: [ "grave_hook", "cultist_reposition" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "frost" ]
+    loot-profile: cultist
+    source-tags: [ "event:cultist", "role:blade" ]
+    spawn-policy: event
+    bestiary-id: cultist_blade
+    affix-pool: [ "FRENZIED", "VAMPIRIC", "ARCANE" ]
+    bestiary-summary: "A rituálé körül rövid belépésekkel és eltűnő visszalépéssel őröl."
+    counterplay-hint: "Ne üldözd a teleport után; védd a rituálist megszakító társadat."
+  cultist_courier:
+    schema-version: 2
+    display-name: "Suttogás Futára"
+    entity-type: VINDICATOR
+    level: { minimum: 5, maximum: 58 }
+    rank: VETERAN
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 0.82, damage-multiplier: 0.82, movement-multiplier: 1.3, cc-resistance: 0.12 }
+    abilities: [ "scatter_step", "cultist_reposition" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "lightning" ]
+    loot-profile: cultist
+    source-tags: [ "event:cultist", "role:courier" ]
+    spawn-policy: event
+    bestiary-id: cultist_courier
+    affix-pool: []
+    bestiary-summary: "Nem párbajt keres: irányt váltva próbálja célba vinni a meghívót."
+    counterplay-hint: "Vágd el az útját és használj lassítást; a direkt üldözést lerázza."
+  corruption_scabwalker:
+    schema-version: 2
+    display-name: "Sebkéreg Járó"
+    entity-type: ZOMBIE
+    level: { minimum: 4, maximum: 70 }
+    rank: NORMAL
+    archetype: BRUISER
+    stats: { health-multiplier: 1.16, damage-multiplier: 1.0, movement-multiplier: 0.92, cc-resistance: 0.25 }
+    abilities: [ "rot_bloom", "grave_hook" ]
+    rank-abilities: { ELITE: [ "boss_weakening_zone" ] }
+    resistances: [ "dark", "poison" ]
+    weaknesses: [ "holy" ]
+    loot-profile: surface_survival
+    source-tags: [ "event:corruption", "role:frontline" ]
+    spawn-policy: event
+    bestiary-id: corruption_scabwalker
+    affix-pool: [ "VAMPIRIC", "SHIELDED", "FRENZIED" ]
+    bestiary-summary: "Rothadó frontkatona, amely a góc körüli tiszta földet fogyasztja."
+    counterplay-hint: "Húzd ki a góc aurájából és lépj át a felhő túloldalára."
+  corruption_hollowbow:
+    schema-version: 2
+    display-name: "Üregíj"
+    entity-type: SKELETON
+    level: { minimum: 4, maximum: 70 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.9, damage-multiplier: 1.08, movement-multiplier: 1.0, cc-resistance: 0.12 }
+    abilities: [ "marrow_volley", "scatter_step" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: surface_survival
+    source-tags: [ "event:corruption", "role:ranged" ]
+    spawn-policy: event
+    bestiary-id: corruption_hollowbow
+    affix-pool: [ "ARCANE", "FRENZIED", "FROSTBOUND" ]
+    bestiary-summary: "A góc mögül hármas sortűzzel tartja mozgásban a tisztítókat."
+    counterplay-hint: "Fedezékből zárj rá a sorozat után."
+  corruption_gloomvotary:
+    schema-version: 2
+    display-name: "Homály Fogadalmas"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 8, maximum: 74 }
+    rank: VETERAN
+    archetype: DEFENDER
+    stats: { health-multiplier: 1.22, damage-multiplier: 1.02, movement-multiplier: 0.88, cc-resistance: 0.42 }
+    abilities: [ "ossuary_guard", "blackiron_bash" ]
+    resistances: [ "dark", "knockback" ]
+    weaknesses: [ "holy" ]
+    loot-profile: surface_survival
+    source-tags: [ "event:corruption", "role:defender" ]
+    spawn-policy: event
+    bestiary-id: corruption_gloomvotary
+    affix-pool: [ "SHIELDED", "VAMPIRIC", "ARCANE" ]
+    bestiary-summary: "A rontásmag mellett marad, és pajzsütéssel védi a gyenge pontot."
+    counterplay-hint: "Kényszerítsd el a magtól, vagy kerüld meg a pajzsát."
+  corruption_blackwing:
+    schema-version: 2
+    display-name: "Feketeszárny Maradvány"
+    entity-type: PHANTOM
+    level: { minimum: 8, maximum: 74 }
+    rank: NORMAL
+    archetype: FLYING
+    stats: { health-multiplier: 0.86, damage-multiplier: 1.12, movement-multiplier: 1.14, cc-resistance: 0.1 }
+    abilities: [ "phantom_shear", "void_afterstep" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "lightning" ]
+    loot-profile: night_hunt
+    source-tags: [ "event:corruption", "role:flying" ]
+    spawn-policy: event
+    bestiary-id: corruption_blackwing
+    affix-pool: [ "FRENZIED", "ARCANE", "FROSTBOUND" ]
+    bestiary-summary: "Felülről szakítja meg a rontásmag tisztítására beálló játékost."
+    counterplay-hint: "A vijjogásra oldalazz; a zuhanás után fókuszáld."
+  road_raider:
+    schema-version: 2
+    display-name: "Útvám Lövésze"
+    entity-type: PILLAGER
+    level: { minimum: 3, maximum: 60 }
+    rank: NORMAL
+    archetype: RANGED
+    stats: { health-multiplier: 0.92, damage-multiplier: 1.04, movement-multiplier: 1.0, cc-resistance: 0.1 }
+    abilities: [ "marrow_volley", "hunter_retreat" ]
+    resistances: [ "physical" ]
+    weaknesses: [ "arcane" ]
+    loot-profile: surface_survival
+    source-tags: [ "event:escort", "role:ranged" ]
+    spawn-policy: event
+    bestiary-id: road_raider
+    affix-pool: [ "ARCANE", "FRENZIED" ]
+    bestiary-summary: "A karaván elé lő, majd a kísérők elől hátrál."
+    counterplay-hint: "Egy játékos zárjon rá, míg a másik a karavánt védi."
+  tollblade:
+    schema-version: 2
+    display-name: "Útvám Pengéje"
+    entity-type: VINDICATOR
+    level: { minimum: 3, maximum: 60 }
+    rank: NORMAL
+    archetype: ASSASSIN
+    stats: { health-multiplier: 0.9, damage-multiplier: 1.1, movement-multiplier: 1.16, cc-resistance: 0.12 }
+    abilities: [ "grave_hook", "scatter_step" ]
+    resistances: [ "physical" ]
+    weaknesses: [ "frost" ]
+    loot-profile: surface_survival
+    source-tags: [ "event:escort", "role:convoy_diver" ]
+    spawn-policy: event
+    bestiary-id: tollblade
+    affix-pool: [ "FRENZIED", "VAMPIRIC" ]
+    bestiary-summary: "A kísérőkön át a lámára tör, majd új szöget keres."
+    counterplay-hint: "Testtel zárd el a karavánt és a kampó után kontrolláld."
+  hunt_ancient_ravager:
+    schema-version: 2
+    display-name: "Agancstörő Ősvad"
+    entity-type: RAVAGER
+    level: { minimum: 34, maximum: 70 }
+    rank: ELITE
+    archetype: CHARGER
+    stats: { health-multiplier: 1.42, damage-multiplier: 1.08, movement-multiplier: 1.04, cc-resistance: 0.56 }
+    abilities: [ "gatebreaker_charge", "defensive_stomp" ]
+    resistances: [ "knockback" ]
+    weaknesses: [ "frost" ]
+    loot-profile: wild_hunt
+    source-tags: [ "event:wild_hunt", "role:beast" ]
+    spawn-policy: event
+    bestiary-id: hunt_ancient_ravager
+    affix-pool: []
+    bestiary-summary: "Nyílt terepen rohammal vadászik; kihagyáskor hosszú ideig sebezhető."
+    counterplay-hint: "Vezesd fának vagy sziklának, majd büntesd a megállást."
+  hunt_bone_hunter:
+    schema-version: 2
+    display-name: "Nyomcsont Vadász"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 34, maximum: 70 }
+    rank: ELITE
+    archetype: SKIRMISHER
+    stats: { health-multiplier: 1.18, damage-multiplier: 1.1, movement-multiplier: 1.12, cc-resistance: 0.34 }
+    abilities: [ "grave_hook", "marrow_volley", "scatter_step" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: wild_hunt
+    source-tags: [ "event:wild_hunt", "role:beast" ]
+    spawn-policy: event
+    bestiary-id: hunt_bone_hunter
+    affix-pool: []
+    bestiary-summary: "Kampóval kijelöli a prédát, sortűz után ismét távolságot vált."
+    counterplay-hint: "A kampót oldalazd ki, és ne engedd vissza középtávra."
+  hunt_elder_mage:
+    schema-version: 2
+    display-name: "Szarvasjel Remetéje"
+    entity-type: EVOKER
+    level: { minimum: 34, maximum: 70 }
+    rank: ELITE
+    archetype: SUMMONER
+    stats: { health-multiplier: 1.1, damage-multiplier: 0.94, movement-multiplier: 0.94, cc-resistance: 0.36 }
+    abilities: [ "mire_hex", "ring_lock", "cultist_reposition" ]
+    resistances: [ "arcane" ]
+    weaknesses: [ "physical" ]
+    loot-profile: wild_hunt
+    source-tags: [ "event:wild_hunt", "role:beast" ]
+    spawn-policy: event
+    bestiary-id: hunt_elder_mage
+    affix-pool: []
+    bestiary-summary: "Két késleltetett jellel tereli a vadászokat, majd eltűnik a fókuszból."
+    counterplay-hint: "A jelek közti tiszta sávban zárkózz fel és szakítsd meg a castot."
+  hunt_infernal_brute:
+    schema-version: 2
+    display-name: "Perzselő Hajtó"
+    entity-type: PIGLIN_BRUTE
+    level: { minimum: 34, maximum: 70 }
+    rank: ELITE
+    archetype: BRUISER
+    stats: { health-multiplier: 1.3, damage-multiplier: 1.12, movement-multiplier: 1.02, cc-resistance: 0.44 }
+    abilities: [ "blackiron_bash", "ember_surge", "grave_hook" ]
+    resistances: [ "fire" ]
+    weaknesses: [ "frost" ]
+    loot-profile: wild_hunt
+    source-tags: [ "event:wild_hunt", "role:beast" ]
+    spawn-policy: event
+    bestiary-id: hunt_infernal_brute
+    affix-pool: []
+    bestiary-summary: "Rántással tart a közelharcban, majd hőhullámmal tiltja a visszaütést."
+    counterplay-hint: "Fagyhatással lassítsd, és a hamugyűrűn kívülről támadj."
+  dungeon_depth_jailer:
+    schema-version: 2
+    display-name: "A Mélycsend Börtönőre"
+    entity-type: WITHER_SKELETON
+    level: { minimum: 12, maximum: 80 }
+    rank: MINIBOSS
+    archetype: CONTROLLER
+    stats: { health-multiplier: 1.3, damage-multiplier: 1.05, movement-multiplier: 0.92, cc-resistance: 0.58 }
+    abilities: [ "ring_lock", "boss_darkness_zone", "blackiron_bash" ]
+    resistances: [ "dark", "knockback" ]
+    weaknesses: [ "holy" ]
+    loot-profile: champion
+    source-tags: [ "event:dungeon", "dungeon:melyseg" ]
+    spawn-policy: boss
+    bestiary-id: dungeon_depth_jailer
+    affix-pool: []
+    bestiary-summary: "Sötétségben zárórúnával tartja a cellák közti szűk teret."
+    counterplay-hint: "A csengő jelből lépj ki, majd a pajzsütés után támadj."
+  dungeon_ossuary_lord:
+    schema-version: 2
+    display-name: "Csontkarzat Ura"
+    entity-type: SKELETON
+    level: { minimum: 12, maximum: 80 }
+    rank: MINIBOSS
+    archetype: RANGED
+    stats: { health-multiplier: 1.18, damage-multiplier: 1.12, movement-multiplier: 1.0, cc-resistance: 0.5 }
+    abilities: [ "marrow_volley", "silk_snare", "scatter_step" ]
+    resistances: [ "dark" ]
+    weaknesses: [ "holy" ]
+    loot-profile: champion
+    source-tags: [ "event:dungeon", "dungeon:csontkripta" ]
+    spawn-policy: boss
+    bestiary-id: dungeon_ossuary_lord
+    affix-pool: []
+    bestiary-summary: "Csontsortűzzel a selyemjelbe tereli a kripta behatolóit."
+    counterplay-hint: "A fehér jelből oldalra lépj, majd a visszalépését vágd el."

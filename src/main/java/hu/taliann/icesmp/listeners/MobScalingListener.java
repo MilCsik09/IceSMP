@@ -55,7 +55,7 @@ public final class MobScalingListener implements Listener {
         // subclasses must remain vanilla so this never becomes global fire immunity.
         if (event.getClass() == EntityCombustEvent.class
                 && event.getEntity() instanceof LivingEntity living
-                && mobScalingManager.hasTerritoryDaylightProtection(living)) {
+                && mobScalingManager.hasDaylightProtection(living)) {
             event.setCancelled(true);
         }
     }

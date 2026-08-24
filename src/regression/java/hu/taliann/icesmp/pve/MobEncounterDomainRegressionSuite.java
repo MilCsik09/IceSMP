@@ -16,6 +16,9 @@ public final class MobEncounterDomainRegressionSuite {
         progressionCoversOneToSeventyWithSeparateCurves();
         hybridPrecedenceAndBonusesAreBounded();
         authoredTemplateAbilityAndAffixInvariantsHold();
+        behaviorProfilesCreateDistinctSpacingDecisions();
+        contextualSelectionIsStableAndWeighted();
+        daylightProtectionSourcesCompose();
         creatureReactionIdentityIsStableAndBounded();
         elitePassiveRankDoesNotImplyAggressionOrRewards();
         deterministicPopulationDistributionIsRepresentative();
@@ -211,6 +214,61 @@ public final class MobEncounterDomainRegressionSuite {
         check(MobRank.parse("world-boss") == MobRank.WORLD_BOSS
                         && MobArchetype.parse("skirmisher") == MobArchetype.SKIRMISHER,
                 "canonical rank and archetype vocabulary parses config ids");
+    }
+
+    private static void behaviorProfilesCreateDistinctSpacingDecisions() {
+        final MobBehaviorProfile bruiser = MobBehaviorProfile.defaults(MobArchetype.BRUISER);
+        final MobBehaviorProfile ranged = MobBehaviorProfile.defaults(MobArchetype.RANGED);
+        final MobBehaviorProfile skirmisher = MobBehaviorProfile.defaults(MobArchetype.SKIRMISHER);
+        check(bruiser.preferredRange() < skirmisher.preferredRange()
+                        && skirmisher.preferredRange() < ranged.preferredRange(),
+                "archetype projection creates distinct close, cycling and ranged spacing");
+        check(ranged.techniqueWeight(MobAbilityDefinition.Kind.RETREAT, 2.0D, 0.8D)
+                        > ranged.techniqueWeight(MobAbilityDefinition.Kind.PROJECTILE_BURST,
+                        2.0D, 0.8D),
+                "ranged profile prefers retreat when crowded");
+        check(bruiser.techniqueWeight(MobAbilityDefinition.Kind.LUNGE, 12.0D, 0.8D)
+                        > bruiser.techniqueWeight(MobAbilityDefinition.Kind.RETREAT,
+                        12.0D, 0.8D),
+                "bruiser profile prefers closing over retreat at distance");
+        expectFailure(() -> new MobBehaviorProfile(8.0D, 9.0D, 20.0D,
+                0.0D, 0.0D, 0.0D, 1.0D, 1.0D),
+                "minimum comfort range cannot exceed preferred range");
+    }
+
+    private static void contextualSelectionIsStableAndWeighted() {
+        final List<ContextualWeightedSelector.Candidate<String>> candidates = List.of(
+                new ContextualWeightedSelector.Candidate<>("common", "common", 3.0D),
+                new ContextualWeightedSelector.Candidate<>("rare", "rare", 1.0D));
+        final UUID stable = new UUID(0x1ce5L, 42L);
+        final String first = ContextualWeightedSelector.select(candidates, stable, 17L);
+        check(first.equals(ContextualWeightedSelector.select(candidates.reversed(), stable, 17L)),
+                "weighted variant choice is stable and authoring-order independent");
+        int common = 0;
+        for (int index = 0; index < 20_000; index++) {
+            if (ContextualWeightedSelector.select(candidates,
+                    new UUID(0x1ce5L, index), 17L).equals("common")) common++;
+        }
+        check(common >= 14_600 && common <= 15_400,
+                "seeded 3:1 natural weight remains within deterministic tolerance: " + common);
+        final MobNaturalContext swamp = new MobNaturalContext(1.0D, Set.of("dimension:normal"),
+                Set.of("territory:protected_city"), Map.of("biome:swamp", 4.0D), 3, true);
+        check(swamp.eligible(Set.of("dimension:normal", "biome:swamp"))
+                        && close(swamp.effectiveWeight(Set.of("dimension:normal", "biome:swamp")), 4.0D)
+                        && !swamp.eligible(Set.of("dimension:normal", "territory:protected_city")),
+                "context affinity weights eligible wilderness but protected-city exclusion fails closed");
+    }
+
+    private static void daylightProtectionSourcesCompose() {
+        check(!DaylightProtectionPolicy.shouldBurn(true, true, false, false),
+                "authored daylight source suppresses baseline burn");
+        check(!DaylightProtectionPolicy.shouldBurn(true, false, true, true)
+                        && !DaylightProtectionPolicy.shouldBurn(true, false, false, true),
+                "removing territory protection cannot cancel an active event source");
+        check(DaylightProtectionPolicy.shouldBurn(true, false, false, false),
+                "removing the final source restores a burning baseline");
+        check(!DaylightProtectionPolicy.shouldBurn(false, false, false, false),
+                "a naturally non-burning carrier never gains burn from reconciliation");
     }
 
     private static void encounterSnapshotUsesDiminishingStableScaling() {

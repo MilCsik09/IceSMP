@@ -144,6 +144,19 @@ val authoredPveConsolidationAudit by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_authored_pve_consolidation.py", "--check")
 }
 
+val enemyWorldBossReworkAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates enemy inventory, variants, behavior, context, daylight, FX and boss diversity."
+    inputs.files(
+        "scripts/audit_enemy_worldboss_rework.py",
+        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/config/world.yml",
+        "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
+        "docs/development/enemy-worldboss-rework-2.json",
+    )
+    commandLine(pythonCommand, "scripts/audit_enemy_worldboss_rework.py", "--check")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -959,6 +972,8 @@ tasks.check {
     dependsOn(equipment2ReportRegressionTest)
     dependsOn(combatEncounterFoundationAudit)
     dependsOn(unifiedCreatureCombatAudit)
+    dependsOn(authoredPveConsolidationAudit)
+    dependsOn(enemyWorldBossReworkAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
