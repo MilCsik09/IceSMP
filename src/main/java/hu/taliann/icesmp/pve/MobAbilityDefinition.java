@@ -136,8 +136,7 @@ public record MobAbilityDefinition(String abilityId, Kind kind, long cooldownTic
         if (dangerous && telegraphTicks < 10L) {
             throw new IllegalArgumentException("dangerous ability requires a readable telegraph");
         }
-        presentation = Objects.requireNonNullElseGet(presentation,
-                () -> Presentation.defaults(kind));
+        presentation = presentation == null ? Presentation.defaults(kind) : presentation;
     }
 
     /** Compatibility constructor for the #137 Kind-authored model. */
