@@ -131,7 +131,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
     private static void verifyCommandRuntime() throws Exception {
         final java.util.ArrayList<String> deniedMessages = new java.util.ArrayList<>();
         final CommandSender denied = probeSender(false, deniedMessages);
-        check(Bukkit.dispatchCommand(denied, "icesmp reload status"),
+        check(dispatchRegisteredCommand(denied, "icesmp reload status"),
                 "permission-denied /icesmp command did not route through Paper");
         check(!deniedMessages.isEmpty(), "permission-denied /icesmp command produced no feedback");
 
@@ -145,7 +145,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 "icesmp config menu",
                 "icesmp invalid-subcommand",
                 "ismp reload status")) {
-            check(Bukkit.dispatchCommand(allowed, command),
+            check(dispatchRegisteredCommand(allowed, command),
                     "Paper command dispatch rejected: /" + command);
         }
         check(allowedMessages.size() >= 7,
@@ -168,7 +168,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final byte[] original = java.nio.file.Files.readAllBytes(general);
         try {
             java.nio.file.Files.writeString(general, "invalid: [\n", java.nio.charset.StandardCharsets.UTF_8);
-            check(Bukkit.dispatchCommand(allowed, "icesmp reload operator"),
+            check(dispatchRegisteredCommand(allowed, "icesmp reload operator"),
                     "invalid operator reload did not route through Paper");
             check(manager.snapshot() == before,
                     "invalid operator reload replaced the previously published snapshot");
@@ -176,6 +176,13 @@ public final class PaperSourceIntegrityRuntimeProbe {
             java.nio.file.Files.write(general, original);
         }
         Bukkit.getLogger().info("ICESMP_CONFIG_COMMAND_RUNTIME_PROBE_PASS");
+    }
+
+    private static boolean dispatchRegisteredCommand(final CommandSender sender, final String line) {
+        final String[] parts = line.trim().split("\\s+");
+        final org.bukkit.command.Command command = Bukkit.getCommandMap().getCommand(parts[0]);
+        if (command == null) return false;
+        return command.execute(sender, parts[0], java.util.Arrays.copyOfRange(parts, 1, parts.length));
     }
 
     private static List<String> commandCompletions(final CommandSender sender, final String line) {
