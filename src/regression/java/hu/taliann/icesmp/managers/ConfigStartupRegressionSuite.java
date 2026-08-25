@@ -197,7 +197,7 @@ public final class ConfigStartupRegressionSuite {
         final YamlConfiguration general = load("general.yml");
         final YamlConfiguration factions = load("factions.yml");
         final YamlConfiguration world = load("world.yml");
-        final YamlConfiguration relics = load("relics.yml");
+        final YamlConfiguration relics = loadContent("equipment", "relics.yml");
         final YamlConfiguration blockRegen = load("block-regen.yml");
         check(general.getConfigurationSection("sit") == null,
                 "general.yml must not duplicate sit.yml ownership");
@@ -372,6 +372,11 @@ public final class ConfigStartupRegressionSuite {
     private static YamlConfiguration load(final String name) {
         return YamlConfiguration.loadConfiguration(
                 Path.of("src/main/resources/config", name).toFile());
+    }
+
+    private static YamlConfiguration loadContent(final String domain, final String name) {
+        return YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/content", domain, name).toFile());
     }
 
     private static <T extends Throwable> void expectThrows(final Class<T> type,
