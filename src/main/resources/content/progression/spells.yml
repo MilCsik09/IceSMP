@@ -39,6 +39,16 @@ spells:
       evoker: tuz
     # Kézi felülírások (spell-id → iskola) — bővítsd szabadon:
     by-spell:
+      # ProjectileBurstSpell school snapshotok: a hit út nem következtethet többé vanilla
+      # projectile DamageSource-ból vagy a kaszter későbbi állapotából.
+      piercing_bolt: termeszet
+      arrow_storm: termeszet
+      dagger_throw: arnyek
+      fireball: tuz
+      gale_burst: vihar
+      bone_spear: arnyek
+      double_tap: termeszet
+      spectral_volley: termeszet
       living_flame: tuz
       frost_fever: fagy
       holy_wrath: szent

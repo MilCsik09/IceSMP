@@ -370,18 +370,6 @@ public final class ProfessionRecipeBookListener implements Listener {
                         configManager.getInt("signature.tuzkopo.quick-charge-level", 2)));
                 if (level > 0) sigMeta.addEnchant(org.bukkit.enchantments.Enchantment.QUICK_CHARGE, level, true);
             }
-            if (configManager.getBoolean("signature.custom-enchants.enabled", true)
-                    && configManager.getBoolean("signature.custom-enchants.items." + recipe.signature(), true)) {
-                final net.kyori.adventure.key.Key enchantKey =
-                        hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE.get(recipe.signature());
-                if (enchantKey != null) {
-                    final org.bukkit.enchantments.Enchantment enchant =
-                            io.papermc.paper.registry.RegistryAccess.registryAccess()
-                                    .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
-                                    .get(org.bukkit.NamespacedKey.fromString(enchantKey.asString()));
-                    if (enchant != null) sigMeta.addEnchant(enchant, 1, true);
-                }
-            }
             result.setItemMeta(sigMeta);
         }
         final String enchantSpec = configManager.getString(

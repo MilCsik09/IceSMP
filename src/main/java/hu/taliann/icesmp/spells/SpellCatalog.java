@@ -241,7 +241,7 @@ public final class SpellCatalog {
                 .particle(Particle.CLOUD, 12).sound(Sound.ENTITY_RABBIT_JUMP, 1.0F, 0.8F)
                 .build());
         registry.register(new ProjectileBurstSpell(mm, "piercing_bolt", "Átütő Lövedék", 35, SpellCostType.XP, 25,
-                ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 1, 0.0D, 3.2D, 3,
+                ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 1, 0.0D, 3.2D, 7.0D, 3,
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 0.7F));
         registry.register(ConfiguredSpell.builder(mm, "snare", "Csapdázás", 45, SpellCostType.HUNGER, 4)
                 .target(14.0D).targetEffect(PotionEffectType.SLOWNESS, 3 * 20, 3)
@@ -253,7 +253,7 @@ public final class SpellCatalog {
                 .particle(Particle.COMPOSTER, 20).sound(Sound.BLOCK_GRASS_BREAK, 0.8F, 0.8F)
                 .build());
         registry.register(new ProjectileBurstSpell(mm, "arrow_storm", "Nyílzápor", 90, SpellCostType.XP, 60,
-                ProjectileBurstSpell.ProjectileKind.ARROW, 7, 6.0D, 2.0D,
+                ProjectileBurstSpell.ProjectileKind.ARROW, 7, 6.0D, 2.0D, 4.0D,
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 1.2F));
         registry.register(ConfiguredSpell.builder(mm, "swift_steps", "Szélléptek", 90, SpellCostType.HUNGER, 5)
                 .selfEffect(PotionEffectType.SPEED, 20 * 20, 1)
@@ -265,7 +265,7 @@ public final class SpellCatalog {
     // ===== ORGYILKOS (assassin) =====
     private static void registerAssassin(final SpellRegistry registry, final MessageManager mm) {
         registry.register(new ProjectileBurstSpell(mm, "dagger_throw", "Tőrhajítás", 15, SpellCostType.HUNGER, 2,
-                ProjectileBurstSpell.ProjectileKind.ARROW, 1, 0.0D, 2.6D,
+                ProjectileBurstSpell.ProjectileKind.ARROW, 1, 0.0D, 2.6D, 6.0D,
                 Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.8F, 1.6F));
         registry.register(ConfiguredSpell.builder(mm, "adrenaline", "Adrenalin", 60, SpellCostType.HUNGER, 4)
                 .selfEffect(PotionEffectType.SPEED, 8 * 20, 1)
@@ -306,7 +306,7 @@ public final class SpellCatalog {
     // ===== ELEMENTALISTA (wizard spec) =====
     private static void registerElementalist(final SpellRegistry registry, final MessageManager mm) {
         registry.register(new ProjectileBurstSpell(mm, "fireball", "Tűzgolyó", 45, SpellCostType.XP, 40,
-                ProjectileBurstSpell.ProjectileKind.SMALL_FIREBALL, 1, 0.0D, 1.8D,
+                ProjectileBurstSpell.ProjectileKind.SMALL_FIREBALL, 1, 0.0D, 1.8D, 5.0D,
                 Sound.ITEM_FIRECHARGE_USE, 1.0F, 1.0F));
         registry.register(ConfiguredSpell.builder(mm, "frost_nova", "Fagyrobbanás", 90, SpellCostType.XP, 60)
                 .aoe(6.0D).freeze(120).targetEffect(PotionEffectType.SLOWNESS, 6 * 20, 2)
@@ -330,7 +330,7 @@ public final class SpellCatalog {
                 .particle(Particle.ASH, 40).sound(Sound.BLOCK_STONE_PLACE, 1.0F, 0.6F)
                 .build());
         registry.register(new ProjectileBurstSpell(mm, "gale_burst", "Viharlöket", 40, SpellCostType.XP, 35,
-                ProjectileBurstSpell.ProjectileKind.WIND_CHARGE, 1, 0.0D, 1.6D,
+                ProjectileBurstSpell.ProjectileKind.WIND_CHARGE, 1, 0.0D, 1.6D, 1.0D,
                 Sound.ENTITY_BREEZE_SHOOT, 1.0F, 1.0F));
         registry.register(ConfiguredSpell.builder(mm, "elemental_overload", "Elemi Túltöltés", 300, SpellCostType.XP, 150)
                 .aoe(7.0D).damage(5.0D).ignite(3 * 20).freeze(80).knockback(0.8D)
@@ -355,7 +355,7 @@ public final class SpellCatalog {
                 .particle(Particle.SQUID_INK, 50).sound(Sound.ENTITY_WITHER_AMBIENT, 0.6F, 0.8F)
                 .build());
         registry.register(new ProjectileBurstSpell(mm, "bone_spear", "Csontdárda", 30, SpellCostType.XP, 30,
-                ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 1, 0.0D, 3.0D,
+                ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 1, 0.0D, 3.0D, 6.0D,
                 Sound.ENTITY_SKELETON_SHOOT, 1.0F, 0.7F));
         registry.register(ConfiguredSpell.builder(mm, "plague_touch", "Dögvészérintés", 75, SpellCostType.HEALTH, 3)
                 .target(6.0D).targetEffect(PotionEffectType.POISON, 6 * 20, 0)
@@ -489,7 +489,7 @@ public final class SpellCatalog {
                 .particle(Particle.CRIT, 25).sound(Sound.ENTITY_ARROW_HIT_PLAYER, 1.0F, 0.6F)
                 .build());
         registry.register(new ProjectileBurstSpell(mm, "double_tap", "Duplalövés", 30, SpellCostType.HUNGER, 4,
-                ProjectileBurstSpell.ProjectileKind.ARROW, 2, 2.0D, 2.8D,
+                ProjectileBurstSpell.ProjectileKind.ARROW, 2, 2.0D, 2.8D, 6.0D,
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 1.4F));
         registry.register(ConfiguredSpell.builder(mm, "flare", "Jelzőfény", 90, SpellCostType.HUNGER, 4)
                 .aoe(15.0D).targetEffect(PotionEffectType.GLOWING, 8 * 20, 0)
@@ -512,7 +512,7 @@ public final class SpellCatalog {
                 .particle(Particle.ENCHANT, 30).sound(Sound.BLOCK_NOTE_BLOCK_CHIME, 1.0F, 1.6F)
                 .build());
         registry.register(new ProjectileBurstSpell(mm, "spectral_volley", "Szellemsortűz", 90, SpellCostType.XP, 60,
-                ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 5, 5.0D, 2.4D,
+                ProjectileBurstSpell.ProjectileKind.SPECTRAL_ARROW, 5, 5.0D, 2.4D, 5.0D,
                 Sound.ITEM_CROSSBOW_SHOOT, 1.0F, 0.9F));
         registry.register(ConfiguredSpell.builder(mm, "masterful_shot", "Mesterlövés", 300, SpellCostType.XP, 80)
                 .target(20.0D).damage(12.0D)

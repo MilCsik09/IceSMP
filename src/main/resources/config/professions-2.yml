@@ -7,4 +7,9 @@ professions:
     chance-per-level: 0.003
     maximum-chance: 0.18
   economy:
-    recipe-aliases: {}
+    # Historical recipe IDs resolve to the one #140 canonical acquisition authority.
+    recipe-aliases:
+      fonix_tollkopeny: p2_fonixpihe_kopeny
+      sarkanycsont_ij: item2_sarkanycsont_ij
+      vasmuvek_csakanya: item2_vasmuvek_csakanya
+      bokic_horgaszbot: item2_bokic_horgaszbot

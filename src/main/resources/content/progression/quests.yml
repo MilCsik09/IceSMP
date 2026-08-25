@@ -637,7 +637,7 @@ quests:
     display-name: "Rejtvény: Az édes hó"
     description: "„Fehér, mint a hó, de nem hideg; a nádból sajtolják, s a szakács keze alatt arannyá lesz. Hozz belőle egy marékkal a világra.”"
     objective:
-      type: "COLLECT_ITEMS"
+      type: "CRAFT_ITEMS"
       materials: [ "SUGAR" ]
       count: 16
     rewards:
@@ -3096,7 +3096,7 @@ quests:
     repeatable: true
     cooldown-hours: 24
     objective:
-      type: "COLLECT_ITEMS"
+      type: "CRAFT_ITEMS"
       materials:
         - "BLAZE_POWDER"
       count: 8
@@ -3289,7 +3289,7 @@ quests:
     requires-quest: "onboarding_hunt"
     next: "onboarding_utmutatas"
     objective:
-      type: "COLLECT_ITEMS"
+      type: "BREAK_BLOCKS"
       count: 10
       materials:
         - "OAK_LOG"

@@ -563,7 +563,7 @@ Regisztrált spellkatalógus, célzás, költség, cooldown, projectile/state ke
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
 Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz és szakmai GUI.
-A receptkatalógus 475 receptet tartalmaz, és minden recept kimondja a **fajtáját**
+A receptkatalógus 471 aktív receptet tartalmaz (plusz 4 történelmi signature recept-alias), és minden recept kimondja a **fajtáját**
 (gyakorló / hozam / egyedi / lánc / ritkaság); a fajta szabja meg, mit adhat a
 vanília fölé, és ezt gépi kapu tartja fenn.
 
@@ -732,6 +732,11 @@ Egyedi relikviák, ownership/transfer, triggerelt képességek, cooldown, soul s
 > **Aktív és játékosok számára elérhető** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
 Mérföldkövek és jutalmak, datapack advancementek, harci statisztika és ranglisták.
+
+Az 50. kasztszint üzleti mérföldköve egyetlen durable achievement (`legend`): ez adja egyszer az
+economic rewardot. A korábbi külön `class_max` advancement-projekció megszűnt, így nincs második
+threshold vagy jutalmazási authority. A datapack jelenleg 21 persistent node-ot és 1 reusable
+quest-toastot szállít (22 authored JSON összesen).
 
 - **Így találkozol vele:** `/achievements`, `/stats`, `/leaderboard`; főmenü. Parancs: /achievements (alias: /ach, /eleresek); /leaderboard (alias: /lb, /rangsor, /top); /stats.
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
@@ -1247,7 +1252,7 @@ Komp/utazás, NPC-binding, Stranger NPC és FancyNpcs-quest/shop kapcsolatok.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
 - **Mitől mozdul meg:** NPC click/dialog, teleport/komp és binding adminművelet.
 - **Ami még kellhet hozzá:** Biztonságos célpontok, NPC-k, kompállomások és világnevek előkészítendők.
-- **Fontos határ:** A külső FancyNpcs és élő világ nélkül csak capability bizonyítható.
+- **Fontos határ:** FancyNpcs kötelező production dependency; az élő NPC snapshot és világ nélkül csak a bridge capability bizonyítható, a production readiness nem.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>

@@ -10,11 +10,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Vanília advancement-toast felugratása a jobb felső sarokban (quest-teljesítés, mérföldkő,
- * felfedezés ünneplése).
+ * Vanília advancement-toast felugratása a jobb felső sarokban (quest-teljesítés).
  *
- * <p><b>Hogyan:</b> a jar datapackje három REJTETT, {@code show_toast:true} advancementet
- * szállít ({@code icesmp:toast_quest|toast_milestone|toast_discovery}); a toast megjelenítése
+ * <p><b>Hogyan:</b> a jar datapackje egy REJTETT, {@code show_toast:true} advancementet
+ * szállít ({@code icesmp:toast_quest}); a toast megjelenítése
  * = a bejegyzés odaítélése, majd azonnali visszavonása, hogy legközelebb újra felugorhasson.
  * A rejtett bejegyzés nem szennyezi a haladás-fület.
  *
@@ -27,15 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p><b>Folia:</b> az odaítélés/visszavonás a JÁTÉKOS advancement-progresszét írja, ezért a
  * játékos saját régió-szálán fut. Ha a datapack nem töltött be (nincs ilyen advancement), a
- * toast némán elmarad — a chat-üzenet a fő visszajelzés.
+ * toast elmarad és egyszeri WARNING jelzi — a chat-üzenet a fő visszajelzés.
  */
 public final class ToastUtil {
 
     /** Toast-fajták: a datapack fix bejegyzéseihez képeznek le. */
     public enum Kind {
-        QUEST("toast_quest"),
-        MILESTONE("toast_milestone"),
-        DISCOVERY("toast_discovery");
+        QUEST("toast_quest");
 
         private final String advancementId;
 
@@ -83,7 +80,7 @@ public final class ToastUtil {
     private static void warnOnce(final JavaPlugin plugin) {
         if (warned.compareAndSet(false, true)) {
             plugin.getLogger().warning("A toast-advancementek nincsenek betöltve (icesmp datapack) — "
-                    + "a toastok kimaradnak, a chat-üzenet marad. Ellenőrizd a datapack-felderítést a logban.");
+                    + "a quest-toast kimarad, a chat-üzenet marad. Ellenőrizd a datapack-felderítést a logban.");
         }
     }
 }

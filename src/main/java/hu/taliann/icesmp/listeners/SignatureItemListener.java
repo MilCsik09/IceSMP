@@ -44,7 +44,7 @@ public final class SignatureItemListener implements Listener {
     public static final String MIINUS_KARD = "miinus_haragja";
     public static final String SARKANYCSONT_IJ = "sarkanycsont_ij";
     public static final String LANGNYELV = "zhoris_langnyelve";
-    public static final String NAPFOGYATKOZAS = "napfogyatkozas";
+    public static final String NAPFOGYATKOZAS = "napfogyatkozas_fokusz";
 
     private static final String SPIRIT_STAG_COOLDOWN = "signature.spirit-stag";
 

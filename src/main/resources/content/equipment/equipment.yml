@@ -1477,12 +1477,14 @@ item-templates:
     - hunting:rare
   kallan_szeletelo:
     schema: 2
+    version: 2
     display-name: Kallan Szeletelője
     rarity: legendary
     item-level: 41
     family: weapon
     slot: main-hand
-    material: NETHERITE_AXE
+    material: BOW
+    item-model: icesmp:kallan_szeletelo
     base-damage: 7.5
     rolled-stats:
       attack_damage:
@@ -1628,12 +1630,14 @@ item-templates:
     level-requirement: 39
   napfogyatkozas_fokusz:
     schema: 2
+    version: 2
     display-name: Napfogyatkozás Fókusza
     rarity: mythic
     item-level: 46
     family: weapon
     slot: main-hand
-    material: ECHO_SHARD
+    material: BOW
+    item-model: icesmp:napfogyatkozas
     fixed-stats:
       ability_power: 8.0
     rolled-stats:
@@ -1644,7 +1648,7 @@ item-templates:
         min: 0.003
         max: 0.01
     rune-sockets: 2
-    signature-effect: napfogyatkozas
+    signature-effect: napfogyatkozas_fokusz
     source-tags:
     - combat:world_boss
     - profession:enchanter

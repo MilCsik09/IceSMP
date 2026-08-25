@@ -74,7 +74,7 @@ public final class SignatureEffectRegistry {
         register(definitions, "zhoris_langnyelve", "Zhoris lángnyelve",
                 "Égő célpont ellen erősödik, máskor lángot lobbanthat.", Set.of(Trigger.ON_HIT),
                 "SignatureItemListener#onMelee");
-        register(definitions, "napfogyatkozas", "Napfogyatkozás",
+        register(definitions, "napfogyatkozas_fokusz", "Napfogyatkozás",
                 "Éjszaka erősebb lövedékeket lő.", Set.of(Trigger.ON_SHOOT),
                 "SignatureItemListener#onShoot");
         DEFINITIONS = Map.copyOf(definitions);

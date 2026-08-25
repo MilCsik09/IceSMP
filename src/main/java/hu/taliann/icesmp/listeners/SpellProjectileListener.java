@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.spells.WisplightSpell;
+import hu.taliann.icesmp.spells.SpellTargetingUtil;
+import hu.taliann.icesmp.utils.SpellDamageUtil;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
@@ -23,6 +25,26 @@ public final class SpellProjectileListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onProjectileHit(final ProjectileHitEvent event) {
         final Projectile projectile = event.getEntity();
+
+        final var spellSnapshot = SpellDamageUtil.projectileSnapshot(projectile);
+        if (spellSnapshot.isPresent() && event.getHitEntity() instanceof LivingEntity target) {
+            final var snapshot = spellSnapshot.orElseThrow();
+            event.setCancelled(true); // suppress the vanilla hit; custom DamageSource fires exactly once
+            if (!SpellDamageUtil.claimProjectileTarget(projectile, target.getUniqueId())
+                    || SpellTargetingUtil.isAlly(snapshot.casterId(), target)) {
+                if (!(projectile instanceof org.bukkit.entity.AbstractArrow arrow)
+                        || arrow.getPierceLevel() <= 0) projectile.remove();
+                return;
+            }
+            if (!SpellDamageUtil.damageByProjectile(projectile, target, snapshot)) {
+                projectile.remove();
+                throw new IllegalStateException("Missing bootstrap DamageType for spell projectile "
+                        + snapshot.spellId() + '/' + snapshot.school());
+            }
+            if (!(projectile instanceof org.bukkit.entity.AbstractArrow arrow)
+                    || arrow.getPierceLevel() <= 0) projectile.remove();
+            return;
+        }
 
         if (projectile.getScoreboardTags().contains(WisplightSpell.PROJECTILE_TAG)) {
             final Block targetBlock = resolveWisplightTarget(event);
@@ -58,4 +80,3 @@ public final class SpellProjectileListener implements Listener {
         return event.getHitBlock().getRelative(face);
     }
 }
-

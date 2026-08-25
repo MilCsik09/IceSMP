@@ -47,10 +47,11 @@ public final class AdvancementService {
     /** Runtime verification order; parent JSONs precede their children for deprecated fallback load. */
     private static final List<String> ADVANCEMENT_IDS = List.of(
             "root",
-            "first_class", "first_spec", "class_max", "capstone",
+            "first_class", "first_spec", "capstone",
             "faction_join", "whisperer", "exiled", "crowned", "cursed_crown", "raid_win", "redeemed",
             "profession_pick", "profession_master", "masterwork",
             "cleanse", "hidden_spot", "world_boss", "first_relic", "first_ritual", "pet_bond", "parkour");
+    private static final List<String> TOAST_IDS = List.of("toast_quest");
 
     private static volatile AdvancementService instance;
 
@@ -61,7 +62,16 @@ public final class AdvancementService {
     public AdvancementService(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
-        instance = this;
+        synchronized (AdvancementService.class) {
+            instance = this;
+        }
+    }
+
+    /** Identity-safe lifecycle teardown: a late disable of A cannot clear active B. */
+    public static void clearIfCurrent(final AdvancementService candidate) {
+        synchronized (AdvancementService.class) {
+            if (instance == candidate) instance = null;
+        }
     }
 
     /**
@@ -109,13 +119,42 @@ public final class AdvancementService {
                     + ". A datapack a jar-ból telepítődik a világ datapack-könyvtárába.");
             return;
         }
+        final List<String> missingToasts = new java.util.ArrayList<>();
+        int toastFromDatapack = 0;
+        int toastFromFallback = 0;
+        for (final String id : TOAST_IDS) {
+            final NamespacedKey key = new NamespacedKey(NS, id);
+            if (Bukkit.getAdvancement(key) != null) {
+                toastFromDatapack++;
+                continue;
+            }
+            try {
+                if (Bukkit.getUnsafe().loadAdvancement(key, authoredJson(id)) != null) {
+                    toastFromFallback++;
+                    continue;
+                }
+            } catch (final Throwable throwable) {
+                plugin.getLogger().warning("Quest-toast tartalék-betöltés hiba: " + throwable.getMessage());
+            }
+            missingToasts.add(id);
+        }
         if (fromFallback > 0) {
-            plugin.getLogger().warning("IceSMP advancement-fa: " + fromDatapack + " datapackből, "
-                    + fromFallback + " a DEPRECATED tartalék úton (" + ADVANCEMENT_IDS.size() + " összesen). "
+            plugin.getLogger().warning("IceSMP persistent advancement-fa: " + fromDatapack + " datapackből, "
+                    + fromFallback + " a DEPRECATED tartalék úton (" + ADVANCEMENT_IDS.size() + " persistent). "
                     + "A datapack-felderítés nem hozta be mindet — érdemes a szerver-logot megnézni.");
         } else {
-            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "IceSMP advancement-fa: " + fromDatapack + "/" + ADVANCEMENT_IDS.size()
-                    + " bejegyzés a jar datapackjéből él.");
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager,
+                    "IceSMP persistent advancement-fa: " + fromDatapack + "/" + ADVANCEMENT_IDS.size()
+                            + " bejegyzés a jar datapackjéből él.");
+        }
+        if (!missingToasts.isEmpty()) {
+            plugin.getLogger().warning("IceSMP presentation DEGRADED: a persistent advancement-fa teljes, "
+                    + "de a használt quest-toast hiányzik: " + String.join(", ", missingToasts)
+                    + ". A quest chat-visszajelzés működik.");
+        } else {
+            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager,
+                    "IceSMP reusable toast: " + toastFromDatapack + " datapackből, "
+                            + toastFromFallback + " deprecated fallbackból (1 authored).");
         }
     }
 

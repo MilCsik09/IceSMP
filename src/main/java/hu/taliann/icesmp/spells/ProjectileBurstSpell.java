@@ -39,6 +39,7 @@ public final class ProjectileBurstSpell extends BaseSpell {
     private final int count;
     private final double spreadDegrees;
     private final double speed;
+    private final double baseDamage;
     private final int pierceLevel;
     private final Sound sound;
     private final float soundVolume;
@@ -47,21 +48,26 @@ public final class ProjectileBurstSpell extends BaseSpell {
     public ProjectileBurstSpell(final MessageManager messageManager, final String id, final String defaultName,
                                 final int cooldown, final SpellCostType costType, final int costAmount,
                                 final ProjectileKind kind, final int count, final double spreadDegrees,
-                                final double speed, final Sound sound, final float soundVolume, final float soundPitch) {
+                                final double speed, final double baseDamage,
+                                final Sound sound, final float soundVolume, final float soundPitch) {
         this(messageManager, id, defaultName, cooldown, costType, costAmount, kind, count, spreadDegrees, speed,
-                0, sound, soundVolume, soundPitch);
+                baseDamage, 0, sound, soundVolume, soundPitch);
     }
 
     public ProjectileBurstSpell(final MessageManager messageManager, final String id, final String defaultName,
                                 final int cooldown, final SpellCostType costType, final int costAmount,
                                 final ProjectileKind kind, final int count, final double spreadDegrees,
-                                final double speed, final int pierceLevel,
+                                final double speed, final double baseDamage, final int pierceLevel,
                                 final Sound sound, final float soundVolume, final float soundPitch) {
         super(messageManager, id, defaultName, cooldown, costType, costAmount);
         this.kind = kind;
         this.count = Math.max(1, count);
         this.spreadDegrees = spreadDegrees;
         this.speed = speed;
+        if (!Double.isFinite(baseDamage) || baseDamage <= 0.0D) {
+            throw new IllegalArgumentException("projectile spell baseDamage must be finite and positive");
+        }
+        this.baseDamage = baseDamage;
         this.pierceLevel = Math.max(0, pierceLevel);
         this.sound = sound;
         this.soundVolume = soundVolume;
@@ -82,7 +88,7 @@ public final class ProjectileBurstSpell extends BaseSpell {
                     .rotateAroundY(Math.toRadians(angle))
                     .multiply(projectileSpeed);
             final Projectile projectile = player.launchProjectile(kind.projectileClass, velocity);
-            SpellDamageUtil.markProjectile(projectile, getId(), modifiers);
+            SpellDamageUtil.markProjectile(projectile, getId(), balance("damage", baseDamage), modifiers);
             if (projectile instanceof AbstractArrow arrow) {
                 arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
                 arrow.setCritical(true);

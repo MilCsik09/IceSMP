@@ -13,8 +13,8 @@ import org.bukkit.persistence.PersistentDataType;
  * every nearby item one tick later. The scan contaminated unrelated drops. Stack PDC is copied into
  * the actual death/drop entity by Bukkit, so ownership is now attached directly to the exact drops.
  *
- * <p>Collection progress no longer depends on pickup events; this marker remains as a fail-closed
- * guard for any future pickup consumer and for diagnostics.
+ * <p>The canonical quest acquisition producer rejects this marker. Consequently a player drop,
+ * death drop, re-pickup, or player-to-player handoff cannot manufacture collection progress.
  */
 public final class ItemProvenance {
 
