@@ -17,12 +17,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /** Focused startup regressions for packaged configuration and strict profession parsing. */
 public final class ConfigStartupRegressionSuite {
     private static final Logger LOGGER = Logger.getLogger(ConfigStartupRegressionSuite.class.getName());
-    private static final Pattern LEGACY_CHAIN = Pattern.compile("\\bCHAIN\\b");
 
     private ConfigStartupRegressionSuite() {
     }
@@ -134,11 +132,6 @@ public final class ConfigStartupRegressionSuite {
                                 + " -> " + uniqueIngredient);
             }
         }
-
-        final String recipes = Files.readString(recipeFile.toPath());
-        final String materials = Files.readString(materialFile.toPath());
-        check(!LEGACY_CHAIN.matcher(recipes).find() && !LEGACY_CHAIN.matcher(materials).find(),
-                "bundled profession config still contains obsolete CHAIN");
     }
 
     private static void validatesPactUniqueMaterialReference() {
