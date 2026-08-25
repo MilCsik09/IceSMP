@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.managers.ProfessionIngredientParser;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
+import hu.taliann.icesmp.utils.ConfigMaterialResolver;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -132,9 +133,11 @@ public final class ProfessionRecipeAuditRegressionSuite {
                         "recipe does not multiply its own input material: " + id);
             }
             if (unique != null) {
-                final String model = materials.getString("profession-materials."
-                        + unique.toLowerCase(Locale.ROOT) + ".item-model");
-                check(model != null && !model.isBlank(), "unique profession output has icon: " + unique);
+                final ConfigurationSection definition = materials.getConfigurationSection(
+                        "profession-materials." + unique.toLowerCase(Locale.ROOT));
+                check(definition != null, "unique profession output is defined: " + unique);
+                check(ConfigMaterialResolver.match(definition.getString("material", "")) != null,
+                        "unique profession output has a valid Bukkit icon: " + unique);
             }
         }
         check(ids.size() == EXPECTED_RECIPE_COUNT,
