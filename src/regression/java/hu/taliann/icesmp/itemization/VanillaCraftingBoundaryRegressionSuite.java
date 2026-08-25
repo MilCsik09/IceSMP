@@ -212,7 +212,21 @@ public final class VanillaCraftingBoundaryRegressionSuite {
         check(config.contains("crafting-restrictions:\n  enabled: false"),
                 "legacy profession gates no longer block survival recipes");
         check(config.contains("smithing-upgrade: false"), "canonical netherite upgrade is denied by default");
-        check(config.contains("allowed-enchantments: []"), "canonical enchant whitelist is explicit and empty");
+        final int allowlistStart = config.indexOf("allowed-enchantments:");
+        final int allowlistEnd = config.indexOf("durability:", allowlistStart);
+        check(allowlistStart >= 0 && allowlistEnd > allowlistStart,
+                "canonical enchant whitelist is explicit");
+        final String allowlist = config.substring(allowlistStart, allowlistEnd);
+        final List<String> signatureEnchants = List.of(
+                "icesmp:jegfog", "icesmp:vihartuz", "icesmp:verszomj", "icesmp:fagypancel",
+                "icesmp:fonixtoll", "icesmp:erc_erzek", "icesmp:bokic_kegye");
+        for (final String enchant : signatureEnchants) {
+            check(allowlist.contains("\"" + enchant + "\""),
+                    "bootstrap signature enchant missing from canonical allowlist: " + enchant);
+        }
+        check(allowlist.lines().filter(line -> line.trim().startsWith("- \"icesmp:")).count()
+                        == signatureEnchants.size(),
+                "canonical enchant whitelist contains an unauthorised entry");
         check(config.contains("durability: \"vanilla\""), "canonical durability contract is explicit");
         final String policy = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/itemization/ItemTransformationPolicy.java"));
