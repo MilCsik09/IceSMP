@@ -140,6 +140,7 @@ INTEGRITY_HARDENING_ALLOWED_DRIFT = {
     "spells.spell-schools.by-spell.gale_burst",
     "spells.spell-schools.by-spell.piercing_bolt",
     "spells.spell-schools.by-spell.spectral_volley",
+    "itemization.vanilla-boundary.canonical.allowed-enchantments",
     "signature.custom-enchants.enabled",
     "signature.custom-enchants.items.bokic_horgaszbot",
     "signature.custom-enchants.items.fonix_tollkopeny",

@@ -131,9 +131,10 @@ jobs:
             'package test;' \
             'public final class IncompatibleFancyNpcs extends org.bukkit.plugin.java.JavaPlugin {}' \
             > "$fixture/src/test/IncompatibleFancyNpcs.java"
-          paper_api=$(find "$HOME/.gradle/caches/modules-2/files-2.1" -path '*paper-api*' -name '*.jar' -print -quit)
-          test -n "$paper_api"
-          javac -cp "$paper_api" -d "$fixture/classes" "$fixture/src/test/IncompatibleFancyNpcs.java"
+          folia_api=$(find "$GRADLE_USER_HOME/caches/modules-2/files-2.1/dev.folia/folia-api" \
+            -type f -name 'folia-api-*.jar' ! -name '*sources*' ! -name '*javadoc*' -print -quit)
+          test -n "$folia_api"
+          javac -cp "$folia_api" -d "$fixture/classes" "$fixture/src/test/IncompatibleFancyNpcs.java"
           printf '%s\n' \
             'name: FancyNpcs' \
             'version: 0.0.0' \

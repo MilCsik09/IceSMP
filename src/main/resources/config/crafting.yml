@@ -17,7 +17,14 @@ itemization:
       enchanting: false
       # Csak explicit canonical producer által felrakott, ismert enchant kerülhet ide.
       # Az enchanting table és az anvil ettől még nem kerülheti meg a mutation/WAL boundaryt.
-      allowed-enchantments: []
+      allowed-enchantments:
+        - "icesmp:jegfog"
+        - "icesmp:vihartuz"
+        - "icesmp:verszomj"
+        - "icesmp:fagypancel"
+        - "icesmp:fonixtoll"
+        - "icesmp:erc_erzek"
+        - "icesmp:bokic_kegye"
       durability: "vanilla"
 
 # ===== Legacy kaszt/szakma-alapú vanilla receptkapu =====

@@ -216,9 +216,11 @@ public final class PaperSourceIntegrityRuntimeProbe {
             signatures++;
             final ItemStack canonical = identity.create(template.templateId(),
                     "runtime:integrity-signature", "paper-folia", null);
+            final ItemIdentityService.Inspection canonicalInspection = identity.inspect(canonical);
             check(canonical.getType().name().equals(template.material())
-                            && identity.inspect(canonical).status() == ItemIdentityService.Status.VALID,
-                    "canonical signature render mismatch: " + template.templateId());
+                            && canonicalInspection.status() == ItemIdentityService.Status.VALID,
+                    "canonical signature render mismatch: " + template.templateId() + " status="
+                            + canonicalInspection.status() + " detail=" + canonicalInspection.detail());
             final net.kyori.adventure.key.Key enchantKey =
                     hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE
                             .get(template.signatureEffectId());

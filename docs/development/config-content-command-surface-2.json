@@ -13560,7 +13560,7 @@
       "runtime_state": false
     },
     {
-      "bytes": 8314,
+      "bytes": 9249,
       "canonical": true,
       "category": "OPERATOR_CONFIGURATION",
       "consumer_count": 0,
@@ -13570,7 +13570,7 @@
       "format": "yml",
       "gameplay_content": false,
       "generated": false,
-      "lines": 214,
+      "lines": 235,
       "migration_requirement": "NONE",
       "operator_editable": false,
       "owner": "CI maintainers",
@@ -40146,7 +40146,7 @@
       "runtime_state": false
     },
     {
-      "bytes": 7166,
+      "bytes": 7364,
       "canonical": true,
       "category": "OPERATOR_CONFIGURATION",
       "consumer_count": 1,
@@ -40156,7 +40156,7 @@
       "format": "yml",
       "gameplay_content": false,
       "generated": false,
-      "lines": 154,
+      "lines": 161,
       "migration_requirement": "NONE",
       "operator_editable": true,
       "owner": "server operator",
@@ -45466,6 +45466,7 @@
       "item-templates.napfogyatkozas_fokusz.material",
       "item-templates.napfogyatkozas_fokusz.signature-effect",
       "item-templates.napfogyatkozas_fokusz.version",
+      "itemization.vanilla-boundary.canonical.allowed-enchantments",
       "profession-recipes.bokic_horgaszbot.category",
       "profession-recipes.bokic_horgaszbot.display-name",
       "profession-recipes.bokic_horgaszbot.faction",
@@ -45591,7 +45592,7 @@
       "spells.spell-schools.by-spell.spectral_volley"
     ],
     "effective_leaf_count": 24413,
-    "effective_tree_sha256": "fc5cfa4b8fcd0e9ab15bb78c5f6bee2d80f9608971067da794accacd6e97912f",
+    "effective_tree_sha256": "9fb23ef71fc7d16a104b49af3c7a5fa849f71f75e8f7ea2b155ab5088b297250",
     "entire_effective_tree_equal_to_parent": false,
     "equal_except_bounded_integrity_fixes": true
   },
