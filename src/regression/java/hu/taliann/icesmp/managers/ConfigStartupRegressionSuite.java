@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -114,14 +115,14 @@ public final class ConfigStartupRegressionSuite {
             final String uniqueResult = result.getString("unique", null);
             if (templateResult != null && !templateResult.isBlank()) {
                 check(equipmentRoot.isConfigurationSection(
-                                templateResult.toLowerCase(java.util.Locale.ROOT)),
+                                templateResult.toLowerCase(Locale.ROOT)),
                         "profession recipe has undefined equipment template result: "
                                 + id + " -> " + templateResult);
             } else if (uniqueResult == null || uniqueResult.isBlank()) {
                 check(ConfigMaterialResolver.match(result.getString("material", "")) != null,
                         "profession recipe has invalid Bukkit result: " + id);
             } else {
-                check(materialRoot.isConfigurationSection(uniqueResult.toLowerCase(java.util.Locale.ROOT)),
+                check(materialRoot.isConfigurationSection(uniqueResult.toLowerCase(Locale.ROOT)),
                         "profession recipe has undefined unique result: " + id + " -> " + uniqueResult);
             }
 
