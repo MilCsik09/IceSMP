@@ -5,23 +5,6 @@
 #   definiált ládához tartozó kulcs-itemet ad a játékosnak (CrateKeyFactory,
 #   tele inventorynál a lába elé esik). Lásd a lenti onboarding_gather questet
 #   kézzelfogható példaként.
-# ===== Napi küldetések (ROADMAP 8.) =====
-daily-quests:
-  # Sorozat-bónusz: minden egymást követő napi teljesítés +streak-bonus-per-day jutalmat
-  # ad, legfeljebb streak-bonus-cap-days napig halmozva.
-  streak-bonus-per-day: 5
-  streak-bonus-cap-days: 7
-  enabled: true
-  daily_hunt:
-    amount: 20
-    reward: 60
-  daily_fish:
-    amount: 10
-    reward: 50
-  daily_gather:
-    amount: 64
-    reward: 40
-
 # ===== Elérések (ROADMAP 8.) =====
 achievements:
   enabled: true
@@ -775,13 +758,14 @@ quests:
     category: MAIN
     visibility: DISCOVERED
     chapter: 1
-    display-name: "1. fejezet: Az írott szó"
-    description: "Amit láttál, azt írásba kell adni. Készíts 6 papírt a jelentéshez — a krónika nem szóbeszédből épül."
+    display-name: "1. fejezet: A robbanó pecsét"
+    description: "A jelentést csak a Kapu puskaporos őrzőinek megtörésével hitelesítheted: győzz le 8 creepert."
     next: "fejezet1_kronikas"
     objective:
-      type: "CRAFT_ITEMS"
-      materials: [ "PAPER" ]
-      count: 6
+      type: "KILL_MOBS"
+      entity-type: "CREEPER"
+      min-mob-level: 3
+      count: 8
     rewards:
       class-xp: 90
       currency:
@@ -795,7 +779,7 @@ quests:
     visibility: DISCOVERED
     chapter: 1
     display-name: "1. fejezet: A Krónikás pecsétje"
-    description: "Vidd a híreket a fővárosba: beszélj a hírnökkel, hogy a krónikába kerüljön, amit láttál. A fejezet zárása gazdagon fizet."
+    description: "A Kapu első hullámát megtörted. Vidd a bizonyítékot a hírnöknek, hogy a Krónikás lezárja az első fejezetet."
     objective:
       type: "TALK_TO_NPC"
       npc: "hirnok"
@@ -804,6 +788,9 @@ quests:
       currency:
         type: "OWN"
         amount: 120
+      items:
+        - "WRITABLE_BOOK:1"
+      crate-key: "ritka:1"
   # --- Szezon-közepi ablak (20-40. nap, MINDEN szezonban): A Fa üzenete ---
   # A min/max-season-day kapu miatt csak a szezon derekán vehető fel — a szezon
   # közepének is van dátum-kapus tartalma (gameplay-audit 5. lelet zárása).
@@ -863,6 +850,7 @@ quests:
   fejezet2_repedesek:
     category: MAIN
     chapter: 2
+    requires-quest: "fejezet1_kronikas"
     display-name: "2. fejezet: A repedések éneke"
     description: "A hegyek közt a föld ma is a Hasadásra emlékszik. Járd meg a szélfútta ormokat, és hallgasd meg, mit mesélnek."
     next: "fejezet2_szilankok"
@@ -939,7 +927,7 @@ quests:
     visibility: DISCOVERED
     chapter: 2
     display-name: "2. fejezet: A második pecsét"
-    description: "A krónika új lapja megtelt. Vidd a hírnöknek, amit a repedésekről megtudtál — a fejezet zárása gazdagon fizet."
+    description: "A mélység őrzői elestek, a repedés lezárható. Vidd a hírnöknek a pecsét hírét és zárd le a második fejezetet."
     objective:
       type: "TALK_TO_NPC"
       npc: "hirnok"
@@ -950,10 +938,12 @@ quests:
         amount: 150
       items:
         - "EXPERIENCE_BOTTLE:16"
+      crate-key: "expedicio:1"
   # --- 3. fejezet (3. szezon): A Néma Királynő árnyéka — a Kapu válaszol ---
   fejezet3_sohajok:
     category: MAIN
     chapter: 3
+    requires-quest: "fejezet2_pecset"
     display-name: "3. fejezet: Az álom sóhajai"
     description: "A Királynő nyugtalanul forgolódik, s a holtak megindulnak. Küldj vissza 20 élőhalottat az álomba."
     next: "fejezet3_lelekfeny"
@@ -1031,7 +1021,7 @@ quests:
     visibility: DISCOVERED
     chapter: 3
     display-name: "3. fejezet: A harmadik mondat"
-    description: "Amit a Kapunál láttál, azt a krónikának tudnia kell — mert a harmadik mondatot senki élő nem akarja hallani. Beszélj a hírnökkel."
+    description: "Az ostrom megtört, a harmadik mondat titka nálad maradt. Jelents a hírnöknek, hogy a Krónika hitelesítse a győzelmedet."
     objective:
       type: "TALK_TO_NPC"
       npc: "hirnok"
@@ -1151,6 +1141,7 @@ quests:
     rewards:
       class-xp: 100
   warrior_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Aldric mester"
       give:
@@ -1185,6 +1176,7 @@ quests:
     rewards:
       class-xp: 100
   archer_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Lysa mesterasszony"
       give:
@@ -1219,6 +1211,7 @@ quests:
     rewards:
       class-xp: 100
   wizard_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Orvus főmágus"
       give:
@@ -1252,6 +1245,7 @@ quests:
     rewards:
       class-xp: 100
   assassin_master_trial:
+    category: CLASS
     dialogue:
       speaker: "A Névtelen"
       give:
@@ -1286,6 +1280,7 @@ quests:
     rewards:
       class-xp: 100
   druid_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Ylvara, a Vén Tölgy"
       give:
@@ -1319,6 +1314,7 @@ quests:
     rewards:
       class-xp: 100
   paladin_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Seratiel lovag-parancsnok"
       give:
@@ -1353,6 +1349,7 @@ quests:
     rewards:
       class-xp: 100
   death_knight_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Morvran, a Fagyott Penge"
       give:
@@ -1387,6 +1384,7 @@ quests:
     rewards:
       class-xp: 100
   shaman_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Tharkun, a Viharlátó"
       give:
@@ -1421,6 +1419,7 @@ quests:
     rewards:
       class-xp: 100
   monk_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Csendes Jin apát"
       give:
@@ -1461,6 +1460,7 @@ quests:
     rewards:
       class-xp: 100
   priest_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Elenora főtisztelendő"
       give:
@@ -1494,6 +1494,7 @@ quests:
     rewards:
       class-xp: 100
   warlock_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Az Alkuszó"
       give:
@@ -1528,6 +1529,7 @@ quests:
     rewards:
       class-xp: 100
   demon_hunter_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Karyx, a Megjelölt"
       give:
@@ -1562,6 +1564,7 @@ quests:
     rewards:
       class-xp: 100
   evoker_master_trial:
+    category: CLASS
     dialogue:
       speaker: "Vaelith, a Pikkelyes Bölcs"
       give:
@@ -1590,14 +1593,21 @@ quests:
     requires-specialization: "berserker"
     requires-level: 50
     requires-quest: "warrior_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Düh és Csatatempó"
-      count: 18
-      spells:
-        - "reckless_swing"
-        - "bloodbath"
-        - "whirlwind"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Düh és Csatatempó"
+        count: 12
+        spells:
+          - "reckless_swing"
+          - "bloodbath"
+          - "whirlwind"
+      2:
+        type: "KILL_MOBS"
+        description: "Dühödt rohamban legyőzött ellenfelek"
+        count: 12
+        min-mob-level: 3
   warrior_guardian_last_wall:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1607,15 +1617,22 @@ quests:
     requires-specialization: "guardian"
     requires-level: 50
     requires-quest: "warrior_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Őrség és pajzstöltet"
-      count: 18
-      spells:
-        - "bulwark"
-        - "shield_charge"
-        - "aegis"
-        - "whirlwind"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Őrség és pajzstöltet"
+        count: 12
+        spells:
+          - "bulwark"
+          - "shield_charge"
+          - "aegis"
+          - "whirlwind"
+      2:
+        type: "KILL_MOBS"
+        description: "Frontvonalban megtartott elit ellenfelek"
+        count: 8
+        min-mob-level: 4
   evoker_devastation_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1625,15 +1642,22 @@ quests:
     requires-specialization: "devastation"
     requires-level: 50
     requires-quest: "evoker_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Felerősítés és Eszencia"
-      count: 18
-      spells:
-        - "fire_breath"
-        - "disintegrate"
-        - "pyre"
-        - "eternity_surge"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Felerősítés és Eszencia"
+        count: 12
+        spells:
+          - "fire_breath"
+          - "disintegrate"
+          - "pyre"
+          - "eternity_surge"
+      2:
+        type: "KILL_MOBS"
+        description: "Eszenciával legyőzött erős ellenfelek"
+        count: 10
+        min-mob-level: 4
   evoker_preservation_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1643,15 +1667,23 @@ quests:
     requires-specialization: "preservation"
     requires-level: 50
     requires-quest: "evoker_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Visszhang és Időlenyomat"
-      count: 18
-      spells:
-        - "echo"
-        - "reversion"
-        - "spiritbloom"
-        - "temporal_anomaly"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Visszhang és Időlenyomat"
+        count: 12
+        spells:
+          - "echo"
+          - "reversion"
+          - "spiritbloom"
+          - "temporal_anomaly"
+      2:
+        type: "COLLECT_ITEMS"
+        description: "Időlenyomatot tartó ametiszt"
+        count: 12
+        materials:
+          - "AMETHYST_SHARD"
   archer_sharpshooter_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1661,16 +1693,24 @@ quests:
     requires-specialization: "sharpshooter"
     requires-level: 50
     requires-quest: "archer_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Szélolvasás és Pontosság"
-      count: 18
-      spells:
-        - "hunters_mark"
-        - "piercing_bolt"
-        - "deadeye"
-        - "headshot"
-        - "perfect_focus"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Szélolvasás és Pontosság"
+        count: 12
+        spells:
+          - "hunters_mark"
+          - "piercing_bolt"
+          - "deadeye"
+          - "headshot"
+          - "perfect_focus"
+      2:
+        type: "KILL_MOBS"
+        description: "Távoli párbaj: csontvázak"
+        count: 10
+        entity-type: "SKELETON"
+        min-mob-level: 2
   archer_beast_master_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1680,15 +1720,21 @@ quests:
     requires-specialization: "beast_master"
     requires-level: 50
     requires-quest: "archer_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Kötelék és társparancs"
-      count: 18
-      spells:
-        - "wolf_call"
-        - "primal_bond"
-        - "thick_hide"
-        - "stampede"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Kötelék és társparancs"
+        count: 12
+        spells:
+          - "wolf_call"
+          - "primal_bond"
+          - "thick_hide"
+          - "stampede"
+      2:
+        type: "TAME_ANIMALS"
+        description: "Új társak megszelídítése"
+        count: 2
   shaman_elemental_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1698,17 +1744,24 @@ quests:
     requires-specialization: "elemental"
     requires-level: 50
     requires-quest: "shaman_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Totemkerék és Rezonancia"
-      count: 18
-      spells:
-        - "lightning_bolt"
-        - "flame_shock"
-        - "searing_totem"
-        - "healing_stream_totem"
-        - "lava_burst"
-        - "chain_lightning"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Totemkerék és Rezonancia"
+        count: 12
+        spells:
+          - "lightning_bolt"
+          - "flame_shock"
+          - "searing_totem"
+          - "healing_stream_totem"
+          - "lava_burst"
+          - "chain_lightning"
+      2:
+        type: "KILL_MOBS"
+        description: "Elemi körben legyőzött ellenfelek"
+        count: 8
+        min-mob-level: 4
   shaman_enhancement_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1718,16 +1771,23 @@ quests:
     requires-specialization: "enhancement"
     requires-level: 50
     requires-quest: "shaman_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Maelstrom és Fegyveráldás"
-      count: 18
-      spells:
-        - "stormstrike"
-        - "lava_lash"
-        - "windfury_totem"
-        - "crash_lightning"
-        - "feral_spirit"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Maelstrom és Fegyveráldás"
+        count: 12
+        spells:
+          - "stormstrike"
+          - "lava_lash"
+          - "windfury_totem"
+          - "crash_lightning"
+          - "feral_spirit"
+      2:
+        type: "KILL_MOBS"
+        description: "Fegyveráldással vívott közelharc"
+        count: 12
+        min-mob-level: 3
   shaman_tidal_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1737,15 +1797,21 @@ quests:
     requires-specialization: "tidal"
     requires-level: 50
     requires-quest: "shaman_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Dagály és Apály"
-      count: 18
-      spells:
-        - "healing_surge"
-        - "riptide"
-        - "chain_heal"
-        - "healing_rain"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Dagály és Apály"
+        count: 12
+        spells:
+          - "healing_surge"
+          - "riptide"
+          - "chain_heal"
+          - "healing_rain"
+      2:
+        type: "CATCH_FISH"
+        description: "A dagály ritmusában szerzett fogások"
+        count: 8
   monk_windwalker_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1755,17 +1821,24 @@ quests:
     requires-specialization: "windwalker"
     requires-level: 50
     requires-quest: "monk_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Áramlás és harcművészeti lánc"
-      count: 18
-      spells:
-        - "tiger_palm"
-        - "blackout_kick"
-        - "rising_sun_kick"
-        - "flying_kick"
-        - "fists_of_fury"
-        - "whirling_dragon_punch"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Áramlás és harcművészeti lánc"
+        count: 12
+        spells:
+          - "tiger_palm"
+          - "blackout_kick"
+          - "rising_sun_kick"
+          - "flying_kick"
+          - "fists_of_fury"
+          - "whirling_dragon_punch"
+      2:
+        type: "PARKOUR_TRIAL"
+        description: "Mozgáspróba"
+        count: 1
+        course: "kezdo_parkour"
   monk_brewmaster_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1775,16 +1848,24 @@ quests:
     requires-specialization: "brewmaster"
     requires-level: 50
     requires-quest: "monk_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Stagger és tisztítás"
-      count: 18
-      spells:
-        - "keg_smash"
-        - "breath_of_fire"
-        - "purifying_brew"
-        - "ironskin_brew"
-        - "fortifying_brew"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Stagger és tisztítás"
+        count: 12
+        spells:
+          - "keg_smash"
+          - "breath_of_fire"
+          - "purifying_brew"
+          - "ironskin_brew"
+          - "fortifying_brew"
+      2:
+        type: "CONSUME_ITEMS"
+        description: "Tisztító főzetek"
+        count: 4
+        materials:
+          - "HONEY_BOTTLE"
   monk_mistweaver_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1794,17 +1875,25 @@ quests:
     requires-specialization: "mistweaver"
     requires-level: 50
     requires-quest: "monk_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Ködszál és gyógyító ritmus"
-      count: 18
-      spells:
-        - "vivify"
-        - "soothing_mist"
-        - "renewing_mist"
-        - "enveloping_mist"
-        - "essence_font"
-        - "life_cocoon"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Ködszál és gyógyító ritmus"
+        count: 12
+        spells:
+          - "vivify"
+          - "soothing_mist"
+          - "renewing_mist"
+          - "enveloping_mist"
+          - "essence_font"
+          - "life_cocoon"
+      2:
+        type: "COLLECT_ITEMS"
+        description: "Gyógyító köd alapanyaga"
+        count: 8
+        materials:
+          - "GHAST_TEAR"
   paladin_holy_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1814,16 +1903,24 @@ quests:
     requires-specialization: "holy"
     requires-level: 50
     requires-quest: "paladin_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Meggyőződés és Fényjel"
-      count: 18
-      spells:
-        - "flash_heal"
-        - "holy_light"
-        - "beacon_of_light"
-        - "word_of_glory"
-        - "lay_on_hands"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Meggyőződés és Fényjel"
+        count: 12
+        spells:
+          - "flash_heal"
+          - "holy_light"
+          - "beacon_of_light"
+          - "word_of_glory"
+          - "lay_on_hands"
+      2:
+        type: "KILL_MOBS"
+        description: "Élőholtak megtisztítása"
+        count: 8
+        entity-type: "ZOMBIE"
+        min-mob-level: 2
   paladin_retribution_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1833,17 +1930,24 @@ quests:
     requires-specialization: "retribution"
     requires-level: 50
     requires-quest: "paladin_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Ítélet-jelek és végrehajtás"
-      count: 18
-      spells:
-        - "smite"
-        - "crusader_strike"
-        - "judgment"
-        - "blade_of_justice"
-        - "holy_fire"
-        - "divine_storm"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Ítélet-jelek és végrehajtás"
+        count: 12
+        spells:
+          - "smite"
+          - "crusader_strike"
+          - "judgment"
+          - "blade_of_justice"
+          - "holy_fire"
+          - "divine_storm"
+      2:
+        type: "KILL_MOBS"
+        description: "Ítélet alá vont elit ellenfelek"
+        count: 12
+        min-mob-level: 4
   paladin_protection_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1853,17 +1957,23 @@ quests:
     requires-specialization: "protection"
     requires-level: 50
     requires-quest: "paladin_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Pajzstöltet és szent védelem"
-      count: 18
-      spells:
-        - "consecration"
-        - "avengers_shield"
-        - "shield_of_the_righteous"
-        - "blessed_hammer"
-        - "consecrated_ground"
-        - "guardian_of_kings"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Pajzstöltet és szent védelem"
+        count: 12
+        spells:
+          - "consecration"
+          - "avengers_shield"
+          - "shield_of_the_righteous"
+          - "blessed_hammer"
+          - "consecrated_ground"
+          - "guardian_of_kings"
+      2:
+        type: "WIN_RAID"
+        description: "Egy rajtaütés védelmezőjeként aratott győzelem"
+        count: 1
   demon_hunter_havoc_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1873,17 +1983,24 @@ quests:
     requires-specialization: "havoc"
     requires-level: 50
     requires-quest: "demon_hunter_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Kárhozat-terhelés és Momentum"
-      count: 18
-      spells:
-        - "demons_bite"
-        - "chaos_strike"
-        - "fel_rush"
-        - "blade_dance"
-        - "eye_beam"
-        - "vengeful_retreat"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Kárhozat-terhelés és Momentum"
+        count: 12
+        spells:
+          - "demons_bite"
+          - "chaos_strike"
+          - "fel_rush"
+          - "blade_dance"
+          - "eye_beam"
+          - "vengeful_retreat"
+      2:
+        type: "PARKOUR_TRIAL"
+        description: "Momentum-mozgáspróba"
+        count: 1
+        course: "kezdo_parkour"
   demon_hunter_vengeance_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1893,17 +2010,24 @@ quests:
     requires-specialization: "vengeance"
     requires-level: 50
     requires-quest: "demon_hunter_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Fájdalom és Sigil"
-      count: 18
-      spells:
-        - "shear"
-        - "immolation_aura"
-        - "soul_cleave"
-        - "demon_spikes"
-        - "fiery_brand"
-        - "sigil_of_flame"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Fájdalom és Sigil"
+        count: 12
+        spells:
+          - "shear"
+          - "immolation_aura"
+          - "soul_cleave"
+          - "demon_spikes"
+          - "fiery_brand"
+          - "sigil_of_flame"
+      2:
+        type: "KILL_MOBS"
+        description: "Fájdalomból megtartott frontvonal"
+        count: 8
+        min-mob-level: 4
   druid_feral_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1913,16 +2037,23 @@ quests:
     requires-specialization: "feral"
     requires-level: 50
     requires-quest: "druid_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Harmónia, Szagnyom és Kombó"
-      count: 18
-      spells:
-        - "savage_claw"
-        - "maul"
-        - "swipe"
-        - "feral_charge"
-        - "primal_roar"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Harmónia, Szagnyom és Kombó"
+        count: 12
+        spells:
+          - "savage_claw"
+          - "maul"
+          - "swipe"
+          - "feral_charge"
+          - "primal_roar"
+      2:
+        type: "KILL_MOBS"
+        description: "Vad alakban elejtett ellenfelek"
+        count: 12
+        min-mob-level: 3
   druid_lunar_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1932,17 +2063,24 @@ quests:
     requires-specialization: "lunar"
     requires-level: 50
     requires-quest: "druid_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Nap–Hold mérleg és Eclipse"
-      count: 18
-      spells:
-        - "moonfire"
-        - "starsurge"
-        - "sunfire"
-        - "solar_beam"
-        - "starfall"
-        - "hurricane"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Nap–Hold mérleg és Eclipse"
+        count: 12
+        spells:
+          - "moonfire"
+          - "starsurge"
+          - "sunfire"
+          - "solar_beam"
+          - "starfall"
+          - "hurricane"
+      2:
+        type: "EXPLORE_BIOME"
+        description: "Nyílt ég alatti holdfigyelés"
+        count: 1
+        biome: "plains"
   druid_ironbark_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1952,17 +2090,27 @@ quests:
     requires-specialization: "ironbark"
     requires-level: 50
     requires-quest: "druid_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Kéregréteg és Gyökérháló"
-      count: 18
-      spells:
-        - "mangle"
-        - "iron_bark"
-        - "thornguard"
-        - "bristling_fur"
-        - "entangling_roots"
-        - "frenzied_regen"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Kéregréteg és Gyökérháló"
+        count: 12
+        spells:
+          - "mangle"
+          - "iron_bark"
+          - "thornguard"
+          - "bristling_fur"
+          - "entangling_roots"
+          - "frenzied_regen"
+      2:
+        type: "PLACE_BLOCKS"
+        description: "Védőliget megerősítése"
+        count: 12
+        materials:
+          - "OAK_LOG"
+          - "SPRUCE_LOG"
+          - "BIRCH_LOG"
   druid_restoration_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1972,17 +2120,27 @@ quests:
     requires-specialization: "restoration"
     requires-level: 50
     requires-quest: "druid_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Magvetés, érés és Virágzás"
-      count: 18
-      spells:
-        - "rejuvenation"
-        - "regrowth"
-        - "healing_touch"
-        - "swiftmend"
-        - "lifebloom"
-        - "wild_bloom"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Magvetés, érés és Virágzás"
+        count: 12
+        spells:
+          - "rejuvenation"
+          - "regrowth"
+          - "healing_touch"
+          - "swiftmend"
+          - "lifebloom"
+          - "wild_bloom"
+      2:
+        type: "COLLECT_ITEMS"
+        description: "Új növekedés magjai"
+        count: 12
+        materials:
+          - "OAK_SAPLING"
+          - "BIRCH_SAPLING"
+          - "SPRUCE_SAPLING"
   priest_discipline_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -1992,17 +2150,24 @@ quests:
     requires-specialization: "discipline"
     requires-level: 50
     requires-quest: "priest_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Litánia, Engesztelés és Pajzsháló"
-      count: 18
-      spells:
-        - "heal"
-        - "power_word_shield"
-        - "penance"
-        - "power_word_radiance"
-        - "atonement"
-        - "barrier"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Litánia, Engesztelés és Pajzsháló"
+        count: 12
+        spells:
+          - "heal"
+          - "power_word_shield"
+          - "penance"
+          - "power_word_radiance"
+          - "atonement"
+          - "barrier"
+      2:
+        type: "KILL_MOBS"
+        description: "Pajzs mögül megtört elit ellenfelek"
+        count: 8
+        min-mob-level: 4
   priest_bone_priest_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2012,17 +2177,25 @@ quests:
     requires-specialization: "bone_priest"
     requires-level: 50
     requires-quest: "priest_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Velő és Osszárium"
-      count: 18
-      spells:
-        - "bone_mend"
-        - "leeching_ray"
-        - "bone_ward"
-        - "queens_lament"
-        - "blood_tithe"
-        - "silence_of_the_grave"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Velő és Osszárium"
+        count: 12
+        spells:
+          - "bone_mend"
+          - "leeching_ray"
+          - "bone_ward"
+          - "queens_lament"
+          - "blood_tithe"
+          - "silence_of_the_grave"
+      2:
+        type: "COLLECT_ITEMS"
+        description: "Osszáriumhoz gyűjtött csontok"
+        count: 16
+        materials:
+          - "BONE"
   priest_shadow_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2032,17 +2205,24 @@ quests:
     requires-specialization: "shadow"
     requires-level: 50
     requires-quest: "priest_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Őrület és Küszöb"
-      count: 18
-      spells:
-        - "shadow_word_pain"
-        - "mind_blast"
-        - "mind_flay"
-        - "vampiric_touch"
-        - "shadow_word_death"
-        - "dispersion"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Őrület és Küszöb"
+        count: 12
+        spells:
+          - "shadow_word_pain"
+          - "mind_blast"
+          - "mind_flay"
+          - "vampiric_touch"
+          - "shadow_word_death"
+          - "dispersion"
+      2:
+        type: "KILL_MOBS"
+        description: "Őrületküszöbön legyőzött ellenfelek"
+        count: 10
+        min-mob-level: 4
   death_knight_blood_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2052,17 +2232,24 @@ quests:
     requires-specialization: "blood"
     requires-level: 50
     requires-quest: "death_knight_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Rúnakör és Vér Emlékezete"
-      count: 18
-      spells:
-        - "heart_strike"
-        - "marrowrend"
-        - "death_strike"
-        - "rune_tap"
-        - "blood_boil"
-        - "vampiric_blood"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Rúnakör és Vér Emlékezete"
+        count: 12
+        spells:
+          - "heart_strike"
+          - "marrowrend"
+          - "death_strike"
+          - "rune_tap"
+          - "blood_boil"
+          - "vampiric_blood"
+      2:
+        type: "KILL_MOBS"
+        description: "Vérrel megtartott frontvonal"
+        count: 8
+        min-mob-level: 4
   death_knight_frost_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2072,17 +2259,25 @@ quests:
     requires-specialization: "frost"
     requires-level: 50
     requires-quest: "death_knight_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Rúnakör és Fagyjelek"
-      count: 18
-      spells:
-        - "obliterate"
-        - "frost_strike"
-        - "howling_blast"
-        - "icy_touch"
-        - "frostscythe"
-        - "remorseless_winter"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Rúnakör és Fagyjelek"
+        count: 12
+        spells:
+          - "obliterate"
+          - "frost_strike"
+          - "howling_blast"
+          - "icy_touch"
+          - "frostscythe"
+          - "remorseless_winter"
+      2:
+        type: "KILL_MOBS"
+        description: "Faggyal kioltott lánglények"
+        count: 10
+        entity-type: "BLAZE"
+        min-mob-level: 2
   death_knight_unholy_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2092,17 +2287,25 @@ quests:
     requires-specialization: "unholy"
     requires-level: 50
     requires-quest: "death_knight_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Dögvész és ghúlmutáció"
-      count: 18
-      spells:
-        - "festering_strike"
-        - "outbreak"
-        - "unholy_coil"
-        - "raise_ghoul"
-        - "grip_of_the_dead"
-        - "epidemic"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Dögvész és ghúlmutáció"
+        count: 12
+        spells:
+          - "festering_strike"
+          - "outbreak"
+          - "unholy_coil"
+          - "raise_ghoul"
+          - "grip_of_the_dead"
+          - "epidemic"
+      2:
+        type: "COLLECT_ITEMS"
+        description: "Dögvészhez gyűjtött maradványok"
+        count: 16
+        materials:
+          - "ROTTEN_FLESH"
   assassin_poisoner_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2112,17 +2315,25 @@ quests:
     requires-specialization: "poisoner"
     requires-level: 50
     requires-quest: "assassin_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Toxinkészlet és Opportunity"
-      count: 18
-      spells:
-        - "venom_strike"
-        - "toxin_dart"
-        - "acid_splash"
-        - "numbing_agent"
-        - "paralytic_strike"
-        - "contagion"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Toxinkészlet és Opportunity"
+        count: 12
+        spells:
+          - "venom_strike"
+          - "toxin_dart"
+          - "acid_splash"
+          - "numbing_agent"
+          - "paralytic_strike"
+          - "contagion"
+      2:
+        type: "KILL_MOBS"
+        description: "Toxinpróba barlangi pókokon"
+        count: 10
+        entity-type: "CAVE_SPIDER"
+        min-mob-level: 2
   assassin_phantom_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2132,17 +2343,24 @@ quests:
     requires-specialization: "phantom"
     requires-level: 50
     requires-quest: "assassin_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Rejtőzés és fantomnyom"
-      count: 18
-      spells:
-        - "hide"
-        - "ghost_step"
-        - "phase_blink"
-        - "haunt"
-        - "cold_spot"
-        - "ethereal_form"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Rejtőzés és fantomnyom"
+        count: 12
+        spells:
+          - "hide"
+          - "ghost_step"
+          - "phase_blink"
+          - "haunt"
+          - "cold_spot"
+          - "ethereal_form"
+      2:
+        type: "PARKOUR_TRIAL"
+        description: "Nyomtalan mozgáspróba"
+        count: 1
+        course: "kezdo_parkour"
   assassin_plaguebringer_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2152,17 +2370,24 @@ quests:
     requires-specialization: "plaguebringer"
     requires-level: 50
     requires-quest: "assassin_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Fertőzés és Dögvész"
-      count: 18
-      spells:
-        - "plague_cut"
-        - "plague_contagion"
-        - "black_boils"
-        - "miasma"
-        - "festering_wounds"
-        - "plague_wind"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Fertőzés és Dögvész"
+        count: 12
+        spells:
+          - "plague_cut"
+          - "plague_contagion"
+          - "black_boils"
+          - "miasma"
+          - "festering_wounds"
+          - "plague_wind"
+      2:
+        type: "KILL_MOBS"
+        description: "Fertőzés alatt elesett elit ellenfelek"
+        count: 10
+        min-mob-level: 4
   warlock_affliction_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2172,17 +2397,24 @@ quests:
     requires-specialization: "affliction"
     requires-level: 50
     requires-quest: "warlock_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Lélekadósság, Átokgrimoár és Lélekfonal"
-      count: 18
-      spells:
-        - "corruption"
-        - "agony"
-        - "unstable_affliction"
-        - "malefic_grasp"
-        - "siphon_life"
-        - "seed_of_corruption"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Lélekadósság, Átokgrimoár és Lélekfonal"
+        count: 12
+        spells:
+          - "corruption"
+          - "agony"
+          - "unstable_affliction"
+          - "malefic_grasp"
+          - "siphon_life"
+          - "seed_of_corruption"
+      2:
+        type: "KILL_MOBS"
+        description: "Átkokkal felőrölt elit ellenfelek"
+        count: 10
+        min-mob-level: 4
   warlock_destruction_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2192,17 +2424,25 @@ quests:
     requires-specialization: "destruction"
     requires-level: 50
     requires-quest: "warlock_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Lélekadósság, Parázs és Túlhevülés"
-      count: 18
-      spells:
-        - "immolate"
-        - "incinerate"
-        - "conflagrate"
-        - "chaos_bolt"
-        - "rain_of_fire"
-        - "shadowfury"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Lélekadósság, Parázs és Túlhevülés"
+        count: 12
+        spells:
+          - "immolate"
+          - "incinerate"
+          - "conflagrate"
+          - "chaos_bolt"
+          - "rain_of_fire"
+          - "shadowfury"
+      2:
+        type: "KILL_MOBS"
+        description: "Túlhevülési próba lánglényeken"
+        count: 12
+        entity-type: "BLAZE"
+        min-mob-level: 2
   warlock_demonologist_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2212,17 +2452,24 @@ quests:
     requires-specialization: "demonologist"
     requires-level: 50
     requires-quest: "warlock_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Lélekadósság és démonroster"
-      count: 18
-      spells:
-        - "fel_bolt"
-        - "imp_swarm"
-        - "magma_servant"
-        - "demon_skin"
-        - "chaos_flame"
-        - "sacrifice_pact"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Lélekadósság és démonroster"
+        count: 12
+        spells:
+          - "fel_bolt"
+          - "imp_swarm"
+          - "magma_servant"
+          - "demon_skin"
+          - "chaos_flame"
+          - "sacrifice_pact"
+      2:
+        type: "KILL_MOBS"
+        description: "Démonkísérettel legyőzött elit ellenfelek"
+        count: 8
+        min-mob-level: 4
   wizard_elementalist_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2232,17 +2479,24 @@ quests:
     requires-specialization: "elementalist"
     requires-level: 50
     requires-quest: "wizard_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Rúnaszövés és Elemi Korona"
-      count: 18
-      spells:
-        - "fireball"
-        - "frost_nova"
-        - "thunder_strike"
-        - "ember_storm"
-        - "gale_burst"
-        - "stone_skin"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Rúnaszövés és Elemi Korona"
+        count: 12
+        spells:
+          - "fireball"
+          - "frost_nova"
+          - "thunder_strike"
+          - "ember_storm"
+          - "gale_burst"
+          - "stone_skin"
+      2:
+        type: "KILL_MOBS"
+        description: "Elemi koronával legyőzött ellenfelek"
+        count: 12
+        min-mob-level: 3
   wizard_necromancer_trial:
     category: SPECIALIZATION
     visibility: PREREQUISITES_MET
@@ -2252,17 +2506,25 @@ quests:
     requires-specialization: "necromancer"
     requires-level: 50
     requires-quest: "wizard_master_trial"
-    objective:
-      type: "CAST_SPELLS"
-      description: "Rúnaszövés és Holtak Udvara"
-      count: 18
-      spells:
-        - "life_drain"
-        - "bone_spear"
-        - "grave_grasp"
-        - "raise_horde"
-        - "bone_archers"
-        - "soul_harvest"
+    objectives-mode: "ALL"
+    objectives:
+      1:
+        type: "CAST_SPELLS"
+        description: "Rúnaszövés és Holtak Udvara"
+        count: 12
+        spells:
+          - "life_drain"
+          - "bone_spear"
+          - "grave_grasp"
+          - "raise_horde"
+          - "bone_archers"
+          - "soul_harvest"
+      2:
+        type: "COLLECT_ITEMS"
+        description: "Holtak udvarához gyűjtött csontok"
+        count: 16
+        materials:
+          - "BONE"
   # --- Példa: több-objektívás quest (párhuzamos ALL mód) ---
   # "Ölj 10 mobot ÉS hozz 16 kenyeret" — a két feladat egymástól függetlenül
   # halad, a quest akkor zárul, ha mindkettő kész. Repeatable, napi cooldownnal.
@@ -2327,11 +2589,11 @@ quests:
       class-xp: 150
   penance_3:
     display-name: "Vezeklés III. — A Feloldozás"
-    description: "Az utolsó próba: győzz le 50 elit szörnyet (min. Lvl 4). A paktum megtörik."
+    description: "Az utolsó próba: győzz le 24 elit szörnyet (min. Lvl 4). A paktum megtörik."
     requires-quest: "penance_2"
     objective:
       type: "KILL_MOBS"
-      count: 50
+      count: 24
       min-mob-level: 4
     rewards:
       class-xp: 400
@@ -2449,11 +2711,13 @@ quests:
 
   # --- Szakma-questek (nem kaszthoz kötöttek) ---
   miner_ore_haul:
+    requires-profession: "miner"
+    requires-profession-level: 3
     display-name: "Ércfejtő Norma"
-    description: "Bányássz ki 64 érctömböt a mélyben."
+    description: "Bányászként fejts ki 40 érctömböt a mélyben."
     objective:
       type: "BREAK_BLOCKS"
-      count: 64
+      count: 40
       materials:
         - "IRON_ORE"
         - "DEEPSLATE_IRON_ORE"
@@ -2480,6 +2744,8 @@ quests:
       items:
         - "FISHING_ROD:1"
   smith_smelt_iron:
+    requires-profession: "armorer"
+    requires-profession-level: 3
     display-name: "Kovács Kaloda"
     description: "Olvassz be 32 vasat a kohóban."
     objective:
@@ -2494,11 +2760,13 @@ quests:
       items:
         - "ANVIL:1"
   farmer_harvest:
+    requires-profession: "cook"
+    requires-profession-level: 3
     display-name: "Learatás Ideje"
-    description: "Takaríts be 96 termést a földekről."
+    description: "Szakácsként gyűjts be 48 adag termést a következő főzéshez."
     objective:
       type: "COLLECT_ITEMS"
-      count: 96
+      count: 48
       materials:
         - "WHEAT"
         - "CARROT"
@@ -2698,6 +2966,8 @@ quests:
 
   # --- Mellék-questek: a kovács és a vének több munkát adnak (rotálódó napi pool) ---
   kovacs_acel_rendeles:
+    requires-profession: "armorer"
+    requires-profession-level: 5
     category: DAILY
     rotation-group: "napi-npc"
     repeatable: true
@@ -2871,12 +3141,14 @@ quests:
     repeatable: true
     cooldown-hours: 168
     requires-faction: "RED"
+    requires-profession: "armorer"
+    requires-profession-level: 15
     display-name: "A kohók hete"
-    description: "Pyralingrad kohói sosem hűlnek ki: olvassz ki 64 fémrudat a Láng dicsőségére."
+    description: "Pyralingrad kohói sosem hűlnek ki: kovácsként olvassz ki 40 fémrudat a Láng dicsőségére."
     objective:
       type: "SMELT_ITEMS"
       materials: [ "IRON_INGOT", "GOLD_INGOT", "COPPER_INGOT" ]
-      count: 64
+      count: 40
     rewards:
       class-xp: 200
       currency:
@@ -2888,10 +3160,10 @@ quests:
     cooldown-hours: 168
     requires-faction: "BLUE"
     display-name: "A Jégmezők tisztogatása"
-    description: "Glatziendorf határvidékét tisztán tartjuk: győzz le 60 megerősített szörnyet (min. Lvl 2)."
+    description: "Glatziendorf határvidékét tisztán tartjuk: győzz le 36 megerősített szörnyet (min. Lvl 2)."
     objective:
       type: "KILL_MOBS"
-      count: 60
+      count: 36
       min-mob-level: 2
     rewards:
       class-xp: 200
@@ -2919,10 +3191,10 @@ quests:
     cooldown-hours: 168
     requires-faction: "DARK"
     display-name: "Lélek-aratás"
-    description: "A Királynő szavának maradékát arasd: pusztíts el 40 erős fajzatot (min. Lvl 3)."
+    description: "A Királynő szavának maradékát arasd: pusztíts el 30 erős fajzatot (min. Lvl 3)."
     objective:
       type: "KILL_MOBS"
-      count: 40
+      count: 30
       min-mob-level: 3
     rewards:
       class-xp: 200
@@ -2957,6 +3229,8 @@ quests:
         type: "OWN"
         amount: 35
   kovacs_fegyvermustra:
+    requires-profession: "armorer"
+    requires-profession-level: 8
     category: DAILY
     rotation-group: "napi-npc"
     repeatable: true
@@ -3089,6 +3363,8 @@ quests:
         type: "OWN"
         amount: 25
   parazs_gyujtes:
+    requires-profession: "alchemist"
+    requires-profession-level: 5
     category: DAILY
     display-name: "Parázs a kohóknak"
     description: "Szerezz 8 lángrúd-port a Parázsmag kinyeréséhez."
@@ -3167,6 +3443,8 @@ quests:
       items:
         - "COOKED_SALMON:4"
   uti_kenyer:
+    requires-profession: "cook"
+    requires-profession-level: 2
     category: DAILY
     display-name: "A vándor konyhája"
     description: "Süss 6 kenyeret — a karavánok úti kenyérként viszik magukkal."
@@ -3231,14 +3509,12 @@ quests:
   # --- Onboarding-lánc (IDEAS A5): "az új játékos első 10 perce vezetett" ---
   # Az "onboarding.first-quest" (lásd fent) állítja fel a láncot ELSŐ belépéskor;
   # innentől a "next" mező viszi tovább automatikusan, lépésenként:
-  #   1) onboarding_herald  — beszélj a hírnökkel (a kattintás ugyanitt nyitja meg
-  #      a királyság-választó menüt is, ha a hírnök-NPC /npcbind <npc> faction-nel
-  #      be van kötve — nincs külön "válassz királyságot" feladat-típus).
+  #   1) onboarding_herald  — beszélj a hírnökkel; a Menedék legitim vendégállapot,
+  #      a királyságválasztás későbbi, külön döntés.
   #   2) onboarding_hunt    — ölj 5 szörnyet (első harc-lecke).
   #   3) onboarding_gather  — gyűjts 10 rönköt (első gyűjtögetés-lecke).
   # A hírnök-NPC-t a szerver-csapat helyezi ki FancyNpcs-szel "hirnok" belső
-  # névvel (/npc create hirnok a semleges fővárosban, opcionálisan
-  # /npcbind hirnok faction a királyság-választáshoz) — amíg nincs kint, az 1.
+  # névvel (/npc create hirnok a semleges fővárosban) — amíg nincs kint, az 1.
   # lépés egyszerűen nem halad, a lánc nem törik, csak vár.
   onboarding_herald:
     start:
@@ -3250,9 +3526,10 @@ quests:
         - "Üdvözöllek a szigeten, vándor! Én vagyok a Hírnök."
         - "Mielőtt utadra engednélek, ismerkedjünk meg — gyere közelebb!"
       complete:
-        - "Örvendek! Mostantól itthon vagy — válaszd ki, melyik királysághoz csatlakozol."
+        - "Örvendek! A Menedék vendégeként is biztonságban kezdheted meg az utad."
+        - "Királysághoz később, külön döntéssel csatlakozhatsz; most tanuljuk meg az alapokat."
     display-name: "Beszélj a hírnökkel"
-    description: "Keresd fel a hírnököt a semleges fővárosban, és válaszd ki a királyságodat."
+    description: "Keresd fel a hírnököt a semleges fővárosban, és ismerd meg a Menedéket."
     next: "onboarding_hunt"
     objective:
       type: "TALK_TO_NPC"
@@ -3308,8 +3585,7 @@ quests:
       items:
         - "WOODEN_PICKAXE:1"
         - "BREAD:8"
-  # A lánc zárása (gameplay-audit: eddig itt zsákutca volt): a hírnök elmagyarázza a
-  # következő lépéseket — kaszt (/class), szakma (/profession join), kaszt-próba.
+  # A lánc zárása: a /menu és /profile az egyetlen elsődleges navigációs handoff.
   onboarding_utmutatas:
     start:
       type: CHAIN
@@ -3317,7 +3593,7 @@ quests:
     category: TUTORIAL
     visibility: DISCOVERED
     display-name: "Az utad kezdete"
-    description: "Térj vissza a hírnökhöz — elmondja, hogyan válassz kasztot (/class), szakmát (/profession join), és hol vár a kaszt-próbád (/quest list)."
+    description: "Térj vissza a hírnökhöz: megmutatja a /menu és /profile útvonalat a kasztodhoz, szakmádhoz és következő küldetésedhez."
     requires-quest: "onboarding_gather"
     objective:
       type: "TALK_TO_NPC"
@@ -3326,9 +3602,9 @@ quests:
       speaker: "A Hírnök"
       complete:
         - "Ügyes vagy, vándor. Most jön a java."
-        - "Válassz kasztot a /class paranccsal — ez határozza meg, KI leszel."
-        - "Válassz szakmát a /profession join paranccsal — ebből fogsz megélni."
-        - "És ha készen állsz: a /quest list mutatja a kasztod próbáját. Sok szerencsét!"
+        - "Nyisd meg a /menu felületet; a /profile a karaktered, kasztod és szakmád otthona."
+        - "Ezután keresd a Küldetésnapló Megbízások fülét vagy folytasd a történetet egy jelzett NPC-nél."
+        - "Királyságot később is választhatsz. Menedék-vendégként egyetlen jutalmad sem vész el."
     rewards:
       class-xp: 50
       currency:
@@ -3473,10 +3749,10 @@ quests:
     cooldown-hours: 168
     requires-faction: "RED"
     display-name: "A Vérszavanna határjárása"
-    description: "A Láng nem tűr férget a portáján. Járd a határvidéket, és tisztíts meg negyvenöt szörnyet Pyralingrad nevében."
+    description: "A Láng nem tűr férget a portáján. Járd a határvidéket, és tisztíts meg harminckét szörnyet Pyralingrad nevében."
     objective:
       type: "KILL_MOBS"
-      count: 45
+      count: 32
     rewards:
       class-xp: 200
       currency:
@@ -3489,11 +3765,11 @@ quests:
     cooldown-hours: 168
     requires-faction: "BLUE"
     display-name: "Jégszüret"
-    description: "Glatziendorf falai a fagyból élnek. Vágj ki kilencvenhat jégtömböt az örök tél mezőiről a kőfaragóknak."
+    description: "Glatziendorf falai a fagyból élnek. Vágj ki hatvannégy jégtömböt az örök tél mezőiről a kőfaragóknak."
     objective:
       type: "BREAK_BLOCKS"
       materials: ["ICE", "PACKED_ICE", "BLUE_ICE"]
-      count: 96
+      count: 64
     rewards:
       class-xp: 200
       currency:
@@ -3526,11 +3802,11 @@ quests:
     cooldown-hours: 168
     requires-faction: "DARK"
     display-name: "Csont-tized"
-    description: "Thanaopolis utcáin a holtak járnak — de a vadonban kóborlók senkinek sem szolgálnak. Hatvan gazdátlan élőhalottat hajts be a tizedbe."
+    description: "Thanaopolis utcáin a holtak járnak — de a vadonban kóborlók senkinek sem szolgálnak. Harminchat gazdátlan élőhalottat hajts be a tizedbe."
     objective:
       type: "KILL_MOBS"
       entity-type: "ZOMBIE"
-      count: 60
+      count: 36
     rewards:
       class-xp: 220
       currency:
@@ -3606,6 +3882,8 @@ quests:
         amount: 45
 
   hamu_zuzmara_2:
+    requires-profession: "armorer"
+    requires-profession-level: 10
     start:
       type: CHAIN
       auto-accept: true
@@ -3649,12 +3927,12 @@ quests:
     repeatable: true
     cooldown-hours: 168
     display-name: "Beszállítás: épületfa"
-    description: "A vándor kereskedő szekere üresen kong. Szállíts le hatvannégy szál rönköt — az ácsok már várják a túlparton."
+    description: "A vándor kereskedő szekere üresen kong. Szállíts le negyvennyolc szál rönköt — az ácsok már várják a túlparton."
     objective:
       type: "DELIVER_ITEMS"
       npc: "vandor_kereskedo"
       materials: ["OAK_LOG", "SPRUCE_LOG", "BIRCH_LOG", "DARK_OAK_LOG", "ACACIA_LOG", "MANGROVE_LOG", "CHERRY_LOG"]
-      count: 64
+      count: 48
     rewards:
       class-xp: 150
       currency:
@@ -3666,12 +3944,12 @@ quests:
     repeatable: true
     cooldown-hours: 168
     display-name: "Beszállítás: faragott kő"
-    description: "A kereskedő kőműveseknek visz árut: kilencvenhat zúzottkövet kér, egyenesen a tárnából."
+    description: "A kereskedő kőműveseknek visz árut: hatvannégy zúzottkövet kér, egyenesen a tárnából."
     objective:
       type: "DELIVER_ITEMS"
       npc: "vandor_kereskedo"
       materials: ["COBBLESTONE", "COBBLED_DEEPSLATE"]
-      count: 96
+      count: 64
     rewards:
       class-xp: 150
       currency:
@@ -3719,10 +3997,10 @@ quests:
     repeatable: true
     cooldown-hours: 168
     display-name: "A nagy hajtóvadászat"
-    description: "A krónikás hetente megnyitja a vadászlajstromot: százhúsz szörny, aki győzi. A neved a lap tetejére kerül — a jutalom a lap aljára."
+    description: "A krónikás hetente megnyitja a vadászlajstromot: hatvan szörny, aki győzi. A neved a lap tetejére kerül — a jutalom a lap aljára."
     objective:
       type: "KILL_MOBS"
-      count: 120
+      count: 60
     rewards:
       class-xp: 400
       currency:
@@ -3735,10 +4013,10 @@ quests:
     repeatable: true
     cooldown-hours: 168
     display-name: "A nagy fogás"
-    description: "A kikötő heti fogadása: negyven hal egy hét alatt. A vén halászok szerint lehetetlen. A vén halászok sok mindent mondanak."
+    description: "A kikötő heti fogadása: huszonnégy hal egy hét alatt. A vén halászok szerint nehéz. A vén halászok sok mindent mondanak."
     objective:
       type: "CATCH_FISH"
-      count: 40
+      count: 24
     rewards:
       class-xp: 300
       currency:

@@ -10,7 +10,6 @@ import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.SpecializationType;
-import hu.taliann.icesmp.managers.DailyQuestManager;
 import hu.taliann.icesmp.managers.PartyManager;
 import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.relics.RelicDefinition;
@@ -153,28 +152,12 @@ public final class CommandMenus {
 
     /** The daily/weekly quest tile with live progress (main hub). */
     private static ItemStack dailyTile(final Player player, final CommandMenuContext ctx) {
-        if (!ctx.dailyQuestManager().isEnabled()) {
-            return GuiUtil.icon(Material.GRAY_DYE, title("Napi küldetés"), List.of(grey("A napi küldetések ki vannak kapcsolva.")));
-        }
-
         final List<Component> lore = new ArrayList<>();
-        final DailyQuestManager.Daily daily = ctx.dailyQuestManager().getActive();
-        if (daily != null) {
-            lore.add(label("Napi", Component.text(daily.name(), NamedTextColor.WHITE)));
-            lore.add(label("Állás", ctx.dailyQuestManager().isDone(player)
-                    ? Component.text("teljesítve ✔", NamedTextColor.GREEN)
-                    : Component.text(ctx.dailyQuestManager().getProgress(player) + "/" + daily.amount(), NamedTextColor.WHITE)));
-        }
-        final DailyQuestManager.Daily weekly = ctx.dailyQuestManager().getActiveWeekly();
-        if (weekly != null) {
-            lore.add(label("Heti", Component.text(weekly.name(), NamedTextColor.WHITE)));
-            lore.add(label("Állás", ctx.dailyQuestManager().isWeeklyDone(player)
-                    ? Component.text("teljesítve ✔", NamedTextColor.GREEN)
-                    : Component.text(ctx.dailyQuestManager().getWeeklyProgress(player) + "/" + weekly.amount(), NamedTextColor.WHITE)));
-        }
-        lore.add(label("Sorozat", Component.text(ctx.dailyQuestManager().getStreak(player) + " nap", NamedTextColor.WHITE)));
+        lore.add(grey("A napi és heti megbízások a"));
+        lore.add(grey("kanonikus Küldetésnaplóban vannak."));
+        lore.add(grey("A jutalmak felvétel előtt láthatók."));
         lore.add(click());
-        return GuiUtil.icon(Material.SUNFLOWER, title("Napi küldetés"), lore);
+        return GuiUtil.icon(Material.SUNFLOWER, title("Napi és heti megbízások"), lore);
     }
 
     // ===== FACTION =====

@@ -46,7 +46,6 @@ import hu.taliann.icesmp.listeners.ClassXpListener;
 import hu.taliann.icesmp.listeners.HudListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
-import hu.taliann.icesmp.listeners.DailyQuestListener;
 import hu.taliann.icesmp.listeners.DonationChestListener;
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
@@ -618,6 +617,7 @@ public final class IceSMPCore {
         this.equipmentProficiencyService.setSpecializationManager(specializationManager);
         this.specializationManager.setWorldBossManager(worldBossManager);
         questManager.setSpecializationManager(specializationManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
+        questManager.setProfessionManager(professionManager); // typed szakma- és szakmaszint-kapu
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.spellFavoritesManager = new hu.taliann.icesmp.managers.SpellFavoritesManager(plugin);
@@ -633,7 +633,7 @@ public final class IceSMPCore {
         petManager.setJobManager(jobManager);
         petManager.setTalentManager(talentManager);
         jobManager.setFactionManager(factionManager);
-        this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.dailyQuestManager = new DailyQuestManager();
         this.parkourManager = new ParkourManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.siegeWeaponFactory = new SiegeWeaponFactory(plugin);
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
@@ -723,7 +723,7 @@ public final class IceSMPCore {
                 seasonManager, bloodMoonManager, worldBossManager, caravanManager, escortManager,
                 abundanceManager, serverChallengeManager, gatheringBuffManager, meteorEventManager, soulShardManager,
                 specializationManager, relicManager, statsManager, achievementManager,
-                partyManager, claimManager, sinManager, dailyQuestManager, configManager);
+                partyManager, claimManager, sinManager, configManager);
         this.afkManager = new hu.taliann.icesmp.managers.AfkManager(configManager);
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
@@ -747,7 +747,7 @@ public final class IceSMPCore {
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager,
                 caravanManager, escortManager, abundanceManager, serverChallengeManager,
-                meteorEventManager, gatheringBuffManager, textAnimator, seasonManager, dailyQuestManager,
+                meteorEventManager, gatheringBuffManager, textAnimator, seasonManager,
                 resourcePackReady);
         this.tablistManager = new hu.taliann.icesmp.managers.TablistManager(plugin, configManager,
                 factionManager, textAnimator, afkManager);
@@ -1868,7 +1868,7 @@ public final class IceSMPCore {
         plugin.registerCommand("bounty", "Körözési lista (fejpénzek)", List.of("fejvadasz", "korozes"), new BountyCommand(sinManager, currencyManager, configManager, messageManager));
         plugin.registerCommand("relic", "Relikvia parancsok (admin)", List.of("relics", "relikvia"), new RelicCommand(plugin, relicManager, messageManager));
         plugin.registerCommand("parkour", "Parkour-pályák (futás, admin beállítás)", List.of("trial", "palya"), new ParkourCommand(parkourManager, messageManager));
-        plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
+        plugin.registerCommand("daily", "Napi és heti megbízások", List.of("napi"), new DailyCommand(questManager, messageManager));
         plugin.registerCommand("pet", "Társ (befogó item, idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, captureItemFactory, messageManager));
         plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"),
                 new ProfessionCommand(plugin, professionManager, messageManager,
@@ -2101,7 +2101,6 @@ public final class IceSMPCore {
         pluginManager.registerEvents(petXpListener, plugin);
         pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new PetCombatListener(plugin, petManager), plugin);
-        pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         final SinListener sinListener = new SinListener(plugin, sinManager, raidManager, factionManager, territoryManager, statsManager, currencyManager, configManager, messageManager);
         sinListener.setHonorDuelManager(honorDuelManager); // párbaj-kill kizárás

@@ -155,6 +155,16 @@ public final class QuestLogGUI {
         if (!description.isBlank()) {
             lore.add(GuiUtil.grey(description));
         }
+        final List<String> rewards = questManager.describeRewards(viewer, questId);
+        if (!rewards.isEmpty()) {
+            lore.add(Component.empty());
+            lore.add(Component.text("Jutalom", NamedTextColor.GOLD)
+                    .decoration(TextDecoration.ITALIC, false));
+            for (final String reward : rewards) {
+                lore.add(Component.text("  • " + reward, NamedTextColor.WHITE)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+        }
         lore.add(Component.empty());
         switch (tab) {
             case ACTIVE -> {

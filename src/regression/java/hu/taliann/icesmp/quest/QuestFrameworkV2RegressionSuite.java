@@ -309,6 +309,41 @@ public final class QuestFrameworkV2RegressionSuite {
         check(errors.stream().anyMatch(error -> error.contains("start.npc")),
                 "missing source field rejected at graph level");
 
+        errors = QuestGraphValidator.validate(root("""
+                quests:
+                  szakmai:
+                    requires-profession: armorer
+                    requires-profession-level: 5
+                    objective:
+                      type: CRAFT_ITEMS
+                      count: 1
+                """));
+        check(errors.isEmpty(), "known typed profession plus positive level validates");
+
+        errors = QuestGraphValidator.validate(root("""
+                quests:
+                  ismeretlen_szakma:
+                    requires-profession: merchant
+                    requires-profession-level: 2
+                    objective:
+                      type: CRAFT_ITEMS
+                      count: 1
+                """));
+        check(errors.stream().anyMatch(error -> error.contains("unknown requires-profession")),
+                "unknown profession gate is rejected");
+
+        errors = QuestGraphValidator.validate(root("""
+                quests:
+                  gazdatlan_szakmaszint:
+                    requires-profession-level: 2
+                    objective:
+                      type: CRAFT_ITEMS
+                      count: 1
+                """));
+        check(errors.stream().anyMatch(error -> error.contains(
+                        "requires-profession-level requires requires-profession")),
+                "profession level cannot exist without a typed profession");
+
         // A `next` lista alakban is kanonikus (elágazó branching).
         final ConfigurationSection branching = root("""
                 quests:
@@ -559,8 +594,15 @@ public final class QuestFrameworkV2RegressionSuite {
                         "capstone trial is level 50 gated: " + questId);
                 check(!quest.getString("requires-specialization", "").isBlank(),
                         "capstone trial is bound to its active specialization: " + questId);
-                check("CAST_SPELLS".equals(quest.getString("objective.type"))
-                                && !quest.getStringList("objective.spells").isEmpty(),
+                final ConfigurationSection capstoneObjectives =
+                        quest.getConfigurationSection("objectives");
+                check(capstoneObjectives != null
+                                && capstoneObjectives.getKeys(false).stream()
+                                .map(capstoneObjectives::getConfigurationSection)
+                                .filter(java.util.Objects::nonNull)
+                                .anyMatch(objective -> "CAST_SPELLS".equals(
+                                        objective.getString("type"))
+                                        && !objective.getStringList("spells").isEmpty()),
                         "capstone trial practices specialization abilities: " + questId);
             }
         }
