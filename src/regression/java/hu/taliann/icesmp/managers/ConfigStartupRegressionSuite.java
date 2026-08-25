@@ -85,13 +85,18 @@ public final class ConfigStartupRegressionSuite {
     private static void parsesEveryBundledProfessionIngredient() throws Exception {
         final File recipeFile = Path.of("src/main/resources/content/professions/recipes.yml").toFile();
         final File materialFile = Path.of("src/main/resources/content/professions/materials.yml").toFile();
+        final File equipmentFile = Path.of("src/main/resources/content/equipment/equipment.yml").toFile();
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(recipeFile);
         final YamlConfiguration materialYaml = YamlConfiguration.loadConfiguration(materialFile);
+        final YamlConfiguration equipmentYaml = YamlConfiguration.loadConfiguration(equipmentFile);
         final ConfigurationSection root = yaml.getConfigurationSection("profession-recipes");
         final ConfigurationSection materialRoot = materialYaml.getConfigurationSection("profession-materials");
+        final ConfigurationSection equipmentRoot = equipmentYaml.getConfigurationSection("item-templates");
         check(root != null && !root.getKeys(false).isEmpty(), "bundled profession recipes missing");
         check(materialRoot != null && !materialRoot.getKeys(false).isEmpty(),
                 "bundled profession materials missing");
+        check(equipmentRoot != null && !equipmentRoot.getKeys(false).isEmpty(),
+                "bundled equipment templates missing");
 
         for (final String id : materialRoot.getKeys(false)) {
             final ConfigurationSection definition = materialRoot.getConfigurationSection(id);
@@ -105,8 +110,14 @@ public final class ConfigStartupRegressionSuite {
             check(recipe != null, "profession recipe section missing: " + id);
             final ConfigurationSection result = recipe.getConfigurationSection("result");
             check(result != null, "profession recipe result missing: " + id);
+            final String templateResult = result.getString("template", null);
             final String uniqueResult = result.getString("unique", null);
-            if (uniqueResult == null || uniqueResult.isBlank()) {
+            if (templateResult != null && !templateResult.isBlank()) {
+                check(equipmentRoot.isConfigurationSection(
+                                templateResult.toLowerCase(java.util.Locale.ROOT)),
+                        "profession recipe has undefined equipment template result: "
+                                + id + " -> " + templateResult);
+            } else if (uniqueResult == null || uniqueResult.isBlank()) {
                 check(ConfigMaterialResolver.match(result.getString("material", "")) != null,
                         "profession recipe has invalid Bukkit result: " + id);
             } else {
