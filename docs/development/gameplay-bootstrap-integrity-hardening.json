@@ -131,7 +131,11 @@
   "finding_closure": [
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/resources/paper-plugin.yml",
+        "src/main/resources/class-spec-dependencies.lock.yml",
+        "src/main/java/hu/taliann/icesmp/classspec/compat/ClassSpecDependencyPreflight.java",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
+        "src/main/java/hu/taliann/icesmp/integration/FancyNpcsQuestBridge.java"
       ],
       "exact_implementation": "required Paper/lock dependency; fail-closed preflight and bridge",
       "folia_proof": "exact-head hardening workflow",
@@ -147,7 +151,10 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/resources/content/progression/quests.yml",
+        "src/main/java/hu/taliann/icesmp/listeners/QuestProgressListener.java",
+        "src/main/java/hu/taliann/icesmp/progression/ItemAcquisitionPolicy.java",
+        "src/main/java/hu/taliann/icesmp/utils/ItemProvenance.java"
       ],
       "exact_implementation": "23 acquisition producers plus 2 craft and 1 block-break semantic migrations",
       "folia_proof": "exact-head hardening workflow",
@@ -163,7 +170,11 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/resources/content/progression/spells.yml",
+        "src/main/java/hu/taliann/icesmp/spells/ProjectileBurstSpell.java",
+        "src/main/java/hu/taliann/icesmp/utils/SpellDamageUtil.java",
+        "src/main/java/hu/taliann/icesmp/listeners/SpellDamageListener.java",
+        "src/main/java/hu/taliann/icesmp/listeners/SpellProjectileListener.java"
       ],
       "exact_implementation": "immutable projectile snapshot and one custom DamageSource hit authority",
       "folia_proof": "exact-head hardening workflow",
@@ -179,7 +190,11 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/resources/content/equipment/equipment.yml",
+        "src/main/resources/content/professions/recipes.yml",
+        "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
+        "src/main/java/hu/taliann/icesmp/itemization/SignatureEffectRegistry.java",
+        "src/main/java/hu/taliann/icesmp/listeners/SignatureItemListener.java"
       ],
       "exact_implementation": "source-evidenced BOW identity and idempotent legacy migration",
       "folia_proof": "exact-head hardening workflow",
@@ -195,7 +210,11 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/resources/config/crafting.yml",
+        "src/main/resources/config/professions-2.yml",
+        "src/main/resources/content/professions/recipes.yml",
+        "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
+        "src/main/java/hu/taliann/icesmp/items/SignatureEnchantKeys.java"
       ],
       "exact_implementation": "identity render owns signature enchant; mapped recipes request templates",
       "folia_proof": "exact-head hardening workflow",
@@ -210,7 +229,10 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java",
+        "src/main/java/hu/taliann/icesmp/utils/ToastUtil.java",
+        "src/main/resources/datapack/data/icesmp/advancement/toast_discovery.json",
+        "src/main/resources/datapack/data/icesmp/advancement/toast_milestone.json"
       ],
       "exact_implementation": "orphan toast removal and explicit one-toast readiness",
       "folia_proof": "exact-head hardening workflow",
@@ -225,7 +247,8 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/resources/datapack/data/icesmp/advancement/class_max.json",
+        "docs/development/gameplay-bootstrap-integrity-hardening.json"
       ],
       "exact_implementation": "durable legend achievement is sole threshold/reward authority",
       "folia_proof": "exact-head hardening workflow",
@@ -241,7 +264,10 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/resources/paper-plugin.yml",
+        "src/main/resources/class-spec-dependencies.lock.yml",
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
       ],
       "exact_implementation": "removed MythicMobs/PacketEvents/FancyDialogs runtime declarations",
       "folia_proof": "exact-head hardening workflow",
@@ -256,7 +282,10 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java",
+        "src/main/java/hu/taliann/icesmp/itemization/ItemTemplateRegistry.java",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"
       ],
       "exact_implementation": "synchronized identity-safe clearIfCurrent teardown",
       "folia_proof": "exact-head hardening workflow",
@@ -272,7 +301,10 @@
     },
     {
       "changed_files": [
-        "see git diff against exact parent"
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md",
+        "docs/QUESTS.md",
+        "docs/development/gameplay-bootstrap-integrity-hardening.json"
       ],
       "exact_implementation": "21 persistent + 1 reusable toast + 22 total documented",
       "folia_proof": "exact-head hardening workflow",
