@@ -348,17 +348,19 @@ public final class ProfessionRecipeBookListener implements Listener {
                 : new ItemStack(recipe.result(), recipe.resultAmount());
         if (result == null) return null;
 
-        if (recipe.uniqueResult() == null && recipe.lore() != null && !recipe.lore().isEmpty()) {
+        if (recipe.uniqueResult() == null) {
             final ItemMeta meta = result.getItemMeta();
             if (meta != null) {
                 meta.displayName(LEGACY.deserialize(recipe.displayName())
                         .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                final List<Component> loreLines = new ArrayList<>();
-                for (final String line : recipe.lore()) {
-                    loreLines.add(LEGACY.deserialize(line)
-                            .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                if (recipe.lore() != null && !recipe.lore().isEmpty()) {
+                    final List<Component> loreLines = new ArrayList<>();
+                    for (final String line : recipe.lore()) {
+                        loreLines.add(LEGACY.deserialize(line)
+                                .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    }
+                    meta.lore(loreLines);
                 }
-                meta.lore(loreLines);
                 result.setItemMeta(meta);
             }
         }

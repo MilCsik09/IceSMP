@@ -279,8 +279,9 @@ public final class WorldBossManager {
         if (snapshot != null && delivery != null
                 && ledger.contribution(playerId).score() >= threshold
                 && rewardCandidates.add(playerId)) {
-            final String componentId = configManager.getString(
-                    "world-events.world-boss.ascension-component", "osi_ereklyeszilank");
+            final String archetypeName = boss.getPersistentDataContainer().get(
+                    bossArchetypeKey, PersistentDataType.STRING);
+            final String componentId = resolveBossSpecificReward(archetypeName);
             final int amount = Math.max(1, Math.min(8, configManager.getInt(
                     "world-events.world-boss.ascension-component-amount", 1)
                     + (boss.getPersistentDataContainer().getOrDefault(finaleBossKey,
@@ -703,8 +704,7 @@ public final class WorldBossManager {
                 "world-boss");
         final int buffTicks = Math.max(1, configManager.getInt(
                 "world-events.world-boss.buff-minutes", 10)) * 60 * 20;
-        final String componentId = configManager.getString(
-                "world-events.world-boss.ascension-component", "osi_ereklyeszilank");
+        final String componentId = resolveBossSpecificReward(archetypeName);
         final int componentAmount = Math.max(1, Math.min(8, configManager.getInt(
                 "world-events.world-boss.ascension-component-amount", 1) + (finale ? 1 : 0)));
         final EncounterRewardDeliveryService delivery = rewardDelivery;
@@ -752,6 +752,24 @@ public final class WorldBossManager {
                         "reward", String.valueOf(treasuryReward),
                         "points", String.valueOf(configManager.getInt(
                                 "world-events.world-boss.season-points", 10)))));
+    }
+
+    /**
+     * Each authored world boss projects one provenance-correct personal material reward. The
+     * global ascension component remains the fail-closed compatibility fallback for an old or
+     * externally supplied template that has not declared the optional identity layer yet.
+     */
+    private String resolveBossSpecificReward(final String archetypeName) {
+        final String fallback = configManager.getString(
+                "world-events.world-boss.ascension-component", "osi_ereklyeszilank");
+        if (archetypeName == null || archetypeName.isBlank()) {
+            return fallback;
+        }
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawnService =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
+        if (spawnService == null) return fallback;
+        final String authored = spawnService.template(archetypeName).bossSpecificReward();
+        return authored.isBlank() ? fallback : authored;
     }
 
     private void clearDisplayState() {

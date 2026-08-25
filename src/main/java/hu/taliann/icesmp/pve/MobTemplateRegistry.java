@@ -87,6 +87,7 @@ public final class MobTemplateRegistry {
                             stats.getDouble("cc-resistance", 0.0D)),
                     abilityIds, normalizedSet(section.getStringList("resistances")),
                     normalizedSet(section.getStringList("weaknesses")), lootProfile,
+                    section.getString("boss-specific-reward", ""),
                     sourceTags, spawnPolicy,
                     section.getString("bestiary-id", ""), affixes,
                     behavior(section.getConfigurationSection("behavior"), archetype),

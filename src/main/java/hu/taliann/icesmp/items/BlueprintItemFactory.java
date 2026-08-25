@@ -42,7 +42,7 @@ public final class BlueprintItemFactory {
                 Component.text("Szakma: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
                         .append(recipe.profession().getDisplayName()),
                 Component.text("Jobb katt: megtanulod a receptet.", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
-                Component.text("(Craftoláshoz " + recipe.level() + ". szakma-szint is kell.)", NamedTextColor.DARK_GRAY)
+                Component.text("(Elkészítéséhez " + recipe.level() + ". szakmaszint is kell.)", NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, false)));
         meta.getPersistentDataContainer().set(recipeKey, PersistentDataType.STRING, recipe.id());
         item.setItemMeta(meta);
