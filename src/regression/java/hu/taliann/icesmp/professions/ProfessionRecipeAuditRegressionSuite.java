@@ -21,12 +21,13 @@ import java.util.TreeSet;
 
 public final class ProfessionRecipeAuditRegressionSuite {
     private static final Set<String> KINDS =
-            Set.of("gyakorlo", "hozam", "egyedi", "lanc", "ritkasag");
+            Set.of("gyakorlo", "hozam", "egyedi", "lanc", "ritkasag",
+                    "processing", "crafting", "equipment", "service");
     private static final List<String> FUNCTIONAL_KEYS =
             List.of("template", "affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects");
     private static final int GYAKORLO_MAX_LEVEL = 15;
-    private static final int EXPECTED_RECIPE_COUNT = 392;
-    private static final int EXPECTED_CANONICAL_GEAR_COUNT = 15;
+    private static final int EXPECTED_RECIPE_COUNT = 475;
+    private static final int EXPECTED_CANONICAL_GEAR_COUNT = 76;
     /** A vanília MAGA is ugyanígy duplikálja ezt a tárgyat — a katalógusból ez nem látszik. */
     private static final Set<String> VANILLA_DUPLICATION = Set.of("kovacsmesteri_sablon");
 
@@ -39,8 +40,12 @@ public final class ProfessionRecipeAuditRegressionSuite {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(path.toFile());
         final YamlConfiguration materials = YamlConfiguration.loadConfiguration(
                 Path.of("src/main/resources/content/professions/materials.yml").toFile());
+        final YamlConfiguration equipment = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/content/equipment/equipment.yml").toFile());
         final ConfigurationSection root = yaml.getConfigurationSection("profession-recipes");
+        final ConfigurationSection equipmentRoot = equipment.getConfigurationSection("item-templates");
         check(root != null, "profession recipe root exists");
+        check(equipmentRoot != null, "equipment template root exists");
         final Set<String> ids = new TreeSet<>(root.getKeys(false));
         final Set<String> fingerprints = new HashSet<>();
         int canonicalGearCount = 0;
@@ -53,7 +58,16 @@ public final class ProfessionRecipeAuditRegressionSuite {
                     ProfessionIngredientParser.parse(section.getStringList("ingredients"));
             final String unique = result.getString("unique", null);
             final String template = result.getString("template", null);
-            final Material material = unique == null ? Material.matchMaterial(result.getString("material", "")) : Material.PAPER;
+            final ConfigurationSection templateDefinition = template == null ? null
+                    : equipmentRoot.getConfigurationSection(template.toLowerCase(Locale.ROOT));
+            if (template != null) {
+                check(templateDefinition != null,
+                        "canonical gear template exists: " + id + " -> " + template);
+            }
+            final String outputMaterial = templateDefinition == null
+                    ? result.getString("material", "")
+                    : templateDefinition.getString("material", "");
+            final Material material = unique == null ? Material.matchMaterial(outputMaterial) : Material.PAPER;
             check(material != null, "valid output material: " + id);
             final ProfessionType profession = ProfessionType.fromId(section.getString("profession", ""));
             check(profession != null, "valid profession gate: " + id);
