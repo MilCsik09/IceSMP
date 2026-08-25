@@ -49,6 +49,8 @@ public final class IceSMP extends JavaPlugin {
         } finally {
             if (resourcePackListener != null) resourcePackListener.close();
             TransientEntities.shutdown();
+            hu.taliann.icesmp.itemization.PaperSourceIntegrityRuntimeProbe
+                    .verifyFacadesClearedAfterDisable(this);
         }
     }
 }

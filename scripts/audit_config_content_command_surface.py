@@ -59,6 +59,106 @@ REMOVED_GAMEPLAY_GENERATORS = (
     "scripts/apply_professions_2_hardening.py",
     "scripts/apply_professions_2_rework.py",
 )
+# The #142 authority gate compares the composed content tree with the #141
+# parent.  This hardening PR is allowed to change only the exact leaves needed
+# to close the verified quest, spell and signature-identity findings.  Keeping
+# the paths explicit makes any neighbouring gameplay drift fail closed.
+INTEGRITY_HARDENING_ALLOWED_DRIFT = {
+    "item-templates.kallan_szeletelo.item-model",
+    "item-templates.kallan_szeletelo.material",
+    "item-templates.kallan_szeletelo.version",
+    "item-templates.napfogyatkozas_fokusz.item-model",
+    "item-templates.napfogyatkozas_fokusz.material",
+    "item-templates.napfogyatkozas_fokusz.signature-effect",
+    "item-templates.napfogyatkozas_fokusz.version",
+    "profession-recipes.kallan_szeletelo.result.affix-tier",
+    "profession-recipes.kallan_szeletelo.result.item-model",
+    "profession-recipes.kallan_szeletelo.result.signature",
+    "profession-recipes.kallan_szeletelo.result.template",
+    "profession-recipes.napfogyatkozas.result.affix-tier",
+    "profession-recipes.napfogyatkozas.result.item-model",
+    "profession-recipes.napfogyatkozas.result.signature",
+    "profession-recipes.napfogyatkozas.result.template",
+    "profession-recipes.bokic_horgaszbot.result.affix-tier",
+    "profession-recipes.bokic_horgaszbot.result.item-model",
+    "profession-recipes.bokic_horgaszbot.result.signature",
+    "profession-recipes.fonix_tollkopeny.result.affix-tier",
+    "profession-recipes.fonix_tollkopeny.result.item-model",
+    "profession-recipes.fonix_tollkopeny.result.material",
+    "profession-recipes.fonix_tollkopeny.result.signature",
+    "profession-recipes.jegsarkany_kantar.result.item-model",
+    "profession-recipes.jegsarkany_kantar.result.signature",
+    "profession-recipes.jegsarkany_kantar.result.template",
+    "profession-recipes.miinus_haragja.result.affix-tier",
+    "profession-recipes.miinus_haragja.result.item-model",
+    "profession-recipes.miinus_haragja.result.material",
+    "profession-recipes.miinus_haragja.result.signature",
+    "profession-recipes.miinus_haragja.result.template",
+    "profession-recipes.pyralingradi_tuzkopo.result.affix-tier",
+    "profession-recipes.pyralingradi_tuzkopo.result.item-model",
+    "profession-recipes.pyralingradi_tuzkopo.result.signature",
+    "profession-recipes.pyralingradi_tuzkopo.result.template",
+    "profession-recipes.sarkanycsont_ij.result.affix-tier",
+    "profession-recipes.sarkanycsont_ij.result.item-model",
+    "profession-recipes.sarkanycsont_ij.result.signature",
+    "profession-recipes.smaragdko_bankbetet.result.item-model",
+    "profession-recipes.smaragdko_bankbetet.result.material",
+    "profession-recipes.smaragdko_bankbetet.result.signature",
+    "profession-recipes.smaragdko_bankbetet.result.template",
+    "profession-recipes.szellemszarvas_bubaj.result.item-model",
+    "profession-recipes.szellemszarvas_bubaj.result.signature",
+    "profession-recipes.szellemszarvas_bubaj.result.template",
+    "profession-recipes.vasmuvek_csakanya.result.affix-tier",
+    "profession-recipes.vasmuvek_csakanya.result.item-model",
+    "profession-recipes.vasmuvek_csakanya.result.material",
+    "profession-recipes.vasmuvek_csakanya.result.signature",
+    "profession-recipes.verszavanna_agyara.result.affix-tier",
+    "profession-recipes.verszavanna_agyara.result.item-model",
+    "profession-recipes.verszavanna_agyara.result.signature",
+    "profession-recipes.verszavanna_agyara.result.template",
+    "profession-recipes.zhoris_langnyelve.result.affix-tier",
+    "profession-recipes.zhoris_langnyelve.result.item-model",
+    "profession-recipes.zhoris_langnyelve.result.material",
+    "profession-recipes.zhoris_langnyelve.result.signature",
+    "profession-recipes.zhoris_langnyelve.result.template",
+    "quests.onboarding_gather.objective.type",
+    "quests.parazs_gyujtes.objective.type",
+    "quests.rejtveny_edes_ho.objective.type",
+    "spell-balance.arrow_storm.damage",
+    "spell-balance.bone_spear.damage",
+    "spell-balance.dagger_throw.damage",
+    "spell-balance.double_tap.damage",
+    "spell-balance.fireball.damage",
+    "spell-balance.gale_burst.damage",
+    "spell-balance.piercing_bolt.damage",
+    "spell-balance.spectral_volley.damage",
+    "spells.spell-schools.by-spell.arrow_storm",
+    "spells.spell-schools.by-spell.bone_spear",
+    "spells.spell-schools.by-spell.dagger_throw",
+    "spells.spell-schools.by-spell.double_tap",
+    "spells.spell-schools.by-spell.fireball",
+    "spells.spell-schools.by-spell.gale_burst",
+    "spells.spell-schools.by-spell.piercing_bolt",
+    "spells.spell-schools.by-spell.spectral_volley",
+    "signature.custom-enchants.enabled",
+    "signature.custom-enchants.items.bokic_horgaszbot",
+    "signature.custom-enchants.items.fonix_tollkopeny",
+    "signature.custom-enchants.items.glatziendorfi_jegvert",
+    "signature.custom-enchants.items.kallan_szeletelo",
+    "signature.custom-enchants.items.pyralingradi_tuzkopo",
+    "signature.custom-enchants.items.vasmuvek_csakanya",
+    "signature.custom-enchants.items.verszavanna_agyara",
+}
+INTEGRITY_HARDENING_ALLOWED_DRIFT_PREFIXES = (
+    "profession-recipes.fonix_tollkopeny.",
+    "profession-recipes.sarkanycsont_ij.",
+    "profession-recipes.vasmuvek_csakanya.",
+    "profession-recipes.bokic_horgaszbot.",
+    "professions.economy.recipe-aliases.fonix_tollkopeny",
+    "professions.economy.recipe-aliases.sarkanycsont_ij",
+    "professions.economy.recipe-aliases.vasmuvek_csakanya",
+    "professions.economy.recipe-aliases.bokic_horgaszbot",
+)
 GENERATOR_CATEGORIES = {
     "generate_class_ui_assets.py": ("RESOURCE_BUILD", "KEEP_RESOURCE_BUILD"),
     "generate_equipment_assets.py": ("RESOURCE_BUILD", "KEEP_RESOURCE_BUILD"),
@@ -440,10 +540,20 @@ def build_report(baseline: str) -> dict[str, Any]:
     old, old_names = old_effective(baseline)
     current = current_effective()
     old_leaves, new_leaves = leaves(old), leaves(current)
-    if old_leaves != new_leaves:
-        drift = [key for key in sorted(set(old_leaves) | set(new_leaves))
-                 if old_leaves.get(key) != new_leaves.get(key)]
-        raise AssertionError(f"effective gameplay/config semantic drift: {drift[:20]}")
+    drift = {key for key in set(old_leaves) | set(new_leaves)
+             if old_leaves.get(key) != new_leaves.get(key)}
+    unexpected_drift = sorted(key for key in drift
+                              if key not in INTEGRITY_HARDENING_ALLOWED_DRIFT
+                              and not key.startswith(INTEGRITY_HARDENING_ALLOWED_DRIFT_PREFIXES))
+    missing_expected_drift = sorted(INTEGRITY_HARDENING_ALLOWED_DRIFT - drift)
+    missing_prefix_drift = sorted(prefix for prefix in INTEGRITY_HARDENING_ALLOWED_DRIFT_PREFIXES
+                                  if not any(key.startswith(prefix) for key in drift))
+    if unexpected_drift or missing_expected_drift or missing_prefix_drift:
+        raise AssertionError(
+            "effective gameplay/config semantic drift outside the bounded integrity fixes: "
+            f"unexpected={unexpected_drift[:20]}, missing_expected={missing_expected_drift[:20]}, "
+            f"missing_prefix={missing_prefix_drift}"
+        )
 
     source_paths = list(CONTENT_FILES) + [f"config/{name}.yml" for name in OPERATOR_FILES] + ["config.yml"]
     owners: dict[str, list[str]] = defaultdict(list)
@@ -601,7 +711,9 @@ def build_report(baseline: str) -> dict[str, Any]:
                              "invalid reload rollback", "restart-required refusal", "missing content fail-closed"],
         },
         "semantic_parity": {
-            "entire_effective_tree_equal_to_parent": True,
+            "entire_effective_tree_equal_to_parent": False,
+            "equal_except_bounded_integrity_fixes": True,
+            "bounded_integrity_fix_paths": sorted(drift),
             "effective_tree_sha256": stable_hash(current),
             "effective_leaf_count": len(leaves(current)),
         },

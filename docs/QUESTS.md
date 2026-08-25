@@ -638,7 +638,7 @@ ki megoldótáblát.
 |---|---|---|---|---|
 | **133.** `onboarding_herald` | **Beszélj a hírnökkel**<br>Keresd fel a hírnököt a semleges fővárosban, és válaszd ki a királyságodat. | beszélgetés NPC-vel; NPC: `hirnok` | következő: `onboarding_hunt` | 15 `NEUTRAL` valuta (vendég-útravaló) |
 | **134.** `onboarding_hunt` | **Első csata**<br>Bizonyítsd, hogy készen állsz: ölj meg 5 szörnyet. | szörny legyőzése; ×5 | előfeltétel: `onboarding_herald`; következő: `onboarding_gather` | 20 `NEUTRAL` valuta (vendég-útravaló) |
-| **135.** `onboarding_gather` | **Első gyűjtögetés**<br>Vágj ki 10 rönköt — kezdő felszerelés vár érte. | tárgy összegyűjtése; ×10; anyag: `OAK_LOG`, `BIRCH_LOG`, `SPRUCE_LOG`, `JUNGLE_LOG`, `ACACIA_LOG`, `DARK_OAK_LOG`, `MANGROVE_LOG`, `CHERRY_LOG` | előfeltétel: `onboarding_hunt`; következő: `onboarding_utmutatas` | 25 `NEUTRAL` valuta (vendég-útravaló); item: `WOODEN_PICKAXE:1`, `BREAD:8`; crate-kulcs: `koznapi:1` |
+| **135.** `onboarding_gather` | **Első gyűjtögetés**<br>Vágj ki 10 rönköt — kezdő felszerelés vár érte. | blokk kitermelése; ×10; anyag: `OAK_LOG`, `BIRCH_LOG`, `SPRUCE_LOG`, `JUNGLE_LOG`, `ACACIA_LOG`, `DARK_OAK_LOG`, `MANGROVE_LOG`, `CHERRY_LOG` | előfeltétel: `onboarding_hunt`; következő: `onboarding_utmutatas` | 25 `NEUTRAL` valuta (vendég-útravaló); item: `WOODEN_PICKAXE:1`, `BREAD:8`; crate-kulcs: `koznapi:1` |
 | **136.** `onboarding_utmutatas` | **Az utad kezdete**<br>Térj vissza a hírnökhöz — elmondja, hogyan válassz kasztot (/class), szakmát (/profession join), és hol vár a kaszt-próbád (/quest list). | beszélgetés NPC-vel; NPC: `hirnok` | előfeltétel: `onboarding_gather` | 50 kaszt-XP; 25 `NEUTRAL` valuta (vendég-útravaló) |
 | **137.** `napi_ospatak` | **A vén halász kérése**<br>Az Őspatak öreg halásza már nem bírja a hálót. Fogj helyette nyolc halat — a fele a tiéd. | hal kifogása; ×8 | ismételhető: 24 óra; rotáció: `napi-npc` | 120 kaszt-XP; 35 `OWN` valuta |
 | **138.** `napi_erclelet` | **Ércjárat**<br>A kovácsműhely kifogyott a nyersanyagból. Fejts ki huszonnégy vas- vagy rézércet a környék tárnáiból. | blokk kitermelése; ×24; anyag: `IRON_ORE`, `DEEPSLATE_IRON_ORE`, `COPPER_ORE`, `DEEPSLATE_COPPER_ORE` | ismételhető: 24 óra; rotáció: `napi-npc` | 120 kaszt-XP; 35 `OWN` valuta |
@@ -699,7 +699,7 @@ world-hook.
 - [ ] `TALK_TO_NPC` egy kattintással halad; `DELIVER_ITEMS` kevés tárggyal nem vesz el semmit, elég tárggyal pontosan a szükséges mennyiséget veszi át.
 - [ ] A több questet adó NPC config-sorrendje és napi rotációja végigpróbálva.
 - [ ] Minden explicit `/npcbind` esetén dokumentált, hogy a legacy giver-scan miért hagyható el.
-- [ ] FancyNpcs nélküli stagingben `/quest talk <npc-id>` működik; aktív híd mellett a fallback policy megfelel a confignek.
+- [ ] FancyNpcs nélkül és inkompatibilis verzióval külön-külön determinisztikus fail-closed startup látszik; normál játékosnak nincs spoofolható parancsos fallback.
 - [ ] A négy territory ID létezik; a `dark-capital` ↔ `thanaopolis` eltérés rendezve.
 - [ ] A `kezdo_parkour` teljesítése haladást ad az `acrobat_challenge` questhez.
 - [ ] Mind az öt biome túlélő módban és tiltott portál nélkül elérhető.

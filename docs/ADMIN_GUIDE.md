@@ -1146,6 +1146,9 @@ fallback vagy kill switch. Az üzemeltetőnek telepítenie kell a
 `class-spec-dependencies.lock.yml` fájlban rögzített kötelező plugineket, majd stagingen
 `-Dpaper.disablePluginRemapping=true` kapcsolóval kell indítania a szervert. Aktív dependency
 enforcement mellett hiányzó vagy eltérő kötelező plugin fail-closed startup hibát okoz.
+Jelenleg FancyNpcs az egyetlen kötelező külső gameplay dependency. MythicMobs nem tervezett;
+PacketEvents és FancyDialogs csak jövőbeli integrációs jelölt, ezért egyik sem szerepel az aktív
+Paper metadata- vagy provisioning contractban.
 Quarantine esetén az evidence megőrzendő, és csak az explicit
 `/spec recover <player|uuid> confirm` parancs használható (`icesmp.admin.spec.recover`).
 A részletes persistence-, recovery- és shutdown-folyamat:

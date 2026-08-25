@@ -168,7 +168,8 @@ public final class FancyNpcsQuestBridge {
                             }
                         }
                     } catch (final Throwable exception) {
-                        plugin.getLogger().warning("FancyNpcs quest-bridge hiba: " + exception.getMessage());
+                        plugin.getLogger().severe("FancyNpcs production quest-bridge interaction failed: "
+                                + safeMessage(exception));
                     }
                 },
                 plugin
@@ -292,7 +293,7 @@ public final class FancyNpcsQuestBridge {
                     + report.requiredCount() + " kötelező NPC pontos belső névvel elérhető.");
             return;
         }
-        plugin.getLogger().warning("Quest-NPC ellenőrzés: required=" + report.requiredCount()
+        plugin.getLogger().severe("Quest-NPC production readiness HIBA: required=" + report.requiredCount()
                 + ", available=" + report.availableCount()
                 + ", missingOrMismatched=" + report.missing().size()
                 + ", lookupErrors=" + report.lookupErrors().size() + ".");
@@ -300,19 +301,27 @@ public final class FancyNpcsQuestBridge {
             final String match = issue.caseInsensitiveMatch() == null
                     ? ""
                     : "; caseInsensitiveMatch=" + issue.caseInsensitiveMatch();
-            plugin.getLogger().warning("Quest-NPC hiányzik vagy rossz a belső neve: expected="
+            plugin.getLogger().severe("Quest-NPC hiányzik vagy rossz a belső neve: expected="
                     + issue.expectedName() + match + "; references="
                     + String.join(",", issue.references()));
         }
         for (final String error : report.lookupErrors()) {
-            plugin.getLogger().warning("Quest-NPC lookup hiba: " + error);
+            plugin.getLogger().severe("Quest-NPC lookup hiba: " + error);
         }
-        plugin.getLogger().warning("A koordináta és világ nem következtethető biztonságosan. "
-                + "Hozd létre vagy importáld a szükséges NPC-ket pontos belső névvel. "
-                + "Átmeneti áthidalásra az admin /quest talk parancs használható.");
+        plugin.getLogger().severe("A koordináta és világ nem következtethető biztonságosan. "
+                + "Hozd létre vagy importáld a szükséges NPC-ket pontos belső névvel; "
+                + "a player-facing canonical NPC út addig nem áll készen.");
     }
 
     private static String safeMessage(final ReflectiveOperationException exception) {
+        final Throwable cause = exception.getCause();
+        final String message = cause == null ? exception.getMessage() : cause.getMessage();
+        return message == null || message.isBlank()
+                ? exception.getClass().getSimpleName()
+                : message.replaceAll("[\r\n]+", " ");
+    }
+
+    private static String safeMessage(final Throwable exception) {
         final Throwable cause = exception.getCause();
         final String message = cause == null ? exception.getMessage() : cause.getMessage();
         return message == null || message.isBlank()

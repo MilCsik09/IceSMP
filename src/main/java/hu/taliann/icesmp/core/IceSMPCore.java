@@ -340,6 +340,7 @@ public final class IceSMPCore {
     private final AchievementManager achievementManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask questNpcMarkerTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask questNpcValidationTask;
     private hu.taliann.icesmp.integration.FancyNpcsQuestBridge npcQuestBridge;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
@@ -393,7 +394,7 @@ public final class IceSMPCore {
         this.jobManager = new JobManager(plugin, configManager, messageManager, factionManager);
         this.spellRegistry = new SpellRegistry();
         // Statikus bekötés a spell-iskola feloldáshoz (SpellDamageUtil — minta: ProtectionBridge).
-        hu.taliann.icesmp.utils.SpellDamageUtil.init(configManager, jobManager);
+        hu.taliann.icesmp.utils.SpellDamageUtil.init(configManager, jobManager, spellRegistry);
         hu.taliann.icesmp.utils.CcDiminish.init(configManager);
         this.catalystItemFactory = new CatalystItemFactory(plugin);
         this.captureItemFactory = new CaptureItemFactory(plugin);
@@ -1162,20 +1163,11 @@ public final class IceSMPCore {
         }
     }
 
-    /**
-     * Registers the FancyNpcs quest bridge (TALK_TO_NPC objectives) if FancyNpcs is
-     * installed. The bridge is fully reflective, so the core has no compile-time
-     * dependency on the FancyNpcs API; without the plugin this is a no-op.
-     */
+    /** Registers the required FancyNpcs production bridge; every failure is startup-fatal. */
     private void registerNpcQuestBridge() {
         if (!plugin.getServer().getPluginManager().isPluginEnabled("FancyNpcs")) {
-            final java.util.Set<String> questNpcs = questManager.getQuestNpcNames();
-            if (!questNpcs.isEmpty()) {
-                plugin.getLogger().warning("FancyNpcs nincs telepítve, pedig " + questNpcs.size()
-                        + " quest-NPC-re épül a tartalom — a /quest talk <npc> tartalék-út aktív, "
-                        + "a dialógusok a parancsos úton is lejátszódnak.");
-            }
-            return;
+            throw new IllegalStateException("FancyNpcs required production dependency is not enabled; "
+                    + questManager.getQuestNpcNames().size() + " authored quest NPC is unreachable");
         }
         try {
             npcQuestBridge = hu.taliann.icesmp.integration.FancyNpcsQuestBridge.register(
@@ -1209,24 +1201,22 @@ public final class IceSMPCore {
             scheduleQuestNpcMarkers();
             questManager.setNpcBridgeActive(true);
             // NPC-létezés ellenőrzés késleltetve (a FancyNpcs a saját NPC-it a világok
-            // betöltése után éleszti) — hiányzó NPC hangos figyelmeztetést kap.
+            // betöltése után éleszti) — hiányos authored snapshot fail-closed letiltást kap.
             final hu.taliann.icesmp.integration.FancyNpcsQuestBridge bridgeRef = npcQuestBridge;
-            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task ->
-                    bridgeRef.validateNpcs(questManager.getQuestNpcNames()), 20L * 60L);
+            questNpcValidationTask = Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
+                final var report = bridgeRef.validateNpcs(questManager.getQuestNpcNames());
+                if (!report.healthy()) {
+                    plugin.getLogger().severe("FancyNpcs authored NPC snapshot is incomplete; "
+                            + "IceSMP disables fail-closed instead of exposing dead onboarding content.");
+                    plugin.getServer().getPluginManager().disablePlugin(plugin);
+                }
+            }, 20L * 60L);
             plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok, /npcbind kötések).");
         } catch (final Throwable throwable) {
-            plugin.getLogger().warning("FancyNpcs jelen van, de a quest-bridge nem indult: "
-                    + throwable.getMessage());
+            throw new IllegalStateException("FancyNpcs required production bridge failed to initialize", throwable);
         }
-        // A sztori-gerinc NPC-ken lóg: híd nélkül a TALK_TO_NPC/giver-npc questek némán
-        // állnának — a /quest talk tartalék-út ilyenkor automatikusan él, és a log jelez.
         if (npcQuestBridge == null) {
-            final java.util.Set<String> questNpcs = questManager.getQuestNpcNames();
-            if (!questNpcs.isEmpty()) {
-                plugin.getLogger().warning("FancyNpcs-híd nem aktív, pedig " + questNpcs.size()
-                        + " quest-NPC-re épül a tartalom — a /quest talk <npc> tartalék-út aktív, "
-                        + "a dialógusok a parancsos úton is lejátszódnak.");
-            }
+            throw new IllegalStateException("FancyNpcs bridge returned no runtime authority");
         }
     }
 
@@ -1305,6 +1295,12 @@ public final class IceSMPCore {
             // eldobott ConfigManager-példányt tartana életben a következő enable-ig.
             shutdownStep("NamedEntityDeathLogFilter.uninstall",
                     hu.taliann.icesmp.utils.NamedEntityDeathLogFilter::uninstall);
+            shutdownStep("AdvancementService.clearIfCurrent",
+                    () -> hu.taliann.icesmp.managers.AdvancementService.clearIfCurrent(advancementService));
+            shutdownStep("ItemTemplateRegistry.clearIfCurrent",
+                    () -> hu.taliann.icesmp.itemization.ItemTemplateRegistry.clearIfCurrent(itemTemplateRegistry));
+            shutdownStep("ConfigManager.clearIfCurrent",
+                    () -> hu.taliann.icesmp.managers.ConfigManager.clearIfCurrent(configManager));
         }
     }
 
@@ -1346,6 +1342,10 @@ public final class IceSMPCore {
         if (questNpcMarkerTask != null) {
             questNpcMarkerTask.cancel();
             questNpcMarkerTask = null;
+        }
+        if (questNpcValidationTask != null) {
+            questNpcValidationTask.cancel();
+            questNpcValidationTask = null;
         }
         shutdownStep("raidManager", raidManager::shutdown);
         if (economyEventTask != null) {

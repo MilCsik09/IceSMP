@@ -46,8 +46,13 @@ require(len(sets) >= 2, "at least two authored sets are required")
 require(5 <= sum(bool(row.get("ascension-path")) for row in templates.values()) <= 12,
         "ascension-capable catalog must stay in the bounded gate")
 require(8 <= len(actual_runes) <= 12, "rune catalog must stay in the 8-12 gate")
-require(len(canonical_recipes) == 76,
+require(len(canonical_recipes) == 85,
         "handcrafted equipment recipe catalog identity drifted")
+signature_ids = {row["signature-effect"] for row in templates.values()
+                 if row.get("signature-effect")}
+require(not [key for key, row in recipes.items()
+             if row.get("result", {}).get("signature") in signature_ids],
+        "a recipe-owned legacy form still duplicates a canonical signature template")
 
 # Economy-unit invariant used by the production ItemSalvageService: its conservative input value
 # is 64 and every possible dust output is capped before physical material mapping.

@@ -3,7 +3,7 @@ package hu.taliann.icesmp.classspec.integration;
 import java.util.Map;
 import java.util.UUID;
 
-/** Boundary for MythicMobs-backed initiation and capstone encounters. */
+/** Boundary for IceSMP-authored initiation and capstone encounters. */
 public interface ClassSpecEncounterPort {
 
     EncounterHandle start(String encounterId, UUID ownerId, LocationSnapshot origin,

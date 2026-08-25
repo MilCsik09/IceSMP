@@ -224,10 +224,7 @@ public final class JobManager implements PlayerStateCleanup {
                         increment, secondSpecUnlockLevel, operationId))
                 .thenCompose(result -> {
                     if (!result.runtimeGenerationUsable()) return CompletableFuture.completedFuture(result);
-                    return schedulePlayer(player, () -> {
-                        if (getPrimaryLevel(player) >= MAX_JOB_LEVEL)
-                            AdvancementService.award(player, "class_max");
-                    }).thenCompose(ignored -> {
+                    return schedulePlayer(player, () -> { }).thenCompose(ignored -> {
                         final java.util.function.Function<Player, CompletionStage<Void>> hook = xpChangeHook;
                         return hook == null ? CompletableFuture.completedFuture(null) : hook.apply(player);
                     }).thenCompose(ignored -> applyAutoUnlocksV2(player))

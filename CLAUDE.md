@@ -88,7 +88,7 @@ Folia-alapú Minecraft **1.21.11** Paper-plugin (Java **21**), MMO-jellegű SMP-
   `itemStack.setData(...)` UTÁN a `setItemMeta(...)` TÖRLI a komponenst (a meta-round-trip nem hordozza)
   — a data-komponenseket MINDIG a meta-műveletek UTÁN, utolsóként kell alkalmazni (a `buildResult` a végén hívja).
 - **Spellek**: deklaratív `ConfiguredSpell.builder(...)` a `spells/SpellCatalog`-ban + unlock a `content/progression/classes.yml`-ben; külön osztály csak valóban állapotos spellnek (kötelező `clearPlayerState` override).
-- **Soft-depend integrációk**: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard és LuckPerms — runtime opcionális hidak, a plugin nélkülük is fut. Build-oldalon csak PlaceholderAPI és LibsDisguises `compileOnly` (lásd `build.gradle.kts`); a többi híd reflexiós. A first-party HUD kizárólag immutable `HudSnapshot` adatot olvas, és nem gameplay authority.
+- **Dependency contract**: FancyNpcs kötelező production gameplay dependency és a canonical TALK_TO_NPC/onboarding híd; hiányzó vagy inkompatibilis lockolt verziónál a startup fail-closed. PlaceholderAPI, LibsDisguises, WorldGuard/WorldEdit és LuckPerms opcionális jelenlegi integráció. MythicMobs nem tervezett; PacketEvents és FancyDialogs csak jövőbeli jelölt, nem runtime-dependency. Build-oldalon csak PlaceholderAPI és LibsDisguises `compileOnly`; a többi jelenlegi híd reflexiós. A first-party HUD kizárólag immutable `HudSnapshot` adatot olvas, és nem gameplay authority.
 
 ## Folia-szabályok (KRITIKUS — részletek: `docs/ARCHITECTURE.md` §4)
 - Soha `Bukkit.getScheduler()`; entitáshoz `entity.getScheduler()`, helyhez `getRegionScheduler()`, globálishoz `getGlobalRegionScheduler()`.

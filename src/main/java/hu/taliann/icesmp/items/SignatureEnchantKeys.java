@@ -12,7 +12,7 @@ import java.util.Map;
  * enchant az identitás (név + glint) és a vanília anvil-szabályok hordozója.
  *
  * <p>Egy helyen él a signature-id → enchant-kulcs megfeleltetés, mert a
- * bootstrap (regisztráció) és a runtime (craft-stamp) is ezt használja.
+ * bootstrap (regisztráció) és a canonical identity render/migration is ezt használja.
  */
 public final class SignatureEnchantKeys {
 

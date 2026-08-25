@@ -171,6 +171,21 @@ val configContentCommandSurfaceAudit by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_config_content_command_surface.py", "--check")
 }
 
+val gameplayBootstrapIntegrityAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates the ten bounded gameplay/bootstrap finding closures and evidence matrices."
+    inputs.files(
+        "scripts/audit_gameplay_bootstrap_integrity.py",
+        "docs/development/gameplay-bootstrap-integrity-hardening.json",
+        "src/main/resources/paper-plugin.yml",
+        "src/main/resources/class-spec-dependencies.lock.yml",
+    )
+    inputs.dir("src/main/resources/content")
+    inputs.dir("src/main/resources/datapack")
+    inputs.dir("src/main/java")
+    commandLine(pythonCommand, "scripts/audit_gameplay_bootstrap_integrity.py", "--check")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -981,6 +996,10 @@ val mobRuntimeSourceRegressionTest = registerRegression(
     "mobRuntimeSourceRegressionTest",
     "Runs Folia, telegraph, bounded lifecycle and durable encounter reward source gates.",
     "hu.taliann.icesmp.pve.MobRuntimeSourceRegressionSuite")
+val gameplayBootstrapIntegrityRegressionTest = registerRegression(
+    "gameplayBootstrapIntegrityRegressionTest",
+    "Runs behavioral acquisition, projectile, dependency, advancement and facade closure regressions.",
+    "hu.taliann.icesmp.hardening.GameplayBootstrapIntegrityRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -993,6 +1012,7 @@ tasks.check {
     dependsOn(authoredPveConsolidationAudit)
     dependsOn(enemyWorldBossReworkAudit)
     dependsOn(configContentCommandSurfaceAudit)
+    dependsOn(gameplayBootstrapIntegrityAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
@@ -1041,6 +1061,7 @@ tasks.check {
         wizardGameplayRegressionTest, wizardProfileRegressionTest,
         itemizationDomainRegressionTest, vanillaCraftingBoundaryRegressionTest,
         equipmentDomainRegressionTest, playerProfileLootDiversityRegressionTest,
-        mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest
+        mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest,
+        gameplayBootstrapIntegrityRegressionTest
     )
 }

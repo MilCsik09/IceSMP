@@ -7,6 +7,8 @@ import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.managers.QuestPhysicalRewardDeliveryService;
 import hu.taliann.icesmp.managers.WorldBossManager;
 import hu.taliann.icesmp.progression.BlockRewardOriginTracker;
+import hu.taliann.icesmp.progression.ItemAcquisitionPolicy;
+import hu.taliann.icesmp.utils.ItemProvenance;
 import io.papermc.paper.event.player.PlayerTradeEvent;
 import org.bukkit.Location;
 import org.bukkit.entity.Item;
@@ -18,6 +20,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityBreedEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
@@ -31,6 +34,7 @@ import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -50,6 +54,8 @@ public final class QuestProgressListener implements Listener {
     private final MobScalingManager mobScalingManager;
     private final WorldBossManager worldBossManager;
     private final CommunityGoalManager communityGoalManager;
+    private final ItemAcquisitionPolicy.ReceiptWindow acquisitionReceipts =
+            new ItemAcquisitionPolicy.ReceiptWindow(4_096);
 
     public QuestProgressListener(final JavaPlugin plugin, final QuestManager questManager,
                                  final MobScalingManager mobScalingManager,
@@ -205,13 +211,44 @@ public final class QuestProgressListener implements Listener {
     public void onPlayerFish(final PlayerFishEvent event) {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) return;
         questManager.handleFish(event.getPlayer());
-        if (!(event.getCaught() instanceof Item caught)) return;
-        final var stack = caught.getItemStack();
-        if (stack.getType().isAir() || stack.getAmount() <= 0) return;
-        if (communityGoalManager.contributeOnce(event.getPlayer(), "COLLECT_ITEMS",
-                stack.getType().name(), stack.getAmount(), caught.getUniqueId())) {
-            questManager.handleCollect(event.getPlayer(), stack.getType(), stack.getAmount());
-        }
+        // A kifogott tárgy csak a későbbi, sikeres EntityPickupItemEventben acquisition.
+        // Így ugyanaz a logical item nem számít a horogra kerüléskor és a felvételkor is.
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onItemPickup(final EntityPickupItemEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        final Item item = event.getItem();
+        final ItemStack stack = item.getItemStack();
+        final int acquired = ItemAcquisitionPolicy.acceptedPickupAmount(player.getGameMode(),
+                event.isCancelled(), ItemProvenance.isPlayerDropped(item), stack.getAmount(),
+                event.getRemaining());
+        if (acquired <= 0 || stack.getType().isAir()) return;
+        final String logicalEvent = player.getUniqueId() + "|pickup|" + item.getUniqueId()
+                + '|' + stack.getAmount() + '|' + event.getRemaining();
+        final UUID receipt = UUID.nameUUIDFromBytes(logicalEvent.getBytes(StandardCharsets.UTF_8));
+        if (!acquisitionReceipts.claim(receipt)) return;
+        questManager.handleCollect(player, stack.getType(), acquired);
+        communityGoalManager.contribute(player, "COLLECT_ITEMS", stack.getType().name(), acquired);
+    }
+
+    /** Buckets enter the player's inventory directly and therefore have no pickup event. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBucketFill(final PlayerBucketFillEvent event) {
+        final Player player = event.getPlayer();
+        if (player.getGameMode() != org.bukkit.GameMode.SURVIVAL
+                && player.getGameMode() != org.bukkit.GameMode.ADVENTURE) return;
+        final ItemStack result = event.getItemStack();
+        if (result == null || result.getType().isAir() || result.getAmount() <= 0) return;
+        final String logicalEvent = player.getUniqueId() + "|bucket|"
+                + event.getBlock().getWorld().getUID() + '|' + event.getBlock().getX() + '|'
+                + event.getBlock().getY() + '|' + event.getBlock().getZ() + '|'
+                + result.getType().name() + '|' + System.identityHashCode(event);
+        final UUID receipt = UUID.nameUUIDFromBytes(logicalEvent.getBytes(StandardCharsets.UTF_8));
+        if (!acquisitionReceipts.claim(receipt)) return;
+        questManager.handleCollect(player, result.getType(), result.getAmount());
+        communityGoalManager.contribute(player, "COLLECT_ITEMS",
+                result.getType().name(), result.getAmount());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -259,10 +296,10 @@ public final class QuestProgressListener implements Listener {
                 + event.getBlock().getZ() + '|' + event.getItemType().name() + '|'
                 + event.getItemAmount() + '|' + System.identityHashCode(event);
         final UUID contributionId = UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));
-        if (communityGoalManager.contributeOnce(event.getPlayer(), "COLLECT_ITEMS",
-                event.getItemType().name(), event.getItemAmount(), contributionId)) {
-            questManager.handleCollect(event.getPlayer(), event.getItemType(), event.getItemAmount());
-        }
+        if (!acquisitionReceipts.claim(contributionId)) return;
+        questManager.handleCollect(event.getPlayer(), event.getItemType(), event.getItemAmount());
+        communityGoalManager.contribute(event.getPlayer(), "COLLECT_ITEMS",
+                event.getItemType().name(), event.getItemAmount());
     }
 
     @EventHandler(ignoreCancelled = true)

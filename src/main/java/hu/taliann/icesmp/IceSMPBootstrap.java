@@ -20,8 +20,8 @@ import org.jspecify.annotations.NonNull;
  * A data-driven enchant-registry a kliensre szinkronizálódik, így a magyar nevük valódi
  * enchant-sorként renderelődik a tooltipben — kliens-mod és resource pack nélkül. A
  * tényleges perk-viselkedés a SignatureItemListenerben él (az enchant az identitás +
- * glint + anvil-szabályok hordozója); a craft-kori rástampelést a
- * {@code signature.custom-enchants} kulcs kapcsolja (crafting.yml, élőben olvasva).
+ * glint + anvil-szabályok hordozója); a rástampelés a canonical ItemIdentityService
+ * render/migration projection része, ezért acquisition-path szerint nem térhet el.
  *
  * <p>FIGYELEM: a bootstrap a config-rendszer előtt fut, ezért itt nincs config-kapu —
  * a regisztráció önmagában ártalmatlan: a saját enchantok NINCSENEK a
@@ -42,10 +42,8 @@ public final class IceSMPBootstrap implements PluginBootstrap {
         // halál-üzenetet a SpellDamageListener írja felül.
         // A regisztráció a compose eseményen fut (nem a régi freeze-en): az 1.21.11-es
         // szerver registry-providere már csak a compose horgot szolgálja ki.
-        // Védőháló: az unstable registry-API verzió-bumpnál törhet — a hiba itt NEM
-        // viheti el a szerver-indulást: a runtime minden regisztrációra fallbackkel
-        // készül (SpellDamageUtil vanília sebzés; a signature-stamp kihagyja a
-        // hiányzó enchantot), így degradáltan, de elindul a plugin.
+        // A custom DamageType-ok executable gameplay authorityk. Registry-compose
+        // hiba esetén a bootstrap fail-closed: nincs vanilla spell-damage fallback.
         context.getLifecycleManager().registerEventHandler(RegistryEvents.DAMAGE_TYPE.compose().newHandler(event -> {
             try {
                 for (final hu.taliann.icesmp.data.SpellSchool school : hu.taliann.icesmp.data.SpellSchool.values()) {
@@ -69,8 +67,9 @@ public final class IceSMPBootstrap implements PluginBootstrap {
                                 .damageScaling(org.bukkit.damage.DamageScaling.NEVER)
                                 .exhaustion(0.0F));
             } catch (final Throwable throwable) {
-                context.getLogger().error("Damage-type regisztráció hiba (a spellek vanília sebzésre esnek vissza): "
+                context.getLogger().error("Damage-type regisztráció hiba; az IceSMP bootstrap fail-closed: "
                         + throwable, throwable);
+                throw new IllegalStateException("IceSMP custom DamageType registry compose failed", throwable);
             }
         }));
 
@@ -121,8 +120,9 @@ public final class IceSMPBootstrap implements PluginBootstrap {
             register(event, "kaosz_zabla", "Káosz-zabla", NamedTextColor.DARK_RED,
                     ItemTypeTagKeys.ENCHANTABLE_CHEST_ARMOR, EquipmentSlotGroup.CHEST);
             } catch (final Throwable throwable) {
-                context.getLogger().error("Enchant-regisztráció hiba (a signature/counter enchantok kimaradnak): "
+                context.getLogger().error("Enchant-regisztráció hiba; az IceSMP bootstrap fail-closed: "
                         + throwable, throwable);
+                throw new IllegalStateException("IceSMP custom enchant registry compose failed", throwable);
             }
         }));
 

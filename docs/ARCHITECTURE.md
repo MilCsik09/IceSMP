@@ -413,7 +413,8 @@ meglévő tartós `SpellMasteryManager` tranzakciót hívja.
 A pontos runtime-verziók forrása a `class-spec-dependencies.lock.yml`. A külső content- és
 megjelenítési motorok nem kerülhetnek a domainbe: a `classspec/integration` portjai kizárólag stabil
 UUID-t, string ID-t, immutable snapshotot és saját handle-t engednek át. CraftEngine-,
-ModelEngine-, MythicMobs- vagy Fancy-típus csak későbbi adaptercsomagban jelenhet meg.
+MythicMobs nem tervezett: a saját authored PvE stack marad canonical. Új külső adapter csak külön,
+konkrét product consumerrel kerülhet a runtime surface-re.
 
 A class/spec integráció teljes helyi próbája a `runFolia` feladattal fut: ugyanazt a lockolt
 Folia 1.21.11 build 14-et és a lockolt pluginverziókat használja, mint a production cél, és előkészíti az egyetlen
@@ -809,15 +810,23 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
 - **Bootstrap-szint (`IceSMPBootstrap`):** a registry-fagyás előtt fut — itt regisztráljuk a
   data-driven **signature-enchantokat** (`icesmp:jegfog` stb., kulcsok: `items/SignatureEnchantKeys`);
   a kliens a registry-szinkronnal kapja őket, a leírás-Component a tooltipben renderelődik. A
-  viselkedés NEM itt él (`SignatureItemListener`); a craft-stamp kulcsa `signature.custom-enchants`.
+  viselkedés NEM itt él (`SignatureItemListener`); a signature-enchant/glint projekciót minden
+  acquisition úthoz az `ItemIdentityService` canonical render/migration rétege bélyegzi.
+  A Kallan Szeletelő és a Napfogyatkozás source-evidence alapján íj; minden signature-recept
+  template-renderelést kér. A négy korábbi duplikált recept-ID (`fonix_tollkopeny`,
+  `sarkanycsont_ij`, `vasmuvek_csakanya`, `bokic_horgaszbot`) a `professions-2.yml`
+  aliasain át az egyetlen #140 canonical receptre oldódik, a régi PDC-itemek pedig
+  idempotens identity-migrációval őrzik meg enchantjukat és provenance-üket.
   Bővíthető: damage-type/banner-minta/trim regisztráció ugyanígy; MobEffect (bájital-effekt) NEM
   regisztrálható (kliens-hardcode) — arra szerver-oldali pszeudo-effekt a minta.
 - **Jarból szállított datapack (`DATAPACK_DISCOVERY`):** a bootstrap a jar `/datapack`
   könyvtárát rendes datapackként ismerteti meg a szerverrel (`autoEnableOnServerStart`), így
-  a 22 csomópontos IceSMP haladás-fa és a 3 fix toast-bejegyzés a KÓDDAL EGYÜTT verziózódik,
+  a 21 persistent csomópontos IceSMP haladás-fa és az 1 újrahasználható quest-toast a KÓDDAL
+  EGYÜTT verziózódik (22 authored advancement JSON összesen),
   futásidejű registry-mutáció nélkül. Az `AdvancementService` enable-időben csak ellenőriz;
   ha a felderítés elbukott, a régi (`@Deprecated Bukkit.getUnsafe()`) úton pótolja a hiányzó
-  bejegyzéseket, és WARNING-ot logol. A fa-bejegyzések `show_toast:false` +
+  bejegyzéseket, és WARNING-ot logol. A persistent fa hiányosan fail-closed; a toast hiánya
+  explicit degraded presentation állapot. A fa-bejegyzések `show_toast:false` +
   `announce_to_chat:false` (a visszajelzés a rendszerek saját chat-üzenete, az ünneplő toast a
   külön `ToastUtil`-réteg). A deprecated tartalék út ugyanazt a kézzel authorolt, jarban
   szállított JSON resource-t olvassa, ezért nincs másodlagos Java gameplay-katalógus vagy

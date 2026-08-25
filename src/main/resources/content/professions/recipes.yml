@@ -1728,9 +1728,7 @@ profession-recipes:
     result:
       material: BOW
       amount: 1
-      affix-tier: crafted
-      signature: kallan_szeletelo
-      item-model: icesmp:kallan_szeletelo
+      template: kallan_szeletelo
     ingredients:
     - BOW:1
     - STRING:8
@@ -1802,8 +1800,7 @@ profession-recipes:
     result:
       material: SADDLE
       amount: 1
-      signature: jegsarkany_kantar
-      item-model: icesmp:jegsarkany_kantar
+      template: jegsarkany_kantar
     ingredients:
     - SADDLE:1
     - LEATHER:8
@@ -1823,9 +1820,7 @@ profession-recipes:
     result:
       material: CROSSBOW
       amount: 1
-      affix-tier: crafted
-      signature: pyralingradi_tuzkopo
-      item-model: icesmp:pyralingradi_tuzkopo
+      template: pyralingradi_tuzkopo
     ingredients:
     - CROSSBOW:1
     - BLAZE_ROD:4
@@ -1878,35 +1873,11 @@ profession-recipes:
     result:
       material: NETHERITE_SWORD
       amount: 1
-      affix-tier: crafted
-      signature: verszavanna_agyara
-      item-model: icesmp:verszavanna_agyara
+      template: verszavanna_agyara
     ingredients:
     - NETHERITE_SWORD:1
     - BLAZE_POWDER:8
     - unique:szorny_mag:3
-  fonix_tollkopeny:
-    profession: armorer
-    kind: egyedi
-    level: 40
-    learn: blueprint
-    faction: RED
-    display-name: Főnix-Tollköpeny
-    lore:
-    - '&7I. Zhoris lángmadarainak tollaiból szőve;'
-    - '&7óv a hőségtől és a láva haragjától.'
-    category: Lángoló Birodalom (tervrajz)
-    result:
-      material: LEATHER_CHESTPLATE
-      amount: 1
-      affix-tier: crafted
-      signature: fonix_tollkopeny
-      item-model: icesmp:fonix_tollkopeny
-    ingredients:
-    - LEATHER_CHESTPLATE:1
-    - FEATHER:32
-    - MAGMA_CREAM:8
-    - unique:arnyekpor:2
   runavert_tekercs:
     profession: enchanter
     kind: egyedi
@@ -2116,50 +2087,6 @@ profession-recipes:
     - WHEAT:3
     - BONE_MEAL:2
     - CHARCOAL:1
-  vasmuvek_csakanya:
-    profession: miner
-    kind: egyedi
-    level: 45
-    learn: blueprint
-    faction: NEUTRAL
-    display-name: Vasművek Akadémiájának Csákánya
-    lore:
-    - '&7A ryanorai Vasművek mestervizsga-darabja;'
-    - '&7éle megérzi az érc rejtett teléreit.'
-    category: Menedék (tervrajz)
-    result:
-      material: DIAMOND_PICKAXE
-      amount: 1
-      affix-tier: crafted
-      signature: vasmuvek_csakanya
-      item-model: icesmp:vasmuvek_csakanya
-    ingredients:
-    - DIAMOND_PICKAXE:1
-    - IRON_BLOCK:4
-    - EMERALD:8
-    - unique:vad_esszencia:2
-  bokic_horgaszbot:
-    profession: fisherman
-    kind: egyedi
-    level: 40
-    learn: blueprint
-    faction: NEUTRAL
-    display-name: Bokic-menti Horgászbot
-    lore:
-    - '&7A Bokic halászai szerint a folyó annak ad'
-    - '&7kétszer, aki ismeri a vize énekét.'
-    category: Menedék (tervrajz)
-    result:
-      material: FISHING_ROD
-      amount: 1
-      affix-tier: crafted
-      signature: bokic_horgaszbot
-      item-model: icesmp:bokic_horgaszbot
-    ingredients:
-    - FISHING_ROD:1
-    - STRING:16
-    - PRISMARINE_CRYSTALS:8
-    - unique:vad_esszencia:1
   smaragdko_bankbetet:
     profession: enchanter
     kind: egyedi
@@ -2172,10 +2099,9 @@ profession-recipes:
     - '&7jobb-kattal beváltható Creutzérre.'
     category: Menedék (tervrajz)
     result:
-      material: PAPER
+      material: EMERALD
       amount: 1
-      signature: smaragdko_bankbetet
-      item-model: icesmp:smaragdko_bankbetet
+      template: smaragdko_bankbetet
     ingredients:
     - PAPER:1
     - EMERALD_BLOCK:1
@@ -2195,8 +2121,7 @@ profession-recipes:
     result:
       material: RABBIT_FOOT
       amount: 1
-      signature: szellemszarvas_bubaj
-      item-model: icesmp:szellemszarvas_bubaj
+      template: szellemszarvas_bubaj
     ingredients:
     - RABBIT_FOOT:1
     - GOLDEN_CARROT:8
@@ -2295,11 +2220,9 @@ profession-recipes:
     - '&8„A tél nem kegyelmez — emlékezik.”'
     category: Fagyott Királyság (tervrajz)
     result:
-      material: NETHERITE_SWORD
+      material: NETHERITE_AXE
       amount: 1
-      affix-tier: crafted
-      signature: miinus_haragja
-      item-model: icesmp:miinus_haragja
+      template: miinus_haragja
     ingredients:
     - DIAMOND_SWORD:1
     - NETHERITE_INGOT:3
@@ -2307,28 +2230,6 @@ profession-recipes:
     - unique:osi_ereklyeszilank:1
     - unique:elso_csend_szilankja:1
     - unique:folyositoszer:2
-  sarkanycsont_ij:
-    profession: armorer
-    kind: egyedi
-    level: 44
-    learn: blueprint
-    faction: BLUE
-    display-name: Sárkánycsont Íj
-    lore:
-    - '&7Kallan elhullott sárkányainak csontjából'
-    - '&7hajlított íj — nyila átüti a sorfalat.'
-    category: Fagyott Királyság (tervrajz)
-    result:
-      material: BOW
-      amount: 1
-      affix-tier: crafted
-      signature: sarkanycsont_ij
-      item-model: icesmp:sarkanycsont_ij
-    ingredients:
-    - BOW:1
-    - unique:sarkanycsont_szilank:2
-    - STRING:6
-    - unique:vad_esszencia:2
   zhoris_langnyelve:
     profession: armorer
     kind: egyedi
@@ -2343,11 +2244,9 @@ profession-recipes:
     - '&7parázslanak, mint az emléke.'
     category: Vérszavanna (tervrajz)
     result:
-      material: NETHERITE_SWORD
+      material: BLAZE_ROD
       amount: 1
-      affix-tier: crafted
-      signature: zhoris_langnyelve
-      item-model: icesmp:zhoris_langnyelve
+      template: zhoris_langnyelve
     ingredients:
     - DIAMOND_SWORD:1
     - NETHERITE_INGOT:3
@@ -2370,9 +2269,7 @@ profession-recipes:
     result:
       material: BOW
       amount: 1
-      affix-tier: crafted
-      signature: napfogyatkozas
-      item-model: icesmp:napfogyatkozas
+      template: napfogyatkozas_fokusz
     ingredients:
     - BOW:1
     - unique:fonixpihe:3

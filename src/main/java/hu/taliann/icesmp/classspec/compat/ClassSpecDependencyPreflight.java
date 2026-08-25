@@ -17,11 +17,11 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Compatibility gate for the mandatory Profile v2 runtime and its optional external integrations.
+ * Compatibility gate for the current executable external dependency contract.
  *
  * <p>The checked-in lock is the version/provisioning authority, but only entries explicitly marked
- * {@code required-runtime} may block IceSMP startup. Optional integrations are inspected when they
- * are installed and degrade to their existing fallback/no-op paths when absent. Dev-only and
+ * {@code required-runtime} block IceSMP startup. Optional integrations are inspected when they
+ * are installed and degrade only to their proven no-op paths when absent. Dev-only and
  * validation-only entries never participate in server runtime enforcement.</p>
  */
 public final class ClassSpecDependencyPreflight {
@@ -78,7 +78,7 @@ public final class ClassSpecDependencyPreflight {
             if (dependency == null) {
                 results.add(new Result(requirement, requirement.acceptsMissingDependency(), null,
                         requirement.blocksStartup() ? "required-runtime plugin nincs telepítve"
-                                : "opcionális integráció nincs telepítve; fallback/no-op aktív"));
+                                : "opcionális integráció nincs telepítve; igazolt no-op aktív"));
                 continue;
             }
             final String runtimeVersion = dependency.getPluginMeta().getVersion();

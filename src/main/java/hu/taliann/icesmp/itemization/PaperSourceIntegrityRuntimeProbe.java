@@ -23,7 +23,16 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Skeleton;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -48,7 +57,13 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class PaperSourceIntegrityRuntimeProbe {
     public static final String PROPERTY = "icesmp.source-integrity-runtime";
     public static final String AUTHORED_PVE_PROPERTY = "icesmp.authored-pve-runtime";
+    public static final String INTEGRITY_HARDENING_PROPERTY =
+            "icesmp.gameplay-bootstrap-integrity-runtime";
     public static final String PASS_MARKER = "ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS";
+    public static final String HARDENING_PASS_MARKER =
+            "ICESMP_GAMEPLAY_BOOTSTRAP_INTEGRITY_RUNTIME_PROBE_PASS";
+    public static final String FACADE_TEARDOWN_MARKER =
+            "ICESMP_STATIC_FACADE_TEARDOWN_RUNTIME_PROBE_PASS";
 
     private PaperSourceIntegrityRuntimeProbe() { }
 
@@ -75,7 +90,18 @@ public final class PaperSourceIntegrityRuntimeProbe {
 
     public static void maybeRun(final JavaPlugin plugin, final Object assembledCore) {
         final boolean authoredPve = Boolean.getBoolean(AUTHORED_PVE_PROPERTY);
-        if (!Boolean.getBoolean(PROPERTY) && !authoredPve) return;
+        final boolean integrityHardening = Boolean.getBoolean(INTEGRITY_HARDENING_PROPERTY);
+        if (!Boolean.getBoolean(PROPERTY) && !authoredPve && !integrityHardening) return;
+        if (integrityHardening) {
+            final ItemIdentityService identity = readField(assembledCore,
+                    "itemIdentityService", ItemIdentityService.class);
+            final ItemTemplateRegistry templates = readField(assembledCore,
+                    "itemTemplateRegistry", ItemTemplateRegistry.class);
+            final hu.taliann.icesmp.managers.SpellRegistry spells = readField(assembledCore,
+                    "spellRegistry", hu.taliann.icesmp.managers.SpellRegistry.class);
+            startIntegrityHardeningRuntimeProof(plugin, identity, templates, spells);
+            return;
+        }
         final CreatureSpeciesRegistry creatureSpecies = readField(assembledCore,
                 "creatureSpeciesRegistry", CreatureSpeciesRegistry.class);
         final MobAbilityRegistry mobAbilities = readField(assembledCore,
@@ -125,6 +151,234 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 Bukkit.shutdown();
             }
         }, 1L);
+    }
+
+    /** Real Paper/Folia registry, identity, migration and projectile-hit proof for this PR. */
+    private static void startIntegrityHardeningRuntimeProof(
+            final JavaPlugin plugin, final ItemIdentityService identity,
+            final ItemTemplateRegistry templates,
+            final hu.taliann.icesmp.managers.SpellRegistry spells) {
+        final org.bukkit.World world = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst();
+        check(world != null, "integrity-hardening runtime world unavailable");
+        final Location at = world.getSpawnLocation().clone().add(0.5D, 2.0D, 0.5D);
+        final DamageRecorder recorder = new DamageRecorder();
+        plugin.getServer().getPluginManager().registerEvents(recorder, plugin);
+        plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
+            final java.util.ArrayList<org.bukkit.entity.Entity> spawned = new java.util.ArrayList<>();
+            try {
+                verifyBootstrapRegistries();
+                verifySignatureIdentityAndMigration(plugin, identity, templates);
+                verifyProjectileDamageRuntime(world, at, spells, recorder, spawned);
+                plugin.getLogger().info(HARDENING_PASS_MARKER + " platform="
+                        + Bukkit.getServer().getName() + " minecraft=" + Bukkit.getMinecraftVersion());
+            } catch (final Throwable failure) {
+                plugin.getLogger().severe("ICESMP_GAMEPLAY_BOOTSTRAP_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
+                failure.printStackTrace();
+            } finally {
+                HandlerList.unregisterAll(recorder);
+                spawned.forEach(entity -> {
+                    if (entity.isValid()) entity.remove();
+                });
+                Bukkit.shutdown();
+            }
+        }, 1L);
+    }
+
+    private static void verifyBootstrapRegistries() {
+        final var damageTypes = io.papermc.paper.registry.RegistryAccess.registryAccess()
+                .getRegistry(io.papermc.paper.registry.RegistryKey.DAMAGE_TYPE);
+        for (final hu.taliann.icesmp.data.SpellSchool school
+                : hu.taliann.icesmp.data.SpellSchool.values()) {
+            check(damageTypes.get(new NamespacedKey("icesmp", school.getTypeId())) != null,
+                    "missing custom DamageType: " + school.getTypeId());
+        }
+        check(damageTypes.get(new NamespacedKey("icesmp", "rontas")) != null,
+                "missing environmental custom DamageType: rontas");
+        final var enchants = io.papermc.paper.registry.RegistryAccess.registryAccess()
+                .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT);
+        final java.util.LinkedHashSet<String> keys = new java.util.LinkedHashSet<>();
+        hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE.values()
+                .forEach(key -> keys.add(key.value()));
+        keys.addAll(List.of("runavert", "ej_fatyol", "arnyuzo", "meregfojto",
+                "viharfogo", "kaosz_zabla"));
+        for (final String key : keys) {
+            check(enchants.get(new NamespacedKey("icesmp", key)) != null,
+                    "missing custom enchant: " + key);
+        }
+    }
+
+    private static void verifySignatureIdentityAndMigration(
+            final JavaPlugin plugin, final ItemIdentityService identity,
+            final ItemTemplateRegistry templates) {
+        int signatures = 0;
+        for (final ItemTemplate template : templates.snapshot().values()) {
+            if (template.signatureEffectId().isBlank()) continue;
+            signatures++;
+            final ItemStack canonical = identity.create(template.templateId(),
+                    "runtime:integrity-signature", "paper-folia", null);
+            check(canonical.getType().name().equals(template.material())
+                            && identity.inspect(canonical).status() == ItemIdentityService.Status.VALID,
+                    "canonical signature render mismatch: " + template.templateId());
+            final net.kyori.adventure.key.Key enchantKey =
+                    hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE
+                            .get(template.signatureEffectId());
+            if (enchantKey != null) {
+                final org.bukkit.enchantments.Enchantment enchant =
+                        io.papermc.paper.registry.RegistryAccess.registryAccess()
+                                .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                                .get(NamespacedKey.fromString(enchantKey.asString()));
+                check(enchant != null && canonical.getEnchantmentLevel(enchant) == 1,
+                        "canonical signature enchant projection missing: " + template.templateId());
+            }
+
+            final ItemStack legacy = new ItemStack(Material.valueOf(template.material()));
+            final var legacyMeta = legacy.getItemMeta();
+            final String legacySignature = "napfogyatkozas_fokusz".equals(template.templateId())
+                    ? "napfogyatkozas" : template.signatureEffectId();
+            legacyMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, "signature_item"),
+                    org.bukkit.persistence.PersistentDataType.STRING, legacySignature);
+            legacy.setItemMeta(legacyMeta);
+            final ItemIdentityService.Inspection migrated =
+                    identity.migrateLegacySignature(legacy, null, 1_000L);
+            check(migrated.status() == ItemIdentityService.Status.VALID
+                            && template.templateId().equals(migrated.instance().templateId()),
+                    "legacy signature did not converge on canonical template: " + template.templateId());
+            final java.util.UUID migratedId = migrated.instance().itemId();
+            check(identity.migrateLegacySignature(legacy, null, 2_000L).instance().itemId()
+                            .equals(migratedId),
+                    "legacy signature migration was not idempotent: " + template.templateId());
+        }
+        check(signatures == 15, "signature template inventory drift: " + signatures);
+    }
+
+    private static void verifyProjectileDamageRuntime(
+            final org.bukkit.World world, final Location at,
+            final hu.taliann.icesmp.managers.SpellRegistry spells,
+            final DamageRecorder recorder,
+            final List<org.bukkit.entity.Entity> spawned) {
+        final Map<String, hu.taliann.icesmp.data.SpellSchool> expectedSchools = Map.of(
+                "piercing_bolt", hu.taliann.icesmp.data.SpellSchool.TERMESZET,
+                "arrow_storm", hu.taliann.icesmp.data.SpellSchool.TERMESZET,
+                "dagger_throw", hu.taliann.icesmp.data.SpellSchool.ARNYEK,
+                "fireball", hu.taliann.icesmp.data.SpellSchool.TUZ,
+                "gale_burst", hu.taliann.icesmp.data.SpellSchool.VIHAR,
+                "bone_spear", hu.taliann.icesmp.data.SpellSchool.ARNYEK,
+                "double_tap", hu.taliann.icesmp.data.SpellSchool.TERMESZET,
+                "spectral_volley", hu.taliann.icesmp.data.SpellSchool.TERMESZET);
+        final Map<String, Double> baseDamage = Map.of(
+                "piercing_bolt", 7.0D, "arrow_storm", 4.0D,
+                "dagger_throw", 6.0D, "fireball", 5.0D,
+                "gale_burst", 1.0D, "bone_spear", 6.0D,
+                "double_tap", 6.0D, "spectral_volley", 5.0D);
+        final Map<String, Class<? extends Projectile>> kinds = Map.of(
+                "piercing_bolt", org.bukkit.entity.Arrow.class,
+                "arrow_storm", org.bukkit.entity.Arrow.class,
+                "dagger_throw", org.bukkit.entity.Snowball.class,
+                "fireball", org.bukkit.entity.SmallFireball.class,
+                "gale_burst", org.bukkit.entity.WindCharge.class,
+                "bone_spear", org.bukkit.entity.Snowball.class,
+                "double_tap", org.bukkit.entity.Arrow.class,
+                "spectral_volley", org.bukkit.entity.SpectralArrow.class);
+        final Skeleton shooter = world.spawn(at.clone(), Skeleton.class, entity -> entity.setAI(false));
+        spawned.add(shooter);
+        final hu.taliann.icesmp.listeners.SpellProjectileListener hitAuthority =
+                new hu.taliann.icesmp.listeners.SpellProjectileListener();
+
+        final LivingEntity directTarget = world.spawn(at.clone().add(3.0D, 0.0D, 0.0D),
+                org.bukkit.entity.Zombie.class, entity -> entity.setAI(false));
+        spawned.add(directTarget);
+        check(spells.getById("living_flame") != null, "direct spell control is not registered");
+        recorder.arm(directTarget);
+        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(null, directTarget, 3.0D,
+                "living_flame", hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
+        check(recorder.events == 1 && "icesmp:tuz_magia".equals(recorder.damageType)
+                        && recorder.direct == null && recorder.causing == null,
+                "direct spell control bypassed its canonical custom DamageType");
+
+        for (final String spellId : expectedSchools.keySet().stream().sorted().toList()) {
+            check(spells.getById(spellId) instanceof hu.taliann.icesmp.spells.ProjectileBurstSpell,
+                    "projectile spell is not registered/reachable: " + spellId);
+            final LivingEntity target = world.spawn(at.clone().add(2.0D, 0.0D, 0.0D),
+                    org.bukkit.entity.Zombie.class, entity -> entity.setAI(false));
+            final Projectile projectile = world.spawn(at.clone().add(1.0D, 1.0D, 0.0D),
+                    kinds.get(spellId));
+            projectile.setShooter(shooter);
+            spawned.add(target);
+            spawned.add(projectile);
+            hu.taliann.icesmp.utils.SpellDamageUtil.markProjectile(projectile, spellId,
+                    baseDamage.get(spellId), hu.taliann.icesmp.spells.CastModifiers.standardPower(1.25D));
+            final var snapshot = hu.taliann.icesmp.utils.SpellDamageUtil
+                    .projectileSnapshot(projectile).orElseThrow();
+            check(snapshot.school() == expectedSchools.get(spellId)
+                            && close(snapshot.scaledDamage(), baseDamage.get(spellId) * 1.25D),
+                    "projectile snapshot school/multiplier mismatch: " + spellId);
+            recorder.arm(target);
+            final ProjectileHitEvent hit = new ProjectileHitEvent(projectile, target);
+            hitAuthority.onProjectileHit(hit);
+            check(hit.isCancelled(), "spell projectile did not suppress vanilla damage: " + spellId);
+            check(recorder.events == 1
+                            && recorder.direct == projectile
+                            && recorder.causing == shooter
+                            && ("icesmp:" + expectedSchools.get(spellId).getTypeId())
+                            .equals(recorder.damageType),
+                    "canonical projectile DamageSource/event attribution mismatch: " + spellId);
+        }
+
+        for (final Class<? extends Projectile> kind
+                : List.of(org.bukkit.entity.Arrow.class, org.bukkit.entity.SmallFireball.class)) {
+            final Projectile vanilla = world.spawn(at.clone(), kind);
+            final LivingEntity target = world.spawn(at.clone().add(2.0D, 0.0D, 0.0D),
+                    org.bukkit.entity.Zombie.class, entity -> entity.setAI(false));
+            spawned.add(vanilla); spawned.add(target);
+            recorder.arm(target);
+            final ProjectileHitEvent hit = new ProjectileHitEvent(vanilla, target);
+            hitAuthority.onProjectileHit(hit);
+            check(!hit.isCancelled() && recorder.events == 0,
+                    "ordinary vanilla projectile was intercepted: " + kind.getSimpleName());
+        }
+    }
+
+    private static final class DamageRecorder implements Listener {
+        private java.util.UUID target;
+        private int events;
+        private org.bukkit.entity.Entity direct;
+        private org.bukkit.entity.Entity causing;
+        private String damageType;
+
+        private void arm(final LivingEntity targetEntity) {
+            target = targetEntity.getUniqueId();
+            events = 0;
+            direct = null;
+            causing = null;
+            damageType = "";
+        }
+
+        @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+        public void onDamage(final EntityDamageEvent event) {
+            if (target == null || !target.equals(event.getEntity().getUniqueId())) return;
+            events++;
+            direct = event.getDamageSource().getDirectEntity();
+            causing = event.getDamageSource().getCausingEntity();
+            damageType = event.getDamageSource().getDamageType().getKey().toString();
+        }
+    }
+
+    /** Called after IceSMPCore.disable to prove that the discarded graph is unreachable. */
+    public static void verifyFacadesClearedAfterDisable(final JavaPlugin plugin) {
+        if (!Boolean.getBoolean(INTEGRITY_HARDENING_PROPERTY)) return;
+        try {
+            check(hu.taliann.icesmp.managers.ConfigManager.current() == null,
+                    "ConfigManager facade retained disabled graph");
+            check(ItemTemplateRegistry.current() == null,
+                    "ItemTemplateRegistry facade retained disabled graph");
+            final Field field = hu.taliann.icesmp.managers.AdvancementService.class
+                    .getDeclaredField("instance");
+            field.setAccessible(true);
+            check(field.get(null) == null, "AdvancementService facade retained disabled graph");
+            plugin.getLogger().info(FACADE_TEARDOWN_MARKER);
+        } catch (final Throwable failure) {
+            plugin.getLogger().severe("ICESMP_STATIC_FACADE_TEARDOWN_RUNTIME_PROBE_FAIL: " + failure);
+        }
     }
 
     /** Representative real-Paper dispatch proof for the permission-filtered admin surface. */

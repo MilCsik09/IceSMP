@@ -658,6 +658,18 @@ tételek nem élő funkcióvesztések, hanem későbbi tervek tudatos határai.
 | LuckPerms | Permission backendként, illetve chat metadata miatt |
 | LibsDisguises | A kiterjesztett druida-vizuálokhoz és a `/kem` disguise útvonalához |
 
+### Külső dependency policy
+
+- **FancyNpcs:** kötelező production gameplay dependency; a canonical onboarding/quest NPC út.
+- **MythicMobs:** `NOT_PLANNED`; az IceSMP authored PvE stack marad canonical.
+- **PacketEvents:** `FUTURE_CANDIDATE / NOT_CURRENTLY_REQUIRED`; csak konkrét packet consumerrel térhet vissza.
+- **FancyDialogs:** `FUTURE_CANDIDATE / NOT_CURRENTLY_REQUIRED`; csak konkrét dialog consumerrel térhet vissza.
+
+A signature equipment identity most acquisition-úttól független: a canonical template rendereli
+a PDC-t, perk-ID-t és a kötelező bootstrap enchantot. Kallan és Napfogyatkozás canonical formája
+íj, a történelmi signature itemek idempotensen migrálódnak, a duplikált profession recept-ID-k
+pedig aliasból ugyanarra a canonical receptra oldódnak.
+
 ## Mi vár még stagingtesztre?
 
 1. **Moderáció:** restart és expiry, korrupt state, lemezhiba, PM

@@ -132,6 +132,7 @@ public final class EquipmentProficiencyListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(final PlayerJoinEvent event) {
+        identities.reconcileOwnedInventory(event.getPlayer(), System.currentTimeMillis());
         proficiency.reconcile(event.getPlayer());
         scheduleReconcile(event.getPlayer(), 20L);
         scheduleReconcile(event.getPlayer(), 100L);
