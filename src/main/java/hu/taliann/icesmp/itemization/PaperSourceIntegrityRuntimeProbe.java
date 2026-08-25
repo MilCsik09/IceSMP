@@ -220,7 +220,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
             check(canonical.getType().name().equals(template.material())
                             && canonicalInspection.status() == ItemIdentityService.Status.VALID,
                     "canonical signature render mismatch: " + template.templateId() + " status="
-                            + canonicalInspection.status() + " detail=" + canonicalInspection.detail());
+                            + canonicalInspection.status() + " detail=" + canonicalInspection.diagnostic());
             final net.kyori.adventure.key.Key enchantKey =
                     hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE
                             .get(template.signatureEffectId());
