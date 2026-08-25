@@ -79,6 +79,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime build dependencies
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
       - uses: gradle/actions/setup-gradle@v4
       - name: Start without the required dependency
         shell: bash
@@ -109,6 +114,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime build dependencies
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
       - uses: gradle/actions/setup-gradle@v4
       - name: Build incompatible dependency fixture
         shell: bash
@@ -121,7 +131,7 @@ jobs:
             'package test;' \
             'public final class IncompatibleFancyNpcs extends org.bukkit.plugin.java.JavaPlugin {}' \
             > "$fixture/src/test/IncompatibleFancyNpcs.java"
-          paper_api=$(find "$HOME/.gradle/caches/modules-2/files-2.1" -path '*paper-api*' -name '*.jar' | head -1)
+          paper_api=$(find "$HOME/.gradle/caches/modules-2/files-2.1" -path '*paper-api*' -name '*.jar' -print -quit)
           test -n "$paper_api"
           javac -cp "$paper_api" -d "$fixture/classes" "$fixture/src/test/IncompatibleFancyNpcs.java"
           printf '%s\n' \
@@ -159,6 +169,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime build dependencies
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
       - uses: gradle/actions/setup-gradle@v4
       - name: Run compatible FancyNpcs production profile
         env:
@@ -193,6 +208,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime build dependencies
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
       - uses: gradle/actions/setup-gradle@v4
       - name: Run lock-pinned Folia profile
         env:
