@@ -186,6 +186,18 @@ val gameplayBootstrapIntegrityAudit by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_gameplay_bootstrap_integrity.py", "--check")
 }
 
+val questItemContentIntegrityAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Exhaustively validates quest, reward, item-lore and boss-reward finding closure."
+    inputs.files(
+        "scripts/audit_quest_item_content_integrity.py",
+        "docs/development/quest-item-content-integrity-hardening.json",
+    )
+    inputs.dir("src/main/resources/content")
+    inputs.dir("src/main/java")
+    commandLine(pythonCommand, "scripts/audit_quest_item_content_integrity.py", "--check")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -1000,6 +1012,10 @@ val gameplayBootstrapIntegrityRegressionTest = registerRegression(
     "gameplayBootstrapIntegrityRegressionTest",
     "Runs behavioral acquisition, projectile, dependency, advancement and facade closure regressions.",
     "hu.taliann.icesmp.hardening.GameplayBootstrapIntegrityRegressionSuite")
+val questItemContentIntegrityRegressionTest = registerRegression(
+    "questItemContentIntegrityRegressionTest",
+    "Runs guest reward, quest preview, capstone, profession, daily, item and boss identity regressions.",
+    "hu.taliann.icesmp.quest.QuestItemContentIntegrityRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -1013,6 +1029,7 @@ tasks.check {
     dependsOn(enemyWorldBossReworkAudit)
     dependsOn(configContentCommandSurfaceAudit)
     dependsOn(gameplayBootstrapIntegrityAudit)
+    dependsOn(questItemContentIntegrityAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
@@ -1062,6 +1079,6 @@ tasks.check {
         itemizationDomainRegressionTest, vanillaCraftingBoundaryRegressionTest,
         equipmentDomainRegressionTest, playerProfileLootDiversityRegressionTest,
         mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest,
-        gameplayBootstrapIntegrityRegressionTest
+        gameplayBootstrapIntegrityRegressionTest, questItemContentIntegrityRegressionTest
     )
 }

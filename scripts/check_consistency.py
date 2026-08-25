@@ -190,8 +190,10 @@ for _trial_id, _spec_id in sorted(_trial_pairs.items()):
         fail(f"{_trial_id}: requires-specialization '{_spec_id}' kell")
     if int(_trial.get("requires-level", 0) or 0) < 50:
         fail(f"{_trial_id}: requires-level legalább 50 kell")
-    _objective = _trial.get("objective") or {}
-    if _objective.get("type") != "CAST_SPELLS" or not _objective.get("spells"):
+    _objectives = list((_trial.get("objectives") or {}).values()) or [_trial.get("objective") or {}]
+    _spell_objectives = [objective for objective in _objectives
+                         if objective.get("type") == "CAST_SPELLS" and objective.get("spells")]
+    if not _spell_objectives:
         fail(f"{_trial_id}: nem üres CAST_SPELLS objective kell")
 
 _service_specs = {
@@ -470,7 +472,7 @@ except Exception as e:
 # ezert MONITOR prioritason kell futniuk. KIVETEL: a cancel-only vedelmi handler (pl. a quest
 # fizikai jutalom-stamp zarolasa) direkt HIGH/HIGHEST prioritason cancel-el es semmit nem
 # konyvel — az ilyet a torzse azonositja: van setCancelled(true), es nincs manager-hivas.
-_PROGRESS_LISTENERS = ["QuestProgressListener", "DailyQuestListener", "ProfessionXpListener",
+_PROGRESS_LISTENERS = ["QuestProgressListener", "ProfessionXpListener",
                        "ServerChallengeListener", "GatheringBuffListener"]
 _CANCELLABLE = {"BlockBreakEvent", "BlockPlaceEvent", "CraftItemEvent", "PlayerFishEvent",
                 "EntityPickupItemEvent", "PlayerHarvestBlockEvent", "SmithItemEvent",

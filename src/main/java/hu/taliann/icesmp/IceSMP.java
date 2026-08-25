@@ -38,6 +38,7 @@ public final class IceSMP extends JavaPlugin {
         resourcePackListener.resendCurrent();
         hu.taliann.icesmp.professions.ProfessionsPaperRuntimeProbe.maybeRun(this, core);
         hu.taliann.icesmp.itemization.PaperSourceIntegrityRuntimeProbe.maybeRun(this, core);
+        hu.taliann.icesmp.quest.QuestItemContentIntegrityPaperRuntimeProbe.maybeRun(this, core);
     }
 
     @Override

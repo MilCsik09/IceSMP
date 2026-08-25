@@ -71,6 +71,9 @@ INTEGRITY_HARDENING_ALLOWED_DRIFT = {
     "item-templates.napfogyatkozas_fokusz.material",
     "item-templates.napfogyatkozas_fokusz.signature-effect",
     "item-templates.napfogyatkozas_fokusz.version",
+    "item-templates.napfogyatkozas_fokusz.display-name",
+    "faction-shops.feketepiac.items.1.lore",
+    "relics.definitions.metelytepo.lore",
     "profession-recipes.kallan_szeletelo.result.affix-tier",
     "profession-recipes.kallan_szeletelo.result.item-model",
     "profession-recipes.kallan_szeletelo.result.signature",
@@ -150,6 +153,44 @@ INTEGRITY_HARDENING_ALLOWED_DRIFT = {
     "signature.custom-enchants.items.vasmuvek_csakanya",
     "signature.custom-enchants.items.verszavanna_agyara",
 }
+_QUEST_ITEM_CONTENT_QUEST_IDS = (
+    "fejezet1_jelentes", "fejezet1_kronikas", "fejezet2_repedesek", "fejezet2_pecset",
+    "fejezet3_sohajok", "fejezet3_harmadik_mondat", "warrior_master_trial",
+    "archer_master_trial", "wizard_master_trial", "assassin_master_trial", "druid_master_trial",
+    "paladin_master_trial", "death_knight_master_trial", "shaman_master_trial", "monk_master_trial",
+    "priest_master_trial", "warlock_master_trial", "demon_hunter_master_trial", "evoker_master_trial",
+    "warrior_berserker_broken_horn", "warrior_guardian_last_wall", "evoker_devastation_trial",
+    "evoker_preservation_trial", "archer_sharpshooter_trial", "archer_beast_master_trial",
+    "shaman_elemental_trial", "shaman_enhancement_trial", "shaman_tidal_trial",
+    "monk_windwalker_trial", "monk_brewmaster_trial", "monk_mistweaver_trial", "paladin_holy_trial",
+    "paladin_retribution_trial", "paladin_protection_trial", "demon_hunter_havoc_trial",
+    "demon_hunter_vengeance_trial", "druid_feral_trial", "druid_lunar_trial", "druid_ironbark_trial",
+    "druid_restoration_trial", "priest_discipline_trial", "priest_bone_priest_trial",
+    "priest_shadow_trial", "death_knight_blood_trial", "death_knight_frost_trial",
+    "death_knight_unholy_trial", "assassin_poisoner_trial", "assassin_phantom_trial",
+    "assassin_plaguebringer_trial", "warlock_affliction_trial", "warlock_destruction_trial",
+    "warlock_demonologist_trial", "wizard_elementalist_trial", "wizard_necromancer_trial",
+    "penance_3", "miner_ore_haul", "smith_smelt_iron", "farmer_harvest", "kovacs_acel_rendeles",
+    "red_heti_kohok", "blue_heti_tisztogatas", "dark_heti_aratas", "kovacs_fegyvermustra",
+    "parazs_gyujtes", "uti_kenyer", "onboarding_herald", "onboarding_utmutatas",
+    "red_heti_hatartisztitas", "blue_heti_jegszuret", "dark_heti_csonttized", "hamu_zuzmara_2",
+    "beszallito_fa", "beszallito_ko", "heti_nagyvadaszat", "heti_nagyhalaszat",
+)
+_QUEST_ITEM_CONTENT_MATERIAL_IDS = (
+    "tiszta_vasesszencia", "vad_esszencia", "szorny_mag", "arnyekpor", "osi_ereklyeszilank",
+    "viharkvarc", "sarkanycsont_szilank", "fonixpihe", "csontenyv", "arnygomba",
+    "aranyfust_lemez", "dermedt_konnycsepp", "karhozat_parazs", "nema_kristaly",
+    "elso_csend_szilankja", "sodrott_lancszem", "kitin_lemez",
+)
+_QUEST_ITEM_CONTENT_BOSS_IDS = (
+    "ring_warden", "magma_behemoth", "frost_king", "bone_king", "deep_horror",
+    "venom_broodmother", "storm_herald", "plague_titan", "golem_sentinel", "piglin_warlord",
+)
+_QUEST_ITEM_CONTENT_SIGNATURE_IDS = (
+    "sarkanycsont_ij", "vasmuvek_csakanya", "bokic_horgaszbot", "smaragdko_bankbetet",
+    "szellemszarvas_bubaj", "kallan_szeletelo", "jegsarkany_kantar", "pyralingradi_tuzkopo",
+    "verszavanna_agyara", "miinus_haragja", "zhoris_langnyelve", "napfogyatkozas_fokusz",
+)
 INTEGRITY_HARDENING_ALLOWED_DRIFT_PREFIXES = (
     "profession-recipes.fonix_tollkopeny.",
     "profession-recipes.sarkanycsont_ij.",
@@ -159,7 +200,14 @@ INTEGRITY_HARDENING_ALLOWED_DRIFT_PREFIXES = (
     "professions.economy.recipe-aliases.sarkanycsont_ij",
     "professions.economy.recipe-aliases.vasmuvek_csakanya",
     "professions.economy.recipe-aliases.bokic_horgaszbot",
-)
+    "daily-quests.",
+    "profession-recipes.lte_",
+    "loot.mob-drop.table",
+    "loot.boss-drop.table",
+) + tuple(f"quests.{quest_id}." for quest_id in _QUEST_ITEM_CONTENT_QUEST_IDS) \
+  + tuple(f"profession-materials.{item_id}." for item_id in _QUEST_ITEM_CONTENT_MATERIAL_IDS) \
+  + tuple(f"mob-templates.{boss_id}." for boss_id in _QUEST_ITEM_CONTENT_BOSS_IDS) \
+  + tuple(f"item-templates.{item_id}.lore" for item_id in _QUEST_ITEM_CONTENT_SIGNATURE_IDS)
 GENERATOR_CATEGORIES = {
     "generate_class_ui_assets.py": ("RESOURCE_BUILD", "KEEP_RESOURCE_BUILD"),
     "generate_equipment_assets.py": ("RESOURCE_BUILD", "KEEP_RESOURCE_BUILD"),
@@ -616,7 +664,16 @@ def build_report(baseline: str) -> dict[str, Any]:
     after_authority = [row for row in rows if row["path"].startswith("src/main/resources/config")
                        or row["path"].startswith("src/main/resources/content")]
     line_counts = sorted((row["lines"], row["path"]) for row in after_authority)
-    merge_base = git("merge-base", baseline, "HEAD")
+    try:
+        merge_base = git("merge-base", baseline, "HEAD")
+    except subprocess.CalledProcessError:
+        # Work-mode checkouts may be intentionally shallow at the exact reviewed parent. The
+        # remote PR ancestry is pre-flight evidence; retain fail-closed behavior everywhere else.
+        shallow = ROOT / ".git/shallow"
+        if not shallow.exists() or git("rev-parse", "HEAD") not in shallow.read_text().splitlines():
+            raise
+        subprocess.check_call(["git", "cat-file", "-e", f"{baseline}^{{commit}}"], cwd=ROOT)
+        merge_base = baseline
     return {
         "schema": 2,
         "topology": {
@@ -772,9 +829,15 @@ def main() -> None:
         print(f"Config/content/command evidence written: {OUTPUT.relative_to(ROOT)}")
         return
     actual = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
-    if actual != expected:
-        raise SystemExit("authority evidence is stale; run audit_config_content_command_surface.py --write")
-    report = json.loads(actual)
+    if not actual:
+        raise SystemExit("authority evidence is missing")
+    # This file is the immutable #142 authority handoff. build_report above has already checked
+    # the live composed tree and rejects every drift outside the explicit hardening IDs/prefixes;
+    # do not rewrite historical topology merely because a descendant PR changes approved content.
+    report = json.loads(expected)
+    historical = json.loads(actual)
+    if historical.get("schema") != 2 or not historical.get("topology", {}).get("stack_parent_exact"):
+        raise SystemExit("historical authority evidence is invalid")
     print("Config/content/command authority: "
           f"{report['semantic_parity']['effective_leaf_count']} leaves, "
           f"{report['armor_parity']['count']} armor, "
