@@ -168,7 +168,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
             try {
                 verifyBootstrapRegistries();
                 verifySignatureIdentityAndMigration(plugin, identity, templates);
-                verifyProjectileDamageRuntime(world, at, spells, recorder, spawned);
+                verifyProjectileDamageRuntime(plugin, world, at, spells, recorder, spawned);
                 plugin.getLogger().info(HARDENING_PASS_MARKER + " platform="
                         + Bukkit.getServer().getName() + " minecraft=" + Bukkit.getMinecraftVersion());
             } catch (final Throwable failure) {
@@ -252,7 +252,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
     }
 
     private static void verifyProjectileDamageRuntime(
-            final org.bukkit.World world, final Location at,
+            final JavaPlugin plugin, final org.bukkit.World world, final Location at,
             final hu.taliann.icesmp.managers.SpellRegistry spells,
             final DamageRecorder recorder,
             final List<org.bukkit.entity.Entity> spawned) {
@@ -282,7 +282,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final Skeleton shooter = world.spawn(at.clone(), Skeleton.class, entity -> entity.setAI(false));
         spawned.add(shooter);
         final hu.taliann.icesmp.listeners.SpellProjectileListener hitAuthority =
-                new hu.taliann.icesmp.listeners.SpellProjectileListener();
+                new hu.taliann.icesmp.listeners.SpellProjectileListener(plugin);
 
         final LivingEntity directTarget = world.spawn(at.clone().add(3.0D, 0.0D, 0.0D),
                 org.bukkit.entity.Zombie.class, entity -> entity.setAI(false));
