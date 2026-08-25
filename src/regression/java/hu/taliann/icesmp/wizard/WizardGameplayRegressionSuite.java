@@ -282,8 +282,12 @@ public final class WizardGameplayRegressionSuite {
                 "the 70+ attunement bar is admin-tunable live config");
         check(gameplayConfig.contains("lidercz-spells: []"),
                 "Wraith Form remains a form spell and cannot also create a durable courtier");
-        check(gameplayConfig.contains("classes: []"),
-                "every class casts through its personal Lélekkapocs");
+        final String spellContent = Files.readString(Path.of(
+                "src/main/resources/content/progression/spells.yml"));
+        check(gameplayConfig.contains("melee-catalyst: {}")
+                        && spellContent.contains(
+                        "classes: [warrior, paladin, death_knight, monk, demon_hunter]"),
+                "the locked melee-catalyst roster must retain exact parent semantics without an operator duplicate");
     }
 
     private static void check(final boolean condition, final String message) {
