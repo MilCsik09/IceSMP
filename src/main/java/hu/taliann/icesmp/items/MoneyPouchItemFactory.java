@@ -19,8 +19,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * Kopott erszény — fizikai "talált pénz" tárgy (WoW-stílusú mob-drop / horgász-lelet).
  * A pénz NEM közvetlenül íródik jóvá: az erszény tárgyként esik (mob-loot, horgászat,
  * admin-adás), és jobb-kattra váltható be a benne lévő darabszámú FIZIKAI veretre (token-item) — a SZÁMLÁRA pénz
- * KIZÁRÓLAG a banki befizetésen át kerülhet! A valuta sorsoláskor dől el (bármelyik
- * frakció-veret lehet — a Kapu mindenhonnan sodor pénzt), így árfolyam-játékot is kínál.
+ * KIZÁRÓLAG a banki befizetésen át kerülhet! A valuta és az összeg az erszény létrehozásakor
+ * eldől és PDC-ben stabilan megmarad, de bontásig szándékosan rejtve marad a játékos előtt.
  */
 public final class MoneyPouchItemFactory {
 
@@ -50,9 +50,9 @@ public final class MoneyPouchItemFactory {
         meta.displayName(Component.text("💰 Kopott erszény", NamedTextColor.GOLD)
                 .decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
-                Component.text(rounded + "× " + currency.getDisplayName(), NamedTextColor.YELLOW)
+                Component.text("Valami csörög odabent...", NamedTextColor.YELLOW)
                         .decoration(TextDecoration.ITALIC, false),
-                Component.text("Jobb-katt: a vereteket a kezedbe rázod.", NamedTextColor.GRAY)
+                Component.text("Jobb-katt: bontsd ki az erszényt.", NamedTextColor.GRAY)
                         .decoration(TextDecoration.ITALIC, false),
                 Component.text("„Valaki elvesztette. Most a tiéd.”", NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, true)));
