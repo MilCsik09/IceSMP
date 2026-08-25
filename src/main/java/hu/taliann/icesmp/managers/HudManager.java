@@ -96,7 +96,6 @@ public final class HudManager {
     private final GatheringBuffManager gatheringBuffManager;
     private final hu.taliann.icesmp.utils.TextAnimator animator;
     private final SeasonManager seasonManager;
-    private final DailyQuestManager dailyQuestManager;
     /** A harc-fókusz célpont-sorának adatforrása; setterrel kötve, regisztrációkor. */
     private volatile hu.taliann.icesmp.listeners.DamageIndicatorListener damageIndicators;
 
@@ -194,7 +193,7 @@ public final class HudManager {
                       final AbundanceManager abundanceManager, final ServerChallengeManager serverChallengeManager,
                       final MeteorEventManager meteorEventManager, final GatheringBuffManager gatheringBuffManager,
                       final hu.taliann.icesmp.utils.TextAnimator animator,
-                      final SeasonManager seasonManager, final DailyQuestManager dailyQuestManager,
+                      final SeasonManager seasonManager,
                       final Predicate<UUID> resourcePackReady) {
         this.plugin = plugin;
         this.configManager = configManager;
@@ -214,7 +213,6 @@ public final class HudManager {
         this.gatheringBuffManager = gatheringBuffManager;
         this.animator = animator;
         this.seasonManager = seasonManager;
-        this.dailyQuestManager = dailyQuestManager;
         this.iceSmpHudBackend = new IceSmpHudBackend(plugin, resourcePackReady);
         if (!PlatformCapabilities.supportsBukkitScoreboards()) {
             plugin.getLogger().info("Folia detected: Bukkit scoreboard API unavailable; "
@@ -1340,14 +1338,6 @@ public final class HudManager {
                 (seasonManager.getSeasonEndMillis() - System.currentTimeMillis()) / (24L * 60L * 60L * 1000L));
         frames.add(new InfoFrame("ꜱᴢᴇᴢᴏɴ",
                 Component.text("még ~" + remainingDays + " nap", NamedTextColor.WHITE)));
-        final DailyQuestManager.Daily daily = dailyQuestManager.isEnabled() ? dailyQuestManager.getActive() : null;
-        if (daily != null) {
-            frames.add(new InfoFrame("ɴᴀᴘɪ", dailyQuestManager.isDone(player)
-                    ? Component.text("kész ✔", NamedTextColor.GREEN)
-                    : Component.text(dailyQuestManager.getProgress(player) + "/" + daily.amount(),
-                            NamedTextColor.YELLOW)));
-        }
-
         final long rotationMillis = Math.max(2L, configManager.getLong("hud.dynamic.rotation-seconds", 4L)) * 1000L;
         return frames.get((int) ((System.currentTimeMillis() / rotationMillis) % frames.size()));
     }

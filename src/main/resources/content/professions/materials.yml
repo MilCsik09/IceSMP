@@ -23,6 +23,7 @@ profession-materials:
     - '&7A Vasművek Akadémiájának titka:'
     - '&7ezerszer hajtogatott vas lelke.'
     - '&8Kovács köztes alapanyag'
+    - '&8A Jelszó Nélküli biztos személyes zsákmánya is.'
   gyogy_kivonat:
     material: GLOW_BERRIES
     display-name: '&aGyógy-kivonat'
@@ -62,7 +63,7 @@ profession-materials:
     lore:
     - '&7A Káoszkor elvadult fenevadjának'
     - '&7dühe, mely legyőzött testéből száll el.'
-    - '&cCsak szörnyekből esik'
+    - '&8Vadonbeli zsákmányként és ritka ládákban bukkan fel.'
     tier: SPECIAL
     processing-state: RAW
     source-types:
@@ -81,7 +82,7 @@ profession-materials:
     lore:
     - '&7Egy káoszkori szörny lüktető, sötét'
     - '&7szíve — még kihűlve is hatalmat rejt.'
-    - '&cCsak erősebb szörnyekből esik'
+    - '&8Erős szörnyek és bossok zsákmánya; hősi ládában is rejtőzhet.'
   arnyekpor:
     material: SCULK_VEIN
     display-name: '&8Árnyékpor'
@@ -90,7 +91,7 @@ profession-materials:
     - '&7A Néma Királynő suttogásának'
     - '&7megülepedett, éjfekete pora —'
     - '&7elnyeli a fényt és a hangot.'
-    - '&cCsak szörnyekből esik'
+    - '&8Szörnyeknél és ritka ládákban fordul elő.'
   osi_ereklyeszilank:
     material: NETHER_STAR
     display-name: '&cFekete Villám Szilánk'
@@ -99,7 +100,7 @@ profession-materials:
     - '&7Az a sötét energia pulzál benne, amely'
     - '&7Hu. 698-ban kettéhasította az eget,'
     - '&7s felébresztette a Holtak Úrnőjét.'
-    - '&4Csak világbossból / nehéz eventből esik'
+    - '&8Bosszsákmány; hősi és mitikus ládában is fennmaradhat.'
   jegviragpor:
     material: SUGAR
     display-name: '&bJégvirág-por'
@@ -124,6 +125,7 @@ profession-materials:
     - '&7Villámsújtotta sziklából fejtett kvarc —'
     - '&7a belsejében még ott remeg a vihar.'
     - '&8Bányász köztes alapanyag'
+    - '&8Orkánénekes Rael biztos személyes zsákmánya is.'
   ures_kupa:
     material: GLASS_BOTTLE
     display-name: '&7Üres Kupa'
@@ -149,7 +151,8 @@ profession-materials:
     lore:
     - '&7Kallan elhullott jégsárkányainak'
     - '&7csontja — hidegebb, mint a jég maga.'
-    - '&4Csak világbossból / nehéz eventből esik'
+    - '&8Bosszsákmány, expedíciós vagy hadi láda és karavánáru.'
+    - '&8Kallan Elárvult Trónja biztos személyes zsákmánya is.'
   fonixpihe:
     material: FEATHER
     display-name: '&cFőnixpihe'
@@ -157,7 +160,7 @@ profession-materials:
     lore:
     - '&7Soleil főnixeinek pihéje — a hamu'
     - '&7nem fogja, a láng nem emészti.'
-    - '&cCsak szörnyekből esik'
+    - '&8Szörnyzsákmány; hadi ládából vagy karavántól is szerezhető.'
   holdezust_huzal:
     material: IRON_CHAIN
     display-name: '&fHoldezüst Huzal'
@@ -174,6 +177,7 @@ profession-materials:
     - '&7A Mélység Népe régi receptje: lassan'
     - '&7főzött enyv, ami követ is köt fához.'
     - '&8Szakács köztes alapanyag'
+    - '&8A Koronátlan Csontúr biztos személyes zsákmánya is.'
   sarkfeny_cseppko:
     material: PRISMARINE_CRYSTALS
     display-name: '&bSarkfény-cseppkő'
@@ -206,6 +210,7 @@ profession-materials:
     - '&7Csak romok pincéiben nő, fény sosem'
     - '&7érte — a Kitaszítottak kenyérpótlója.'
     - '&8Gyógynövényész köztes alapanyag'
+    - '&8A Rothadás Hordozója biztos személyes zsákmánya is.'
   lelekhamu:
     material: GUNPOWDER
     display-name: '&7Lélekhamu'
@@ -222,6 +227,7 @@ profession-materials:
     - '&7Leheletvékonyra vert arany, a caldesterai'
     - '&7ötvösnegyed büszkesége.'
     - '&8Kovács köztes alapanyag'
+    - '&8Varkhaz, a Kaputörő biztos személyes zsákmánya is.'
   gyongyhaz_pikkely:
     material: PRISMARINE_SHARD
     display-name: '&bGyöngyház-pikkely'
@@ -269,7 +275,7 @@ profession-materials:
     lore:
     - '&7Azt mondják, Eleftheria sírt, mielőtt'
     - '&7elhallgatott. Ez itt bizonyíték.'
-    - '&cCsak élőhalottakból esik'
+    - '&8Leggyakrabban élőhalottaknál, néha a vándorkaravánnál található.'
   karhozat_parazs:
     material: FIRE_CHARGE
     display-name: '&4A Kapu Parazsa'
@@ -277,7 +283,8 @@ profession-materials:
     lore:
     - '&7A Kárhozat Kapujából kisodródott parázs —'
     - '&7nem ég, nem alszik ki. Csak vár.'
-    - '&4Csak világbossból / nehéz eventből esik'
+    - '&8Bosszsákmány; karavánáru és ritka bányászlelet is lehet.'
+    - '&8A Salakkohó Szíve biztos személyes zsákmánya is.'
   nema_kristaly:
     material: AMETHYST_SHARD
     display-name: '&5Néma Kristály'
@@ -285,7 +292,7 @@ profession-materials:
     lore:
     - '&7Sculk-erek közt nőtt kristály. Ha a füledhez'
     - '&7tartod, hallod, hogy NEM szól semmit.'
-    - '&cCsak szörnyekből esik'
+    - '&8Szörnyeknél, a karavánnál és ritka bányászleletként bukkan fel.'
   elso_csend_szilankja:
     material: ECHO_SHARD
     display-name: '&0Az Első Csend Szilánkja'
@@ -294,7 +301,8 @@ profession-materials:
     - '&7Nem tudni, mi ez, sem honnan való. Csak'
     - '&7azt, hogy amikor a kezedbe veszed,'
     - '&7a világ egy pillanatra elhallgat.'
-    - '&4A legritkább kincs — csak világbossból'
+    - '&4A legritkább kincsek egyike — bosszsákmány vagy mitikus ládalelet.'
+    - '&8A Visszanéző Csend biztos személyes zsákmánya is.'
   robbantopor:
     material: GUNPOWDER
     display-name: '&cRobbantópor'
@@ -776,6 +784,7 @@ profession-materials:
     lore:
     - '&7Bőrpánt köré zárt könnyű fémgyűrűk.'
     - '&8MAIL felszerelés-komponens'
+    - '&8Körzáró biztos személyes zsákmánya is.'
   edzett_otvozet:
     material: IRON_INGOT
     display-name: '&fEdzett Ötvözet'
@@ -1008,6 +1017,7 @@ profession-materials:
     lore:
     - '&7Könnyű, egymásra lapolt szerves páncélkomponens.'
     - '&8Szerep: chitin'
+    - '&8Selyemanya Vezhra biztos személyes zsákmánya is.'
   konnyu_otvozet:
     material: COPPER_INGOT
     display-name: '&fKönnyű Ötvözet'

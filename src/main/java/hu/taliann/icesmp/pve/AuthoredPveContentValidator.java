@@ -90,6 +90,7 @@ public final class AuthoredPveContentValidator {
             throw new IllegalStateException("authored PvE primitive was introduced without a use case");
         }
         final Set<List<String>> bossKits = new LinkedHashSet<>();
+        final Set<String> bossSpecificRewards = new LinkedHashSet<>();
         for (final String id : WORLD_BOSSES) {
             final MobTemplate boss = templates.require(id);
             if (!bossKits.add(boss.abilityIds())) {
@@ -98,6 +99,13 @@ public final class AuthoredPveContentValidator {
             if (boss.abilityIds().stream().map(abilities::require).noneMatch(definition ->
                     definition.triggers().contains(MobAbilityDefinition.Trigger.HEALTH_THRESHOLD))) {
                 throw new IllegalStateException("world boss lacks threshold phase: " + id);
+            }
+            if (boss.bossSpecificReward().isBlank()) {
+                throw new IllegalStateException("world boss lacks specific reward identity: " + id);
+            }
+            if (!bossSpecificRewards.add(boss.bossSpecificReward())) {
+                throw new IllegalStateException("duplicate world-boss specific reward identity: "
+                        + boss.bossSpecificReward());
             }
         }
         final LinkedHashMap<String, String> identityOwners = new LinkedHashMap<>();

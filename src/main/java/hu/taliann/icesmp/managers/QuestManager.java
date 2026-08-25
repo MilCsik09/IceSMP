@@ -3,9 +3,11 @@ package hu.taliann.icesmp.managers;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.items.CrateKeyFactory;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileQuestStore;
 import hu.taliann.icesmp.quest.QuestCategory;
+import hu.taliann.icesmp.quest.QuestCurrencyResolver;
 import hu.taliann.icesmp.quest.QuestChoiceRegistry;
 import hu.taliann.icesmp.quest.QuestGraphValidator;
 import hu.taliann.icesmp.quest.QuestMarkerPalette;
@@ -62,6 +64,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             "display-name", "description", "giver-npc", "next", "repeatable",
             "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count", "requires-job", "requires-faction",
+            "requires-profession", "requires-profession-level",
             "requires-specialization", "requires-level", "requires-quest", "chapter", "riddle", "min-season-day",
             "max-season-day", "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.spells", "objective.territory",
@@ -107,6 +110,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     private volatile StatsManager statsManager;
     private volatile CrateKeyFactory crateKeyFactory;
     private volatile SpecializationManager specializationManagerRef;
+    private volatile ProfessionManager professionManagerRef;
     private volatile boolean warnedMissingCrateKeyFactory;
     private volatile boolean npcBridgeActive;
 
@@ -210,6 +214,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     public void setStatsManager(final StatsManager statsManager) { this.statsManager = statsManager; }
     public void setCrateKeyFactory(final CrateKeyFactory crateKeyFactory) { this.crateKeyFactory = crateKeyFactory; }
     public void setSpecializationManager(final SpecializationManager manager) { this.specializationManagerRef = manager; }
+    public void setProfessionManager(final ProfessionManager manager) { this.professionManagerRef = manager; }
 
     @Override
     public void load() {
@@ -340,7 +345,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                         throw new IllegalArgumentException();
                     yield mode;
                 }
-                case "requires-level", "objective.count", "objective.min-mob-level",
+                case "requires-level", "requires-profession-level", "objective.count", "objective.min-mob-level",
                      "objective.level", "rewards.class-xp", "rotation-daily-count" ->
                         Math.max(0, Integer.parseInt(rawValue.trim()));
                 case "rewards.currency.amount", "cooldown-hours" ->
@@ -358,9 +363,9 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                 case "dialogue.give", "dialogue.complete" -> parseLines(rawValue);
                 case "rewards.currency.type" -> {
                     final String type = rawValue.trim();
-                    if (!isOwnFactionCurrency(type) && CurrencyType.fromInput(type) == null)
+                    if (!QuestCurrencyResolver.isOwn(type) && CurrencyType.fromInput(type) == null)
                         throw new IllegalArgumentException();
-                    yield isOwnFactionCurrency(type) ? "OWN" : type.toUpperCase(Locale.ROOT);
+                    yield QuestCurrencyResolver.isOwn(type) ? "OWN" : type.toUpperCase(Locale.ROOT);
                 }
                 case "objective.type" -> {
                     final String type = rawValue.trim().toUpperCase(Locale.ROOT);
@@ -532,6 +537,19 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         final int requiredLevel = quest.getInt("requires-level", 0);
         if (requiredLevel > 0 && jobManager.getPrimaryLevel(player) < requiredLevel)
             return "quest-requires-level";
+        final String requiredProfession = quest.getString("requires-profession", "");
+        if (!requiredProfession.isBlank()) {
+            final ProfessionType type = ProfessionType.fromId(requiredProfession);
+            final ProfessionManager professions = professionManagerRef;
+            if (type == null || professions == null || !professions.hasProfession(player, type)) {
+                return "quest-requires-profession";
+            }
+            final int professionLevel = Math.max(1,
+                    quest.getInt("requires-profession-level", 1));
+            if (professions.getLevel(player, type) < professionLevel) {
+                return "quest-requires-profession-level";
+            }
+        }
         final String requiredQuest = quest.getString("requires-quest");
         if (requiredQuest != null && !requiredQuest.isBlank()
                 && !hasCompleted(player, requiredQuest)) return "quest-requires-quest";
@@ -541,6 +559,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     /** Blokkolók, amelyek TELJESÍTETLEN előfeltételt jeleznek (PREREQUISITES_MET elrejt). */
     private static final Set<String> PREREQUISITE_BLOCKERS = Set.of(
             "quest-requires-job", "quest-requires-specialization", "quest-requires-faction", "quest-requires-level",
+            "quest-requires-profession", "quest-requires-profession-level",
             "quest-requires-quest", "quest-chapter-future", "quest-chapter-closed",
             "quest-season-window-future", "quest-season-window-closed");
 
@@ -1354,6 +1373,53 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         return policy == null ? "" : turnInHint(policy);
     }
 
+    /** Compact promise shown by the journal, resolved through the payout currency authority. */
+    public List<String> describeRewards(final Player player, final String questId) {
+        final ConfigurationSection quest = getQuestSection(questId);
+        if (player == null || quest == null) return List.of();
+        final ArrayList<String> result = new ArrayList<>();
+        final ConfigurationSection currency = quest.getConfigurationSection("rewards.currency");
+        if (currency != null) {
+            final long amount = Math.round(currency.getDouble("amount", 0.0D));
+            final CurrencyType type = QuestCurrencyResolver.resolve(
+                    currency.getString("type", ""),
+                    factionManager.getChosenFaction(player.getUniqueId()));
+            if (type != null && amount > 0L) {
+                result.add(amount + " " + type.getDisplayName());
+            }
+        }
+        final int classXp = quest.getInt("rewards.class-xp", 0);
+        if (classXp > 0) result.add(classXp + " kaszt TP");
+        for (final String item : quest.getStringList("rewards.items")) {
+            final String[] parts = item.split(":", 2);
+            final int amount = parts.length == 2 ? positiveAmount(parts[1]) : 1;
+            result.add(amount + "× " + readableId(parts[0]));
+        }
+        final String crate = quest.getString("rewards.crate-key", "");
+        if (!crate.isBlank()) {
+            final String[] parts = crate.split(":", 2);
+            final int amount = parts.length == 2 ? positiveAmount(parts[1]) : 1;
+            result.add(amount + "× " + readableId(parts[0]) + " ládakulcs");
+        }
+        final String unlock = quest.getString("rewards.unlock-spell", "");
+        if (!unlock.isBlank()) result.add("Feloldás: " + readableId(unlock));
+        if (quest.getBoolean("rewards.cleanse-sins", false)) {
+            result.add("A sötét paktum megtörése");
+        }
+        return List.copyOf(result);
+    }
+
+    private static int positiveAmount(final String raw) {
+        try { return Math.max(1, Integer.parseInt(raw.trim())); }
+        catch (final NumberFormatException ignored) { return 1; }
+    }
+
+    private static String readableId(final String raw) {
+        if (raw == null || raw.isBlank()) return "ismeretlen";
+        final String text = raw.trim().toLowerCase(Locale.ROOT).replace('_', ' ');
+        return Character.toUpperCase(text.charAt(0)) + text.substring(1);
+    }
+
     private String startHint(final QuestSourcePolicy policy) {
         return switch (policy.startType()) {
             case NPC -> messageManager.get("quest-start-hint-npc",
@@ -1560,6 +1626,14 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             final JobType type = JobType.fromId(requiredJob);
             if (type == null || jobManager.getPrimaryJob(player) != type) return false;
         }
+        final String requiredProfession = quest.getString("requires-profession", "");
+        if (!requiredProfession.isBlank()) {
+            final ProfessionType type = ProfessionType.fromId(requiredProfession);
+            final ProfessionManager professions = professionManagerRef;
+            if (type == null || professions == null || !professions.hasProfession(player, type)) {
+                return false;
+            }
+        }
         final String requiredSpecialization = quest.getString("requires-specialization");
         if (requiredSpecialization == null || requiredSpecialization.isBlank()) return true;
         final SpecializationManager manager = specializationManagerRef;
@@ -1662,7 +1736,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             case "KILL_WORLDBOSS" -> "Világboss";
             case "BREAK_BLOCKS" -> "Bányászás";
             case "PLACE_BLOCKS" -> "Építés";
-            case "CRAFT_ITEMS" -> "Craftolás";
+            case "CRAFT_ITEMS" -> "Készítés";
             case "COLLECT_ITEMS" -> "Gyűjtés";
             case "DELIVER_ITEMS" -> "Beszállítás";
             case "CONSUME_ITEMS" -> "Fogyasztás";
@@ -1687,10 +1761,6 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     private static String normalizeQuestId(final String raw) {
         if (raw == null || raw.isBlank()) throw new IllegalArgumentException("quest id required");
         return raw.trim().toLowerCase(Locale.ROOT);
-    }
-    private static boolean isOwnFactionCurrency(final String raw) {
-        return "OWN".equalsIgnoreCase(raw) || "FACTION".equalsIgnoreCase(raw)
-                || "SAJAT".equalsIgnoreCase(raw) || "SAJÁT".equalsIgnoreCase(raw);
     }
     private static List<String> parseItems(final String raw) {
         final List<String> result = new ArrayList<>();

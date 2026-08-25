@@ -760,7 +760,7 @@ quest-toastot szállít (22 authored JSON összesen).
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit forrás-keret (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény / auto / admin), a felvétel és a leadás KIZÁRÓLAG a jogosult forrásnál történhet; NPC-forrású questnél a feladatok teljesítése után KÉSZ állapot jön, és a leadási pontnál (alapból az adó NPC-nél) zárul a küldetés. Kategóriák (story/mellék/kaszt/specializáció/frakció/napi/heti/titok…), kaszt-, specializáció- és szintkapuk, láthatóság (a rejtett quest felfedezésig sehol nem látszik), tartós felfedezés és küldetés-követés, öt-füles napló, objective progress — köztük sikeres, engedélyezett kasztolást számláló `CAST_SPELLS` —, napi feladatok és admin/builder questkészítő.
+Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit forrás-keret (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény / auto / admin), a felvétel és a leadás KIZÁRÓLAG a jogosult forrásnál történhet; NPC-forrású questnél a feladatok teljesítése után KÉSZ állapot jön, és a leadási pontnál (alapból az adó NPC-nél) zárul a küldetés. Kategóriák (story/mellék/kaszt/specializáció/frakció/napi/heti/titok…), kaszt-, specializáció-, szakma-, szakmaszint- és karakterszint-kapuk, láthatóság (a rejtett quest felfedezésig sehol nem látszik), tartós felfedezés és küldetés-követés, öt-füles napló, felvétel előtti jutalom-előnézet és objective progress — köztük sikeres, engedélyezett kasztolást számláló `CAST_SPELLS` —, authored napi feladatok és admin/builder questkészítő. A `/daily` nem külön generátor: ugyanebbe a naplóba vezet.
 
 - **Így találkozol vele:** `/quest`, `/daily`; questlog (öt fül: Aktív/Kész/Megbízások/Elérhető/Teljesített) és quest builder GUI. Parancs: /quest (alias: /kuldetes, /quests); /daily. GUI: Küldetésnapló; Quest builder.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
@@ -772,8 +772,8 @@ Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit for
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.quest` (a `/quest accept` és `/quest talk` is admin-parancs — a forrás-authority parancsból nem kerülhető meg).
-- Config: `quests.*` (start/turn-in/category/visibility séma), napi küldetés-, NPC- és rewarddefiníciók.
-- Tartós állapot: Aktív quest, objective progress, forrás-audit, felfedezés, követett quest, napi állapot és builder által mentett definíció tartós (PlayerProfile QuestSection az egyetlen player-authority).
+- Config: `quests.*` (start/turn-in/category/visibility/szakmakapu séma), authored napi küldetés-, NPC- és rewarddefiníciók.
+- Tartós állapot: Aktív quest, objective progress, forrás-audit, felfedezés, követett quest, reward receipt és builder által mentett definíció tartós (PlayerProfile QuestSection az egyetlen player-authority); a retired procedural streak csak történeti/achievement olvasási adat.
 - Reload: a quest-registry csere atomikus és teljes gráf-validációval kapuzott — érvénytelen candidate a korábbi definíciókat hagyja élőben; az admin-szerkesztő ugyanezen a validátoron megy át mentés előtt.
 
 </details>
@@ -926,17 +926,17 @@ Nyolc permission nélküli alapláda, fizikai crate-helyek, kulcsvásárlás/-fe
 
 </details>
 
-### Napi jutalmak, bounty és jutalomforrások
+### Megbízásjutalmak, bounty és jutalomforrások
 
 <!-- icesmp-doc-id: feature.economy.rewards_bounty -->
 
 > **Aktív, configgal engedélyezhető** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Napi átvétel, bounty, pénzeszsák, mobpénz, reward-budget és party-kompatibilis jutalomfeloldás.
+Authored napi/heti megbízásjutalom, bounty, pénzeszsák, mobpénz, reward-budget és party-kompatibilis jutalomfeloldás.
 
 - **Így találkozol vele:** `/daily`, `/bounty`; loot-, kill- és event-triggerek. Parancs: /bounty (alias: /fejvadasz, /korozes); /daily (alias: /napi).
 - **Kinek szól:** Játékos, Admin, Eventes, Tesztelő.
-- **Mitől mozdul meg:** Napi ciklus, kill, bounty teljesítés, itemhasználat és reward trigger.
+- **Mitől mozdul meg:** Authored quest objective/leadás, kill, bounty teljesítés, itemhasználat és reward trigger.
 - **Ami még kellhet hozzá:** Bounty/event célpontok és jutalomforrások biztonságát ellenőrizni kell.
 - **Fontos határ:** AFK-blokkolás, full inventory és economy-storage hiba esetén runtime teszt szükséges.
 
@@ -944,9 +944,9 @@ Napi átvétel, bounty, pénzeszsák, mobpénz, reward-budget és party-kompatib
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: Daily-, bounty-, loot-, money-pouch- és rewardbeállítások.
-- Tartós állapot: Napi átvétel, bounty és egyes budgetállapotok tartósak.
-- Reload: Jutalomtáblák reloadolhatók; periodikus reset task restarthoz kötött lehet.
+- Config: Authored `quests.*`, bounty-, loot-, money-pouch- és rewardbeállítások.
+- Tartós állapot: Quest reward receipt, bounty és egyes budgetállapotok tartósak.
+- Reload: Jutalomtáblák reloadolhatók; a quest-registry atomikusan, teljes gráfvalidáció után cserélődik.
 
 </details>
 

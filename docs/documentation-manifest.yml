@@ -351,11 +351,6 @@
         "docs/ADMIN_GUIDE.md"
       ]
     },
-    "config.daily-quests": {
-      "docs": [
-        "docs/ADMIN_GUIDE.md"
-      ]
-    },
     "config.ferry": {
       "docs": [
         "docs/ADMIN_GUIDE.md"
@@ -2469,12 +2464,6 @@
     },
     "component.hu.taliann.icesmp.managers.SpellFavoritesManager": {
       "feature": "feature.progression.spells",
-      "docs": [
-        "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.listeners.DailyQuestListener": {
-      "feature": "feature.progression.quests_daily",
       "docs": [
         "docs/FEATURES.md"
       ]

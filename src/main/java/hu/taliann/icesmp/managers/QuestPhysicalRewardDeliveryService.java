@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.quest.QuestCurrencyResolver;
 import hu.taliann.icesmp.items.CrateKeyFactory;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileQuestStore;
 import hu.taliann.icesmp.playerprofile.application.QuestRewardDeliveryProtocol;
@@ -106,10 +107,8 @@ public final class QuestPhysicalRewardDeliveryService {
         final ConfigurationSection currency = quest.getConfigurationSection("rewards.currency");
         if (currency != null) {
             final String raw = currency.getString("type", "");
-            final CurrencyType type = isOwnFactionCurrency(raw)
-                    ? factionManager.getChosenFaction(player.getUniqueId())
-                            .map(CurrencyType::fromFactionType).orElse(null)
-                    : CurrencyType.fromInput(raw);
+            final CurrencyType type = QuestCurrencyResolver.resolve(raw,
+                    factionManager.getChosenFaction(player.getUniqueId()));
             final long total = Math.round(currency.getDouble("amount", 0.0D));
             if (type != null && total > 0L) {
                 long left = total;
@@ -270,11 +269,6 @@ public final class QuestPhysicalRewardDeliveryService {
         }, () -> result.completeExceptionally(new IllegalStateException(
                 "player scheduler rejected physical quest reward delivery")));
         return result;
-    }
-
-    private static boolean isOwnFactionCurrency(final String raw) {
-        return "OWN".equalsIgnoreCase(raw) || "FACTION".equalsIgnoreCase(raw)
-                || "SAJAT".equalsIgnoreCase(raw) || "SAJÁT".equalsIgnoreCase(raw);
     }
 
     private record Component(String id, ItemStack item) {

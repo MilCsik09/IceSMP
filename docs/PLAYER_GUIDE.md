@@ -1152,7 +1152,7 @@ legtöbb művelet a `/menu` felületéről is elérhető.
 | `/lore <téma>` | nyilvános kódexlapok |
 | `/komp [útvonal]` | kompjáratok |
 | `/parkour list` | pályák |
-| `/daily` | napi feladat |
+| `/daily` | authored napi/heti megbízások a Küldetésnaplóban |
 | `/crate info <id>` | láda és kulcsinformáció |
 
 ### Gazdaság és birtok

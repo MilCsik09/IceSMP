@@ -5,6 +5,7 @@ messages:
   daily-completed: '<gold>📅 Napi küldetés teljesítve: <yellow>{name}</yellow> <gray>(+{reward} valuta, sorozat: {streak} nap)</gray></gold>'
   daily-info: '<gold>📅 Napi küldetés: <yellow>{name}</yellow> &7| Állás: <white>{state}</white> &7| Jutalom: <white>{reward}</white> &7| Sorozat: <white>{streak} nap</white></gold>'
   daily-state-done: '&ateljesítve'
+  daily-authored-route: '<gold>📅 A napi és heti megbízások a kanonikus Küldetésnaplóban vannak; jutalmukat ott előre látod.</gold>'
   quest:
     accepted-from-npc: '<gold>❕ Új küldetés: <white>{quest}</white> <gray>— {description}</gray></gold>'
     auto-started: '<gold>❕ Új küldetés indult: <white>{quest}</white> <gray>— {description}</gray></gold>'
@@ -86,6 +87,8 @@ messages:
   quest-requires-job: '&cEhhez a küldetéshez másik kaszt szükséges.'
   quest-requires-specialization: '&cEzt a próbát csak a hozzá tartozó aktív specializációval kezdheted el.'
   quest-requires-level: '&cMég nem vagy elég magas szintű ehhez a küldetéshez.'
+  quest-requires-profession: '&cEhhez a küldetéshez másik szakma szükséges.'
+  quest-requires-profession-level: '&cA választott szakmádban még nem érted el a szükséges szintet.'
   quest-requires-quest: '&cElőbb az előfeltétel-küldetést kell teljesítened.'
   quest-unknown: '&cIsmeretlen küldetés: &f%s'
   quest-unknown-subcommand: '&cIsmeretlen alparancs: &f%s'
