@@ -10,7 +10,7 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-CFG = ROOT / "src/main/resources/config"
+RESOURCES = ROOT / "src/main/resources"
 DEFAULT_OUTPUT = ROOT / "build/reports/long-term-equipment/equipment-catalog.json"
 ARMOR_FAMILIES = ("CLOTH", "LEATHER", "MAIL", "PLATE")
 ARMOR_SLOTS = ("head", "chest", "legs", "feet")
@@ -51,19 +51,15 @@ AUTHORED_BAND_FLOOR = {
     "PLATE": {"early": 21.5, "mid": 23.5, "high": 25.5, "endgame": 27.5},
 }
 RARITY_ORDER = ["common", "uncommon", "rare", "epic", "legendary", "mythic"]
-CONFIG_FILES = [
-    "item-templates.yml",
-    "profession-materials.yml",
-    "profession-recipes.yml",
-    "professions-2.yml",
-    "material-economy-expansion.yml",
-    "equipment-catalog-expansion.yml",
-    "reward-discoverability-closure.yml",
+AUTHORITY_FILES = [
+    "content/equipment/equipment.yml",
+    "content/professions/materials.yml",
+    "content/professions/recipes.yml",
 ]
 
 
 def load(name: str) -> dict[str, Any]:
-    path = CFG / name
+    path = RESOURCES / name
     if not path.exists():
         return {}
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -80,7 +76,7 @@ def merge(target: dict[str, Any], patch: dict[str, Any]) -> None:
 
 def effective() -> dict[str, Any]:
     result: dict[str, Any] = {}
-    for name in CONFIG_FILES:
+    for name in AUTHORITY_FILES:
         merge(result, load(name))
     return result
 

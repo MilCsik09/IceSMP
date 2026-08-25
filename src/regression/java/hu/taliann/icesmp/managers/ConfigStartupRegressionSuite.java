@@ -14,14 +14,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /** Focused startup regressions for packaged configuration and strict profession parsing. */
 public final class ConfigStartupRegressionSuite {
     private static final Logger LOGGER = Logger.getLogger(ConfigStartupRegressionSuite.class.getName());
-    private static final Pattern LEGACY_CHAIN = Pattern.compile("\\bCHAIN\\b");
 
     private ConfigStartupRegressionSuite() {
     }
@@ -83,15 +82,20 @@ public final class ConfigStartupRegressionSuite {
     }
 
     private static void parsesEveryBundledProfessionIngredient() throws Exception {
-        final File recipeFile = Path.of("src/main/resources/config/profession-recipes.yml").toFile();
-        final File materialFile = Path.of("src/main/resources/config/profession-materials.yml").toFile();
+        final File recipeFile = Path.of("src/main/resources/content/professions/recipes.yml").toFile();
+        final File materialFile = Path.of("src/main/resources/content/professions/materials.yml").toFile();
+        final File equipmentFile = Path.of("src/main/resources/content/equipment/equipment.yml").toFile();
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(recipeFile);
         final YamlConfiguration materialYaml = YamlConfiguration.loadConfiguration(materialFile);
+        final YamlConfiguration equipmentYaml = YamlConfiguration.loadConfiguration(equipmentFile);
         final ConfigurationSection root = yaml.getConfigurationSection("profession-recipes");
         final ConfigurationSection materialRoot = materialYaml.getConfigurationSection("profession-materials");
+        final ConfigurationSection equipmentRoot = equipmentYaml.getConfigurationSection("item-templates");
         check(root != null && !root.getKeys(false).isEmpty(), "bundled profession recipes missing");
         check(materialRoot != null && !materialRoot.getKeys(false).isEmpty(),
                 "bundled profession materials missing");
+        check(equipmentRoot != null && !equipmentRoot.getKeys(false).isEmpty(),
+                "bundled equipment templates missing");
 
         for (final String id : materialRoot.getKeys(false)) {
             final ConfigurationSection definition = materialRoot.getConfigurationSection(id);
@@ -105,12 +109,18 @@ public final class ConfigStartupRegressionSuite {
             check(recipe != null, "profession recipe section missing: " + id);
             final ConfigurationSection result = recipe.getConfigurationSection("result");
             check(result != null, "profession recipe result missing: " + id);
+            final String templateResult = result.getString("template", null);
             final String uniqueResult = result.getString("unique", null);
-            if (uniqueResult == null || uniqueResult.isBlank()) {
+            if (templateResult != null && !templateResult.isBlank()) {
+                check(equipmentRoot.isConfigurationSection(
+                                templateResult.toLowerCase(Locale.ROOT)),
+                        "profession recipe has undefined equipment template result: "
+                                + id + " -> " + templateResult);
+            } else if (uniqueResult == null || uniqueResult.isBlank()) {
                 check(ConfigMaterialResolver.match(result.getString("material", "")) != null,
                         "profession recipe has invalid Bukkit result: " + id);
             } else {
-                check(materialRoot.isConfigurationSection(uniqueResult.toLowerCase(java.util.Locale.ROOT)),
+                check(materialRoot.isConfigurationSection(uniqueResult.toLowerCase(Locale.ROOT)),
                         "profession recipe has undefined unique result: " + id + " -> " + uniqueResult);
             }
 
@@ -122,11 +132,6 @@ public final class ConfigStartupRegressionSuite {
                                 + " -> " + uniqueIngredient);
             }
         }
-
-        final String recipes = Files.readString(recipeFile.toPath());
-        final String materials = Files.readString(materialFile.toPath());
-        check(!LEGACY_CHAIN.matcher(recipes).find() && !LEGACY_CHAIN.matcher(materials).find(),
-                "bundled profession config still contains obsolete CHAIN");
     }
 
     private static void validatesPactUniqueMaterialReference() {
@@ -192,7 +197,7 @@ public final class ConfigStartupRegressionSuite {
         final YamlConfiguration general = load("general.yml");
         final YamlConfiguration factions = load("factions.yml");
         final YamlConfiguration world = load("world.yml");
-        final YamlConfiguration relics = load("relics.yml");
+        final YamlConfiguration relics = loadContent("equipment", "relics.yml");
         final YamlConfiguration blockRegen = load("block-regen.yml");
         check(general.getConfigurationSection("sit") == null,
                 "general.yml must not duplicate sit.yml ownership");
@@ -341,10 +346,20 @@ public final class ConfigStartupRegressionSuite {
         final String configManager = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java"));
         check(configManager.contains("baseConfiguration")
-                        && configManager.contains("mergePackagedDefaults")
+                        && configManager.contains("CONTENT_FILES")
+                        && configManager.contains("OPERATOR_CONFIG_FILES")
+                        && configManager.contains("migrateLegacyContentFiles")
+                        && configManager.contains("LOCKED_CANONICAL_CONTENT")
+                        && configManager.contains("RESTART_REQUIRED_OPERATOR_PATHS")
+                        && configManager.contains("operatorReloadPolicy")
                         && configManager.contains("resetOverride")
                         && configManager.contains("\"block-regen\""),
-                "base-value layering or reset support is incomplete");
+                "authority layering, migration or reset support is incomplete");
+        final String configRenderer = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/gui/ConfigMenuEntryRenderer.java"));
+        check(configRenderer.contains("configManager.reloadPolicyOf(entry.key())")
+                        && !configRenderer.contains("effectMode("),
+                "Config GUI must render the ConfigManager reload-policy authority");
 
         final String bridge = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/core/ConfigRuntimeReloadBridge.java"));
@@ -357,6 +372,11 @@ public final class ConfigStartupRegressionSuite {
     private static YamlConfiguration load(final String name) {
         return YamlConfiguration.loadConfiguration(
                 Path.of("src/main/resources/config", name).toFile());
+    }
+
+    private static YamlConfiguration loadContent(final String domain, final String name) {
+        return YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/content", domain, name).toFile());
     }
 
     private static <T extends Throwable> void expectThrows(final Class<T> type,

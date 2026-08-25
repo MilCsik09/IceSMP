@@ -151,7 +151,9 @@ public final class EvokerGameplayRegressionSuite {
 
         final String gameplay = normalized("src/main/resources/config/class-gameplay.yml");
         final int empower = gameplay.indexOf("    empower:", gameplay.indexOf("  evoker:"));
-        check(gameplay.indexOf("        - eternity_breath", empower) > empower,
+        final int empowerBoundary = gameplay.indexOf("      rank2-hold-millis:", empower);
+        final int capstone = gameplay.indexOf("- eternity_breath", empower);
+        check(empower >= 0 && capstone > empower && capstone < empowerBoundary,
                 "the Devastation capstone participates in the Felerősítés charge loop");
 
         final String adapter = normalized("src/main/java/hu/taliann/icesmp/classspec/integration/BukkitClassSpecRuntimeAdapter.java");

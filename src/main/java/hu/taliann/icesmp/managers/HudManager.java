@@ -472,6 +472,9 @@ public final class HudManager {
             final HudEditorSaveStatus status;
             if (result == ConfigManager.BatchApplyResult.STALE) {
                 status = HudEditorSaveStatus.STALE;
+            } else if (result == ConfigManager.BatchApplyResult.LOCKED
+                    || result == ConfigManager.BatchApplyResult.REJECTED) {
+                throw new IllegalStateException("global HUD override rejected: " + result);
             } else {
                 hudEditor.apply(player.getUniqueId(), session);
                 status = result == ConfigManager.BatchApplyResult.NO_CHANGES

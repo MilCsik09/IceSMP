@@ -3,9 +3,20 @@ messages:
   admin:
     icesmp:
       reload:
-        success: <green>A konfiguráció sikeresen újratöltve!</green>
-        usage: '&cHasználat: /icesmp reload'
+        success: <green>Az operator konfiguráció biztonságosan újratöltve.</green>
+        messages-success: '&aAz üzenetek újratöltve.'
+        rollback: '&cAz újratöltés hibás adatot talált; a korábbi aktív snapshot maradt érvényben. Részletek a szervernaplóban.'
+        restart-required: '&eA(z) &f%s &edomain canonical contentje csak újraindítással tölthető újra; az aktív snapshot változatlan maradt.'
+        status: '&6Reload policy: &foperator/config = path-specific LIVE/SAFE/RESTART, messages = LIVE_RELOADABLE, authored content = RESTART_REQUIRED.'
+        usage: '&cHasználat: /icesmp reload [operator|messages|status|content-domain]'
         quest-invalid: '&cA quest-definíciók érvénytelenek (%s hiba) — a korábbi registry maradt élőben, részletek a szerver-logban.'
+      inspect:
+        config-usage: '&cHasználat: /icesmp inspect config <kulcs>'
+        config-missing: '&eIsmeretlen config-kulcs: &f%s'
+        config-authority: '&6%s &7= &f%s &7| authority: &f%s &7| reload: &f%s'
+      config:
+        locked: '&cA(z) &f%s &ckulcs locked canonical content vagy ismeretlen; csak Gitben authorolható.'
+        rejected: '&cA módosítás sikertelen volt; a config.yml és az aktív snapshot változatlan maradt.'
     job:
       description: Adminisztrációs segédparancsok.
       invalid-usage: '&cHasználat: %s'

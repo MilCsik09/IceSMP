@@ -21,6 +21,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.inventory.Inventory;
@@ -115,6 +116,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 verifyMutationPhysicalState(identity);
                 verifyCatalogPositiveLoad(identity, catalog, templates);
                 verifyCreatureRuntime(creatureSpecies, mobAbilities);
+                verifyCommandRuntime();
                 plugin.getLogger().info(PASS_MARKER);
             } catch (final Throwable failure) {
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -123,6 +125,72 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 Bukkit.shutdown();
             }
         }, 1L);
+    }
+
+    /** Representative real-Paper dispatch proof for the permission-filtered admin surface. */
+    private static void verifyCommandRuntime() throws Exception {
+        final JavaPlugin owner = JavaPlugin.getProvidingPlugin(PaperSourceIntegrityRuntimeProbe.class);
+        final CommandSender allowed = Bukkit.getConsoleSender();
+        for (final String command : List.of(
+                "icesmp",
+                "icesmp reload status",
+                "icesmp inspect config resource-pack.enabled",
+                "icesmp config get resource-pack.enabled",
+                "icesmp config menu",
+                "icesmp invalid-subcommand",
+                "ismp reload status")) {
+            check(Bukkit.dispatchCommand(allowed, command),
+                    "Paper command dispatch rejected: /" + command);
+        }
+        final List<String> roots = commandCompletions(allowed, "icesmp ");
+        check(roots.containsAll(List.of("reload", "config", "inspect", "client")),
+                "permission-allowed root completion omitted /icesmp domains: " + roots);
+        final List<String> configActions = commandCompletions(allowed, "icesmp config ");
+        check(configActions.containsAll(List.of("menu", "get", "set", "unset", "list", "find")),
+                "Paper trailing-space completion did not enter config domain: " + configActions);
+        final org.bukkit.permissions.PermissionAttachment denied = allowed.addAttachment(owner);
+        for (final String permission : List.of(
+                hu.taliann.icesmp.core.Permissions.RELOAD,
+                hu.taliann.icesmp.core.Permissions.CONFIG,
+                hu.taliann.icesmp.core.Permissions.INSPECT,
+                hu.taliann.icesmp.core.Permissions.CLIENT)) {
+            denied.setPermission(permission, false);
+        }
+        check(!allowed.hasPermission(hu.taliann.icesmp.core.Permissions.RELOAD)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.CONFIG)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.INSPECT)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.CLIENT),
+                "console permission overrides were not applied");
+        try {
+            check(Bukkit.dispatchCommand(allowed, "icesmp reload status"),
+                    "permission-denied /icesmp command did not route through Paper");
+            final List<String> deniedRoots = commandCompletions(allowed, "icesmp ");
+            check(deniedRoots.stream().noneMatch(List.of("reload", "config", "inspect", "client")::contains),
+                    "permission-denied root completion leaked /icesmp domains: " + deniedRoots);
+        } finally {
+            allowed.removeAttachment(denied);
+        }
+        final hu.taliann.icesmp.managers.ConfigManager manager =
+                hu.taliann.icesmp.managers.ConfigManager.current();
+        check(manager != null, "ConfigManager runtime singleton unavailable");
+        final hu.taliann.icesmp.managers.ConfigManager.ConfigSnapshot before = manager.snapshot();
+        final java.nio.file.Path general = owner.getDataFolder().toPath().resolve("config/general.yml");
+        final byte[] original = java.nio.file.Files.readAllBytes(general);
+        try {
+            java.nio.file.Files.writeString(general, "invalid: [\n", java.nio.charset.StandardCharsets.UTF_8);
+            check(Bukkit.dispatchCommand(allowed, "icesmp reload operator"),
+                    "invalid operator reload did not route through Paper");
+            check(manager.snapshot() == before,
+                    "invalid operator reload replaced the previously published snapshot");
+        } finally {
+            java.nio.file.Files.write(general, original);
+        }
+        Bukkit.getLogger().info("ICESMP_CONFIG_COMMAND_RUNTIME_PROBE_PASS");
+    }
+
+    private static List<String> commandCompletions(final CommandSender sender, final String line) {
+        final List<String> completions = Bukkit.getCommandMap().tabComplete(sender, line);
+        return completions == null ? List.of() : completions;
     }
 
     /** Spawns authored roles/carrier variants and waits for common-runtime techniques to execute. */

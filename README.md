@@ -31,6 +31,7 @@ kézikönyv.
 Kiegészítő belső források:
 
 - [architektúra](docs/ARCHITECTURE.md);
+- [kézzel authorolt gameplay-tartalom szerzői útmutatója](docs/CONTENT_AUTHORING.md);
 - [resource pack modelljegyzék](docs/RESOURCE_PACK_CMD.md);
 - [lore-kódex](docs/LORE.md) és [technikai lore-megfeleltetés](docs/LORE_REFERENCE.md);
 - [teljes quest- és NPC-builder leltár](docs/QUESTS.md);
@@ -61,6 +62,7 @@ generálásához és auditjához kell.
 ```bash
 ./gradlew clean build --no-daemon --stacktrace
 python3 scripts/check_consistency.py
+python3 scripts/audit_config_content_command_surface.py --check
 python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
 python3 scripts/generate_repository_inventory.py \
   --root . --output build/repository-inventory --mode strict

@@ -145,7 +145,7 @@ a resource csak aktív kaszt-erőforrásnál, a party pedig tagonként bővül. 
 
 A `pve/` csomag dependency-free domainje az authority a mob ID, schema, rank,
 archetype, ability, affix, levelgörbe, encounter snapshot és contribution szabályokhoz.
-A `MobTemplateRegistry` a 18 elemű `mob-templates.yml` katalógust fail-fast tölti: invalid entity,
+A `MobTemplateRegistry` a `content/pve/enemies.yml` 89 elemű handcrafted katalógusát fail-fast tölti: invalid entity,
 rank/archetype, hiányzó ability/loot profile, Bestiary ID-ütközés vagy schemahiba nem
 eredményez részleges registryt. Természetes vanilla mobhoz nem kötelező template;
 `MobTemplateRegistry.naturalTemplate` biome-, dimension-, depth-, night- és weather-tag
@@ -179,7 +179,7 @@ language, általános scripting DSL vagy speciesenkénti Java mechanic. A target
 target külön typed mező. A registry hibás trigger/condition/action/ability referenciára fail-fast,
 a runtime pedig cooldown, telegraph, recovery, interrupt és cast epoch mellett hajt végre.
 
-A `CreatureSpeciesRegistry` a `mob-templates.yml` egyetlen `creature-species` matrixát atomikusan
+A `CreatureSpeciesRegistry` a `content/pve/enemies.yml` egyetlen `creature-species` matrixát atomikusan
 publikálja. Runtime teljességi authority a Paper 1.21.11 `EntityType.values()` azon halmaza, ahol
 `isAlive && isSpawnable`, player nélkül; minden típusnak pontosan egy explicit row kell. A 91 row
 közös level/rank/stat/ability authorityra vetít, és category, disposition, temperament,
@@ -740,7 +740,7 @@ registry.register(ConfiguredSpell.builder(mm, "spell_id", "Megjelenő Név", coo
         .target(6.0).damage(7.0).ignite(60).particle(Particle.FLAME, 30).sound(Sound.ENTITY_BLAZE_SHOOT, 1f, 1f)
         .build());
 ```
-Majd a feloldási szintet a `config/classes.yml` (`classes.<kaszt>.spell-unlocks`) vagy
+Majd a feloldási szintet a `content/progression/classes.yml` (`classes.<kaszt>.spell-unlocks`) vagy
 `config/spells.yml`/`specializations.*.spell-unlocks` alá. A `describe()` automatikus.
 
 ### 5.5 Új egyedi spell (ha a builder nem elég)
@@ -819,11 +819,12 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   ha a felderítés elbukott, a régi (`@Deprecated Bukkit.getUnsafe()`) úton pótolja a hiányzó
   bejegyzéseket, és WARNING-ot logol. A fa-bejegyzések `show_toast:false` +
   `announce_to_chat:false` (a visszajelzés a rendszerek saját chat-üzenete, az ünneplő toast a
-  külön `ToastUtil`-réteg) — a tartalék út JSON-generátora is ezt írja, hogy a két betöltési
-  út ugyanúgy viselkedjen. Új csomópont = NODES-bejegyzés + `python3 scripts/gen_advancements.py`
-  (a JSON-ok EGYETLEN forrása a Java NODES lista) + VALÓDI `AdvancementService.award(...)`
-  hívás — a `scripts/check_consistency.py` négyesével ellenőrzi: hiányzó JSON, árva JSON,
-  holt bejegyzés, tartalom-drift.
+  külön `ToastUtil`-réteg). A deprecated tartalék út ugyanazt a kézzel authorolt, jarban
+  szállított JSON resource-t olvassa, ezért nincs másodlagos Java gameplay-katalógus vagy
+  generátor. Új csomópont = új handcrafted datapack JSON + az `ADVANCEMENT_IDS` bounded runtime
+  index frissítése + VALÓDI `AdvancementService.award(...)` hívás. A
+  `scripts/check_consistency.py` ellenőrzi a hiányzó/árva JSON-t, parentet, display sémát,
+  `minecraft:impossible` triggert és a valódi award-hívást.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
 - **Méret:** 960 Java-fájl, ~85 000 sor; 94 `*Manager` osztály (a `managers/` csomag 125 fájl).
@@ -1121,6 +1122,38 @@ minden classnak pontosan egy relic és minden specializationnek pontosan egy res
 kötelező, különben a betöltés (és a CI) bukik. A class reworknek csak a gameplay-oldalt kell
 hoznia (mechanikák, szemantikus események, resource-hookok, ability-tagek): az ownership, a
 birtoklás-validáció, a binding-registry és a cooldown-perzisztencia ebből a keretből jön.
+
+## Configuration és content authority
+
+A `ConfigManager` két explicit allowlistből épít egy immutable
+`ConfigSnapshot`-ot. Az `OPERATOR_CONFIG_FILES` deployolt, schema-bounded
+`config/*.yml` beállításokat tölt; a `CONTENT_FILES` a JAR handcrafted
+`content/**` definícióit tölti, és ezeket soha nem másolja írható server
+configgá. A root `config.yml` is csak packaged operator leafeket fogad.
+
+| Authority | Forrás | Mutáció | Reload |
+|---|---|---|---|
+| `OPERATOR_TUNABLE` | `config/*.yml`, ismert root override | fájl, `/icesmp config`, Config GUI | live vagy reconciliation; kulcstól függően restart |
+| `LOCKED_CANONICAL_CONTENT` | `content/**` | csak Git/JAR authoring | restart required |
+| presentation | `messages/**` | lokalizációs fájl | `/icesmp reload messages` |
+| runtime/persistent state | manager-owned data/PDC | domain API | nem config reload |
+
+Az operator load minden fájlt a packaged sémára szűr; ismeretlen vagy content
+leaf nem kerül az effective fába. Parse/schema/validáció/reconciliation hiba
+esetén az új generáció nem publikálódik. Az `/icesmp reload operator` a teljes
+előző snapshotot visszaállítja és annak hookjait futtatja újra, tehát nincs
+félig alkalmazott generáció. A content domain explicit restart-required
+elutasítást kap.
+
+Upgrade-kor a korábbi deployolt gameplay- és expansion-YAML-okat a manager az
+aktiválás előtt SHA-jelölt migration backupba mozgatja. Ha az archiválás nem
+sikerül, a startup fail-closed; server-oldali módosítás nem veszhet el és nem
+írhatja felül némán a packaged handcrafted authorityt.
+
+A source-of-truth, migration, duplicate/dead-key, reload és command inventory
+gépi bizonyítéka a
+`docs/development/config-content-command-surface-2.json`. A szerzői workflow
+a [`CONTENT_AUTHORING.md`](CONTENT_AUTHORING.md) dokumentumban él.
 
 ## Config GUI coverage
 

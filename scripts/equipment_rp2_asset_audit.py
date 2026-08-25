@@ -27,22 +27,15 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "resource-pack"
 ASSETS = PACK / "assets"
-CONFIG = ROOT / "src/main/resources/config"
+RESOURCES = ROOT / "src/main/resources"
 DEFAULT_OUTPUT = ROOT / "build/reports/equipment-rp2/asset-audit.json"
 
 TEMPLATE_OVERLAYS = (
-    "item-templates.yml",
-    "material-economy-expansion.yml",
-    "equipment-catalog-expansion.yml",
-    "reward-discoverability-closure.yml",
+    "content/equipment/equipment.yml",
 )
 MATERIAL_OVERLAYS = (
-    "profession-materials.yml",
-    "profession-recipes.yml",
-    "professions-2.yml",
-    "material-economy-expansion.yml",
-    "equipment-catalog-expansion.yml",
-    "reward-discoverability-closure.yml",
+    "content/professions/materials.yml",
+    "content/professions/recipes.yml",
 )
 PLAYER_ARMOR_SUFFIXES = ("_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS")
 TEXT_EXTENSIONS = {
@@ -79,7 +72,7 @@ def deep_merge(target: dict[str, Any], patch: dict[str, Any]) -> None:
 def effective_section(section: str, files: Iterable[str]) -> dict[str, dict[str, Any]]:
     merged: dict[str, Any] = {}
     for name in files:
-        root = load_yaml(CONFIG / name)
+        root = load_yaml(RESOURCES / name)
         patch = root.get(section, {})
         if isinstance(patch, dict):
             deep_merge(merged, patch)
@@ -158,7 +151,9 @@ def walk_keyed_values(value: Any, wanted: set[str], out: list[tuple[str, str]], 
 def config_roots() -> tuple[dict[str, set[str]], list[dict[str, str]]]:
     roots: dict[str, set[str]] = defaultdict(set)
     missing: list[dict[str, str]] = []
-    for path in sorted(CONFIG.glob("*.yml")):
+    authority_paths = sorted((RESOURCES / "config").glob("*.yml"))
+    authority_paths += sorted((RESOURCES / "content").rglob("*.yml"))
+    for path in authority_paths:
         raw = load_yaml(path)
         found: list[tuple[str, str]] = []
         walk_keyed_values(raw, {"item-model", "equipment-asset"}, found)
@@ -168,7 +163,7 @@ def config_roots() -> tuple[dict[str, set[str]], list[dict[str, str]]]:
                 continue
             kind = "items" if location.endswith("item-model") else "equipment"
             target = asset_file(rid, kind)
-            consumer = f"config:{path.name}:{location}"
+            consumer = f"authority:{path.relative_to(RESOURCES)}:{location}"
             roots[rel(target)].add(consumer)
             if not target.is_file():
                 missing.append({"consumer": consumer, "resource_id": rid, "expected": rel(target)})

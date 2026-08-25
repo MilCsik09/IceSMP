@@ -409,6 +409,21 @@ def _resolve_generic_expression(
             src, offset, "hasPermission", "optional config permission set is empty",
         )]
 
+    # Registry subcommands expose their concrete node through the shared
+    # Subcommand.permission() contract. Resolve every implementation return so
+    # the centralized discovery/execution gate remains statically auditable.
+    if name == "permission()" and src.class_name == "Subcommand":
+        values: set[str] = set()
+        evidence: list[dict[str, Any]] = []
+        for candidate in index.sources:
+            resolved, nested = _method_return_permissions(
+                candidate, "permission", _constants_for_source(constants, candidate),
+            )
+            values.update(resolved)
+            evidence.extend(nested)
+        if values:
+            return values, evidence
+
     if not re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*", name):
         return set(), []
 

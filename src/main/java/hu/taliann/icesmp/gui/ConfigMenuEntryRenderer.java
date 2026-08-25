@@ -16,8 +16,6 @@ import java.util.Map;
 /** Shared renderer and staged value resolver for every scalar admin-config icon. */
 public final class ConfigMenuEntryRenderer {
 
-    private enum EffectMode { LIVE, RELOAD_HOOK, RESTART_REQUIRED }
-
     private static final Map<String, Object> CODE_DEFAULTS = Map.ofEntries(
             Map.entry("territory.protection.regen.debris-horizontal-multiplier", 1.0D),
             Map.entry("territory.protection.regen.debris-vertical-multiplier", 1.0D),
@@ -55,10 +53,11 @@ public final class ConfigMenuEntryRenderer {
                     ? "&eForrás: config.yml felülbírálás"
                     : "&aForrás: subsystem alapkonfiguráció");
         }
-        lore.add(switch (effectMode(entry.key())) {
-            case LIVE -> "&aHatás: mentés után azonnal él";
-            case RELOAD_HOOK -> "&eHatás: mentés utáni élő reload-hook";
+        lore.add(switch (configManager.reloadPolicyOf(entry.key())) {
+            case LIVE_RELOADABLE -> "&aHatás: mentés után azonnal él";
+            case SAFE_RELOAD_WITH_RECONCILIATION -> "&eHatás: mentés utáni élő reload-hook";
             case RESTART_REQUIRED -> "&cHatás: szerver-újraindítás szükséges";
+            case UNKNOWN -> "&cHatás: ismeretlen; a kulcs nem szerkeszthető";
         });
 
         final Material icon;
@@ -157,24 +156,6 @@ public final class ConfigMenuEntryRenderer {
     public static String formatCurrent(final ConfigMenuGUI.Entry entry,
                                        final ConfigManager configManager) {
         return format(entry, currentValue(entry, configManager));
-    }
-
-    private static EffectMode effectMode(final String key) {
-        if (key.startsWith("motd.") || key.startsWith("sit.")
-                || key.startsWith("crates-settings.") || key.startsWith("crates.")
-                || key.startsWith("resource-pack.") || key.startsWith("factions.passives.")
-                || key.startsWith("factions.whisper.") || key.startsWith("professions.recipes.")
-                || key.startsWith("moderation.") || key.startsWith("hud.")
-                || key.startsWith("tablist.") || key.startsWith("mob-scaling.")
-                || key.equals("world-events.check-interval-seconds")
-                || key.equals("settings.disable-locator-bar")
-                || key.equals("pets.companion.tick-ticks")
-                || key.equals("currency.economy-event.check-interval-minutes")
-                || key.equals("factions.tax.enabled")
-                || key.equals("factions.tax.interval-minutes")) {
-            return EffectMode.RELOAD_HOOK;
-        }
-        return EffectMode.LIVE;
     }
 
     private static Object normalize(final ConfigMenuGUI.Entry entry, final Object value) {

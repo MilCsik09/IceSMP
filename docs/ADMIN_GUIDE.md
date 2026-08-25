@@ -73,7 +73,7 @@ pluginoktól. Az első teszt előtt:
 | `icesmp.moderation.inventory.edit` | Online inventory és ender chest szerkesztése | OP | Csak vezető admin |
 | `icesmp.moderation.gui` | `/moderation` és `/mod` megnyitása | OP | Moderátor |
 | `icesmp.message` | `/msg`, `/tell`, `/w`, `/reply`, `/r` | TRUE | Játékosok |
-| `icesmp.admin.reload` | `/icesmp reload` és az `/icesmp` admin gyökér | OP | Üzemeltető vagy admin |
+| `icesmp.admin.reload` | `/icesmp reload ...`; a `/icesmp` gyökérhelp önmagában nem globálisan kapuzott | OP | Üzemeltető vagy admin |
 | `icesmp.admin.hud-editor` | `/hud edit global`; a szerver globális HUD-alapja és szintetikus preview | OP, plusz külön configkapu | Csak HUD/resource-pack staginget végző admin |
 
 Az `icesmp.admin.all` minden kanonikus IceSMP admin-domain parentje,
@@ -136,7 +136,7 @@ megkülönbözteti az autoritatív állapotot a best-effort szöveges naplótól
 | `/invsee <online játékos>` | — | `/invsee Anna` | Senior moderátor/Admin | read: `icesmp.moderation.inventory.read`; write: `icesmp.moderation.inventory.edit` | Nem | Moderációs GUI, 22. slot | Csak online, látható cél; saját inventory tiltott; nincs offline playerdata-szerkesztés. Edit joggal az első megnyitó write sessiont kap, a többi egyidejű megnyitó read-only; a MAIN ↔ ENDER váltás a GUI gombjával történik. | Writeonként best-effort `logs/moderation-audit.log`; escrow külön tartós állapot. Read megnyitása nincs naplózva. |
 | `/offlinetp <játékos>` | — | Példa: `/offlinetp Anna` | Admin/Senior moderátor | `icesmp.moderation.offlinetp` | Nem | Moderációs GUI, 29. slot; a 28. slot külön online teleport | A világ UUID-jának és nevének egyeznie és a világnak betöltve lennie kell; nincs biztonságos hely keresése. | Nincs külön teleport-audit. |
 | `/moderation [online játékos]` | `/mod` | `/moderation`; `/mod Anna` | Moderátor/Admin | `icesmp.moderation.gui` | Nem | Maga a GUI | Legfeljebb 45 látható online játékos, nincs lapozás; az akciógombokhoz külön leaf permission kell. | A megnyitás nincs naplózva; a gombok a mögöttes parancs auditját öröklik. |
-| `/icesmp reload` | `/ismp reload` | Konfiguráció és üzenetek újratöltése | Admin/Üzemeltető | `icesmp.admin.reload` | Igen | Az admin/config felületek egyes útvonalai | Nem tölti újra a tartós moderációs state fájlokat; bezárja az élő invsee sessionöket. | Nincs külön moderációs audit; konzol-visszajelzés van. |
+| `/icesmp reload [operator\|messages\|status]` | `/ismp reload ...` | Policy-aware operator/message reload vagy policy-státusz | Admin/Üzemeltető | `icesmp.admin.reload` | Igen | Az admin/config felületek egyes útvonalai | `content`, `classes`, `equipment`, `pve`, `professions`, `events` explicit restart-required elutasítás; hibánál rollback. | Nincs külön moderációs audit; konzol-visszajelzés van. |
 
 ### 3.1. Tab completion és láthatóság
 
@@ -580,9 +580,9 @@ gyanúsan hiányos reportlista esetén a fájlt és a startup logot is vizsgáld
 
 ### 12.1. `/icesmp reload`
 
-A plugin reload:
+A `/icesmp reload operator` (és a rövid `/icesmp reload`) művelet:
 
-- újratölti a configot és az üzeneteket;
+- újratölti a schema-bounded operator configot és az üzeneteket;
 - egyetlen új, immutable config-generációt publikál a merged YAML-lal és az
   összetartozó override-pathokkal, majd ebből új validált frakciópasszív-snapshotot
   készít és kiüríti a mulandó provokációs/megtorlási állapotot; minden passzív
@@ -591,7 +591,14 @@ A plugin reload:
 - bezárja az élő invsee sessionöket, és visszaadja vagy escrow-ba teszi a
   mozgásban lévő itemeket;
 - újraszámolja a vanish-láthatóságot;
-- más reloadképes IceSMP-rendszereket is frissít.
+- más reloadképes IceSMP-rendszereket is frissít;
+- bármely parse-, validációs- vagy reconciliation-hibánál visszaállítja a
+  korábbi immutable config-snapshotot és újrafuttatja a régi állapot hookjait.
+
+A `/icesmp reload messages` csak a lokalizációt tölti újra. A
+`/icesmp reload status` kiírja a policyt. A canonical `content/**` domainek
+explicit elutasítást kapnak, mert authored registryt élőben részlegesen cserélni
+tilos; új JAR/content után kontrollált restart kell.
 
 Nem tölti újra a `moderation-data.yml`, `reports.yml` vagy
 `invsee-escrow.yml` tartós állományokat. Ezek kézi szerkesztése után a
@@ -819,9 +826,10 @@ bizonyítékai ettől még kötelezőek.
 
 ## Teljes parancsreferencia
 
-A napi munkához nem 286 route bemagolása kell, hanem annak ismerete, melyik
-eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
-`Repository Docs Inventory` CI-artifact gépileg generálja és ellenőrzi.
+A napi munkához nem minden route bemagolása kell, hanem annak ismerete, melyik
+eszköz milyen felelősséggel jár. A pontos root/subcommand/alias/permission/
+console inventoryt a követett
+`docs/development/config-content-command-surface-2.json` gépileg ellenőrzi.
 
 | Terület | Legfontosabb parancsok | Mire használd? |
 |---|---|---|
@@ -834,6 +842,22 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | Karakter és gazdaság | `/class`, `/spec`, `/profession`, `/currency`, `/faction`, `/relic`, `/sinner` | ritka, naplózandó játékosmutáció |
 | Játékosrendszerek | `/afk`, `/sit`, `/party`, `/claim`, `/market`, `/bank`, `/spellbook`, `/talent` és a többi publikus root | a játékoskézikönyv szerinti használat |
 
+Az `/icesmp` gyökér permission-filterelt: helpben és tab completionben csak az
+a domain jelenik meg, amelyre a sendernek joga van. Konzolról a `reload`,
+`config`, `inspect config` és `client stats` utak használhatók; GUI-nyitás és
+játékos-only cél nélkül magyar elutasítást ad.
+
+| Útvonal | Permission | Szemantika |
+|---|---|---|
+| `/icesmp reload [operator\|messages\|status]` | `icesmp.admin.reload` | fail-safe reload, localization reload vagy policy-lekérdezés |
+| `/icesmp config get <kulcs>` | `icesmp.admin.config` | érték + authority + reload policy |
+| `/icesmp config set <kulcs> <érték>` | `icesmp.admin.config` | kizárólag ismert operator path atomikus override-ja |
+| `/icesmp config unset <kulcs>` | `icesmp.admin.config` | kizárólag létező operator override törlése |
+| `/icesmp config list\|find\|menu` | `icesmp.admin.config` | override-lista, snapshot-keresés vagy permission-safe GUI |
+| `/icesmp inspect config <kulcs>` | `icesmp.admin.inspect` | authority/reload diagnosztika, írás nélkül |
+| `/icesmp inspect <játékos>` | `icesmp.admin.inspect` | online/offline, Folia-safe játékosdiagnosztika |
+| `/icesmp client ...` | `icesmp.admin.client` | kliens-bridge diagnosztika/resync |
+
 ### Magas kockázatú szintaxisok
 
 | Parancs | Biztonságos használat |
@@ -843,7 +867,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | `/offlinetp <játékos>` | a staff teleportál a cél utolsó ismert helyére; nem a célt mozgatja |
 | `/crate set <id>` / `/crate remove` | csak stagingen ellenőrzött blokk- és világkötéshez |
 | `/territory setcapital <frakció> selection [név...]` | a `/claim pos1` + `/claim pos2` pontos X/Y/Z dobozát teszi védett fővárossá; előbb ellenőrizd a személyes claim-konfliktust és utána a `/territory show` rajzot |
-| `/icesmp reload` | configmentés és validáció után; strukturális változásnál restart kellhet |
+| `/icesmp reload operator` | operator YAML mentése és validáció után; contenthez mindig kontrollált restart kell |
 | `/prologue start` | az éles Prologue-indítás a nyitás pillanatában; enélkül `DORMANT` marad, ezért sem stage-óra, sem Prologue-korlát, overlay, Nether-pecsét, HUD vagy ambient hatás nincs |
 | `/prologue gate open --force` | veszélyes override: megnyitja a Kaput valódi finálégyőzelem nélkül |
 | `/prologue gate close --force` | csak override-dal nyitott Kaput zár vissza; kiérdemelt győzelem után elutasít |
@@ -876,7 +900,7 @@ eszköz milyen felelősséggel jár. A pontos root/subcommand/alias routingot a
 | Node | Leírás | Célközönség | Command | GUI | Listener/service | Parent | Default | Érzékenység | Javasolt kiosztás | Deployed változás |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `icesmp.admin.all` | Az összes kanonikus admin-node szülője. | Vezető admin | — | Admin panel minden jogosultságfüggő eleme | — | — | OP | kritikus | Csak vezető admin/üzemeltető | Új |
-| `icesmp.admin.reload` | Plugin config és üzenetek reloadja; az /icesmp gyökér kapuja is. | Admin | /icesmp, /icesmp reload | Admin panel: reload | — | icesmp.admin.all | OP | magas | Admin | Megváltozott |
+| `icesmp.admin.reload` | Operator config és üzenetek policy-aware reloadja; nem kapuzza a teljes `/icesmp` gyökeret. | Admin | /icesmp reload | Admin panel: reload | — | icesmp.admin.all | OP | magas | Admin | Megváltozott |
 | `icesmp.admin.config` | Élő config override és Config GUI. | Vezető admin | /icesmp config * | Config menü | ConfigMenuGUIListener | icesmp.admin.all | OP | kritikus | Szűk üzemeltetői kör | Új |
 | `icesmp.admin.events` | Világesemények kézi indítása és spawnpontkezelés. | Eventes/Admin | /events adminágak | Esemény/Admin menü | — | icesmp.admin.all | OP | magas | Eventes és admin | Megváltozott |
 | `icesmp.admin.npc` | NPC-kötések kezelése. | Admin/Builder | /npcbind * | Admin menü | NpcInteractionListener | icesmp.admin.all | OP | magas | NPC-t kezelő builder/admin | Megváltozott |
@@ -972,25 +996,47 @@ A release bundled `config/crates.yml` fájljában a `koznapi` crate permissionje
 
 ## Konfiguráció és reload
 
-Az aktív konfiguráció több `src/main/resources/config/*.yml` fájlból
-áll össze; az élő pluginmappában ugyanezek a tartományok felülírhatók.
+Az aktív konfiguráció a packaged operator defaultokból és a kézzel authorolt,
+restart-required `content/**` tartalomból áll össze. Az élő pluginmappában csak
+az explicit operator sémához tartozó pathok írhatók felül; ismeretlen vagy
+locked content leaf warning mellett kimarad.
 A teljes, minden pathot, típust, alapértéket és olvasót tartalmazó lista
 nem kézi dokumentum: a `Repository Docs Inventory` workflow artifactjában
-a `config-keys.md`/`.json` fájlok adják.
+a `config-keys.md`/`.json` fájlok adják; az authority/reload/migration
+besorolást a követett `docs/development/config-content-command-surface-2.json`
+rögzíti.
 
 Fő adminfelületek:
 
-- `/icesmp reload` — a reloadolható snapshotok, üzenetek és validáció
+- `/icesmp reload [operator|messages|status]` — a reloadolható snapshotok, üzenetek és policy
   frissítése;
 - `/icesmp config get|set|unset|list|find` — ellenőrzött runtime
   felülírás;
 - konfigurációs GUI — a támogatott adminbeállításokhoz;
 - közvetlen YAML-szerkesztés — csak mentéssel és staging-ellenőrzéssel.
 
-Restart kellhet scheduler-periódus, registry/definíció, világ- vagy
-integrációs struktúra módosításakor. Hibás típusnál vagy értéknél az
-alrendszer fallbacket, warningot vagy letiltást használhat; ezért reload
-után mindig ellenőrizd a konzolt.
+Canonical gameplay registry/definíció változásakor restart kötelező.
+Operator reload hibánál a teljes korábbi snapshot marad aktív; részleges új
+generáció nem publikálható. Reload után mindig ellenőrizd a konzolt.
+
+| Authority | Írás helye | Runtime override | Policy |
+|---|---|---|---|
+| `OPERATOR_TUNABLE` | `config/*.yml`, schema-bounded `config.yml` | igen | live vagy reconciliation reload; egyes scheduler kulcsok restart-required |
+| `LOCKED_CANONICAL_CONTENT` | `content/**` | nem | kontrollált restart |
+| presentation/localization | `messages/**` | nem gameplay override | live message reload |
+| persistent state | plugin data store-ok | csak a tulajdonos manager | lifecycle/recovery szabály szerint |
+
+Szándékos `EXTENSIBLE_CONTENT`: a `custom-quests.yml` schema-version 1,
+gráfvalidált szerver-extension. A bounded quest-admin út nem írhatja felül a
+packaged quest ID-ket; az állományt release/deployment forráskontrollban kell
+tartani, ismeretlen séma vagy sérült fájl startupkor fail-closed.
+
+Régi deployment upgrade-kor a korábbi gameplay- és expansion-YAML-ok nem
+írják felül az új packaged contentet. A startup előbb SHA-jelölt példányt
+mozgat a `migration-backups/config-content-command-surface-2/config/`
+könyvtárba; archiválási hiba esetén fail-closed megáll. A backup megtartja a
+szerveroldali módosításokat kézi összehasonlításhoz, de automatikus content
+merge nincs.
 
 A `factions.passives.*` értékekhez **nem kell restart**: reloadkor új immutable
 snapshot készül. A multiplier véges és nem negatív lehet, rejtett maximum
@@ -1107,41 +1153,27 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 
 ### Konfigurációs fájlok
 
-- `afk.yml`
-- `block-regen.yml`
-- `class-gameplay.yml`
-- `classes.yml`
-- `crafting.yml`
-- `crates.yml`
-- `dev-items.yml`
-- `economy.yml`
-- `event-spawn-safety.yml`
-- `factions.yml`
-- `general.yml`
-- `item-rarity.yml`
-- `item-templates.yml`
-- `loot.yml`
-- `moderation.yml`
-- `motd.yml`
-- `mob-templates.yml`
-- `pets.yml`
-- `profession-materials.yml`
-- `profession-recipes.yml`
-- `professions.yml`
-- `quests.yml`
-- `relics.yml`
-- `sit.yml`
-- `spells-balance.yml`
-- `spells.yml`
-- `tablist.yml`
-- `world.yml`
+Az üzemeltető által deploykor szerkeszthető, schema-bounded fájlok a
+`plugins/IceSMP/config/` könyvtárban: `afk.yml`, `block-regen.yml`,
+`class-gameplay.yml`, `client.yml`, `crafting.yml`, `crates.yml`, `dev-items.yml`,
+`economy.yml`, `event-spawn-safety.yml`, `factions.yml`, `general.yml`,
+`moderation.yml`, `motd.yml`, `pets.yml`, `professions-2.yml`, `professions.yml`,
+`sit.yml`, `spells-balance.yml`, `tablist.yml` és `world.yml`. A gyökér
+`config.yml` kizárólag a packaged sémában ismert operator override-okat és a
+resource-pack bootstrap értékeit fogadja.
+
+A kézzel authorolt gameplay nem deployolt operator config: a JAR
+`content/equipment/**`, `content/professions/**`, `content/progression/**`,
+`content/pve/**` és `content/events/**` fájljaiból töltődik. Ezek Gitben
+szerkesztendők és restart-required authorityk. Részletes authoring workflow:
+[`CONTENT_AUTHORING.md`](CONTENT_AUTHORING.md).
 
 ### Itemization 2.0 Phase 4–5 üzemeltetés
 
 - Admin authored itemadás: `/iceitem template <template-id> [darab] [játékos]`.
   Az `admin:give` provenance miatt ez a példány salvage tiltott; ne használd production
   economy input előállítására.
-- A balance-kulcsok az `item-templates.yml` `itemization.crafting`, `reroll`, `runes`,
+- A balance-kulcsok a `content/equipment/equipment.yml` `itemization.crafting`, `reroll`, `runes`,
   `salvage`, `gathering` és `ascension` blokkjában vannak. A bundled rune policy
   `old-rune-policy: destroy`; remove/replace költsége külön állítható. Identity/schema/template
   invariáns nem kapcsolható ki configból.
@@ -1168,10 +1200,10 @@ A részletes persistence-, recovery- és shutdown-folyamat:
 
 ### Equipment 2.0 üzemeltetés
 
-- Authority: `item-templates.yml` → `itemization.equipment.family-profiles`; a 160 armor
-  teljes leaf-authorityja az `equipment-catalog-expansion.yml`, benne az `armor-family`
-  mezővel. Reload csak teljesen valid immutable snapshotot publikál; hiba esetén az előző
-  marad aktív.
+- Authority: `content/equipment/equipment.yml` → `itemization.equipment.family-profiles`
+  és ugyanebben az egyetlen handcrafted katalógusban a 160 armor teljes leaf-authorityja,
+  benne az `armor-family` mezővel. Content-változás restart-required; startup csak teljesen
+  valid immutable snapshotot publikál.
 - Canonical mapping: Priest/Warlock/Wizard=CLOTH; Monk/Demon Hunter/Druid/Assassin=LEATHER;
   Archer/Shaman/Evoker=MAIL; Warrior/Paladin/Death Knight=PLATE. Spec-váltás nem változtatja.
 - `/iceitem inspect [játékos]` a familyt, explicit class restrictiont, can-equip döntést
@@ -1179,7 +1211,7 @@ A részletes persistence-, recovery- és shutdown-folyamat:
   engedélyezett; a tényleges equip ugyanazon a kapun bukik.
 - Market family filter: `/market search @cloth|@leather|@mail|@plate`. Listázást és vételt
   az eladó/vevő proficiencyje nem tiltja.
-- Az `equipment-catalog-expansion.yml` közvetlenül authorolt authority: a 160 armor
+- A `content/equipment/equipment.yml` közvetlenül authorolt authority: a 160 armor
   fix `base-armor`, toughness és — ahol van — knockback resistance értékét, egyedi magyar
   lore-ját és szűk, family-azonos secondary rolljait nem generátor állítja elő. Az
   `audit_long_term_equipment_catalog.py --require-eight-sets` a Leather/Gold/Chain/Copper/
@@ -1308,7 +1340,7 @@ anyagláncok és Equipment Resource Pack 2.0 nem részei ennek a változásnak.
 - Precedencia: encounter override → authored location → MobTemplate → wilderness
   distance, majd territory/biome-or-dimension/depth/event bónusz. A safe-zone ramp
   megmarad; claim önmagában nem tesz minden területet biztonságossá.
-- `mob-templates.yml`: ability-, loot-profile-, 49 MobTemplate- és 91 soros
+- `content/pve/enemies.yml`: 61 ability-, 89 MobTemplate- és 91 soros
   `creature-species` authority. A Paper runtime living/spawnable `EntityType` készletéhez
   képest missing/extra row, invalid disposition/temperament/social/reward vagy missing
   technique startupkor fail-fast; lookup fallbackje NON_COMBAT/VANILLA_ONLY.
@@ -2298,7 +2330,9 @@ Kézi elfogadási minimum:
   class HUD és egy Player/Target/Party kompozíció ugyanabban a per-player bossbar-carrierben.
 
 ## Professions 2.0 admin / economy
-- Effective recipe authority: `config/profession-recipes.yml` + később merge-elt `config/professions-2.yml` overlay; player progression továbbra is PlayerProfile v2.
+- Az effective recipe authority egyetlen handcrafted fájl: `content/professions/recipes.yml`;
+  az üzemeltetési/economy policy a schema-bounded `config/professions-2.yml`. Player
+  progression továbbra is PlayerProfile v2.
 - Machine-readable migration: `docs/development/professions-2-recipe-migration.json`.
 - Producer/consumer, faucet/sink és dependency graph: `docs/development/professions-2-economy-graph.json`.
 - `./gradlew professions2ReportRegressionTest professions2EconomyRegressionTest professions2RegressionTest` futtatja a célzott source gate-eket.
@@ -2312,7 +2346,7 @@ A `scripts/check_professions_2_reports.py` ellenőrzi a 392 baseline recept telj
 
 ## Enemy & World Boss Rework 2.0 üzemeltetés
 
-Az authored enemy és technique truth source a `config/mob-templates.yml`. A natural template
+Az authored enemy és technique truth source a `content/pve/enemies.yml`. A natural template
 `natural-context` mezői csak a meglévő runtime inputokat használhatják: biome, dimension, depth,
 time, weather, Blood Moon, territory és spawn reason. A `weight` és az `affinities` relatív
 súlyok; a `required`/`excluded` hard eligibility. Koordinátalistát, world progressiont, kill heatet

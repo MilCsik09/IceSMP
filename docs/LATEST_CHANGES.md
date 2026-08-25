@@ -1,5 +1,16 @@
 # Mi változott a július 12-i szerververzió óta?
 
+- A gameplay-definíciók egyetlen kézzel authorolt `content/**` fába kerültek;
+  a korábbi három expansion overlay és a gameplayt író advancement/profession
+  generátorok megszűntek. A megmaradt tooling csak validál, evidence/reportot
+  vagy resource-pack artifactot készít. Az effective konfiguráció bitazonos a
+  #141 parenttel: a #140 160 armorja és a #141 89 enemy/61 technique tartalma
+  nem lett újratervezve.
+- Az `/icesmp` gyökér helpje, végrehajtása és tab completionje domainenként
+  ugyanazt a permissiont használja. Az operator reload atomikus rollbacket ad,
+  a canonical content reloadját explicit restart-required válasszal utasítja
+  el, az `inspect config` pedig megmutatja az authorityt és a reload policyt.
+
 - Az Enemy & World Boss Rework 2.0 a #140 combat-hardening branchre stackelve 89 stabil
   `MobTemplate` identityre és 61 bounded technique-re dolgozza át az authored PvE rostert.
   A natural világban 38 elérhető identity közül választ az EntityType mellett biome, dimenzió,
@@ -702,7 +713,7 @@ JAR nem tartalmaz Git SHA-t vagy megbízható build-időt.
 
 Az élő config, permissionkiosztás, világállapot és teljes pluginlista nincs
 a JAR-ban. Emiatt több rendszerről csak képességszintű következtetés adható.
-A teljes 68 root parancs, 286 route, 79 root alias, 93 routing alias,
+A teljes 69 root parancs, 287 route, 79 root alias, 93 routing alias,
 44 permission, 13 550 configútvonal és 545 production komponens gépi
 referenciáját a `Repository Docs Inventory` workflow artifactja tartalmazza.
 

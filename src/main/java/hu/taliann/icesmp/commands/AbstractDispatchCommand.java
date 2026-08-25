@@ -57,6 +57,12 @@ public abstract class AbstractDispatchCommand implements BasicCommand {
             return;
         }
 
+        if (!subcommand.isVisibleTo(sender)) {
+            sender.sendMessage(messageManager.get("messages.permission-denied",
+                    "&cNincs jogosultságod erre a parancsra."));
+            return;
+        }
+
         subcommand.execute(sender, Arrays.copyOfRange(args, 1, args.length));
     }
 
@@ -65,7 +71,9 @@ public abstract class AbstractDispatchCommand implements BasicCommand {
         final CommandSender sender = commandSourceStack.getSender();
 
         if (args.length == 0) {
-            return subcommands.keySet().stream().toList();
+            return subcommands.values().stream()
+                    .filter(subcommand -> subcommand.isVisibleTo(sender))
+                    .map(Subcommand::name).toList();
         }
 
         // Paper nem adja át a lezáró szóköz utáni üres szót, ezért a subcommand-név pozícióját
@@ -78,10 +86,11 @@ public abstract class AbstractDispatchCommand implements BasicCommand {
         if (args.length == 1 && subcommand == null) {
             return subcommands.keySet().stream()
                     .filter(name -> name.startsWith(first))
+                    .filter(name -> subcommands.get(name).isVisibleTo(sender))
                     .toList();
         }
 
-        if (subcommand == null) {
+        if (subcommand == null || !subcommand.isVisibleTo(sender)) {
             return List.of();
         }
 
@@ -91,6 +100,7 @@ public abstract class AbstractDispatchCommand implements BasicCommand {
     private void sendHelp(final CommandSender sender) {
         sender.sendMessage(messageManager.get("messages." + commandName + "-help-header", helpHeaderDefault));
         for (final Subcommand subcommand : subcommands.values()) {
+            if (!subcommand.isVisibleTo(sender)) continue;
             sender.sendMessage(messageManager.get(
                     "messages." + commandName + "-help-" + subcommand.name(),
                     "&e" + subcommand.usage() + " &7- " + subcommand.description()));

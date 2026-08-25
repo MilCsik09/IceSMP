@@ -1,5 +1,233 @@
-# Authored Equipment 2.0 catalog. Every armor value, fixed stat and lore line is canonical here.
-# Do not derive or regenerate these templates from item level, rarity or slot formulas.
+itemization:
+  stats:
+    ability-power-percent-per-point: 1.0
+    ability-power-max-percent: 50.0
+  equipment:
+    family-profiles:
+      cloth:
+        base-armor-coefficient: 0.7
+        budget:
+          offensive: 0.35
+          defensive: 0.25
+          utility: 0.4
+        preferred-stats:
+        - ability_power
+        - max_health
+        disfavored-stats:
+        - armor_toughness
+      leather:
+        base-armor-coefficient: 0.9
+        budget:
+          offensive: 0.4
+          defensive: 0.25
+          utility: 0.35
+        preferred-stats:
+        - attack_damage
+        - attack_speed
+        - movement_speed
+        disfavored-stats:
+        - armor_toughness
+      mail:
+        base-armor-coefficient: 1.1
+        budget:
+          offensive: 0.33
+          defensive: 0.4
+          utility: 0.27
+        preferred-stats:
+        - ability_power
+        - max_health
+        - armor
+        disfavored-stats: []
+      plate:
+        base-armor-coefficient: 1.35
+        budget:
+          offensive: 0.25
+          defensive: 0.6
+          utility: 0.15
+        preferred-stats:
+        - max_health
+        - armor
+        - armor_toughness
+        disfavored-stats:
+        - movement_speed
+  loot:
+    enabled: true
+    max-personalization-multiplier: 1.5
+    history-window: 24
+    repeated-template-penalty: 0.12
+    repeated-category-penalty: 0.035
+    unseen-category-boost: 0.04
+  crafting:
+    base-minimum-quality: 0.1
+    quality-per-profession-level: 0.003
+    maximum-level-contribution: 0.2
+    blueprint-quality-bonus: 0.05
+    masterwork-quality-bonus: 0.15
+  reroll:
+    base-material: runapor
+    base-amount: 2
+    growth: 1.55
+    maximum-amount: 32
+    stat-lock-extra-material: folyositoszer
+    stat-lock-extra-amount: 1
+    quality-amplifier-material: sarkfeny_cseppko
+    quality-amplifier-floor: 0.65
+    stability-material: viaszpecset
+  runes:
+    old-rune-policy: destroy
+    remove:
+      material: runapor
+      amount: 1
+    replace:
+      material: runapor
+      amount: 2
+  salvage:
+    base-dust: 1
+    per-rarity-dust: 1
+    rune-dust-per-rune: 1
+    signature-dust: 1
+    maximum-dust: 8
+    output-map:
+      salvage_dust: runapor
+      rune_dust: runapor
+      signature_dust: folyositoszer
+      szovet_foszlany: szovet_foszlany
+      bor_hulladek: bor_hulladek
+      lanc_toredek: lanc_toredek
+      femhulladek: femhulladek
+  gathering:
+    rare-mining:
+      enabled: true
+      daily-cap: 6
+      resources:
+        sarkfeny_cseppko:
+          chance: 0.006
+          source-blocks:
+          - DEEPSLATE_DIAMOND_ORE
+          - DEEPSLATE_EMERALD_ORE
+          minimum-y: -64
+          maximum-y: 16
+          environment: NORMAL
+        viharkvarc:
+          chance: 0.0045
+          source-blocks:
+          - DEEPSLATE_REDSTONE_ORE
+          - DEEPSLATE_COPPER_ORE
+          minimum-y: -64
+          maximum-y: 8
+          environment: NORMAL
+        melysegi_borostyan:
+          chance: 0.0035
+          source-blocks:
+          - DEEPSLATE_GOLD_ORE
+          - DEEPSLATE_LAPIS_ORE
+          minimum-y: -64
+          maximum-y: 0
+          environment: NORMAL
+        nema_kristaly:
+          chance: 0.002
+          source-blocks:
+          - DEEPSLATE_LAPIS_ORE
+          - DEEPSLATE_DIAMOND_ORE
+          minimum-y: -64
+          maximum-y: -24
+          environment: NORMAL
+        karhozat_parazs:
+          chance: 0.0015
+          source-blocks:
+          - NETHER_GOLD_ORE
+          - ANCIENT_DEBRIS
+          minimum-y: 8
+          maximum-y: 96
+          environment: NETHER
+  ascension:
+    glatziendorfi_jegvert:
+      awakened:
+        materials:
+          sarkfeny_cseppko: 4
+          tiszta_vasesszencia: 6
+          osi_ereklyeszilank: 1
+          runapor: 8
+      ascended:
+        materials:
+          sarkfeny_cseppko: 8
+          tiszta_vasesszencia: 12
+          osi_ereklyeszilank: 2
+          runapor: 16
+    glatziendorfi_jegtoro:
+      awakened:
+        materials:
+          sarkfeny_cseppko: 5
+          viharkvarc: 4
+          osi_ereklyeszilank: 1
+          runapor: 10
+      ascended:
+        materials:
+          sarkfeny_cseppko: 9
+          viharkvarc: 8
+          osi_ereklyeszilank: 2
+          runapor: 18
+    ostromtoro_mellvert:
+      awakened:
+        materials:
+          melysegi_borostyan: 5
+          tiszta_vasesszencia: 8
+          osi_ereklyeszilank: 1
+          runapor: 8
+    csillagvesz_ritualbot:
+      awakened:
+        materials:
+          nema_kristaly: 4
+          holdezust_huzal: 6
+          osi_ereklyeszilank: 1
+          runapor: 10
+    kallan_szeletelo:
+      awakened:
+        materials:
+          sarkanycsont_szilank: 6
+          sarkfeny_cseppko: 6
+          osi_ereklyeszilank: 1
+          runapor: 12
+    sarkanycsont_ij:
+      awakened:
+        materials:
+          sarkanycsont_szilank: 8
+          szavannafu_kotel: 5
+          osi_ereklyeszilank: 1
+          runapor: 12
+    napfogyatkozas_fokusz:
+      awakened:
+        materials:
+          nema_kristaly: 6
+          karhozat_parazs: 3
+          osi_ereklyeszilank: 2
+          runapor: 16
+    csillagfatyol_mellvert:
+      awakened:
+        materials:
+          szivfa_mag: 2
+          holdlen_fonal: 4
+          runapor: 4
+    demonbor_mellvert:
+      awakened:
+        materials:
+          bokic_gyongy: 2
+          vizbor: 3
+          halolaj: 2
+    melyvizi_vadasz_mellvert:
+      awakened:
+        materials:
+          melyvizi_esszencia: 2
+          gyongyhaz_hej: 3
+          runapor: 4
+    runaforged_mellvert:
+      awakened:
+        materials:
+          szorny_szerv: 2
+          kovacsolt_lemez: 3
+          runapor: 4
+  legacy:
+    market-enabled: true
 item-sets:
   glatziendorfi_jegorseg:
     display-name: Glatziendorfi Jégőrség
@@ -89,6 +317,1685 @@ item-sets:
           attack_damage: 2.0
           max_health: 6.0
 item-templates:
+  glatziendorfi_jegvert:
+    schema: 2
+    version: 2
+    display-name: Glatziendorfi Jégvért
+    lore:
+    - A glatziendorfi jégőrség lemezeiben egy megfagyott eskü tartja távol a félelmet.
+    - A Jégvért kristálygerince sziklaként fogja össze a mellkast.
+    rarity: epic
+    item-level: 34
+    family: armor
+    armor-family: plate
+    family-exception: A jégőrségi signature mellvért kis mozgás-rollja authored különlegesség.
+    slot: chest
+    material: NETHERITE_CHESTPLATE
+    item-model: icesmp:glatziendorfi_jegvert
+    equipment-asset: icesmp:rp2/glatziendorfi
+    level-requirement: 30
+    rune-sockets: 1
+    signature-effect: glatziendorfi_jegvert
+    set-id: glatziendorfi_jegorseg
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags:
+    - profession:armorer
+    - region:glatziendorf
+    region-tags:
+    - glatziendorf
+    gathering-tags:
+    - mining:frost_ore
+    - hunting:dragon_scale
+    crafting-tags:
+    - armorer:masterwork
+    - processing:frost_forging
+    encounter-metadata:
+      primary-source: Glatziendorf páncélkovácsai
+      catalog-line: glatziendorfi
+      catalog-acquisition: crafted
+      catalog-archetype: Runeforged
+      progression-band: high
+      rank-eligibility: CRAFTED
+      catalog-profession: armorer
+    ascension-path:
+    - awakened
+    - ascended
+    ascension-stages:
+      awakened:
+        item-level: 40
+        level-requirement: 34
+        rune-sockets: 2
+        signature-tier: 2
+        lore:
+        - A sarkfény felébresztette a páncélba fagyott esküt.
+        - A kristálygerinc már a viselő szívverésére válaszol.
+        fixed-stats:
+          ability_power: 7.0
+          max_health: 8.0
+          armor_toughness: 4.0
+          knockback_resistance: 0.1
+        rolled-stats:
+          max_health:
+            min: 3.0
+            max: 6.0
+          ability_power:
+            min: 3.0
+            max: 5.5
+      ascended:
+        item-level: 48
+        level-requirement: 42
+        rune-sockets: 2
+        signature-tier: 3
+        lore:
+        - A jégőrség legendája teljesítette ki ugyanazt az ősi vértet.
+        - A felemelkedett lemezeken a dér többé nem olvad el.
+        fixed-stats:
+          ability_power: 9.0
+          max_health: 11.0
+          armor_toughness: 5.0
+          knockback_resistance: 0.13
+        rolled-stats:
+          max_health:
+            min: 4.0
+            max: 8.0
+          ability_power:
+            min: 4.0
+            max: 7.0
+    base-armor: 9.5
+    fixed-stats:
+      ability_power: 5.0
+      max_health: 6.0
+      armor_toughness: 3.25
+      knockback_resistance: 0.08
+    rolled-stats:
+      max_health:
+        min: 2.0
+        max: 4.5
+      ability_power:
+        min: 2.0
+        max: 4.0
+  glatziendorfi_jegtoro:
+    schema: 2
+    version: 1
+    display-name: Glatziendorfi Jégtörő
+    lore:
+    - A Jégmezők sárkányainak pikkelyeivel megerősített fegyver.
+    rarity: legendary
+    item-level: 34
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_AXE
+    item-model: icesmp:glatziendorfi_jegtoro
+    level-requirement: 30
+    base-damage: 7.0
+    fixed-stats:
+      ability_power: 3.0
+      attack_speed: -3.2
+    rolled-stats:
+      attack_damage:
+        min: 0.5
+        max: 2.0
+      attack_speed:
+        min: 0.05
+        max: 0.25
+    rune-sockets: 2
+    signature-effect: glatziendorfi_jegtoro
+    set-id: glatziendorfi_jegorseg
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags:
+    - profession:lumberjack
+    - region:glatziendorf
+    region-tags:
+    - glatziendorf
+    gathering-tags:
+    - logging:frostwood
+    - hunting:dragon_scale
+    crafting-tags:
+    - weaponsmith:masterwork
+    - processing:frost_forging
+    encounter-metadata:
+      primary-source: Glatziendorf jégkovácsai
+    ascension-path:
+    - awakened
+    - ascended
+    ascension-stages:
+      awakened:
+        item-level: 42
+        level-requirement: 36
+        fixed-stats:
+          ability_power: 3.0
+        rolled-stats:
+          attack_damage:
+            min: 1.0
+            max: 3.0
+          attack_speed:
+            min: 0.08
+            max: 0.32
+        rune-sockets: 2
+        signature-tier: 2
+      ascended:
+        item-level: 50
+        level-requirement: 44
+        fixed-stats:
+          ability_power: 4.0
+        rolled-stats:
+          attack_damage:
+            min: 1.5
+            max: 4.0
+          attack_speed:
+            min: 0.1
+            max: 0.4
+        rune-sockets: 2
+        signature-tier: 3
+  vadvilagi_eskukard:
+    schema: 2
+    version: 1
+    display-name: Vadvidéki Eskükard
+    lore:
+    - A határvidék őrei kézről kézre adják, ha új őr áll a helyükre.
+    rarity: rare
+    item-level: 18
+    family: weapon
+    slot: main-hand
+    material: IRON_SWORD
+    level-requirement: 14
+    class-restrictions:
+    - warrior
+    - paladin
+    - death_knight
+    specialization-restrictions:
+    - berserker
+    - guardian
+    - retribution
+    - protection
+    - blood
+    - frost
+    base-damage: 5.3
+    rolled-stats:
+      attack_damage:
+        min: 0.25
+        max: 1.25
+      max_health:
+        min: 0.5
+        max: 2.0
+    rune-sockets: 1
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: materials
+    source-tags:
+    - combat:wilderness
+    - profession:armorer
+    region-tags:
+    - wilderness
+    gathering-tags:
+    - hunting:hide
+    - mining:iron
+    crafting-tags:
+    - armorer:standard
+    - salvage:weapon
+    encounter-metadata:
+      primary-source: Vadvidéki ellenfelek
+      crate-eligible: 'true'
+    fixed-stats:
+      attack_speed: -2.4
+  hamuszeli_vadaszij:
+    schema: 2
+    version: 1
+    display-name: Hamuszéli Vadászíj
+    lore:
+    - Füstszagú idegén még ott rezeg az utolsó hajtás emléke.
+    rarity: uncommon
+    item-level: 16
+    family: weapon
+    slot: main-hand
+    material: BOW
+    level-requirement: 12
+    class-restrictions:
+    - archer
+    - druid
+    specialization-restrictions:
+    - sharpshooter
+    - beast_master
+    - feral
+    fixed-stats:
+      ability_power: 2.0
+    rolled-stats:
+      movement_speed:
+        min: 0.001
+        max: 0.004
+    rune-sockets: 1
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: materials
+    source-tags:
+    - combat:wilderness
+    region-tags:
+    - wilderness
+    gathering-tags:
+    - logging:hardwood
+    - hunting:sinew
+    crafting-tags:
+    - salvage:weapon
+    encounter-metadata:
+      primary-source: Vadvidéki ellenfelek
+  ostromtoro_mellvert:
+    schema: 2
+    version: 2
+    display-name: Ostromtörő Mellvért
+    lore:
+    - Horpadásai olyan ostromokról mesélnek, amelyeknek nem maradt krónikása.
+    - A túlméretezett mellvért roham közben mozgó ostromfallá válik.
+    rarity: legendary
+    item-level: 43
+    family: armor
+    armor-family: plate
+    slot: chest
+    material: DIAMOND_CHESTPLATE
+    level-requirement: 39
+    rune-sockets: 2
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - profession:armorer
+    region-tags:
+    - wilderness
+    gathering-tags:
+    - mining:diamond
+    - hunting:boss_trophy
+    crafting-tags:
+    - salvage:armor
+    encounter-metadata:
+      primary-source: Világbossok és inváziós bajnokok
+      catalog-line: ostromtoro
+      catalog-acquisition: boss
+      catalog-archetype: Dread
+      progression-band: endgame
+      rank-eligibility: BOSS
+    ascension-path:
+    - awakened
+    ascension-stages:
+      awakened:
+        item-level: 47
+        level-requirement: 43
+        rune-sockets: 2
+        signature-tier: 0
+        fixed-stats:
+          attack_damage: 2.2
+          max_health: 11.0
+          armor_toughness: 5.5
+          knockback_resistance: 0.14
+        rolled-stats:
+          attack_damage:
+            min: 0.9
+            max: 1.9
+          max_health:
+            min: 4.0
+            max: 8.0
+        lore:
+        - Az utolsó horpadást belülről kalapálták ki, és ostromjel került a helyére.
+        - 'Az ébredt mellvért már nem állítja meg a rohamot: vezeti.'
+    base-armor: 11.5
+    fixed-stats:
+      attack_damage: 1.5
+      max_health: 8.0
+      armor_toughness: 4.5
+      knockback_resistance: 0.11
+    rolled-stats:
+      attack_damage:
+        min: 0.7
+        max: 1.5
+      max_health:
+        min: 3.0
+        max: 6.0
+    set-id: ostromtoro_ostromfal
+    item-model: icesmp:ostromtoro_mellvert
+    equipment-asset: icesmp:rp2/ostromtoro
+  csillagvesz_ritualbot:
+    schema: 2
+    version: 1
+    display-name: Csillagvész Rituálbot
+    lore:
+    - A belefagyott fény nem melegít, de válaszol a kimondott nevekre.
+    rarity: legendary
+    item-level: 34
+    family: weapon
+    slot: main-hand
+    material: BLAZE_ROD
+    level-requirement: 30
+    class-restrictions:
+    - wizard
+    - priest
+    - warlock
+    - evoker
+    - shaman
+    specialization-restrictions:
+    - elementalist
+    - necromancer
+    - discipline
+    - shadow
+    - affliction
+    - destruction
+    - devastation
+    - elemental
+    - tidal
+    fixed-stats:
+      ability_power: 5.0
+    rolled-stats:
+      max_health:
+        min: 1.0
+        max: 3.0
+      movement_speed:
+        min: 0.001
+        max: 0.006
+    rune-sockets: 2
+    bind-policy: none
+    trade-policy: tradeable
+    salvage-policy: signature-materials
+    source-tags:
+    - combat:boss
+    region-tags:
+    - wilderness
+    gathering-tags:
+    - hunting:boss_essence
+    - gathering:star_fragment
+    crafting-tags:
+    - salvage:focus
+    encounter-metadata:
+      primary-source: Világbossok és inváziós bajnokok
+    ascension-path:
+    - awakened
+    ascension-stages:
+      awakened:
+        item-level: 43
+        level-requirement: 36
+        fixed-stats:
+          ability_power: 5.0
+        rolled-stats:
+          max_health:
+            min: 2.0
+            max: 5.0
+          movement_speed:
+            min: 0.003
+            max: 0.01
+        rune-sockets: 2
+        signature-tier: 0
+  kovacstanonc_penge:
+    schema: 2
+    display-name: Kovácstanonc Pengéje
+    rarity: common
+    item-level: 6
+    family: weapon
+    slot: main-hand
+    material: STONE_SWORD
+    base-damage: 4.0
+    rolled-stats:
+      attack_damage:
+        min: 0.1
+        max: 0.5
+    rune-sockets: 0
+    source-tags:
+    - profession:armorer
+    crafting-tags:
+    - armorer:starter
+    fixed-stats:
+      attack_speed: -2.4
+    level-requirement: 2
+  borkeretes_ij:
+    schema: 2
+    display-name: Bőrkeretes Íj
+    rarity: common
+    item-level: 7
+    family: weapon
+    slot: main-hand
+    material: BOW
+    rolled-stats:
+      movement_speed:
+        min: 0.001
+        max: 0.003
+    source-tags:
+    - profession:lumberjack
+    - combat:wilderness
+    gathering-tags:
+    - logging:oak
+    - hunting:sinew
+    fixed-stats:
+      ability_power: 0.5
+    level-requirement: 3
+  mohas_fokusz:
+    schema: 2
+    display-name: Mohás Fókusz
+    rarity: uncommon
+    item-level: 8
+    family: weapon
+    slot: main-hand
+    material: AMETHYST_SHARD
+    fixed-stats:
+      ability_power: 1.5
+    rolled-stats:
+      max_health:
+        min: 0.5
+        max: 1.5
+    source-tags:
+    - profession:enchanter
+    - combat:wilderness
+    gathering-tags:
+    - farming:herbs
+    level-requirement: 4
+  tarnapajzs:
+    schema: 2
+    display-name: Tárnapajzs
+    rarity: uncommon
+    item-level: 10
+    family: armor
+    slot: off-hand
+    material: SHIELD
+    base-armor: 1.0
+    rolled-stats:
+      armor:
+        min: 0.25
+        max: 0.75
+    rune-sockets: 1
+    source-tags:
+    - profession:armorer
+    gathering-tags:
+    - mining:iron
+    fixed-stats:
+      max_health: 1.0
+    level-requirement: 6
+  utjaro_csizma:
+    schema: 2
+    display-name: Útjáró Csizma
+    rarity: uncommon
+    item-level: 13
+    family: armor
+    armor-family: leather
+    slot: feet
+    material: LEATHER_BOOTS
+    source-tags:
+    - combat:wilderness
+    - rank:normal
+    gathering-tags:
+    - hunting:hide
+    version: 2
+    lore:
+    - Útpor, eső és száz idegen kapu csiszolta puhára ezt a vándorbőrt.
+    - A hosszú útra tört csizma könnyedén veszi a kőlépcsőt.
+    level-requirement: 9
+    base-armor: 2.5
+    fixed-stats:
+      attack_damage: 0.2
+      attack_speed: 0.03
+      armor_toughness: 0.25
+      movement_speed: 0.005
+    rolled-stats:
+      movement_speed:
+        min: 0.002
+        max: 0.005
+    rune-sockets: 0
+    encounter-metadata:
+      catalog-line: utjaro
+      catalog-acquisition: world
+      catalog-archetype: Shadow
+      progression-band: early
+      rank-eligibility: NORMAL
+    item-model: icesmp:utjaro_csizma
+    equipment-asset: icesmp:rp2/utjaro
+  csontvarro_kopeny:
+    schema: 2
+    display-name: Csontvarró Köpeny
+    rarity: uncommon
+    item-level: 15
+    family: armor
+    armor-family: cloth
+    family-exception: A csontvarrás tartósabb support Cloth identitást ad, nem armor rangsort.
+    slot: chest
+    material: LEATHER_CHESTPLATE
+    rune-sockets: 0
+    source-tags:
+    - combat:wilderness
+    - rank:normal
+    gathering-tags:
+    - hunting:bone
+    - hunting:hide
+    version: 2
+    lore:
+    - Csonttűvel foltozott mezei szövet; minden öltés egy túlélő fogadalma.
+    - A foltozott köpenyen minden bordaöltés egy régi sérülést fed.
+    level-requirement: 11
+    base-armor: 3.5
+    fixed-stats:
+      ability_power: 3.0
+      max_health: 3.0
+    rolled-stats:
+      max_health:
+        min: 1.0
+        max: 2.5
+      ability_power:
+        min: 0.5
+        max: 1.5
+    encounter-metadata:
+      catalog-line: csontvarro
+      catalog-acquisition: world
+      catalog-archetype: Sanctified
+      progression-band: early
+      rank-eligibility: NORMAL
+    item-model: icesmp:csontvarro_kopeny
+    equipment-asset: icesmp:rp2/csontvarro
+  holdfeny_bot:
+    schema: 2
+    display-name: Holdfény Bot
+    rarity: rare
+    item-level: 15
+    family: weapon
+    slot: main-hand
+    material: BLAZE_ROD
+    fixed-stats:
+      ability_power: 3.0
+    rolled-stats:
+      movement_speed:
+        min: 0.001
+        max: 0.004
+    rune-sockets: 1
+    source-tags:
+    - profession:enchanter
+    gathering-tags:
+    - farming:moon_herb
+    - fishing:pearl
+    level-requirement: 11
+  viharkvarc_pallos:
+    schema: 2
+    display-name: Viharkvarc Pallos
+    rarity: rare
+    item-level: 20
+    family: weapon
+    slot: two-hand
+    material: IRON_SWORD
+    base-damage: 6.0
+    rolled-stats:
+      attack_damage:
+        min: 0.5
+        max: 1.8
+      attack_speed:
+        min: 0.02
+        max: 0.12
+    rune-sockets: 1
+    source-tags:
+    - profession:armorer
+    gathering-tags:
+    - mining:viharkvarc
+    fixed-stats:
+      attack_speed: -2.7
+    level-requirement: 16
+  melysegi_borostyan_mellvert:
+    schema: 2
+    display-name: Borostyán Tárnavért
+    rarity: rare
+    item-level: 25
+    family: armor
+    armor-family: plate
+    slot: chest
+    material: IRON_CHESTPLATE
+    rune-sockets: 1
+    source-tags:
+    - profession:armorer
+    gathering-tags:
+    - mining:melysegi_borostyan
+    version: 2
+    lore:
+    - Borostyánnal kiöntött lemezei a tárnák omlásainak erejét is szétterítik.
+    - A tárnavért vastag mellbordája úgy áll, mint egy bányatám.
+    level-requirement: 21
+    base-armor: 9.0
+    fixed-stats:
+      max_health: 8.0
+      armor_toughness: 2.5
+      knockback_resistance: 0.04
+    rolled-stats:
+      max_health:
+        min: 2.0
+        max: 4.5
+    encounter-metadata:
+      catalog-line: borostyan_tarna
+      catalog-acquisition: crafted
+      catalog-archetype: Bulwark
+      progression-band: mid
+      rank-eligibility: CRAFTED
+      catalog-profession: armorer
+    item-model: icesmp:melysegi_borostyan_mellvert
+    equipment-asset: icesmp:rp2/borostyan_tarna
+  szelvago_ij:
+    schema: 2
+    display-name: Szélvágó Íj
+    rarity: rare
+    item-level: 22
+    family: weapon
+    slot: main-hand
+    material: CROSSBOW
+    rolled-stats:
+      attack_damage:
+        min: 0.3
+        max: 1.1
+      movement_speed:
+        min: 0.002
+        max: 0.006
+    rune-sockets: 1
+    source-tags:
+    - profession:lumberjack
+    - combat:wilderness
+    gathering-tags:
+    - logging:hardwood
+    - hunting:sinew
+    fixed-stats:
+      ability_power: 2.5
+    level-requirement: 18
+  nema_kristaly_fokusz:
+    schema: 2
+    display-name: Néma Kristályfókusz
+    rarity: epic
+    item-level: 24
+    family: weapon
+    slot: main-hand
+    material: ECHO_SHARD
+    fixed-stats:
+      ability_power: 4.0
+    rolled-stats:
+      max_health:
+        min: 1.0
+        max: 3.0
+    rune-sockets: 1
+    source-tags:
+    - profession:enchanter
+    - combat:deep
+    gathering-tags:
+    - mining:nema_kristaly
+    level-requirement: 20
+  parazs_kard:
+    schema: 2
+    display-name: Parázsél
+    rarity: epic
+    item-level: 25
+    family: weapon
+    slot: main-hand
+    material: DIAMOND_SWORD
+    base-damage: 5.8
+    rolled-stats:
+      attack_damage:
+        min: 0.6
+        max: 2.0
+      ability_power:
+        min: 1.0
+        max: 3.0
+    rune-sockets: 1
+    source-tags:
+    - profession:armorer
+    - combat:event
+    gathering-tags:
+    - mining:karhozat_parazs
+    fixed-stats:
+      attack_speed: -2.4
+    level-requirement: 21
+  gyongyhaz_pajzs:
+    schema: 2
+    display-name: Gyöngyház Pajzs
+    rarity: rare
+    item-level: 23
+    family: armor
+    slot: off-hand
+    material: SHIELD
+    base-armor: 2.0
+    rolled-stats:
+      armor_toughness:
+        min: 0.5
+        max: 1.5
+    rune-sockets: 1
+    source-tags:
+    - profession:armorer
+    gathering-tags:
+    - fishing:gyongyhaz_pikkely
+    fixed-stats:
+      max_health: 2.0
+    level-requirement: 19
+  vadorzo_csizma:
+    schema: 2
+    display-name: Vadőrző Csizma
+    rarity: rare
+    item-level: 23
+    family: armor
+    armor-family: leather
+    slot: feet
+    material: CHAINMAIL_BOOTS
+    rune-sockets: 1
+    source-tags:
+    - profession:alchemist
+    - combat:wilderness
+    - catalog:crafted
+    gathering-tags:
+    - hunting:hide
+    version: 2
+    lore:
+    - A vadőrök cserzett páncélja az üldözéshez könnyű, a visszavágáshoz elég kemény.
+    - A mély mintájú csizma nem csúszik meg a felvert sárban.
+    level-requirement: 19
+    base-armor: 2.0
+    fixed-stats:
+      attack_damage: 0.4
+      attack_speed: 0.04
+      armor_toughness: 0.5
+      movement_speed: 0.005
+    rolled-stats:
+      movement_speed:
+        min: 0.002
+        max: 0.005
+    encounter-metadata:
+      catalog-line: vadorzo
+      catalog-acquisition: crafted
+      catalog-archetype: Predator
+      progression-band: mid
+      rank-eligibility: CRAFTED
+      catalog-profession: alchemist
+    item-model: icesmp:vadorzo_csizma
+    equipment-asset: icesmp:rp2/vadorzo
+  holdsarlo:
+    schema: 2
+    display-name: Holdsarló
+    rarity: epic
+    item-level: 27
+    family: weapon
+    slot: main-hand
+    material: GOLDEN_HOE
+    fixed-stats:
+      ability_power: 3.0
+      attack_speed: -2.2
+    rolled-stats:
+      attack_damage:
+        min: 0.5
+        max: 1.8
+      movement_speed:
+        min: 0.002
+        max: 0.006
+    rune-sockets: 2
+    source-tags:
+    - combat:event
+    - profession:enchanter
+    gathering-tags:
+    - farming:moon_herb
+    base-damage: 4.8
+    level-requirement: 23
+  csontenyv_pancel:
+    schema: 2
+    display-name: Csontenyv Páncél
+    rarity: rare
+    item-level: 25
+    family: armor
+    armor-family: mail
+    slot: chest
+    material: CHAINMAIL_CHESTPLATE
+    rune-sockets: 1
+    source-tags:
+    - profession:armorer
+    gathering-tags:
+    - hunting:bone
+    version: 2
+    lore:
+    - Csontenyv köti össze a sodronyszemeket; a lánc tompán nyög, de nem enged.
+    - A ragasztott láncvért mellén vastag bordák fogják fel a rohamot.
+    level-requirement: 21
+    base-armor: 7.0
+    fixed-stats:
+      max_health: 8.0
+      armor_toughness: 1.5
+    rolled-stats:
+      max_health:
+        min: 2.0
+        max: 4.5
+    encounter-metadata:
+      catalog-line: csontenyv
+      catalog-acquisition: crafted
+      catalog-archetype: Warden
+      progression-band: mid
+      rank-eligibility: CRAFTED
+      catalog-profession: armorer
+    item-model: icesmp:csontenyv_pancel
+    equipment-asset: icesmp:rp2/csontenyv
+  viharszovo_bot:
+    schema: 2
+    display-name: Viharszövő Bot
+    rarity: epic
+    item-level: 28
+    family: weapon
+    slot: main-hand
+    material: TRIDENT
+    fixed-stats:
+      ability_power: 4.0
+      attack_speed: -2.9
+    rolled-stats:
+      attack_damage:
+        min: 0.4
+        max: 1.4
+    rune-sockets: 2
+    source-tags:
+    - profession:enchanter
+    - combat:event
+    gathering-tags:
+    - mining:viharkvarc
+    - fishing:storm
+    base-damage: 6.5
+    level-requirement: 24
+  sarkfeny_sisak:
+    schema: 2
+    display-name: Sarkfény Sisak
+    rarity: rare
+    item-level: 24
+    family: armor
+    armor-family: plate
+    slot: head
+    material: DIAMOND_HELMET
+    rune-sockets: 1
+    source-tags:
+    - profession:armorer
+    gathering-tags:
+    - mining:sarkfeny_cseppko
+    version: 2
+    lore:
+    - Sarkfényben hűtött acélja egyszerre tartja az eskü melegét és az északi ég hidegét.
+    - A fényíves sisak a látómező fölött vezeti végig az aurórát.
+    level-requirement: 20
+    base-armor: 4.0
+    fixed-stats:
+      ability_power: 2.0
+      attack_damage: 0.4
+      max_health: 2.0
+      armor_toughness: 2.5
+      knockback_resistance: 0.05
+    rolled-stats:
+      ability_power:
+        min: 1.0
+        max: 2.5
+    encounter-metadata:
+      catalog-line: sarkfeny
+      catalog-acquisition: crafted
+      catalog-archetype: Crusader
+      progression-band: mid
+      rank-eligibility: CRAFTED
+      catalog-profession: armorer
+    item-model: icesmp:sarkfeny_sisak
+    equipment-asset: icesmp:rp2/sarkfeny
+  aranyfust_kopeny:
+    schema: 2
+    display-name: Aranyfüst Köpeny
+    rarity: legendary
+    item-level: 43
+    family: armor
+    armor-family: cloth
+    slot: chest
+    material: GOLDEN_CHESTPLATE
+    rune-sockets: 2
+    source-tags:
+    - combat:champion
+    - rank:champion
+    gathering-tags:
+    - mining:gold
+    version: 2
+    lore:
+    - A füstfekete szövet szélén aranylevél foszlik, mintha a parázs emlékezne.
+    - A legyezős köpeny minden fordulattal új mintára töri a fényt.
+    level-requirement: 39
+    base-armor: 5.0
+    fixed-stats:
+      ability_power: 8.0
+      armor_toughness: 1.0
+      attack_speed: 0.03
+      movement_speed: 0.004
+    rolled-stats:
+      ability_power:
+        min: 2.5
+        max: 5.0
+      movement_speed:
+        min: 0.002
+        max: 0.006
+    encounter-metadata:
+      catalog-line: aranyfust
+      catalog-acquisition: prestige
+      catalog-archetype: Veil
+      progression-band: endgame
+      rank-eligibility: CHAMPION
+    item-model: icesmp:aranyfust_kopeny
+    equipment-asset: icesmp:rp2/aranyfust
+  kapuparazs_pallos:
+    schema: 2
+    display-name: Kapuparázs Pallos
+    rarity: legendary
+    item-level: 38
+    family: weapon
+    slot: two-hand
+    material: NETHERITE_SWORD
+    base-damage: 7.2
+    rolled-stats:
+      attack_damage:
+        min: 1.0
+        max: 3.5
+      max_health:
+        min: 1.0
+        max: 3.0
+    rune-sockets: 2
+    source-tags:
+    - combat:boss
+    - profession:armorer
+    gathering-tags:
+    - mining:karhozat_parazs
+    fixed-stats:
+      attack_speed: -2.7
+    level-requirement: 34
+  elsocsend_penge:
+    schema: 2
+    display-name: Az Első Csend Pengéje
+    rarity: mythic
+    item-level: 50
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_SWORD
+    base-damage: 8.0
+    rolled-stats:
+      attack_damage:
+        min: 1.5
+        max: 4.0
+      movement_speed:
+        min: 0.004
+        max: 0.01
+    rune-sockets: 2
+    bind-policy: on-pickup
+    trade-policy: bound-only
+    salvage-policy: forbidden
+    source-tags:
+    - combat:world_boss
+    gathering-tags:
+    - event:elso_csend_szilankja
+    fixed-stats:
+      attack_speed: -2.4
+    level-requirement: 46
+  fonixpihe_kopeny:
+    schema: 2
+    display-name: Főnixpihe Köpeny
+    rarity: legendary
+    item-level: 43
+    family: armor
+    armor-family: cloth
+    slot: chest
+    material: ELYTRA
+    rune-sockets: 2
+    signature-effect: fonix_tollkopeny
+    source-tags:
+    - combat:event
+    - profession:enchanter
+    - catalog:crafted
+    gathering-tags:
+    - hunting:fonixpihe
+    version: 2
+    lore:
+    - Tűzben edzett tollszálai kihunynak, majd a lélegzettel újra felizzanak.
+    - A Főnixpihe Köpeny szárnyszerű rétegei eséskor szétnyílnak.
+    level-requirement: 39
+    base-armor: 5.0
+    fixed-stats:
+      ability_power: 10.0
+      max_health: 5.0
+      armor_toughness: 1.25
+      movement_speed: 0.002
+    rolled-stats:
+      ability_power:
+        min: 3.0
+        max: 5.5
+      max_health:
+        min: 2.5
+        max: 6.0
+    encounter-metadata:
+      catalog-line: fonixszovet
+      catalog-acquisition: crafted
+      catalog-archetype: Arcane
+      progression-band: endgame
+      rank-eligibility: CRAFTED
+      catalog-profession: enchanter
+    item-model: icesmp:fonixpihe_kopeny
+    equipment-asset: icesmp:rp2/fonixszovet
+  sarkanycsont_ij:
+    schema: 2
+    display-name: Sárkánycsont Íj
+    rarity: legendary
+    item-level: 39
+    family: weapon
+    slot: main-hand
+    material: BOW
+    rolled-stats:
+      attack_damage:
+        min: 1.0
+        max: 3.0
+      movement_speed:
+        min: 0.003
+        max: 0.009
+    rune-sockets: 2
+    signature-effect: sarkanycsont_ij
+    source-tags:
+    - profession:lumberjack
+    - combat:boss
+    gathering-tags:
+    - hunting:sarkanycsont_szilank
+    ascension-path:
+    - awakened
+    ascension-stages:
+      awakened:
+        item-level: 48
+        level-requirement: 42
+        rolled-stats:
+          attack_damage:
+            min: 2.0
+            max: 4.5
+          movement_speed:
+            min: 0.006
+            max: 0.014
+        rune-sockets: 2
+        signature-tier: 2
+    fixed-stats:
+      ability_power: 4.0
+    level-requirement: 35
+  vasmuvek_csakanya:
+    schema: 2
+    display-name: Vasművek Csákánya
+    rarity: legendary
+    item-level: 36
+    family: tool
+    slot: main-hand
+    material: NETHERITE_PICKAXE
+    rolled-stats:
+      attack_damage:
+        min: 0.5
+        max: 2.0
+    rune-sockets: 1
+    signature-effect: vasmuvek_csakanya
+    source-tags:
+    - profession:miner
+    gathering-tags:
+    - mining:masterwork
+  bokic_horgaszbot:
+    schema: 2
+    display-name: Bokic Öreg Horgászbotja
+    rarity: legendary
+    item-level: 35
+    family: tool
+    slot: main-hand
+    material: FISHING_ROD
+    rolled-stats:
+      movement_speed:
+        min: 0.002
+        max: 0.008
+    rune-sockets: 1
+    signature-effect: bokic_horgaszbot
+    source-tags:
+    - profession:fisherman
+    gathering-tags:
+    - fishing:rare
+  smaragdko_bankbetet:
+    schema: 2
+    display-name: Smaragdkő Bankbetét
+    rarity: epic
+    item-level: 32
+    family: accessory
+    slot: accessory
+    material: EMERALD
+    fixed-stats:
+      max_health: 2.0
+    signature-effect: smaragdko_bankbetet
+    salvage-policy: forbidden
+    source-tags:
+    - profession:enchanter
+    - market:bank
+    gathering-tags:
+    - mining:emerald
+  szellemszarvas_bubaj:
+    schema: 2
+    display-name: Szellemszarvas Bűbáj
+    rarity: legendary
+    item-level: 37
+    family: accessory
+    slot: accessory
+    material: RABBIT_FOOT
+    rolled-stats:
+      movement_speed:
+        min: 0.004
+        max: 0.012
+    signature-effect: szellemszarvas_bubaj
+    source-tags:
+    - combat:wilderness
+    - profession:enchanter
+    gathering-tags:
+    - hunting:rare
+  kallan_szeletelo:
+    schema: 2
+    display-name: Kallan Szeletelője
+    rarity: legendary
+    item-level: 41
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_AXE
+    base-damage: 7.5
+    rolled-stats:
+      attack_damage:
+        min: 1.0
+        max: 3.5
+      attack_speed:
+        min: 0.06
+        max: 0.22
+    rune-sockets: 2
+    signature-effect: kallan_szeletelo
+    source-tags:
+    - combat:boss
+    - profession:armorer
+    gathering-tags:
+    - hunting:sarkanycsont_szilank
+    ascension-path:
+    - awakened
+    ascension-stages:
+      awakened:
+        item-level: 49
+        level-requirement: 43
+        rolled-stats:
+          attack_damage:
+            min: 2.0
+            max: 5.0
+          attack_speed:
+            min: 0.1
+            max: 0.3
+        rune-sockets: 2
+        signature-tier: 2
+    fixed-stats:
+      attack_speed: -3.2
+    level-requirement: 37
+  jegsarkany_kantar:
+    schema: 2
+    display-name: Jégsárkány Kantar
+    rarity: legendary
+    item-level: 38
+    family: accessory
+    slot: accessory
+    material: SADDLE
+    fixed-stats:
+      max_health: 3.0
+    signature-effect: jegsarkany_kantar
+    salvage-policy: forbidden
+    source-tags:
+    - combat:boss
+    gathering-tags:
+    - hunting:dragon_scale
+  pyralingradi_tuzkopo:
+    schema: 2
+    display-name: Pyralingradi Tűzköpő
+    rarity: legendary
+    item-level: 42
+    family: weapon
+    slot: main-hand
+    material: CROSSBOW
+    fixed-stats:
+      ability_power: 5.0
+    rolled-stats:
+      attack_damage:
+        min: 1.0
+        max: 3.0
+    rune-sockets: 2
+    signature-effect: pyralingradi_tuzkopo
+    source-tags:
+    - combat:event
+    - profession:armorer
+    gathering-tags:
+    - mining:karhozat_parazs
+    level-requirement: 38
+  verszavanna_agyara:
+    schema: 2
+    display-name: Vérszavanna Agyara
+    rarity: legendary
+    item-level: 40
+    family: weapon
+    slot: main-hand
+    material: NETHERITE_SWORD
+    rolled-stats:
+      attack_damage:
+        min: 1.0
+        max: 3.2
+      max_health:
+        min: 1.0
+        max: 3.0
+    rune-sockets: 2
+    signature-effect: verszavanna_agyara
+    source-tags:
+    - combat:wilderness
+    - profession:armorer
+    gathering-tags:
+    - hunting:elite
+    base-damage: 6.8
+    fixed-stats:
+      attack_speed: -2.4
+    level-requirement: 36
+  miinus_haragja:
+    schema: 2
+    display-name: Míínus Haragja
+    rarity: mythic
+    item-level: 48
+    family: weapon
+    slot: two-hand
+    material: NETHERITE_AXE
+    base-damage: 8.5
+    rolled-stats:
+      attack_damage:
+        min: 2.0
+        max: 5.0
+    rune-sockets: 2
+    signature-effect: miinus_haragja
+    source-tags:
+    - combat:world_boss
+    gathering-tags:
+    - event:osi_ereklyeszilank
+    fixed-stats:
+      attack_speed: -3.0
+    level-requirement: 44
+  zhoris_langnyelve:
+    schema: 2
+    display-name: Zhoris Lángnyelve
+    rarity: legendary
+    item-level: 43
+    family: weapon
+    slot: main-hand
+    material: BLAZE_ROD
+    fixed-stats:
+      ability_power: 7.0
+      attack_speed: -2.2
+    rolled-stats:
+      attack_damage:
+        min: 0.8
+        max: 2.5
+    rune-sockets: 2
+    signature-effect: zhoris_langnyelve
+    source-tags:
+    - combat:event
+    - profession:enchanter
+    gathering-tags:
+    - mining:karhozat_parazs
+    base-damage: 4.5
+    level-requirement: 39
+  napfogyatkozas_fokusz:
+    schema: 2
+    display-name: Napfogyatkozás Fókusza
+    rarity: mythic
+    item-level: 46
+    family: weapon
+    slot: main-hand
+    material: ECHO_SHARD
+    fixed-stats:
+      ability_power: 8.0
+    rolled-stats:
+      max_health:
+        min: 2.0
+        max: 5.0
+      movement_speed:
+        min: 0.003
+        max: 0.01
+    rune-sockets: 2
+    signature-effect: napfogyatkozas
+    source-tags:
+    - combat:world_boss
+    - profession:enchanter
+    gathering-tags:
+    - mining:nema_kristaly
+    ascension-path:
+    - awakened
+    ascension-stages:
+      awakened:
+        item-level: 55
+        level-requirement: 48
+        fixed-stats:
+          ability_power: 9.0
+        rolled-stats:
+          max_health:
+            min: 4.0
+            max: 8.0
+          movement_speed:
+            min: 0.006
+            max: 0.016
+        rune-sockets: 2
+        signature-tier: 2
+    level-requirement: 42
+  melyseg_orseg_sisak:
+    schema: 2
+    display-name: Mélységőr Sisak
+    rarity: legendary
+    item-level: 42
+    family: armor
+    armor-family: plate
+    slot: head
+    material: DIAMOND_HELMET
+    rune-sockets: 2
+    set-id: melyseg_orseg
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+    gathering-tags:
+    - mining:melysegi_borostyan
+    version: 2
+    lore:
+    - A mélység nyomására kovácsolt őrvért nem hátrál, csak egyre mélyebbre horgonyoz.
+    - A zárt sisak vastag homloka a legsúlyosabb ütést is oldalra viszi.
+    level-requirement: 38
+    base-armor: 5.0
+    fixed-stats:
+      max_health: 6.0
+      armor_toughness: 4.0
+      knockback_resistance: 0.12
+    rolled-stats:
+      max_health:
+        min: 3.0
+        max: 6.0
+    encounter-metadata:
+      catalog-line: melyseg_orseg
+      catalog-acquisition: boss
+      catalog-archetype: Bulwark
+      progression-band: endgame
+      rank-eligibility: BOSS
+    item-model: icesmp:melyseg_orseg_sisak
+    equipment-asset: icesmp:rp2/melyseg_orseg
+  melyseg_orseg_mellvert:
+    schema: 2
+    display-name: Mélységőr Mellvért
+    rarity: legendary
+    item-level: 43
+    family: armor
+    armor-family: plate
+    slot: chest
+    material: DIAMOND_CHESTPLATE
+    rune-sockets: 2
+    set-id: melyseg_orseg
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+    gathering-tags:
+    - mining:melysegi_borostyan
+    version: 2
+    lore:
+    - A mélység nyomására kovácsolt őrvért nem hátrál, csak egyre mélyebbre horgonyoz.
+    - A többrétegű mellvért a viselőt élő kapuoszloppá teszi.
+    level-requirement: 39
+    base-armor: 11.0
+    fixed-stats:
+      max_health: 12.0
+      armor_toughness: 4.0
+      knockback_resistance: 0.12
+    rolled-stats:
+      max_health:
+        min: 4.0
+        max: 8.0
+    encounter-metadata:
+      catalog-line: melyseg_orseg
+      catalog-acquisition: boss
+      catalog-archetype: Bulwark
+      progression-band: endgame
+      rank-eligibility: BOSS
+    item-model: icesmp:melyseg_orseg_mellvert
+    equipment-asset: icesmp:rp2/melyseg_orseg
+  melyseg_orseg_labvert:
+    schema: 2
+    display-name: Mélységőr Lábvért
+    rarity: legendary
+    item-level: 42
+    family: armor
+    armor-family: plate
+    slot: legs
+    material: DIAMOND_LEGGINGS
+    rune-sockets: 2
+    set-id: melyseg_orseg
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+    gathering-tags:
+    - mining:melysegi_borostyan
+    version: 2
+    lore:
+    - A mélység nyomására kovácsolt őrvért nem hátrál, csak egyre mélyebbre horgonyoz.
+    - A lábvért mély csuklói terhelés alatt még szorosabbra zárnak.
+    level-requirement: 38
+    base-armor: 8.5
+    fixed-stats:
+      max_health: 9.0
+      armor_toughness: 4.0
+      knockback_resistance: 0.12
+    rolled-stats:
+      max_health:
+        min: 3.5
+        max: 7.0
+    encounter-metadata:
+      catalog-line: melyseg_orseg
+      catalog-acquisition: boss
+      catalog-archetype: Bulwark
+      progression-band: endgame
+      rank-eligibility: BOSS
+    item-model: icesmp:melyseg_orseg_labvert
+    equipment-asset: icesmp:rp2/melyseg_orseg
+  melyseg_orseg_bakancs:
+    schema: 2
+    display-name: Mélységőr Bakancs
+    rarity: legendary
+    item-level: 41
+    family: armor
+    armor-family: plate
+    family-exception: A teljes set mobilitási darabja; a többi piece hordozza a Plate védelmi súlyt.
+    slot: feet
+    material: DIAMOND_BOOTS
+    rune-sockets: 2
+    set-id: melyseg_orseg
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:deep
+    - profession:armorer
+    gathering-tags:
+    - mining:melysegi_borostyan
+    version: 2
+    lore:
+    - A mélység nyomására kovácsolt őrvért nem hátrál, csak egyre mélyebbre horgonyoz.
+    - A horgonytalpú bakancsot roham sem mozdítja ki könnyen.
+    level-requirement: 37
+    base-armor: 4.5
+    fixed-stats:
+      max_health: 5.0
+      armor_toughness: 4.0
+      knockback_resistance: 0.12
+    rolled-stats:
+      max_health:
+        min: 2.5
+        max: 5.5
+    encounter-metadata:
+      catalog-line: melyseg_orseg
+      catalog-acquisition: boss
+      catalog-archetype: Bulwark
+      progression-band: endgame
+      rank-eligibility: BOSS
+    item-model: icesmp:melyseg_orseg_bakancs
+    equipment-asset: icesmp:rp2/melyseg_orseg
+  viharjaro_sisak:
+    schema: 2
+    display-name: Viharjáró Csuklya
+    rarity: legendary
+    item-level: 42
+    family: armor
+    armor-family: mail
+    slot: head
+    material: LEATHER_HELMET
+    rune-sockets: 2
+    set-id: viharjaro
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+    gathering-tags:
+    - mining:viharkvarc
+    version: 2
+    lore:
+    - A vihart nem kizárja, hanem végigvezeti a sodronyon és visszaengedi az égbe.
+    - A csuklya rézpereme az első villanás előtt már felizzik.
+    level-requirement: 38
+    base-armor: 3.5
+    fixed-stats:
+      ability_power: 5.0
+      attack_speed: 0.04
+      armor_toughness: 2.0
+      movement_speed: 0.004
+    rolled-stats:
+      ability_power:
+        min: 2.0
+        max: 4.0
+    encounter-metadata:
+      catalog-line: viharjaro
+      catalog-acquisition: boss
+      catalog-archetype: Tempest
+      progression-band: endgame
+      rank-eligibility: BOSS
+    item-model: icesmp:viharjaro_sisak
+    equipment-asset: icesmp:rp2/viharjaro
+  viharjaro_mellvert:
+    schema: 2
+    display-name: Viharjáró Kabát
+    rarity: legendary
+    item-level: 43
+    family: armor
+    armor-family: mail
+    slot: chest
+    material: LEATHER_CHESTPLATE
+    rune-sockets: 2
+    set-id: viharjaro
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+    gathering-tags:
+    - mining:viharkvarc
+    version: 2
+    lore:
+    - A vihart nem kizárja, hanem végigvezeti a sodronyon és visszaengedi az égbe.
+    - A kabát függőleges láncai tiszta úton vezetik le a töltést.
+    level-requirement: 39
+    base-armor: 8.0
+    fixed-stats:
+      ability_power: 8.0
+      attack_speed: 0.05
+      armor_toughness: 2.5
+      movement_speed: 0.003
+    rolled-stats:
+      ability_power:
+        min: 2.5
+        max: 5.0
+      movement_speed:
+        min: 0.003
+        max: 0.007
+    encounter-metadata:
+      catalog-line: viharjaro
+      catalog-acquisition: boss
+      catalog-archetype: Tempest
+      progression-band: endgame
+      rank-eligibility: BOSS
+    item-model: icesmp:viharjaro_mellvert
+    equipment-asset: icesmp:rp2/viharjaro
+  viharjaro_labvert:
+    schema: 2
+    display-name: Viharjáró Nadrág
+    rarity: legendary
+    item-level: 42
+    family: armor
+    armor-family: mail
+    slot: legs
+    material: LEATHER_LEGGINGS
+    rune-sockets: 2
+    set-id: viharjaro
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+    gathering-tags:
+    - mining:viharkvarc
+    version: 2
+    lore:
+    - A vihart nem kizárja, hanem végigvezeti a sodronyon és visszaengedi az égbe.
+    - A nadrág oldalsó vezetékei gyors forduláskor sem érnek össze.
+    level-requirement: 38
+    base-armor: 6.5
+    fixed-stats:
+      ability_power: 6.0
+      attack_speed: 0.04
+      armor_toughness: 2.0
+      movement_speed: 0.004
+    rolled-stats:
+      attack_speed:
+        min: 0.02
+        max: 0.06
+    encounter-metadata:
+      catalog-line: viharjaro
+      catalog-acquisition: boss
+      catalog-archetype: Tempest
+      progression-band: endgame
+      rank-eligibility: BOSS
+    item-model: icesmp:viharjaro_labvert
+    equipment-asset: icesmp:rp2/viharjaro
+  viharjaro_bakancs:
+    schema: 2
+    display-name: Viharjáró Bakancs
+    rarity: legendary
+    item-level: 41
+    family: armor
+    armor-family: mail
+    slot: feet
+    material: LEATHER_BOOTS
+    rune-sockets: 2
+    set-id: viharjaro
+    source-tags:
+    - combat:boss
+    - rank:boss
+    - combat:event
+    - profession:armorer
+    gathering-tags:
+    - mining:viharkvarc
+    version: 2
+    lore:
+    - A vihart nem kizárja, hanem végigvezeti a sodronyon és visszaengedi az égbe.
+    - A bakancs sarkából kék szikra ugrik a földre minden érkezésnél.
+    level-requirement: 37
+    base-armor: 4.0
+    fixed-stats:
+      ability_power: 4.0
+      attack_speed: 0.06
+      armor_toughness: 1.5
+      movement_speed: 0.008
+    rolled-stats:
+      movement_speed:
+        min: 0.004
+        max: 0.009
+    encounter-metadata:
+      catalog-line: viharjaro
+      catalog-acquisition: boss
+      catalog-archetype: Tempest
+      progression-band: endgame
+      rank-eligibility: BOSS
+    item-model: icesmp:viharjaro_bakancs
+    equipment-asset: icesmp:rp2/viharjaro
   alkimista_fatyol_sisak:
     schema: 2
     version: 2
@@ -287,47 +2194,6 @@ item-templates:
       progression-band: endgame
       rank-eligibility: CHAMPION
     item-model: icesmp:aranyfust_sisak
-    equipment-asset: icesmp:rp2/aranyfust
-  aranyfust_kopeny:
-    schema: 2
-    version: 2
-    display-name: Aranyfüst Köpeny
-    lore:
-    - A füstfekete szövet szélén aranylevél foszlik, mintha a parázs emlékezne.
-    - A legyezős köpeny minden fordulattal új mintára töri a fényt.
-    rarity: legendary
-    item-level: 43
-    family: armor
-    armor-family: cloth
-    slot: chest
-    material: GOLDEN_CHESTPLATE
-    level-requirement: 39
-    base-armor: 5.0
-    fixed-stats:
-      ability_power: 8.0
-      armor_toughness: 1.0
-      attack_speed: 0.03
-      movement_speed: 0.004
-    rolled-stats:
-      ability_power:
-        min: 2.5
-        max: 5.0
-      movement_speed:
-        min: 0.002
-        max: 0.006
-    rune-sockets: 2
-    source-tags:
-    - combat:champion
-    - rank:champion
-    gathering-tags:
-    - mining:gold
-    encounter-metadata:
-      catalog-line: aranyfust
-      catalog-acquisition: prestige
-      catalog-archetype: Veil
-      progression-band: endgame
-      rank-eligibility: CHAMPION
-    item-model: icesmp:aranyfust_kopeny
     equipment-asset: icesmp:rp2/aranyfust
   aranyfust_labvert:
     schema: 2
@@ -625,47 +2491,6 @@ item-templates:
       rank-eligibility: NORMAL
     item-model: icesmp:csontvarro_sisak
     equipment-asset: icesmp:rp2/csontvarro
-  csontvarro_kopeny:
-    schema: 2
-    version: 2
-    display-name: Csontvarró Köpeny
-    lore:
-    - Csonttűvel foltozott mezei szövet; minden öltés egy túlélő fogadalma.
-    - A foltozott köpenyen minden bordaöltés egy régi sérülést fed.
-    rarity: uncommon
-    item-level: 15
-    family: armor
-    armor-family: cloth
-    family-exception: A csontvarrás tartósabb support Cloth identitást ad, nem armor rangsort.
-    slot: chest
-    material: LEATHER_CHESTPLATE
-    level-requirement: 11
-    base-armor: 3.5
-    fixed-stats:
-      ability_power: 3.0
-      max_health: 3.0
-    rolled-stats:
-      max_health:
-        min: 1.0
-        max: 2.5
-      ability_power:
-        min: 0.5
-        max: 1.5
-    rune-sockets: 0
-    source-tags:
-    - combat:wilderness
-    - rank:normal
-    gathering-tags:
-    - hunting:bone
-    - hunting:hide
-    encounter-metadata:
-      catalog-line: csontvarro
-      catalog-acquisition: world
-      catalog-archetype: Sanctified
-      progression-band: early
-      rank-eligibility: NORMAL
-    item-model: icesmp:csontvarro_kopeny
-    equipment-asset: icesmp:rp2/csontvarro
   csontvarro_labvert:
     schema: 2
     version: 2
@@ -779,50 +2604,6 @@ item-templates:
       rank-eligibility: CRAFTED
       catalog-profession: enchanter
     item-model: icesmp:fonixszovet_sisak
-    equipment-asset: icesmp:rp2/fonixszovet
-  fonixpihe_kopeny:
-    schema: 2
-    version: 2
-    display-name: Főnixpihe Köpeny
-    lore:
-    - Tűzben edzett tollszálai kihunynak, majd a lélegzettel újra felizzanak.
-    - A Főnixpihe Köpeny szárnyszerű rétegei eséskor szétnyílnak.
-    rarity: legendary
-    item-level: 43
-    family: armor
-    armor-family: cloth
-    slot: chest
-    material: ELYTRA
-    level-requirement: 39
-    base-armor: 5.0
-    fixed-stats:
-      ability_power: 10.0
-      max_health: 5.0
-      armor_toughness: 1.25
-      movement_speed: 0.002
-    rolled-stats:
-      ability_power:
-        min: 3.0
-        max: 5.5
-      max_health:
-        min: 2.5
-        max: 6.0
-    rune-sockets: 2
-    signature-effect: fonix_tollkopeny
-    source-tags:
-    - combat:event
-    - profession:enchanter
-    - catalog:crafted
-    gathering-tags:
-    - hunting:fonixpihe
-    encounter-metadata:
-      catalog-line: fonixszovet
-      catalog-acquisition: crafted
-      catalog-archetype: Arcane
-      progression-band: endgame
-      rank-eligibility: CRAFTED
-      catalog-profession: enchanter
-    item-model: icesmp:fonixpihe_kopeny
     equipment-asset: icesmp:rp2/fonixszovet
   fonixszovet_labvert:
     schema: 2
@@ -2638,44 +4419,6 @@ item-templates:
       rank-eligibility: NORMAL
     item-model: icesmp:utjaro_labvert
     equipment-asset: icesmp:rp2/utjaro
-  utjaro_csizma:
-    schema: 2
-    version: 2
-    display-name: Útjáró Csizma
-    lore:
-    - Útpor, eső és száz idegen kapu csiszolta puhára ezt a vándorbőrt.
-    - A hosszú útra tört csizma könnyedén veszi a kőlépcsőt.
-    rarity: uncommon
-    item-level: 13
-    family: armor
-    armor-family: leather
-    slot: feet
-    material: LEATHER_BOOTS
-    level-requirement: 9
-    base-armor: 2.5
-    fixed-stats:
-      attack_damage: 0.2
-      attack_speed: 0.03
-      armor_toughness: 0.25
-      movement_speed: 0.005
-    rolled-stats:
-      movement_speed:
-        min: 0.002
-        max: 0.005
-    rune-sockets: 0
-    source-tags:
-    - combat:wilderness
-    - rank:normal
-    gathering-tags:
-    - hunting:hide
-    encounter-metadata:
-      catalog-line: utjaro
-      catalog-acquisition: world
-      catalog-archetype: Shadow
-      progression-band: early
-      rank-eligibility: NORMAL
-    item-model: icesmp:utjaro_csizma
-    equipment-asset: icesmp:rp2/utjaro
   vadbor_sisak:
     schema: 2
     version: 2
@@ -2961,46 +4704,6 @@ item-templates:
       rank-eligibility: CRAFTED
       catalog-profession: alchemist
     item-model: icesmp:vadorzo_labvert
-    equipment-asset: icesmp:rp2/vadorzo
-  vadorzo_csizma:
-    schema: 2
-    version: 2
-    display-name: Vadőrző Csizma
-    lore:
-    - A vadőrök cserzett páncélja az üldözéshez könnyű, a visszavágáshoz elég kemény.
-    - A mély mintájú csizma nem csúszik meg a felvert sárban.
-    rarity: rare
-    item-level: 23
-    family: armor
-    armor-family: leather
-    slot: feet
-    material: CHAINMAIL_BOOTS
-    level-requirement: 19
-    base-armor: 2.0
-    fixed-stats:
-      attack_damage: 0.4
-      attack_speed: 0.04
-      armor_toughness: 0.5
-      movement_speed: 0.005
-    rolled-stats:
-      movement_speed:
-        min: 0.002
-        max: 0.005
-    rune-sockets: 1
-    source-tags:
-    - profession:alchemist
-    - combat:wilderness
-    - catalog:crafted
-    gathering-tags:
-    - hunting:hide
-    encounter-metadata:
-      catalog-line: vadorzo
-      catalog-acquisition: crafted
-      catalog-archetype: Predator
-      progression-band: mid
-      rank-eligibility: CRAFTED
-      catalog-profession: alchemist
-    item-model: icesmp:vadorzo_csizma
     equipment-asset: icesmp:rp2/vadorzo
   verszavanna_sisak:
     schema: 2
@@ -3365,42 +5068,6 @@ item-templates:
       rank-eligibility: CRAFTED
       catalog-profession: armorer
     item-model: icesmp:csontenyv_sisak
-    equipment-asset: icesmp:rp2/csontenyv
-  csontenyv_pancel:
-    schema: 2
-    version: 2
-    display-name: Csontenyv Páncél
-    lore:
-    - Csontenyv köti össze a sodronyszemeket; a lánc tompán nyög, de nem enged.
-    - A ragasztott láncvért mellén vastag bordák fogják fel a rohamot.
-    rarity: rare
-    item-level: 25
-    family: armor
-    armor-family: mail
-    slot: chest
-    material: CHAINMAIL_CHESTPLATE
-    level-requirement: 21
-    base-armor: 7.0
-    fixed-stats:
-      max_health: 8.0
-      armor_toughness: 1.5
-    rolled-stats:
-      max_health:
-        min: 2.0
-        max: 4.5
-    rune-sockets: 1
-    source-tags:
-    - profession:armorer
-    gathering-tags:
-    - hunting:bone
-    encounter-metadata:
-      catalog-line: csontenyv
-      catalog-acquisition: crafted
-      catalog-archetype: Warden
-      progression-band: mid
-      rank-eligibility: CRAFTED
-      catalog-profession: armorer
-    item-model: icesmp:csontenyv_pancel
     equipment-asset: icesmp:rp2/csontenyv
   csontenyv_labvert:
     schema: 2
@@ -4460,173 +6127,6 @@ item-templates:
       rank-eligibility: NORMAL
     item-model: icesmp:vadvadasz_csizma
     equipment-asset: icesmp:rp2/vadvadasz
-  viharjaro_sisak:
-    schema: 2
-    version: 2
-    display-name: Viharjáró Csuklya
-    lore:
-    - A vihart nem kizárja, hanem végigvezeti a sodronyon és visszaengedi az égbe.
-    - A csuklya rézpereme az első villanás előtt már felizzik.
-    rarity: legendary
-    item-level: 42
-    family: armor
-    armor-family: mail
-    slot: head
-    material: LEATHER_HELMET
-    level-requirement: 38
-    base-armor: 3.5
-    fixed-stats:
-      ability_power: 5.0
-      attack_speed: 0.04
-      armor_toughness: 2.0
-      movement_speed: 0.004
-    rolled-stats:
-      ability_power:
-        min: 2.0
-        max: 4.0
-    rune-sockets: 2
-    set-id: viharjaro
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - combat:event
-    - profession:armorer
-    gathering-tags:
-    - mining:viharkvarc
-    encounter-metadata:
-      catalog-line: viharjaro
-      catalog-acquisition: boss
-      catalog-archetype: Tempest
-      progression-band: endgame
-      rank-eligibility: BOSS
-    item-model: icesmp:viharjaro_sisak
-    equipment-asset: icesmp:rp2/viharjaro
-  viharjaro_mellvert:
-    schema: 2
-    version: 2
-    display-name: Viharjáró Kabát
-    lore:
-    - A vihart nem kizárja, hanem végigvezeti a sodronyon és visszaengedi az égbe.
-    - A kabát függőleges láncai tiszta úton vezetik le a töltést.
-    rarity: legendary
-    item-level: 43
-    family: armor
-    armor-family: mail
-    slot: chest
-    material: LEATHER_CHESTPLATE
-    level-requirement: 39
-    base-armor: 8.0
-    fixed-stats:
-      ability_power: 8.0
-      attack_speed: 0.05
-      armor_toughness: 2.5
-      movement_speed: 0.003
-    rolled-stats:
-      ability_power:
-        min: 2.5
-        max: 5.0
-      movement_speed:
-        min: 0.003
-        max: 0.007
-    rune-sockets: 2
-    set-id: viharjaro
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - combat:event
-    - profession:armorer
-    gathering-tags:
-    - mining:viharkvarc
-    encounter-metadata:
-      catalog-line: viharjaro
-      catalog-acquisition: boss
-      catalog-archetype: Tempest
-      progression-band: endgame
-      rank-eligibility: BOSS
-    item-model: icesmp:viharjaro_mellvert
-    equipment-asset: icesmp:rp2/viharjaro
-  viharjaro_labvert:
-    schema: 2
-    version: 2
-    display-name: Viharjáró Nadrág
-    lore:
-    - A vihart nem kizárja, hanem végigvezeti a sodronyon és visszaengedi az égbe.
-    - A nadrág oldalsó vezetékei gyors forduláskor sem érnek össze.
-    rarity: legendary
-    item-level: 42
-    family: armor
-    armor-family: mail
-    slot: legs
-    material: LEATHER_LEGGINGS
-    level-requirement: 38
-    base-armor: 6.5
-    fixed-stats:
-      ability_power: 6.0
-      attack_speed: 0.04
-      armor_toughness: 2.0
-      movement_speed: 0.004
-    rolled-stats:
-      attack_speed:
-        min: 0.02
-        max: 0.06
-    rune-sockets: 2
-    set-id: viharjaro
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - combat:event
-    - profession:armorer
-    gathering-tags:
-    - mining:viharkvarc
-    encounter-metadata:
-      catalog-line: viharjaro
-      catalog-acquisition: boss
-      catalog-archetype: Tempest
-      progression-band: endgame
-      rank-eligibility: BOSS
-    item-model: icesmp:viharjaro_labvert
-    equipment-asset: icesmp:rp2/viharjaro
-  viharjaro_bakancs:
-    schema: 2
-    version: 2
-    display-name: Viharjáró Bakancs
-    lore:
-    - A vihart nem kizárja, hanem végigvezeti a sodronyon és visszaengedi az égbe.
-    - A bakancs sarkából kék szikra ugrik a földre minden érkezésnél.
-    rarity: legendary
-    item-level: 41
-    family: armor
-    armor-family: mail
-    slot: feet
-    material: LEATHER_BOOTS
-    level-requirement: 37
-    base-armor: 4.0
-    fixed-stats:
-      ability_power: 4.0
-      attack_speed: 0.06
-      armor_toughness: 1.5
-      movement_speed: 0.008
-    rolled-stats:
-      movement_speed:
-        min: 0.004
-        max: 0.009
-    rune-sockets: 2
-    set-id: viharjaro
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - combat:event
-    - profession:armorer
-    gathering-tags:
-    - mining:viharkvarc
-    encounter-metadata:
-      catalog-line: viharjaro
-      catalog-acquisition: boss
-      catalog-archetype: Tempest
-      progression-band: endgame
-      rank-eligibility: BOSS
-    item-model: icesmp:viharjaro_bakancs
-    equipment-asset: icesmp:rp2/viharjaro
   viharkvarc_runas_sisak:
     schema: 2
     version: 2
@@ -4984,43 +6484,6 @@ item-templates:
       catalog-profession: armorer
     item-model: icesmp:borostyan_tarna_sisak
     equipment-asset: icesmp:rp2/borostyan_tarna
-  melysegi_borostyan_mellvert:
-    schema: 2
-    version: 2
-    display-name: Borostyán Tárnavért
-    lore:
-    - Borostyánnal kiöntött lemezei a tárnák omlásainak erejét is szétterítik.
-    - A tárnavért vastag mellbordája úgy áll, mint egy bányatám.
-    rarity: rare
-    item-level: 25
-    family: armor
-    armor-family: plate
-    slot: chest
-    material: IRON_CHESTPLATE
-    level-requirement: 21
-    base-armor: 9.0
-    fixed-stats:
-      max_health: 8.0
-      armor_toughness: 2.5
-      knockback_resistance: 0.04
-    rolled-stats:
-      max_health:
-        min: 2.0
-        max: 4.5
-    rune-sockets: 1
-    source-tags:
-    - profession:armorer
-    gathering-tags:
-    - mining:melysegi_borostyan
-    encounter-metadata:
-      catalog-line: borostyan_tarna
-      catalog-acquisition: crafted
-      catalog-archetype: Bulwark
-      progression-band: mid
-      rank-eligibility: CRAFTED
-      catalog-profession: armorer
-    item-model: icesmp:melysegi_borostyan_mellvert
-    equipment-asset: icesmp:rp2/borostyan_tarna
   borostyan_tarna_labvert:
     schema: 2
     version: 2
@@ -5302,105 +6765,6 @@ item-templates:
       catalog-profession: armorer
     item-model: icesmp:glatziendorfi_sisak
     equipment-asset: icesmp:rp2/glatziendorfi
-  glatziendorfi_jegvert:
-    schema: 2
-    version: 2
-    display-name: Glatziendorfi Jégvért
-    lore:
-    - A glatziendorfi jégőrség lemezeiben egy megfagyott eskü tartja távol a félelmet.
-    - A Jégvért kristálygerince sziklaként fogja össze a mellkast.
-    rarity: epic
-    item-level: 34
-    family: armor
-    armor-family: plate
-    family-exception: A jégőrségi signature mellvért kis mozgás-rollja authored különlegesség.
-    slot: chest
-    material: NETHERITE_CHESTPLATE
-    level-requirement: 30
-    base-armor: 9.5
-    fixed-stats:
-      ability_power: 5.0
-      max_health: 6.0
-      armor_toughness: 3.25
-      knockback_resistance: 0.08
-    rolled-stats:
-      max_health:
-        min: 2.0
-        max: 4.5
-      ability_power:
-        min: 2.0
-        max: 4.0
-    rune-sockets: 1
-    signature-effect: glatziendorfi_jegvert
-    set-id: glatziendorfi_jegorseg
-    bind-policy: none
-    trade-policy: tradeable
-    salvage-policy: signature-materials
-    source-tags:
-    - profession:armorer
-    - region:glatziendorf
-    region-tags:
-    - glatziendorf
-    gathering-tags:
-    - mining:frost_ore
-    - hunting:dragon_scale
-    crafting-tags:
-    - armorer:masterwork
-    - processing:frost_forging
-    encounter-metadata:
-      primary-source: Glatziendorf páncélkovácsai
-      catalog-line: glatziendorfi
-      catalog-acquisition: crafted
-      catalog-archetype: Runeforged
-      progression-band: high
-      rank-eligibility: CRAFTED
-      catalog-profession: armorer
-    ascension-path:
-    - awakened
-    - ascended
-    ascension-stages:
-      awakened:
-        item-level: 40
-        level-requirement: 34
-        fixed-stats:
-          ability_power: 7.0
-          max_health: 8.0
-          armor_toughness: 4.0
-          knockback_resistance: 0.1
-        rolled-stats:
-          max_health:
-            min: 3.0
-            max: 6.0
-          ability_power:
-            min: 3.0
-            max: 5.5
-        rune-sockets: 2
-        signature-tier: 2
-        lore:
-        - A sarkfény felébresztette a páncélba fagyott esküt.
-        - A kristálygerinc már a viselő szívverésére válaszol.
-      ascended:
-        item-level: 48
-        level-requirement: 42
-        fixed-stats:
-          ability_power: 9.0
-          max_health: 11.0
-          armor_toughness: 5.0
-          knockback_resistance: 0.13
-        rolled-stats:
-          max_health:
-            min: 4.0
-            max: 8.0
-          ability_power:
-            min: 4.0
-            max: 7.0
-        rune-sockets: 2
-        signature-tier: 3
-        lore:
-        - A jégőrség legendája teljesítette ki ugyanazt az ősi vértet.
-        - A felemelkedett lemezeken a dér többé nem olvad el.
-    item-model: icesmp:glatziendorfi_jegvert
-    equipment-asset: icesmp:rp2/glatziendorfi
   glatziendorfi_labvert:
     schema: 2
     version: 2
@@ -5640,167 +7004,6 @@ item-templates:
       rank-eligibility: NORMAL
     item-model: icesmp:hataror_csizma
     equipment-asset: icesmp:rp2/hataror
-  melyseg_orseg_sisak:
-    schema: 2
-    version: 2
-    display-name: Mélységőr Sisak
-    lore:
-    - A mélység nyomására kovácsolt őrvért nem hátrál, csak egyre mélyebbre horgonyoz.
-    - A zárt sisak vastag homloka a legsúlyosabb ütést is oldalra viszi.
-    rarity: legendary
-    item-level: 42
-    family: armor
-    armor-family: plate
-    slot: head
-    material: DIAMOND_HELMET
-    level-requirement: 38
-    base-armor: 5.0
-    fixed-stats:
-      max_health: 6.0
-      armor_toughness: 4.0
-      knockback_resistance: 0.12
-    rolled-stats:
-      max_health:
-        min: 3.0
-        max: 6.0
-    rune-sockets: 2
-    set-id: melyseg_orseg
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - combat:deep
-    - profession:armorer
-    gathering-tags:
-    - mining:melysegi_borostyan
-    encounter-metadata:
-      catalog-line: melyseg_orseg
-      catalog-acquisition: boss
-      catalog-archetype: Bulwark
-      progression-band: endgame
-      rank-eligibility: BOSS
-    item-model: icesmp:melyseg_orseg_sisak
-    equipment-asset: icesmp:rp2/melyseg_orseg
-  melyseg_orseg_mellvert:
-    schema: 2
-    version: 2
-    display-name: Mélységőr Mellvért
-    lore:
-    - A mélység nyomására kovácsolt őrvért nem hátrál, csak egyre mélyebbre horgonyoz.
-    - A többrétegű mellvért a viselőt élő kapuoszloppá teszi.
-    rarity: legendary
-    item-level: 43
-    family: armor
-    armor-family: plate
-    slot: chest
-    material: DIAMOND_CHESTPLATE
-    level-requirement: 39
-    base-armor: 11.0
-    fixed-stats:
-      max_health: 12.0
-      armor_toughness: 4.0
-      knockback_resistance: 0.12
-    rolled-stats:
-      max_health:
-        min: 4.0
-        max: 8.0
-    rune-sockets: 2
-    set-id: melyseg_orseg
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - combat:deep
-    - profession:armorer
-    gathering-tags:
-    - mining:melysegi_borostyan
-    encounter-metadata:
-      catalog-line: melyseg_orseg
-      catalog-acquisition: boss
-      catalog-archetype: Bulwark
-      progression-band: endgame
-      rank-eligibility: BOSS
-    item-model: icesmp:melyseg_orseg_mellvert
-    equipment-asset: icesmp:rp2/melyseg_orseg
-  melyseg_orseg_labvert:
-    schema: 2
-    version: 2
-    display-name: Mélységőr Lábvért
-    lore:
-    - A mélység nyomására kovácsolt őrvért nem hátrál, csak egyre mélyebbre horgonyoz.
-    - A lábvért mély csuklói terhelés alatt még szorosabbra zárnak.
-    rarity: legendary
-    item-level: 42
-    family: armor
-    armor-family: plate
-    slot: legs
-    material: DIAMOND_LEGGINGS
-    level-requirement: 38
-    base-armor: 8.5
-    fixed-stats:
-      max_health: 9.0
-      armor_toughness: 4.0
-      knockback_resistance: 0.12
-    rolled-stats:
-      max_health:
-        min: 3.5
-        max: 7.0
-    rune-sockets: 2
-    set-id: melyseg_orseg
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - combat:deep
-    - profession:armorer
-    gathering-tags:
-    - mining:melysegi_borostyan
-    encounter-metadata:
-      catalog-line: melyseg_orseg
-      catalog-acquisition: boss
-      catalog-archetype: Bulwark
-      progression-band: endgame
-      rank-eligibility: BOSS
-    item-model: icesmp:melyseg_orseg_labvert
-    equipment-asset: icesmp:rp2/melyseg_orseg
-  melyseg_orseg_bakancs:
-    schema: 2
-    version: 2
-    display-name: Mélységőr Bakancs
-    lore:
-    - A mélység nyomására kovácsolt őrvért nem hátrál, csak egyre mélyebbre horgonyoz.
-    - A horgonytalpú bakancsot roham sem mozdítja ki könnyen.
-    rarity: legendary
-    item-level: 41
-    family: armor
-    armor-family: plate
-    family-exception: A teljes set mobilitási darabja; a többi piece hordozza a Plate védelmi súlyt.
-    slot: feet
-    material: DIAMOND_BOOTS
-    level-requirement: 37
-    base-armor: 4.5
-    fixed-stats:
-      max_health: 5.0
-      armor_toughness: 4.0
-      knockback_resistance: 0.12
-    rolled-stats:
-      max_health:
-        min: 2.5
-        max: 5.5
-    rune-sockets: 2
-    set-id: melyseg_orseg
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - combat:deep
-    - profession:armorer
-    gathering-tags:
-    - mining:melysegi_borostyan
-    encounter-metadata:
-      catalog-line: melyseg_orseg
-      catalog-acquisition: boss
-      catalog-archetype: Bulwark
-      progression-band: endgame
-      rank-eligibility: BOSS
-    item-model: icesmp:melyseg_orseg_bakancs
-    equipment-asset: icesmp:rp2/melyseg_orseg
   osicsarnok_sisak:
     schema: 2
     version: 2
@@ -5992,81 +7195,6 @@ item-templates:
       progression-band: endgame
       rank-eligibility: BOSS
     item-model: icesmp:ostromtoro_sisak
-    equipment-asset: icesmp:rp2/ostromtoro
-  ostromtoro_mellvert:
-    schema: 2
-    version: 2
-    display-name: Ostromtörő Mellvért
-    lore:
-    - Horpadásai olyan ostromokról mesélnek, amelyeknek nem maradt krónikása.
-    - A túlméretezett mellvért roham közben mozgó ostromfallá válik.
-    rarity: legendary
-    item-level: 43
-    family: armor
-    armor-family: plate
-    slot: chest
-    material: DIAMOND_CHESTPLATE
-    level-requirement: 39
-    base-armor: 11.5
-    fixed-stats:
-      attack_damage: 1.5
-      max_health: 8.0
-      armor_toughness: 4.5
-      knockback_resistance: 0.11
-    rolled-stats:
-      attack_damage:
-        min: 0.7
-        max: 1.5
-      max_health:
-        min: 3.0
-        max: 6.0
-    rune-sockets: 2
-    set-id: ostromtoro_ostromfal
-    bind-policy: none
-    trade-policy: tradeable
-    salvage-policy: signature-materials
-    source-tags:
-    - combat:boss
-    - rank:boss
-    - profession:armorer
-    region-tags:
-    - wilderness
-    gathering-tags:
-    - mining:diamond
-    - hunting:boss_trophy
-    crafting-tags:
-    - salvage:armor
-    encounter-metadata:
-      primary-source: Világbossok és inváziós bajnokok
-      catalog-line: ostromtoro
-      catalog-acquisition: boss
-      catalog-archetype: Dread
-      progression-band: endgame
-      rank-eligibility: BOSS
-    ascension-path:
-    - awakened
-    ascension-stages:
-      awakened:
-        item-level: 47
-        level-requirement: 43
-        fixed-stats:
-          attack_damage: 2.2
-          max_health: 11.0
-          armor_toughness: 5.5
-          knockback_resistance: 0.14
-        rolled-stats:
-          attack_damage:
-            min: 0.9
-            max: 1.9
-          max_health:
-            min: 4.0
-            max: 8.0
-        rune-sockets: 2
-        signature-tier: 0
-        lore:
-        - Az utolsó horpadást belülről kalapálták ki, és ostromjel került a helyére.
-        - 'Az ébredt mellvért már nem állítja meg a rohamot: vezeti.'
-    item-model: icesmp:ostromtoro_mellvert
     equipment-asset: icesmp:rp2/ostromtoro
   ostromtoro_labvert:
     schema: 2
@@ -6493,45 +7621,6 @@ item-templates:
       rank-eligibility: VETERAN
     item-model: icesmp:salakfal_csizma
     equipment-asset: icesmp:rp2/salakfal
-  sarkfeny_sisak:
-    schema: 2
-    version: 2
-    display-name: Sarkfény Sisak
-    lore:
-    - Sarkfényben hűtött acélja egyszerre tartja az eskü melegét és az északi ég hidegét.
-    - A fényíves sisak a látómező fölött vezeti végig az aurórát.
-    rarity: rare
-    item-level: 24
-    family: armor
-    armor-family: plate
-    slot: head
-    material: DIAMOND_HELMET
-    level-requirement: 20
-    base-armor: 4.0
-    fixed-stats:
-      ability_power: 2.0
-      attack_damage: 0.4
-      max_health: 2.0
-      armor_toughness: 2.5
-      knockback_resistance: 0.05
-    rolled-stats:
-      ability_power:
-        min: 1.0
-        max: 2.5
-    rune-sockets: 1
-    source-tags:
-    - profession:armorer
-    gathering-tags:
-    - mining:sarkfeny_cseppko
-    encounter-metadata:
-      catalog-line: sarkfeny
-      catalog-acquisition: crafted
-      catalog-archetype: Crusader
-      progression-band: mid
-      rank-eligibility: CRAFTED
-      catalog-profession: armorer
-    item-model: icesmp:sarkfeny_sisak
-    equipment-asset: icesmp:rp2/sarkfeny
   sarkfeny_mellvert:
     schema: 2
     version: 2
@@ -6658,1489 +7747,3 @@ item-templates:
       catalog-profession: armorer
     item-model: icesmp:sarkfeny_csizma
     equipment-asset: icesmp:rp2/sarkfeny
-  kovacstanonc_penge:
-    base-damage: 4.0
-    fixed-stats:
-      attack_speed: -2.4
-    level-requirement: 2
-  borkeretes_ij:
-    fixed-stats:
-      ability_power: 0.5
-    level-requirement: 3
-  mohas_fokusz:
-    fixed-stats:
-      ability_power: 1.5
-    level-requirement: 4
-  tarnapajzs:
-    base-armor: 1.0
-    fixed-stats:
-      max_health: 1.0
-    level-requirement: 6
-  holdfeny_bot:
-    fixed-stats:
-      ability_power: 3.0
-    level-requirement: 11
-  hamuszeli_vadaszij:
-    fixed-stats:
-      ability_power: 2.0
-    level-requirement: 12
-  vadvilagi_eskukard:
-    base-damage: 5.3
-    fixed-stats:
-      attack_speed: -2.4
-    level-requirement: 14
-  viharkvarc_pallos:
-    base-damage: 6.0
-    fixed-stats:
-      attack_speed: -2.7
-    level-requirement: 16
-  szelvago_ij:
-    fixed-stats:
-      ability_power: 2.5
-    level-requirement: 18
-  gyongyhaz_pajzs:
-    base-armor: 2.0
-    fixed-stats:
-      max_health: 2.0
-    level-requirement: 19
-  nema_kristaly_fokusz:
-    fixed-stats:
-      ability_power: 4.0
-    level-requirement: 20
-  parazs_kard:
-    base-damage: 5.8
-    fixed-stats:
-      attack_speed: -2.4
-    level-requirement: 21
-  holdsarlo:
-    base-damage: 4.8
-    fixed-stats:
-      ability_power: 3.0
-      attack_speed: -2.2
-    level-requirement: 23
-  viharszovo_bot:
-    base-damage: 6.5
-    fixed-stats:
-      ability_power: 4.0
-      attack_speed: -2.9
-    level-requirement: 24
-  glatziendorfi_jegtoro:
-    base-damage: 7.0
-    fixed-stats:
-      ability_power: 3.0
-      attack_speed: -3.2
-    level-requirement: 30
-  csillagvesz_ritualbot:
-    fixed-stats:
-      ability_power: 5.0
-    level-requirement: 30
-  kapuparazs_pallos:
-    base-damage: 7.2
-    fixed-stats:
-      attack_speed: -2.7
-    level-requirement: 34
-  sarkanycsont_ij:
-    fixed-stats:
-      ability_power: 4.0
-    level-requirement: 35
-  verszavanna_agyara:
-    base-damage: 6.8
-    fixed-stats:
-      attack_speed: -2.4
-    level-requirement: 36
-  kallan_szeletelo:
-    base-damage: 7.5
-    fixed-stats:
-      attack_speed: -3.2
-    level-requirement: 37
-  pyralingradi_tuzkopo:
-    fixed-stats:
-      ability_power: 5.0
-    level-requirement: 38
-  zhoris_langnyelve:
-    base-damage: 4.5
-    fixed-stats:
-      ability_power: 7.0
-      attack_speed: -2.2
-    level-requirement: 39
-  napfogyatkozas_fokusz:
-    fixed-stats:
-      ability_power: 8.0
-    level-requirement: 42
-  miinus_haragja:
-    base-damage: 8.5
-    fixed-stats:
-      attack_speed: -3.0
-    level-requirement: 44
-  elsocsend_penge:
-    base-damage: 8.0
-    fixed-stats:
-      attack_speed: -2.4
-    level-requirement: 46
-profession-recipes:
-  lte_fonixszovet_sisak:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Főnixszövet craft
-    category: CLOTH • Arcane
-    result:
-      template: fonixszovet_sisak
-      amount: 1
-    ingredients:
-    - unique:runaszott_poszto:2
-    - unique:holdlen_fonal:2
-    - unique:fonixpihe:1
-    processing-dependencies:
-    - runaszott_poszto
-    - holdlen_fonal
-    - fonixpihe
-  p2_fonixpihe_kopeny:
-    profession: enchanter
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-  lte_fonixszovet_labvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Főnixszövet craft
-    category: CLOTH • Arcane
-    result:
-      template: fonixszovet_labvert
-      amount: 1
-    ingredients:
-    - unique:runaszott_poszto:3
-    - unique:holdlen_fonal:3
-    - unique:fonixpihe:1
-    processing-dependencies:
-    - runaszott_poszto
-    - holdlen_fonal
-    - fonixpihe
-  lte_fonixszovet_csizma:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Főnixszövet craft
-    category: CLOTH • Arcane
-    result:
-      template: fonixszovet_csizma
-      amount: 1
-    ingredients:
-    - unique:runaszott_poszto:2
-    - unique:holdlen_fonal:2
-    - unique:fonixpihe:1
-    processing-dependencies:
-    - runaszott_poszto
-    - holdlen_fonal
-    - fonixpihe
-  lte_holdlen_sisak:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Holdlen craft
-    category: CLOTH • Ritual
-    result:
-      template: holdlen_sisak
-      amount: 1
-    ingredients:
-    - unique:szott_poszto:2
-    - unique:holdlen_fonal:2
-    - unique:fenyves_gyanta:1
-    processing-dependencies:
-    - szott_poszto
-    - holdlen_fonal
-    - fenyves_gyanta
-  lte_holdlen_mellvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Holdlen craft
-    category: CLOTH • Ritual
-    result:
-      template: holdlen_mellvert
-      amount: 1
-    ingredients:
-    - unique:szott_poszto:4
-    - unique:holdlen_fonal:4
-    - unique:fenyves_gyanta:1
-    processing-dependencies:
-    - szott_poszto
-    - holdlen_fonal
-    - fenyves_gyanta
-  lte_holdlen_labvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Holdlen craft
-    category: CLOTH • Ritual
-    result:
-      template: holdlen_labvert
-      amount: 1
-    ingredients:
-    - unique:szott_poszto:3
-    - unique:holdlen_fonal:3
-    - unique:fenyves_gyanta:1
-    processing-dependencies:
-    - szott_poszto
-    - holdlen_fonal
-    - fenyves_gyanta
-  lte_holdlen_csizma:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Holdlen craft
-    category: CLOTH • Ritual
-    result:
-      template: holdlen_csizma
-      amount: 1
-    ingredients:
-    - unique:szott_poszto:2
-    - unique:holdlen_fonal:2
-    - unique:fenyves_gyanta:1
-    processing-dependencies:
-    - szott_poszto
-    - holdlen_fonal
-    - fenyves_gyanta
-  lte_nemakristaly_sisak:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Némakristály craft
-    category: CLOTH • Arcane
-    result:
-      template: nemakristaly_sisak
-      amount: 1
-    ingredients:
-    - unique:runaszott_poszto:2
-    - unique:holdlen_fonal:2
-    - unique:nema_kristaly:1
-    - unique:szivfa_mag:1
-    processing-dependencies:
-    - runaszott_poszto
-    - holdlen_fonal
-    - nema_kristaly
-    - szivfa_mag
-  lte_nemakristaly_mellvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Némakristály craft
-    category: CLOTH • Arcane
-    result:
-      template: nemakristaly_mellvert
-      amount: 1
-    ingredients:
-    - unique:runaszott_poszto:4
-    - unique:holdlen_fonal:4
-    - unique:nema_kristaly:1
-    - unique:szivfa_mag:1
-    processing-dependencies:
-    - runaszott_poszto
-    - holdlen_fonal
-    - nema_kristaly
-    - szivfa_mag
-  lte_nemakristaly_labvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Némakristály craft
-    category: CLOTH • Arcane
-    result:
-      template: nemakristaly_labvert
-      amount: 1
-    ingredients:
-    - unique:runaszott_poszto:3
-    - unique:holdlen_fonal:3
-    - unique:nema_kristaly:1
-    - unique:szivfa_mag:1
-    processing-dependencies:
-    - runaszott_poszto
-    - holdlen_fonal
-    - nema_kristaly
-    - szivfa_mag
-  lte_nemakristaly_csizma:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Némakristály craft
-    category: CLOTH • Arcane
-    result:
-      template: nemakristaly_csizma
-      amount: 1
-    ingredients:
-    - unique:runaszott_poszto:2
-    - unique:holdlen_fonal:2
-    - unique:nema_kristaly:1
-    - unique:szivfa_mag:1
-    processing-dependencies:
-    - runaszott_poszto
-    - holdlen_fonal
-    - nema_kristaly
-    - szivfa_mag
-  lte_alkimista_fatyol_sisak:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Alkimista Fátyol craft
-    category: CLOTH • Sanctified
-    result:
-      template: alkimista_fatyol_sisak
-      amount: 1
-    ingredients:
-    - unique:szott_poszto:2
-    - unique:kotogyanta:1
-    - unique:gyogy_kivonat:1
-    processing-dependencies:
-    - szott_poszto
-    - kotogyanta
-    - gyogy_kivonat
-  lte_alkimista_fatyol_mellvert:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Alkimista Fátyol craft
-    category: CLOTH • Sanctified
-    result:
-      template: alkimista_fatyol_mellvert
-      amount: 1
-    ingredients:
-    - unique:szott_poszto:4
-    - unique:kotogyanta:1
-    - unique:gyogy_kivonat:1
-    processing-dependencies:
-    - szott_poszto
-    - kotogyanta
-    - gyogy_kivonat
-  lte_alkimista_fatyol_labvert:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Alkimista Fátyol craft
-    category: CLOTH • Sanctified
-    result:
-      template: alkimista_fatyol_labvert
-      amount: 1
-    ingredients:
-    - unique:szott_poszto:3
-    - unique:kotogyanta:1
-    - unique:gyogy_kivonat:1
-    processing-dependencies:
-    - szott_poszto
-    - kotogyanta
-    - gyogy_kivonat
-  lte_alkimista_fatyol_csizma:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Alkimista Fátyol craft
-    category: CLOTH • Sanctified
-    result:
-      template: alkimista_fatyol_csizma
-      amount: 1
-    ingredients:
-    - unique:szott_poszto:2
-    - unique:kotogyanta:1
-    - unique:gyogy_kivonat:1
-    processing-dependencies:
-    - szott_poszto
-    - kotogyanta
-    - gyogy_kivonat
-  lte_vadorzo_sisak:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Vadőrző craft
-    category: LEATHER • Predator
-    result:
-      template: vadorzo_sisak
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:2
-    - unique:in_kotelez:1
-    - unique:vad_esszencia:1
-    processing-dependencies:
-    - erositett_bor
-    - in_kotelez
-    - vad_esszencia
-  lte_vadorzo_mellvert:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Vadőrző craft
-    category: LEATHER • Predator
-    result:
-      template: vadorzo_mellvert
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:4
-    - unique:in_kotelez:1
-    - unique:vad_esszencia:1
-    processing-dependencies:
-    - erositett_bor
-    - in_kotelez
-    - vad_esszencia
-  lte_vadorzo_labvert:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Vadőrző craft
-    category: LEATHER • Predator
-    result:
-      template: vadorzo_labvert
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:3
-    - unique:in_kotelez:1
-    - unique:vad_esszencia:1
-    processing-dependencies:
-    - erositett_bor
-    - in_kotelez
-    - vad_esszencia
-  p2_vadorzo_csizma:
-    profession: alchemist
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-  lte_vadbor_sisak:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Vadbőr craft
-    category: LEATHER • Wildheart
-    result:
-      template: vadbor_sisak
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:2
-    - unique:in_kotelez:1
-    - unique:vad_esszencia:1
-    - unique:cserle:1
-    processing-dependencies:
-    - erositett_bor
-    - in_kotelez
-    - vad_esszencia
-    - cserle
-  lte_vadbor_mellvert:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Vadbőr craft
-    category: LEATHER • Wildheart
-    result:
-      template: vadbor_mellvert
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:4
-    - unique:in_kotelez:1
-    - unique:vad_esszencia:1
-    - unique:cserle:1
-    processing-dependencies:
-    - erositett_bor
-    - in_kotelez
-    - vad_esszencia
-    - cserle
-  lte_vadbor_labvert:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Vadbőr craft
-    category: LEATHER • Wildheart
-    result:
-      template: vadbor_labvert
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:3
-    - unique:in_kotelez:1
-    - unique:vad_esszencia:1
-    - unique:cserle:1
-    processing-dependencies:
-    - erositett_bor
-    - in_kotelez
-    - vad_esszencia
-    - cserle
-  lte_vadbor_csizma:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Vadbőr craft
-    category: LEATHER • Wildheart
-    result:
-      template: vadbor_csizma
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:2
-    - unique:in_kotelez:1
-    - unique:vad_esszencia:1
-    - unique:cserle:1
-    processing-dependencies:
-    - erositett_bor
-    - in_kotelez
-    - vad_esszencia
-    - cserle
-  lte_vizbor_sisak:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Vízbőr craft
-    category: LEATHER • Demonhide
-    result:
-      template: vizbor_sisak
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:2
-    - unique:vizbor:1
-    - unique:halolaj:1
-    - unique:bokic_gyongy:1
-    processing-dependencies:
-    - erositett_bor
-    - vizbor
-    - halolaj
-    - bokic_gyongy
-  lte_vizbor_mellvert:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Vízbőr craft
-    category: LEATHER • Demonhide
-    result:
-      template: vizbor_mellvert
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:4
-    - unique:vizbor:1
-    - unique:halolaj:1
-    - unique:bokic_gyongy:1
-    processing-dependencies:
-    - erositett_bor
-    - vizbor
-    - halolaj
-    - bokic_gyongy
-  lte_vizbor_labvert:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Vízbőr craft
-    category: LEATHER • Demonhide
-    result:
-      template: vizbor_labvert
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:3
-    - unique:vizbor:1
-    - unique:halolaj:1
-    - unique:bokic_gyongy:1
-    processing-dependencies:
-    - erositett_bor
-    - vizbor
-    - halolaj
-    - bokic_gyongy
-  lte_vizbor_csizma:
-    profession: alchemist
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Vízbőr craft
-    category: LEATHER • Demonhide
-    result:
-      template: vizbor_csizma
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:2
-    - unique:vizbor:1
-    - unique:halolaj:1
-    - unique:bokic_gyongy:1
-    processing-dependencies:
-    - erositett_bor
-    - vizbor
-    - halolaj
-    - bokic_gyongy
-  lte_kitinbor_sisak:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Kitinbőr craft
-    category: LEATHER • Shadow
-    result:
-      template: kitinbor_sisak
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:2
-    - unique:kitin_lemez:1
-    - unique:in_kotelez:1
-    processing-dependencies:
-    - erositett_bor
-    - kitin_lemez
-    - in_kotelez
-  lte_kitinbor_mellvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Kitinbőr craft
-    category: LEATHER • Shadow
-    result:
-      template: kitinbor_mellvert
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:4
-    - unique:kitin_lemez:1
-    - unique:in_kotelez:1
-    processing-dependencies:
-    - erositett_bor
-    - kitin_lemez
-    - in_kotelez
-  lte_kitinbor_labvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Kitinbőr craft
-    category: LEATHER • Shadow
-    result:
-      template: kitinbor_labvert
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:3
-    - unique:kitin_lemez:1
-    - unique:in_kotelez:1
-    processing-dependencies:
-    - erositett_bor
-    - kitin_lemez
-    - in_kotelez
-  lte_kitinbor_csizma:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Kitinbőr craft
-    category: LEATHER • Shadow
-    result:
-      template: kitinbor_csizma
-      amount: 1
-    ingredients:
-    - unique:erositett_bor:2
-    - unique:kitin_lemez:1
-    - unique:in_kotelez:1
-    processing-dependencies:
-    - erositett_bor
-    - kitin_lemez
-    - in_kotelez
-  lte_csontenyv_sisak:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Csontenyv craft
-    category: MAIL • Warden
-    result:
-      template: csontenyv_sisak
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:2
-    - unique:cserzett_bor:1
-    - unique:csontenyv:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - cserzett_bor
-    - csontenyv
-  p2_csontenyv_pancel:
-    profession: armorer
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-  lte_csontenyv_labvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Csontenyv craft
-    category: MAIL • Warden
-    result:
-      template: csontenyv_labvert
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:3
-    - unique:cserzett_bor:1
-    - unique:csontenyv:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - cserzett_bor
-    - csontenyv
-  lte_csontenyv_csizma:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Csontenyv craft
-    category: MAIL • Warden
-    result:
-      template: csontenyv_csizma
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:2
-    - unique:cserzett_bor:1
-    - unique:csontenyv:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - cserzett_bor
-    - csontenyv
-  lte_konnyu_otvozet_sisak:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Könnyű Ötvözet craft
-    category: MAIL • Hunter
-    result:
-      template: konnyu_otvozet_sisak
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:2
-    - unique:konnyu_otvozet:1
-    - unique:in_kotelez:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - konnyu_otvozet
-    - in_kotelez
-  lte_konnyu_otvozet_mellvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Könnyű Ötvözet craft
-    category: MAIL • Hunter
-    result:
-      template: konnyu_otvozet_mellvert
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:4
-    - unique:konnyu_otvozet:1
-    - unique:in_kotelez:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - konnyu_otvozet
-    - in_kotelez
-  lte_konnyu_otvozet_labvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Könnyű Ötvözet craft
-    category: MAIL • Hunter
-    result:
-      template: konnyu_otvozet_labvert
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:3
-    - unique:konnyu_otvozet:1
-    - unique:in_kotelez:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - konnyu_otvozet
-    - in_kotelez
-  lte_konnyu_otvozet_csizma:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Könnyű Ötvözet craft
-    category: MAIL • Hunter
-    result:
-      template: konnyu_otvozet_csizma
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:2
-    - unique:konnyu_otvozet:1
-    - unique:in_kotelez:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - konnyu_otvozet
-    - in_kotelez
-  lte_runalanc_sisak:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Rúnalánc craft
-    category: MAIL • Runic
-    result:
-      template: runalanc_sisak
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:2
-    - unique:holdlen_fonal:1
-    - unique:runapor:1
-    - unique:gyongyhaz_hej:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - holdlen_fonal
-    - runapor
-    - gyongyhaz_hej
-  lte_runalanc_mellvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Rúnalánc craft
-    category: MAIL • Runic
-    result:
-      template: runalanc_mellvert
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:4
-    - unique:holdlen_fonal:1
-    - unique:runapor:1
-    - unique:gyongyhaz_hej:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - holdlen_fonal
-    - runapor
-    - gyongyhaz_hej
-  lte_runalanc_labvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Rúnalánc craft
-    category: MAIL • Runic
-    result:
-      template: runalanc_labvert
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:3
-    - unique:holdlen_fonal:1
-    - unique:runapor:1
-    - unique:gyongyhaz_hej:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - holdlen_fonal
-    - runapor
-    - gyongyhaz_hej
-  lte_runalanc_csizma:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Rúnalánc craft
-    category: MAIL • Runic
-    result:
-      template: runalanc_csizma
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:2
-    - unique:holdlen_fonal:1
-    - unique:runapor:1
-    - unique:gyongyhaz_hej:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - holdlen_fonal
-    - runapor
-    - gyongyhaz_hej
-  lte_viharkvarc_runas_sisak:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Viharkvarc Rúnás craft
-    category: MAIL • Tempest
-    result:
-      template: viharkvarc_runas_sisak
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:2
-    - unique:konnyu_otvozet:1
-    - unique:viharkvarc:1
-    - unique:melyvizi_esszencia:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - konnyu_otvozet
-    - viharkvarc
-    - melyvizi_esszencia
-  lte_viharkvarc_runas_mellvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Viharkvarc Rúnás craft
-    category: MAIL • Tempest
-    result:
-      template: viharkvarc_runas_mellvert
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:4
-    - unique:konnyu_otvozet:1
-    - unique:viharkvarc:1
-    - unique:melyvizi_esszencia:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - konnyu_otvozet
-    - viharkvarc
-    - melyvizi_esszencia
-  lte_viharkvarc_runas_labvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Viharkvarc Rúnás craft
-    category: MAIL • Tempest
-    result:
-      template: viharkvarc_runas_labvert
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:3
-    - unique:konnyu_otvozet:1
-    - unique:viharkvarc:1
-    - unique:melyvizi_esszencia:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - konnyu_otvozet
-    - viharkvarc
-    - melyvizi_esszencia
-  lte_viharkvarc_runas_csizma:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Viharkvarc Rúnás craft
-    category: MAIL • Tempest
-    result:
-      template: viharkvarc_runas_csizma
-      amount: 1
-    ingredients:
-    - unique:sodrott_lancszem:2
-    - unique:konnyu_otvozet:1
-    - unique:viharkvarc:1
-    - unique:melyvizi_esszencia:1
-    processing-dependencies:
-    - sodrott_lancszem
-    - konnyu_otvozet
-    - viharkvarc
-    - melyvizi_esszencia
-  lte_glatziendorfi_sisak:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Glatziendorfi craft
-    category: PLATE • Runeforged
-    result:
-      template: glatziendorfi_sisak
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:2
-    - unique:sarkfeny_cseppko:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - sarkfeny_cseppko
-    - tiszta_vasesszencia
-  glatziendorfi_jegvert:
-    profession: armorer
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-  lte_glatziendorfi_labvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Glatziendorfi craft
-    category: PLATE • Runeforged
-    result:
-      template: glatziendorfi_labvert
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:3
-    - unique:sarkfeny_cseppko:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - sarkfeny_cseppko
-    - tiszta_vasesszencia
-  lte_glatziendorfi_csizma:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: HIGH
-    economy-managed: true
-    batchable: false
-    level: 29
-    learn: level
-    display-name: Glatziendorfi craft
-    category: PLATE • Runeforged
-    result:
-      template: glatziendorfi_csizma
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:2
-    - unique:sarkfeny_cseppko:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - sarkfeny_cseppko
-    - tiszta_vasesszencia
-  lte_borostyan_tarna_sisak:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Borostyán Tárna craft
-    category: PLATE • Bulwark
-    result:
-      template: borostyan_tarna_sisak
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:2
-    - unique:melysegi_borostyan:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - melysegi_borostyan
-    - tiszta_vasesszencia
-  item2_borostyan_tarnavert:
-    profession: armorer
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-  lte_borostyan_tarna_labvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Borostyán Tárna craft
-    category: PLATE • Bulwark
-    result:
-      template: borostyan_tarna_labvert
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:3
-    - unique:melysegi_borostyan:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - melysegi_borostyan
-    - tiszta_vasesszencia
-  lte_borostyan_tarna_csizma:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Borostyán Tárna craft
-    category: PLATE • Bulwark
-    result:
-      template: borostyan_tarna_csizma
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:2
-    - unique:melysegi_borostyan:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - melysegi_borostyan
-    - tiszta_vasesszencia
-  item2_sarkfeny_sisak:
-    profession: armorer
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-  lte_sarkfeny_mellvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Sarkfény craft
-    category: PLATE • Crusader
-    result:
-      template: sarkfeny_mellvert
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:4
-    - unique:sarkfeny_cseppko:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - sarkfeny_cseppko
-    - tiszta_vasesszencia
-  lte_sarkfeny_labvert:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Sarkfény craft
-    category: PLATE • Crusader
-    result:
-      template: sarkfeny_labvert
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:3
-    - unique:sarkfeny_cseppko:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - sarkfeny_cseppko
-    - tiszta_vasesszencia
-  lte_sarkfeny_csizma:
-    profession: armorer
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: MID
-    economy-managed: true
-    batchable: false
-    level: 20
-    learn: level
-    display-name: Sarkfény craft
-    category: PLATE • Crusader
-    result:
-      template: sarkfeny_csizma
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:2
-    - unique:sarkfeny_cseppko:1
-    - unique:tiszta_vasesszencia:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - sarkfeny_cseppko
-    - tiszta_vasesszencia
-  lte_runaforged_sisak:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Rúnakovácsolt craft
-    category: PLATE • Runeforged
-    result:
-      template: runaforged_sisak
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:2
-    - unique:runapor:1
-    - unique:szorny_szerv:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - runapor
-    - szorny_szerv
-  lte_runaforged_mellvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Rúnakovácsolt craft
-    category: PLATE • Runeforged
-    result:
-      template: runaforged_mellvert
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:4
-    - unique:runapor:1
-    - unique:szorny_szerv:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - runapor
-    - szorny_szerv
-  lte_runaforged_labvert:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Rúnakovácsolt craft
-    category: PLATE • Runeforged
-    result:
-      template: runaforged_labvert
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:3
-    - unique:runapor:1
-    - unique:szorny_szerv:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - runapor
-    - szorny_szerv
-  lte_runaforged_csizma:
-    profession: enchanter
-    kind: crafting
-    economy-category: CANONICAL_GEAR
-    material-tier: ENDGAME
-    economy-managed: true
-    batchable: false
-    level: 38
-    learn: level
-    display-name: Rúnakovácsolt craft
-    category: PLATE • Runeforged
-    result:
-      template: runaforged_csizma
-      amount: 1
-    ingredients:
-    - unique:kovacsolt_lemez:2
-    - unique:runapor:1
-    - unique:szorny_szerv:1
-    processing-dependencies:
-    - kovacsolt_lemez
-    - runapor
-    - szorny_szerv
-itemization:
-  ascension:
-    csillagfatyol_mellvert:
-      awakened:
-        materials:
-          szivfa_mag: 2
-          holdlen_fonal: 4
-          runapor: 4
-    demonbor_mellvert:
-      awakened:
-        materials:
-          bokic_gyongy: 2
-          vizbor: 3
-          halolaj: 2
-    melyvizi_vadasz_mellvert:
-      awakened:
-        materials:
-          melyvizi_esszencia: 2
-          gyongyhaz_hej: 3
-          runapor: 4
-    runaforged_mellvert:
-      awakened:
-        materials:
-          szorny_szerv: 2
-          kovacsolt_lemez: 3
-          runapor: 4

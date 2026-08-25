@@ -4,7 +4,9 @@ import pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MODEL_RE = re.compile(r'^(?:icesmp:)?([a-z0-9_]+)$')
 used: dict[str,set[str]] = {}
-for path in (ROOT/'src/main/resources/config').glob('*.yml'):
+authority_paths = list((ROOT/'src/main/resources/config').glob('*.yml'))
+authority_paths += list((ROOT/'src/main/resources/content').rglob('*.yml'))
+for path in authority_paths:
     text=path.read_text(encoding='utf-8')
     for match in re.finditer(r'(?:key-)?item-model:\s*["\']?([^"\'\s#}]+)', text):
         raw=match.group(1); parsed=MODEL_RE.match(raw)

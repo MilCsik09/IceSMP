@@ -12,7 +12,7 @@
 
 - Forráság: `master`.
 - Dokumentált commit: `73508dfa1bb40e6be54ab215bbe02dd0ae003e54`.
-- Questforrás: `src/main/resources/config/quests.yml`.
+- Questforrás: `src/main/resources/content/progression/quests.yml`.
 - Runtimeforrás: `QuestManager`, `FancyNpcsQuestBridge`, `QuestCommand`, `NpcBindCommand` és `NpcBindingManager`.
 - Loreforrás: `docs/LORE.md` és `docs/LORE_REFERENCE.md`; a tervezetet az owner lore-baseline-jával is összeolvastuk.
 - Bundled questek: **195/195** — 160 világ-/történeti küldetés és 35

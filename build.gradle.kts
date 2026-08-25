@@ -75,10 +75,10 @@ val progressionBalanceRegressionTest by tasks.registering(Exec::class) {
     description = "Runs the Itemization/Mob 2.0 economy, Monte Carlo and bounded-load gate."
     inputs.files(
         "scripts/test_progression_balance.py",
-        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/content/equipment/equipment.yml",
         "src/main/resources/config/crafting.yml",
-        "src/main/resources/config/profession-recipes.yml",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/professions/recipes.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/resources/config/world.yml",
     )
     commandLine(pythonCommand, "scripts/test_progression_balance.py")
@@ -89,9 +89,8 @@ val equipment2ReportRegressionTest by tasks.registering(Exec::class) {
     description = "Validates the deterministic Equipment 2.0 migration, budget and handoff report."
     inputs.files(
         "scripts/generate_equipment_2_report.py",
-        "src/main/resources/config/item-templates.yml",
-        "src/main/resources/config/equipment-catalog-expansion.yml",
-        "src/main/resources/config/profession-recipes.yml",
+        "src/main/resources/content/equipment/equipment.yml",
+        "src/main/resources/content/professions/recipes.yml",
         "docs/development/equipment-2-handoff.json",
     )
     commandLine(pythonCommand, "scripts/generate_equipment_2_report.py", "--check")
@@ -103,9 +102,8 @@ val combatEncounterFoundationAudit by tasks.registering(Exec::class) {
     inputs.files(
         "scripts/audit_combat_encounter_foundation.py",
         "scripts/audit_long_term_equipment_catalog.py",
-        "src/main/resources/config/item-templates.yml",
-        "src/main/resources/config/equipment-catalog-expansion.yml",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/equipment/equipment.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/resources/config/world.yml",
         "docs/development/combat-balance-authority.json",
     )
@@ -117,7 +115,7 @@ val unifiedCreatureCombatAudit by tasks.registering(Exec::class) {
     description = "Validates the bounded creature species, technique, reaction, reward and social authority."
     inputs.files(
         "scripts/audit_unified_creature_combat.py",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
         "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
@@ -131,7 +129,7 @@ val authoredPveConsolidationAudit by tasks.registering(Exec::class) {
     inputs.files(
         "scripts/audit_authored_pve_consolidation.py",
         "src/main/resources/config.yml",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/resources/config/world.yml",
         "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
@@ -149,12 +147,28 @@ val enemyWorldBossReworkAudit by tasks.registering(Exec::class) {
     description = "Validates enemy inventory, variants, behavior, context, daylight, FX and boss diversity."
     inputs.files(
         "scripts/audit_enemy_worldboss_rework.py",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/resources/config/world.yml",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
         "docs/development/enemy-worldboss-rework-2.json",
     )
     commandLine(pythonCommand, "scripts/audit_enemy_worldboss_rework.py", "--check")
+}
+
+val configContentCommandSurfaceAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates canonical config/content ownership, semantic parity and command permissions."
+    inputs.files(
+        "scripts/audit_config_content_command_surface.py",
+        "docs/development/config-content-command-surface-2.json",
+        "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java",
+        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java",
+        "src/main/java/hu/taliann/icesmp/commands/AbstractDispatchCommand.java",
+        "src/main/java/hu/taliann/icesmp/commands/Subcommand.java",
+    )
+    inputs.dir("src/main/resources/config")
+    inputs.dir("src/main/resources/content")
+    commandLine(pythonCommand, "scripts/audit_config_content_command_surface.py", "--check")
 }
 
 val validateIceSmpHudPackage by tasks.registering {
@@ -538,6 +552,10 @@ val configStartupRegressionTest = registerRegression(
     "configStartupRegressionTest",
     "Runs packaged config, material compatibility and profession parser regressions.",
     "hu.taliann.icesmp.managers.ConfigStartupRegressionSuite")
+val commandSurfaceRegressionTest = registerRegression(
+    "commandSurfaceRegressionTest",
+    "Runs permission, help and Paper trailing-space command surface source contracts.",
+    "hu.taliann.icesmp.commands.CommandSurfaceRegressionSuite")
 val afkRegressionTest = registerRegression(
     "afkRegressionTest",
     "Runs global AFK state, display ordering and product-boundary regressions.",
@@ -824,7 +842,7 @@ val professions2EconomyRegressionTest by tasks.registering(Exec::class) {
     group = "verification"
     description = "Runs the seeded Professions 2.0 economy sanity harness."
     inputs.files("scripts/test_professions_2_economy.py", "src/main/resources/config/professions-2.yml",
-        "src/main/resources/config/profession-recipes.yml", "src/main/resources/config/professions.yml")
+        "src/main/resources/content/professions/recipes.yml", "src/main/resources/config/professions.yml")
     commandLine(pythonCommand, "scripts/test_professions_2_economy.py")
 }
 val runtimeHardeningRegressionTest = registerRegression(
@@ -974,12 +992,13 @@ tasks.check {
     dependsOn(unifiedCreatureCombatAudit)
     dependsOn(authoredPveConsolidationAudit)
     dependsOn(enemyWorldBossReworkAudit)
+    dependsOn(configContentCommandSurfaceAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
-        configStartupRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
+        configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,

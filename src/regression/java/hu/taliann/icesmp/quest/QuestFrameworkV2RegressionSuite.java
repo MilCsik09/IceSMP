@@ -500,7 +500,7 @@ public final class QuestFrameworkV2RegressionSuite {
 
     private static void packagedQuestMigrationContract() throws Exception {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(
-                new java.io.File("src/main/resources/config/quests.yml"));
+                new java.io.File("src/main/resources/content/progression/quests.yml"));
         final ConfigurationSection quests = yaml.getConfigurationSection("quests");
         check(quests != null && quests.getKeys(false).size() == 195,
                 "packaged catalog carries the 160 world quests plus 35 capstone trials");
@@ -573,7 +573,7 @@ public final class QuestFrameworkV2RegressionSuite {
                 "onboarding chain opener stays AUTO-sourced");
 
         final String raw = java.nio.file.Files.readString(java.nio.file.Path.of(
-                "src/main/resources/config/quests.yml"));
+                "src/main/resources/content/progression/quests.yml"));
         check(!raw.contains("giver-npc:"),
                 "legacy giver-npc keys fully migrated to start sections");
     }
@@ -592,6 +592,10 @@ public final class QuestFrameworkV2RegressionSuite {
                 "clickable choices carry single-use tokens, never raw accept commands");
         check(manager.contains("reloadDefinitions") && manager.contains("keeping previous"),
                 "invalid definition reload keeps the previous registry snapshot");
+        check(manager.contains("CUSTOM_QUEST_SCHEMA_VERSION = 1")
+                        && manager.contains("Unsupported custom-quests.yml schema-version")
+                        && manager.contains("Failed to load versioned custom-quests.yml"),
+                "extensible custom quest content is versioned and fails closed");
         check(manager.contains("handleSpellCast(final Player player, final String spellId)")
                         && manager.contains("forEachActive(player, \"CAST_SPELLS\"")
                         && manager.contains("quest-requires-specialization"),

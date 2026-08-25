@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SAMPLES = 100_000
 
 
-def load(name: str):
-    with (ROOT / "src/main/resources/config" / name).open(encoding="utf-8") as stream:
+def load(relative: str):
+    with (ROOT / "src/main/resources" / relative).open(encoding="utf-8") as stream:
         return yaml.safe_load(stream)
 
 
@@ -24,11 +24,11 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
-items = load("item-templates.yml")
-crafting = load("crafting.yml")
-recipes = load("profession-recipes.yml")["profession-recipes"]
-mobs = load("mob-templates.yml")
-world = load("world.yml")
+items = load("content/equipment/equipment.yml")
+crafting = load("config/crafting.yml")
+recipes = load("content/professions/recipes.yml")["profession-recipes"]
+mobs = load("content/pve/enemies.yml")
+world = load("config/world.yml")
 
 templates = items["item-templates"]
 sets = items["item-sets"]
@@ -37,15 +37,17 @@ actual_runes = {key: value for key, value in crafting["runes"].items()
 canonical_recipes = {key: value for key, value in recipes.items()
                      if isinstance(value, dict) and value.get("result", {}).get("template")}
 
-require(40 <= len(templates) <= 60, "authored item catalog must stay in the 40-60 gate")
-require(6 <= sum(bool(row.get("signature-effect")) for row in templates.values()) <= 16,
+require(len(templates) == 190, "handcrafted equipment catalog identity drifted")
+require(sum(bool(row.get("armor-family")) for row in templates.values()) == 160,
+        "the #140 handcrafted armor catalog must remain exactly 160 pieces")
+require(6 <= sum(bool(row.get("signature-effect")) for row in templates.values()) <= 20,
         "signature catalog is outside the playable bound")
 require(len(sets) >= 2, "at least two authored sets are required")
-require(5 <= sum(bool(row.get("ascension-path")) for row in templates.values()) <= 8,
-        "ascension-capable catalog must stay in the 5-8 gate")
+require(5 <= sum(bool(row.get("ascension-path")) for row in templates.values()) <= 12,
+        "ascension-capable catalog must stay in the bounded gate")
 require(8 <= len(actual_runes) <= 12, "rune catalog must stay in the 8-12 gate")
-require(10 <= len(canonical_recipes) <= 15,
-        "canonical profession gear recipes must stay in the 10-15 gate")
+require(len(canonical_recipes) == 76,
+        "handcrafted equipment recipe catalog identity drifted")
 
 # Economy-unit invariant used by the production ItemSalvageService: its conservative input value
 # is 64 and every possible dust output is capped before physical material mapping.
@@ -70,10 +72,10 @@ for resource in mining["resources"].values():
 require(max(by_block.values()) <= 0.02, "one mining block has an exploitably high rare yield")
 require(1 <= mining["daily-cap"] <= 12, "rare mining daily budget is not conservative")
 
-require(40 <= len(mobs["mob-templates"]) <= 128,
-        "MobTemplate roster must stay in the bounded enemy-rework PvE gate")
-require(16 <= len(mobs["mob-abilities"]) <= 128,
-        "reusable ability registry is outside its bounded gate")
+require(len(mobs["mob-templates"]) == 89,
+        "the #141 handcrafted enemy roster must remain exactly 89 templates")
+require(len(mobs["mob-abilities"]) == 61,
+        "the #141 handcrafted technique registry must remain exactly 61 entries")
 require(len({row["archetype"] for row in mobs["mob-templates"].values()}) >= 6,
         "mob roster lacks archetype variety")
 

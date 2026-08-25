@@ -37,7 +37,7 @@ def main() -> None:
     if "ProfessionSpecializationEconomyPolicy.effectFor(player, recipe)" in transaction:
         raise RuntimeError("specialization arithmetic escaped CraftPlan authority")
 
-    config = (ROOT / "src/main/resources/config.yml").read_text(encoding="utf-8")
+    config = (ROOT / "src/main/resources/config/professions-2.yml").read_text(encoding="utf-8")
     for token in ("economy-efficiency-percent: 0.10", "economy-yield-percent: 0.10"):
         if token not in config:
             raise RuntimeError(f"specialization config missing: {token}")

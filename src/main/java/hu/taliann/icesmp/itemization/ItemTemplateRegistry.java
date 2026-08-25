@@ -47,7 +47,7 @@ public final class ItemTemplateRegistry {
         final ConfigurationSection root = configManager.getConfiguration() == null ? null
                 : configManager.getConfiguration().getConfigurationSection("item-templates");
         if (root == null) {
-            throw new IllegalStateException("item-templates.yml: hiányzik az item-templates gyökér; "
+            throw new IllegalStateException("content/equipment/equipment.yml: hiányzik az item-templates gyökér; "
                     + "az előző immutable Equipment 2.0 snapshot marad aktív");
         }
         final Map<String, ItemSetDefinition> loadedSets = parseSets(

@@ -13,13 +13,15 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-CFG = ROOT / "src/main/resources/config"
+RESOURCES = ROOT / "src/main/resources"
 AUTHORITY = ROOT / "docs/development/combat-balance-authority.json"
 DEFAULT_OUTPUT = ROOT / "build/reports/combat-foundation"
-CONFIG_FILES = (
-    "item-templates.yml", "profession-materials.yml", "profession-recipes.yml", "professions-2.yml",
-    "material-economy-expansion.yml", "equipment-catalog-expansion.yml",
-    "reward-discoverability-closure.yml", "world.yml", "mob-templates.yml",
+AUTHORITY_FILES = (
+    "content/equipment/equipment.yml",
+    "content/professions/materials.yml",
+    "content/professions/recipes.yml",
+    "content/pve/enemies.yml",
+    "config/world.yml",
 )
 GROUP = {
     "attack_damage": "offense", "attack_speed": "offense", "ability_power": "offense",
@@ -57,8 +59,8 @@ def merge(target: dict[str, Any], patch: dict[str, Any]) -> None:
 
 def effective() -> dict[str, Any]:
     result: dict[str, Any] = {}
-    for name in CONFIG_FILES:
-        merge(result, load(CFG / name))
+    for name in AUTHORITY_FILES:
+        merge(result, load(RESOURCES / name))
     return result
 
 
