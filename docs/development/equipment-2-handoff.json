@@ -4668,9 +4668,23 @@
     }
   ],
   "professions_2_handoff": {
-    "canonical_recipe_count": 76,
+    "canonical_recipe_count": 85,
     "ownership_policy_finalized": false,
     "recipes": [
+      {
+        "armor_family": null,
+        "current_materials": [
+          "BOW:1",
+          "STRING:8",
+          "NETHERITE_INGOT:1",
+          "unique:vad_esszencia:3"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "kallan_szeletelo",
+        "recipe_id": "kallan_szeletelo"
+      },
       {
         "armor_family": null,
         "current_materials": [
@@ -4702,6 +4716,74 @@
       {
         "armor_family": null,
         "current_materials": [
+          "SADDLE:1",
+          "LEATHER:8",
+          "STRING:4",
+          "unique:arnyekpor:2"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "jegsarkany_kantar",
+        "recipe_id": "jegsarkany_kantar"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "CROSSBOW:1",
+          "BLAZE_ROD:4",
+          "NETHERITE_INGOT:1",
+          "unique:vad_esszencia:3"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "pyralingradi_tuzkopo",
+        "recipe_id": "pyralingradi_tuzkopo"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "NETHERITE_SWORD:1",
+          "BLAZE_POWDER:8",
+          "unique:szorny_mag:3"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "verszavanna_agyara",
+        "recipe_id": "verszavanna_agyara"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "PAPER:1",
+          "EMERALD_BLOCK:1",
+          "unique:viaszpecset:1"
+        ],
+        "current_profession": "enchanter",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "smaragdko_bankbetet",
+        "recipe_id": "smaragdko_bankbetet"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "RABBIT_FOOT:1",
+          "GOLDEN_CARROT:8",
+          "AMETHYST_SHARD:8",
+          "unique:vad_esszencia:2"
+        ],
+        "current_profession": "herbalist",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "szellemszarvas_bubaj",
+        "recipe_id": "szellemszarvas_bubaj"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
           "DIAMOND_AXE:1",
           "NETHERITE_INGOT:2",
           "unique:jegviragpor:3",
@@ -4713,6 +4795,53 @@
         "migration_complexity": "MEDIUM",
         "output_template": "glatziendorfi_jegtoro",
         "recipe_id": "glatziendorfi_jegtoro"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "DIAMOND_SWORD:1",
+          "NETHERITE_INGOT:3",
+          "unique:sarkanycsont_szilank:3",
+          "unique:osi_ereklyeszilank:1",
+          "unique:elso_csend_szilankja:1",
+          "unique:folyositoszer:2"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "miinus_haragja",
+        "recipe_id": "miinus_haragja"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "DIAMOND_SWORD:1",
+          "NETHERITE_INGOT:3",
+          "unique:parazsmag:3",
+          "unique:osi_ereklyeszilank:1",
+          "unique:karhozat_parazs:2",
+          "unique:folyositoszer:2"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "zhoris_langnyelve",
+        "recipe_id": "zhoris_langnyelve"
+      },
+      {
+        "armor_family": null,
+        "current_materials": [
+          "BOW:1",
+          "unique:fonixpihe:3",
+          "unique:obszidian_szilank:3",
+          "unique:parazsmag:2",
+          "unique:folyositoszer:1"
+        ],
+        "current_profession": "armorer",
+        "future_processing_chain_needed": false,
+        "migration_complexity": "MEDIUM",
+        "output_template": "napfogyatkozas_fokusz",
+        "recipe_id": "napfogyatkozas"
       },
       {
         "armor_family": null,
@@ -6075,7 +6204,7 @@
       {
         "armor_family": null,
         "class_restriction": [],
-        "current_asset": "minecraft:netherite_axe",
+        "current_asset": "icesmp:kallan_szeletelo",
         "missing_equipment_asset": false,
         "needs_redesign": false,
         "orientation_fit_review_required": false,
@@ -6135,7 +6264,7 @@
       {
         "armor_family": null,
         "class_restriction": [],
-        "current_asset": "minecraft:echo_shard",
+        "current_asset": "icesmp:napfogyatkozas",
         "missing_equipment_asset": false,
         "needs_redesign": false,
         "orientation_fit_review_required": false,

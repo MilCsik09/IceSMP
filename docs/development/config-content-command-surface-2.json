@@ -13770,7 +13770,7 @@
       "runtime_state": false
     },
     {
-      "bytes": 254823,
+      "bytes": 258830,
       "canonical": false,
       "category": "VALIDATION_EVIDENCE",
       "consumer_count": 0,
@@ -13780,7 +13780,7 @@
       "format": "json",
       "gameplay_content": false,
       "generated": true,
-      "lines": 8315,
+      "lines": 8444,
       "migration_requirement": "NONE",
       "operator_editable": false,
       "owner": "CI/audit tooling",
