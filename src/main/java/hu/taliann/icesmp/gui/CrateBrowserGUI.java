@@ -58,7 +58,7 @@ public final class CrateBrowserGUI {
                     currencyManager.formatBalance(definition.keyPriceAmount()) + " "
                             + definition.keyPriceCurrency().getDisplayName(), NamedTextColor.WHITE)));
             lore.add(GuiUtil.label("Kulcs/nyitás", Component.text(definition.requiredKeys(), NamedTextColor.YELLOW)));
-            lore.add(GuiUtil.label("Cooldown", Component.text(
+            lore.add(GuiUtil.label("Töltési idő", Component.text(
                     definition.cooldownMillis() <= 0L ? "nincs" : definition.cooldownMillis() / 1000L + " mp",
                     NamedTextColor.AQUA)));
             lore.add(GuiUtil.grey("Kattints a jutalmak előnézetéhez."));
@@ -104,7 +104,7 @@ public final class CrateBrowserGUI {
                     ? new ArrayList<>() : new ArrayList<>(meta.lore());
             lore.add(GuiUtil.label("Esély", Component.text(
                     CrateFormatting.decimal(odds.percent()) + "%", NamedTextColor.YELLOW)));
-            lore.add(GuiUtil.label("Típus", Component.text(reward.type().name(), NamedTextColor.AQUA)));
+            lore.add(GuiUtil.label("Típus", Component.text(rewardTypeLabel(reward.type()), NamedTextColor.AQUA)));
             lore.add(GuiUtil.grey("Csak előnézet — innen tárgy nem vehető ki."));
             meta.lore(lore);
             icon.setItemMeta(meta);
@@ -119,5 +119,19 @@ public final class CrateBrowserGUI {
         holder.bind(49, "CLOSE");
         player.openInventory(inventory);
         GuiUtil.sound(player, GuiUtil.GuiSound.PAGE);
+    }
+
+    private static String rewardTypeLabel(final CrateManager.RewardType type) {
+        return switch (type) {
+            case ITEM -> "Tárgy";
+            case COMMAND -> "Különleges jutalom";
+            case CURRENCY -> "Valuta";
+            case UNIQUE_ITEM -> "Egyedi tárgy";
+            case TEMPLATE -> "Felszerelés";
+            case RECIPE_ITEM -> "Recepttárgy";
+            case BLUEPRINT -> "Tervrajz";
+            case RANDOM_BLUEPRINT -> "Véletlen tervrajz";
+            case CRATE_KEY -> "Ládakulcs";
+        };
     }
 }

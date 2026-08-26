@@ -40,7 +40,7 @@ public final class JobGUI {
 
         final hu.taliann.icesmp.data.FactionType faction = ClassUiAssets.faction(viewer, factionManager);
         final Component title = ClassUiAssets.title(ClassUiAssets.Surface.CLASS_SELECT, faction,
-                messageManager.getComponent("messages.job-gui-title", "&3\u00bb Kasztok és Szakmák \u00ab"));
+                messageManager.getComponent("messages.job-gui-title", "&3» Kasztok és Szakmák «"));
         final JobGUIHolder holder = new JobGUIHolder(viewer.getUniqueId());
         final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
@@ -155,14 +155,14 @@ public final class JobGUI {
         if (primary == null) {
             return List.of(
                     roleLine,
-                    messageManager.getComponent("messages.job-gui-lore-click", "&7Kattints a kivalasztashoz!"));
+                    messageManager.getComponent("messages.job-gui-lore-click", "&7Kattints a kiválasztáshoz!"));
         }
 
         // A class is already chosen (and it isn't this one) — the player can't change it anymore.
         return List.of(
                 roleLine,
                 messageManager.getComponent("messages.job-gui-lore-already-have", "&cMár van kasztod."),
-                messageManager.getComponent("messages.job-gui-lore-no-change", "&7Jelenleg nem modosithato.")
+                messageManager.getComponent("messages.job-gui-lore-no-change", "&7Jelenleg nem módosítható.")
         );
     }
 

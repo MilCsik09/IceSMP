@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "scope": "player-facing messaging integrity hardening",
+  "review_authority": "IceSMP_Full_Player_Facing_Messaging_Review",
+  "parent": "a256a52264ac0d58427c9db33d80f66af1ce73d3",
+  "parallel_sibling": {
+    "pr": 146,
+    "branch": "feature/trash-anomaly-archaeology",
+    "relationship": "sibling from the same #144 parent; not a parent of this hardening"
+  },
+  "findings": {
+    "MSG-M0-001": "CLOSED",
+    "MSG-M0-002": "CLOSED",
+    "MSG-M1-001": "CLOSED",
+    "MSG-M1-002": "CLOSED",
+    "MSG-M1-003": "CLOSED",
+    "MSG-M1-004": "CLOSED",
+    "MSG-M1-005": "CLOSED",
+    "MSG-M1-006": "CLOSED",
+    "MSG-M1-007": "CLOSED",
+    "MSG-M1-008": "CLOSED",
+    "MSG-M1-009": "CLOSED",
+    "MSG-M1-010": "CLOSED",
+    "MSG-M1-011": "CLOSED",
+    "MSG-M2-001": "CLOSED",
+    "MSG-M2-002": "CLOSED",
+    "MSG-M2-003": "CLOSED",
+    "MSG-M2-004": "CLOSED",
+    "MSG-M2-005": "CLOSED",
+    "MSG-M2-006": "INTENTIONALLY_DEFERRED_NON_BLOCKING",
+    "MSG-M2-007": "CLOSED",
+    "MSG-M2-008": "INTENTIONALLY_DEFERRED_NON_BLOCKING",
+    "MSG-M3-001": "CLOSED"
+  },
+  "preserved_gates": {
+    "PLAYER_VISIBLE_LITERAL_PLACEHOLDER": 0,
+    "PLAYER_VISIBLE_RAW_FORMAT_TOKEN": 0,
+    "MONEY_POUCH_MESSAGE_CONTENT_LEAK": 0,
+    "MENEDÉK_COPY_CONTRADICTION": 0,
+    "DAILY_COPY_SECOND_AUTHORITY": 0,
+    "HIGH_FREQUENCY_CHAT_SPAM": 0
+  },
+  "verification_gates": {
+    "BUNDLED_MESSAGE_YAML_PARSE": "REQUIRED",
+    "FINDING_DRIVEN_MESSAGING_AUDIT": "REQUIRED",
+    "JOB_GUI_BEHAVIOR_PRESERVATION": "REQUIRED",
+    "JAVA21_FULL_REGRESSION": "REQUIRED",
+    "PAPER_1_21_11_RUNTIME": "REQUIRED",
+    "FOLIA_1_21_11_RUNTIME": "REQUIRED",
+    "CUMULATIVE_QUEST_ITEM_AUTHORITY": "REQUIRED",
+    "RAW_BUKKIT_SCHEDULER": 0
+  },
+  "notes": {
+    "MSG-M2-006": "Fallback-only copy remains a supported MessageManager compatibility mechanism. This hardening moved or aligned the repeated/core paths implicated by M0/M1 findings without creating a localization framework or bulk-migrating all local/staff fallbacks.",
+    "MSG-M2-008": "Unused keys require per-key operator-compatibility decisions. Retired procedural-daily vocabulary and divergent territory ownership were cleaned, but no unsafe bulk deletion of compatibility-retained keys is performed."
+  },
+  "human_staging_required": true
+}

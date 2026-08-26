@@ -5,6 +5,8 @@ import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.managers.WorldBossManager;
+import hu.taliann.icesmp.pve.MobArchetype;
+import hu.taliann.icesmp.pve.MobRank;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -26,12 +28,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * B21 — a bestiárium lapozható nézetei. A főoldal 4 kattintható kategória-csempét ad
  * teljesítmény-%-kal; a kategória-nézet 45 bejegyzés/oldal: az ismert bejegyzés ikonnal
  * és tudás-fokozat szerinti lore-ral, az ismeretlen „???" sziluettként jelenik meg —
- * a nevezőt a fajta-, recept-, territórium- és boss-lajstrom adja. Minden nézet
+ * a nevezőt a fajta-, recept-, terület- és boss-lajstrom adja. Minden nézet
  * csak olvasható; a kattintás-útvonalakat a BestiaryListener értelmezi.
  */
 public final class BestiaryGUI {
@@ -69,19 +72,19 @@ public final class BestiaryGUI {
         inventory.setItem(10, categoryIcon(Material.IRON_SWORD, BestiaryManager.Category.MOBS,
                 bestiaryManager.count(player, BestiaryManager.Category.MOBS),
                 bestiaryManager.knownMobEntryCount(),
-                "Megölt szörny-FAJOK — minden faj első", "elejtése új bejegyzés."));
+                "Megölt szörnyfajok — minden faj első", "elejtése új bejegyzés."));
         inventory.setItem(12, categoryIcon(Material.CRAFTING_TABLE, BestiaryManager.Category.RECIPES,
                 bestiaryManager.count(player, BestiaryManager.Category.RECIPES),
                 recipeCatalog.allIds().size(),
-                "Első craftok a recept-katalógusból.", "A céh számon tartja a munkád."));
+                "Első elkészítések a receptkatalógusból.", "A céh számon tartja a munkád."));
         inventory.setItem(14, categoryIcon(Material.FILLED_MAP, BestiaryManager.Category.TERRITORIES,
                 bestiaryManager.count(player, BestiaryManager.Category.TERRITORIES),
                 territoryManager.all().size(),
-                "Bejárt territóriumok — az első", "határátlépés írja a lajstromot."));
+                "Bejárt területek — az első", "határátlépés írja a lajstromot."));
         inventory.setItem(16, categoryIcon(Material.WITHER_SKELETON_SKULL, BestiaryManager.Category.BOSSES,
                 bestiaryManager.count(player, BestiaryManager.Category.BOSSES),
                 WorldBossManager.archetypeDisplayNames().size(),
-                "Legyőzött boss-archetípusok.", "A krónikások kedvence."));
+                "Legyőzött világbossok.", "A krónikások kedvencei."));
         player.openInventory(inventory);
     }
 
@@ -147,7 +150,6 @@ public final class BestiaryGUI {
                     rows.put(id, new Entry(id, spawnEgg(type),
                             Component.text(template.displayName()), collected.contains(id)));
                 });
-                // A ritka variánsok gyűjtött extrák: nem részei a nevezőnek, nincs ???-soruk.
                 for (final String id : collected) {
                     if (!rows.containsKey(id)) {
                         rows.put(id, new Entry(id, Material.NETHER_STAR,
@@ -160,7 +162,7 @@ public final class BestiaryGUI {
                     final ProfessionRecipeCatalog.Recipe recipe = recipeCatalog.get(id);
                     final Material icon = recipe == null ? Material.CRAFTING_TABLE : recipe.result();
                     final Component name = recipe == null
-                            ? Component.text(id)
+                            ? Component.text("Ismeretlen recept")
                             : LEGACY.deserialize(recipe.displayName());
                     rows.put(id, new Entry(id, icon, name, collected.contains(id.toLowerCase(Locale.ROOT))));
                 }
@@ -178,7 +180,7 @@ public final class BestiaryGUI {
                                 LEGACY.deserialize(rawName), collected.contains(id))));
                 for (final String id : collected) {
                     rows.putIfAbsent(id, new Entry(id, Material.SKELETON_SKULL,
-                            Component.text(id), true));
+                            Component.text("Ismeretlen világboss"), true));
                 }
             }
         }
@@ -217,22 +219,22 @@ public final class BestiaryGUI {
             final hu.taliann.icesmp.pve.MobTemplate template =
                     bestiaryManager.mobTemplate(entry.id());
             if (template != null && tier >= 1) {
-                lore.add(GuiUtil.grey("Rang: " + template.rank().name()
-                        + " • Archetípus: " + template.archetype().name()));
+                lore.add(GuiUtil.grey("Rang: " + rankLabel(template.rank())
+                        + " • Harcmodor: " + archetypeLabel(template.archetype())));
                 lore.add(GuiUtil.grey(template.bestiarySummary()));
             }
             if (template != null && tier >= 2) {
                 lore.add(Component.text("Taktikai jegyzet: " + template.counterplayHint(),
                         NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
                 if (!template.resistances().isEmpty()) {
-                    lore.add(GuiUtil.grey("Ellenállás: " + String.join(", ", template.resistances())));
+                    lore.add(GuiUtil.grey("Ellenállás: " + humanizeIds(template.resistances())));
                 }
                 if (!template.weaknesses().isEmpty()) {
-                    lore.add(GuiUtil.grey("Gyengeség: " + String.join(", ", template.weaknesses())));
+                    lore.add(GuiUtil.grey("Gyengeség: " + humanizeIds(template.weaknesses())));
                 }
             }
             if (template != null && tier >= 3) {
-                lore.add(GuiUtil.grey("Forrásprofil: " + template.lootProfile()));
+                lore.add(GuiUtil.grey("A zsákmányának részleteit már kiismered."));
             }
             if (tier >= 2) {
                 lore.add(GuiUtil.grey("Zsákmány-jegyzet: a Káoszkor erős példányai"));
@@ -250,7 +252,7 @@ public final class BestiaryGUI {
                 lore.add(Component.text("„" + note + "”", NamedTextColor.DARK_AQUA)
                         .decoration(TextDecoration.ITALIC, true));
             }
-            lore.add(GuiUtil.grey("Archetípus legyőzve — a krónikák jegyzik."));
+            lore.add(GuiUtil.grey("Világboss legyőzve — a krónikák jegyzik."));
         } else {
             lore.add(GuiUtil.grey("Bejegyezve a lajstromba."));
         }
@@ -283,6 +285,55 @@ public final class BestiaryGUI {
         meta.lore(lore);
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    private static String rankLabel(final MobRank rank) {
+        return switch (rank) {
+            case NORMAL -> "Normál";
+            case VETERAN -> "Veterán";
+            case ELITE -> "Elit";
+            case CHAMPION -> "Bajnok";
+            case MINIBOSS -> "Mini-főellenfél";
+            case BOSS -> "Főellenfél";
+            case WORLD_BOSS -> "Világboss";
+        };
+    }
+
+    private static String archetypeLabel(final MobArchetype archetype) {
+        return switch (archetype) {
+            case BRUISER -> "nehéz közelharcos";
+            case CHARGER -> "rohamozó";
+            case SKIRMISHER -> "portyázó";
+            case RANGED -> "távolsági";
+            case ARTILLERY -> "tüzér";
+            case DEFENDER -> "védelmező";
+            case SUPPORT -> "támogató";
+            case HEALER -> "gyógyító";
+            case SUMMONER -> "idéző";
+            case ASSASSIN -> "orgyilkos";
+            case CONTROLLER -> "irányító";
+            case FLYING -> "repülő";
+        };
+    }
+
+    private static String humanizeIds(final Set<String> ids) {
+        return ids.stream().map(BestiaryGUI::humanizeId).sorted().collect(Collectors.joining(", "));
+    }
+
+    private static String humanizeId(final String raw) {
+        if (raw == null || raw.isBlank()) return "ismeretlen";
+        final String normalized = raw.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ');
+        return switch (normalized) {
+            case "fire", "tuz", "tűz" -> "tűz";
+            case "frost", "ice", "jeg", "jég" -> "jég";
+            case "storm", "lightning", "vihar" -> "vihar";
+            case "shadow", "dark", "arnyek", "árnyék" -> "árnyék";
+            case "nature", "termeszet", "természet" -> "természet";
+            case "holy", "feny", "fény" -> "fény";
+            case "physical", "fizikai" -> "fizikai";
+            case "poison", "venom", "mereg", "méreg" -> "méreg";
+            default -> Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+        };
     }
 
     private static Material spawnEgg(final EntityType type) {

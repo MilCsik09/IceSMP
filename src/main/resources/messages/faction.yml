@@ -89,26 +89,3 @@ messages:
   sinner.target-offline: <red>A célpont nem elérhető (offline).</red>
   sinner.theft-recorded: '<dark_purple>Bűnt követtél el: lopás a(z) {faction} frakció területén ({territory}). <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>'
   sinner.usage: '<yellow>Használat: /sinner <játékos> <set|clear|add|status></yellow>'
-  territory-build-denied: <red>Ez a(z) {faction} frakció területe — itt nem építhetsz.</red>
-  territory-claim-success: '&aTerület kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)'
-  territory-claim-usage: '&cHasználat: /territory claim <frakció> <azonosító> <sugár> [név...]'
-  territory-enter: <yellow>{name}</yellow> <gray>({faction} terület)</gray>
-  territory-enter-capital: <gold>✦ {name} ✦</gold> <gray>({faction} főváros)</gray>
-  territory-enter-wilderness: <gray>Vadon</gray>
-  territory-help-claim: '&e/territory claim <frakció> <azonosító> <sugár> [név...] &7- Terület kijelölése.'
-  territory-help-header: '&6/territory &7- Elérhető parancsok (Admin):'
-  territory-help-info: '&e/territory info &7- Az aktuális pozíció területe.'
-  territory-help-list: '&e/territory list &7- Területek listája.'
-  territory-help-remove: '&e/territory remove <azonosító> &7- Terület törlése.'
-  territory-help-setcapital: '&e/territory setcapital <frakció> <sugár> [név...] &7- Főváros kijelölése a pozíciódnál.'
-  territory-info-line: '&6Terület: &f%s &7| Frakció: &f%s &7| Azonosító: &f%s%s'
-  territory-info-wilderness: '&7Itt nincs kijelölt terület (vadon).'
-  territory-list-empty: '&eNincsenek kijelölt területek.'
-  territory-list-header: '&6Kijelölt területek:'
-  territory-list-line: '&e%s &7(%s) | %s | sugár: %s | középpont: %s, %s (%s)%s'
-  territory-remove-success: '&aTerület törölve: &f%s'
-  territory-remove-usage: '&cHasználat: /territory remove <azonosító>'
-  territory-setcapital-success: '&aFőváros kijelölve: &f%s &7(%s, sugár: %s, középpont: %s, %s)'
-  territory-setcapital-usage: '&cHasználat: /territory setcapital <frakció> <sugár> [név...]'
-  territory-unknown: '&cIsmeretlen terület: &f%s'
-  territory-unknown-subcommand: '&cIsmeretlen alparancs: &f%s'

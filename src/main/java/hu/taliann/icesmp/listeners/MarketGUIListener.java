@@ -90,11 +90,9 @@ public final class MarketGUIListener implements Listener {
 
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.2F);
         player.sendMessage(messageManager.getMessage(
-                "market-buy-success",
-                "&aMegvetted: &f{price} {currency} &7(a bankodból).",
+                "market-buy-recorded",
+                "&aA vásárlási művelet rögzítve: &f{price} {currency}&a. &7A piactér lezárja a tartós tranzakciót; az átvehető tárgyakat a /market claim alatt látod.",
                 Map.of(
-                        // The amount actually deducted at the moment of the sale (returned by
-                        // buy()), not a separately re-derived estimate — see MarketManager#buy.
                         "price", currencyManager.formatBalance(outcome.amount()),
                         "currency", listing.currency().getDisplayName()
                 )
@@ -106,8 +104,8 @@ public final class MarketGUIListener implements Listener {
             // whose click thread we are on — deliver the notice on the seller's own scheduler.
             final String buyerName = player.getName();
             seller.getScheduler().run(plugin, task -> seller.sendMessage(messageManager.getMessage(
-                    "market-sold-notice",
-                    "&aEladtad egy tárgyadat a piacon &f{buyer}&a részére — a bevétel a bankodba került.",
+                    "market-sale-recorded",
+                    "&aVevő érkezett a piaci tételedre: &f{buyer}&a. &7A piactér lezárja a tartós elszámolást; a végleges állapot helyreállításkor is egyeztethető.",
                     Map.of("buyer", buyerName)
             )), null);
         }
@@ -130,8 +128,8 @@ public final class MarketGUIListener implements Listener {
         if (outcome.boughtOut()) {
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.2F);
             player.sendMessage(messageManager.getMessage(
-                    "market-buyout-success",
-                    "&aMegvetted azonnal a buy-out áron: &f{price} {currency}&a — a tárgy a /market claim paranccsal átvehető.",
+                    "market-buyout-recorded",
+                    "&aAz azonnali vásárlási művelet rögzítve: &f{price} {currency}&a. &7A piactér lezárja a tartós tranzakciót; az átvehető tárgyakat a /market claim alatt látod.",
                     Map.of(
                             "price", currencyManager.formatBalance(outcome.amount()),
                             "currency", listing.currency().getDisplayName()
@@ -145,8 +143,8 @@ public final class MarketGUIListener implements Listener {
 
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 1.4F);
         player.sendMessage(messageManager.getMessage(
-                "market-bid-success",
-                "&aLicitáltál: &f{bid} {currency} &7(a bankodból zárolva; túllicitálásnál visszajár).",
+                "market-bid-recorded",
+                "&aA licitművelet rögzítve: &f{bid} {currency}&a. &7A piactér lezárja a tartós állapotot; túllicitálásnál a zárolt összeg felszabadítása is helyreállításbiztos.",
                 Map.of(
                         "bid", currencyManager.formatBalance(outcome.amount()),
                         "currency", listing.currency().getDisplayName()
@@ -158,33 +156,34 @@ public final class MarketGUIListener implements Listener {
         MarketGUI.open(player, marketManager, currencyManager, messageManager, holder.getPage(), holder.getFilter());
     }
 
-    /** Notifies the previously-escrowed bidder (if any) that their bid was refunded. */
+    /** Notifies the previously-escrowed bidder (if any) that their bid refund is being reconciled. */
     private void notifyOutbid(final MarketManager.BidOutcome outcome, final MarketManager.Listing listing) {
         if (outcome.previousBidder() == null) {
             return;
         }
-        // Folia: the outbid player may be in another region — hop to their scheduler.
         final Player outbid = Bukkit.getPlayer(outcome.previousBidder());
         if (outbid != null) {
-            // effectiveName(): a saját név, ha van; különben a fordítható típusnév — a nyers
-            // enum-név („DIAMOND_SWORD”) belső azonosító, nem való játékos-üzenetbe.
-            final String itemName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+            final String plainName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
                     .plainText().serialize(listing.item().effectiveName());
+            // Placeholder-map substitution happens before MiniMessage parsing, so escape any
+            // player-controlled/anvil-authored tag-looking text before inserting it.
+            final String itemName = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()
+                    .escapeTags(plainName);
             outbid.getScheduler().run(plugin, task -> outbid.sendMessage(messageManager.getMessage(
-                    "market-outbid-notice",
-                    "&cTúllicitáltak (&f{item}&c) — a zárolt licited visszakerült a bankodba.",
+                    "market-outbid-recorded",
+                    "&eTúllicitáltak (&f{item}&e). &7A piactér felszabadítja a korábbi licitedet; a tartós állapotot helyreállításkor is egyezteti.",
                     Map.of("item", itemName)
             )), null);
         }
     }
 
-    /** Notifies the seller that a buy-out settled their auction immediately. */
+    /** Notifies the seller that a buy-out entered the durable settlement path. */
     private void notifySellerSold(final MarketManager.Listing listing, final String buyerName) {
         final Player seller = Bukkit.getPlayer(listing.seller());
         if (seller != null) {
             seller.getScheduler().run(plugin, task -> seller.sendMessage(messageManager.getMessage(
-                    "market-sold-notice",
-                    "&aEladtad egy tárgyadat a piacon &f{buyer}&a részére — a bevétel a bankodba került.",
+                    "market-sale-recorded",
+                    "&aVevő érkezett a piaci tételedre: &f{buyer}&a. &7A piactér lezárja a tartós elszámolást; a végleges állapot helyreállításkor is egyeztethető.",
                     Map.of("buyer", buyerName)
             )), null);
         }
@@ -200,13 +199,15 @@ public final class MarketGUIListener implements Listener {
             case "market-bid-too-low" -> "&cA licit nem éri el a minimum következő licitet.";
             case "market-auction-use-bid" -> "&cEz aukciós tétel — licitálni lehet rá.";
             case "market-item-identity-invalid" ->
-                    "&cA canonical item identitása hibás vagy elavult; az átadás biztonsági okból elmaradt.";
+                    "&cA tárgy azonosító adatai hibásak vagy elavultak; az átadás biztonsági okból elmaradt.";
             case "market-item-policy-blocked" ->
-                    "&cA template jelenlegi kötési/kereskedési szabálya tiltja az átadást.";
+                    "&cA tárgy jelenlegi kötési vagy kereskedési szabálya tiltja az átadást.";
             case "market-item-duplicate" ->
-                    "&cDuplikált item UUID észlelve; az átadás biztonsági okból elmaradt.";
+                    "&cDuplikált egyedi tárgyat észleltünk; az átadás biztonsági okból elmaradt.";
             case "market-journal-unavailable" ->
-                    "&cA piac tranzakció-naplója most nem írható — a művelet biztonsági okból elmaradt. Próbáld újra kicsit később.";
+                    "&cA piac tranzakciós nyilvántartása most nem írható — a művelet biztonsági okból elmaradt. Próbáld újra kicsit később.";
+            case "market-commit-pending" ->
+                    "&eA piaci művelet tartós lezárása még nem igazolt. Ne ismételd meg azonnal; a rendszer helyreállításkor egyezteti az állapotot.";
             default -> "&cA vásárlás nem sikerült.";
         };
     }
