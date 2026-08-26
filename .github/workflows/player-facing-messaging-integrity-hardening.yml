@@ -49,6 +49,7 @@ jobs:
           set -euo pipefail
           parent=a256a52264ac0d58427c9db33d80f66af1ce73d3
           test "$(git merge-base HEAD "$parent")" = "$parent"
+          python3 scripts/audit_player_facing_messaging_hardening.py
           python3 scripts/audit_quest_item_content_integrity.py --check
           python3 scripts/audit_gameplay_bootstrap_integrity.py --check
           python3 scripts/audit_config_content_command_surface.py --check
