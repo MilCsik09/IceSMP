@@ -60,24 +60,25 @@ public final class SpellbookListener implements Listener {
         final String spellId = holder.getSpellAt(slot);
         if (spellId == null) return;
         if (event.isRightClick() && !event.isShiftClick()) {
+            final long upgradeCost = masteryManager.getUpgradeCost(player, spellId);
             masteryManager.upgrade(player, spellId).whenComplete((result, failure) ->
                     masteryManager.runOnOwnerThread(player, () -> {
                         if (!player.isOnline()) return;
                         if (failure != null) {
                             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.8F, 0.8F);
                             player.sendMessage(messages.getComponent("spell-mastery-failed",
-                                    "&cA spell-mastery tartós mentése sikertelen; az állapot nem változott."));
+                                    "&cA képesség-mesterség mentése sikertelen; az állapot nem változott."));
                         } else if (result == SpellMasteryManager.UpgradeResult.SUCCESS) {
                             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.9F, 1.4F);
                             player.sendMessage(messages.getComponent("spell-mastery-upgraded-gui",
-                                    "&aSpell-mastery fejlesztve."));
+                                    "&aKépesség-mesterség fejlesztve."));
                         } else if (result == SpellMasteryManager.UpgradeResult.MAX_RANK) {
                             player.sendMessage(messages.getComponent("spell-mastery-max",
                                     "&7Ez a képesség már maximális mesterségű."));
                         } else {
                             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.8F, 0.8F);
                             player.sendMessage(messages.getComponent("spell-mastery-poor",
-                                    "&cNincs elég frakcióvalutád."));
+                                    "&cNincs elég frakcióvalutád (%s kellene).", upgradeCost));
                         }
                         catalyst.openSpellbook(player, holder.getPage(), holder.isOnlyUnlocked());
                     }));
@@ -101,7 +102,7 @@ public final class SpellbookListener implements Listener {
                                     0.8F, 0.8F);
                             player.sendMessage(Component.text(
                                     "Az aktív készleted legfeljebb " + maximum
-                                            + " spell lehet. Vegyél ki előbb egy kedvencet.",
+                                            + " képességet tartalmazhat. Vegyél ki előbb egy kedvencet.",
                                     NamedTextColor.RED));
                             return;
                         }
