@@ -108,11 +108,9 @@ public final class SpecCommand implements BasicCommand {
         specializationManager.switchClassSpecializationV2(player, target)
                 .whenComplete((success, failure) -> player.getScheduler().run(plugin, task -> {
                     if (failure == null && Boolean.TRUE.equals(success)) {
-                        final String active = specializationManager.getClassSpecialization(player) == null
-                                ? target.name().toLowerCase(Locale.ROOT)
-                                : specializationManager.getClassSpecialization(player).getId();
-                        player.sendMessage(messageManager.required("spec-switch-success",
-                                active));
+                        final SpecializationType activeSpec = specializationManager.getClassSpecialization(player);
+                        final String active = activeSpec == null ? "ismeretlen" : plain(activeSpec.getDisplayName());
+                        player.sendMessage(messageManager.required("spec-switch-success", active));
                     } else {
                         player.sendMessage(messageManager.required("spec-switch-failed"));
                     }
@@ -289,7 +287,7 @@ public final class SpecCommand implements BasicCommand {
                         : messageManager.required("spec-unavailable");
                 player.sendMessage(Component.text(" - ")
                         .append(specialization.getDisplayName())
-                        .append(Component.text(" (" + specialization.getId() + ") "))
+                        .append(Component.text(" "))
                         .append(messageManager.requiredMessage("spec-availability",
                                 Map.of("state", availability))));
             }
@@ -308,7 +306,7 @@ public final class SpecCommand implements BasicCommand {
                     : messageManager.required("spec-unavailable");
             player.sendMessage(Component.text(" - ")
                     .append(specialization.getDisplayName())
-                    .append(Component.text(" (" + specialization.getId() + ") "))
+                    .append(Component.text(" "))
                     .append(messageManager.requiredMessage("spec-availability",
                             Map.of("state", availability))));
         }
@@ -363,10 +361,63 @@ public final class SpecCommand implements BasicCommand {
         }
         final ProfileDiagnostic diagnostic = specializationManager.profileGateway()
                 .diagnostic(player.getUniqueId());
-        player.sendMessage(Component.text("Profile v2: "
+        sendPlayerInfo(player, diagnostic);
+        if (player.hasPermission(ADMIN_PERMISSION)) {
+            sendAdminDiagnosticInfo(player, diagnostic);
+        }
+    }
+
+    /** Normal player view: display names and actionable state only, never schema/seal/profile internals. */
+    private void sendPlayerInfo(final Player player, final ProfileDiagnostic diagnostic) {
+        player.sendMessage(messageManager.required("spec-info-header"));
+        final String className = diagnostic.primaryClassId()
+                .map(JobType::fromId)
+                .map(JobType::getDisplayName)
+                .map(SpecCommand::plain)
+                .orElse(messageManager.required("spec-info-none"));
+        player.sendMessage(messageManager.required("spec-info-class", className, diagnostic.classLevel()));
+
+        final LoadoutSlot activeSlot = diagnostic.activeSlot().orElse(null);
+        final ProfileDiagnostic.SlotDiagnostic active = activeSlot == null
+                ? null : diagnostic.slots().get(activeSlot);
+        if (active != null && active.specializationId().isPresent()) {
+            player.sendMessage(messageManager.required("spec-info-active",
+                    specializationDisplay(active.specializationId().orElse("")), active.masteryRank()));
+        } else {
+            player.sendMessage(messageManager.required("spec-info-active",
+                    messageManager.required("spec-info-none"), 0));
+        }
+
+        ProfileDiagnostic.SlotDiagnostic secondary = null;
+        for (final LoadoutSlot slot : LoadoutSlot.values()) {
+            if (slot == activeSlot) continue;
+            final ProfileDiagnostic.SlotDiagnostic candidate = diagnostic.slots().get(slot);
+            if (candidate != null && candidate.specializationId().isPresent()) {
+                secondary = candidate;
+                break;
+            }
+        }
+        if (secondary != null) {
+            player.sendMessage(messageManager.required("spec-info-secondary",
+                    specializationDisplay(secondary.specializationId().orElse("")), secondary.masteryRank()));
+        } else {
+            player.sendMessage(messageManager.required("spec-info-secondary",
+                    messageManager.required("spec-info-none"), 0));
+        }
+
+        if (diagnostic.reviewReason().isPresent()
+                || diagnostic.quarantineReason().isPresent()
+                || diagnostic.sessionBlockReason().isPresent()) {
+            player.sendMessage(messageManager.required("spec-info-review"));
+        }
+    }
+
+    /** Staff-only raw diagnostic projection retained for support and recovery work. */
+    private void sendAdminDiagnosticInfo(final Player player, final ProfileDiagnostic diagnostic) {
+        player.sendMessage(Component.text("[Admin] Profile v2: "
                 + (diagnostic.loaded() ? diagnostic.profileStatus() : "UNAVAILABLE")
                 + " | schema=" + diagnostic.schemaVersion() + " | revision=" + diagnostic.revision()));
-        player.sendMessage(Component.text("Primary class="
+        player.sendMessage(Component.text("[Admin] Primary class="
                 + diagnostic.primaryClassId().orElse("none") + " | level=" + diagnostic.classLevel()
                 + " | xp=" + diagnostic.classExperience() + " | activeSlot="
                 + diagnostic.activeSlot().map(Enum::name).orElse("none")
@@ -376,7 +427,7 @@ public final class SpecCommand implements BasicCommand {
         for (final LoadoutSlot slot : LoadoutSlot.values()) {
             final ProfileDiagnostic.SlotDiagnostic state = diagnostic.slots().get(slot);
             if (state == null) {
-                player.sendMessage(Component.text(slot.name() + ": unavailable"));
+                player.sendMessage(Component.text("[Admin] " + slot.name() + ": unavailable"));
                 continue;
             }
             String extra = "";
@@ -385,18 +436,28 @@ public final class SpecCommand implements BasicCommand {
                 extra = " | doctrine=" + loadout.doctrineChoices()
                         + " | capstone=" + loadout.capstoneStatus();
             }
-            player.sendMessage(Component.text(slot.name() + ": spec="
+            player.sendMessage(Component.text("[Admin] " + slot.name() + ": spec="
                     + state.specializationId().orElse("none") + " | status=" + state.status()
                     + " | seal=" + state.sealReason().map(Object::toString).orElse("none")
                     + " | mastery=" + state.masteryRank() + "/10 xp=" + state.masteryXp()
                     + extra));
         }
         diagnostic.reviewReason().ifPresent(reason ->
-                player.sendMessage(Component.text("Review: " + reason)));
+                player.sendMessage(Component.text("[Admin] Review: " + reason)));
         diagnostic.quarantineReason().ifPresent(reason ->
-                player.sendMessage(Component.text("Quarantine: " + reason)));
+                player.sendMessage(Component.text("[Admin] Quarantine: " + reason)));
         diagnostic.sessionBlockReason().ifPresent(reason ->
-                player.sendMessage(Component.text("Session block: " + reason)));
+                player.sendMessage(Component.text("[Admin] Session block: " + reason)));
+    }
+
+    private static String specializationDisplay(final String id) {
+        final SpecializationType specialization = SpecializationType.fromId(id);
+        return specialization == null ? "ismeretlen specializáció" : plain(specialization.getDisplayName());
+    }
+
+    private static String plain(final Component component) {
+        return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(component);
     }
 
     private void handleReset(final CommandSender sender, final String[] args) {
