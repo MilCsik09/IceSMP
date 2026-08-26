@@ -1470,6 +1470,30 @@ esetén azonnal cserélj. A `requests-per-minute`, `max-request-bytes`,
 `max-response-bytes` és `timeout-ms` korlátokat a proxy limitjeivel együtt állítsd;
 a limiter IP-címenként, perces ablakban számol.
 
+### Ócska katalógus — Phase A staging authority
+
+A 330 elemű katalógus csomagolt, restart-required tartalom. Induláskor az egész
+állomány validálódik; hibás séma, elemszám, duplikált identity/modell/textúra vagy
+játékosnak szánt szövegbe került belső jelölés esetén a plugin fail-closed módon
+nem indulhat el. A sikeres normál bootlog csak az összesített elemszámot mutatja.
+
+A diagnosztikai útvonalak:
+
+- `/icesmp dev trash catalog` — az érvényes katalógus mérete és rollout-státusza;
+- `/icesmp dev trash inspect <id>` — egy identity belső, fejlesztői inspectje.
+
+Ezek nem permission-node-ok. Kizárólag a forrásba égetett fejlesztői UUID
+(`2d47d7b6-294e-4a14-922c-befacd66ee6d`) vagy a konzol használhatja őket;
+OP, `icesmp.admin.all` és tetszőleges külső permission sem ad hozzáférést. Más
+játékosnál a `dev` ág sem a helpben, sem tab completionben nem jelenhet meg.
+Az inspect belső tartalmi adatot mutat, ezért kimenetét ne másold normál adminlogba
+vagy játékoskommunikációba.
+
+Ez a Phase A még nem ad tárgyat és nem köt lootot a katalógushoz. Ne dokumentálj
+megszerzési módot, és ne tekintsd az asset-auditot élő gameplay-bizonyítéknak.
+Katalógus- vagy sprite-változás után teljes restart, új resource-pack hash és valódi
+klienses vizuális próba szükséges; `/icesmp reload` nem alkalmazza a változást.
+
 ### Release acceptance checklist
 
 <!-- icesmp-release-document: acceptance-checklist -->
@@ -1809,6 +1833,15 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CRATE-24 Valós preview-modellek | Tesztelő | unique-, recipe-, blueprint- és key reward mind browserben, mind fizikai nyitással | a GUI és a végső ItemDisplay ugyanazt az itemmodellt mutatja, mint a kiosztott stack | crate rollout stop, pack/model manifest vizsgálata | `crate/CRATE-24/` |
 | [ ] | CRATE-25 Random tervrajz policy | Admin/tesztelő | szakma- és szintszűrt normál pool, majd Mitikus `include-loot-only` pool | minden sorsolt recept a tartományban van; boss-only csak engedélyezett poolból jön | érintett pool tiltása | `crate/CRATE-25/` |
 | [ ] | CRATE-26 Elytra-tiltás | Admin | közvetlen `item: ELYTRA`, Elytra-recept és ilyen tervrajz tesztdefiníciója | mindhárom config betöltéskor elutasított; bundled lootban nincs Elytra | crate config rollback | `crate/CRATE-26/` |
+
+### Ócska katalógus — Phase A
+
+| Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
+|---|---|---|---|---|---|---|
+| [ ] | TRASH-A01 Katalógus boot | Fejlesztő | exact build, változatlan packaged katalógus, kontrollált restart | pontosan 330 identity validálódik; normál logban csak összesített elemszám látszik | deployment stop | `trash/TRASH-A01/` |
+| [ ] | TRASH-A02 Fail-closed authority | Fejlesztő | külön tesztbuildben hibás séma, hiányzó sor, duplikált modell és tiltott player-facing marker | mindegyik indításkor elutasított, részleges katalógus nem publikálódik | hibás build eldobása | `trash/TRASH-A02/` |
+| [ ] | TRASH-A03 Rejtett dev-kapu | Admin/fejlesztő | normál játékos, OP, `icesmp.admin.all`, canonical fejlesztői UUID és konzol | csak a canonical UUID és konzol látja/futtatja a `dev trash` ágat | deployment stop | `trash/TRASH-A03/` |
+| [ ] | TRASH-A04 Teljes klienslap | Tesztelő | packos Paper 1.21.11 kliens, 330 sprite ellenőrző készlet vagy renderleltár | minden identity saját 64×64 sprite-ot kap; nincs hiányzó modell, duplikált kép, glint, emissive réteg vagy kategóriaszivárgás | resource-pack rollout stop | `trash/TRASH-A04/` |
 
 ### Combat & Encounter recalibration
 

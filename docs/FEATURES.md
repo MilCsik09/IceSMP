@@ -26,7 +26,7 @@ Ez az oldal az **egyetlen általános funkciótérkép**. A használat részlete
 > referenciáját a `Repository Docs Inventory` CI-artifact generálja. Itt csak az marad,
 > ami egy játékosnak vagy csapattagnak valóban segít megérteni a rendszert.
 
-A katalógus **48 implementált rendszercsoportot** és **1 tudatos planning-határt** ír le.
+A katalógus **49 implementált rendszercsoportot** és **1 tudatos planning-határt** ír le.
 A release forrásállapota `4643ab53586f0c1ee7352df16dcd477013e6fad4`; az üzemeltető által
 futóként átadott JAR nagy bizonyossággal a 2026. július 12-i `775d9e247…` állapothoz tartozik.
 
@@ -1261,6 +1261,38 @@ Komp/utazás, NPC-binding, Stranger NPC és FancyNpcs-quest/shop kapcsolatok.
 - Config: `world.*`, NPC-, ferry-, teleport-, shop- és questdefiníciók.
 - Tartós állapot: NPC-kötések és egyes utazási állapotok tartósak.
 - Reload: Célpontok reloadolhatók; világátnevezés vagy NPC-ID csere migrációt igényel.
+
+</details>
+
+### Ócska leletek — katalógus- és vizuális alapréteg
+
+<!-- icesmp-doc-id: feature.world.trash-foundation -->
+
+> **Rollout-kapu alatt, Phase A** · A futó JAR-hoz képest: **Új alapréteg**
+
+A világ apró, kopott leleteinek 330 elemű, restartkor fail-closed módon validált
+katalógusa és ugyanennyi saját AI-generált inventory-sprite-ja elkészült. Minden
+fizikai alaptárgy játékosoldali ritkasága egységesen **Ócska**; a belső tartalmi
+besorolás nem jelenhet meg névben, lore-ban, normál adminfelületen vagy rutinlogban.
+
+- **Így találkozol vele:** ebben a fázisban még nincs bekapcsolt loot-, régészeti,
+  átalakulási vagy relikvia-szerzési út; a katalógus és az item factory staging-alap.
+- **Kinek szól:** Fejlesztő/üzemeltető és Tesztelő; játékoskommunikáció csak a későbbi
+  gameplay-fázis aktiválásakor szükséges.
+- **Mitől mozdul meg:** pluginindításkor a teljes csomagolt katalógus validálódik;
+  hibás elemszám, séma, duplikált modell/textúra vagy player-facing szivárgás leállítja az indítást.
+- **Ami még kellhet hozzá:** lootforrások, régészeti állapotgép, felismerési/mutasd-meg
+  folyamat, gyűjtemény és gazdasági sink külön stacked fázisokban érkeznek.
+- **Fontos határ:** ez a Phase A nem változtat vanilla lootot és nem kapcsol be
+  játékos által elérhető megszerzést; az elkészült sprite-okhoz valódi klienses vizuális QA kell.
+
+<details>
+<summary>Admin- és technikai jegyzet</summary>
+
+- Permission: nincs; a rejtett diagnosztikai út kizárólag immutable fejlesztői UUID-ről vagy konzolról érhető el, OP/permission nem ad hozzáférést.
+- Config: `content/trash/catalog.yml` (`LOCKED_CANONICAL_CONTENT`, 330 identity).
+- Tartós állapot: ebben a fázisban nincs játékos-progress vagy loot-state; az alaptárgy PDC-je csak az identityt és a fázist tartja.
+- Reload: nem reloadolható; katalógus- vagy assetváltozás kontrollált restartot és új resource-pack buildet igényel.
 
 </details>
 

@@ -69,6 +69,7 @@ A kód generikus `RED/BLUE/NEUTRAL/DARK` azonosítókat használ; a lore ezekre 
 | Csontszámvevő / Csontveret (VII.) | a bank/váltó mechanikailag mind a 4 valutát egyben kezeli — a megkülönböztetés lore-szintű (Thanaopolis = DARK bank-kapu; Caldesterában csak a Botera-negyed váltja) |
 | Céhek Öröksége (VIII.) | 8 szakma, szakma-szintek, recept-katalógus, tervrajz-tanulás, craft-kapuk |
 | Tárgyak Lelke (VIII.) | tárgy-raritás létra (Ócska→Ereklye), affixek, nevesített craft |
+| **A világ apró maradványai** (III–VIII.) | Phase A: 330 stable, saját nevű és saját sprite-tal rendelkező Ócska identity a `content/trash/catalog.yml` authorityban. A játékosoldal egységesen Ócska; a belső tartalmi besorolás nem lore-ismeret és nem jelenhet meg normál admin- vagy játékosfelületen. Loot, régészet, felismerés és átalakulás még nincs aktiválva. |
 | Vér Emlékezete (VIII.) | talentpontok + talentfák (kaszt- és szakma-szintből) |
 | Hű Társak (VIII.) | Vadmester befogott állat-társa / Nekromanta élőholt companionja, pet-szintezés; Szentségtelen ghúlja és Boszorkánymester démona rituálé-idézéssel (Nyughatatlan Szív / Démon-pecsét, éjjel; forma-fejlődés `pets.summon.*`); állásmódok + Társ-GUI (`/pet`); Társvért (`pets.equipment.*`) |
 | Vének Tanácsa (III./IV.) | NEUTRAL heti tanács-szavazás: `CouncilManager` + `/tanacs` (`factions.council.*`) — a tanács véleményez, nem hirdet |

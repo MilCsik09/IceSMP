@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "icesmp:item/trash/deli_csat_eszaki_javitassal"
+  }
+}

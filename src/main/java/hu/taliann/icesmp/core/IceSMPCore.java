@@ -233,6 +233,9 @@ public final class IceSMPCore {
     private final ProfessionManager professionManager;
     private final ProfessionRecipeManager professionRecipeManager;
     private final ItemRarityService itemRarityService;
+    private final hu.taliann.icesmp.items.RarityPresentationService rarityPresentationService;
+    private final hu.taliann.icesmp.trash.TrashCatalog trashCatalog;
+    private final hu.taliann.icesmp.trash.TrashItemFactory trashItemFactory;
     private final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplateRegistry;
     private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
     private final hu.taliann.icesmp.itemization.EquipmentProficiencyService equipmentProficiencyService;
@@ -435,6 +438,10 @@ public final class IceSMPCore {
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.professionRecipeManager = new ProfessionRecipeManager(plugin, configManager);
         this.itemRarityService = new ItemRarityService(plugin, configManager);
+        this.rarityPresentationService = new hu.taliann.icesmp.items.RarityPresentationService(configManager);
+        this.trashCatalog = new hu.taliann.icesmp.trash.TrashCatalog(plugin);
+        this.trashItemFactory = new hu.taliann.icesmp.trash.TrashItemFactory(
+                plugin, trashCatalog, rarityPresentationService);
         this.itemTemplateRegistry = new hu.taliann.icesmp.itemization.ItemTemplateRegistry(plugin, configManager);
         this.itemIdentityService = new hu.taliann.icesmp.itemization.ItemIdentityService(plugin, itemTemplateRegistry);
         this.equipmentProficiencyService =
@@ -1041,6 +1048,7 @@ public final class IceSMPCore {
         mobScalingManager.load();
         craftingRestrictionManager.load();
         itemTemplateRegistry.load();
+        trashCatalog.load();
         professionRecipeCatalog.load();
         crateManager.reloadConfig();
         advancementService.load();
@@ -1696,7 +1704,8 @@ public final class IceSMPCore {
     private void registerCommands() {
         final IceSMPCommand iceSMPCommand = new IceSMPCommand(plugin, configManager, messageManager,
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
-                statsManager, claimManager, questManager, abilityCatalystListener, sinManager);
+                statsManager, claimManager, questManager, abilityCatalystListener, sinManager,
+                new hu.taliann.icesmp.trash.TrashDevCommand(trashCatalog, trashItemFactory));
         iceSMPCommand.setClientBridge(clientBridge);
         // Native HUD routing: a HudManager csak a seam-interfészt látja, a bridge a
         // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.
