@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
-import re
 import sys
 import yaml
 
@@ -25,6 +24,18 @@ def messages(path: str) -> dict:
     return data.get("messages", {}) or {}
 
 
+# Every bundled default/override resource must be valid YAML before any semantic gate runs.
+message_root = ROOT / "src/main/resources/messages"
+for message_file in sorted(message_root.glob("*.yml")):
+    try:
+        yaml.safe_load(message_file.read_text(encoding="utf-8"))
+    except yaml.YAMLError as failure:
+        fail(f"invalid bundled message YAML {message_file.relative_to(ROOT)}: {failure}")
+try:
+    yaml.safe_load(text("src/main/resources/messages.yml"))
+except yaml.YAMLError as failure:
+    fail(f"invalid root messages.yml: {failure}")
+
 system = messages("src/main/resources/messages/system.yml")
 world = messages("src/main/resources/messages/world.yml")
 quest = messages("src/main/resources/messages/quest.yml")
@@ -33,7 +44,6 @@ party = messages("src/main/resources/messages/party.yml")
 profession = messages("src/main/resources/messages/profession.yml")
 market = messages("src/main/resources/messages/market.yml")
 faction = messages("src/main/resources/messages/faction.yml")
-territory = messages("src/main/resources/messages/territory.yml")
 
 # M0/M1 crate parity.
 if str(system.get("crate-opened", "")).count("%s") != 3:
@@ -122,4 +132,4 @@ if evidence["findings"]["MSG-M0-001"] != "CLOSED" or evidence["findings"]["MSG-M
 if any(evidence["findings"][f"MSG-M1-{i:03d}"] != "CLOSED" for i in range(1, 12)):
     fail("one or more M1 evidence entries are not closed")
 
-print("Player-facing messaging hardening audit passed: M0=2/2 M1=11/11 bounded-M2/M3 gates=PASS")
+print("Player-facing messaging hardening audit passed: bundled-message-yaml=PASS M0=2/2 M1=11/11 bounded-M2/M3=PASS")
