@@ -21,6 +21,10 @@ This is a bounded sibling hardening layer to the parallel Trash / Anomaly work. 
 - `/spec info` has a normal-player projection; raw profile diagnostics are restricted to staff-capable viewers.
 - Profession, crate browser and Bestiary surfaces use player-facing labels instead of raw template/enum/UUID vocabulary.
 
+## Verification boundary
+
+The dedicated exact-head audit parses the root `messages.yml` and every bundled `messages/*.yml` file before evaluating finding-specific semantic gates. It then proves the crate format contracts, world-boss contribution/reward copy, single territory message ownership, daily and party terminology, player/staff spec projection, market non-final receipts and MiniMessage escaping, pending quest reward guidance, profession-gate discoverability, committed personal boss receipts, profession/item internal-vocabulary cleanup, and raw-enum GUI removal. The workflow additionally reruns the cumulative #144 quest/item, bootstrap, config/content, profession, progression, resource-pack, Java 21, Paper and Folia gates.
+
 ## Preserved positive gates
 
 - Money Pouch unopened amount/currency remains hidden.
