@@ -100,7 +100,7 @@ messages:
   season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
   season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>
   season-champion-member: <gold>🏆 A frakciód lett a szezon bajnoka — fogadd a győzelmi jutalmadat!</gold>
-  encounter-reward-delivered: <gold>✦ Személyes világboss-jutalom: <white>{amount}× {item}</white>.</gold>
+  encounter-reward-delivered: '<gold>✦ Személyes világboss-jutalom: <white>{amount}× {item}</white>.</gold>'
   world-boss-despawned: <gray>👹 A világboss elvonult — senki sem tudta időben legyőzni.</gray>
   world-boss-slain: <gold>⚔ {player} vezette a világboss elleni győzelmet! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot kapott; minden érdemi résztvevő személyes jutalomra jogosult.</gold>
   world-boss-slain-guest: <gold>⚔ {player} vezette a világboss elleni győzelmet! Minden érdemi résztvevő személyes jutalomra jogosult.</gold>
