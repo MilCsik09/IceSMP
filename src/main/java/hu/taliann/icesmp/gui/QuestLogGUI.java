@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.gui;
 
+import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.managers.QuestManager;
 import hu.taliann.icesmp.quest.QuestSourcePolicy;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -69,7 +70,13 @@ public final class QuestLogGUI {
             inventory.setItem(i, createQuestItem(viewer, questManager, questId, tab, tracked));
             switch (tab) {
                 case ACTIVE -> holder.mapSlot(i, questId, QuestLogHolder.Action.TRACK);
-                case BOARD -> holder.mapSlot(i, questId, QuestLogHolder.Action.ACCEPT);
+                case BOARD -> {
+                    // Profession-gated Board entries stay visible as locked guidance instead of
+                    // disappearing. Only actually eligible entries receive an ACCEPT action.
+                    if (questManager.getAcceptBlocker(viewer, questId) == null) {
+                        holder.mapSlot(i, questId, QuestLogHolder.Action.ACCEPT);
+                    }
+                }
                 default -> {
                 }
             }
@@ -111,11 +118,13 @@ public final class QuestLogGUI {
             case READY -> result.addAll(questManager.getReadyQuests(viewer));
             case COMPLETED -> result.addAll(questManager.getCompletedQuests(viewer));
             case BOARD, AVAILABLE -> {
-                for (final String questId : questManager.getVisibleQuestIds(viewer)) {
-                    if (questManager.isActive(viewer, questId)
-                            || questManager.getAcceptBlocker(viewer, questId) != null) {
-                        continue;
-                    }
+                for (final String questId : questManager.getQuestIds()) {
+                    if (questManager.isActive(viewer, questId)) continue;
+                    final String blocker = questManager.getAcceptBlocker(viewer, questId);
+                    final boolean professionLocked = isProfessionBlocker(blocker)
+                            && isPrerequisiteVisibleQuest(questManager, questId);
+                    if (!questManager.isVisible(viewer, questId) && !professionLocked) continue;
+                    if (blocker != null && !professionLocked) continue;
                     final QuestSourcePolicy policy = questManager.getSourcePolicy(questId);
                     final boolean board = policy != null
                             && policy.startType() == QuestSourcePolicy.StartType.QUEST_BOARD;
@@ -126,6 +135,19 @@ public final class QuestLogGUI {
             }
         }
         return result;
+    }
+
+    private static boolean isProfessionBlocker(final String blocker) {
+        return "quest-requires-profession".equals(blocker)
+                || "quest-requires-profession-level".equals(blocker);
+    }
+
+    /** Only reveal an unmet profession prerequisite if the authored visibility itself is prerequisite-based. */
+    private static boolean isPrerequisiteVisibleQuest(final QuestManager questManager, final String questId) {
+        final ConfigurationSection quest = questManager.getQuestSection(questId);
+        if (quest == null) return false;
+        return "PREREQUISITES_MET".equalsIgnoreCase(
+                quest.getString("visibility", "PREREQUISITES_MET"));
     }
 
     private static ItemStack createQuestItem(final Player viewer, final QuestManager questManager,
@@ -141,8 +163,10 @@ public final class QuestLogGUI {
         final ItemStack item = new ItemStack(material);
         final ItemMeta meta = item.getItemMeta();
         final boolean isTracked = questId.equals(tracked);
+        final String blocker = questManager.getAcceptBlocker(viewer, questId);
+        final boolean professionLocked = isProfessionBlocker(blocker);
         meta.displayName(Component.text((isTracked ? "★ " : "") + questManager.getDisplayName(questId),
-                switch (tab) {
+                professionLocked ? NamedTextColor.GRAY : switch (tab) {
                     case READY -> NamedTextColor.GOLD;
                     case BOARD, AVAILABLE -> NamedTextColor.GREEN;
                     default -> NamedTextColor.YELLOW;
@@ -165,6 +189,24 @@ public final class QuestLogGUI {
                         .decoration(TextDecoration.ITALIC, false));
             }
         }
+        if (professionLocked && quest != null) {
+            lore.add(Component.empty());
+            lore.add(Component.text("🔒 Szakmai feltétel", NamedTextColor.YELLOW)
+                    .decoration(TextDecoration.ITALIC, false));
+            final String rawProfession = quest.getString("requires-profession", "");
+            final ProfessionType requiredProfession = ProfessionType.fromId(rawProfession);
+            final String professionName = requiredProfession == null || requiredProfession.getDisplayName() == null
+                    ? rawProfession : requiredProfession.getDisplayName().toString();
+            if (!professionName.isBlank()) {
+                lore.add(Component.text("  • Szakma: " + professionName, NamedTextColor.WHITE)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+            final int requiredLevel = Math.max(1, quest.getInt("requires-profession-level", 1));
+            lore.add(Component.text("  • Szükséges szakmaszint: " + requiredLevel, NamedTextColor.WHITE)
+                    .decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("  • Saját állapotod: /profile", NamedTextColor.AQUA)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
         lore.add(Component.empty());
         switch (tab) {
             case ACTIVE -> {
@@ -186,12 +228,18 @@ public final class QuestLogGUI {
                 lore.add(GuiUtil.label("Feladatok", Component.text(
                         questManager.getObjectiveTotal(questId), NamedTextColor.WHITE)));
                 lore.add(Component.empty());
-                lore.add(Component.text("» Kattints az elvállaláshoz", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+                lore.add(professionLocked
+                        ? Component.text("» Zárolva — teljesítsd a fenti szakmai feltételt", NamedTextColor.GRAY)
+                                .decoration(TextDecoration.ITALIC, false)
+                        : Component.text("» Kattints az elvállaláshoz", NamedTextColor.GREEN)
+                                .decoration(TextDecoration.ITALIC, false));
             }
             case AVAILABLE -> {
-                final String hint = questManager.describeStartHint(questId);
-                if (!hint.isBlank()) {
-                    lore.add(GuiUtil.grey(hint));
+                if (!professionLocked) {
+                    final String hint = questManager.describeStartHint(questId);
+                    if (!hint.isBlank()) {
+                        lore.add(GuiUtil.grey(hint));
+                    }
                 }
             }
             case COMPLETED -> lore.add(Component.text("✔ Teljesítve", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
