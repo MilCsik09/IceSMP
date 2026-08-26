@@ -1,0 +1,4296 @@
+# Git-authored Trash identity authority. Internal fields must never reach player/admin surfaces.
+schema-version: 1
+player-presentation:
+  rarity-id: ocska
+  rarity-label: Ócska
+items:
+  rozsdas_szog:
+    display-name: Rozsdás Szög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rozsdas_szog
+    texture: icesmp:item/trash/rozsdas_szog
+    vendor-value: 1
+    lore:
+    - A feje laposra kalapálódott.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gorbe_szog:
+    display-name: Görbe Szög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/gorbe_szog
+    texture: icesmp:item/trash/gorbe_szog
+    vendor-value: 1
+    lore:
+    - Valaki egyszer már megpróbálta kiegyenesíteni.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rovid_satorszog:
+    display-name: Rövid Sátorszög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rovid_satorszog
+    texture: icesmp:item/trash/rovid_satorszog
+    vendor-value: 1
+    lore:
+    - Túl rövid ahhoz, hogy rendesen tartson bármit.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_szog:
+    display-name: Kormos Szög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kormos_szog
+    texture: icesmp:item/trash/kormos_szog
+    vendor-value: 1
+    lore:
+    - Kohó vagy tábortűz mellett feküdhetett.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_szegecs:
+    display-name: Repedt Szegecs
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/repedt_szegecs
+    texture: icesmp:item/trash/repedt_szegecs
+    vendor-value: 1
+    lore:
+    - A peremén hajszálrepedés fut végig.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  laposra_vert_szegecs:
+    display-name: Laposra Vert Szegecs
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/laposra_vert_szegecs
+    texture: icesmp:item/trash/laposra_vert_szegecs
+    vendor-value: 1
+    lore:
+    - Már nem fér semmilyen rendes furatba.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  elhajlott_kapocsszog:
+    display-name: Elhajlott Kapocsszög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/elhajlott_kapocsszog
+    texture: icesmp:item/trash/elhajlott_kapocsszog
+    vendor-value: 1
+    lore:
+    - Egy deszkából téphették ki.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_nagy_szog:
+    display-name: Túl Nagy Szög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tul_nagy_szog
+    texture: icesmp:item/trash/tul_nagy_szog
+    vendor-value: 1
+    lore:
+    - A gazdája valószínűleg kisebbet keresett.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rossz_menetu_csavar:
+    display-name: Rossz Menetű Csavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rossz_menetu_csavar
+    texture: icesmp:item/trash/rossz_menetu_csavar
+    vendor-value: 2
+    lore:
+    - A menet két helyen is megszakad.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  lapos_feju_csavar:
+    display-name: Lapos Fejű Csavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/lapos_feju_csavar
+    texture: icesmp:item/trash/lapos_feju_csavar
+    vendor-value: 2
+    lore:
+    - A vájat szinte teljesen elkopott.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  patinas_bronzcsavar:
+    display-name: Patinás Bronzcsavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/patinas_bronzcsavar
+    texture: icesmp:item/trash/patinas_bronzcsavar
+    vendor-value: 2
+    lore:
+    - Zöldes foltok ülnek a menetben.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  megszorult_csavar:
+    display-name: Megszorult Csavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/megszorult_csavar
+    texture: icesmp:item/trash/megszorult_csavar
+    vendor-value: 2
+    lore:
+    - A menete össze van nyomódva.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kicsorbult_csavar:
+    display-name: Kicsorbult Csavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kicsorbult_csavar
+    texture: icesmp:item/trash/kicsorbult_csavar
+    vendor-value: 2
+    lore:
+    - A fejének egyik oldala hiányzik.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_vastag_csavar:
+    display-name: Túl Vastag Csavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tul_vastag_csavar
+    texture: icesmp:item/trash/tul_vastag_csavar
+    vendor-value: 2
+    lore:
+    - A szokásos szerszámok egyikébe sem illik.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ferde_csavar:
+    display-name: Ferde Csavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/ferde_csavar
+    texture: icesmp:item/trash/ferde_csavar
+    vendor-value: 2
+    lore:
+    - Már gyártáskor görbe lehetett.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  elhasznalt_csavar:
+    display-name: Elhasznált Csavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/elhasznalt_csavar
+    texture: icesmp:item/trash/elhasznalt_csavar
+    vendor-value: 2
+    lore:
+    - A menetből több helyen csak emlék maradt.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  csorba_kanal:
+    display-name: Csorba Kanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/csorba_kanal
+    texture: icesmp:item/trash/csorba_kanal
+    vendor-value: 2
+    lore:
+    - A pereméből hiányzik egy apró darab.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gorbe_kanal:
+    display-name: Görbe Kanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/gorbe_kanal
+    texture: icesmp:item/trash/gorbe_kanal
+    vendor-value: 2
+    lore:
+    - A nyele félúton enyhén meghajlik.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_kanal:
+    display-name: Kormos Kanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kormos_kanal
+    texture: icesmp:item/trash/kormos_kanal
+    vendor-value: 2
+    lore:
+    - A hátulja tábortűztől fekete.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  foltos_kanal:
+    display-name: Foltos Kanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/foltos_kanal
+    texture: icesmp:item/trash/foltos_kanal
+    vendor-value: 2
+    lore:
+    - A fémet nem sikerült teljesen megtisztítani.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kopott_kanal:
+    display-name: Kopott Kanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kopott_kanal
+    texture: icesmp:item/trash/kopott_kanal
+    vendor-value: 2
+    lore:
+    - Sokáig használhatták, semmi különös.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  fakanal_nyele:
+    display-name: Fakanál Nyele
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/fakanal_nyele
+    texture: icesmp:item/trash/fakanal_nyele
+    vendor-value: 2
+    lore:
+    - A kanálfej már rég letört róla.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gorbe_villa:
+    display-name: Görbe Villa
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/gorbe_villa
+    texture: icesmp:item/trash/gorbe_villa
+    vendor-value: 2
+    lore:
+    - Az egyik foga kifelé áll.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  haromfogu_villa:
+    display-name: Háromfogú Villa
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/haromfogu_villa
+    texture: icesmp:item/trash/haromfogu_villa
+    vendor-value: 2
+    lore:
+    - A negyedik fog helye simára kopott.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_villa:
+    display-name: Kormos Villa
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kormos_villa
+    texture: icesmp:item/trash/kormos_villa
+    vendor-value: 2
+    lore:
+    - Tűz fölött használhatták.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdafoltos_villa:
+    display-name: Rozsdafoltos Villa
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rozsdafoltos_villa
+    texture: icesmp:item/trash/rozsdafoltos_villa
+    vendor-value: 2
+    lore:
+    - Az ezüstözés alatt előjött a vas.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tompa_kiskes:
+    display-name: Tompa Kiskés
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tompa_kiskes
+    texture: icesmp:item/trash/tompa_kiskes
+    vendor-value: 2
+    lore:
+    - Vágni alig, kenni még lehet vele.
+    source-bias: HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_markolatu_kes:
+    display-name: Repedt Markolatú Kés
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/repedt_markolatu_kes
+    texture: icesmp:item/trash/repedt_markolatu_kes
+    vendor-value: 2
+    lore:
+    - A fa nyél két helyen megrepedt.
+    source-bias: HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  csorba_asztali_kes:
+    display-name: Csorba Asztali Kés
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/csorba_asztali_kes
+    texture: icesmp:item/trash/csorba_asztali_kes
+    vendor-value: 2
+    lore:
+    - A penge széle hullámosra kopott.
+    source-bias: HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_kenokes:
+    display-name: Rozsdás Kenőkés
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rozsdas_kenokes
+    texture: icesmp:item/trash/rozsdas_kenokes
+    vendor-value: 2
+    lore:
+    - A pengéje túl tompa bármi komolyhoz.
+    source-bias: HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  elazott_nyugta:
+    display-name: Elázott Nyugta
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/elazott_nyugta
+    texture: icesmp:item/trash/elazott_nyugta
+    vendor-value: 1
+    lore:
+    - Az összeg olvashatatlan, a pecsét sem jobb.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  felbehajtott_nyugta:
+    display-name: Félbehajtott Nyugta
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/felbehajtott_nyugta
+    texture: icesmp:item/trash/felbehajtott_nyugta
+    vendor-value: 1
+    lore:
+    - Négyszer hajtották ugyanazon a vonalon.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  zsiros_kocsmai_szamla:
+    display-name: Zsíros Kocsmai Számla
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/zsiros_kocsmai_szamla
+    texture: icesmp:item/trash/zsiros_kocsmai_szamla
+    vendor-value: 1
+    lore:
+    - Legalább három ital foltja látszik rajta.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tepett_szallitolevel:
+    display-name: Tépett Szállítólevél
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/tepett_szallitolevel
+    texture: icesmp:item/trash/tepett_szallitolevel
+    vendor-value: 1
+    lore:
+    - A címzett neve pont a hiányzó részen volt.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  raktari_jegyzekdarab:
+    display-name: Raktári Jegyzékdarab
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/raktari_jegyzekdarab
+    texture: icesmp:item/trash/raktari_jegyzekdarab
+    vendor-value: 1
+    lore:
+    - 'Három sor: kötél, gyertya, só.'
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  teves_szamla:
+    display-name: Téves Számla
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/teves_szamla
+    texture: icesmp:item/trash/teves_szamla
+    vendor-value: 1
+    lore:
+    - Valaki vastagon áthúzta az egészet.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  vamhazi_masolat:
+    display-name: Vámházi Másolat
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/vamhazi_masolat
+    texture: icesmp:item/trash/vamhazi_masolat
+    vendor-value: 1
+    lore:
+    - A pecsét fele rajta maradt.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ures_konyvelolap:
+    display-name: Üres Könyvelőlap
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/ures_konyvelolap
+    texture: icesmp:item/trash/ures_konyvelolap
+    vendor-value: 1
+    lore:
+    - Szép vonalak, egyetlen szám nélkül.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gyurott_cetli:
+    display-name: Gyűrött Cetli
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/gyurott_cetli
+    texture: icesmp:item/trash/gyurott_cetli
+    vendor-value: 1
+    lore:
+    - A tintát szinte teljesen ledörzsölték.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  szakadt_bevasarlolista:
+    display-name: Szakadt Bevásárlólista
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/szakadt_bevasarlolista
+    texture: icesmp:item/trash/szakadt_bevasarlolista
+    vendor-value: 1
+    lore:
+    - Kenyér, hagyma, só. A vége hiányzik.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  foltos_uzenet:
+    display-name: Foltos Üzenet
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/foltos_uzenet
+    texture: icesmp:item/trash/foltos_uzenet
+    vendor-value: 1
+    lore:
+    - A címzett neve szétázott.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  elrontott_levelkezdet:
+    display-name: Elrontott Levélkezdet
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/elrontott_levelkezdet
+    texture: icesmp:item/trash/elrontott_levelkezdet
+    vendor-value: 1
+    lore:
+    - Háromszor kezdődik úgy, hogy „Tisztelt…”.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tintaproba:
+    display-name: Tintapróba
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/tintaproba
+    texture: icesmp:item/trash/tintaproba
+    vendor-value: 1
+    lore:
+    - Egymás alá húzott vonalak és pacák.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ures_papirdarab:
+    display-name: Üres Papírdarab
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/ures_papirdarab
+    texture: icesmp:item/trash/ures_papirdarab
+    vendor-value: 1
+    lore:
+    - Nem minden papír őriz titkot.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  szamolocetli:
+    display-name: Számolócetli
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/szamolocetli
+    texture: icesmp:item/trash/szamolocetli
+    vendor-value: 1
+    lore:
+    - Apró összeadások, mind áthúzva.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kifakult_cimzes:
+    display-name: Kifakult Címzés
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/kifakult_cimzes
+    texture: icesmp:item/trash/kifakult_cimzes
+    vendor-value: 1
+    lore:
+    - Egy utcanév első két betűje maradt meg.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  szakadt_rongy:
+    display-name: Szakadt Rongy
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/szakadt_rongy
+    texture: icesmp:item/trash/szakadt_rongy
+    vendor-value: 1
+    lore:
+    - Valaha talán ingujj volt.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  olajos_rongy:
+    display-name: Olajos Rongy
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/olajos_rongy
+    texture: icesmp:item/trash/olajos_rongy
+    vendor-value: 1
+    lore:
+    - Gépolaj- vagy fegyverolajszaga van.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  iszapos_rongy:
+    display-name: Iszapos Rongy
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/iszapos_rongy
+    texture: icesmp:item/trash/iszapos_rongy
+    vendor-value: 1
+    lore:
+    - A szövetbe finom homok tapadt.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_rongy:
+    display-name: Kormos Rongy
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/kormos_rongy
+    texture: icesmp:item/trash/kormos_rongy
+    vendor-value: 1
+    lore:
+    - A széle enyhén megpörkölődött.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kifakult_rongy:
+    display-name: Kifakult Rongy
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/kifakult_rongy
+    texture: icesmp:item/trash/kifakult_rongy
+    vendor-value: 1
+    lore:
+    - A színe már alig azonosítható.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  foltozott_rongy:
+    display-name: Foltozott Rongy
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/foltozott_rongy
+    texture: icesmp:item/trash/foltozott_rongy
+    vendor-value: 1
+    lore:
+    - Egy rongyot is meg lehet foltozni.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  hasznalt_kotesdarab:
+    display-name: Használt Kötésdarab
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/hasznalt_kotesdarab
+    texture: icesmp:item/trash/hasznalt_kotesdarab
+    vendor-value: 1
+    lore:
+    - Tiszta már biztosan nem lesz.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  fel_tekercs_kotes:
+    display-name: Fél Tekercs Kötés
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/fel_tekercs_kotes
+    texture: icesmp:item/trash/fel_tekercs_kotes
+    vendor-value: 1
+    lore:
+    - A másik felét valaki használta.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  megkemenyedett_kotes:
+    display-name: Megkeményedett Kötés
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/megkemenyedett_kotes
+    texture: icesmp:item/trash/megkemenyedett_kotes
+    vendor-value: 1
+    lore:
+    - A szövet szinte kartonszerű.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  szakadt_kotes:
+    display-name: Szakadt Kötés
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/szakadt_kotes
+    texture: icesmp:item/trash/szakadt_kotes
+    vendor-value: 1
+    lore:
+    - Középen hosszában elrepedt.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rojtos_szalag:
+    display-name: Rojtos Szalag
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/rojtos_szalag
+    texture: icesmp:item/trash/rojtos_szalag
+    vendor-value: 1
+    lore:
+    - Mindkét vége szétfoszlott.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  csomora_kotott_szalag:
+    display-name: Csomóra Kötött Szalag
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/csomora_kotott_szalag
+    texture: icesmp:item/trash/csomora_kotott_szalag
+    vendor-value: 1
+    lore:
+    - A csomó túl szoros a kibontáshoz.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  lyukas_zokni:
+    display-name: Lyukas Zokni
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/lyukas_zokni
+    texture: icesmp:item/trash/lyukas_zokni
+    vendor-value: 1
+    lore:
+    - A saroknál szinte nincs anyag.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  foltozott_zokni:
+    display-name: Foltozott Zokni
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/foltozott_zokni
+    texture: icesmp:item/trash/foltozott_zokni
+    vendor-value: 1
+    lore:
+    - Négy különböző fonallal javították.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_horgaszhorog:
+    display-name: Rozsdás Horgászhorog
+    player-rarity: ocska
+    material: TRIPWIRE_HOOK
+    item-model: icesmp:trash/rozsdas_horgaszhorog
+    texture: icesmp:item/trash/rozsdas_horgaszhorog
+    vendor-value: 1
+    lore:
+    - A hegye teljesen tompa.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kiegyenesedett_horog:
+    display-name: Kiegyenesedett Horog
+    player-rarity: ocska
+    material: TRIPWIRE_HOOK
+    item-model: icesmp:trash/kiegyenesedett_horog
+    texture: icesmp:item/trash/kiegyenesedett_horog
+    vendor-value: 1
+    lore:
+    - Valami nagy egyszer már majdnem elvitte.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_horog:
+    display-name: Törött Horog
+    player-rarity: ocska
+    material: TRIPWIRE_HOOK
+    item-model: icesmp:trash/torott_horog
+    texture: icesmp:item/trash/torott_horog
+    vendor-value: 1
+    lore:
+    - A kampó fele hiányzik.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kifakult_uszo:
+    display-name: Kifakult Úszó
+    player-rarity: ocska
+    material: OAK_BUTTON
+    item-model: icesmp:trash/kifakult_uszo
+    texture: icesmp:item/trash/kifakult_uszo
+    vendor-value: 1
+    lore:
+    - A festék nagy része lekopott.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_uszo:
+    display-name: Repedt Úszó
+    player-rarity: ocska
+    material: OAK_BUTTON
+    item-model: icesmp:trash/repedt_uszo
+    texture: icesmp:item/trash/repedt_uszo
+    vendor-value: 1
+    lore:
+    - Vizet szív magába, ezért már nem sokat ér.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_nehez_uszo:
+    display-name: Túl Nehéz Úszó
+    player-rarity: ocska
+    material: OAK_BUTTON
+    item-model: icesmp:trash/tul_nehez_uszo
+    texture: icesmp:item/trash/tul_nehez_uszo
+    vendor-value: 1
+    lore:
+    - Az úszás részét valaki elrontotta.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gubancos_damil:
+    display-name: Gubancos Damil
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/gubancos_damil
+    texture: icesmp:item/trash/gubancos_damil
+    vendor-value: 1
+    lore:
+    - A csomót jobb nem megpróbálni kibontani.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  szakadt_damil:
+    display-name: Szakadt Damil
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/szakadt_damil
+    texture: icesmp:item/trash/szakadt_damil
+    vendor-value: 1
+    lore:
+    - Mindkét vége rojtos.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  hinaros_zsinor:
+    display-name: Hínáros Zsinór
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/hinaros_zsinor
+    texture: icesmp:item/trash/hinaros_zsinor
+    vendor-value: 1
+    lore:
+    - Száraz hínár tekeredett rá.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_palack:
+    display-name: Repedt Palack
+    player-rarity: ocska
+    material: GLASS_BOTTLE
+    item-model: icesmp:trash/repedt_palack
+    texture: icesmp:item/trash/repedt_palack
+    vendor-value: 2
+    lore:
+    - A hajszálrepedés a nyaktól az aljáig fut.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  zoldes_uvegpalack:
+    display-name: Zöldes Üvegpalack
+    player-rarity: ocska
+    material: GLASS_BOTTLE
+    item-model: icesmp:trash/zoldes_uvegpalack
+    texture: icesmp:item/trash/zoldes_uvegpalack
+    vendor-value: 2
+    lore:
+    - Az üveg tele van apró légbuborékkal.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  dugo_nelkuli_palack:
+    display-name: Dugó Nélküli Palack
+    player-rarity: ocska
+    material: GLASS_BOTTLE
+    item-model: icesmp:trash/dugo_nelkuli_palack
+    texture: icesmp:item/trash/dugo_nelkuli_palack
+    vendor-value: 2
+    lore:
+    - A szája körül régi viasz maradt.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kokemeny_kenyer:
+    display-name: Kőkemény Kenyér
+    player-rarity: ocska
+    material: BREAD
+    item-model: icesmp:trash/kokemeny_kenyer
+    texture: icesmp:item/trash/kokemeny_kenyer
+    vendor-value: 1
+    lore:
+    - Kalapácsnak majdnem jobb lenne.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  peneszes_kenyerhej:
+    display-name: Penészes Kenyérhéj
+    player-rarity: ocska
+    material: BREAD
+    item-model: icesmp:trash/peneszes_kenyerhej
+    texture: icesmp:item/trash/peneszes_kenyerhej
+    vendor-value: 1
+    lore:
+    - A penész legalább három színű.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  megegett_kenyerveg:
+    display-name: Megégett Kenyérvég
+    player-rarity: ocska
+    material: BREAD
+    item-model: icesmp:trash/megegett_kenyerveg
+    texture: icesmp:item/trash/megegett_kenyerveg
+    vendor-value: 1
+    lore:
+    - A közepe még felismerhető.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kiszaradt_sajtdarab:
+    display-name: Kiszáradt Sajtdarab
+    player-rarity: ocska
+    material: HONEYCOMB
+    item-model: icesmp:trash/kiszaradt_sajtdarab
+    texture: icesmp:item/trash/kiszaradt_sajtdarab
+    vendor-value: 1
+    lore:
+    - A széle kőkemény.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  peneszes_sajthej:
+    display-name: Penészes Sajthéj
+    player-rarity: ocska
+    material: HONEYCOMB
+    item-model: icesmp:trash/peneszes_sajthej
+    texture: icesmp:item/trash/peneszes_sajthej
+    vendor-value: 1
+    lore:
+    - A belseje már nincs meg.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_sos_sajt:
+    display-name: Túl Sós Sajt
+    player-rarity: ocska
+    material: HONEYCOMB
+    item-model: icesmp:trash/tul_sos_sajt
+    texture: icesmp:item/trash/tul_sos_sajt
+    vendor-value: 1
+    lore:
+    - A sókristályok kívül is látszanak.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  megolvadt_sajtcsonk:
+    display-name: Megolvadt Sajtcsonk
+    player-rarity: ocska
+    material: HONEYCOMB
+    item-model: icesmp:trash/megolvadt_sajtcsonk
+    texture: icesmp:item/trash/megolvadt_sajtcsonk
+    vendor-value: 1
+    lore:
+    - Egyszer meleg lehetett, aztán meggondolta magát.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_sajt:
+    display-name: Kormos Sajt
+    player-rarity: ocska
+    material: HONEYCOMB
+    item-model: icesmp:trash/kormos_sajt
+    texture: icesmp:item/trash/kormos_sajt
+    vendor-value: 1
+    lore:
+    - Tűz mellett felejtették.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  csorba_bogre:
+    display-name: Csorba Bögre
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/csorba_bogre
+    texture: icesmp:item/trash/csorba_bogre
+    vendor-value: 2
+    lore:
+    - A pereméből kis darab hiányzik.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ful_nelkuli_bogre:
+    display-name: Fül Nélküli Bögre
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/ful_nelkuli_bogre
+    texture: icesmp:item/trash/ful_nelkuli_bogre
+    vendor-value: 2
+    lore:
+    - A fül helye simára kopott.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  hajszalrepedt_bogre:
+    display-name: Hajszálrepedt Bögre
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/hajszalrepedt_bogre
+    texture: icesmp:item/trash/hajszalrepedt_bogre
+    vendor-value: 2
+    lore:
+    - A repedésen át lassan szivárogna bármi.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_bogre:
+    display-name: Kormos Bögre
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/kormos_bogre
+    texture: icesmp:item/trash/kormos_bogre
+    vendor-value: 2
+    lore:
+    - A feneke fekete a koromtól.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_kicsi_bogre:
+    display-name: Túl Kicsi Bögre
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/tul_kicsi_bogre
+    texture: icesmp:item/trash/tul_kicsi_bogre
+    vendor-value: 2
+    lore:
+    - Egy rendes korty alig fér bele.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_tal:
+    display-name: Repedt Tál
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/repedt_tal
+    texture: icesmp:item/trash/repedt_tal
+    vendor-value: 2
+    lore:
+    - A máz a repedés körül lepattogzott.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  csorba_csesze:
+    display-name: Csorba Csésze
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/csorba_csesze
+    texture: icesmp:item/trash/csorba_csesze
+    vendor-value: 2
+    lore:
+    - Az egyik oldala alacsonyabb a másiknál.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  sofoltos_talka:
+    display-name: Sófoltos Tálka
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/sofoltos_talka
+    texture: icesmp:item/trash/sofoltos_talka
+    vendor-value: 2
+    lore:
+    - Fehér kristályok ülnek a peremén.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  fel_tanyer:
+    display-name: Fél Tányér
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/fel_tanyer
+    texture: icesmp:item/trash/fel_tanyer
+    vendor-value: 2
+    lore:
+    - Meglepően egyenes törésvonal.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_tal:
+    display-name: Kormos Tál
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/kormos_tal
+    texture: icesmp:item/trash/kormos_tal
+    vendor-value: 2
+    lore:
+    - Valaha közvetlenül tűzre tehették.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_nyilhegy:
+    display-name: Törött Nyílhegy
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/torott_nyilhegy
+    texture: icesmp:item/trash/torott_nyilhegy
+    vendor-value: 1
+    lore:
+    - A hegye letört.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_nyilhegy:
+    display-name: Rozsdás Nyílhegy
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/rozsdas_nyilhegy
+    texture: icesmp:item/trash/rozsdas_nyilhegy
+    vendor-value: 1
+    lore:
+    - A nyakán még fa rostjai maradtak.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gorbe_nyilhegy:
+    display-name: Görbe Nyílhegy
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/gorbe_nyilhegy
+    texture: icesmp:item/trash/gorbe_nyilhegy
+    vendor-value: 1
+    lore:
+    - Valami keménynek csapódhatott.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tompa_nyilhegy:
+    display-name: Tompa Nyílhegy
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/tompa_nyilhegy
+    texture: icesmp:item/trash/tompa_nyilhegy
+    vendor-value: 1
+    lore:
+    - Többször újraélezhették.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_nyilhegy:
+    display-name: Kormos Nyílhegy
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/kormos_nyilhegy
+    texture: icesmp:item/trash/kormos_nyilhegy
+    vendor-value: 1
+    lore:
+    - A felületén égésnyomok vannak.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kifakult_jelveny:
+    display-name: Kifakult Jelvény
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kifakult_jelveny
+    texture: icesmp:item/trash/kifakult_jelveny
+    vendor-value: 2
+    lore:
+    - A jelképből csak körvonal maradt.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_jelveny:
+    display-name: Törött Jelvény
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/torott_jelveny
+    texture: icesmp:item/trash/torott_jelveny
+    vendor-value: 2
+    lore:
+    - A rögzítőtű teljesen hiányzik.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_melljel:
+    display-name: Rozsdás Melljel
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rozsdas_melljel
+    texture: icesmp:item/trash/rozsdas_melljel
+    vendor-value: 2
+    lore:
+    - Az írás nem olvasható.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ures_cimerlap:
+    display-name: Üres Címerlap
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/ures_cimerlap
+    texture: icesmp:item/trash/ures_cimerlap
+    vendor-value: 2
+    lore:
+    - A festék teljesen lekopott.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gorbe_zaszlotu:
+    display-name: Görbe Zászlótű
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/gorbe_zaszlotu
+    texture: icesmp:item/trash/gorbe_zaszlotu
+    vendor-value: 2
+    lore:
+    - A tű hegye visszahajlott.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_ovcsat:
+    display-name: Törött Övcsat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/torott_ovcsat
+    texture: icesmp:item/trash/torott_ovcsat
+    vendor-value: 1
+    lore:
+    - A tüske letört.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_hamcsat:
+    display-name: Rozsdás Hámcsat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rozsdas_hamcsat
+    texture: icesmp:item/trash/rozsdas_hamcsat
+    vendor-value: 1
+    lore:
+    - A keret egyik oldala elvékonyodott.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_csat:
+    display-name: Kormos Csat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kormos_csat
+    texture: icesmp:item/trash/kormos_csat
+    vendor-value: 1
+    lore:
+    - A fém hőtől elszíneződött.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_nagy_csat:
+    display-name: Túl Nagy Csat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tul_nagy_csat
+    texture: icesmp:item/trash/tul_nagy_csat
+    vendor-value: 1
+    lore:
+    - Nem világos, mihez készült.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  elhajlott_csat:
+    display-name: Elhajlott Csat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/elhajlott_csat
+    texture: icesmp:item/trash/elhajlott_csat
+    vendor-value: 1
+    lore:
+    - Már nem zárható rendesen.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  szakadt_dogcedula:
+    display-name: Szakadt Dögcédula
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/szakadt_dogcedula
+    texture: icesmp:item/trash/szakadt_dogcedula
+    vendor-value: 1
+    lore:
+    - A zsinór már nincs meg.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ures_dogcedula:
+    display-name: Üres Dögcédula
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/ures_dogcedula
+    texture: icesmp:item/trash/ures_dogcedula
+    vendor-value: 1
+    lore:
+    - Soha nem véstek rá nevet.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kifakult_nevtag:
+    display-name: Kifakult Névtag
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/kifakult_nevtag
+    texture: icesmp:item/trash/kifakult_nevtag
+    vendor-value: 1
+    lore:
+    - Két betű maradt olvasható.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gorbe_femcimke:
+    display-name: Görbe Fémcímke
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/gorbe_femcimke
+    texture: icesmp:item/trash/gorbe_femcimke
+    vendor-value: 1
+    lore:
+    - Valaki ráállhatott.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  lyukas_cimke:
+    display-name: Lyukas Címke
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/lyukas_cimke
+    texture: icesmp:item/trash/lyukas_cimke
+    vendor-value: 1
+    lore:
+    - A zsinórlyuk körül teljesen kirepedt.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_fogaskerek:
+    display-name: Törött Fogaskerék
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/torott_fogaskerek
+    texture: icesmp:item/trash/torott_fogaskerek
+    vendor-value: 2
+    lore:
+    - Két foga hiányzik.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  fel_fogaskerek:
+    display-name: Fél Fogaskerék
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/fel_fogaskerek
+    texture: icesmp:item/trash/fel_fogaskerek
+    vendor-value: 2
+    lore:
+    - Nagyjából pontosan a fele maradt.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_fogaskerek:
+    display-name: Rozsdás Fogaskerék
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rozsdas_fogaskerek
+    texture: icesmp:item/trash/rozsdas_fogaskerek
+    vendor-value: 2
+    lore:
+    - A fogak közé rozsda tapadt.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  megszorult_fogaskerek:
+    display-name: Megszorult Fogaskerék
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/megszorult_fogaskerek
+    texture: icesmp:item/trash/megszorult_fogaskerek
+    vendor-value: 2
+    lore:
+    - A közepe oválisra deformálódott.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_apro_fogaskerek:
+    display-name: Túl Apró Fogaskerék
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tul_apro_fogaskerek
+    texture: icesmp:item/trash/tul_apro_fogaskerek
+    vendor-value: 2
+    lore:
+    - Talán valamilyen finom műszerhez tartozott.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tompa_vesohegy:
+    display-name: Tompa Vésőhegy
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tompa_vesohegy
+    texture: icesmp:item/trash/tompa_vesohegy
+    vendor-value: 2
+    lore:
+    - A hegye laposra kopott.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_veso:
+    display-name: Repedt Véső
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/repedt_veso
+    texture: icesmp:item/trash/repedt_veso
+    vendor-value: 2
+    lore:
+    - Hosszában fut rajta a repedés.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  letort_szerszamveg:
+    display-name: Letört Szerszámvég
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/letort_szerszamveg
+    texture: icesmp:item/trash/letort_szerszamveg
+    vendor-value: 2
+    lore:
+    - Nem lehet megmondani, mihez tartozott.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_vesohegy:
+    display-name: Kormos Vésőhegy
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kormos_vesohegy
+    texture: icesmp:item/trash/kormos_vesohegy
+    vendor-value: 2
+    lore:
+    - Fekete lerakódás borítja.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_rovid_veso:
+    display-name: Túl Rövid Véső
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tul_rovid_veso
+    texture: icesmp:item/trash/tul_rovid_veso
+    vendor-value: 2
+    lore:
+    - A markolathoz tartozó rész hiányzik.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kopott_meropalca:
+    display-name: Kopott Mérőpálca
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/kopott_meropalca
+    texture: icesmp:item/trash/kopott_meropalca
+    vendor-value: 1
+    lore:
+    - A rovátkák fele eltűnt.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_meropalca:
+    display-name: Törött Mérőpálca
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/torott_meropalca
+    texture: icesmp:item/trash/torott_meropalca
+    vendor-value: 1
+    lore:
+    - Pont a számoknál tört ketté.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  jeloletlen_palca:
+    display-name: Jelöletlen Pálca
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/jeloletlen_palca
+    texture: icesmp:item/trash/jeloletlen_palca
+    vendor-value: 1
+    lore:
+    - Talán soha nem is mérésre készült.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gorbe_merovesszo:
+    display-name: Görbe Mérővessző
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/gorbe_merovesszo
+    texture: icesmp:item/trash/gorbe_merovesszo
+    vendor-value: 1
+    lore:
+    - Egyeneset biztosan nem mér.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_meropalca:
+    display-name: Kormos Mérőpálca
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/kormos_meropalca
+    texture: icesmp:item/trash/kormos_meropalca
+    vendor-value: 1
+    lore:
+    - A fa sötétre égett, de nem szenesedett el teljesen.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_alatet:
+    display-name: Repedt Alátét
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/repedt_alatet
+    texture: icesmp:item/trash/repedt_alatet
+    vendor-value: 1
+    lore:
+    - A furattól a peremig repedés fut.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_nagy_alatet:
+    display-name: Túl Nagy Alátét
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tul_nagy_alatet
+    texture: icesmp:item/trash/tul_nagy_alatet
+    vendor-value: 1
+    lore:
+    - Majdnem tenyérnyi.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_kicsi_alatet:
+    display-name: Túl Kicsi Alátét
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tul_kicsi_alatet
+    texture: icesmp:item/trash/tul_kicsi_alatet
+    vendor-value: 1
+    lore:
+    - Inkább gyűrűnek néz ki.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ovalis_alatet:
+    display-name: Ovális Alátét
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/ovalis_alatet
+    texture: icesmp:item/trash/ovalis_alatet
+    vendor-value: 1
+    lore:
+    - Valami összenyomta.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_alatet:
+    display-name: Kormos Alátét
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kormos_alatet
+    texture: icesmp:item/trash/kormos_alatet
+    vendor-value: 1
+    lore:
+    - A széle hőtől kékesre színeződött.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ismeretlen_csontdarab:
+    display-name: Ismeretlen Csontdarab
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/ismeretlen_csontdarab
+    texture: icesmp:item/trash/ismeretlen_csontdarab
+    vendor-value: 1
+    lore:
+    - Túl kicsi ahhoz, hogy biztosan azonosítsd.
+    source-bias: UNDEAD+FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_csontdarab:
+    display-name: Repedt Csontdarab
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/repedt_csontdarab
+    texture: icesmp:item/trash/repedt_csontdarab
+    vendor-value: 1
+    lore:
+    - Régi, száraz törésvonal fut rajta.
+    source-bias: UNDEAD+FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  megfeketedett_csont:
+    display-name: Megfeketedett Csont
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/megfeketedett_csont
+    texture: icesmp:item/trash/megfeketedett_csont
+    vendor-value: 1
+    lore:
+    - Füst és korom színezte el.
+    source-bias: UNDEAD+FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  sima_csontdarab:
+    display-name: Sima Csontdarab
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/sima_csontdarab
+    texture: icesmp:item/trash/sima_csontdarab
+    vendor-value: 1
+    lore:
+    - A víz hosszú idő alatt lekerekítette.
+    source-bias: UNDEAD+FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ragott_csont:
+    display-name: Rágott Csont
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/ragott_csont
+    texture: icesmp:item/trash/ragott_csont
+    vendor-value: 1
+    lore:
+    - Apró fognyomok sorakoznak rajta.
+    source-bias: UNDEAD+FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_fog:
+    display-name: Törött Fog
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/torott_fog
+    texture: icesmp:item/trash/torott_fog
+    vendor-value: 1
+    lore:
+    - A gyökér fele hiányzik.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kopott_agyardarab:
+    display-name: Kopott Agyardarab
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/kopott_agyardarab
+    texture: icesmp:item/trash/kopott_agyardarab
+    vendor-value: 1
+    lore:
+    - A hegye teljesen lekerekedett.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  fekete_fog:
+    display-name: Fekete Fog
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/fekete_fog
+    texture: icesmp:item/trash/fekete_fog
+    vendor-value: 1
+    lore:
+    - Az elszíneződés mélyen beitta magát.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_orlofog:
+    display-name: Repedt Őrlőfog
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/repedt_orlofog
+    texture: icesmp:item/trash/repedt_orlofog
+    vendor-value: 1
+    lore:
+    - A korona két részre vált.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  apro_agyar:
+    display-name: Apró Agyar
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/apro_agyar
+    texture: icesmp:item/trash/apro_agyar
+    vendor-value: 1
+    lore:
+    - Talán kölyökállaté volt.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  leegett_gyertyacsonk:
+    display-name: Leégett Gyertyacsonk
+    player-rarity: ocska
+    material: CANDLE
+    item-model: icesmp:trash/leegett_gyertyacsonk
+    texture: icesmp:item/trash/leegett_gyertyacsonk
+    vendor-value: 1
+    lore:
+    - A kanóc már túl rövid.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_kanoc:
+    display-name: Kormos Kanóc
+    player-rarity: ocska
+    material: CANDLE
+    item-model: icesmp:trash/kormos_kanoc
+    texture: icesmp:item/trash/kormos_kanoc
+    vendor-value: 1
+    lore:
+    - A viasz teljesen hiányzik róla.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  megolvadt_viaszdarab:
+    display-name: Megolvadt Viaszdarab
+    player-rarity: ocska
+    material: CANDLE
+    item-model: icesmp:trash/megolvadt_viaszdarab
+    texture: icesmp:item/trash/megolvadt_viaszdarab
+    vendor-value: 1
+    lore:
+    - Több szín keveredett össze benne.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_imako:
+    display-name: Törött Imakő
+    player-rarity: ocska
+    material: CANDLE
+    item-model: icesmp:trash/torott_imako
+    texture: icesmp:item/trash/torott_imako
+    vendor-value: 1
+    lore:
+    - A jel fele hiányzik.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  jeloletlen_amulett:
+    display-name: Jelöletlen Amulett
+    player-rarity: ocska
+    material: CANDLE
+    item-model: icesmp:trash/jeloletlen_amulett
+    texture: icesmp:item/trash/jeloletlen_amulett
+    vendor-value: 1
+    lore:
+    - Nincs rajta sem írás, sem felismerhető jelkép.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  obszidianforgacs:
+    display-name: Obszidiánforgács
+    player-rarity: ocska
+    material: OBSIDIAN
+    item-model: icesmp:trash/obszidianforgacs
+    texture: icesmp:item/trash/obszidianforgacs
+    vendor-value: 2
+    lore:
+    - Éles, de túl kicsi szerszámnak.
+    source-bias: NETHER↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_obszidianszilank:
+    display-name: Repedt Obszidiánszilánk
+    player-rarity: ocska
+    material: OBSIDIAN
+    item-model: icesmp:trash/repedt_obszidianszilank
+    texture: icesmp:item/trash/repedt_obszidianszilank
+    vendor-value: 2
+    lore:
+    - A belsejében hajszálvékony törés látszik.
+    source-bias: NETHER↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_obszidian:
+    display-name: Kormos Obszidián
+    player-rarity: ocska
+    material: OBSIDIAN
+    item-model: icesmp:trash/kormos_obszidian
+    texture: icesmp:item/trash/kormos_obszidian
+    vendor-value: 2
+    lore:
+    - Fekete anyagon is látszik a feketébb korom.
+    source-bias: NETHER↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tompa_obszidiandarab:
+    display-name: Tompa Obszidiándarab
+    player-rarity: ocska
+    material: OBSIDIAN
+    item-model: icesmp:trash/tompa_obszidiandarab
+    texture: icesmp:item/trash/tompa_obszidiandarab
+    vendor-value: 2
+    lore:
+    - A széle víztől simára kopott.
+    source-bias: NETHER↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  lila_fenyu_uvegszilank:
+    display-name: Lila Fényű Üvegszilánk
+    player-rarity: ocska
+    material: OBSIDIAN
+    item-model: icesmp:trash/lila_fenyu_uvegszilank
+    texture: icesmp:item/trash/lila_fenyu_uvegszilank
+    vendor-value: 2
+    lore:
+    - Csak az üveg színe furcsa, semmi több.
+    source-bias: NETHER↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  koromcsomo:
+    display-name: Koromcsomó
+    player-rarity: ocska
+    material: CHARCOAL
+    item-model: icesmp:trash/koromcsomo
+    texture: icesmp:item/trash/koromcsomo
+    vendor-value: 1
+    lore:
+    - Mindenhez hozzáfog.
+    source-bias: NETHER+HOT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  hideg_hamucsomo:
+    display-name: Hideg Hamucsomó
+    player-rarity: ocska
+    material: CHARCOAL
+    item-model: icesmp:trash/hideg_hamucsomo
+    texture: icesmp:item/trash/hideg_hamucsomo
+    vendor-value: 1
+    lore:
+    - Teljesen kihűlt.
+    source-bias: NETHER+HOT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  osszetapadt_hamu:
+    display-name: Összetapadt Hamu
+    player-rarity: ocska
+    material: CHARCOAL
+    item-model: icesmp:trash/osszetapadt_hamu
+    texture: icesmp:item/trash/osszetapadt_hamu
+    vendor-value: 1
+    lore:
+    - Nedvességtől kemény kis csomóvá állt össze.
+    source-bias: NETHER+HOT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_kavics:
+    display-name: Kormos Kavics
+    player-rarity: ocska
+    material: CHARCOAL
+    item-model: icesmp:trash/kormos_kavics
+    texture: icesmp:item/trash/kormos_kavics
+    vendor-value: 1
+    lore:
+    - A színe alatt közönséges kő van.
+    source-bias: NETHER+HOT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  egett_faszendarab:
+    display-name: Égett Faszéndarab
+    player-rarity: ocska
+    material: CHARCOAL
+    item-model: icesmp:trash/egett_faszendarab
+    texture: icesmp:item/trash/egett_faszendarab
+    vendor-value: 1
+    lore:
+    - Semmiben nem különbözik egy rossz tüzelőtől.
+    source-bias: NETHER+HOT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  torott_toll:
+    display-name: Törött Toll
+    player-rarity: ocska
+    material: FEATHER
+    item-model: icesmp:trash/torott_toll
+    texture: icesmp:item/trash/torott_toll
+    vendor-value: 1
+    lore:
+    - A tollszár középen elpattant.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kormos_toll:
+    display-name: Kormos Toll
+    player-rarity: ocska
+    material: FEATHER
+    item-model: icesmp:trash/kormos_toll
+    texture: icesmp:item/trash/kormos_toll
+    vendor-value: 1
+    lore:
+    - A zászló egyik széle megpörkölődött.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  vizes_toll:
+    display-name: Vizes Toll
+    player-rarity: ocska
+    material: FEATHER
+    item-model: icesmp:trash/vizes_toll
+    texture: icesmp:item/trash/vizes_toll
+    vendor-value: 1
+    lore:
+    - Összetapadt és nehéz.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kifakult_toll:
+    display-name: Kifakult Toll
+    player-rarity: ocska
+    material: FEATHER
+    item-model: icesmp:trash/kifakult_toll
+    texture: icesmp:item/trash/kifakult_toll
+    vendor-value: 1
+    lore:
+    - Nem lehet megmondani, milyen madártól származott.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  fel_toll:
+    display-name: Fél Toll
+    player-rarity: ocska
+    material: FEATHER
+    item-model: icesmp:trash/fel_toll
+    texture: icesmp:item/trash/fel_toll
+    vendor-value: 1
+    lore:
+    - A zászló egyik oldala teljesen hiányzik.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_csapagygolyo:
+    display-name: Rozsdás Csapágygolyó
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/rozsdas_csapagygolyo
+    texture: icesmp:item/trash/rozsdas_csapagygolyo
+    vendor-value: 2
+    lore:
+    - A felületét apró ütődések borítják.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ellapult_csapagygolyo:
+    display-name: Ellapult Csapágygolyó
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/ellapult_csapagygolyo
+    texture: icesmp:item/trash/ellapult_csapagygolyo
+    vendor-value: 2
+    lore:
+    - Már szemre sem teljesen gömb alakú.
+    source-bias: DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  szalkas_deszkadarab:
+    display-name: Szálkás Deszkadarab
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/szalkas_deszkadarab
+    texture: icesmp:item/trash/szalkas_deszkadarab
+    vendor-value: 1
+    lore:
+    - Két régi szöglyuk van benne.
+    source-bias: AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  festekes_deszkadarab:
+    display-name: Festékes Deszkadarab
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/festekes_deszkadarab
+    texture: icesmp:item/trash/festekes_deszkadarab
+    vendor-value: 1
+    lore:
+    - A festékből csak egy halvány csík maradt.
+    source-bias: AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  csorba_tegla:
+    display-name: Csorba Tégla
+    player-rarity: ocska
+    material: BRICK
+    item-model: icesmp:trash/csorba_tegla
+    texture: icesmp:item/trash/csorba_tegla
+    vendor-value: 1
+    lore:
+    - Az egyik sarka teljesen letört.
+    source-bias: AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  habarcsos_tegladarab:
+    display-name: Habarcsos Tégladarab
+    player-rarity: ocska
+    material: BRICK
+    item-model: icesmp:trash/habarcsos_tegladarab
+    texture: icesmp:item/trash/habarcsos_tegladarab
+    vendor-value: 1
+    lore:
+    - A felén vastag, régi habarcs ül.
+    source-bias: AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_vodor:
+    display-name: Rozsdás Vödör
+    player-rarity: ocska
+    material: BUCKET
+    item-model: icesmp:trash/rozsdas_vodor
+    texture: icesmp:item/trash/rozsdas_vodor
+    vendor-value: 2
+    lore:
+    - Az alján több apró korróziós folt van.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  horpadasos_vodor:
+    display-name: Horpadásos Vödör
+    player-rarity: ocska
+    material: BUCKET
+    item-model: icesmp:trash/horpadasos_vodor
+    texture: icesmp:item/trash/horpadasos_vodor
+    vendor-value: 2
+    lore:
+    - A fala befelé nyomódott, de még egyben van.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_lancdarab:
+    display-name: Rozsdás Láncdarab
+    player-rarity: ocska
+    material: CHAIN
+    item-model: icesmp:trash/rozsdas_lancdarab
+    texture: icesmp:item/trash/rozsdas_lancdarab
+    vendor-value: 2
+    lore:
+    - Három összezárt láncszem maradt belőle.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  nyitott_lancszem:
+    display-name: Nyitott Láncszem
+    player-rarity: ocska
+    material: CHAIN
+    item-model: icesmp:trash/nyitott_lancszem
+    texture: icesmp:item/trash/nyitott_lancszem
+    vendor-value: 1
+    lore:
+    - A szem egyik oldala szétfeszült.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  repedt_iranytu:
+    display-name: Repedt Iránytű
+    player-rarity: ocska
+    material: COMPASS
+    item-model: icesmp:trash/repedt_iranytu
+    texture: icesmp:item/trash/repedt_iranytu
+    vendor-value: 3
+    lore:
+    - Az üveg megrepedt, a tű szabadon mozog.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  beragadt_iranytu:
+    display-name: Beragadt Iránytű
+    player-rarity: ocska
+    material: COMPASS
+    item-model: icesmp:trash/beragadt_iranytu
+    texture: icesmp:item/trash/beragadt_iranytu
+    vendor-value: 2
+    lore:
+    - A tű ugyanoda tapadt, bárhogy forgatod.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kopott_csontkocka:
+    display-name: Kopott Csontkocka
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/kopott_csontkocka
+    texture: icesmp:item/trash/kopott_csontkocka
+    vendor-value: 2
+    lore:
+    - A pontok közül kettő alig látszik.
+    source-bias: HUMANOID+FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  fakocka:
+    display-name: Fakocka
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/fakocka
+    texture: icesmp:item/trash/fakocka
+    vendor-value: 1
+    lore:
+    - A sarkai lekerekedtek a sok dobástól.
+    source-bias: HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  horpadasos_fazek:
+    display-name: Horpadásos Fazék
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/horpadasos_fazek
+    texture: icesmp:item/trash/horpadasos_fazek
+    vendor-value: 2
+    lore:
+    - A feneke nem áll meg sík felületen.
+    source-bias: HUMANOID+FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  ful_nelkuli_fazek:
+    display-name: Fül Nélküli Fazék
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/ful_nelkuli_fazek
+    texture: icesmp:item/trash/ful_nelkuli_fazek
+    vendor-value: 2
+    lore:
+    - Mindkét oldalsó fül letört róla.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  lapos_folyami_kavics:
+    display-name: Lapos Folyami Kavics
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/lapos_folyami_kavics
+    texture: icesmp:item/trash/lapos_folyami_kavics
+    vendor-value: 1
+    lore:
+    - A víz teljesen simára koptatta.
+    source-bias: FISH↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  lyukas_kavics:
+    display-name: Lyukas Kavics
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/lyukas_kavics
+    texture: icesmp:item/trash/lyukas_kavics
+    vendor-value: 1
+    lore:
+    - Egy természetes kis furat megy át rajta.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  foszlo_koteldarab:
+    display-name: Foszló Kötéldarab
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/foszlo_koteldarab
+    texture: icesmp:item/trash/foszlo_koteldarab
+    vendor-value: 1
+    lore:
+    - A vége szálaira bomlott.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tul_rovid_kotel:
+    display-name: Túl Rövid Kötél
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/tul_rovid_kotel
+    texture: icesmp:item/trash/tul_rovid_kotel
+    vendor-value: 1
+    lore:
+    - Talán egy csomóhoz még elég.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kopott_papucs:
+    display-name: Kopott Papucs
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/kopott_papucs
+    texture: icesmp:item/trash/kopott_papucs
+    vendor-value: 1
+    lore:
+    - A talpa szinte teljesen sima.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  elszakadt_papucs:
+    display-name: Elszakadt Papucs
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/elszakadt_papucs
+    texture: icesmp:item/trash/elszakadt_papucs
+    vendor-value: 1
+    lore:
+    - A pántja csak az egyik oldalon tart.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  voroses_faszalka:
+    display-name: Vöröses Faszálka
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/voroses_faszalka
+    texture: icesmp:item/trash/voroses_faszalka
+    vendor-value: 1
+    lore:
+    - A fa természetesen sötétvörös, de semmi különös nincs benne.
+    source-bias: HOT+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  elszenesedett_faszalka:
+    display-name: Elszenesedett Faszálka
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/elszenesedett_faszalka
+    texture: icesmp:item/trash/elszenesedett_faszalka
+    vendor-value: 1
+    lore:
+    - A széle megégett, a közepe ép.
+    source-bias: HOT+MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  gorbe_bot:
+    display-name: Görbe Bot
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/gorbe_bot
+    texture: icesmp:item/trash/gorbe_bot
+    vendor-value: 1
+    lore:
+    - Az egyik vége Y alakban elágazik.
+    source-bias: GLOBAL
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  keregtelen_bot:
+    display-name: Kéregtelen Bot
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/keregtelen_bot
+    texture: icesmp:item/trash/keregtelen_bot
+    vendor-value: 1
+    lore:
+    - Teljesen simára kopott a felülete.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  rozsdas_kardcsonk:
+    display-name: Rozsdás Kardcsonk
+    player-rarity: ocska
+    material: IRON_SWORD
+    item-model: icesmp:trash/rozsdas_kardcsonk
+    texture: icesmp:item/trash/rozsdas_kardcsonk
+    vendor-value: 3
+    lore:
+    - A penge nagy része hiányzik, harcra értéktelen.
+    source-bias: MOB↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  tompa_rovidpenge:
+    display-name: Tompa Rövidpenge
+    player-rarity: ocska
+    material: IRON_SWORD
+    item-model: icesmp:trash/tompa_rovidpenge
+    texture: icesmp:item/trash/tompa_rovidpenge
+    vendor-value: 3
+    lore:
+    - Az éle inkább lekerekített, mint éles.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  faek:
+    display-name: Faék
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/faek
+    texture: icesmp:item/trash/faek
+    vendor-value: 1
+    lore:
+    - Közönséges, szétnyomódott kis faék.
+    source-bias: AMBIENT↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  kobol_faragott_ek:
+    display-name: Kőből Faragott Ék
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/kobol_faragott_ek
+    texture: icesmp:item/trash/kobol_faragott_ek
+    vendor-value: 1
+    lore:
+    - Durván pattintott, hétköznapi kődarab.
+    source-bias: AMBIENT+DEEP↑
+    internal:
+      kind: MUNDANE
+      behavior: NONE
+  harom_udvar_kanala:
+    display-name: Három Udvar Kanala
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/harom_udvar_kanala
+    texture: icesmp:item/trash/harom_udvar_kanala
+    vendor-value: 3
+    lore:
+    - Három különböző uralkodói leltárban szerepel ugyanilyen karcolásokkal. Egyik leltár sem jegyzi, honnan került oda.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  bokici_reveszgomb:
+    display-name: Bokici Révészgomb
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/bokici_reveszgomb
+    texture: icesmp:item/trash/bokici_reveszgomb
+    vendor-value: 2
+    lore:
+    - Egy régi révészruháról származhat; a hátuljába apró hullámjelet karcoltak.
+    source-bias: FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  caldesterai_vamcedula:
+    display-name: Caldesterai Vámcédula
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/caldesterai_vamcedula
+    texture: icesmp:item/trash/caldesterai_vamcedula
+    vendor-value: 1
+    lore:
+    - A pecsét valódi, az áru megnevezése leszakadt. A Vámház valamikor elfogadta.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  boterai_hamis_pecset:
+    display-name: Boterai Hamis Pecsét
+    player-rarity: ocska
+    material: CLAY_BALL
+    item-model: icesmp:trash/boterai_hamis_pecset
+    texture: icesmp:item/trash/boterai_hamis_pecset
+    vendor-value: 2
+    lore:
+    - A lenyomat első pillantásra hivatalos. Másodikra már kevésbé.
+    source-bias: HUMANOID+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  regi_kompjegy:
+    display-name: Régi Kompjegy
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/regi_kompjegy
+    texture: icesmp:item/trash/regi_kompjegy
+    vendor-value: 1
+    lore:
+    - A jegyen még egy megszűnt menetrend halvány számai látszanak.
+    source-bias: FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  radicorai_imaszalag:
+    display-name: Radicorai Imaszalag
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/radicorai_imaszalag
+    texture: icesmp:item/trash/radicorai_imaszalag
+    vendor-value: 2
+    lore:
+    - A szalag végébe gyökérmintát hímeztek; az anyag sokáig füstös helyen lóghatott.
+    source-bias: AMBIENT+FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  botera_negyedi_kettos_nyugta:
+    display-name: Botera-negyedi Kettős Nyugta
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/botera_negyedi_kettos_nyugta
+    texture: icesmp:item/trash/botera_negyedi_kettos_nyugta
+    vendor-value: 1
+    lore:
+    - Ugyanarra az árura két eltérő összeg szerepel rajta. Mindkét sor le van pecsételve.
+    source-bias: HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  caldesterai_ezustozott_villa:
+    display-name: Caldesterai Ezüstözött Villa
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/caldesterai_ezustozott_villa
+    texture: icesmp:item/trash/caldesterai_ezustozott_villa
+    vendor-value: 3
+    lore:
+    - Olcsó vasvilla, gondosan ezüstözve. A városi polgári asztalok tipikus darabja lehetett.
+    source-bias: GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  bokic_parti_gyerekuszo:
+    display-name: Bokic-parti Gyerekúszó
+    player-rarity: ocska
+    material: OAK_BUTTON
+    item-model: icesmp:trash/bokic_parti_gyerekuszo
+    texture: icesmp:item/trash/bokic_parti_gyerekuszo
+    vendor-value: 1
+    lore:
+    - A fakockába ügyetlenül egy szarvast karcoltak.
+    source-bias: FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  szovetsegi_merlegsuly_darabja:
+    display-name: Szövetségi Mérlegsúly Darabja
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/szovetsegi_merlegsuly_darabja
+    texture: icesmp:item/trash/szovetsegi_merlegsuly_darabja
+    vendor-value: 2
+    lore:
+    - Az Arany Liga korát utánzó jel van rajta, de a fém jóval fiatalabbnak tűnik.
+    source-bias: HUMANOID+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  o_caldesterai_ajtogomb:
+    display-name: Ó-Caldesterai Ajtógomb
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/o_caldesterai_ajtogomb
+    texture: icesmp:item/trash/o_caldesterai_ajtogomb
+    vendor-value: 2
+    lore:
+    - Az egyszerű csontgombot több generáción át újra felvarrhatták.
+    source-bias: AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  boterai_rejtett_zseb_foszlanya:
+    display-name: Boterai Rejtett Zseb Foszlánya
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/boterai_rejtett_zseb_foszlanya
+    texture: icesmp:item/trash/boterai_rejtett_zseb_foszlanya
+    vendor-value: 1
+    lore:
+    - A bélés két rétege közé valaha valami lapos tárgyat varrtak.
+    source-bias: HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  caldesterai_piaci_sorszam_47:
+    display-name: Caldesterai Piaci Sorszám 47
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/caldesterai_piaci_sorszam_47
+    texture: icesmp:item/trash/caldesterai_piaci_sorszam_47
+    vendor-value: 1
+    lore:
+    - A szám jól olvasható. A bolt neve már nem.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  ryanorai_patkocsat:
+    display-name: Ryanorai Patkócsat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/ryanorai_patkocsat
+    texture: icesmp:item/trash/ryanorai_patkocsat
+    vendor-value: 2
+    lore:
+    - Könnyű hámról származó csat, apró szarvasmotívummal.
+    source-bias: AMBIENT+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  bankarszovetsegi_tintazar:
+    display-name: Bankárszövetségi Tintazár
+    player-rarity: ocska
+    material: CLAY_BALL
+    item-model: icesmp:trash/bankarszovetsegi_tintazar
+    texture: icesmp:item/trash/bankarszovetsegi_tintazar
+    vendor-value: 2
+    lore:
+    - Egy régi irat viaszmaradványa; a lenyomatból csak a külső gyűrű maradt.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  glatziendorfi_leveskanal:
+    display-name: Glatziendorfi Leveskanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/glatziendorfi_leveskanal
+    texture: icesmp:item/trash/glatziendorfi_leveskanal
+    vendor-value: 2
+    lore:
+    - A nyél végén hópehely alakú, olcsó préselt dísz van. Nem udvari darab.
+    source-bias: COLD+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  repedt_hopiher_veret:
+    display-name: Repedt Hópihér-veret
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/repedt_hopiher_veret
+    texture: icesmp:item/trash/repedt_hopiher_veret
+    vendor-value: 3
+    lore:
+    - A pénzverdéből selejtként kerülhetett ki; a veret egyik oldala elcsúszott.
+    source-bias: COLD+GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  sarkanyistallo_rezcsatja:
+    display-name: Sárkányistálló Rézcsatja
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/sarkanyistallo_rezcsatja
+    texture: icesmp:item/trash/sarkanyistallo_rezcsatja
+    vendor-value: 2
+    lore:
+    - Erős, többször javított hámcsat. A belső oldalát mély karcolások borítják.
+    source-bias: COLD+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  kallan_unnepi_szalagdarab:
+    display-name: Kallan-ünnepi Szalagdarab
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/kallan_unnepi_szalagdarab
+    texture: icesmp:item/trash/kallan_unnepi_szalagdarab
+    vendor-value: 1
+    lore:
+    - A kereskedői jelölés szerint ünnepi áru volt; ettől még csak egy rongydarab.
+    source-bias: COLD+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  glatziendorfi_orsegi_sip:
+    display-name: Glatziendorfi Őrségi Síp
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/glatziendorfi_orsegi_sip
+    texture: icesmp:item/trash/glatziendorfi_orsegi_sip
+    vendor-value: 3
+    lore:
+    - A városi őrség régi szabványához hasonló, de a jelzés nagy része lekopott.
+    source-bias: COLD+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  fagyott_postacimke:
+    display-name: Fagyott Postacímke
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/fagyott_postacimke
+    texture: icesmp:item/trash/fagyott_postacimke
+    vendor-value: 1
+    lore:
+    - Cryghalirisi címzés maradványa; a címzett neve alatt vörös homokfoltok ülnek.
+    source-bias: FISH+COLD↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  eszaki_szanszog:
+    display-name: Északi Szánszög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/eszaki_szanszog
+    texture: icesmp:item/trash/eszaki_szanszog
+    vendor-value: 1
+    lore:
+    - A fején kézzel ütött hópehelyjel van, valószínűleg műhelyazonosító.
+    source-bias: COLD+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  v_miinus_korabol_valo_gomb:
+    display-name: V. Miinus Korából Való Gomb?
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/v_miinus_korabol_valo_gomb
+    texture: icesmp:item/trash/v_miinus_korabol_valo_gomb
+    vendor-value: 2
+    lore:
+    - Egy családi hagyatéki cetli ezt állítja. Maga a gomb semmivel nem bizonyítja.
+    source-bias: COLD+HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  sarkanypikkely_utanzat:
+    display-name: Sárkánypikkely-utánzat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/sarkanypikkely_utanzat
+    texture: icesmp:item/trash/sarkanypikkely_utanzat
+    vendor-value: 1
+    lore:
+    - Festett, vékony lemezdarab. Piaci emléktárgynak túl rossz, valódi pikkelynek még rosszabb.
+    source-bias: COLD+GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  jegmezoi_tabori_bogre:
+    display-name: Jégmezői Tábori Bögre
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/jegmezoi_tabori_bogre
+    texture: icesmp:item/trash/jegmezoi_tabori_bogre
+    vendor-value: 2
+    lore:
+    - A fenekébe három tulajdonos monogramjának nyomát karcolták egymásra.
+    source-bias: COLD+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  cryghalirisi_ezustozo_rongy:
+    display-name: Cryghalirisi Ezüstöző Rongy
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/cryghalirisi_ezustozo_rongy
+    texture: icesmp:item/trash/cryghalirisi_ezustozo_rongy
+    vendor-value: 1
+    lore:
+    - A szövetbe finom fémpor ivódott; pénzverő vagy ötvösműhely környékéről származhat.
+    source-bias: COLD+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  eszaki_futar_fel_cimkeje:
+    display-name: Északi Futár Fél Címkéje
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/eszaki_futar_fel_cimkeje
+    texture: icesmp:item/trash/eszaki_futar_fel_cimkeje
+    vendor-value: 1
+    lore:
+    - A megmaradt útvonaljelölés déli irányba mutat. Hogy meddig jutott, nem tudni.
+    source-bias: COLD+FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  pyralingradi_fuszerkanal:
+    display-name: Pyralingradi Fűszerkanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/pyralingradi_fuszerkanal
+    texture: icesmp:item/trash/pyralingradi_fuszerkanal
+    vendor-value: 2
+    lore:
+    - A nyélen vörös festék és erős fűszer illata maradt.
+    source-bias: HOT+HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  megolvadt_parals:
+    display-name: Megolvadt Parals
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/megolvadt_parals
+    texture: icesmp:item/trash/megolvadt_parals
+    vendor-value: 3
+    lore:
+    - Valódi Parals lehetett, mielőtt a pereme összefolyt. Pénzként már használhatatlan.
+    source-bias: HOT+GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  verfa_metszokes_nyele:
+    display-name: Vérfa Metszőkés Nyele
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/verfa_metszokes_nyele
+    texture: icesmp:item/trash/verfa_metszokes_nyele
+    vendor-value: 2
+    lore:
+    - A penge hiányzik; a fa markolatot vöröses gyantafoltok borítják.
+    source-bias: HOT+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  pyralingradi_kulacsdugo:
+    display-name: Pyralingradi Kulacsdugó
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/pyralingradi_kulacsdugo
+    texture: icesmp:item/trash/pyralingradi_kulacsdugo
+    vendor-value: 1
+    lore:
+    - A dugó külsejét fehér sókivirágzás borítja; sokáig száraz, forró helyen használhatták.
+    source-bias: HOT+GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  langmadar_istallo_tollsepru_darabja:
+    display-name: Lángmadár-istálló Tollseprű Darabja
+    player-rarity: ocska
+    material: FEATHER
+    item-model: icesmp:trash/langmadar_istallo_tollsepru_darabja
+    texture: icesmp:item/trash/langmadar_istallo_tollsepru_darabja
+    vendor-value: 1
+    lore:
+    - Néhány közönséges toll maradt a nyélen. A név ellenére nem főnixtoll.
+    source-bias: HOT+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  verszavannai_orsegi_csat:
+    display-name: Vérszavannai Őrségi Csat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/verszavannai_orsegi_csat
+    texture: icesmp:item/trash/verszavannai_orsegi_csat
+    vendor-value: 2
+    lore:
+    - Könnyű, gyorsan oldható csat, többször cserélt szegeccsel.
+    source-bias: HOT+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  zhoris_kori_piaci_masolat:
+    display-name: Zhoris-kori Piaci Másolat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/zhoris_kori_piaci_masolat
+    texture: icesmp:item/trash/zhoris_kori_piaci_masolat
+    vendor-value: 1
+    lore:
+    - Egy olcsó érmeutánzat, amelyet állítólag I. Zhoris idejére datáltak. A patina gyanúsan friss.
+    source-bias: HOT+HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  fonix_tojashejkent_arult_darab:
+    display-name: Főnix-Tojáshéjként Árult Darab
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/fonix_tojashejkent_arult_darab
+    texture: icesmp:item/trash/fonix_tojashejkent_arult_darab
+    vendor-value: 1
+    lore:
+    - A boterai árus ezt mondta. Közelebbről nézve inkább festett tojáshéj.
+    source-bias: HOT+GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  pyralingradi_ostromkonyha_villaja:
+    display-name: Pyralingradi Ostromkonyha Villája
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/pyralingradi_ostromkonyha_villaja
+    texture: icesmp:item/trash/pyralingradi_ostromkonyha_villaja
+    vendor-value: 2
+    lore:
+    - Vastag, durva villa; a nyélbe egy katonai készletszámot ütöttek.
+    source-bias: HOT+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  verfa_ultetesi_cedula:
+    display-name: Vérfa Ültetési Cédula
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/verfa_ultetesi_cedula
+    texture: icesmp:item/trash/verfa_ultetesi_cedula
+    vendor-value: 1
+    lore:
+    - A cédula valódi nemesi kertészeti formátumot utánoz, de a névmező üres.
+    source-bias: HOT+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  parals_zacsko_foszlanya:
+    display-name: Parals-zacskó Foszlánya
+    player-rarity: ocska
+    material: RABBIT_HIDE
+    item-model: icesmp:trash/parals_zacsko_foszlanya
+    texture: icesmp:item/trash/parals_zacsko_foszlanya
+    vendor-value: 1
+    lore:
+    - A kis vászonzacskó belsejében vörösréz por maradt.
+    source-bias: HOT+HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  verszavannai_viharszalag:
+    display-name: Vérszavannai Viharszalag
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/verszavannai_viharszalag
+    texture: icesmp:item/trash/verszavannai_viharszalag
+    vendor-value: 1
+    lore:
+    - A lovasok és futárok által használt jelzőszalag egyszerű, kifakult darabja.
+    source-bias: HOT+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  hetedik_verhaborus_satorszog:
+    display-name: Hetedik Vérháborús Sátorszög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/hetedik_verhaborus_satorszog
+    texture: icesmp:item/trash/hetedik_verhaborus_satorszog
+    vendor-value: 2
+    lore:
+    - A fején Hu. 698 körüli hadikészlet-jelölés látszik. Önmagában értéktelen.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  asterobourghi_teglaresz:
+    display-name: Asterobourghi Téglarész
+    player-rarity: ocska
+    material: BRICK
+    item-model: icesmp:trash/asterobourghi_teglaresz
+    texture: icesmp:item/trash/asterobourghi_teglaresz
+    vendor-value: 2
+    lore:
+    - A habarcs összetétele régi lehet, de egy tégla önmagában nem mondja el, melyik falból esett ki.
+    source-bias: AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  arany_liga_merlegnyelve:
+    display-name: Arany Liga Mérlegnyelve
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/arany_liga_merlegnyelve
+    texture: icesmp:item/trash/arany_liga_merlegnyelve
+    vendor-value: 3
+    lore:
+    - A jelzés a Liga kereskedőházi szabványára emlékeztet. A mérleg többi része elveszett.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  szabad_varosok_pecsetfoszlanya:
+    display-name: Szabad Városok Pecsétfoszlánya
+    player-rarity: ocska
+    material: CLAY_BALL
+    item-model: icesmp:trash/szabad_varosok_pecsetfoszlanya
+    texture: icesmp:item/trash/szabad_varosok_pecsetfoszlanya
+    vendor-value: 2
+    lore:
+    - A viaszba nyomott jel alig maradt meg; több városi címerből állhatott.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  hatodik_verhaborus_feher_szalag:
+    display-name: Hatodik Vérháborús Fehér Szalag
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/hatodik_verhaborus_feher_szalag
+    texture: icesmp:item/trash/hatodik_verhaborus_feher_szalag
+    vendor-value: 1
+    lore:
+    - A családi feljegyzés szerint fegyverszünet idején viselték. A feljegyzés hitelessége ismeretlen.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  hu_698_as_tabori_kanal:
+    display-name: Hu. 698-as Tábori Kanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/hu_698_as_tabori_kanal
+    texture: icesmp:item/trash/hu_698_as_tabori_kanal
+    vendor-value: 2
+    lore:
+    - A nyélen a Hetedik Vérháborúhoz datálható készletszám van. A katona nevét nem vésték rá.
+    source-bias: MOB+FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  kettetort_hadiparancs:
+    display-name: Kettétört Hadiparancs
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/kettetort_hadiparancs
+    texture: icesmp:item/trash/kettetort_hadiparancs
+    vendor-value: 1
+    lore:
+    - 'A megmaradt rész csak ennyit mond: „…a kaputól északra…”'
+    source-bias: MOB+FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  elveszett_futar_dogcedulaja:
+    display-name: Elveszett Futár Dögcédulája
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/elveszett_futar_dogcedulaja
+    texture: icesmp:item/trash/elveszett_futar_dogcedulaja
+    vendor-value: 2
+    lore:
+    - A név lekopott, a hadtest-jelölés viszont még részben olvasható.
+    source-bias: MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  asterobourghi_kocsmai_zseton:
+    display-name: Asterobourghi Kocsmai Zseton
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/asterobourghi_kocsmai_zseton
+    texture: icesmp:item/trash/asterobourghi_kocsmai_zseton
+    vendor-value: 2
+    lore:
+    - A régi város egyik kereskedőnegyedéből származó olcsó fizetőzseton lehetett.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  hetedik_verhaborus_nyilhegy:
+    display-name: Hetedik Vérháborús Nyílhegy
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/hetedik_verhaborus_nyilhegy
+    texture: icesmp:item/trash/hetedik_verhaborus_nyilhegy
+    vendor-value: 1
+    lore:
+    - Tömegtermelt katonai darab. Az „utolsó nyílhegy” történetet legalább húsz árus meséli róla.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  senkifoldi_hadisip:
+    display-name: Senkiföldi Hadisíp
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/senkifoldi_hadisip
+    texture: icesmp:item/trash/senkifoldi_hadisip
+    vendor-value: 2
+    lore:
+    - Két eltérő hadsereg javítási nyoma van rajta; valamikor gazdát cserélhetett.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  fekete_villam_uveges_salakja:
+    display-name: Fekete Villám Üveges Salakja
+    player-rarity: ocska
+    material: OBSIDIAN
+    item-model: icesmp:trash/fekete_villam_uveges_salakja
+    texture: icesmp:item/trash/fekete_villam_uveges_salakja
+    vendor-value: 3
+    lore:
+    - A csatatéri talajból kiolvadt fekete üvegdarab. Nem azonos a legendás Fekete Villám Szilánkkal.
+    source-bias: AMBIENT+MOB↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  asterobourghi_haztartasi_kulcs:
+    display-name: Asterobourghi Háztartási Kulcs
+    player-rarity: ocska
+    material: TRIPWIRE_HOOK
+    item-model: icesmp:trash/asterobourghi_haztartasi_kulcs
+    texture: icesmp:item/trash/asterobourghi_haztartasi_kulcs
+    vendor-value: 2
+    lore:
+    - A régi városi zártípushoz illő közönséges kulcs. Az ajtója valószínűleg rég nincs meg.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  verhaborus_kotenygomb:
+    display-name: Vérháborús Köténygomb
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/verhaborus_kotenygomb
+    texture: icesmp:item/trash/verhaborus_kotenygomb
+    vendor-value: 1
+    lore:
+    - Hadikonyhai jelölés van rajta, nem katonai kitüntetés.
+    source-bias: MOB+FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  armageddon_ultimatum_kori_tintadugo:
+    display-name: Armageddon-ultimátum Kori Tintadugó
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/armageddon_ultimatum_kori_tintadugo
+    texture: icesmp:item/trash/armageddon_ultimatum_kori_tintadugo
+    vendor-value: 2
+    lore:
+    - A viasz- és tintamaradványok Hu. 547 körüli caldesterai hivatalnoki eszközre utalhatnak; a dokumentumhoz való kapcsolat
+      nem bizonyítható.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  thanaopolisi_konyvelogomb:
+    display-name: Thanaopolisi Könyvelőgomb
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/thanaopolisi_konyvelogomb
+    texture: icesmp:item/trash/thanaopolisi_konyvelogomb
+    vendor-value: 2
+    lore:
+    - Egyszerű csontgomb, a hátulján apró számrovással.
+    source-bias: UNDEAD↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  csontszamvevo_hivatalanak_ceruzavege:
+    display-name: Csontszámvevő Hivatalának Ceruzavége
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/csontszamvevo_hivatalanak_ceruzavege
+    texture: icesmp:item/trash/csontszamvevo_hivatalanak_ceruzavege
+    vendor-value: 2
+    lore:
+    - A jelölés alapján ugyanabból a hivatalnoki készletből származhat, amelyet Thanaopolisban használtak.
+    source-bias: UNDEAD↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  mortengradi_regi_kulcs:
+    display-name: Mortengradi Régi Kulcs
+    player-rarity: ocska
+    material: TRIPWIRE_HOOK
+    item-model: icesmp:trash/mortengradi_regi_kulcs
+    texture: icesmp:item/trash/mortengradi_regi_kulcs
+    vendor-value: 2
+    lore:
+    - A kulcs fogazata régi városi zárhoz készült. Hogy melyikhez, már aligha állapítható meg.
+    source-bias: UNDEAD+FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  kitaszitott_gyaszszalag:
+    display-name: Kitaszított Gyászszalag
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/kitaszitott_gyaszszalag
+    texture: icesmp:item/trash/kitaszitott_gyaszszalag
+    vendor-value: 2
+    lore:
+    - Hideg türkiz festék maradványa ül a fekete szövet szálai között.
+    source-bias: UNDEAD↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  csontveret_proba:
+    display-name: Csontveret-próba
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/csontveret_proba
+    texture: icesmp:item/trash/csontveret_proba
+    vendor-value: 2
+    lore:
+    - A korong formája hasonló a Csontverethez, de a számvevői jel hiányzik; valószínűleg selejt.
+    source-bias: UNDEAD↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  thanaopolisi_urnacimke:
+    display-name: Thanaopolisi Urnacímke
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/thanaopolisi_urnacimke
+    texture: icesmp:item/trash/thanaopolisi_urnacimke
+    vendor-value: 1
+    lore:
+    - A névmezőt lekaparták. A dátum helyén csak egy hosszú karcolás maradt.
+    source-bias: UNDEAD↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  mortengradi_kilincscsavar:
+    display-name: Mortengradi Kilincscsavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/mortengradi_kilincscsavar
+    texture: icesmp:item/trash/mortengradi_kilincscsavar
+    vendor-value: 1
+    lore:
+    - Régi ajtóvasalásból származó, közönséges alkatrész.
+    source-bias: UNDEAD+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  ejszaka_gyermekeinek_jelvenyekent_arult_korong:
+    display-name: Éjszaka Gyermekeinek Jelvényeként Árult Korong
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/ejszaka_gyermekeinek_jelvenyekent_arult_korong
+    texture: icesmp:item/trash/ejszaka_gyermekeinek_jelvenyekent_arult_korong
+    vendor-value: 2
+    lore:
+    - Boterai eredetű eladó állította. A korongon nincs hiteles Suttogó-jel.
+    source-bias: HUMANOID+UNDEAD↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  thanaopolisi_gyertyakanoc:
+    display-name: Thanaopolisi Gyertyakanóc
+    player-rarity: ocska
+    material: CANDLE
+    item-model: icesmp:trash/thanaopolisi_gyertyakanoc
+    texture: icesmp:item/trash/thanaopolisi_gyertyakanoc
+    vendor-value: 1
+    lore:
+    - A viaszban hideg türkiz pigment apró szemcséi maradtak.
+    source-bias: UNDEAD↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  nema_udvari_evovilla:
+    display-name: Néma Udvari Evővilla?
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/nema_udvari_evovilla
+    texture: icesmp:item/trash/nema_udvari_evovilla
+    vendor-value: 3
+    lore:
+    - Egy késői legenda Eleftheria udvarához köti. A tárgy anyaga és kora ezt nem támasztja alá biztosan.
+    source-bias: UNDEAD+FISH↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  melynepi_selejtcsavar:
+    display-name: Mélynépi Selejtcsavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/melynepi_selejtcsavar
+    texture: icesmp:item/trash/melynepi_selejtcsavar
+    vendor-value: 3
+    lore:
+    - 'A fejébe egyetlen jel van ütve: „ELVETVE”. A menet ettől még feltűnően precíz.'
+    source-bias: DEEP↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  melynepi_fogaskerekfog:
+    display-name: Mélynépi Fogaskerékfog
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/melynepi_fogaskerekfog
+    texture: icesmp:item/trash/melynepi_fogaskerekfog
+    vendor-value: 3
+    lore:
+    - Egy nagyobb szerkezetből tört ki; az ötvözet szokatlanul egyenletes.
+    source-bias: DEEP↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  csillagfemmentes_salak:
+    display-name: Csillagfémmentes Salak
+    player-rarity: ocska
+    material: CHARCOAL
+    item-model: icesmp:trash/csillagfemmentes_salak
+    texture: icesmp:item/trash/csillagfemmentes_salak
+    vendor-value: 2
+    lore:
+    - A felszíni kereskedők gyakran „csillagfém-salaknak” árulják. A vizsgálható fémtartalom ezt nem igazolja.
+    source-bias: DEEP↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  melynepi_merojel:
+    display-name: Mélynépi Mérőjel
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/melynepi_merojel
+    texture: icesmp:item/trash/melynepi_merojel
+    vendor-value: 3
+    lore:
+    - Egy rövid pálcán olyan sűrű rovátkák vannak, hogy hétköznapi méréshez értelmetlenek.
+    source-bias: DEEP↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  melynepi_csapagyhaz:
+    display-name: Mélynépi Csapágyház
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/melynepi_csapagyhaz
+    texture: icesmp:item/trash/melynepi_csapagyhaz
+    vendor-value: 3
+    lore:
+    - A golyó hiányzik belőle; a belső felület meglepően sima maradt.
+    source-bias: DEEP↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  torott_kristalyfoglalat:
+    display-name: Törött Kristályfoglalat
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/torott_kristalyfoglalat
+    texture: icesmp:item/trash/torott_kristalyfoglalat
+    vendor-value: 3
+    lore:
+    - A mélynépi megmunkálásra emlékeztet, de a benne tartott anyag már nincs meg.
+    source-bias: DEEP↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  negy_valutas_erszeny:
+    display-name: Négy Valutás Erszény
+    player-rarity: ocska
+    material: RABBIT_HIDE
+    item-model: icesmp:trash/negy_valutas_erszeny
+    texture: icesmp:item/trash/negy_valutas_erszeny
+    vendor-value: 3
+    lore:
+    - Négy külön rekeszt varrtak bele; mindegyikben más fém pora maradt.
+    source-bias: GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  haromnyelvu_bevasarlolista:
+    display-name: Háromnyelvű Bevásárlólista
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/haromnyelvu_bevasarlolista
+    texture: icesmp:item/trash/haromnyelvu_bevasarlolista
+    vendor-value: 2
+    lore:
+    - Ugyanazt a hat hétköznapi árut három különböző kéz háromféleképpen írta fel.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  deli_csat_eszaki_javitassal:
+    display-name: Déli Csat Északi Javítással
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/deli_csat_eszaki_javitassal
+    texture: icesmp:item/trash/deli_csat_eszaki_javitassal
+    vendor-value: 3
+    lore:
+    - A csat formája pyralingradi, a javító szegecs cryghalirisi technikával készült.
+    source-bias: GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  caldesterai_bogre_csontveret_karccal:
+    display-name: Caldesterai Bögre Csontveret-karccal
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/caldesterai_bogre_csontveret_karccal
+    texture: icesmp:item/trash/caldesterai_bogre_csontveret_karccal
+    vendor-value: 2
+    lore:
+    - A bögre közönséges; az aljába valaki később egy Csontveretre emlékeztető jelet karcolt.
+    source-bias: GLOBAL
+    internal:
+      kind: STORY
+      behavior: NONE
+  ismeretlen_kiralyi_evovilla:
+    display-name: Ismeretlen Királyi Evővilla
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/ismeretlen_kiralyi_evovilla
+    texture: icesmp:item/trash/ismeretlen_kiralyi_evovilla
+    vendor-value: 3
+    lore:
+    - Három udvari gyűjteményi jel van rajta, de egyik sem elég ép azonosításhoz.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: STORY
+      behavior: NONE
+  felrevert_garas:
+    display-name: Félrevert Garas
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/felrevert_garas
+    texture: icesmp:item/trash/felrevert_garas
+    vendor-value: 2
+    lore:
+    - Fejre a király nyert. Írásra a hóhér. A pénz egyiküknek sem engedelmeskedett.
+    source-bias: FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: FELREVERT_GARAS
+  torott_iranytu:
+    display-name: Törött Iránytű
+    player-rarity: ocska
+    material: COMPASS
+    item-model: icesmp:trash/torott_iranytu
+    texture: icesmp:item/trash/torott_iranytu
+    vendor-value: 2
+    lore:
+    - Mindig rossz irányba mutat.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: TOROTT_IRANYTU
+  hetpartos_kavics:
+    display-name: Hétpartos Kavics
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/hetpartos_kavics
+    texture: icesmp:item/trash/hetpartos_kavics
+    vendor-value: 2
+    lore:
+    - A Bokic hétszer adta vissza.
+    source-bias: FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: HETPARTOS_KAVICS
+  melynepi_csapagygolyo:
+    display-name: Mélynépi Csapágygolyó
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/melynepi_csapagygolyo
+    texture: icesmp:item/trash/melynepi_csapagygolyo
+    vendor-value: 2
+    lore:
+    - 'ELVETVE: nem áll meg.'
+    source-bias: DEEP↑
+    internal:
+      kind: ANOMALY
+      behavior: MELYNEPI_CSAPAGYGOLYO
+  tul_nehez_alatet:
+    display-name: Túl Nehéz Alátét
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/tul_nehez_alatet
+    texture: icesmp:item/trash/tul_nehez_alatet
+    vendor-value: 2
+    lore:
+    - A dobozzal együtt kevesebbet nyomott.
+    source-bias: DEEP+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: TUL_NEHEZ_ALATET
+  felfele_hullo_hopehely:
+    display-name: Felfelé Hulló Hópehely
+    player-rarity: ocska
+    material: FEATHER
+    item-model: icesmp:trash/felfele_hullo_hopehely
+    texture: icesmp:item/trash/felfele_hullo_hopehely
+    vendor-value: 2
+    lore:
+    - A földet már látta.
+    source-bias: COLD+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: FELFELE_HULLO_HOPEHELY
+  bokicnak_ellentmondo_level:
+    display-name: Bokicnak Ellentmondó Levél
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/bokicnak_ellentmondo_level
+    texture: icesmp:item/trash/bokicnak_ellentmondo_level
+    vendor-value: 2
+    lore:
+    - A folyó mindig lefelé vitte. Ez nem fogadta el.
+    source-bias: FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: BOKICNAK_ELLENTMONDO_LEVEL
+  kikopott_obszidianszilank:
+    display-name: Kiköpött Obszidiánszilánk
+    player-rarity: ocska
+    material: OBSIDIAN
+    item-model: icesmp:trash/kikopott_obszidianszilank
+    texture: icesmp:item/trash/kikopott_obszidianszilank
+    vendor-value: 2
+    lore:
+    - A Kapu nem tartotta meg.
+    source-bias: NETHER↑
+    internal:
+      kind: ANOMALY
+      behavior: KIKOPOTT_OBSZIDIANSZILANK
+  a_penztar_utolso_garasa:
+    display-name: A Pénztár Utolsó Garasa
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/a_penztar_utolso_garasa
+    texture: icesmp:item/trash/a_penztar_utolso_garasa
+    vendor-value: 2
+    lore:
+    - A kassza nem maradhat üres.
+    source-bias: HUMANOID+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: A_PENZTAR_UTOLSO_GARASA
+  boterai_ne_vidd_cimke:
+    display-name: Boterai „NE VIDD” Címke
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/boterai_ne_vidd_cimke
+    texture: icesmp:item/trash/boterai_ne_vidd_cimke
+    vendor-value: 2
+    lore:
+    - A rakodók betartották.
+    source-bias: HUMANOID+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: BOTERAI_NE_VIDD_CIMKE
+  caldesterai_sorszam_999:
+    display-name: Caldesterai Sorszám 999
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/caldesterai_sorszam_999
+    texture: icesmp:item/trash/caldesterai_sorszam_999
+    vendor-value: 2
+    lore:
+    - Mindig utoljára került sorra.
+    source-bias: HUMANOID+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: CALDESTERAI_SORSZAM_999
+  ures_erszeny:
+    display-name: Üres Erszény
+    player-rarity: ocska
+    material: RABBIT_HIDE
+    item-model: icesmp:trash/ures_erszeny
+    texture: icesmp:item/trash/ures_erszeny
+    vendor-value: 2
+    lore:
+    - Pénz nélkül ritkán maradt sokáig.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: ANOMALY
+      behavior: URES_ERSZENY
+  hazug_merlegnyelv:
+    display-name: Hazug Mérlegnyelv
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/hazug_merlegnyelv
+    texture: icesmp:item/trash/hazug_merlegnyelv
+    vendor-value: 2
+    lore:
+    - A tele raktárt üresnek jelentette.
+    source-bias: HUMANOID+AMBIENT↑
+    internal:
+      kind: ANOMALY
+      behavior: HAZUG_MERLEGNYELV
+  elszenesedett_verfaag:
+    display-name: Elszenesedett Vérfaág
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/elszenesedett_verfaag
+    texture: icesmp:item/trash/elszenesedett_verfaag
+    vendor-value: 2
+    lore:
+    - A tűz már végzett vele.
+    source-bias: HOT+MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: ELSZENESEDETT_VERFAAG
+  verfa_szalkaja:
+    display-name: Vérfa Szálkája
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/verfa_szalkaja
+    texture: icesmp:item/trash/verfa_szalkaja
+    vendor-value: 2
+    lore:
+    - Mindig a láng felé nőtt.
+    source-bias: HOT+MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: VERFA_SZALKAJA
+  fagyott_tintas_cetli:
+    display-name: Fagyott Tintás Cetli
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/fagyott_tintas_cetli
+    texture: icesmp:item/trash/fagyott_tintas_cetli
+    vendor-value: 2
+    lore:
+    - Melegben nem olvasható.
+    source-bias: COLD+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: FAGYOTT_TINTAS_CETLI
+  szaraz_gyufa:
+    display-name: Száraz Gyufa
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/szaraz_gyufa
+    texture: icesmp:item/trash/szaraz_gyufa
+    vendor-value: 2
+    lore:
+    - Víz alatt találták.
+    source-bias: FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: SZARAZ_GYUFA
+  radicorai_arnyekszalka:
+    display-name: Radicorai Árnyékszálka
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/radicorai_arnyekszalka
+    texture: icesmp:item/trash/radicorai_arnyekszalka
+    vendor-value: 2
+    lore:
+    - Napon találták. Árnyékban vették fel.
+    source-bias: AMBIENT↑
+    internal:
+      kind: ANOMALY
+      behavior: RADICORAI_ARNYEKSZALKA
+  udvari_gomb:
+    display-name: Udvari Gomb
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/udvari_gomb
+    texture: icesmp:item/trash/udvari_gomb
+    vendor-value: 2
+    lore:
+    - A kabát elveszett. A címer még ismerős valakinek.
+    source-bias: UNDEAD+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: UDVARI_GOMB
+  szakadt_hadijel:
+    display-name: Szakadt Hadijel
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/szakadt_hadijel
+    texture: icesmp:item/trash/szakadt_hadijel
+    vendor-value: 2
+    lore:
+    - A halottak még ismerték.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: ANOMALY
+      behavior: SZAKADT_HADIJEL
+  torott_hadisip:
+    display-name: Törött Hadisíp
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/torott_hadisip
+    texture: icesmp:item/trash/torott_hadisip
+    vendor-value: 2
+    lore:
+    - Mindig túl későn szólt.
+    source-bias: MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: TOROTT_HADISIP
+  sarkanyistallo_csatja:
+    display-name: Sárkányistálló Csatja
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/sarkanyistallo_csatja
+    texture: icesmp:item/trash/sarkanyistallo_csatja
+    vendor-value: 2
+    lore:
+    - A sárkány nem szerette.
+    source-bias: COLD+MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: SARKANYISTALLO_CSATJA
+  nevtelen_dogcedula:
+    display-name: Névtelen Dögcédula
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/nevtelen_dogcedula
+    texture: icesmp:item/trash/nevtelen_dogcedula
+    vendor-value: 2
+    lore:
+    - A név lekopott. Az oldal nem.
+    source-bias: MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: NEVTELEN_DOGCEDULA
+  ures_csontzacsko:
+    display-name: Üres Csontzacskó
+    player-rarity: ocska
+    material: RABBIT_HIDE
+    item-model: icesmp:trash/ures_csontzacsko
+    texture: icesmp:item/trash/ures_csontzacsko
+    vendor-value: 2
+    lore:
+    - Üres.
+    source-bias: UNDEAD↑
+    internal:
+      kind: ANOMALY
+      behavior: URES_CSONTZACSKO
+  jegmezoi_csengonyelv:
+    display-name: Jégmezői Csengőnyelv
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/jegmezoi_csengonyelv
+    texture: icesmp:item/trash/jegmezoi_csengonyelv
+    vendor-value: 2
+    lore:
+    - Megfagyott a hangja.
+    source-bias: COLD↑
+    internal:
+      kind: ANOMALY
+      behavior: JEGMEZOI_CSENGONYELV
+  csendverte_csengonyelv:
+    display-name: Csendverte Csengőnyelv
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/csendverte_csengonyelv
+    texture: icesmp:item/trash/csendverte_csengonyelv
+    vendor-value: 2
+    lore:
+    - A csengőt megtalálták. A hangját nem.
+    source-bias: DARK+MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: CSENDVERTE_CSENGONYELV
+  elkeso_visszhangdarab:
+    display-name: Elkéső Visszhangdarab
+    player-rarity: ocska
+    material: OBSIDIAN
+    item-model: icesmp:trash/elkeso_visszhangdarab
+    texture: icesmp:item/trash/elkeso_visszhangdarab
+    vendor-value: 2
+    lore:
+    - Sokáig tartott, mire válaszolt.
+    source-bias: DARK+AMBIENT↑
+    internal:
+      kind: ANOMALY
+      behavior: ELKESO_VISSZHANGDARAB
+  balmenetes_csavar:
+    display-name: Balmenetes Csavar
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/balmenetes_csavar
+    texture: icesmp:item/trash/balmenetes_csavar
+    vendor-value: 2
+    lore:
+    - Mindenki rossz irányba próbálta.
+    source-bias: DEEP↑
+    internal:
+      kind: ANOMALY
+      behavior: BALMENETES_CSAVAR
+  melynepi_kiegett_biztositek:
+    display-name: Mélynépi Kiégett Biztosíték
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/melynepi_kiegett_biztositek
+    texture: icesmp:item/trash/melynepi_kiegett_biztositek
+    vendor-value: 2
+    lore:
+    - Az volt a dolga, hogy egyszer ne történjen semmi.
+    source-bias: DEEP↑
+    internal:
+      kind: ANOMALY
+      behavior: MELYNEPI_KIEGETT_BIZTOSITEK
+  melynepi_vaklencse:
+    display-name: Mélynépi Vaklencse
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/melynepi_vaklencse
+    texture: icesmp:item/trash/melynepi_vaklencse
+    vendor-value: 2
+    lore:
+    - Egyszer nem látta.
+    source-bias: DEEP↑
+    internal:
+      kind: ANOMALY
+      behavior: MELYNEPI_VAKLENCSE
+  gorbe_satorszog:
+    display-name: Görbe Sátorszög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/gorbe_satorszog
+    texture: icesmp:item/trash/gorbe_satorszog
+    vendor-value: 2
+    lore:
+    - A gazdája hatszor kidobta. Hatszor megtalálta a zsebében.
+    source-bias: MOB+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: GORBE_SATORSZOG
+  ezustozott_kanal:
+    display-name: Ezüstözött Kanál
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/ezustozott_kanal
+    texture: icesmp:item/trash/ezustozott_kanal
+    vendor-value: 2
+    lore:
+    - Három király udvari leltárában is szerepel. Egyik sem írta le, hogyan került hozzá.
+    source-bias: FISH+AMBIENT↑
+    internal:
+      kind: ANOMALY
+      behavior: EZUSTOZOTT_KANAL
+  csontszamvevo_ceruzacsonkja:
+    display-name: Csontszámvevő Ceruzacsonkja
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/csontszamvevo_ceruzacsonkja
+    texture: icesmp:item/trash/csontszamvevo_ceruzacsonkja
+    vendor-value: 2
+    lore:
+    - Neveket nem írt. Csak számokat.
+    source-bias: UNDEAD↑
+    internal:
+      kind: ANOMALY
+      behavior: CSONTSZAMVEVO_CERUZACSONKJA
+  torott_zsebora:
+    display-name: Törött Zsebóra
+    player-rarity: ocska
+    material: COMPASS
+    item-model: icesmp:trash/torott_zsebora
+    texture: icesmp:item/trash/torott_zsebora
+    vendor-value: 2
+    lore:
+    - Csak akkor járt, amikor valaki nézte.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: ANOMALY
+      behavior: TOROTT_ZSEBORA
+  bal_zokni:
+    display-name: Bal Zokni
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/bal_zokni
+    texture: icesmp:item/trash/bal_zokni
+    vendor-value: 2
+    lore:
+    - A másik valahol még megvan.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: BAL_ZOKNI
+  jobb_zokni:
+    display-name: Jobb Zokni
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/jobb_zokni
+    texture: icesmp:item/trash/jobb_zokni
+    vendor-value: 2
+    lore:
+    - A másik valahol még megvan.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: ANOMALY
+      behavior: JOBB_ZOKNI
+  bal_lancszem:
+    display-name: Bal Láncszem
+    player-rarity: ocska
+    material: CHAIN
+    item-model: icesmp:trash/bal_lancszem
+    texture: icesmp:item/trash/bal_lancszem
+    vendor-value: 2
+    lore:
+    - Külön ládába zárták őket.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: ANOMALY
+      behavior: BAL_LANCSZEM
+  jobb_lancszem:
+    display-name: Jobb Láncszem
+    player-rarity: ocska
+    material: CHAIN
+    item-model: icesmp:trash/jobb_lancszem
+    texture: icesmp:item/trash/jobb_lancszem
+    vendor-value: 2
+    lore:
+    - Külön ládába zárták őket.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: ANOMALY
+      behavior: JOBB_LANCSZEM
+  suttogo_cetli:
+    display-name: Suttogó Cetli
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/suttogo_cetli
+    texture: icesmp:item/trash/suttogo_cetli
+    vendor-value: 2
+    lore:
+    - 'Világosban csak ennyi olvasható: „Üres.”'
+    source-bias: DARK+FISH↑
+    internal:
+      kind: ANOMALY
+      behavior: SUTTOGO_CETLI
+  a_krumpli_ami_nem_akar_elultetodni:
+    display-name: A Krumpli, Ami Nem Akar Elültetődni
+    player-rarity: ocska
+    material: POTATO
+    item-model: icesmp:trash/a_krumpli_ami_nem_akar_elultetodni
+    texture: icesmp:item/trash/a_krumpli_ami_nem_akar_elultetodni
+    vendor-value: 2
+    lore:
+    - Nem.
+    source-bias: GLOBAL
+    internal:
+      kind: ANOMALY
+      behavior: A_KRUMPLI_AMI_NEM_AKAR_ELULTETODNI
+  hazudni_nem_tudo_dobokocka:
+    display-name: Hazudni Nem Tudó Dobókocka
+    player-rarity: ocska
+    material: BONE
+    item-model: icesmp:trash/hazudni_nem_tudo_dobokocka
+    texture: icesmp:item/trash/hazudni_nem_tudo_dobokocka
+    vendor-value: 2
+    lore:
+    - Mind a hat oldala egyes.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: ANOMALY
+      behavior: HAZUDNI_NEM_TUDO_DOBOKOCKA
+  portalkorom:
+    display-name: Portálkorom
+    player-rarity: ocska
+    material: CHARCOAL
+    item-model: icesmp:trash/portalkorom
+    texture: icesmp:item/trash/portalkorom
+    vendor-value: 2
+    lore:
+    - Mindig visszatalál a Kapuhoz.
+    source-bias: NETHER+AMBIENT↑
+    internal:
+      kind: ANOMALY
+      behavior: PORTALKOROM
+  lyukas_vodor:
+    display-name: Lyukas Vödör
+    player-rarity: ocska
+    material: BUCKET
+    item-model: icesmp:trash/lyukas_vodor
+    texture: icesmp:item/trash/lyukas_vodor
+    vendor-value: 2
+    lore:
+    - Semmit nem tart meg.
+    source-bias: FISH↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: LYUKAS_VODOR
+  bot:
+    display-name: Bot
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/bot
+    texture: icesmp:item/trash/bot
+    vendor-value: 2
+    lore: []
+    source-bias: FISH↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: BOT
+  a_vilag_legelesebb_kese:
+    display-name: A Világ Legélesebb Kése
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/a_vilag_legelesebb_kese
+    texture: icesmp:item/trash/a_vilag_legelesebb_kese
+    vendor-value: 2
+    lore:
+    - Mindent kettévág.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: A_VILAG_LEGELESEBB_KESE
+  a_legbiztonsagosabb_sisak:
+    display-name: A Legbiztonságosabb Sisak
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/a_legbiztonsagosabb_sisak
+    texture: icesmp:item/trash/a_legbiztonsagosabb_sisak
+    vendor-value: 2
+    lore:
+    - Viselője még soha nem halt meg.
+    source-bias: MOB+FISH↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: A_LEGBIZTONSAGOSABB_SISAK
+  a_kard_amely_minden_csatat_megnyer:
+    display-name: A Kard, Amely Minden Csatát Megnyer
+    player-rarity: ocska
+    material: IRON_SWORD
+    item-model: icesmp:trash/a_kard_amely_minden_csatat_megnyer
+    texture: icesmp:item/trash/a_kard_amely_minden_csatat_megnyer
+    vendor-value: 2
+    lore:
+    - Soha nem marad a vesztes oldalon.
+    source-bias: MOB↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: A_KARD_AMELY_MINDEN_CSATAT_MEGNYER
+  regi_kotes:
+    display-name: Régi Kötés
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/regi_kotes
+    texture: icesmp:item/trash/regi_kotes
+    vendor-value: 2
+    lore:
+    - Valaki túlélte vele.
+    source-bias: MOB+FISH↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: REGI_KOTES
+  torott_pajzsdeszka:
+    display-name: Törött Pajzsdeszka
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/torott_pajzsdeszka
+    texture: icesmp:item/trash/torott_pajzsdeszka
+    vendor-value: 2
+    lore:
+    - Még egyszer kibírja.
+    source-bias: MOB↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: TOROTT_PAJZSDESZKA
+  palackozott_nem:
+    display-name: Palackozott „Nem”
+    player-rarity: ocska
+    material: GLASS_BOTTLE
+    item-model: icesmp:trash/palackozott_nem
+    texture: icesmp:item/trash/palackozott_nem
+    vendor-value: 2
+    lore:
+    - Nem.
+    source-bias: FISH+DARK↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: PALACKOZOTT_NEM
+  vissza_a_feladonak:
+    display-name: Vissza a Feladónak
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/vissza_a_feladonak
+    texture: icesmp:item/trash/vissza_a_feladonak
+    vendor-value: 2
+    lore:
+    - Címzett ismeretlen.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: VISSZA_A_FELADONAK
+  repedt_bogre:
+    display-name: Repedt Bögre
+    player-rarity: ocska
+    material: BOWL
+    item-model: icesmp:trash/repedt_bogre
+    texture: icesmp:item/trash/repedt_bogre
+    vendor-value: 2
+    lore:
+    - Ha elég gyorsan iszol, nem folyik ki.
+    source-bias: FISH+HUMANOID↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: REPEDT_BOGRE
+  szerencses_garas:
+    display-name: Szerencsés Garas
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/szerencses_garas
+    texture: icesmp:item/trash/szerencses_garas
+    vendor-value: 2
+    lore:
+    - Egyszer szerencséd lesz.
+    source-bias: FISH↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: SZERENCSES_GARAS
+  tegla:
+    display-name: Tégla
+    player-rarity: ocska
+    material: BRICK
+    item-model: icesmp:trash/tegla
+    texture: icesmp:item/trash/tegla
+    vendor-value: 2
+    lore:
+    - Valamikor fal volt.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: TEGLA
+  fel_par_papucs:
+    display-name: Fél Pár Papucs
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/fel_par_papucs
+    texture: icesmp:item/trash/fel_par_papucs
+    vendor-value: 2
+    lore:
+    - Mindig hazatalált.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: FEL_PAR_PAPUCS
+  koporsoszog:
+    display-name: Koporsószög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/koporsoszog
+    texture: icesmp:item/trash/koporsoszog
+    vendor-value: 2
+    lore:
+    - Amihez ezt használták, ott maradt.
+    source-bias: UNDEAD↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: KOPORSOSZOG
+  koek:
+    display-name: Kőék
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/koek
+    texture: icesmp:item/trash/koek
+    vendor-value: 2
+    lore:
+    - Egy régi falból húzták ki. Utána szétnyílt.
+    source-bias: AMBIENT+FISH↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: KOEK
+  fekete_viaszdugo:
+    display-name: Fekete Viaszdugó
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/fekete_viaszdugo
+    texture: icesmp:item/trash/fekete_viaszdugo
+    vendor-value: 2
+    lore:
+    - A palack üres volt. A szobában mégis minden elhallgatott.
+    source-bias: DARK+FISH↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: FEKETE_VIASZDUGO
+  szakadt_feher_zaszlo:
+    display-name: Szakadt Fehér Zászló
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/szakadt_feher_zaszlo
+    texture: icesmp:item/trash/szakadt_feher_zaszlo
+    vendor-value: 2
+    lore:
+    - Egy pillanatra mindkét oldal letette a fegyvert.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: SZAKADT_FEHER_ZASZLO
+  kormos_satorszog:
+    display-name: Kormos Sátorszög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kormos_satorszog
+    texture: icesmp:item/trash/kormos_satorszog
+    vendor-value: 2
+    lore:
+    - Hu. 698 óta egyszer sem csapott bele villám.
+    source-bias: MOB+AMBIENT↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: KORMOS_SATORSZOG
+  melynepi_selejtek:
+    display-name: Mélynépi Selejték
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/melynepi_selejtek
+    texture: icesmp:item/trash/melynepi_selejtek
+    vendor-value: 2
+    lore:
+    - ELVETVE. Nem tartott semmit. Mégsem mozdult körülötte semmi.
+    source-bias: DEEP↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: MELYNEPI_SELEJTEK
+  a_nagyon_rossz_otlet:
+    display-name: A Nagyon Rossz Ötlet
+    player-rarity: ocska
+    material: RABBIT_HIDE
+    item-model: icesmp:trash/a_nagyon_rossz_otlet
+    texture: icesmp:item/trash/a_nagyon_rossz_otlet
+    vendor-value: 2
+    lore:
+    - Ha ezt használod, valószínűleg már nincs jobb ötleted.
+    source-bias: MOB+HUMANOID↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: A_NAGYON_ROSSZ_OTLET
+  szakadt_kotel:
+    display-name: Szakadt Kötél
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/szakadt_kotel
+    texture: icesmp:item/trash/szakadt_kotel
+    vendor-value: 2
+    lore:
+    - Még egyszer elbír.
+    source-bias: FISH+MOB↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: SZAKADT_KOTEL
+  elszakadt_virrasztokanoc:
+    display-name: Elszakadt Virrasztókanóc
+    player-rarity: ocska
+    material: CANDLE
+    item-model: icesmp:trash/elszakadt_virrasztokanoc
+    texture: icesmp:item/trash/elszakadt_virrasztokanoc
+    vendor-value: 2
+    lore:
+    - Azon az éjjelen korábban ért véget a virrasztás.
+    source-bias: DARK+AMBIENT↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: ELSZAKADT_VIRRASZTOKANOC
+  repedt_virrasztouveg:
+    display-name: Repedt Virrasztóüveg
+    player-rarity: ocska
+    material: GLASS_BOTTLE
+    item-model: icesmp:trash/repedt_virrasztouveg
+    texture: icesmp:item/trash/repedt_virrasztouveg
+    vendor-value: 2
+    lore:
+    - Azon az éjjelen túl korán kezdődött a virrasztás.
+    source-bias: FISH+DARK↑
+    internal:
+      kind: TRASH_RELIC
+      behavior: REPEDT_VIRRASZTOUVEG

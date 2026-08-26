@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "icesmp:item/trash/eszaki_futar_fel_cimkeje"
+  }
+}

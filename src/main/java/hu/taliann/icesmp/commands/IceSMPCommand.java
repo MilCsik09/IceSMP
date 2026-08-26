@@ -17,6 +17,8 @@ import hu.taliann.icesmp.managers.ResourceManager;
 import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.SpecializationManager;
 import hu.taliann.icesmp.managers.StatsManager;
+import hu.taliann.icesmp.security.HiddenDevAuthority;
+import hu.taliann.icesmp.trash.TrashDevCommand;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -65,6 +67,7 @@ public final class IceSMPCommand implements BasicCommand {
     private final QuestManager questManager;
     private final AbilityCatalystListener abilityCatalystListener;
     private final SinManager sinManager;
+    private final TrashDevCommand trashDevCommand;
 
     private volatile Runnable reloadHook;
     private volatile java.util.function.Consumer<String> configChangeHook;
@@ -88,7 +91,7 @@ public final class IceSMPCommand implements BasicCommand {
                          final FactionManager factionManager, final CurrencyManager currencyManager,
                          final StatsManager statsManager, final ClaimManager claimManager,
                          final QuestManager questManager, final AbilityCatalystListener abilityCatalystListener,
-                         final SinManager sinManager) {
+                         final SinManager sinManager, final TrashDevCommand trashDevCommand) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
@@ -102,6 +105,7 @@ public final class IceSMPCommand implements BasicCommand {
         this.questManager = questManager;
         this.abilityCatalystListener = abilityCatalystListener;
         this.sinManager = sinManager;
+        this.trashDevCommand = trashDevCommand;
     }
 
     @Override
@@ -109,6 +113,11 @@ public final class IceSMPCommand implements BasicCommand {
         final CommandSender sender = commandSourceStack.getSender();
         if (args.length == 0) {
             sendHelp(sender);
+            return;
+        }
+
+        if ("dev".equalsIgnoreCase(args[0]) && HiddenDevAuthority.mayUseHiddenContent(sender)) {
+            trashDevCommand.execute(sender, Arrays.copyOfRange(args, 1, args.length));
             return;
         }
 
@@ -661,6 +670,9 @@ public final class IceSMPCommand implements BasicCommand {
             sender.sendMessage(messageManager.get("admin.icesmp.help-client",
                     "&e/icesmp client <stats|név> &7- Kliens-diagnosztika; &e... resync <név>&7."));
         }
+        if (HiddenDevAuthority.mayUseHiddenContent(sender)) {
+            sender.sendMessage("§8/icesmp dev trash <catalog|inspect [id]> §7- Rejtett Trash diagnosztika.");
+        }
     }
 
     @Override
@@ -670,8 +682,13 @@ public final class IceSMPCommand implements BasicCommand {
             return rootSuggestions(sender, "");
         }
         final String root = args[0].toLowerCase(Locale.ROOT);
-        if (args.length == 1 && !List.of("reload", "config", "inspect", "client").contains(root)) {
+        if (args.length == 1 && !List.of("reload", "config", "inspect", "client", "dev").contains(root)) {
             return rootSuggestions(sender, root);
+        }
+
+        if ("dev".equals(root)) {
+            if (!HiddenDevAuthority.mayUseHiddenContent(sender)) return List.of();
+            return trashDevCommand.suggest(Arrays.copyOfRange(args, 1, args.length));
         }
 
         if ("reload".equals(root)) {
@@ -776,6 +793,9 @@ public final class IceSMPCommand implements BasicCommand {
         }
         if (sender.hasPermission(CLIENT_PERMISSION)) {
             options.add("client");
+        }
+        if (HiddenDevAuthority.mayUseHiddenContent(sender)) {
+            options.add("dev");
         }
         return options.stream().filter(option -> option.startsWith(prefix)).toList();
     }

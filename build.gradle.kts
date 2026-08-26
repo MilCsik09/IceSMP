@@ -70,6 +70,21 @@ val auditEquipmentAssets by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_equipment_assets.py")
 }
 
+val trashSpriteAssetAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates all 330 AI-authored Trash sprites and modern item models without writing."
+    inputs.files(
+        "scripts/process_trash_sprite_sheets.py",
+        "dev-assets/trash/source/manifest.json",
+        "src/main/resources/content/trash/catalog.yml",
+    )
+    inputs.dir(layout.projectDirectory.dir("dev-assets/trash/source"))
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/items/trash"))
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/models/item/trash"))
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/textures/item/trash"))
+    commandLine(pythonCommand, "scripts/process_trash_sprite_sheets.py", "--check", "--require-complete")
+}
+
 val progressionBalanceRegressionTest by tasks.registering(Exec::class) {
     group = "verification"
     description = "Runs the Itemization/Mob 2.0 economy, Monte Carlo and bounded-load gate."
@@ -1016,10 +1031,15 @@ val questItemContentIntegrityRegressionTest = registerRegression(
     "questItemContentIntegrityRegressionTest",
     "Runs guest reward, quest preview, capstone, profession, daily, item and boss identity regressions.",
     "hu.taliann.icesmp.quest.QuestItemContentIntegrityRegressionSuite")
+val trashCatalogRegressionTest = registerRegression(
+    "trashCatalogRegressionTest",
+    "Runs the 330-identity Trash catalog, secrecy, factory and hidden DEV authority gates.",
+    "hu.taliann.icesmp.trash.TrashCatalogRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
     dependsOn(auditEquipmentAssets)
+    dependsOn(trashSpriteAssetAudit)
     dependsOn(validateIceSmpHudPackage)
     dependsOn(progressionBalanceRegressionTest)
     dependsOn(equipment2ReportRegressionTest)
@@ -1038,6 +1058,7 @@ tasks.check {
         configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
+        trashCatalogRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,

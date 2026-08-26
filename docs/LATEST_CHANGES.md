@@ -1,5 +1,9 @@
 # Mi változott a július 12-i szerververzió óta?
 
+- Az Ócska leletek Phase A alaprétege 330 stable identityt, szigorú restartkori
+  katalógusvalidációt, stackelhető item factoryt és ugyanennyi saját AI-generált
+  64×64 sprite-ot ad. Loot-, régészeti, felismerési és relikvia-mechanika még nincs
+  bekapcsolva; a rejtett belső besorolás normál játékos/admin felületre nem kerülhet.
 - A gameplay-definíciók egyetlen kézzel authorolt `content/**` fába kerültek;
   a korábbi három expansion overlay és a gameplayt író advancement/profession
   generátorok megszűntek. A megmaradt tooling csak validál, evidence/reportot
