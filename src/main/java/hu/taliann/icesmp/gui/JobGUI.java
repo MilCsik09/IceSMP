@@ -1,12 +1,10 @@
 package hu.taliann.icesmp.gui;
 
-import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.items.CatalystItemFactory;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.JobManager;
 import hu.taliann.icesmp.utils.MessageManager;
-import hu.taliann.icesmp.utils.ClassUiAssets;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -16,75 +14,129 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
 import java.util.List;
 
-/** Character class selector with permanent-choice affordances. */
+@SuppressWarnings("deprecation")
 public final class JobGUI {
 
-    public static final int SIZE = 54;
-    public static final int BACK_SLOT = 49;
+    private static final int SIZE = 54;
+    private static final int BACK_SLOT = 49;
+    private static final int CATALYST_SLOT = 51;
+    private static final int SKILL_TREE_SLOT = 47;
+    // Up to 16 classes: a 4×4 grid (rows 1–4, columns 1/3/5/7), clear of the row-5 buttons (47/49/51).
+    // resolveJobType/placeJobItems both index this array, so layout and click-mapping stay in sync.
+    private static final int[] JOB_SLOTS = {10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32, 34, 37, 39, 41, 43};
 
     private JobGUI() {
     }
 
-    public static void openJobMenu(final Player player, final JobManager jobManager,
+    public static void openJobMenu(final Player viewer, final JobManager jobManager,
                                    final CatalystItemFactory catalystItemFactory,
                                    final FactionManager factionManager,
                                    final MessageManager messageManager) {
-        final JobHolder holder = new JobHolder(player.getUniqueId());
-        final Inventory inventory = Bukkit.createInventory(holder, SIZE,
-                messageManager.getComponent("messages.job-gui-title", "&6» Kasztválasztás «"));
+        if (viewer == null || jobManager == null || catalystItemFactory == null || messageManager == null) {
+            return;
+        }
+
+        final hu.taliann.icesmp.data.FactionType faction = ClassUiAssets.faction(viewer, factionManager);
+        final Component title = ClassUiAssets.title(ClassUiAssets.Surface.CLASS_SELECT, faction,
+                messageManager.getComponent("messages.job-gui-title", "&3» Kasztok és Szakmák «"));
+        final JobGUIHolder holder = new JobGUIHolder(viewer.getUniqueId());
+        final Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
 
-        final JobType primary = jobManager.getPrimaryJob(player);
-        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
-        int slot = 10;
-        for (final JobType jobType : JobType.values()) {
-            if (slot == BACK_SLOT) slot++;
-            if (slot >= SIZE) break;
-            inventory.setItem(slot, jobTile(player, jobType, primary, jobManager,
-                    catalystItemFactory, faction, messageManager));
-            holder.map(slot, jobType);
-            slot += slot % 9 == 7 ? 3 : 2;
-        }
-        inventory.setItem(BACK_SLOT, GuiUtil.icon(Material.ARROW,
-                messageManager.getComponent("messages.job-gui-back", "&eVissza a profilhoz"), List.of()));
-        holder.mapBack(BACK_SLOT);
-        GuiUtil.fill(inventory);
-        player.openInventory(inventory);
+        ClassUiAssets.fill(inventory, faction);
+        placeJobItems(inventory, viewer, jobManager, messageManager);
+        inventory.setItem(BACK_SLOT, createBackButton(messageManager));
+        inventory.setItem(CATALYST_SLOT, createCatalystButton(viewer, jobManager, catalystItemFactory, messageManager));
+        inventory.setItem(SKILL_TREE_SLOT, createSkillTreeButton(messageManager));
+
+        viewer.openInventory(inventory);
     }
 
-    private static ItemStack jobTile(final Player viewer, final JobType jobType,
-                                     final JobType primary, final JobManager jobManager,
-                                     final CatalystItemFactory catalystItemFactory,
-                                     final FactionType faction,
-                                     final MessageManager messageManager) {
-        final ItemStack base = catalystItemFactory.createClassCatalyst(jobType);
-        final ItemStack stack = base == null || base.getType().isAir()
-                ? new ItemStack(Material.ENCHANTED_BOOK) : base.clone();
-        final ItemMeta meta = stack.getItemMeta();
-        meta.displayName(ClassUiAssets.classBadgeName(jobType));
-        final List<Component> lore = new ArrayList<>(resolveJobLore(
-                jobType, primary, jobManager.getPrimaryLevel(viewer), messageManager));
+    public static JobType resolveJobType(final int rawSlot) {
+        for (int index = 0; index < Math.min(JOB_SLOTS.length, JobType.values().length); index++) {
+            if (JOB_SLOTS[index] == rawSlot) {
+                return JobType.values()[index];
+            }
+        }
+
+        return null;
+    }
+
+    public static int getBackSlot() {
+        return BACK_SLOT;
+    }
+
+    public static int getCatalystSlot() {
+        return CATALYST_SLOT;
+    }
+
+    public static int getSkillTreeSlot() {
+        return SKILL_TREE_SLOT;
+    }
+
+    private static ItemStack createSkillTreeButton(final MessageManager messageManager) {
+        final ItemStack button = new ItemStack(Material.KNOWLEDGE_BOOK);
+        final ItemMeta meta = button.getItemMeta();
+        meta.displayName(messageManager.getComponent("messages.job-gui-skilltree", "&5Képesség-fa"));
+        meta.lore(List.of(messageManager.getComponent("messages.job-gui-skilltree-lore", "&7A kasztod képességei és feloldási szintjei.")));
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+        button.setItemMeta(meta);
+        return button;
+    }
+
+    private static ItemStack createCatalystButton(final Player viewer, final JobManager jobManager,
+                                                  final CatalystItemFactory catalystItemFactory,
+                                                  final MessageManager messageManager) {
+        final JobType primaryJob = jobManager.getPrimaryJob(viewer);
+        if (primaryJob == null) {
+            final ItemStack lockedButton = new ItemStack(Material.BARRIER);
+            final ItemMeta lockedMeta = lockedButton.getItemMeta();
+            lockedMeta.displayName(messageManager.getComponent("messages.job-gui-catalyst-locked", "&cLélekkapocs"));
+            lockedMeta.lore(List.of(messageManager.getComponent("messages.job-gui-catalyst-locked-lore", "&7Előbb válassz elsődleges kasztot!")));
+            lockedMeta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+            lockedButton.setItemMeta(lockedMeta);
+            return lockedButton;
+        }
+
+        final ItemStack button = new ItemStack(catalystItemFactory.getMaterial(primaryJob));
+        final ItemMeta meta = button.getItemMeta();
+        meta.displayName(catalystItemFactory.getDisplayName(primaryJob));
+        meta.lore(List.of(
+                messageManager.getComponent("messages.job-gui-catalyst-lore", "&7A kasztod Lélekkapcsa."),
+                messageManager.getComponent("messages.job-gui-catalyst-claim", "&eKattints az igényléshez, ha elveszett!")
+        ));
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
+        button.setItemMeta(meta);
+        return button;
+    }
+
+    private static void placeJobItems(final Inventory inventory, final Player viewer, final JobManager jobManager,
+                                      final MessageManager messageManager) {
+        final JobType[] jobTypes = JobType.values();
+        for (int index = 0; index < Math.min(jobTypes.length, JOB_SLOTS.length); index++) {
+            inventory.setItem(JOB_SLOTS[index], createJobItem(jobTypes[index], viewer, jobManager, messageManager));
+        }
+    }
+
+    private static ItemStack createJobItem(final JobType jobType, final Player viewer, final JobManager jobManager,
+                                           final MessageManager messageManager) {
+        final JobType primary = jobManager.getPrimaryJob(viewer);
         final boolean selected = primary == jobType;
-        if (selected) {
-            meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1, true);
-        }
-        final FactionType required = jobType.getRequiredFaction();
-        if (required != null && required != faction) {
-            lore.add(messageManager.getComponent("messages.job-gui-lore-faction",
-                    "&cEhhez a kaszthoz a(z) %s frakció tagsága szükséges.", required.getDisplayName()));
-        }
-        meta.lore(lore);
-        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES,
-                ItemFlag.HIDE_ENCHANTS);
-        stack.setItemMeta(meta);
-        return stack;
+
+        // Selected jobs glow; the flag set matches GuiUtil.icon exactly, so it is a render-equivalent build.
+        return GuiUtil.icon(
+                Material.ENCHANTED_BOOK,
+                ClassUiAssets.classBadgeName(jobType),
+                resolveJobLore(jobType, primary, jobManager.getPrimaryLevel(viewer), messageManager),
+                selected);
     }
 
     private static List<Component> resolveJobLore(final JobType jobType, final JobType primary,
                                                   final int primaryLevel, final MessageManager messageManager) {
+        // A kaszt visszafordíthatatlan döntés — a szerep-címke már a
+        // választó felületen látsszon, ne csak a spec-oldalon.
         final Component roleLine = messageManager.getComponent(
                 "messages.job-gui-role-" + jobType.getId(), "&b" + defaultRoleTag(jobType));
         if (primary == jobType) {
@@ -106,6 +158,7 @@ public final class JobGUI {
                     messageManager.getComponent("messages.job-gui-lore-click", "&7Kattints a kiválasztáshoz!"));
         }
 
+        // A class is already chosen (and it isn't this one) — the player can't change it anymore.
         return List.of(
                 roleLine,
                 messageManager.getComponent("messages.job-gui-lore-already-have", "&cMár van kasztod."),
@@ -113,6 +166,7 @@ public final class JobGUI {
         );
     }
 
+    /** A kaszt szerep-címkéje (a spec-roster szerint: tank/gyógyító ág, ha van). */
     private static String defaultRoleTag(final JobType jobType) {
         return switch (jobType) {
             case WIZARD -> "Szerep: Távolsági sebző";
@@ -124,10 +178,21 @@ public final class JobGUI {
             case DEATH_KNIGHT -> "Szerep: Sebző / Tank";
             case SHAMAN -> "Szerep: Sebző / Gyógyító";
             case MONK -> "Szerep: Sebző / Tank / Gyógyító";
-            case PRIEST -> "Szerep: Gyógyító";
+            case PRIEST -> "Szerep: Gyógyító / Sebző";
             case WARLOCK -> "Szerep: Távolsági sebző";
-            case DEMON_HUNTER -> "Szerep: Közelharci sebző";
-            case EVOKER -> "Szerep: Távolsági sebző / Gyógyító";
+            case DEMON_HUNTER -> "Szerep: Sebző / Tank";
+            case EVOKER -> "Szerep: Sebző / Gyógyító";
         };
     }
+
+    private static ItemStack createBackButton(final MessageManager messageManager) {
+        final ItemStack itemStack = new ItemStack(Material.ARROW);
+        final ItemMeta meta = itemStack.getItemMeta();
+        meta.displayName(messageManager.getComponent("messages.job-gui-back", "&cVissza a Profilhoz"));
+        meta.lore(List.of());
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
+        itemStack.setItemMeta(meta);
+        return itemStack;
+    }
+
 }
