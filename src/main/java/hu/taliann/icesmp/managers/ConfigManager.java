@@ -80,7 +80,8 @@ public final class ConfigManager {
     private static final String[] OPERATOR_CONFIG_FILES = {
             "general", "economy", "factions", "block-regen", "class-gameplay", "spells-balance",
             "professions", "world", "event-spawn-safety", "pets", "crafting", "crates", "afk",
-            "moderation", "motd", "professions-2", "sit", "tablist", "dev-items", "client"
+            "moderation", "motd", "professions-2", "sit", "tablist", "dev-items", "client",
+            "trash-runtime"
     };
 
     /** Packaged, Git-authored gameplay authorities. They are never copied into the server config folder. */

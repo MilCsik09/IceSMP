@@ -1264,35 +1264,43 @@ Komp/utazás, NPC-binding, Stranger NPC és FancyNpcs-quest/shop kapcsolatok.
 
 </details>
 
-### Ócska leletek — katalógus- és vizuális alapréteg
+### Ócska leletek — loot-ökoszisztéma
 
 <!-- icesmp-doc-id: feature.world.trash-foundation -->
 
-> **Rollout-kapu alatt, Phase A** · A futó JAR-hoz képest: **Új alapréteg**
+> **Rollout-kapu alatt, Phase B** · A futó JAR-hoz képest: **Új gameplay-rendszer**
 
 A világ apró, kopott leleteinek 330 elemű, restartkor fail-closed módon validált
-katalógusa és ugyanennyi saját AI-generált inventory-sprite-ja elkészült. Minden
-fizikai alaptárgy játékosoldali ritkasága egységesen **Ócska**; a belső tartalmi
-besorolás nem jelenhet meg névben, lore-ban, normál adminfelületen vagy rutinlogban.
+katalógusa és ugyanennyi saját AI-generált inventory-sprite-ja mellé elkészült a
+loot-ökoszisztéma. Minden fizikai alaptárgy játékosoldali ritkasága egységesen
+**Ócska**; a belső tartalmi besorolás nem jelenhet meg névben, lore-ban, normál
+adminfelületen vagy rutinlogban.
 
-- **Így találkozol vele:** ebben a fázisban még nincs bekapcsolt loot-, régészeti,
-  átalakulási vagy relikvia-szerzési út; a katalógus és az item factory staging-alap.
-- **Kinek szól:** Fejlesztő/üzemeltető és Tesztelő; játékoskommunikáció csak a későbbi
-  gameplay-fázis aktiválásakor szükséges.
-- **Mitől mozdul meg:** pluginindításkor a teljes csomagolt katalógus validálódik;
-  hibás elemszám, séma, duplikált modell/textúra vagy player-facing szivárgás leállítja az indítást.
-- **Ami még kellhet hozzá:** lootforrások, régészeti állapotgép, felismerési/mutasd-meg
-  folyamat, gyűjtemény és gazdasági sink külön stacked fázisokban érkeznek.
-- **Fontos határ:** ez a Phase A nem változtat vanilla lootot és nem kapcsol be
-  játékos által elérhető megszerzést; az elkészült sprite-okhoz valódi klienses vizuális QA kell.
+- **Így találkozol vele:** sikeres horgászatkor külön fizikai mellékfogásként, jogosult
+  mob elejtésekor külön junk-dropként, illetve aktív mozgás közben a betöltött vadonban
+  ritkán megjelenő felszíni vagy vízi leletként. A normál fogást és moblootot nem cseréli le.
+- **Kinek szól:** Játékos, Tesztelő és Üzemeltető; csak Survival, nem AFK aktivitás adhat
+  forrást, a mobút pedig a közös spawner/minion exploit-kaput használja.
+- **Mitől mozdul meg:** a három forrás előbb saját, authored esélyt dob, majd ugyanaz a
+  kategória-első választó ad identityt. A biome, dimenzió, mélység, mobtípus és meglévő
+  territórium csak az identity súlyát módosítja; Luck, Looting, rang és szakmaszint nem.
+- **Ami még kellhet hozzá:** példánytörténet, átalakulások, aktív anomaly/relic-viselkedés,
+  régészeti felismerés és gyűjtemény külön stacked fázisokban érkeznek.
+- **Fontos határ:** az ambient forrás nem tölt chunkot, kerüli a claimet, territóriumot és
+  WorldGuard-régiót, sűrűség- és TTL-korlátos. Az Ócska tárgy a meglévő Felvásárlónál a
+  látszólagos 1/2/3, ritkán 5 veretes áron, külön figyelmeztetés nélkül eladható.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: nincs; a rejtett diagnosztikai út kizárólag immutable fejlesztői UUID-ről vagy konzolról érhető el, OP/permission nem ad hozzáférést.
-- Config: `content/trash/catalog.yml` (`LOCKED_CANONICAL_CONTENT`, 330 identity).
-- Tartós állapot: ebben a fázisban nincs játékos-progress vagy loot-state; az alaptárgy PDC-je csak az identityt és a fázist tartja.
-- Reload: nem reloadolható; katalógus- vagy assetváltozás kontrollált restartot és új resource-pack buildet igényel.
+- Config: `content/trash/catalog.yml` (`LOCKED_CANONICAL_CONTENT`, 330 identity és authored
+  loot-tuning, restart-required); `config/trash-runtime.yml` (élő operator enable/cap seam).
+- Tartós állapot: `trash-recycle.yml` az eladott, visszaforgatható exact példányok rejtett
+  poolja. A normál kategória- és identity-roll mindig megelőzi az azonos identityre korlátozott
+  recycle-helyettesítést, ezért a pool nem emelhet ritkaságot.
+- Reload: a runtime enable- és ambient cap-kulcsok élőben olvasódnak; a katalógus, esélyek,
+  identity-súlyok vagy assetek módosítása kontrollált restartot és új resource-pack buildet igényel.
 
 </details>
 

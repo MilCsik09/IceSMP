@@ -283,6 +283,17 @@ végösszeget. A relikviák nem hagyományos piaci áruk.
 A közvetlen pénzutalás (`/currency pay`) az alap telepítésben ki lehet
 kapcsolva. Ilyenkor adj át fizikai veretet, vagy használd a piacot.
 
+### Ócska leletek és a Felvásárló
+
+Horgászat közben a rendes fogás mellé, legyőzött ellenfelektől, illetve a vadonban
+mozogva is találhatsz **Ócska** leleteket. A földön vagy vízen megjelenő darabok
+idővel eltűnnek; nem ládákban teremnek, védett építményekben pedig nem jelenhetnek meg.
+
+Minden lelet saját nevet, rövid leírást és AI-generált inventory-képet kapott. A
+Felvásárló kis, a tárgy látszólagos anyagától függő összeget fizet értük a megszokott
+napi keretedből. Külön visszakérdezés nincs, ezért eladás előtt nézd meg, mit tartasz
+a kezedben. A Luck, Looting, mobrang és szakmaszint nem teszi jobbá ezeket a dobásokat.
+
 ### Adományláda
 
 Az adományláda nem piac:

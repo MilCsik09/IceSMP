@@ -37,6 +37,7 @@ public final class TrashCatalog {
     private final JavaPlugin plugin;
     private volatile Map<String, TrashDefinition> definitions = Map.of();
     private volatile String rarityLabel = "";
+    private volatile TrashLootTuning lootTuning;
 
     public TrashCatalog(final JavaPlugin plugin) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -52,6 +53,7 @@ public final class TrashCatalog {
             final Parsed parsed = parse(yaml);
             definitions = parsed.definitions();
             rarityLabel = parsed.rarityLabel();
+            lootTuning = parsed.lootTuning();
             plugin.getLogger().info("Trash catalog ready: " + definitions.size() + " identities.");
         } catch (final java.io.IOException impossibleForResourceStream) {
             throw new IllegalStateException("nem olvasható packaged Trash catalog: " + RESOURCE,
@@ -76,6 +78,12 @@ public final class TrashCatalog {
         return rarityLabel;
     }
 
+    public TrashLootTuning lootTuning() {
+        final TrashLootTuning tuning = lootTuning;
+        if (tuning == null) throw new IllegalStateException("Trash catalog még nincs betöltve");
+        return tuning;
+    }
+
     static Parsed parse(final YamlConfiguration yaml) {
         Objects.requireNonNull(yaml, "yaml");
         if (yaml.getInt("schema-version", 0) != 1) {
@@ -86,6 +94,12 @@ public final class TrashCatalog {
                 "player-presentation.rarity-label");
         if (!"ocska".equals(rarityId) || !"Ócska".equals(rarityLabel)) {
             throw new IllegalStateException("Trash player presentation must remain exactly Ócska/ocska");
+        }
+        final TrashLootTuning lootTuning;
+        try {
+            lootTuning = TrashLootTuning.parse(yaml.getConfigurationSection("loot-ecology"));
+        } catch (final IllegalArgumentException invalid) {
+            throw new IllegalStateException("Hibás Trash loot-ecology: " + invalid.getMessage(), invalid);
         }
         final ConfigurationSection items = yaml.getConfigurationSection("items");
         if (items == null) throw new IllegalStateException("Trash catalog items section missing");
@@ -122,7 +136,7 @@ public final class TrashCatalog {
         if (!EXPECTED_COUNTS.equals(counts)) {
             throw new IllegalStateException("Trash kind counts drifted from the reviewed authority: " + counts);
         }
-        return new Parsed(Map.copyOf(parsed), rarityLabel);
+        return new Parsed(Map.copyOf(parsed), rarityLabel, lootTuning);
     }
 
     private static TrashDefinition parseDefinition(final String rawId, final ConfigurationSection section) {
@@ -156,7 +170,8 @@ public final class TrashCatalog {
         final List<String> lore = List.copyOf(section.getStringList("lore"));
         validatePlayerText(displayName, "display-name");
         lore.forEach(line -> validatePlayerText(line, "lore"));
-        final String sourceBias = required(section.getString("source-bias"), "source-bias");
+        final TrashSourceBias sourceBias = TrashSourceBias.parse(
+                required(section.getString("source-bias"), "source-bias"));
         final TrashKind kind = TrashKind.parse(section.getString("internal.kind"));
         final String behavior = required(section.getString("internal.behavior"), "internal.behavior");
         if (kind.isInert() != "NONE".equals(behavior)) {
@@ -192,9 +207,11 @@ public final class TrashCatalog {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 
-    record Parsed(Map<String, TrashDefinition> definitions, String rarityLabel) {
+    record Parsed(Map<String, TrashDefinition> definitions, String rarityLabel,
+                  TrashLootTuning lootTuning) {
         Parsed {
             definitions = Map.copyOf(definitions);
+            Objects.requireNonNull(lootTuning, "lootTuning");
         }
     }
 }

@@ -51,6 +51,8 @@ public final class MobKillUtil {
 
     public enum RewardKind {
         FAUCET,
+        /** Flavor-only drop: event bosses stay eligible, synthetic NONE-owned mobs do not. */
+        FLAVOR,
         PROGRESSION,
         TRACKING
     }
@@ -181,9 +183,14 @@ public final class MobKillUtil {
         if (victim == null || killerId == null || kind == null) {
             return null;
         }
-        if (kind != RewardKind.TRACKING
-                && hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.rewardOwner(victim)
-                != hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC) {
+        final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner rewardOwner =
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.rewardOwner(victim);
+        if (kind != RewardKind.TRACKING && kind != RewardKind.FLAVOR
+                && rewardOwner != hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC) {
+            return null;
+        }
+        if (kind == RewardKind.FLAVOR
+                && rewardOwner == hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.NONE) {
             return null;
         }
         if (excludeMinions(configManager) && MinionManager.isMinionTagged(victim)) {
@@ -203,7 +210,8 @@ public final class MobKillUtil {
                 return null;
             }
         }
-        if (kind == RewardKind.FAUCET && excludeSpawnerMobs(configManager)
+        if ((kind == RewardKind.FAUCET || kind == RewardKind.FLAVOR)
+                && excludeSpawnerMobs(configManager)
                 && isSpawnerSpawned(victim)) {
             return null;
         }

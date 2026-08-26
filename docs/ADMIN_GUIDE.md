@@ -1470,17 +1470,41 @@ esetén azonnal cserélj. A `requests-per-minute`, `max-request-bytes`,
 `max-response-bytes` és `timeout-ms` korlátokat a proxy limitjeivel együtt állítsd;
 a limiter IP-címenként, perces ablakban számol.
 
-### Ócska katalógus — Phase A staging authority
+### Ócska loot-ökoszisztéma — Phase B staging authority
 
-A 330 elemű katalógus csomagolt, restart-required tartalom. Induláskor az egész
-állomány validálódik; hibás séma, elemszám, duplikált identity/modell/textúra vagy
-játékosnak szánt szövegbe került belső jelölés esetén a plugin fail-closed módon
-nem indulhat el. A sikeres normál bootlog csak az összesített elemszámot mutatja.
+A 330 elemű katalógus és a forrás-/kategória-/identity-tuning csomagolt,
+restart-required tartalom. Induláskor az egész állomány validálódik; hibás séma,
+elemszám, súlyösszeg, duplikált identity/modell/textúra vagy játékosnak szánt
+szövegbe került belső jelölés esetén a plugin fail-closed módon nem indulhat el.
+A sikeres normál bootlog csak az összesített elemszámot mutatja.
+
+Az operator seam a `config/trash-runtime.yml`: `trash-runtime.enabled`,
+`trash-runtime.ambient.enabled`, `max-per-chunk` és `max-per-neighborhood`. Ezeket
+a runtime élőben olvassa; az authored esélyeket, időablakot, távolságot, TTL-t vagy
+identity-súlyokat ne másold operator configba. Az ambient forrás csak aktív, mozgó,
+nem AFK Survival játékos környezetében próbálkozik, nem force-loadol chunkot, és
+fail-closed módon kerüli a claimet, territóriumot és ismeretlen/pozitív WorldGuard-választ.
+Az item entity saját, véges TTL-t kap; pickup után az ambient marker lekerül.
+
+A horgászat a sikeres vanilla fogást nem cseréli, hanem csendes, külön fizikai dropot
+adhat. A mobút közös Survival/AFK/spawner/minion kaput és egyszeri kill-channel claimet
+használ; a valódi event-bossok a flavor policyben jogosultak, a szintetikus `NONE`
+reward-owner nem. Luck, Looting, mobrang, boss-státusz és szakmaszint egyik forrás
+belső esélyét sem módosíthatja.
+
+A Felvásárló az authored 1/2/3, ritkán 5 egységnyi látszólagos árat fizeti a közös
+napi keretből, külön figyelmeztetés vagy felismerés nélkül. A visszaforgatható exact
+példányok a fail-closed `trash-recycle.yml` store-ban élnek. A normál kategória- és
+identity-roll mindig a 50%-os, azonos identityre korlátozott recycle-helyettesítés
+előtt történik; a pool mérete ezért nem emelhet ritkaságot. A store az egységes
+autosave/shutdown koordinátoron keresztül atomikusan mentődik.
 
 A diagnosztikai útvonalak:
 
 - `/icesmp dev trash catalog` — az érvényes katalógus mérete és rollout-státusza;
 - `/icesmp dev trash inspect <id>` — egy identity belső, fejlesztői inspectje.
+- `/icesmp dev trash give <id> [1..64]` — klienses staginghez fizikai alaptárgy;
+- `/icesmp dev trash pool` — a recycle pool összesített exact példányszáma.
 
 Ezek nem permission-node-ok. Kizárólag a forrásba égetett fejlesztői UUID
 (`2d47d7b6-294e-4a14-922c-befacd66ee6d`) vagy a konzol használhatja őket;
@@ -1489,10 +1513,11 @@ játékosnál a `dev` ág sem a helpben, sem tab completionben nem jelenhet meg.
 Az inspect belső tartalmi adatot mutat, ezért kimenetét ne másold normál adminlogba
 vagy játékoskommunikációba.
 
-Ez a Phase A még nem ad tárgyat és nem köt lootot a katalógushoz. Ne dokumentálj
-megszerzési módot, és ne tekintsd az asset-auditot élő gameplay-bizonyítéknak.
-Katalógus- vagy sprite-változás után teljes restart, új resource-pack hash és valódi
-klienses vizuális próba szükséges; `/icesmp reload` nem alkalmazza a változást.
+Az aktív különleges item-viselkedés, példánytörténet és régészeti felismerés nem része
+ennek a fázisnak. A normál adminfelület, log és kézikönyv nem válhat special-scannerré;
+a belső inspect kimenetét ne másold játékoskommunikációba. Katalógus- vagy
+sprite-változás után teljes restart, új resource-pack hash és valódi klienses vizuális
+próba szükséges; `/icesmp reload` az operator seamet frissíti, a katalógust nem.
 
 ### Release acceptance checklist
 
@@ -1834,7 +1859,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CRATE-25 Random tervrajz policy | Admin/tesztelő | szakma- és szintszűrt normál pool, majd Mitikus `include-loot-only` pool | minden sorsolt recept a tartományban van; boss-only csak engedélyezett poolból jön | érintett pool tiltása | `crate/CRATE-25/` |
 | [ ] | CRATE-26 Elytra-tiltás | Admin | közvetlen `item: ELYTRA`, Elytra-recept és ilyen tervrajz tesztdefiníciója | mindhárom config betöltéskor elutasított; bundled lootban nincs Elytra | crate config rollback | `crate/CRATE-26/` |
 
-### Ócska katalógus — Phase A
+### Ócska katalógus és loot-ökoszisztéma — Phase A–B
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
 |---|---|---|---|---|---|---|
@@ -1842,6 +1867,12 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | TRASH-A02 Fail-closed authority | Fejlesztő | külön tesztbuildben hibás séma, hiányzó sor, duplikált modell és tiltott player-facing marker | mindegyik indításkor elutasított, részleges katalógus nem publikálódik | hibás build eldobása | `trash/TRASH-A02/` |
 | [ ] | TRASH-A03 Rejtett dev-kapu | Admin/fejlesztő | normál játékos, OP, `icesmp.admin.all`, canonical fejlesztői UUID és konzol | csak a canonical UUID és konzol látja/futtatja a `dev trash` ágat | deployment stop | `trash/TRASH-A03/` |
 | [ ] | TRASH-A04 Teljes klienslap | Tesztelő | packos Paper 1.21.11 kliens, 330 sprite ellenőrző készlet vagy renderleltár | minden identity saját 64×64 sprite-ot kap; nincs hiányzó modell, duplikált kép, glint, emissive réteg vagy kategóriaszivárgás | resource-pack rollout stop | `trash/TRASH-A04/` |
+| [ ] | TRASH-B01 Horgászat | Tesztelő | Survival és Creative játékos, AFK ki/be, legalább 2 000 sikeres catch telemetryvel | a normál fogás megmarad; csak jogosult catch adhat halk, külön fizikai Ócska dropot a hooknál | `trash-runtime.enabled: false` | `trash/TRASH-B01/` |
+| [ ] | TRASH-B02 Mob flavor-kapu | Tesztelő/admin | normál, elite, valódi event-boss, spawneres mob, minion és synthetic NONE-owner | az első három ugyanazt a flavor esélyt használja; spawner/minion/NONE/Creative/AFK nem ad dropot, killenként legfeljebb egy roll | `trash-runtime.enabled: false` | `trash/TRASH-B02/` |
+| [ ] | TRASH-B03 Ambient Folia és védelem | Builder/tesztelő | mozgó és AFK játékos, 2 régió, unloaded chunk, claim, territory, WG-régió, szárazföld és víz | nincs force-load vagy thread-warning; védett helyen nincs spawn; chunk cap 1, 3×3 cap 4; pickup leveszi a markert, TTL eltávolít | `trash-runtime.ambient.enabled: false` | `trash/TRASH-B03/` |
+| [ ] | TRASH-B04 Eloszlás | Fejlesztő | `trashLootDistributionRegressionTest`, exact commit | 30M source-event szimuláció zöld; forrás-, zárt kategória-, displaced- és recycle-arány tolerancián belül; context nem módosít kategóriaesélyt | deployment stop | `trash/TRASH-B04/` |
+| [ ] | TRASH-B05 Felvásárló és recycle | Tesztelő/admin | minden ársáv, részstack, napi cap, külön eladott visszaforgatható identity, restart | pontos fizikai veret; nincs külön warning vagy belső felismerés; exact példány csak azonos identity normál rollja után jön vissza; restart után pool megmarad | `trash-runtime.enabled: false`, store backup | `trash/TRASH-B05/` |
+| [ ] | TRASH-B06 Operator kapuk | Admin | `trash-runtime.enabled`, ambient enabled és mindkét cap élő módosítása | source master-switch azonnal zár; ambient külön zárható; capek új spawnra érvényesek; authored loot-tuning változatlan | config rollback | `trash/TRASH-B06/` |
 
 ### Combat & Encounter recalibration
 
