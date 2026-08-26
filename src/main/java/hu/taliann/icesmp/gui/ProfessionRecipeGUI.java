@@ -57,12 +57,12 @@ public final class ProfessionRecipeGUI {
                 new ProfessionRecipeHolder(player.getUniqueId(), shownPage);
         final Inventory inventory = Bukkit.createInventory(holder, 54,
                 net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()
-                        .deserialize("<dark_aqua>» Recept-könyv «</dark_aqua>"));
+                        .deserialize("<dark_aqua>» Receptkönyv «</dark_aqua>"));
         holder.setInventory(inventory);
 
         if (recipes.isEmpty()) {
             inventory.setItem(22, icon(Material.BOOK, accent("Nincs recepted"),
-                    List.of(grey("Válassz szakmát (/profession join), és lépj szintet,"),
+                    List.of(grey("Válassz szakmát a /profile felületen, majd lépj szintet,"),
                             grey("hogy receptek nyíljanak meg."))));
         }
         final int start = shownPage * PAGE_SIZE;
@@ -115,18 +115,12 @@ public final class ProfessionRecipeGUI {
 
         final List<Component> lore = new ArrayList<>();
         lore.add(grey("Szakma: ").append(recipe.profession().getDisplayName()));
-        lore.add(grey("Kategória: " + recipe.category()));
-        lore.add(grey("Gazdasági szerep: " + economy.category() + " • " + economy.tier()));
-        if (!economy.dependencies().isEmpty()) {
-            lore.add(Component.text("↔ Feldolgozási lánc: "
-                            + String.join(", ", economy.dependencies()), NamedTextColor.DARK_AQUA)
-                    .decoration(TextDecoration.ITALIC, false));
-        }
+        lore.add(grey("Kategória: " + prettyToken(String.valueOf(recipe.category()))));
         if (specialization.role() != ProfessionSpecializationEconomyPolicy.Role.NONE) {
             lore.add(Component.text("★ Szakosodás: " + specializationLabel(specialization),
                     NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
         }
-        appendCanonicalPreview(lore, recipe, level);
+        appendEquipmentPreview(lore, recipe, level);
 
         if ("gyakorlo".equals(recipe.kind())) {
             lore.add(Component.text("✎ Gyakorló recept — szakma-XP-ért, nem nyereségért",
@@ -139,12 +133,12 @@ public final class ProfessionRecipeGUI {
                         NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         if (recipe.blueprint()) {
             lore.add(learned
-                    ? Component.text("✔ Recept megtanulva", NamedTextColor.GREEN)
+                    ? Component.text("✔ Tervrajz megtanulva", NamedTextColor.GREEN)
                             .decoration(TextDecoration.ITALIC, false)
                     : recipe.lootOnly()
-                    ? Component.text("✘ Csak legendás ellenfelektől szerezhető tervrajz",
+                    ? Component.text("✘ Ritka ellenfelektől megszerezhető tervrajz szükséges",
                             NamedTextColor.DARK_PURPLE).decoration(TextDecoration.ITALIC, false)
-                    : Component.text("✘ Tervrajz kell (NPC / mob-drop)", NamedTextColor.RED)
+                    : Component.text("✘ Tervrajz szükséges (NPC vagy zsákmány)", NamedTextColor.RED)
                             .decoration(TextDecoration.ITALIC, false));
         }
         if (recipe.faction() != null) {
@@ -176,23 +170,23 @@ public final class ProfessionRecipeGUI {
                 NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         if (recipe.affixTier() != null) {
             lore.add(Component.empty());
-            lore.add(Component.text("✦ Sorsolt minőség + toldat-bónuszok",
+            lore.add(Component.text("✦ Sorsolt minőség és különleges bónuszok",
                     NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.ITALIC, false));
         }
         lore.add(Component.empty());
         if (economy.batchable()) {
             final int maxCraftable = maxCraftableBatches(player, recipe, specialization,
                     economy.batchLimit(), uniqueMaterials, transaction);
-            lore.add(Component.text("⇧ Shift+katt: 5-ös batch • effektív max: " + maxCraftable,
+            lore.add(Component.text("⇧ Shift+katt: 5 darabos sorozat • legfeljebb: " + maxCraftable,
                     NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
         }
         if (inventoryPreflight.status()
                 == hu.taliann.icesmp.professions.ProfessionCraftTransaction.Status.INVENTORY_FULL) {
-            lore.add(Component.text("✘ Nincs hely az effektív outputnak", NamedTextColor.RED)
+            lore.add(Component.text("✘ Nincs elég hely a kész tárgyaknak", NamedTextColor.RED)
                     .decoration(TextDecoration.ITALIC, false));
         }
         lore.add(craftable
-                ? Component.text("» Kattints a craftoláshoz", NamedTextColor.YELLOW)
+                ? Component.text("» Kattints az elkészítéshez", NamedTextColor.YELLOW)
                         .decoration(TextDecoration.ITALIC, false)
                 : Component.text("Zárolva", NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, false));
@@ -206,22 +200,21 @@ public final class ProfessionRecipeGUI {
         return icon(recipe.result(), name, lore, recipe.affixTier() != null);
     }
 
-    private static void appendCanonicalPreview(final List<Component> lore,
+    private static void appendEquipmentPreview(final List<Component> lore,
                                                final ProfessionRecipeCatalog.Recipe recipe,
                                                final int professionLevel) {
         if (recipe.templateId() == null) return;
-        lore.add(Component.text("◆ Canonical template: " + recipe.templateId(), NamedTextColor.AQUA)
-                .decoration(TextDecoration.ITALIC, false));
         final ItemTemplateRegistry registry = ItemTemplateRegistry.current();
         final ItemTemplate template = registry == null ? null
                 : registry.find(recipe.templateId()).orElse(null);
         if (template == null) return;
+        lore.add(Component.text("◆ Egyedi IceSMP felszerelés", NamedTextColor.AQUA)
+                .decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text("Tárgyszint: " + template.itemLevel()
                         + " • " + template.rarity().displayName(), NamedTextColor.GRAY)
                 .decoration(TextDecoration.ITALIC, false));
         if (template.armorFamily() != null) {
-            lore.add(Component.text("Páncélcsalád: " + template.armorFamily().displayName()
-                            + " (" + template.armorFamily().name() + ")", NamedTextColor.GRAY)
+            lore.add(Component.text("Páncéltípus: " + template.armorFamily().displayName(), NamedTextColor.GRAY)
                     .decoration(TextDecoration.ITALIC, false));
         }
         if (template.rolledStats().isEmpty()) return;
@@ -230,14 +223,14 @@ public final class ProfessionRecipeGUI {
         final ProfessionCraftQualityPolicy.Tuning tuning = ProfessionCraftQualityPolicy.from(config);
         final double baseFloor = ProfessionCraftQualityPolicy.minimumQualityFloor(
                 professionLevel, recipe.blueprint(), false, tuning);
-        lore.add(Component.text("Roll-minőség: " + percent(baseFloor) + "%–100%",
+        lore.add(Component.text("Minőségi tartomány: " + percent(baseFloor) + "%–100%",
                 NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.ITALIC, false));
         final double chance = ProfessionCraftQualityPolicy.masterworkChance(
                 professionLevel, recipe.masterwork(), tuning);
         if (chance > 0.0D) {
             final double masterworkFloor = ProfessionCraftQualityPolicy.minimumQualityFloor(
                     professionLevel, recipe.blueprint(), true, tuning);
-            lore.add(Component.text("✦ Mestermű: " + percent(chance) + "% esély • floor "
+            lore.add(Component.text("✦ Mestermű: " + percent(chance) + "% esély • minimum minőség "
                             + percent(masterworkFloor) + "%", NamedTextColor.LIGHT_PURPLE)
                     .decoration(TextDecoration.ITALIC, false));
         }
@@ -259,7 +252,7 @@ public final class ProfessionRecipeGUI {
             return role + " • -" + percent(1.0D - effect.inputMultiplier()) + "% alapanyag";
         }
         if (effect.outputMultiplier() > 1.0D) {
-            return role + " • +" + percent(effect.outputMultiplier() - 1.0D) + "% batch hozam";
+            return role + " • +" + percent(effect.outputMultiplier() - 1.0D) + "% sorozathozam";
         }
         return role;
     }
@@ -322,5 +315,11 @@ public final class ProfessionRecipeGUI {
     public static String prettyName(final Material material) {
         final String text = material.name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
         return text.isEmpty() ? text : Character.toUpperCase(text.charAt(0)) + text.substring(1);
+    }
+
+    private static String prettyToken(final String raw) {
+        if (raw == null || raw.isBlank()) return "—";
+        final String text = raw.toLowerCase(java.util.Locale.ROOT).replace('_', ' ').replace('-', ' ');
+        return Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 }
