@@ -1,0 +1,139 @@
+name: Player-Facing Messaging Integrity Hardening
+
+on:
+  pull_request:
+    branches:
+      - feature/quest-item-content-integrity-hardening
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: player-facing-messaging-integrity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  java21-regression:
+    name: Java 21 full regression and authority checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validation dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          'PyYAML>=6.0,<7.0'
+          'Pillow==11.3.0'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate parent and cumulative authorities
+        run: |
+          set -euo pipefail
+          parent=a256a52264ac0d58427c9db33d80f66af1ce73d3
+          test "$(git merge-base HEAD "$parent")" = "$parent"
+          python3 scripts/audit_quest_item_content_integrity.py --check
+          python3 scripts/audit_gameplay_bootstrap_integrity.py --check
+          python3 scripts/audit_config_content_command_surface.py --check
+          python3 scripts/check_consistency.py
+          python3 scripts/check_professions_2_reports.py
+          python3 scripts/check_documentation_coverage.py
+          python3 scripts/test_progression_balance.py
+          python3 scripts/test_professions_2_economy.py
+          python3 scripts/resource_pack.py validate
+          scheduler_count="$(rg -n 'Bukkit\.getScheduler\(|getServer\(\)\.getScheduler\(|import org\.bukkit\.scheduler\.BukkitRunnable|new BukkitRunnable' src/main/java | wc -l || true)"
+          test "$scheduler_count" -eq 0
+          git diff --check "$parent"...HEAD
+
+      - name: Clean Java 21 build and full regressions
+        run: |
+          set -o pipefail
+          ./gradlew clean build --console=plain --no-daemon --stacktrace | tee gradle-build.log
+          grep -F 'Quest/item content-integrity regression suite passed.' gradle-build.log
+          grep -F 'Quest/item content-integrity audit passed: quests=195 items=724 C0=3/3 C1=12/12 C2=6/7' gradle-build.log
+
+  paper-runtime:
+    name: Paper 1.21.11 cumulative runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run isolated Paper profile
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.quest-item-content-integrity-runtime=true
+        run: |
+          set -o pipefail
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+          timeout 480s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            | tee paper-messaging.log
+      - name: Require cumulative proof marker and clean shutdown
+        if: always()
+        run: |
+          grep -F 'ICESMP_QUEST_ITEM_CONTENT_INTEGRITY_RUNTIME_PROBE_PASS' paper-messaging.log
+          ! grep -F 'ICESMP_QUEST_ITEM_CONTENT_INTEGRITY_RUNTIME_PROBE_FAIL' paper-messaging.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' paper-messaging.log
+
+  folia-runtime:
+    name: Folia 1.21.11 cumulative runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime asset dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run lock-pinned Folia profile
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.quest-item-content-integrity-runtime=true
+        run: |
+          set -o pipefail
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+          timeout 600s ./gradlew --no-daemon --console=plain \
+            --init-script gradle/run-folia.init.gradle runFolia \
+            | tee folia-messaging.log
+      - name: Require cumulative proof marker and clean shutdown
+        if: always()
+        run: |
+          grep -F 'ICESMP_QUEST_ITEM_CONTENT_INTEGRITY_RUNTIME_PROBE_PASS' folia-messaging.log
+          ! grep -F 'ICESMP_QUEST_ITEM_CONTENT_INTEGRITY_RUNTIME_PROBE_FAIL' folia-messaging.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' folia-messaging.log
