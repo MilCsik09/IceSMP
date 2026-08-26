@@ -125,6 +125,17 @@ crate_browser = text("src/main/java/hu/taliann/icesmp/gui/CrateBrowserGUI.java")
 if "reward.type().name()" in crate_browser:
     fail("Crate browser still renders raw reward enum")
 
+# M3 copy polish must not collapse the existing class-selector interaction surface.
+job_gui = text("src/main/java/hu/taliann/icesmp/gui/JobGUI.java")
+for required in (
+        "CATALYST_SLOT", "SKILL_TREE_SLOT", "JOB_SLOTS", "resolveJobType",
+        "getCatalystSlot", "getSkillTreeSlot", "createCatalystButton", "createSkillTreeButton"):
+    if required not in job_gui:
+        fail(f"JobGUI copy polish removed required behavior surface: {required}")
+for stale in ("kivalasztashoz", "modosithato"):
+    if stale in job_gui:
+        fail(f"JobGUI still contains reviewed orthography defect: {stale}")
+
 # Evidence must not falsely claim blocking leftovers.
 evidence = json.loads(text("docs/development/player-facing-messaging-integrity-hardening.json"))
 if evidence["findings"]["MSG-M0-001"] != "CLOSED" or evidence["findings"]["MSG-M0-002"] != "CLOSED":
