@@ -58,6 +58,9 @@ messages:
   ritual-structure-incomplete: <red>Az oltár szerkezete hiányos — építsd meg a teljes szentélyt a mag-blokk köré.</red>
   ritual-wrong-class: <red>Ez az oltár nem a te kasztodhoz szól.</red>
   ritual-wrong-faction: <red>Ez az oltár nem a te frakciódhoz szól.</red>
+  signature-szarvas-pending: <gray>🦌 A köd még gyülekezik — az idézés folyamatban van.</gray>
+  signature-szarvas-profile-not-ready: <red>🦌 A karakteradataid még nem állnak készen; az idézés nem indult el. Próbáld újra rövidesen.</red>
+  signature-szarvas-persistence-failed: <red>🦌 Az idézés állapotát most nem sikerült biztonságosan rögzíteni; semmi nem veszett el. Próbáld újra később.</red>
   souls-balance: '<dark_purple>Lélekszilánkjaid: <white>{shards}</white> <gray>(/souls champion — bajnok idézése)</gray></dark_purple>'
   souls-champion-cap: '&cElérted a maximális idézett társ-számot.'
   souls-champion-insufficient: '&cNincs elég lélekszilánkod a bajnokhoz.'
