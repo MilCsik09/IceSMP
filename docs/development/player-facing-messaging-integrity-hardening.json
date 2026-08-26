@@ -40,6 +40,15 @@
     "DAILY_COPY_SECOND_AUTHORITY": 0,
     "HIGH_FREQUENCY_CHAT_SPAM": 0
   },
+  "verification_gates": {
+    "BUNDLED_MESSAGE_YAML_PARSE": "REQUIRED",
+    "FINDING_DRIVEN_MESSAGING_AUDIT": "REQUIRED",
+    "JAVA21_FULL_REGRESSION": "REQUIRED",
+    "PAPER_1_21_11_RUNTIME": "REQUIRED",
+    "FOLIA_1_21_11_RUNTIME": "REQUIRED",
+    "CUMULATIVE_QUEST_ITEM_AUTHORITY": "REQUIRED",
+    "RAW_BUKKIT_SCHEDULER": 0
+  },
   "notes": {
     "MSG-M2-006": "Fallback-only copy remains a supported MessageManager compatibility mechanism. This hardening moved or aligned the repeated/core paths implicated by M0/M1 findings without creating a localization framework or bulk-migrating all local/staff fallbacks.",
     "MSG-M2-008": "Unused keys require per-key operator-compatibility decisions. Retired procedural-daily vocabulary and divergent territory ownership were cleaned, but no unsafe bulk deletion of compatibility-retained keys is performed."
