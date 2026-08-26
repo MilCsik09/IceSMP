@@ -83,8 +83,6 @@ public final class EncounterRewardDeliveryService implements Listener {
                                 + playerId + '/' + encounterId + ": " + failure.getMessage());
                         return;
                     }
-                    // A remove/abort can race the durable prepare callback. The bounded abort
-                    // history makes the later callback fail closed instead of resurrecting PREPARED.
                     if (abortedEncounters.contains(encounterId)) {
                         reject(playerId, encounterId, materialId, amount);
                     }
@@ -180,8 +178,6 @@ public final class EncounterRewardDeliveryService implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
-        // Profile v2 login publication precedes normal gameplay, but recovery yields one second
-        // so a slow repository load never races this read.
         player.getScheduler().runDelayed(plugin, task -> recover(player), null, 20L);
     }
 
@@ -189,9 +185,6 @@ public final class EncounterRewardDeliveryService implements Listener {
         if (player == null || !player.isOnline()) return;
         try {
             cleanupCommittedMarkers(player);
-            // Boss entities are transient and do not survive a restart. A candidate that
-            // never became COMMITTED is exact-before, so abort it rather than leaking one
-            // recoverable receipt per interrupted encounter. A live boss may reserve it again.
             for (final PlayerProfileOperation candidate : operations.prepared(
                     player.getUniqueId(), ELIGIBILITY_TYPE)) {
                 operations.rollback(player.getUniqueId(), candidate.operationId(),
@@ -290,6 +283,7 @@ public final class EncounterRewardDeliveryService implements Listener {
                                 + operation.operationId() + ": " + failure.getMessage());
                         return;
                     }
+                    sendDeliveryReceipt(player, operation);
                     stripReceipt(player, operation.operationId());
                     try { player.saveData(); }
                     catch (final RuntimeException saveFailure) {
@@ -297,6 +291,25 @@ public final class EncounterRewardDeliveryService implements Listener {
                                 + operation.operationId());
                     }
                 }, null));
+    }
+
+    private void sendDeliveryReceipt(final Player player, final PlayerProfileOperation operation) {
+        final String materialId = operation.metadata().get("material");
+        final int amount;
+        try {
+            amount = Math.max(1, Integer.parseInt(operation.metadata().getOrDefault("amount", "1")));
+        } catch (final NumberFormatException malformed) {
+            return;
+        }
+        final ItemStack display = materials.create(materialId, amount);
+        if (display == null) return;
+        final String plainName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                .plainText().serialize(display.effectiveName());
+        final String safeName = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()
+                .escapeTags(plainName);
+        player.sendMessage(messages.getMessage("encounter-reward-delivered",
+                "<gold>✦ Személyes világboss-jutalom: <white>{amount}× {item}</white>.</gold>",
+                Map.of("amount", Integer.toString(amount), "item", safeName)));
     }
 
     private void cleanupCommittedMarkers(final Player player) {
