@@ -195,8 +195,10 @@ public final class QuestLogGUI {
                     .decoration(TextDecoration.ITALIC, false));
             final String rawProfession = quest.getString("requires-profession", "");
             final ProfessionType requiredProfession = ProfessionType.fromId(rawProfession);
-            final String professionName = requiredProfession == null || requiredProfession.getDisplayName() == null
-                    ? rawProfession : requiredProfession.getDisplayName().toString();
+            final String professionName = requiredProfession == null
+                    ? rawProfession
+                    : net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                            .serialize(requiredProfession.getDisplayName());
             if (!professionName.isBlank()) {
                 lore.add(Component.text("  • Szakma: " + professionName, NamedTextColor.WHITE)
                         .decoration(TextDecoration.ITALIC, false));
