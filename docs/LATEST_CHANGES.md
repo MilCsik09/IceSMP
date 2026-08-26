@@ -1,13 +1,5 @@
 # Mi változott a július 12-i szerververzió óta?
 
-- Az Ócska leletek Phase B rendszere a 330 stable identity és ugyanennyi saját,
-  AI-generált 64×64 sprite mellé három Folia-safe szerzési utat ad: halk extra
-  horgászfogást, közös exploit-kapu mögötti mob junk-dropot és betöltött, nem védett
-  terepre korlátozott ambient leletet. A környezet csak identityt súlyoz, Luck/Looting,
-  mobrang és szakma nem módosítja a zárt kategóriaesélyt. A Felvásárló látszólagos áron
-  átveszi a tárgyat; az exact visszaforgatható példányok tartós poolból, kizárólag azonos
-  identity normál kiválasztása után kerülhetnek elő. A rejtett besorolás továbbra sem
-  jelenhet meg normál játékos- vagy adminfelületen.
 - A gameplay-definíciók egyetlen kézzel authorolt `content/**` fába kerültek;
   a korábbi három expansion overlay és a gameplayt író advancement/profession
   generátorok megszűntek. A megmaradt tooling csak validál, evidence/reportot
