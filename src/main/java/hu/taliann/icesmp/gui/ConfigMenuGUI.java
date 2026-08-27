@@ -127,11 +127,6 @@ public final class ConfigMenuGUI {
                 Entry.toggle("kill-rewards.exclude-spawner-mobs", "Spawner-mob kizárása"),
                 Entry.toggle("kill-rewards.exclude-minions", "Minionok kizárása"),
                 Entry.toggle("kill-rewards.require-survival", "Csak survival gyilkos kap jutalmat"))));
-        categories.put("ocska", new Category("ocska", "Ócska ökoszisztéma", Material.BRUSH, List.of(
-                Entry.toggle("trash-runtime.enabled", "Ócska loot-rendszer"),
-                Entry.toggle("trash-runtime.ambient.enabled", "Ambient világ-szemét"),
-                Entry.integer("trash-runtime.ambient.max-per-chunk", "Ambient maximum/chunk", 1, 1, 16),
-                Entry.integer("trash-runtime.ambient.max-per-neighborhood", "Ambient maximum 3×3 chunkban", 1, 1, 32))));
         categories.put("passzivok", new Category("passzivok", "Frakciópasszívok", Material.TOTEM_OF_UNDYING, List.of(
                 Entry.toggle("factions.passives.enabled", "Passzívok mesterkapcsoló"),
                 Entry.toggle("factions.passives.red.enabled", "RED passzív"),

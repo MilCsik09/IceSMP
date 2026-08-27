@@ -236,6 +236,8 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.items.RarityPresentationService rarityPresentationService;
     private final hu.taliann.icesmp.trash.TrashCatalog trashCatalog;
     private final hu.taliann.icesmp.trash.TrashItemFactory trashItemFactory;
+    private final hu.taliann.icesmp.trash.TrashHistoryStore trashHistoryStore;
+    private final hu.taliann.icesmp.trash.TrashHistoryService trashHistoryService;
     private final hu.taliann.icesmp.trash.TrashRecyclePool trashRecyclePool;
     private final hu.taliann.icesmp.trash.TrashLootSelector trashLootSelector;
     private final hu.taliann.icesmp.trash.TrashLootService trashLootService;
@@ -448,11 +450,15 @@ public final class IceSMPCore {
         this.trashCatalog = new hu.taliann.icesmp.trash.TrashCatalog(plugin);
         this.trashItemFactory = new hu.taliann.icesmp.trash.TrashItemFactory(
                 plugin, trashCatalog, rarityPresentationService);
+        this.trashHistoryStore = new hu.taliann.icesmp.trash.TrashHistoryStore(plugin, trashCatalog);
+        this.trashHistoryService = new hu.taliann.icesmp.trash.TrashHistoryService(
+                plugin, trashCatalog, trashItemFactory, trashHistoryStore);
         this.trashRecyclePool = new hu.taliann.icesmp.trash.TrashRecyclePool(
-                plugin, trashCatalog, trashItemFactory);
+                plugin, trashCatalog, trashItemFactory, trashHistoryService);
         this.trashLootSelector = new hu.taliann.icesmp.trash.TrashLootSelector(trashCatalog);
         this.trashLootService = new hu.taliann.icesmp.trash.TrashLootService(
-                configManager, trashCatalog, trashLootSelector, trashItemFactory, trashRecyclePool);
+                trashCatalog, trashLootSelector, trashItemFactory, trashHistoryService,
+                trashRecyclePool);
         this.trashContextResolver = new hu.taliann.icesmp.trash.TrashContextResolver(territoryManager);
         this.itemTemplateRegistry = new hu.taliann.icesmp.itemization.ItemTemplateRegistry(plugin, configManager);
         this.itemIdentityService = new hu.taliann.icesmp.itemization.ItemIdentityService(plugin, itemTemplateRegistry);
@@ -721,7 +727,7 @@ public final class IceSMPCore {
         // Felvásárló NPC: napi keretes nyersanyag-eladás (jövedelem-csap; szintén interact-hook).
         this.buyerService = new hu.taliann.icesmp.managers.BuyerService(configManager, currencyManager, factionManager, messageManager);
         this.trashVendorService = new hu.taliann.icesmp.trash.TrashVendorService(
-                plugin, configManager, trashCatalog, trashItemFactory, trashRecyclePool,
+                plugin, configManager, trashItemFactory, trashHistoryService, trashRecyclePool,
                 currencyManager, factionManager, messageManager);
         buyerService.setTrashVendorService(trashVendorService);
         // Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
@@ -749,7 +755,7 @@ public final class IceSMPCore {
                 partyManager, claimManager, sinManager, configManager);
         this.afkManager = new hu.taliann.icesmp.managers.AfkManager(configManager);
         this.trashAmbientManager = new hu.taliann.icesmp.trash.TrashAmbientManager(
-                plugin, configManager, trashCatalog, trashLootService, trashContextResolver,
+                plugin, trashCatalog, trashLootService, trashContextResolver,
                 claimManager, territoryManager, afkManager);
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
@@ -795,6 +801,7 @@ public final class IceSMPCore {
                 dungeonLootService,
                 raidManager,
                 devItemManager,
+                trashHistoryStore,
                 trashRecyclePool);
         this.storeCoordinator = new PersistentStoreCoordinator(persistentStores);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
@@ -1729,7 +1736,8 @@ public final class IceSMPCore {
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
                 statsManager, claimManager, questManager, abilityCatalystListener, sinManager,
                 new hu.taliann.icesmp.trash.TrashDevCommand(
-                        trashCatalog, trashItemFactory, trashRecyclePool, trashLootService));
+                        trashCatalog, trashItemFactory, trashHistoryService,
+                        trashRecyclePool, trashLootService));
         iceSMPCommand.setClientBridge(clientBridge);
         // Native HUD routing: a HudManager csak a seam-interfészt látja, a bridge a
         // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.
@@ -2147,6 +2155,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(sinListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CombatTagListener(combatTagManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ItemProvenanceListener(plugin), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.trash.TrashHistoryListener(
+                plugin, trashHistoryService, kingManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonLootListener(afkManager, dungeonLootService, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ArcheologyShareListener(archeologyManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.HealthRegenListener(classHealthService), plugin);

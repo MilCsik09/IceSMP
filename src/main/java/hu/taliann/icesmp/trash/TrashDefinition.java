@@ -17,7 +17,8 @@ public record TrashDefinition(
         List<String> lore,
         TrashSourceBias sourceBias,
         TrashKind internalKind,
-        String behavior
+        String behavior,
+        String successPhase
 ) {
     public TrashDefinition {
         Objects.requireNonNull(id, "id");
@@ -30,5 +31,6 @@ public record TrashDefinition(
         Objects.requireNonNull(sourceBias, "sourceBias");
         Objects.requireNonNull(internalKind, "internalKind");
         Objects.requireNonNull(behavior, "behavior");
+        successPhase = successPhase == null ? "" : successPhase;
     }
 }

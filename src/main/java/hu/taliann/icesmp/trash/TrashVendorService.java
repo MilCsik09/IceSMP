@@ -31,8 +31,8 @@ public final class TrashVendorService implements Listener {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
-    private final TrashCatalog catalog;
     private final TrashItemFactory itemFactory;
+    private final TrashHistoryService history;
     private final TrashRecyclePool recyclePool;
     private final CurrencyManager currencyManager;
     private final FactionManager factionManager;
@@ -40,15 +40,15 @@ public final class TrashVendorService implements Listener {
     private final NamespacedKey saleMarker;
 
     public TrashVendorService(final JavaPlugin plugin, final ConfigManager configManager,
-                              final TrashCatalog catalog, final TrashItemFactory itemFactory,
-                              final TrashRecyclePool recyclePool,
+                              final TrashItemFactory itemFactory,
+                              final TrashHistoryService history, final TrashRecyclePool recyclePool,
                               final CurrencyManager currencyManager,
                               final FactionManager factionManager,
                               final MessageManager messageManager) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.configManager = Objects.requireNonNull(configManager, "configManager");
-        this.catalog = Objects.requireNonNull(catalog, "catalog");
         this.itemFactory = Objects.requireNonNull(itemFactory, "itemFactory");
+        this.history = Objects.requireNonNull(history, "history");
         this.recyclePool = Objects.requireNonNull(recyclePool, "recyclePool");
         this.currencyManager = Objects.requireNonNull(currencyManager, "currencyManager");
         this.factionManager = Objects.requireNonNull(factionManager, "factionManager");
@@ -60,7 +60,7 @@ public final class TrashVendorService implements Listener {
     public boolean tryHandle(final Player player, final ItemStack hand) {
         final String id = itemFactory.idOf(hand).orElse(null);
         if (id == null) return false;
-        if (!configManager.getBoolean("trash-runtime.enabled", true)) {
+        if (!itemFactory.isKnownItem(hand)) {
             player.sendMessage(messageManager.getMessage("buyer-not-buying",
                     "<gray>🪙 „Ilyesmire most nincs vevőm.”</gray>"));
             return true;
@@ -73,8 +73,7 @@ public final class TrashVendorService implements Listener {
             }
         }
 
-        final TrashDefinition definition = catalog.require(id);
-        final int unitValue = definition.vendorValue();
+        final int unitValue = itemFactory.vendorValueOf(hand);
         final long soldToday = DailyBudget.spentTodayOnOwnThread(player, BUDGET_ID);
         final long dailyCap = Math.max(0L,
                 (long) configManager.getDouble("buyer.daily-cap", 250.0D));
@@ -87,12 +86,20 @@ public final class TrashVendorService implements Listener {
             return true;
         }
         final long value = Math.multiplyExact((long) sellable, unitValue);
+        final ItemStack soldSnapshot = hand.clone();
+        try {
+            history.validateVendorSale(soldSnapshot, sellable);
+        } catch (final RuntimeException rejected) {
+            player.sendMessage(messageManager.getMessage("buyer-not-buying",
+                    "<gray>🪙 „Ilyesmire most nincs vevőm.”</gray>"));
+            return true;
+        }
         final CurrencyType currency = CurrencyType.fromFactionType(
                 factionManager.getEconomyFaction(player.getUniqueId()));
         final int slot = player.getInventory().getHeldItemSlot();
         final TrashRecyclePool.SaleTransaction sale;
         try {
-            sale = recyclePool.prepareSale(player.getUniqueId(), slot, hand.clone(), sellable,
+            sale = recyclePool.prepareSale(player.getUniqueId(), slot, soldSnapshot, sellable,
                     currency.name(), value, DailyBudget.dayIndex(), soldToday);
             markSale(hand, sale.operationId());
             player.getInventory().setItem(slot, hand);
@@ -118,7 +125,7 @@ public final class TrashVendorService implements Listener {
         player.sendMessage(messageManager.getMessage("buyer-trash-sold",
                 "<gold>🪙 Eladva: <white>{amount}× {item}</white> — <white>{value}× veret</white> az egyenlegedre. <gray>(Mai keretedből maradt: {left})</gray></gold>",
                 Map.of("amount", String.valueOf(sellable),
-                        "item", definition.displayName(),
+                        "item", itemFactory.displayNameOf(soldSnapshot),
                         "value", String.valueOf(value),
                         "left", currencyManager.formatBalance(
                                 dailyCap <= 0L ? 0.0D : Math.max(0L, remaining - value)))));
@@ -171,6 +178,7 @@ public final class TrashVendorService implements Listener {
             sale = recyclePool.commitRecycle(operationId);
         }
         if (sale.stage() == TrashRecyclePool.SaleStage.POOL_COMMITTED) {
+            history.completeVendorOperation(operationId);
             final CurrencyType currency = CurrencyType.valueOf(sale.currency());
             currencyManager.creditOnceDurably(player.getUniqueId(), currency, sale.value(),
                     PAYOUT_PREFIX + operationId);
@@ -188,15 +196,14 @@ public final class TrashVendorService implements Listener {
         final ItemStack live = player.getInventory().getItem(slot);
         if (live == null || live.getType().isAir()) return;
         final boolean marked = sale.operationId().toString().equals(markerOf(live));
-        final boolean sameIdentity = sale.trashId().equals(itemFactory.idOf(live).orElse(null));
-        if (!sameIdentity) {
-            if (marked) throw new IllegalStateException("a vendor marker más Trash identityn maradt");
+        if (!sameSource(live, sale.source(), sale.operationId())) {
+            if (marked) throw new IllegalStateException("a vendor marker más Trash itemen maradt");
             return;
         }
         final int expectedRemainder = sale.originalAmount() - sale.soldAmount();
         if (live.getAmount() == sale.originalAmount()) {
             live.setAmount(expectedRemainder);
-        } else if (!marked || live.getAmount() != expectedRemainder) {
+        } else if (live.getAmount() != expectedRemainder) {
             throw new IllegalStateException("a Trash vendor source mennyisége nem recoverálható");
         }
         if (live.getAmount() > 0) {
@@ -205,6 +212,18 @@ public final class TrashVendorService implements Listener {
         } else {
             player.getInventory().setItem(slot, null);
         }
+    }
+
+    private boolean sameSource(final ItemStack live, final ItemStack source,
+                               final UUID operationId) {
+        if (live == null || source == null) return false;
+        final ItemStack liveUnit = live.clone();
+        final ItemStack sourceUnit = source.clone();
+        clearSaleMarker(liveUnit, operationId);
+        clearSaleMarker(sourceUnit, operationId);
+        liveUnit.setAmount(1);
+        sourceUnit.setAmount(1);
+        return liveUnit.isSimilar(sourceUnit);
     }
 
     private int findMarkedSlot(final Player player, final UUID operationId) {

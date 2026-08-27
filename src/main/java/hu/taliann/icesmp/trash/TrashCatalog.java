@@ -36,6 +36,7 @@ public final class TrashCatalog {
 
     private final JavaPlugin plugin;
     private volatile Map<String, TrashDefinition> definitions = Map.of();
+    private volatile Map<String, TrashLifecyclePhase> lifecyclePhases = Map.of();
     private volatile String rarityLabel = "";
     private volatile TrashLootTuning lootTuning;
 
@@ -52,6 +53,7 @@ public final class TrashCatalog {
                     new InputStreamReader(input, StandardCharsets.UTF_8));
             final Parsed parsed = parse(yaml);
             definitions = parsed.definitions();
+            lifecyclePhases = parsed.lifecyclePhases();
             rarityLabel = parsed.rarityLabel();
             lootTuning = parsed.lootTuning();
             plugin.getLogger().info("Trash catalog ready: " + definitions.size() + " identities.");
@@ -72,6 +74,28 @@ public final class TrashCatalog {
 
     public Map<String, TrashDefinition> snapshot() {
         return definitions;
+    }
+
+    public Optional<TrashLifecyclePhase> findPhase(final String rawId) {
+        if (rawId == null || rawId.isBlank()) return Optional.empty();
+        return Optional.ofNullable(lifecyclePhases.get(normalize(rawId)));
+    }
+
+    public TrashLifecyclePhase requirePhase(final String rawId) {
+        return findPhase(rawId).orElseThrow(() ->
+                new IllegalArgumentException("ismeretlen Trash lifecycle phase: " + rawId));
+    }
+
+    public Map<String, TrashLifecyclePhase> phaseSnapshot() {
+        return lifecyclePhases;
+    }
+
+    public boolean isKnownPhase(final String rawBaseId, final String rawPhase) {
+        final TrashDefinition definition = find(rawBaseId).orElse(null);
+        if (definition == null) return false;
+        final String phase = normalize(rawPhase);
+        if ("base".equals(phase)) return true;
+        return phase.equals(definition.successPhase()) && lifecyclePhases.containsKey(phase);
     }
 
     public String rarityLabel() {
@@ -136,7 +160,44 @@ public final class TrashCatalog {
         if (!EXPECTED_COUNTS.equals(counts)) {
             throw new IllegalStateException("Trash kind counts drifted from the reviewed authority: " + counts);
         }
-        return new Parsed(Map.copyOf(parsed), rarityLabel, lootTuning);
+
+        final ConfigurationSection phases = yaml.getConfigurationSection("lifecycle-phases");
+        if (phases == null) throw new IllegalStateException("Trash catalog lifecycle-phases section missing");
+        final LinkedHashMap<String, TrashLifecyclePhase> parsedPhases = new LinkedHashMap<>();
+        for (final String rawId : phases.getKeys(false)) {
+            final ConfigurationSection section = phases.getConfigurationSection(rawId);
+            try {
+                if (section == null) throw new IllegalArgumentException("a lifecycle phase nem objektum");
+                final TrashLifecyclePhase phase = parseLifecyclePhase(rawId, section);
+                unique(displayNames, phase.displayName(), "display-name");
+                unique(models, phase.itemModel(), "item-model");
+                unique(textures, phase.texture(), "texture");
+                if (parsedPhases.putIfAbsent(phase.id(), phase) != null) {
+                    throw new IllegalArgumentException("duplikált lifecycle phase ID");
+                }
+            } catch (final RuntimeException invalid) {
+                errors.add("lifecycle-phases." + rawId + ": " + invalid.getMessage());
+            }
+        }
+        for (final TrashDefinition definition : parsed.values()) {
+            if (!definition.successPhase().isBlank()
+                    && !parsedPhases.containsKey(definition.successPhase())) {
+                errors.add(definition.id() + ": ismeretlen lifecycle.on-success-transform: "
+                        + definition.successPhase());
+            }
+        }
+        final Set<String> referencedPhases = new HashSet<>();
+        parsed.values().stream().map(TrashDefinition::successPhase)
+                .filter(phase -> !phase.isBlank()).forEach(referencedPhases::add);
+        for (final String phase : parsedPhases.keySet()) {
+            if (!referencedPhases.contains(phase)) {
+                errors.add("lifecycle-phases." + phase + ": árva, base identity nem hivatkozza");
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new IllegalStateException("Hibás Trash catalog: " + String.join("; ", errors));
+        }
+        return new Parsed(Map.copyOf(parsed), Map.copyOf(parsedPhases), rarityLabel, lootTuning);
     }
 
     private static TrashDefinition parseDefinition(final String rawId, final ConfigurationSection section) {
@@ -180,8 +241,48 @@ public final class TrashCatalog {
         if (!kind.isInert() && !id.toUpperCase(Locale.ROOT).equals(behavior)) {
             throw new IllegalArgumentException("a special behavior kulcsnak identity-specifikusnak kell lennie");
         }
+        final String successPhase = normalize(section.getString("lifecycle.on-success-transform", ""));
+        if (!successPhase.isBlank() && !ID_PATTERN.matcher(successPhase).matches()) {
+            throw new IllegalArgumentException("a lifecycle.on-success-transform csak lower_snake_case lehet");
+        }
         return new TrashDefinition(id, displayName, playerRarity, material, itemModel, texture,
-                vendorValue, lore, sourceBias, kind, behavior);
+                vendorValue, lore, sourceBias, kind, behavior, successPhase);
+    }
+
+    private static TrashLifecyclePhase parseLifecyclePhase(final String rawId,
+                                                            final ConfigurationSection section) {
+        final String id = normalize(rawId);
+        if (!ID_PATTERN.matcher(id).matches() || !id.equals(rawId)) {
+            throw new IllegalArgumentException("az ID csak lower_snake_case lehet");
+        }
+        final String displayName = required(section.getString("display-name"), "display-name");
+        final String playerRarity = normalize(section.getString("player-rarity", ""));
+        if (!"ocska".equals(playerRarity)) {
+            throw new IllegalArgumentException("player-rarity csak ocska lehet");
+        }
+        final String rawMaterial = required(section.getString("material"), "material");
+        final Material material = ConfigMaterialResolver.match(rawMaterial);
+        if (material == null || material == Material.AIR || material == Material.CAVE_AIR
+                || material == Material.VOID_AIR) {
+            throw new IllegalArgumentException("ismeretlen vagy nem item material: " + rawMaterial);
+        }
+        final String itemModel = required(section.getString("item-model"), "item-model");
+        if (!("icesmp:trash/" + id).equals(itemModel)) {
+            throw new IllegalArgumentException("az item-model nem a phase saját canonical modellje");
+        }
+        final String texture = required(section.getString("texture"), "texture");
+        if (!("icesmp:item/trash/" + id).equals(texture)) {
+            throw new IllegalArgumentException("a texture nem a phase saját canonical textúrája");
+        }
+        final int vendorValue = section.getInt("vendor-value", 0);
+        if (vendorValue < 1 || vendorValue > 5) {
+            throw new IllegalArgumentException("vendor-value csak 1..5 lehet");
+        }
+        final List<String> lore = List.copyOf(section.getStringList("lore"));
+        validatePlayerText(displayName, "display-name");
+        lore.forEach(line -> validatePlayerText(line, "lore"));
+        return new TrashLifecyclePhase(id, displayName, playerRarity, material, itemModel,
+                texture, vendorValue, lore);
     }
 
     private static void validatePlayerText(final String text, final String field) {
@@ -207,10 +308,12 @@ public final class TrashCatalog {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 
-    record Parsed(Map<String, TrashDefinition> definitions, String rarityLabel,
+    record Parsed(Map<String, TrashDefinition> definitions,
+                  Map<String, TrashLifecyclePhase> lifecyclePhases, String rarityLabel,
                   TrashLootTuning lootTuning) {
         Parsed {
             definitions = Map.copyOf(definitions);
+            lifecyclePhases = Map.copyOf(lifecyclePhases);
             Objects.requireNonNull(lootTuning, "lootTuning");
         }
     }

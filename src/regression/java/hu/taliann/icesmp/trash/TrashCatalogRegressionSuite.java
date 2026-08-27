@@ -53,6 +53,7 @@ public final class TrashCatalogRegressionSuite {
     private static void validatesCanonicalCatalog() {
         final TrashCatalog.Parsed parsed = parseFresh();
         check(parsed.definitions().size() == 330, "base identity denominator drifted");
+        check(parsed.lifecyclePhases().size() == 27, "lifecycle phase denominator drifted");
         check("Ócska".equals(parsed.rarityLabel()), "player rarity label drifted");
         final TrashLootTuning tuning = parsed.lootTuning();
         check(tuning.chance(TrashLootSource.FISHING) == 0.065D, "fishing chance drifted");
@@ -89,12 +90,33 @@ public final class TrashCatalogRegressionSuite {
             check(definition.internalKind().isInert() == "NONE".equals(definition.behavior()),
                     "behavior classification drift: " + definition.id());
         }
+        final Set<String> referencedPhases = new HashSet<>();
+        parsed.definitions().values().stream().map(TrashDefinition::successPhase)
+                .filter(phase -> !phase.isBlank()).forEach(referencedPhases::add);
+        for (final TrashLifecyclePhase phase : parsed.lifecyclePhases().values()) {
+            check(models.add(phase.itemModel()), "shared lifecycle item-model: " + phase.itemModel());
+            check(textures.add(phase.texture()), "shared lifecycle texture: " + phase.texture());
+            check("ocska".equals(phase.playerRarity()), "non-Ócska lifecycle rarity: " + phase.id());
+            check(phase.itemModel().equals("icesmp:trash/" + phase.id()),
+                    "non-canonical lifecycle model: " + phase.id());
+            check(phase.texture().equals("icesmp:item/trash/" + phase.id()),
+                    "non-canonical lifecycle texture: " + phase.id());
+        }
         check(counts.equals(new EnumMap<>(Map.of(
                 TrashKind.MUNDANE, 190,
                 TrashKind.STORY, 75,
                 TrashKind.ANOMALY, 42,
                 TrashKind.TRASH_RELIC, 23))), "kind denominator drifted: " + counts);
-        check(models.size() == 330 && textures.size() == 330, "asset uniqueness denominator drifted");
+        check(models.size() == 357 && textures.size() == 357, "asset uniqueness denominator drifted");
+        check(referencedPhases.equals(parsed.lifecyclePhases().keySet()),
+                "lifecycle phase references drifted");
+        check("par_zokni".equals(parsed.definitions().get("bal_zokni").successPhase())
+                        && "par_zokni".equals(parsed.definitions().get("jobb_zokni").successPhase()),
+                "paired sock transformation drifted");
+        check("osszezart_lancszemek".equals(parsed.definitions().get("bal_lancszem").successPhase())
+                        && "osszezart_lancszemek".equals(
+                                parsed.definitions().get("jobb_lancszem").successPhase()),
+                "paired chain transformation drifted");
         check(parsed.definitions().containsKey("rozsdas_szog"), "first mundane identity missing");
         check(parsed.definitions().containsKey("portalkorom"), "last anomaly identity missing");
         check(parsed.definitions().containsKey("repedt_virrasztouveg"), "last relic identity missing");
@@ -108,6 +130,11 @@ public final class TrashCatalogRegressionSuite {
         final YamlConfiguration countDrift = YamlConfiguration.loadConfiguration(CATALOG.toFile());
         countDrift.set("items.repedt_virrasztouveg", null);
         expectRejected(countDrift, "329-item catalog must fail closed");
+
+        final YamlConfiguration phaseCollision = YamlConfiguration.loadConfiguration(CATALOG.toFile());
+        phaseCollision.set("lifecycle-phases.kiegett_biztositek.item-model",
+                "icesmp:trash/rozsdas_szog");
+        expectRejected(phaseCollision, "base/lifecycle asset collision must fail closed");
     }
 
     private static void preservesMinimalPhysicalStateAndNoRollBoundary() throws Exception {
@@ -149,7 +176,7 @@ public final class TrashCatalogRegressionSuite {
         require(ambient, "world.isChunkLoaded", "loaded-chunk-only ambient gate");
         require(ambient, "claimManager.getClaimAt", "claim avoidance");
         require(ambient, "ProtectionBridge.queryProtected", "WorldGuard fail-closed avoidance");
-        require(ambient, "max-per-neighborhood", "3x3 density cap");
+        require(ambient, "maxPerNeighborhood()", "Git-authored 3x3 density cap");
         require(ambient, "setUnlimitedLifetime(true)", "authored ambient TTL ownership");
         require(ambient, "trash_ambient_expires_at", "durable ambient expiry authority");
         require(ambient, "EntitiesLoadEvent", "chunk-load ambient recovery");
@@ -183,7 +210,8 @@ public final class TrashCatalogRegressionSuite {
                 "recycle substitution must happen after normal category/identity selection");
         require(lootService, "selection.definition().id()", "same-identity recycle lookup");
         final String recyclePool = Files.readString(RECYCLE_POOL);
-        require(recyclePool, "definition.internalKind().isInert()", "inert recycle exclusion");
+        require(recyclePool, "history.isValidTracked", "history-bearing exact recycle eligibility");
+        require(recyclePool, "history.recordRecycled", "recycle history continuation");
         require(recyclePool, "registerCriticalWrite", "critical recycle write registration");
         require(recyclePool, "YamlStore.saveAtomic", "atomic recycle persistence");
         require(recyclePool, "vendor-transactions", "durable vendor transaction journal");

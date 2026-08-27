@@ -25,13 +25,14 @@ TARGET_SIZE = 64
 CONTENT_SIZE = 56
 
 
-def load_authority() -> tuple[list[str], dict[str, object]]:
+def load_authority() -> tuple[list[str], list[str], dict[str, object]]:
     catalog = yaml.safe_load(CATALOG.read_text(encoding="utf-8"))
     item_ids = list(catalog["items"])
+    phase_ids = list(catalog["lifecycle-phases"])
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     if manifest.get("schema_version") != 1:
         raise ValueError("trash sprite manifest schema_version must be 1")
-    return item_ids, manifest
+    return item_ids, phase_ids, manifest
 
 
 def normalize_cell(cell: Image.Image, item_id: str) -> Image.Image:
@@ -91,8 +92,9 @@ def sync_models(item_id: str, check_only: bool) -> None:
               json.dumps(generated_model, ensure_ascii=False, indent=2) + "\n", check_only)
 
 
-def process(check_only: bool) -> int:
-    catalog_ids, manifest = load_authority()
+def process(check_only: bool) -> tuple[int, int]:
+    catalog_ids, phase_ids, manifest = load_authority()
+    authority_ids = catalog_ids + phase_ids
     seen: set[str] = set()
     hashes: dict[str, str] = {}
     if not check_only:
@@ -112,7 +114,7 @@ def process(check_only: bool) -> int:
         if transparent_fraction < 0.20:
             raise ValueError(f"AI source sheet lacks transparent separation: {source_path}")
         for index, item_id in enumerate(ids):
-            if item_id not in catalog_ids:
+            if item_id not in authority_ids:
                 raise ValueError(f"unknown catalog ID in sprite manifest: {item_id}")
             if item_id in seen:
                 raise ValueError(f"duplicate sprite manifest ID: {item_id}")
@@ -130,7 +132,7 @@ def process(check_only: bool) -> int:
                 raise ValueError(f"duplicate output texture: {item_id} == {hashes[digest]}")
             hashes[digest] = item_id
             sync_models(item_id, check_only)
-    expected_prefix = catalog_ids[:len(seen)]
+    expected_prefix = authority_ids[:len(seen)]
     if list(item_id for sheet in manifest["sheets"] for item_id in sheet["ids"]) != expected_prefix:
         raise ValueError("sprite manifest must cover one contiguous catalog prefix in canonical order")
     for root, suffix in ((TEXTURE_ROOT, ".png"), (ITEM_ROOT, ".json"), (MODEL_ROOT, ".json")):
@@ -139,14 +141,18 @@ def process(check_only: bool) -> int:
             missing = sorted(seen - actual)[:5]
             extra = sorted(actual - seen)[:5]
             raise ValueError(f"Trash asset output drift in {root}: missing={missing}, extra={extra}")
-    print(f"Trash AI sprite assets ready: {len(seen)}/330 identities")
-    return len(seen)
+    base_count = len(seen.intersection(catalog_ids))
+    phase_count = len(seen.intersection(phase_ids))
+    print(f"Trash AI sprite assets ready: {base_count}/330 identities; "
+          f"{phase_count}/{len(phase_ids)} lifecycle phases")
+    return base_count, phase_count
 
 
 def validate(require_complete: bool, check_only: bool) -> None:
-    count = process(check_only)
-    if require_complete and count != 330:
-        raise ValueError(f"production Trash asset gate requires 330/330, found {count}/330")
+    base_count, phase_count = process(check_only)
+    if require_complete and (base_count != 330 or phase_count != 27):
+        raise ValueError("production Trash asset gate requires 330/330 base identities and "
+                         f"27/27 phases, found {base_count}/330 and {phase_count}/27")
     for path in TEXTURE_ROOT.glob("*.png"):
         image = Image.open(path)
         if image.size != (64, 64) or image.mode != "RGBA":
@@ -162,7 +168,8 @@ def validate(require_complete: bool, check_only: bool) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="validate committed outputs without writing")
-    parser.add_argument("--require-complete", action="store_true", help="require all 330 final assets")
+    parser.add_argument("--require-complete", action="store_true",
+                        help="require all 330 base and 27 lifecycle-phase assets")
     args = parser.parse_args()
     validate(args.require_complete, args.check)
 

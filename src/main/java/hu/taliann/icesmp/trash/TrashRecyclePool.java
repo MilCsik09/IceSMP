@@ -28,15 +28,18 @@ public final class TrashRecyclePool implements PersistentStore {
     private final JavaPlugin plugin;
     private final TrashCatalog catalog;
     private final TrashItemFactory itemFactory;
+    private final TrashHistoryService history;
     private final File file;
     private final Map<String, ArrayDeque<ItemStack>> pool = new LinkedHashMap<>();
     private final Map<UUID, SaleTransaction> openSales = new LinkedHashMap<>();
 
     public TrashRecyclePool(final JavaPlugin plugin, final TrashCatalog catalog,
-                            final TrashItemFactory itemFactory) {
+                            final TrashItemFactory itemFactory,
+                            final TrashHistoryService history) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.catalog = Objects.requireNonNull(catalog, "catalog");
         this.itemFactory = Objects.requireNonNull(itemFactory, "itemFactory");
+        this.history = Objects.requireNonNull(history, "history");
         this.file = new File(plugin.getDataFolder(), "trash-recycle.yml");
         YamlStore.registerCriticalWrite(file);
     }
@@ -53,12 +56,15 @@ public final class TrashRecyclePool implements PersistentStore {
         }
         loadPool(yaml.getConfigurationSection("pool"));
         loadSales(yaml.getConfigurationSection("vendor-transactions"));
+        reconcileHistoryReceipts();
     }
 
     private void loadPool(final ConfigurationSection stored) {
         if (stored == null) return;
         for (final String id : stored.getKeys(false)) {
-            requireRecycleIdentity(id);
+            if (catalog.find(id).isEmpty()) {
+                corrupt("ismeretlen Trash recycle identity: " + id);
+            }
             final List<?> serialized = stored.getList(id);
             if (serialized == null || serialized.size() > MAX_PER_IDENTITY) {
                 corrupt("érvénytelen recycle lista: " + id);
@@ -100,7 +106,7 @@ public final class TrashRecyclePool implements PersistentStore {
             final long budgetBefore = section.getLong("budget-before", -1L);
             final long createdAt = section.getLong("created-at", -1L);
             final List<ItemStack> recycleUnits = itemList(section.getList("recycle-units"));
-            if (source == null || !itemFactory.isBaseIdentity(source)
+            if (source == null || !itemFactory.isKnownItem(source)
                     || !trashId.equals(itemFactory.idOf(source).orElse(null))
                     || originalAmount < 1 || originalAmount != source.getAmount()
                     || soldAmount < 1 || soldAmount > originalAmount || slot < 0 || slot > 40
@@ -108,8 +114,11 @@ public final class TrashRecyclePool implements PersistentStore {
                     || budgetDay < 0L || budgetBefore < 0L || createdAt < 1L) {
                 corrupt("érvénytelen Trash vendor tranzakció: " + rawOperationId);
             }
-            final boolean exactRecycle = !catalog.require(trashId).internalKind().isInert();
-            if (recycleUnits.size() != (exactRecycle ? soldAmount : 0)
+            final boolean exactRecycle = history.instanceIdOf(source).isPresent()
+                    || !catalog.require(trashId).internalKind().isInert();
+            final int expectedUnits = stage.ordinal() >= SaleStage.POOL_COMMITTED.ordinal()
+                    && exactRecycle ? soldAmount : 0;
+            if (recycleUnits.size() != expectedUnits
                     || recycleUnits.stream().anyMatch(item -> !validRecycleUnit(trashId, item))) {
                 corrupt("érvénytelen Trash vendor recycle payload: " + rawOperationId);
             }
@@ -118,6 +127,15 @@ public final class TrashRecyclePool implements PersistentStore {
                     budgetDay, budgetBefore, createdAt, recycleUnits);
             if (openSales.putIfAbsent(operationId, sale) != null) {
                 corrupt("duplikált Trash vendor operation: " + rawOperationId);
+            }
+        }
+    }
+
+    /** A committed recycle payload is authoritative; any surviving preparation receipt is stale. */
+    private void reconcileHistoryReceipts() {
+        for (final SaleTransaction sale : openSales.values()) {
+            if (sale.stage().ordinal() >= SaleStage.POOL_COMMITTED.ordinal()) {
+                history.completeVendorOperation(sale.operationId());
             }
         }
     }
@@ -134,25 +152,19 @@ public final class TrashRecyclePool implements PersistentStore {
                                                     final long budgetBefore) {
         Objects.requireNonNull(playerId, "playerId");
         Objects.requireNonNull(source, "source");
-        if (openSales.size() >= MAX_OPEN_SALES || !itemFactory.isBaseIdentity(source)
+        if (openSales.size() >= MAX_OPEN_SALES || !itemFactory.isKnownItem(source)
                 || soldAmount < 1 || soldAmount > source.getAmount() || slot < 0 || slot > 40
                 || currency == null || currency.isBlank() || currency.length() > 64
                 || value < 1L || budgetDay < 0L || budgetBefore < 0L) {
             throw new IllegalArgumentException("érvénytelen Trash vendor tranzakció");
         }
         final String trashId = itemFactory.idOf(source).orElseThrow();
-        final List<ItemStack> units = new ArrayList<>();
-        if (!catalog.require(trashId).internalKind().isInert()) {
-            for (int index = 0; index < soldAmount; index++) {
-                final ItemStack unit = source.clone();
-                unit.setAmount(1);
-                units.add(unit);
-            }
-        }
+        history.validateVendorSale(source, soldAmount);
         final UUID operationId = UUID.randomUUID();
         final SaleTransaction sale = new SaleTransaction(operationId, playerId,
                 SaleStage.PREPARED, trashId, source.clone(), source.getAmount(), soldAmount,
-                slot, currency, value, budgetDay, budgetBefore, System.currentTimeMillis(), units);
+                slot, currency, value, budgetDay, budgetBefore, System.currentTimeMillis(),
+                List.of());
         openSales.put(operationId, sale);
         persistOrRestore(() -> openSales.remove(operationId));
         return copy(sale);
@@ -172,19 +184,36 @@ public final class TrashRecyclePool implements PersistentStore {
         if (current.stage() != SaleStage.ITEM_REMOVED) {
             throw new IllegalStateException("Trash vendor recycle commit rossz fázisban");
         }
+        final List<ItemStack> units = history.prepareVendorUnits(operationId, current.source(),
+                current.soldAmount(), current.playerId());
+        final boolean exactRecycle = history.instanceIdOf(current.source()).isPresent()
+                || !catalog.require(current.trashId()).internalKind().isInert();
+        if (units.size() != (exactRecycle ? current.soldAmount() : 0)
+                || units.stream().anyMatch(item -> !validRecycleUnit(current.trashId(), item))) {
+            throw new IllegalStateException("érvénytelen Trash vendor recycle preparation");
+        }
         final ArrayDeque<ItemStack> previous = copyDeque(pool.get(current.trashId()));
         final ArrayDeque<ItemStack> instances = pool.computeIfAbsent(
                 current.trashId(), ignored -> new ArrayDeque<>());
-        for (final ItemStack unit : current.recycleUnits()) {
+        for (final ItemStack unit : units) {
             instances.addLast(unit.clone());
             while (instances.size() > MAX_PER_IDENTITY) instances.removeFirst();
         }
-        final SaleTransaction next = current.withStage(SaleStage.POOL_COMMITTED);
+        final SaleTransaction next = current.withRecycleUnitsAndStage(
+                units, SaleStage.POOL_COMMITTED);
         openSales.put(operationId, next);
         persistOrRestore(() -> {
             restoreDeque(current.trashId(), previous);
             openSales.put(operationId, current);
         });
+        try {
+            history.completeVendorOperation(operationId);
+        } catch (final RuntimeException failure) {
+            restoreDeque(current.trashId(), previous);
+            openSales.put(operationId, current);
+            persist();
+            throw failure;
+        }
         return copy(next);
     }
 
@@ -220,29 +249,40 @@ public final class TrashRecyclePool implements PersistentStore {
                 .map(TrashRecyclePool::copy).toList();
     }
 
-    /** Compatibility entry point; new vendor flows must use the transaction journal. */
-    public synchronized void offer(final ItemStack sold, final int amount) {
-        final String id = itemFactory.idOf(sold).orElse(null);
-        if (id == null || amount <= 0 || catalog.require(id).internalKind().isInert()) return;
-        final ArrayDeque<ItemStack> previous = copyDeque(pool.get(id));
-        final ArrayDeque<ItemStack> instances = pool.computeIfAbsent(id, ignored -> new ArrayDeque<>());
-        for (int index = 0; index < amount; index++) {
-            final ItemStack unit = sold.clone();
-            unit.setAmount(1);
-            instances.addLast(unit);
+    /** Stores exact, already-individualized units without duplicating opaque instance tokens. */
+    public synchronized void offerAll(final List<ItemStack> soldUnits) {
+        Objects.requireNonNull(soldUnits, "soldUnits");
+        for (final ItemStack unit : soldUnits) {
+            if (!history.isValidTracked(unit)) {
+                throw new IllegalArgumentException("csak current history-bearing Trash unit recycle-olható");
+            }
+        }
+        final Map<String, ArrayDeque<ItemStack>> previous = new LinkedHashMap<>();
+        for (final ItemStack unit : soldUnits) {
+            final String id = itemFactory.idOf(unit).orElseThrow();
+            previous.computeIfAbsent(id, ignored -> copyDeque(pool.get(id)));
+            final ArrayDeque<ItemStack> instances = pool.computeIfAbsent(
+                    id, ignored -> new ArrayDeque<>());
+            instances.addLast(unit.clone());
             while (instances.size() > MAX_PER_IDENTITY) instances.removeFirst();
         }
-        persistOrRestore(() -> restoreDeque(id, previous));
+        persistOrRestore(() -> previous.forEach(this::restoreDeque));
     }
 
     public synchronized Optional<ItemStack> take(final String id) {
         final ArrayDeque<ItemStack> instances = pool.get(id);
         if (instances == null || instances.isEmpty()) return Optional.empty();
-        final ItemStack item = instances.removeFirst();
+        final ItemStack stored = instances.removeFirst();
         if (instances.isEmpty()) pool.remove(id);
         persistOrRestore(() -> pool.computeIfAbsent(id, ignored -> new ArrayDeque<>())
-                .addFirst(item));
-        return Optional.of(item.clone());
+                .addFirst(stored));
+        try {
+            return Optional.of(history.recordRecycled(stored.clone()));
+        } catch (final RuntimeException failure) {
+            pool.computeIfAbsent(id, ignored -> new ArrayDeque<>()).addFirst(stored);
+            persist();
+            throw failure;
+        }
     }
 
     public synchronized int pooledCount() {
@@ -315,15 +355,9 @@ public final class TrashRecyclePool implements PersistentStore {
         }
     }
 
-    private void requireRecycleIdentity(final String id) {
-        final TrashDefinition definition = catalog.find(id).orElse(null);
-        if (definition == null || definition.internalKind().isInert()) {
-            corrupt("ismeretlen vagy nem recycle-eligible Trash identity: " + id);
-        }
-    }
-
     private boolean validRecycleUnit(final String id, final ItemStack item) {
-        return item != null && item.getAmount() == 1 && itemFactory.isBaseIdentity(item)
+        return item != null && item.getAmount() == 1 && itemFactory.isKnownItem(item)
+                && history.isValidTracked(item)
                 && id.equals(itemFactory.idOf(item).orElse(null));
     }
 
@@ -405,6 +439,13 @@ public final class TrashRecyclePool implements PersistentStore {
             return new SaleTransaction(operationId, playerId, next, trashId, source,
                     originalAmount, soldAmount, slot, currency, value, budgetDay, budgetBefore,
                     createdAt, recycleUnits);
+        }
+
+        private SaleTransaction withRecycleUnitsAndStage(final List<ItemStack> units,
+                                                         final SaleStage next) {
+            return new SaleTransaction(operationId, playerId, next, trashId, source,
+                    originalAmount, soldAmount, slot, currency, value, budgetDay, budgetBefore,
+                    createdAt, units);
         }
     }
 }
