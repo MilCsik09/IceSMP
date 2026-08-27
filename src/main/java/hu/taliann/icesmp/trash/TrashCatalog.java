@@ -241,6 +241,9 @@ public final class TrashCatalog {
         if (!kind.isInert() && !id.toUpperCase(Locale.ROOT).equals(behavior)) {
             throw new IllegalArgumentException("a special behavior kulcsnak identity-specifikusnak kell lennie");
         }
+        if (kind == TrashKind.ANOMALY) {
+            TrashAnomalyBehavior.parse(behavior);
+        }
         final String successPhase = normalize(section.getString("lifecycle.on-success-transform", ""));
         if (!successPhase.isBlank() && !ID_PATTERN.matcher(successPhase).matches()) {
             throw new IllegalArgumentException("a lifecycle.on-success-transform csak lower_snake_case lehet");

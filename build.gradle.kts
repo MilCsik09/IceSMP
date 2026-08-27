@@ -1043,6 +1043,10 @@ val trashHistoryRegressionTest = registerRegression(
     "trashHistoryRegressionTest",
     "Runs Trash Phase C history, split, lifecycle, persistence, recycle and no-gate regressions.",
     "hu.taliann.icesmp.trash.TrashHistoryRegressionSuite")
+val trashAnomalyRegressionTest = registerRegression(
+    "trashAnomalyRegressionTest",
+    "Runs all 42 Phase D behavior, primitive, Folia, persistence and secrecy gates.",
+    "hu.taliann.icesmp.trash.TrashAnomalyRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -1067,6 +1071,7 @@ tasks.check {
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
+        trashAnomalyRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,

@@ -50,6 +50,7 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final hu.taliann.icesmp.managers.ProfessionManager professionManager,
                                         final hu.taliann.icesmp.managers.AfkManager afkManager,
                                         final hu.taliann.icesmp.trash.TrashAmbientManager trashAmbientManager,
+                                        final hu.taliann.icesmp.trash.TrashAnomalyRuntime trashAnomalyRuntime,
                                         final hu.taliann.icesmp.managers.SitManager sitManager,
                                         final hu.taliann.icesmp.managers.CrateManager crateManager,
                                         final hu.taliann.icesmp.managers.ModerationManager moderationManager,
@@ -70,7 +71,8 @@ public final class PlayerSessionCleanupListener implements Listener {
                 factionPassiveListener, metelytepoManager, relicManager,
                 craftingRestrictionManager, resourceManager, partyManager, claimManager,
                 territoryManager, petManager, ritualManager, professionManager, afkManager,
-                trashAmbientManager, sitManager, crateManager, moderationManager, vanishManager, invseeManager,
+                trashAmbientManager, trashAnomalyRuntime, sitManager, crateManager, moderationManager,
+                vanishManager, invseeManager,
                 whisperManager, guildManager, honorDuelManager, spyManager, combatTagManager,
                 classHealthService, lowHealthBorderListener, soulforgeManager, clientBridge);
         this.spellRegistry = spellRegistry;
