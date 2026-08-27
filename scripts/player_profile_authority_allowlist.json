@@ -525,6 +525,21 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/pve/ContributionLedger.java|private final Map<UUID, Contribution> entries = new LinkedHashMap<>();",
       "category": "RUNTIME",
       "reason": "Bounded encounter-only contribution evidence keyed by participant UUID; it is never persisted, rejects post-close writes and is discarded when the transient boss encounter settles or shuts down. Durable personal reward eligibility lives in PlayerProfile v2 OPERATIONS receipts."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Shared vendor/recycle transaction journal keyed by an operation UUID; player UUIDs are participants in a cross-domain recovery aggregate, not player-owned profile authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashAmbientManager.java|private final Map<UUID, Long> nextAttemptAt = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Transient ambient-attempt throttle for online movement sessions; it is never persisted and is removed by the registered player-state cleanup boundary."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java|private final Map<UUID, SaleTransaction> openSales = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Durable cross-domain vendor recovery operations keyed by opaque operation UUID; the embedded player UUID is a transaction participant reference, not profile-owned state."
     }
   ]
 }
