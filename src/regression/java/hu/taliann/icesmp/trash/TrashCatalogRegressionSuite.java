@@ -33,6 +33,10 @@ public final class TrashCatalogRegressionSuite {
             "src/main/java/hu/taliann/icesmp/trash/TrashLootService.java");
     private static final Path RECYCLE_POOL = Path.of(
             "src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java");
+    private static final Path VENDOR = Path.of(
+            "src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java");
+    private static final Path DAILY_BUDGET = Path.of(
+            "src/main/java/hu/taliann/icesmp/utils/DailyBudget.java");
 
     private TrashCatalogRegressionSuite() {
     }
@@ -136,6 +140,8 @@ public final class TrashCatalogRegressionSuite {
         require(core, "new hu.taliann.icesmp.trash.TrashFishingListener", "fishing source wiring");
         require(core, "new hu.taliann.icesmp.trash.TrashMobDropListener", "mob source wiring");
         require(core, "pluginManager.registerEvents(trashAmbientManager", "ambient source wiring");
+        require(core, "trashAmbientManager.start()", "loaded ambient recovery startup");
+        require(core, "pluginManager.registerEvents(trashVendorService", "vendor recovery wiring");
         require(core, "trashRecyclePool", "recycle store lifecycle wiring");
 
         final String ambient = Files.readString(AMBIENT);
@@ -145,7 +151,15 @@ public final class TrashCatalogRegressionSuite {
         require(ambient, "ProtectionBridge.queryProtected", "WorldGuard fail-closed avoidance");
         require(ambient, "max-per-neighborhood", "3x3 density cap");
         require(ambient, "setUnlimitedLifetime(true)", "authored ambient TTL ownership");
+        require(ambient, "trash_ambient_expires_at", "durable ambient expiry authority");
+        require(ambient, "EntitiesLoadEvent", "chunk-load ambient recovery");
+        require(ambient, "EntitiesUnloadEvent", "chunk-unload density release");
+        require(ambient, "territory.type().isProtectedZone()",
+                "protected-zone-only territory exclusion");
         require(ambient, "ItemMergeEvent", "ambient merge isolation");
+        final int shutdown = ambient.indexOf("public void shutdown()");
+        check(shutdown >= 0 && !ambient.substring(shutdown).contains("item.remove()"),
+                "plugin shutdown must not erase durable ambient entities");
 
         final String mob = Files.readString(MOB);
         require(mob, "MobKillUtil.RewardKind.FLAVOR", "boss-safe AFK/spawner/minion mob gate");
@@ -170,7 +184,25 @@ public final class TrashCatalogRegressionSuite {
         require(lootService, "selection.definition().id()", "same-identity recycle lookup");
         final String recyclePool = Files.readString(RECYCLE_POOL);
         require(recyclePool, "definition.internalKind().isInert()", "inert recycle exclusion");
+        require(recyclePool, "registerCriticalWrite", "critical recycle write registration");
         require(recyclePool, "YamlStore.saveAtomic", "atomic recycle persistence");
+        require(recyclePool, "vendor-transactions", "durable vendor transaction journal");
+        require(recyclePool, "MAX_PER_IDENTITY", "bounded exact-instance recycle pool");
+        require(recyclePool, "persistOrRestore", "immediate recycle mutation persistence");
+        require(recyclePool, "SaleStage.POOL_COMMITTED", "atomic pool commit checkpoint");
+
+        final String vendor = Files.readString(VENDOR);
+        require(vendor, "trash_vendor_sale", "inventory-side vendor recovery marker");
+        require(vendor, "tryConsumeDurablyOnOwnThread", "durable daily budget reservation");
+        require(vendor, "creditOnceDurably", "idempotent durable vendor payout");
+        require(vendor, "recyclePool.commitRecycle", "journaled exact recycle commit");
+        check(!vendor.contains("recyclePool.offer(hand"),
+                "vendor must not use the legacy non-journaled pool route");
+
+        final String dailyBudget = Files.readString(DAILY_BUDGET);
+        require(dailyBudget, "DURABLE.reserve", "PlayerProfile-backed budget authority");
+        require(dailyBudget, ".toCompletableFuture().join()",
+                "vendor budget commit acknowledgement");
     }
 
     private static TrashCatalog.Parsed parseFresh() {

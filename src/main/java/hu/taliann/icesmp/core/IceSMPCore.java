@@ -721,7 +721,7 @@ public final class IceSMPCore {
         // Felvásárló NPC: napi keretes nyersanyag-eladás (jövedelem-csap; szintén interact-hook).
         this.buyerService = new hu.taliann.icesmp.managers.BuyerService(configManager, currencyManager, factionManager, messageManager);
         this.trashVendorService = new hu.taliann.icesmp.trash.TrashVendorService(
-                configManager, trashCatalog, trashItemFactory, trashRecyclePool,
+                plugin, configManager, trashCatalog, trashItemFactory, trashRecyclePool,
                 currencyManager, factionManager, messageManager);
         buyerService.setTrashVendorService(trashVendorService);
         // Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
@@ -1087,6 +1087,7 @@ public final class IceSMPCore {
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
+        trashAmbientManager.start();
         // Hot plugin reloads may enable while players are already online and therefore do not emit
         // a new join event. Give those sessions a fresh generation before PM delivery can link them.
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -2052,6 +2053,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.trash.TrashFishingListener(
                 plugin, trashLootService, trashContextResolver, afkManager), plugin);
         pluginManager.registerEvents(trashAmbientManager, plugin);
+        pluginManager.registerEvents(trashVendorService, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SelectionWandListener(claimManager, territoryManager, currencyManager, messageManager), plugin);
         // Nether-portál világszabály: új portál nem gyújtható — csak a Kárhozat Kapuja él.

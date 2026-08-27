@@ -7,6 +7,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.Location;
@@ -26,11 +27,11 @@ import org.bukkit.event.entity.ItemDespawnEvent;
 import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.world.EntitiesLoadEvent;
+import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -49,6 +50,7 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
     private final TerritoryManager territoryManager;
     private final AfkManager afkManager;
     private final NamespacedKey ambientMarker;
+    private final NamespacedKey ambientExpiresAt;
     private final Map<UUID, Long> nextAttemptAt = new ConcurrentHashMap<>();
     private final Map<UUID, AmbientRecord> active = new ConcurrentHashMap<>();
     private final Map<ChunkKey, Integer> chunkCounts = new ConcurrentHashMap<>();
@@ -67,6 +69,7 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
         this.territoryManager = Objects.requireNonNull(territoryManager, "territoryManager");
         this.afkManager = Objects.requireNonNull(afkManager, "afkManager");
         this.ambientMarker = new NamespacedKey(plugin, "trash_ambient");
+        this.ambientExpiresAt = new NamespacedKey(plugin, "trash_ambient_expires_at");
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -94,8 +97,10 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
         if (!world.isChunkLoaded(chunkX, chunkZ)
                 || !Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)) return;
         final Location spawn = resolveSurface(world, column.getBlockX(), column.getBlockZ());
+        final hu.taliann.icesmp.data.Territory territory = spawn == null ? null
+                : territoryManager.getTerritoryAt(spawn);
         if (spawn == null || claimManager.getClaimAt(spawn) != null
-                || territoryManager.getTerritoryAt(spawn) != null
+                || territory != null && territory.type().isProtectedZone()
                 || !Boolean.FALSE.equals(ProtectionBridge.queryProtected(spawn))) return;
 
         final ChunkKey chunk = new ChunkKey(world.getUID(), chunkX, chunkZ);
@@ -113,15 +118,86 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
             release(chunk);
             return;
         }
+        final long ttlSeconds = randomInclusive(catalog.lootTuning().ambient().ttlMinSeconds(),
+                catalog.lootTuning().ambient().ttlMaxSeconds());
+        final long expiresAt = Math.addExact(System.currentTimeMillis(),
+                Math.multiplyExact(ttlSeconds, 1_000L));
         item.getPersistentDataContainer().set(ambientMarker, PersistentDataType.BYTE, (byte) 1);
+        item.getPersistentDataContainer().set(ambientExpiresAt, PersistentDataType.LONG, expiresAt);
         item.setUnlimitedLifetime(true);
         active.put(item.getUniqueId(), new AmbientRecord(chunk));
-        final long ttlTicks = randomInclusive(catalog.lootTuning().ambient().ttlMinSeconds(),
-                catalog.lootTuning().ambient().ttlMaxSeconds()) * 20L;
+        scheduleExpiry(item, expiresAt);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEntitiesLoad(final EntitiesLoadEvent event) {
+        for (final Entity entity : event.getEntities()) {
+            if (entity instanceof Item item) recoverLoaded(item);
+        }
+    }
+
+    /** Recovers ambient entities from chunks that were already loaded before listener registration. */
+    public void start() {
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+            for (final World world : Bukkit.getWorlds()) {
+                for (final Chunk chunk : world.getLoadedChunks()) {
+                    final int chunkX = chunk.getX();
+                    final int chunkZ = chunk.getZ();
+                    final Location anchor = new Location(world, (chunkX << 4) + 8.0D,
+                            world.getMinHeight(), (chunkZ << 4) + 8.0D);
+                    Bukkit.getRegionScheduler().run(plugin, anchor, region -> {
+                        if (!world.isChunkLoaded(chunkX, chunkZ)) return;
+                        for (final Entity entity : world.getChunkAt(chunkX, chunkZ).getEntities()) {
+                            if (entity instanceof Item item) recoverLoaded(item);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void recoverLoaded(final Item item) {
+        if (!isAmbient(item)) return;
+        final Long expiresAt = item.getPersistentDataContainer().get(
+                ambientExpiresAt, PersistentDataType.LONG);
+        if (expiresAt == null || expiresAt <= System.currentTimeMillis()) {
+            item.remove();
+            return;
+        }
+        final ChunkKey chunk = chunkOf(item.getLocation());
+        if (active.putIfAbsent(item.getUniqueId(), new AmbientRecord(chunk)) == null) {
+            registerLoaded(chunk);
+            item.setUnlimitedLifetime(true);
+            scheduleExpiry(item, expiresAt);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEntitiesUnload(final EntitiesUnloadEvent event) {
+        for (final Entity entity : event.getEntities()) {
+            if (entity instanceof Item item && active.containsKey(item.getUniqueId())) {
+                untrack(item.getUniqueId());
+            }
+        }
+    }
+
+    private void scheduleExpiry(final Item item, final long expiresAt) {
+        final long remainingMillis = Math.max(1L, expiresAt - System.currentTimeMillis());
+        final long delayTicks = Math.max(1L, (remainingMillis + 49L) / 50L);
         item.getScheduler().runDelayed(plugin, task -> {
-            untrack(item.getUniqueId());
-            if (item.isValid()) item.remove();
-        }, () -> untrack(item.getUniqueId()), ttlTicks);
+            if (!item.isValid()) {
+                untrack(item.getUniqueId());
+                return;
+            }
+            final Long currentExpiry = item.getPersistentDataContainer().get(
+                    ambientExpiresAt, PersistentDataType.LONG);
+            if (currentExpiry == null || currentExpiry <= System.currentTimeMillis()) {
+                untrack(item.getUniqueId());
+                item.remove();
+                return;
+            }
+            scheduleExpiry(item, currentExpiry);
+        }, () -> untrack(item.getUniqueId()), delayTicks);
     }
 
     private boolean reserve(final ChunkKey center) {
@@ -150,6 +226,12 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
         }
     }
 
+    private void registerLoaded(final ChunkKey chunk) {
+        synchronized (densityLock) {
+            chunkCounts.merge(chunk, 1, Integer::sum);
+        }
+    }
+
     private void untrack(final UUID entityId) {
         final AmbientRecord removed = active.remove(entityId);
         if (removed != null) release(removed.chunk());
@@ -157,12 +239,12 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPickup(final EntityPickupItemEvent event) {
-        clearMarker(event.getItem());
+        untrack(event.getItem().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHopperPickup(final InventoryPickupItemEvent event) {
-        clearMarker(event.getItem());
+        untrack(event.getItem().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -172,18 +254,17 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
 
     @EventHandler(ignoreCancelled = true)
     public void onMerge(final ItemMergeEvent event) {
-        if (isAmbient(event.getEntity()) || isAmbient(event.getTarget())) event.setCancelled(true);
-    }
-
-    private void clearMarker(final Item item) {
-        if (!isAmbient(item)) return;
-        item.getPersistentDataContainer().remove(ambientMarker);
-        item.setUnlimitedLifetime(false);
-        untrack(item.getUniqueId());
+        if (active.containsKey(event.getEntity().getUniqueId())
+                || active.containsKey(event.getTarget().getUniqueId())) event.setCancelled(true);
     }
 
     private boolean isAmbient(final Item item) {
         return item != null && item.getPersistentDataContainer().has(ambientMarker, PersistentDataType.BYTE);
+    }
+
+    private static ChunkKey chunkOf(final Location location) {
+        return new ChunkKey(location.getWorld().getUID(),
+                location.getBlockX() >> 4, location.getBlockZ() >> 4);
     }
 
     private Location candidate(final Location origin) {
@@ -242,18 +323,9 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
 
     public void shutdown() {
         nextAttemptAt.clear();
-        final List<UUID> ids = new ArrayList<>(active.keySet());
         active.clear();
         synchronized (densityLock) {
             chunkCounts.clear();
-        }
-        for (final UUID id : ids) {
-            final Entity entity = Bukkit.getEntity(id);
-            if (entity instanceof Item item) {
-                item.getScheduler().run(plugin, task -> {
-                    if (item.isValid()) item.remove();
-                }, null);
-            }
         }
     }
 
