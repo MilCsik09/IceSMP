@@ -49,7 +49,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
-| `trash/` | 36 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
+| `trash/` | 37 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, identity-mentes aggregált runtime telemetry, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
 | `security/` | 1 | Immutable, permissiontől és OP-státusztól független fejlesztői authority a rejtett tartalomfelületekhez. |
 | `warrior/` | 2 | Harcos gameplay vertical slice: transiens harci állapot + konkrét runtime (Csatatempó, Berserker, Guardian). |
 | `evoker/` | 2 | Sárkányidéző gameplay vertical slice: transiens állapot + konkrét runtime (Felerősítés, Vörös–Kék Eszencia, Visszhang/Időlenyomat). |
@@ -374,6 +374,10 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   `TooltipPacketBridge_1_21_11` kizárólag az offhand menüslot player-only display copyját küldi;
   inventory transaction előtt canonical resync történik, runtime probe-hibánál pedig szöveges
   fallback működik. Disconnect, reload és slot change takarítja az overlay/session állapotot.
+- **Hardening telemetry:** a runtime kizárólag összesített behavior-error, inspection
+  start/complete/cancel, unlock és text-fallback számlálókat tart. Item identityt, holdert,
+  hidden kindot vagy behavior-paramétert nem tárol és nem logol; a snapshot csak a hardcoded DEV
+  authority mögötti staging diagnosztikában jelenik meg.
 - **Secret surface:** a 42 belső identity, behavior és állapot nem kerül player/admin/feature/changelog/lore
   dokumentációba, normál logba vagy chatre. A contextual mondatok kizárólag a jogosult item viselkedésének
   pillanatnyi, player-only prezentációi; az item canonical neve/lore-ja és stack-equivalence-e nem változik.

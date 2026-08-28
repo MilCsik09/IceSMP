@@ -238,6 +238,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.trash.TrashItemFactory trashItemFactory;
     private final hu.taliann.icesmp.trash.TrashHistoryStore trashHistoryStore;
     private final hu.taliann.icesmp.trash.TrashHistoryService trashHistoryService;
+    private final hu.taliann.icesmp.trash.TrashRuntimeTelemetry trashRuntimeTelemetry;
     private final hu.taliann.icesmp.trash.TrashAnomalyStateStore trashAnomalyStateStore;
     private final hu.taliann.icesmp.trash.TrashSpatialFractureStore trashSpatialFractureStore;
     private final hu.taliann.icesmp.trash.TossableObjectRuntime tossableObjectRuntime;
@@ -463,6 +464,7 @@ public final class IceSMPCore {
         this.trashHistoryStore = new hu.taliann.icesmp.trash.TrashHistoryStore(plugin, trashCatalog);
         this.trashHistoryService = new hu.taliann.icesmp.trash.TrashHistoryService(
                 plugin, trashCatalog, trashItemFactory, trashHistoryStore);
+        this.trashRuntimeTelemetry = new hu.taliann.icesmp.trash.TrashRuntimeTelemetry();
         this.trashArchaeologyProfileStore =
                 new hu.taliann.icesmp.trash.TrashArchaeologyProfileStore();
         this.trashArchaeologyFactEngine = new hu.taliann.icesmp.trash.TrashArchaeologyFactEngine(
@@ -474,7 +476,7 @@ public final class IceSMPCore {
                         plugin, trashItemFactory);
         this.trashArchaeologyListener = new hu.taliann.icesmp.trash.TrashArchaeologyListener(
                 plugin, trashItemFactory, trashArchaeologyService,
-                trashArchaeologyTooltipBridge);
+                trashArchaeologyTooltipBridge, trashRuntimeTelemetry);
         this.trashAnomalyStateStore = new hu.taliann.icesmp.trash.TrashAnomalyStateStore(plugin);
         this.trashSpatialFractureStore =
                 new hu.taliann.icesmp.trash.TrashSpatialFractureStore(plugin);
@@ -788,11 +790,11 @@ public final class IceSMPCore {
         this.trashAnomalyRuntime = new hu.taliann.icesmp.trash.TrashAnomalyRuntime(
                 plugin, trashCatalog, trashItemFactory, trashHistoryService,
                 trashAnomalyStateStore, tossableObjectRuntime, currencyManager, factionManager,
-                kingManager, claimManager, territoryProtectionService);
+                kingManager, claimManager, territoryProtectionService, trashRuntimeTelemetry);
         this.trashRelicRuntime = new hu.taliann.icesmp.trash.TrashRelicRuntime(
                 plugin, trashCatalog, trashItemFactory, trashHistoryService,
                 trashSpatialFractureStore, bloodMoonManager, claimManager,
-                territoryProtectionService);
+                territoryProtectionService, trashRuntimeTelemetry);
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);
@@ -1784,7 +1786,7 @@ public final class IceSMPCore {
                 new hu.taliann.icesmp.trash.TrashDevCommand(
                         plugin, trashCatalog, trashItemFactory, trashHistoryService,
                         trashRecyclePool, trashLootService, trashArchaeologyService,
-                        trashArchaeologyListener));
+                        trashArchaeologyListener, trashRuntimeTelemetry));
         iceSMPCommand.setClientBridge(clientBridge);
         // Native HUD routing: a HudManager csak a seam-interfészt látja, a bridge a
         // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.

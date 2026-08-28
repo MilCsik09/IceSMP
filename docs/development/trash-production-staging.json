@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "scope": "trash-phase-g-production-hardening",
+  "production_ready": false,
+  "automated_gates": {
+    "catalog_and_assets": {
+      "status": "ENFORCED_BY_CI",
+      "command": "./gradlew trashCatalogRegressionTest resourcePackRegressionTest"
+    },
+    "distribution": {
+      "status": "ENFORCED_BY_CI",
+      "command": "./gradlew trashLootDistributionRegressionTest",
+      "minimum_source_events": 30000000,
+      "context_probe_events": 1000000
+    },
+    "stack_history_anomaly_relic_archaeology": {
+      "status": "ENFORCED_BY_CI",
+      "command": "./gradlew trashHistoryRegressionTest trashAnomalyRegressionTest trashRelicRegressionTest trashArchaeologyRegressionTest"
+    },
+    "hard_caps_cleanup_security": {
+      "status": "ENFORCED_BY_CI",
+      "command": "./gradlew trashProductionHardeningRegressionTest"
+    }
+  },
+  "runtime_staging": {
+    "paper_1_21_11": {
+      "status": "RUNTIME_EVIDENCE_REQUIRED",
+      "required_evidence": [
+        "exact server build and plugin commit",
+        "startup and shutdown log without Trash runtime errors",
+        "stack, vendor, ambient, behavior and reload checklist"
+      ]
+    },
+    "folia_1_21_11": {
+      "status": "RUNTIME_EVIDENCE_REQUIRED",
+      "required_evidence": [
+        "exact server build and plugin commit",
+        "region-thread violation scan",
+        "cross-region player, entity and chunk interaction checklist"
+      ]
+    },
+    "brush_and_tooltip_real_client": {
+      "status": "CLIENT_EVIDENCE_REQUIRED",
+      "required_evidence": [
+        "30-tick Brush presentation capture on Paper and Folia",
+        "early release and item-swap cancellation",
+        "overlay expiry, canonical resync and text fallback"
+      ]
+    },
+    "multiplayer_discovery": {
+      "status": "GAMEPLAY_STAGING_REQUIRED",
+      "minimum_duration_hours": 2,
+      "target_duration_hours": 4,
+      "required_evidence": [
+        "several authenticated players",
+        "normal fishing, mob and world exploration",
+        "stacking, vendor recycle and ambient perception",
+        "no special-item fanfare or normal-admin disclosure",
+        "hidden Archaeology discovery and tooltip UX",
+        "resource-pack readability at 16x16 and in GUI"
+      ]
+    },
+    "load_profile": {
+      "status": "LOAD_STAGING_REQUIRED",
+      "target_players_min": 50,
+      "target_players_max": 60,
+      "required_evidence": [
+        "tick and region timing profile",
+        "aggregate hard-cap telemetry snapshot",
+        "heap and task-count before, during and after reload"
+      ]
+    }
+  },
+  "acceptance_rule": "production_ready may become true only after every runtime_staging entry has reviewed evidence; source inspection or CI must never substitute for real runtime and human staging"
+}
