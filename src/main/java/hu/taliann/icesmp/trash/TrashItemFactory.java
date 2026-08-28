@@ -2,7 +2,6 @@ package hu.taliann.icesmp.trash;
 
 import hu.taliann.icesmp.items.ItemDataFactory;
 import hu.taliann.icesmp.items.RarityPresentationService;
-import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -208,7 +207,7 @@ public final class TrashItemFactory {
     }
 
     private static TextComponent colored(final String legacyColor, final String text) {
-        return LEGACY.deserialize(TextUtil.color(legacyColor + text))
+        return LEGACY.deserialize(legacyColor + text)
                 .decoration(TextDecoration.ITALIC, false);
     }
 }
