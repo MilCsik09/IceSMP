@@ -24,7 +24,8 @@
   },
   "runtime_staging": {
     "paper_1_21_11": {
-      "status": "RUNTIME_EVIDENCE_REQUIRED",
+      "status": "AUTOMATED_SMOKE_ENFORCED_BY_CI",
+      "remaining": "real-player interaction evidence required",
       "required_evidence": [
         "exact server build and plugin commit",
         "startup and shutdown log without Trash runtime errors",
@@ -32,7 +33,8 @@
       ]
     },
     "folia_1_21_11": {
-      "status": "RUNTIME_EVIDENCE_REQUIRED",
+      "status": "AUTOMATED_SMOKE_ENFORCED_BY_CI",
+      "remaining": "real-player cross-region interaction evidence required",
       "required_evidence": [
         "exact server build and plugin commit",
         "region-thread violation scan",

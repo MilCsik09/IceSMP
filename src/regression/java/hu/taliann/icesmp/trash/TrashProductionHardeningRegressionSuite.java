@@ -143,6 +143,14 @@ public final class TrashProductionHardeningRegressionSuite {
                 "atomic recycle persistence");
         require(source("TrashArchaeologyListener.java"), "tooltip.shutdown()",
                 "tooltip/session reload cleanup");
+        final String probe = source("TrashProductionRuntimeProbe.java");
+        require(probe, "Bukkit.shutdown()", "runtime smoke clean shutdown");
+        require(Files.readString(ROOT.resolve("IceSMP.java")),
+                "TrashProductionRuntimeProbe.maybeRun(this, core)",
+                "runtime probe bootstrap wiring");
+        check(!probe.contains("failure.printStackTrace()")
+                        && !probe.contains("failure.getMessage()"),
+                "runtime probe could leak a hidden malformed value into normal logs");
     }
 
     private static void preservesHardcodedSecurityBoundary() throws Exception {
@@ -206,11 +214,15 @@ public final class TrashProductionHardeningRegressionSuite {
     private static void refusesToForgeRuntimeOrHumanEvidence() throws Exception {
         final String staging = Files.readString(STAGING);
         require(staging, "\"production_ready\": false", "honest production status");
-        for (final String status : List.of("RUNTIME_EVIDENCE_REQUIRED",
+        for (final String status : List.of("AUTOMATED_SMOKE_ENFORCED_BY_CI",
                 "CLIENT_EVIDENCE_REQUIRED", "GAMEPLAY_STAGING_REQUIRED",
                 "LOAD_STAGING_REQUIRED")) {
             require(staging, status, "unverified staging status");
         }
+        require(staging, "real-player interaction evidence required",
+                "Paper interaction evidence remains explicit");
+        require(staging, "real-player cross-region interaction evidence required",
+                "Folia interaction evidence remains explicit");
         require(staging, "\"minimum_duration_hours\": 2", "minimum human staging duration");
         require(staging, "\"target_duration_hours\": 4", "target human staging duration");
         require(staging, "\"target_players_min\": 50", "minimum load target");
@@ -224,6 +236,10 @@ public final class TrashProductionHardeningRegressionSuite {
                 "Phase G CI hardening task");
         require(workflow, "trashLootDistributionRegressionTest",
                 "Phase G CI Monte Carlo task");
+        require(workflow, "runServer", "real Paper startup smoke task");
+        require(workflow, "runFolia", "real Folia startup smoke task");
+        require(workflow, "ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS",
+                "runtime proof marker enforcement");
     }
 
     private static boolean contains(final Path path, final String token) {
