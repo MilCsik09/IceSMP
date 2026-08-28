@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Common daily anti-farm budget implementation. */
@@ -72,6 +73,35 @@ public final class DailyBudget {
         final PlayerProfileDailyBudgetStore.BudgetState state =
                 state(new Key(player.getUniqueId(), id));
         return state.day() == dayIndex() ? state.spent() : 0L;
+    }
+
+    /**
+     * Durable reservation for journaled cross-domain transactions. The caller may publish its
+     * next transaction phase only after this method returns true.
+     */
+    public static boolean tryConsumeDurablyOnOwnThread(final Player player, final String budgetId,
+                                                       final double cap, final long amount) {
+        if (player == null || amount < 0L) return false;
+        if (cap <= 0.0D) return true;
+        final long limit = (long) cap;
+        final String id = normalize(budgetId);
+        if (id == null) return true;
+        final Key key = new Key(player.getUniqueId(), id);
+        synchronized (LOCKS.computeIfAbsent(key, ignored -> new Object())) {
+            try {
+                TAILS.getOrDefault(key, CompletableFuture.completedFuture(null)).join();
+                final long today = dayIndex();
+                final PlayerProfileDailyBudgetStore.Reservation reservation = DURABLE.reserve(
+                        key.playerId(), key.budgetId(), today, amount, limit)
+                        .toCompletableFuture().join();
+                MIRRORS.put(key, reservation.state());
+                return reservation.allowed();
+            } catch (final CompletionException failure) {
+                MIRRORS.remove(key);
+                throw new IllegalStateException("durable daily budget reservation failed",
+                        failure.getCause() == null ? failure : failure.getCause());
+            }
+        }
     }
 
     private static PlayerProfileDailyBudgetStore.BudgetState state(final Key key) {

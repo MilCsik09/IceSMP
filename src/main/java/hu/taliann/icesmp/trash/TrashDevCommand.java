@@ -16,10 +16,15 @@ public final class TrashDevCommand {
 
     private final TrashCatalog catalog;
     private final TrashItemFactory itemFactory;
+    private final TrashRecyclePool recyclePool;
+    private final TrashLootService lootService;
 
-    public TrashDevCommand(final TrashCatalog catalog, final TrashItemFactory itemFactory) {
+    public TrashDevCommand(final TrashCatalog catalog, final TrashItemFactory itemFactory,
+                           final TrashRecyclePool recyclePool, final TrashLootService lootService) {
         this.catalog = java.util.Objects.requireNonNull(catalog, "catalog");
         this.itemFactory = java.util.Objects.requireNonNull(itemFactory, "itemFactory");
+        this.recyclePool = java.util.Objects.requireNonNull(recyclePool, "recyclePool");
+        this.lootService = java.util.Objects.requireNonNull(lootService, "lootService");
     }
 
     public void execute(final CommandSender sender, final String[] args) {
@@ -29,12 +34,24 @@ public final class TrashDevCommand {
             return;
         }
         if (args.length >= 2 && "catalog".equalsIgnoreCase(args[1])) {
+            final TrashLootService.Telemetry telemetry = lootService.telemetry();
             sender.sendMessage(Component.text("Trash catalog: " + catalog.snapshot().size()
-                    + " validált base identity; gameplay rollout még nincs aktiválva.", NamedTextColor.GRAY));
+                    + " validált base identity; loot ecology aktív. generated="
+                    + telemetry.generated() + ", recycled=" + telemetry.recycled()
+                    + ", pool=" + telemetry.recyclePoolSize(), NamedTextColor.GRAY));
             return;
         }
         if (args.length >= 2 && "inspect".equalsIgnoreCase(args[1])) {
             inspect(sender, args);
+            return;
+        }
+        if (args.length >= 2 && "give".equalsIgnoreCase(args[1])) {
+            give(sender, args);
+            return;
+        }
+        if (args.length >= 2 && "pool".equalsIgnoreCase(args[1])) {
+            sender.sendMessage(Component.text("Trash recycle pool: " + recyclePool.pooledCount()
+                    + " exact instance.", NamedTextColor.GRAY));
             return;
         }
         sendUsage(sender);
@@ -44,13 +61,43 @@ public final class TrashDevCommand {
         if (args.length == 0) return List.of("trash");
         if (args.length == 1) return matching(List.of("trash"), args[0]);
         if (!"trash".equalsIgnoreCase(args[0])) return List.of();
-        if (args.length == 2) return matching(List.of("catalog", "inspect"), args[1]);
-        if (args.length == 3 && "inspect".equalsIgnoreCase(args[1])) {
+        if (args.length == 2) return matching(List.of("catalog", "inspect", "give", "pool"), args[1]);
+        if (args.length == 3 && ("inspect".equalsIgnoreCase(args[1])
+                || "give".equalsIgnoreCase(args[1]))) {
             final String prefix = args[2].toLowerCase(Locale.ROOT);
             return catalog.snapshot().keySet().stream().filter(id -> id.startsWith(prefix))
                     .sorted().limit(MAX_SUGGESTIONS).toList();
         }
         return List.of();
+    }
+
+    private void give(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("A give route játékos feladót igényel.", NamedTextColor.RED));
+            return;
+        }
+        if (args.length < 3 || catalog.find(args[2]).isEmpty()) {
+            sender.sendMessage(Component.text("Használat: /icesmp dev trash give <id> [1..64]",
+                    NamedTextColor.RED));
+            return;
+        }
+        int amount = 1;
+        if (args.length >= 4) {
+            try {
+                amount = Integer.parseInt(args[3]);
+            } catch (final NumberFormatException invalid) {
+                amount = 0;
+            }
+        }
+        if (amount < 1 || amount > 64) {
+            sender.sendMessage(Component.text("A darabszám 1..64 lehet.", NamedTextColor.RED));
+            return;
+        }
+        final org.bukkit.inventory.ItemStack item = itemFactory.create(args[2], amount);
+        player.getInventory().addItem(item).values().forEach(overflow ->
+                player.getWorld().dropItemNaturally(player.getLocation(), overflow));
+        sender.sendMessage(Component.text("Trash identity kiadva: " + args[2] + " ×" + amount,
+                NamedTextColor.GRAY));
     }
 
     private void inspect(final CommandSender sender, final String[] args) {
@@ -84,7 +131,7 @@ public final class TrashDevCommand {
     }
 
     private static void sendUsage(final CommandSender sender) {
-        sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|inspect [id]>",
+        sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|inspect [id]|give <id> [amount]|pool>",
                 NamedTextColor.RED));
     }
 

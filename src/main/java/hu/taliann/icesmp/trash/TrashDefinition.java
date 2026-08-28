@@ -15,7 +15,7 @@ public record TrashDefinition(
         String texture,
         int vendorValue,
         List<String> lore,
-        String sourceBias,
+        TrashSourceBias sourceBias,
         TrashKind internalKind,
         String behavior
 ) {

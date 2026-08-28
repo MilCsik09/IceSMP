@@ -3,6 +3,31 @@ schema-version: 1
 player-presentation:
   rarity-id: ocska
   rarity-label: Ócska
+loot-ecology:
+  # Authored rates: luck, Looting, mob rank and profession level never modify these.
+  sources:
+    fishing:
+      chance: 0.065
+    mob:
+      chance: 0.11
+    ambient:
+      chance: 0.25
+  category-weights:
+    mundane: 75.0
+    story: 23.65
+    anomaly: 1.25
+    trash_relic: 0.10
+  source-affinity-multiplier: 2.5
+  context-affinity-multiplier: 1.3
+  displaced-chance: 0.08
+  recycle-substitution-chance: 0.50
+  ambient:
+    attempt-min-seconds: 360
+    attempt-max-seconds: 600
+    distance-min-blocks: 12
+    distance-max-blocks: 32
+    ttl-min-seconds: 600
+    ttl-max-seconds: 1800
 items:
   rozsdas_szog:
     display-name: Rozsdás Szög

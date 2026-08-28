@@ -20,6 +20,23 @@ public final class TrashCatalogRegressionSuite {
             "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java");
     private static final Path COMMAND = Path.of(
             "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java");
+    private static final Path CORE = Path.of("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
+    private static final Path AMBIENT = Path.of(
+            "src/main/java/hu/taliann/icesmp/trash/TrashAmbientManager.java");
+    private static final Path MOB = Path.of(
+            "src/main/java/hu/taliann/icesmp/trash/TrashMobDropListener.java");
+    private static final Path FISHING = Path.of(
+            "src/main/java/hu/taliann/icesmp/trash/TrashFishingListener.java");
+    private static final Path BUYER = Path.of(
+            "src/main/java/hu/taliann/icesmp/managers/BuyerService.java");
+    private static final Path LOOT_SERVICE = Path.of(
+            "src/main/java/hu/taliann/icesmp/trash/TrashLootService.java");
+    private static final Path RECYCLE_POOL = Path.of(
+            "src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java");
+    private static final Path VENDOR = Path.of(
+            "src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java");
+    private static final Path DAILY_BUDGET = Path.of(
+            "src/main/java/hu/taliann/icesmp/utils/DailyBudget.java");
 
     private TrashCatalogRegressionSuite() {
     }
@@ -28,6 +45,7 @@ public final class TrashCatalogRegressionSuite {
         validatesCanonicalCatalog();
         rejectsIdentityAssetCollisions();
         preservesMinimalPhysicalStateAndNoRollBoundary();
+        preservesLootEcologyRuntimeBoundary();
         preservesHardcodedHiddenAuthority();
         System.out.println("Trash catalog regression suite passed.");
     }
@@ -36,6 +54,25 @@ public final class TrashCatalogRegressionSuite {
         final TrashCatalog.Parsed parsed = parseFresh();
         check(parsed.definitions().size() == 330, "base identity denominator drifted");
         check("Ócska".equals(parsed.rarityLabel()), "player rarity label drifted");
+        final TrashLootTuning tuning = parsed.lootTuning();
+        check(tuning.chance(TrashLootSource.FISHING) == 0.065D, "fishing chance drifted");
+        check(tuning.chance(TrashLootSource.MOB) == 0.11D, "mob chance drifted");
+        check(tuning.chance(TrashLootSource.AMBIENT) == 0.25D, "ambient chance drifted");
+        check(tuning.categoryWeight(TrashKind.MUNDANE) == 75.0D, "mundane weight drifted");
+        check(tuning.categoryWeight(TrashKind.STORY) == 23.65D, "story weight drifted");
+        check(tuning.categoryWeight(TrashKind.ANOMALY) == 1.25D, "anomaly weight drifted");
+        check(tuning.categoryWeight(TrashKind.TRASH_RELIC) == 0.10D, "relic weight drifted");
+        check(tuning.displacedChance() == 0.08D, "displaced chance drifted");
+        check(tuning.recycleSubstitutionChance() == 0.50D, "recycle substitution drifted");
+        check(Math.abs(TrashSourceBias.parse("WET↑").weight(TrashLootSource.AMBIENT,
+                Set.of(TrashContext.WET), false, tuning) - 1.3D) < 0.000_001D,
+                "matching context multiplier drifted");
+        check(Math.abs(TrashSourceBias.parse("FISH↑").weight(TrashLootSource.FISHING,
+                Set.of(), false, tuning) - 2.5D) < 0.000_001D,
+                "matching source multiplier drifted");
+        check(TrashSourceBias.parse("FISH+WET↑").weight(TrashLootSource.FISHING,
+                Set.of(TrashContext.WET), true, tuning) == 2.5D,
+                "displaced selection must ignore context but keep source affinity");
 
         final EnumMap<TrashKind, Integer> counts = new EnumMap<>(TrashKind.class);
         final Set<String> models = new HashSet<>();
@@ -79,6 +116,10 @@ public final class TrashCatalogRegressionSuite {
         require(source, "new NamespacedKey(plugin, \"trash_phase\")", "opaque lifecycle phase PDC");
         require(source, "ItemDataFactory.applyItemModel", "modern ITEM_MODEL projection");
         require(source, "ItemDataFactory.applyRarity", "presentation-only vanilla rarity projection");
+        require(source, "LEGACY.deserialize(legacyColor + text)",
+                "single-pass Adventure legacy-color decoding");
+        check(!source.contains("TextUtil.color("),
+                "Trash factory must not embed literal section codes into Components");
         check(!source.contains("ItemRarityService"), "Trash factory must never invoke rolled gear rarity");
         check(!source.contains("trash_relic"), "physical item must not expose the special kind");
         final int metaWrite = source.indexOf("item.setItemMeta(meta)");
@@ -96,6 +137,76 @@ public final class TrashCatalogRegressionSuite {
         require(source, "HiddenDevAuthority.mayUseHiddenContent(sender)", "central hidden command gate");
         require(source, "trashDevCommand.execute", "hidden Trash dispatch");
         require(source, "trashDevCommand.suggest", "hidden Trash discovery gate");
+    }
+
+    private static void preservesLootEcologyRuntimeBoundary() throws Exception {
+        final String core = Files.readString(CORE);
+        require(core, "new hu.taliann.icesmp.trash.TrashFishingListener", "fishing source wiring");
+        require(core, "new hu.taliann.icesmp.trash.TrashMobDropListener", "mob source wiring");
+        require(core, "pluginManager.registerEvents(trashAmbientManager", "ambient source wiring");
+        require(core, "trashAmbientManager.start()", "loaded ambient recovery startup");
+        require(core, "pluginManager.registerEvents(trashVendorService", "vendor recovery wiring");
+        require(core, "trashRecyclePool", "recycle store lifecycle wiring");
+
+        final String ambient = Files.readString(AMBIENT);
+        require(ambient, "getRegionScheduler().run", "target-region ambient spawn hop");
+        require(ambient, "world.isChunkLoaded", "loaded-chunk-only ambient gate");
+        require(ambient, "claimManager.getClaimAt", "claim avoidance");
+        require(ambient, "ProtectionBridge.queryProtected", "WorldGuard fail-closed avoidance");
+        require(ambient, "max-per-neighborhood", "3x3 density cap");
+        require(ambient, "setUnlimitedLifetime(true)", "authored ambient TTL ownership");
+        require(ambient, "trash_ambient_expires_at", "durable ambient expiry authority");
+        require(ambient, "EntitiesLoadEvent", "chunk-load ambient recovery");
+        require(ambient, "EntitiesUnloadEvent", "chunk-unload density release");
+        require(ambient, "territory.type().isProtectedZone()",
+                "protected-zone-only territory exclusion");
+        require(ambient, "ItemMergeEvent", "ambient merge isolation");
+        final int shutdown = ambient.indexOf("public void shutdown()");
+        check(shutdown >= 0 && !ambient.substring(shutdown).contains("item.remove()"),
+                "plugin shutdown must not erase durable ambient entities");
+
+        final String mob = Files.readString(MOB);
+        require(mob, "MobKillUtil.RewardKind.FLAVOR", "boss-safe AFK/spawner/minion mob gate");
+        require(mob, "claimOnce(\"trash\")", "duplicate kill-channel claim");
+        final String killGate = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java"));
+        require(killGate, "kind == RewardKind.FLAVOR", "bounded flavor reward-owner policy");
+        require(killGate, "RewardOwner.NONE", "synthetic flavor exclusion");
+        final String fishing = Files.readString(FISHING);
+        require(fishing, "PlayerFishEvent.State.CAUGHT_FISH", "successful catch gate");
+        require(fishing, "GameMode.SURVIVAL", "Survival fishing gate");
+        check(!fishing.contains("sendMessage") && !fishing.contains("playSound"),
+                "Trash fishing must remain silent");
+
+        final String buyer = Files.readString(BUYER);
+        require(buyer, "trashVendor.tryHandle", "Felvásárló Trash route");
+        final String lootService = Files.readString(LOOT_SERVICE);
+        final int identityRoll = lootService.indexOf("selector.select");
+        final int recycleTake = lootService.indexOf("recyclePool.take");
+        check(identityRoll >= 0 && recycleTake > identityRoll,
+                "recycle substitution must happen after normal category/identity selection");
+        require(lootService, "selection.definition().id()", "same-identity recycle lookup");
+        final String recyclePool = Files.readString(RECYCLE_POOL);
+        require(recyclePool, "definition.internalKind().isInert()", "inert recycle exclusion");
+        require(recyclePool, "registerCriticalWrite", "critical recycle write registration");
+        require(recyclePool, "YamlStore.saveAtomic", "atomic recycle persistence");
+        require(recyclePool, "vendor-transactions", "durable vendor transaction journal");
+        require(recyclePool, "MAX_PER_IDENTITY", "bounded exact-instance recycle pool");
+        require(recyclePool, "persistOrRestore", "immediate recycle mutation persistence");
+        require(recyclePool, "SaleStage.POOL_COMMITTED", "atomic pool commit checkpoint");
+
+        final String vendor = Files.readString(VENDOR);
+        require(vendor, "trash_vendor_sale", "inventory-side vendor recovery marker");
+        require(vendor, "tryConsumeDurablyOnOwnThread", "durable daily budget reservation");
+        require(vendor, "creditOnceDurably", "idempotent durable vendor payout");
+        require(vendor, "recyclePool.commitRecycle", "journaled exact recycle commit");
+        check(!vendor.contains("recyclePool.offer(hand"),
+                "vendor must not use the legacy non-journaled pool route");
+
+        final String dailyBudget = Files.readString(DAILY_BUDGET);
+        require(dailyBudget, "DURABLE.reserve", "PlayerProfile-backed budget authority");
+        require(dailyBudget, ".toCompletableFuture().join()",
+                "vendor budget commit acknowledgement");
     }
 
     private static TrashCatalog.Parsed parseFresh() {

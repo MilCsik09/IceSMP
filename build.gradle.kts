@@ -1035,6 +1035,10 @@ val trashCatalogRegressionTest = registerRegression(
     "trashCatalogRegressionTest",
     "Runs the 330-identity Trash catalog, secrecy, factory and hidden DEV authority gates.",
     "hu.taliann.icesmp.trash.TrashCatalogRegressionSuite")
+val trashLootDistributionRegressionTest = registerRegression(
+    "trashLootDistributionRegressionTest",
+    "Runs the 30M-event Trash source/category/context/recycle Monte Carlo gate.",
+    "hu.taliann.icesmp.trash.TrashLootDistributionRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -1058,7 +1062,7 @@ tasks.check {
         configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
-        trashCatalogRegressionTest,
+        trashCatalogRegressionTest, trashLootDistributionRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,

@@ -2,7 +2,6 @@ package hu.taliann.icesmp.trash;
 
 import hu.taliann.icesmp.items.ItemDataFactory;
 import hu.taliann.icesmp.items.RarityPresentationService;
-import hu.taliann.icesmp.utils.TextUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -90,8 +89,23 @@ public final class TrashItemFactory {
         return BASE_PHASE.equals(phase);
     }
 
+    public boolean isKnownItem(final ItemStack item) {
+        return idOf(item).isPresent();
+    }
+
+    /** Reapplies modern data components after an ItemMeta/PDC round-trip. */
+    public void refreshPresentation(final ItemStack item) {
+        final String id = idOf(item).orElseThrow(
+                () -> new IllegalArgumentException("unknown Trash item"));
+        final TrashDefinition definition = catalog.require(id);
+        final RarityPresentationService.Presentation rarity = rarityPresentations.require(
+                definition.playerRarity());
+        ItemDataFactory.applyItemModel(item, definition.itemModel());
+        ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+    }
+
     private static TextComponent colored(final String legacyColor, final String text) {
-        return LEGACY.deserialize(TextUtil.color(legacyColor + text))
+        return LEGACY.deserialize(legacyColor + text)
                 .decoration(TextDecoration.ITALIC, false);
     }
 }

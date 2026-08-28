@@ -236,6 +236,12 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.items.RarityPresentationService rarityPresentationService;
     private final hu.taliann.icesmp.trash.TrashCatalog trashCatalog;
     private final hu.taliann.icesmp.trash.TrashItemFactory trashItemFactory;
+    private final hu.taliann.icesmp.trash.TrashRecyclePool trashRecyclePool;
+    private final hu.taliann.icesmp.trash.TrashLootSelector trashLootSelector;
+    private final hu.taliann.icesmp.trash.TrashLootService trashLootService;
+    private final hu.taliann.icesmp.trash.TrashContextResolver trashContextResolver;
+    private final hu.taliann.icesmp.trash.TrashAmbientManager trashAmbientManager;
+    private final hu.taliann.icesmp.trash.TrashVendorService trashVendorService;
     private final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplateRegistry;
     private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
     private final hu.taliann.icesmp.itemization.EquipmentProficiencyService equipmentProficiencyService;
@@ -442,6 +448,12 @@ public final class IceSMPCore {
         this.trashCatalog = new hu.taliann.icesmp.trash.TrashCatalog(plugin);
         this.trashItemFactory = new hu.taliann.icesmp.trash.TrashItemFactory(
                 plugin, trashCatalog, rarityPresentationService);
+        this.trashRecyclePool = new hu.taliann.icesmp.trash.TrashRecyclePool(
+                plugin, trashCatalog, trashItemFactory);
+        this.trashLootSelector = new hu.taliann.icesmp.trash.TrashLootSelector(trashCatalog);
+        this.trashLootService = new hu.taliann.icesmp.trash.TrashLootService(
+                configManager, trashCatalog, trashLootSelector, trashItemFactory, trashRecyclePool);
+        this.trashContextResolver = new hu.taliann.icesmp.trash.TrashContextResolver(territoryManager);
         this.itemTemplateRegistry = new hu.taliann.icesmp.itemization.ItemTemplateRegistry(plugin, configManager);
         this.itemIdentityService = new hu.taliann.icesmp.itemization.ItemIdentityService(plugin, itemTemplateRegistry);
         this.equipmentProficiencyService =
@@ -708,6 +720,10 @@ public final class IceSMPCore {
         this.bardManager = new hu.taliann.icesmp.managers.BardManager(configManager, statsManager, messageManager);
         // Felvásárló NPC: napi keretes nyersanyag-eladás (jövedelem-csap; szintén interact-hook).
         this.buyerService = new hu.taliann.icesmp.managers.BuyerService(configManager, currencyManager, factionManager, messageManager);
+        this.trashVendorService = new hu.taliann.icesmp.trash.TrashVendorService(
+                plugin, configManager, trashCatalog, trashItemFactory, trashRecyclePool,
+                currencyManager, factionManager, messageManager);
+        buyerService.setTrashVendorService(trashVendorService);
         // Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
         this.seasonMonumentManager = new hu.taliann.icesmp.managers.SeasonMonumentManager(plugin, configManager, statsManager);
         seasonManager.setMonumentManager(seasonMonumentManager);
@@ -732,6 +748,9 @@ public final class IceSMPCore {
                 specializationManager, relicManager, statsManager, achievementManager,
                 partyManager, claimManager, sinManager, configManager);
         this.afkManager = new hu.taliann.icesmp.managers.AfkManager(configManager);
+        this.trashAmbientManager = new hu.taliann.icesmp.trash.TrashAmbientManager(
+                plugin, configManager, trashCatalog, trashLootService, trashContextResolver,
+                claimManager, territoryManager, afkManager);
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);
@@ -775,7 +794,8 @@ public final class IceSMPCore {
                 councilManager,
                 dungeonLootService,
                 raidManager,
-                devItemManager);
+                devItemManager,
+                trashRecyclePool);
         this.storeCoordinator = new PersistentStoreCoordinator(persistentStores);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
@@ -806,6 +826,7 @@ public final class IceSMPCore {
                 ritualManager,
                 professionManager,
                 afkManager,
+                trashAmbientManager,
                 sitManager,
                 crateManager,
                 moderationManager,
@@ -1066,6 +1087,7 @@ public final class IceSMPCore {
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         registerListeners();
+        trashAmbientManager.start();
         // Hot plugin reloads may enable while players are already online and therefore do not emit
         // a new join event. Give those sessions a fresh generation before PM delivery can link them.
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -1413,6 +1435,7 @@ public final class IceSMPCore {
         shutdownStep("motdListener", motdListener::shutdown);
         shutdownStep("vanishManager", vanishManager::shutdown);
         shutdownStep("eventSpawnGuard", eventSpawnGuard::clearReservations);
+        shutdownStep("trashAmbientManager", trashAmbientManager::shutdown);
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
@@ -1705,7 +1728,8 @@ public final class IceSMPCore {
         final IceSMPCommand iceSMPCommand = new IceSMPCommand(plugin, configManager, messageManager,
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
                 statsManager, claimManager, questManager, abilityCatalystListener, sinManager,
-                new hu.taliann.icesmp.trash.TrashDevCommand(trashCatalog, trashItemFactory));
+                new hu.taliann.icesmp.trash.TrashDevCommand(
+                        trashCatalog, trashItemFactory, trashRecyclePool, trashLootService));
         iceSMPCommand.setClientBridge(clientBridge);
         // Native HUD routing: a HudManager csak a seam-interfészt látja, a bridge a
         // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.
@@ -2004,6 +2028,8 @@ public final class IceSMPCore {
         mobLootListener.setCultistEventManager(cultistEventManager);
         mobLootListener.setAfkManager(afkManager);
         pluginManager.registerEvents(mobLootListener, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.trash.TrashMobDropListener(
+                configManager, afkManager, trashLootService, trashContextResolver), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CursedGearListener(cursedGearService, messageManager), plugin);
         pluginManager.registerEvents(professionRecipeBookListener, plugin);
         pluginManager.registerEvents(itemMutationCoordinator, plugin);
@@ -2024,6 +2050,10 @@ public final class IceSMPCore {
         pluginManager.registerEvents(lowHealthBorderListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StrangerListener(strangerNpcManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.trash.TrashFishingListener(
+                plugin, trashLootService, trashContextResolver, afkManager), plugin);
+        pluginManager.registerEvents(trashAmbientManager, plugin);
+        pluginManager.registerEvents(trashVendorService, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SelectionWandListener(claimManager, territoryManager, currencyManager, messageManager), plugin);
         // Nether-portál világszabály: új portál nem gyújtható — csak a Kárhozat Kapuja él.
