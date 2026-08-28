@@ -49,7 +49,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
-| `trash/` | 29 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
+| `trash/` | 36 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
 | `security/` | 1 | Immutable, permissiontől és OP-státusztól független fejlesztői authority a rejtett tartalomfelületekhez. |
 | `warrior/` | 2 | Harcos gameplay vertical slice: transiens harci állapot + konkrét runtime (Csatatempó, Berserker, Guardian). |
 | `evoker/` | 2 | Sárkányidéző gameplay vertical slice: transiens állapot + konkrét runtime (Felerősítés, Vörös–Kék Eszencia, Visszhang/Időlenyomat). |
@@ -363,6 +363,17 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   A mechanizmus-attachment claim- és territory-preflight után singleton instance-ként kerül a világba,
   a következő authored rising edge-et egyszer nyeli el, majd a catalog success phase-ébe transzformálódik.
   A stopper és a lokális death counter bounded, atomi `trash-anomaly-state.yml` authorityban él.
+- **Rejtett régészeti tudás:** a `HiddenDiscipline.ARCHAEOLOGY` nem `ProfessionType`, nem foglal
+  profession slotot és nem kapcsolódik combat/craft/loot/vendor bónuszhoz. A 30 tickes Brush-session
+  egy inspectable offhand snapshotot vizsgál; korai item-use release, kéz/slot/inventory változás,
+  drop, halál vagy session-teardown megszakítja. A family/domain/familiarity/insight és a bounded
+  knowledge-signature ledger a canonical Profile v2 `AchievementSection.extensions` CAS-írásán él.
+  Duplicate signature nem ad insightot, az unlock a már korábban teljesült breadth után érkező új,
+  magasabb rendű facthez kötött, a szint küszöbe `round(0.55*l² + 4.5*l)` és legfeljebb 50.
+- **Régészeti prezentáció:** a canonical item lore-ja nem változik. A verzió-pinnelt
+  `TooltipPacketBridge_1_21_11` kizárólag az offhand menüslot player-only display copyját küldi;
+  inventory transaction előtt canonical resync történik, runtime probe-hibánál pedig szöveges
+  fallback működik. Disconnect, reload és slot change takarítja az overlay/session állapotot.
 - **Secret surface:** a 42 belső identity, behavior és állapot nem kerül player/admin/feature/changelog/lore
   dokumentációba, normál logba vagy chatre. A contextual mondatok kizárólag a jogosult item viselkedésének
   pillanatnyi, player-only prezentációi; az item canonical neve/lore-ja és stack-equivalence-e nem változik.

@@ -1051,6 +1051,10 @@ val trashRelicRegressionTest = registerRegression(
     "trashRelicRegressionTest",
     "Runs all 23 Phase E behavior, primitive, Folia, persistence and secrecy gates.",
     "hu.taliann.icesmp.trash.TrashRelicRegressionSuite")
+val trashArchaeologyRegressionTest = registerRegression(
+    "trashArchaeologyRegressionTest",
+    "Runs Phase F hidden progression, Brush session, overlay, secrecy and lifecycle gates.",
+    "hu.taliann.icesmp.trash.TrashArchaeologyRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -1075,7 +1079,7 @@ tasks.check {
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
-        trashAnomalyRegressionTest, trashRelicRegressionTest,
+        trashAnomalyRegressionTest, trashRelicRegressionTest, trashArchaeologyRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,

@@ -575,6 +575,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashSpatialFractureStore.java|private final Map<UUID, Fracture> open = new LinkedHashMap<>();",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "The map is keyed by an opaque fracture operation UUID; embedded owner UUIDs are bounded cap references inside the crash-recovery aggregate."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TooltipPacketBridge_1_21_11.java|private final ConcurrentMap<UUID, UUID> overlays = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Player-only offhand display-overlay generation tokens are transient presentation state; slot/inventory changes, session teardown and plugin shutdown clear them, while canonical knowledge remains in Profile v2."
     }
   ]
 }
