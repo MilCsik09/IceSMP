@@ -44,29 +44,29 @@ public final class TrashLootDistributionRegressionSuite {
     private static void verifyContextBias(final TrashLootSelector selector) {
         final int trials = 1_000_000;
         final Random neutralRandom = new Random(0xC017E57L);
-        final Random wetRandom = new Random(0xC017E57L);
-        long neutralWetAffinity = 0L;
-        long matchedWetAffinity = 0L;
+        final Random deepRandom = new Random(0xC017E57L);
+        long neutralDeepAffinity = 0L;
+        long matchedDeepAffinity = 0L;
         long comparable = 0L;
         for (int trial = 0; trial < trials; trial++) {
             final TrashLootSelector.Selection neutral = selector.select(
                     TrashLootSource.AMBIENT, Set.of(), neutralRandom::nextDouble);
-            final TrashLootSelector.Selection wet = selector.select(
-                    TrashLootSource.AMBIENT, Set.of(TrashContext.WET), wetRandom::nextDouble);
-            check(neutral.kind() == wet.kind() && neutral.displaced() == wet.displaced(),
+            final TrashLootSelector.Selection deep = selector.select(
+                    TrashLootSource.AMBIENT, Set.of(TrashContext.DEEP), deepRandom::nextDouble);
+            check(neutral.kind() == deep.kind() && neutral.displaced() == deep.displaced(),
                     "context must not alter category/displaced rolls");
             if (neutral.displaced()) continue;
             comparable++;
-            if (neutral.definition().sourceBias().affinities().contains("WET")) neutralWetAffinity++;
-            if (wet.definition().sourceBias().affinities().contains("WET")) matchedWetAffinity++;
+            if (neutral.definition().sourceBias().affinities().contains("DEEP")) neutralDeepAffinity++;
+            if (deep.definition().sourceBias().affinities().contains("DEEP")) matchedDeepAffinity++;
         }
-        final double neutralRate = rate(neutralWetAffinity, comparable);
-        final double matchedRate = rate(matchedWetAffinity, comparable);
+        final double neutralRate = rate(neutralDeepAffinity, comparable);
+        final double matchedRate = rate(matchedDeepAffinity, comparable);
         check(matchedRate > neutralRate * 1.10D,
-                "matching WET context must materially bias identity selection: neutral="
+                "matching DEEP context must materially bias identity selection: neutral="
                         + neutralRate + " matched=" + matchedRate);
         System.out.printf(java.util.Locale.ROOT,
-                "TRASH_CONTEXT_PROBE trials=%d neutral_wet=%.6f matched_wet=%.6f category_unchanged=true%n",
+                "TRASH_CONTEXT_PROBE trials=%d neutral_deep=%.6f matched_deep=%.6f category_unchanged=true%n",
                 trials, neutralRate, matchedRate);
     }
 
