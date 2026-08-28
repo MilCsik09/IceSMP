@@ -192,6 +192,27 @@ public final class TrashHistoryService {
         }, () -> player.getInventory().setContents(before));
     }
 
+    /** Commits an arbitrary player-inventory slot projection with durable history rollback. */
+    public boolean transformInventorySlotOnSuccess(final Player player, final int slot) {
+        Objects.requireNonNull(player, "player");
+        if (slot < 0 || slot >= player.getInventory().getSize()) return false;
+        final ItemStack source = player.getInventory().getItem(slot);
+        if (source == null || itemFactory.successPhaseOf(source).isEmpty()) return false;
+        if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        final ItemStack[] before = cloneContents(player.getInventory().getContents());
+        return store.transact(() -> {
+            final ItemStack singleton = source.clone();
+            singleton.setAmount(1);
+            final SplitResult result = transformInternal(source, singleton, player.getUniqueId());
+            player.getInventory().setItem(slot, result.singleton());
+            if (result.remainder() != null
+                    && !player.getInventory().addItem(result.remainder()).isEmpty()) {
+                throw new IllegalStateException("a Trash transform remainder nem fér el");
+            }
+            return true;
+        }, () -> player.getInventory().setContents(before));
+    }
+
     /** Idempotently prepares exact history units after the source item is durably removed. */
     public List<ItemStack> prepareVendorUnits(final UUID operationId,
                                               final ItemStack soldSnapshot, final int amount,

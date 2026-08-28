@@ -243,6 +243,8 @@ public final class TrashCatalog {
         }
         if (kind == TrashKind.ANOMALY) {
             TrashAnomalyBehavior.parse(behavior);
+        } else if (kind == TrashKind.TRASH_RELIC) {
+            TrashRelicBehavior.parse(behavior);
         }
         final String successPhase = normalize(section.getString("lifecycle.on-success-transform", ""));
         if (!successPhase.isBlank() && !ID_PATTERN.matcher(successPhase).matches()) {

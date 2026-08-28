@@ -193,6 +193,9 @@ world-events:
     - wild-hunt
     - escort
     - cultists
+    - prologue
+    - blood-moon
+    - season-finale
   season-modifiers:
     enabled: true
     tel:

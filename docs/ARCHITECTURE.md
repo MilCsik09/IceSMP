@@ -49,7 +49,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
-| `trash/` | 26 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, a 42 zárt anomaly behavior és bounded Folia runtime, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
+| `trash/` | 29 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
 | `security/` | 1 | Immutable, permissiontől és OP-státusztól független fejlesztői authority a rejtett tartalomfelületekhez. |
 | `warrior/` | 2 | Harcos gameplay vertical slice: transiens harci állapot + konkrét runtime (Csatatempó, Berserker, Guardian). |
 | `evoker/` | 2 | Sárkányidéző gameplay vertical slice: transiens állapot + konkrét runtime (Felerősítés, Vörös–Kék Eszencia, Visszhang/Időlenyomat). |
@@ -249,7 +249,7 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 ### 3.3 Perzisztencia — atomikus írás + életciklus SPI
 - **`storage/YamlStore.saveAtomic(file, yaml)`**: egyedi temp-fájl + atomikus rename (konkurens-biztos).
   **Minden** YAML-mentés ezen át megy — soha ne `yaml.save(file)` közvetlenül.
-- **`storage/PersistentStore { load(); save(); }`**: a 37 fájlt-író store implementálja. Az
+- **`storage/PersistentStore { load(); save(); }`**: a 38 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
 - **`storage/PersistentStoreCoordinator`**: az enable során **fail-closed** tölti be a teljes
