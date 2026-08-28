@@ -64,6 +64,12 @@ public final class TrashProductionHardeningRegressionSuite {
         require(archaeology, "recordInspectionCompleted()", "inspection completion telemetry");
         require(archaeology, "recordInspectionCancelled()", "inspection cancellation telemetry");
         require(archaeology, "recordTooltipTextFallback()", "tooltip fallback telemetry");
+
+        final String factory = source("TrashItemFactory.java");
+        require(factory, "LEGACY.deserialize(legacyColor + text)",
+                "single-pass Adventure legacy-color decoding");
+        check(!factory.contains("TextUtil.color("),
+                "factory pre-expanded ampersand colors into literal section codes");
     }
 
     private static void preservesPerformanceHardCaps() throws Exception {
