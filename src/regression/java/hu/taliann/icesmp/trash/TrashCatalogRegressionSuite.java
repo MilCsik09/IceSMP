@@ -116,6 +116,10 @@ public final class TrashCatalogRegressionSuite {
         require(source, "new NamespacedKey(plugin, \"trash_phase\")", "opaque lifecycle phase PDC");
         require(source, "ItemDataFactory.applyItemModel", "modern ITEM_MODEL projection");
         require(source, "ItemDataFactory.applyRarity", "presentation-only vanilla rarity projection");
+        require(source, "LEGACY.deserialize(legacyColor + text)",
+                "single-pass Adventure legacy-color decoding");
+        check(!source.contains("TextUtil.color("),
+                "Trash factory must not embed literal section codes into Components");
         check(!source.contains("ItemRarityService"), "Trash factory must never invoke rolled gear rarity");
         check(!source.contains("trash_relic"), "physical item must not expose the special kind");
         final int metaWrite = source.indexOf("item.setItemMeta(meta)");
