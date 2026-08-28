@@ -451,7 +451,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDespawn(final ItemDespawnEvent event) {
-        releasePhysics(event.getEntity());
+        releasePhysics(event.getEntity().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
