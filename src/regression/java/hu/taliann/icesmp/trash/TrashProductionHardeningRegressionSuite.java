@@ -60,6 +60,12 @@ public final class TrashProductionHardeningRegressionSuite {
                 "Anomaly fail-closed runtime errors are not observable in aggregate");
         check(occurrences(relic, "telemetry.recordBehaviorRuntimeError()") >= 3,
                 "Relic fail-closed runtime errors are not observable in aggregate");
+        check(occurrences(anomaly, "catch (final RuntimeException rejected)")
+                        == occurrences(anomaly, "telemetry.recordBehaviorRuntimeError()"),
+                "an Anomaly best-effort failure bypasses aggregate telemetry");
+        check(occurrences(relic, "catch (final RuntimeException rejected)")
+                        == occurrences(relic, "telemetry.recordBehaviorRuntimeError()"),
+                "a Relic best-effort failure bypasses aggregate telemetry");
         require(archaeology, "recordInspectionStarted()", "inspection start telemetry");
         require(archaeology, "recordInspectionCompleted()", "inspection completion telemetry");
         require(archaeology, "recordInspectionCancelled()", "inspection cancellation telemetry");
@@ -154,6 +160,17 @@ public final class TrashProductionHardeningRegressionSuite {
         require(Files.readString(ROOT.resolve("IceSMP.java")),
                 "TrashProductionRuntimeProbe.maybeRun(this, core)",
                 "runtime probe bootstrap wiring");
+        final String bootstrap = Files.readString(ROOT.resolve("IceSMP.java"));
+        require(bootstrap, "TrashProductionRuntimeProbe\n"
+                        + "                        .verifyCleanShutdown(this, core)",
+                "post-core-disable cleanup proof");
+        check(bootstrap.indexOf("core.disable()")
+                        < bootstrap.indexOf(".verifyCleanShutdown(this, core)"),
+                "runtime shutdown proof ran before Trash cleanup");
+        require(probe, "SHUTDOWN_PASS_MARKER", "separate shutdown proof marker");
+        require(probe, "activePhysics", "Anomaly shutdown-state proof");
+        require(probe, "trackedProjectiles", "Relic shutdown-state proof");
+        require(probe, "overlays", "tooltip shutdown-state proof");
         check(!probe.contains("failure.printStackTrace()")
                         && !probe.contains("failure.getMessage()"),
                 "runtime probe could leak a hidden malformed value into normal logs");
@@ -184,16 +201,11 @@ public final class TrashProductionHardeningRegressionSuite {
         check(!dev.contains("hasPermission(") && !dev.contains("isOp()"),
                 "hidden DEV route gained an ordinary admin bypass");
         for (final Path publicSurface : List.of(Path.of("README.md"), Path.of("ROADMAP.md"),
-                Path.of("docs/admin"))) {
-            if (Files.isDirectory(publicSurface)) {
-                try (var files = Files.walk(publicSurface)) {
-                    check(files.filter(Files::isRegularFile).noneMatch(path -> contains(path, developerId)),
-                            "hardcoded developer identity leaked into admin documentation");
-                }
-            } else {
-                check(!Files.readString(publicSurface).contains(developerId),
-                        "hardcoded developer identity leaked into public documentation");
-            }
+                Path.of("docs/FEATURES.md"), Path.of("docs/LATEST_CHANGES.md"),
+                Path.of("docs/PLAYER_GUIDE.md"), Path.of("docs/BUILDER_GUIDE.md"),
+                Path.of("docs/ADMIN_GUIDE.md"))) {
+            check(!Files.readString(publicSurface).contains(developerId),
+                    "hardcoded developer identity leaked into public/admin documentation");
         }
     }
 
@@ -246,14 +258,8 @@ public final class TrashProductionHardeningRegressionSuite {
         require(workflow, "runFolia", "real Folia startup smoke task");
         require(workflow, "ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS",
                 "runtime proof marker enforcement");
-    }
-
-    private static boolean contains(final Path path, final String token) {
-        try {
-            return Files.readString(path).contains(token);
-        } catch (final Exception failure) {
-            throw new IllegalStateException("cannot inspect " + path, failure);
-        }
+        require(workflow, "ICESMP_TRASH_PRODUCTION_RUNTIME_SHUTDOWN_PASS",
+                "post-cleanup proof marker enforcement");
     }
 
     private static String source(final String file) throws Exception {

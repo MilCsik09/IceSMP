@@ -261,6 +261,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                 history.transformInventorySlotAndAddOnSuccess(player, slot, preserved);
             } catch (final RuntimeException rejected) {
                 // The already-committed vanilla consumption remains authoritative; no dupe/drop.
+                telemetry.recordBehaviorRuntimeError();
             }
         }, () -> pendingConsumes.remove(player.getUniqueId()));
     }
@@ -482,6 +483,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             if (!history.individualizeHandOnSuccess(player, hand,
                     TrashHistoryEvent.ACTIVATED)) return;
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             return;
         }
         final ItemStack reserved = itemInHand(player, hand);
@@ -548,6 +550,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             player.getWorld().dropItem(player.getLocation(), remnant);
             return true;
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             return false;
         }
     }
@@ -671,6 +674,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             clearBrickReservation(player, token);
             return true;
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             return false;
         }
     }

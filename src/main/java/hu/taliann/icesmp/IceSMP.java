@@ -47,7 +47,11 @@ public final class IceSMP extends JavaPlugin {
         try {
             PrologueRuntimeConfigOverlay.shutdown();
             PrologueRuntime.shutdown();
-            if (core != null) core.disable();
+            if (core != null) {
+                core.disable();
+                hu.taliann.icesmp.trash.TrashProductionRuntimeProbe
+                        .verifyCleanShutdown(this, core);
+            }
         } finally {
             if (resourcePackListener != null) resourcePackListener.close();
             TransientEntities.shutdown();

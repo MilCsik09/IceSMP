@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /** Opt-in Paper/Folia startup and shutdown smoke probe; inert outside the dedicated CI profile. */
@@ -16,12 +17,21 @@ public final class TrashProductionRuntimeProbe {
 
     public static final String PROPERTY = "icesmp.trash-production-runtime";
     public static final String PASS_MARKER = "ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS";
+    public static final String SHUTDOWN_PASS_MARKER =
+            "ICESMP_TRASH_PRODUCTION_RUNTIME_SHUTDOWN_PASS";
     public static final String FAIL_MARKER = "ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_FAIL";
+    private static final AtomicReference<ProbeSession> ACTIVE = new AtomicReference<>();
 
     private TrashProductionRuntimeProbe() { }
 
     public static void maybeRun(final JavaPlugin plugin, final Object assembledCore) {
         if (!Boolean.getBoolean(PROPERTY)) return;
+        final ProbeSession session = new ProbeSession(plugin, assembledCore);
+        if (!ACTIVE.compareAndSet(null, session)) {
+            plugin.getLogger().severe(FAIL_MARKER + " type=DuplicateProbeSession");
+            Bukkit.shutdown();
+            return;
+        }
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
             try {
                 check(Bukkit.getPluginManager().isPluginEnabled(plugin),
@@ -35,17 +45,64 @@ public final class TrashProductionRuntimeProbe {
 
                 verifyCatalogAndFactory(catalog, items);
                 verifyStartedAndCleanRuntime(assembledCore, telemetry);
+                session.startupPassed = true;
                 plugin.getLogger().info(PASS_MARKER + " platform="
                         + Bukkit.getServer().getName() + " minecraft="
                         + Bukkit.getMinecraftVersion());
             } catch (final Throwable failure) {
                 // Never print the exception message: a malformed hidden identity must not enter logs.
+                ACTIVE.compareAndSet(session, null);
                 plugin.getLogger().severe(FAIL_MARKER + " type="
                         + failure.getClass().getSimpleName());
             } finally {
                 Bukkit.shutdown();
             }
         }, 1L);
+    }
+
+    /** Called immediately after the core's Trash shutdown hooks have returned. */
+    public static void verifyCleanShutdown(final JavaPlugin plugin, final Object assembledCore) {
+        if (!Boolean.getBoolean(PROPERTY)) return;
+        final ProbeSession session = ACTIVE.getAndSet(null);
+        if (session == null || session.plugin != plugin || session.core != assembledCore
+                || !session.startupPassed) {
+            plugin.getLogger().severe(FAIL_MARKER + " type=MissingStartupProof");
+            return;
+        }
+        try {
+            final Object anomaly = readField(assembledCore,
+                    "trashAnomalyRuntime", Object.class);
+            final Object relic = readField(assembledCore, "trashRelicRuntime", Object.class);
+            final Object archaeology = readField(
+                    assembledCore, "trashArchaeologyListener", Object.class);
+            final Object tooltip = readField(
+                    assembledCore, "trashArchaeologyTooltipBridge", Object.class);
+            final Object ambient = readField(assembledCore, "trashAmbientManager", Object.class);
+            check(readField(anomaly, "heldTick", Object.class) == null,
+                    "Anomaly runtime tick survived shutdown");
+            for (final String state : Set.of("activePhysics", "runtimeStateEntities",
+                    "pendingEchoes", "pairReservations", "compassProjections")) {
+                check(sizeOf(readField(anomaly, state, Object.class)) == 0,
+                        "Anomaly state survived shutdown");
+            }
+            for (final String state : Set.of("fields", "effectVetoArmed", "pendingConsumes",
+                    "claimedFields", "trackedProjectiles")) {
+                check(sizeOf(readField(relic, state, Object.class)) == 0,
+                        "Relic state survived shutdown");
+            }
+            check(sizeOf(readField(archaeology, "sessions", Object.class)) == 0,
+                    "Archaeology session survived shutdown");
+            check(sizeOf(readField(tooltip, "overlays", Object.class)) == 0,
+                    "Archaeology overlay survived shutdown");
+            check(sizeOf(readField(ambient, "active", Object.class)) == 0
+                            && sizeOf(readField(ambient, "nextAttemptAt", Object.class)) == 0
+                            && sizeOf(readField(ambient, "chunkCounts", Object.class)) == 0,
+                    "ambient runtime state survived shutdown");
+            plugin.getLogger().info(SHUTDOWN_PASS_MARKER);
+        } catch (final Throwable failure) {
+            plugin.getLogger().severe(FAIL_MARKER + " type="
+                    + failure.getClass().getSimpleName());
+        }
     }
 
     private static void verifyCatalogAndFactory(final TrashCatalog catalog,
@@ -130,5 +187,16 @@ public final class TrashProductionRuntimeProbe {
 
     private static void check(final boolean condition, final String message) {
         if (!condition) throw new IllegalStateException(message);
+    }
+
+    private static final class ProbeSession {
+        private final JavaPlugin plugin;
+        private final Object core;
+        private volatile boolean startupPassed;
+
+        private ProbeSession(final JavaPlugin plugin, final Object core) {
+            this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
+            this.core = java.util.Objects.requireNonNull(core, "core");
+        }
     }
 }

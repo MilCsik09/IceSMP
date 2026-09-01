@@ -795,6 +795,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                     beginPair(source, candidate, behavior, opposite);
                 }, () -> releasePairProbe(source, candidate, claimed, pending));
             } catch (final RuntimeException rejected) {
+                telemetry.recordBehaviorRuntimeError();
                 releasePairProbe(source, candidate, claimed, pending);
             }
         }
@@ -823,6 +824,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 consumePairCandidate(source, counterpart, behavior, opposite);
             }, () -> releasePair(source, counterpart));
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             releasePair(source, counterpart);
         }
     }
