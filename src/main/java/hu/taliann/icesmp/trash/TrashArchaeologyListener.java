@@ -40,15 +40,18 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
     private final TrashItemFactory items;
     private final TrashArchaeologyService archaeology;
     private final ArchaeologyTooltipBridge tooltip;
+    private final TrashRuntimeTelemetry telemetry;
     private final ConcurrentMap<UUID, Session> sessions = new ConcurrentHashMap<>();
 
     public TrashArchaeologyListener(final JavaPlugin plugin, final TrashItemFactory items,
                                     final TrashArchaeologyService archaeology,
-                                    final ArchaeologyTooltipBridge tooltip) {
+                                    final ArchaeologyTooltipBridge tooltip,
+                                    final TrashRuntimeTelemetry telemetry) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.items = Objects.requireNonNull(items, "items");
         this.archaeology = Objects.requireNonNull(archaeology, "archaeology");
         this.tooltip = Objects.requireNonNull(tooltip, "tooltip");
+        this.telemetry = Objects.requireNonNull(telemetry, "telemetry");
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -123,6 +126,7 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
                     target.getInventory().getHeldItemSlot());
             session.completing = true;
             sessions.put(target.getUniqueId(), session);
+            telemetry.recordInspectionStarted();
             inspect(target, session);
         }, null);
     }
@@ -148,15 +152,24 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
                 if (session.elapsed % PRESENTATION_CADENCE == 0) presentBrush(player);
                 if (session.elapsed < INSPECTION_TICKS) return;
                 beginCompletion(player, session);
-            }, () -> sessions.remove(player.getUniqueId(), session), 1L, 1L);
+            }, () -> {
+                if (sessions.remove(player.getUniqueId(), session)) {
+                    telemetry.recordInspectionCancelled();
+                }
+            }, 1L, 1L);
             session.task = task;
             if (task == null || sessions.get(player.getUniqueId()) != session) {
-                sessions.remove(player.getUniqueId(), session);
+                if (sessions.remove(player.getUniqueId(), session)) {
+                    telemetry.recordInspectionCancelled();
+                }
                 if (task != null) task.cancel();
+            } else {
+                telemetry.recordInspectionStarted();
             }
         } catch (final RuntimeException rejected) {
             sessions.remove(player.getUniqueId(), session);
             player.clearActiveItem();
+            telemetry.recordBehaviorRuntimeError();
         }
     }
 
@@ -190,12 +203,21 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
 
     private void inspect(final Player player, final Session session) {
         final UUID playerId = player.getUniqueId();
-        archaeology.inspect(playerId, session.snapshot).whenComplete((result, failure) ->
+        archaeology.inspect(playerId, session.snapshot).whenComplete((result, failure) -> {
+            try {
                 player.getScheduler().run(plugin, ignored -> {
                     if (!sessions.remove(playerId, session)) return;
-                    if (failure != null || result == null || !result.accepted()
-                            || !player.isOnline()) return;
+                    if (failure != null || result == null) {
+                        telemetry.recordBehaviorRuntimeError();
+                        return;
+                    }
+                    if (!result.accepted() || !player.isOnline()) {
+                        telemetry.recordInspectionCancelled();
+                        return;
+                    }
+                    telemetry.recordInspectionCompleted();
                     if (result.unlockedNow()) {
+                        telemetry.recordArchaeologyUnlock();
                         player.sendMessage(Component.text(
                                         "A régi tárgyakon hagyott nyomok egyre többet mondanak neked.",
                                         NamedTextColor.GRAY)
@@ -211,17 +233,30 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
                     final List<String> observations = result.visibleFacts().stream()
                             .map(TrashArchaeologyFactEngine.Fact::text).toList();
                     if (!tooltip.show(player, session.snapshot, observations)) {
+                        telemetry.recordTooltipTextFallback();
                         player.sendMessage(Component.text("Régészeti megfigyelések",
                                 NamedTextColor.GOLD));
                         observations.forEach(line -> player.sendMessage(
                                 Component.text("• " + line, NamedTextColor.GRAY)));
                     }
-                }, () -> sessions.remove(playerId, session)));
+                }, () -> {
+                    if (sessions.remove(playerId, session)) {
+                        telemetry.recordInspectionCancelled();
+                    }
+                });
+            } catch (final RuntimeException rejected) {
+                if (sessions.remove(playerId, session)) {
+                    telemetry.recordInspectionCancelled();
+                }
+                telemetry.recordBehaviorRuntimeError();
+            }
+        });
     }
 
     private void cancelSession(final Player player, final boolean clearActiveItem) {
         final Session session = sessions.remove(player.getUniqueId());
         if (session == null) return;
+        telemetry.recordInspectionCancelled();
         final ScheduledTask task = session.task;
         if (task != null) task.cancel();
         if (clearActiveItem) player.clearActiveItem();
@@ -230,6 +265,7 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
     private void retire(final Player player, final Session session,
                         final boolean clearActiveItem) {
         if (!sessions.remove(player.getUniqueId(), session)) return;
+        telemetry.recordInspectionCancelled();
         final ScheduledTask task = session.task;
         if (task != null) task.cancel();
         if (clearActiveItem) player.clearActiveItem();
@@ -238,12 +274,16 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
     @Override
     public void clearPlayerState(final UUID playerId) {
         final Session session = sessions.remove(playerId);
-        if (session != null && session.task != null) session.task.cancel();
+        if (session != null) {
+            telemetry.recordInspectionCancelled();
+            if (session.task != null) session.task.cancel();
+        }
         tooltip.clearPlayerState(playerId);
     }
 
     public void shutdown() {
         sessions.values().forEach(session -> {
+            telemetry.recordInspectionCancelled();
             if (session.task != null) session.task.cancel();
         });
         sessions.clear();

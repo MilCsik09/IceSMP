@@ -39,6 +39,7 @@ public final class IceSMP extends JavaPlugin {
         hu.taliann.icesmp.professions.ProfessionsPaperRuntimeProbe.maybeRun(this, core);
         hu.taliann.icesmp.itemization.PaperSourceIntegrityRuntimeProbe.maybeRun(this, core);
         hu.taliann.icesmp.quest.QuestItemContentIntegrityPaperRuntimeProbe.maybeRun(this, core);
+        hu.taliann.icesmp.trash.TrashProductionRuntimeProbe.maybeRun(this, core);
     }
 
     @Override
@@ -46,7 +47,11 @@ public final class IceSMP extends JavaPlugin {
         try {
             PrologueRuntimeConfigOverlay.shutdown();
             PrologueRuntime.shutdown();
-            if (core != null) core.disable();
+            if (core != null) {
+                core.disable();
+                hu.taliann.icesmp.trash.TrashProductionRuntimeProbe
+                        .verifyCleanShutdown(this, core);
+            }
         } finally {
             if (resourcePackListener != null) resourcePackListener.close();
             TransientEntities.shutdown();

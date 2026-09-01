@@ -1,0 +1,179 @@
+name: Trash production hardening
+
+on:
+  pull_request:
+    paths:
+      - "src/main/java/hu/taliann/icesmp/trash/**"
+      - "src/main/java/hu/taliann/icesmp/IceSMP.java"
+      - "src/main/java/hu/taliann/icesmp/security/HiddenDevAuthority.java"
+      - "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"
+      - "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java"
+      - "src/main/java/hu/taliann/icesmp/listeners/PlayerSessionCleanupListener.java"
+      - "src/main/resources/content/trash/**"
+      - "src/regression/java/hu/taliann/icesmp/trash/**"
+      - "resource-pack/assets/icesmp/items/trash/**"
+      - "resource-pack/assets/icesmp/textures/item/trash/**"
+      - "docs/development/trash-production-staging.json"
+      - "build.gradle.kts"
+      - ".github/workflows/trash-production-hardening.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trash-hardening-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  automated-gates:
+    name: Java 21 automated Phase G gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate resource-pack bindings
+        run: python3 scripts/test_resource_pack.py
+
+      - name: Run stacked Trash regressions and 30M distribution simulation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          ./gradlew \
+            trashCatalogRegressionTest \
+            trashLootDistributionRegressionTest \
+            trashHistoryRegressionTest \
+            trashAnomalyRegressionTest \
+            trashRelicRegressionTest \
+            trashArchaeologyRegressionTest \
+            trashProductionHardeningRegressionTest \
+            --no-daemon --console=plain --stacktrace \
+            | tee build/trash-production-hardening.log
+
+      - name: Verify every stacked suite produced evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Trash catalog regression suite passed." build/trash-production-hardening.log
+          grep -F "Trash loot distribution regression suite passed (30,000,000 source events)." build/trash-production-hardening.log
+          grep -F "Trash history regression suite passed." build/trash-production-hardening.log
+          grep -F "Trash anomaly regression suite passed." build/trash-production-hardening.log
+          grep -F "Trash relic regression suite passed." build/trash-production-hardening.log
+          grep -F "Trash archaeology regression suite passed." build/trash-production-hardening.log
+          grep -F "Trash production hardening regression suite passed." build/trash-production-hardening.log
+
+      - name: Retain aggregate simulation output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trash-production-hardening-${{ github.run_id }}
+          path: build/trash-production-hardening.log
+          if-no-files-found: warn
+          retention-days: 14
+
+  paper-runtime:
+    name: Paper 1.21.11 Trash smoke runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Checkout tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Boot isolated Paper runtime and shut down through the probe
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.trash-production-runtime=true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p run build
+          printf 'eula=true\n' > run/eula.txt
+          timeout 480s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            | tee build/trash-paper-runtime.log
+
+      - name: Require Paper proof marker and clean shutdown
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS' build/trash-paper-runtime.log
+          grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_SHUTDOWN_PASS' build/trash-paper-runtime.log
+          ! grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_FAIL' build/trash-paper-runtime.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' build/trash-paper-runtime.log
+
+  folia-runtime:
+    name: Folia 1.21.11 Trash smoke runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime asset dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Boot lock-pinned Folia runtime and shut down through the probe
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.trash-production-runtime=true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p run build
+          printf 'eula=true\n' > run/eula.txt
+          timeout 600s ./gradlew --no-daemon --console=plain \
+            --init-script gradle/run-folia.init.gradle runFolia \
+            | tee build/trash-folia-runtime.log
+
+      - name: Require Folia proof marker and clean shutdown
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS' build/trash-folia-runtime.log
+          grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_SHUTDOWN_PASS' build/trash-folia-runtime.log
+          ! grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_FAIL' build/trash-folia-runtime.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' build/trash-folia-runtime.log

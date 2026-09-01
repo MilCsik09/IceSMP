@@ -132,6 +132,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     private final KingManager kings;
     private final ClaimManager claims;
     private final TerritoryProtectionService territoryProtection;
+    private final TrashRuntimeTelemetry telemetry;
     private final NamespacedKey runtimeStateKey;
     private final Set<UUID> activePhysics = ConcurrentHashMap.newKeySet();
     private final Set<UUID> runtimeStateEntities = ConcurrentHashMap.newKeySet();
@@ -154,7 +155,8 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                                final TossableObjectRuntime tosses,
                                final CurrencyManager currency, final FactionManager factions,
                                final KingManager kings, final ClaimManager claims,
-                               final TerritoryProtectionService territoryProtection) {
+                               final TerritoryProtectionService territoryProtection,
+                               final TrashRuntimeTelemetry telemetry) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.catalog = Objects.requireNonNull(catalog, "catalog");
         this.items = Objects.requireNonNull(items, "items");
@@ -167,6 +169,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         this.claims = Objects.requireNonNull(claims, "claims");
         this.territoryProtection = Objects.requireNonNull(territoryProtection,
                 "territoryProtection");
+        this.telemetry = Objects.requireNonNull(telemetry, "telemetry");
         this.runtimeStateKey = new NamespacedKey(plugin, "trash_runtime_state");
     }
 
@@ -570,6 +573,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 tickPhysics(item, behavior, age[0]);
             }, () -> releasePhysics(itemId), 1L, 2L);
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             releasePhysicsAndRestore(item);
         }
     }
@@ -791,6 +795,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                     beginPair(source, candidate, behavior, opposite);
                 }, () -> releasePairProbe(source, candidate, claimed, pending));
             } catch (final RuntimeException rejected) {
+                telemetry.recordBehaviorRuntimeError();
                 releasePairProbe(source, candidate, claimed, pending);
             }
         }
@@ -819,6 +824,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 consumePairCandidate(source, counterpart, behavior, opposite);
             }, () -> releasePair(source, counterpart));
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             releasePair(source, counterpart);
         }
     }
@@ -869,6 +875,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 source.getWorld().dropItem(source.getLocation(), result.singleton());
             }
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             rollback(rollbackLocation, consumed);
         } finally {
             releasePair(source, counterpart);
@@ -900,6 +907,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
             split = history.splitAndRecord(held, TrashHistoryEvent.WORLD_EVENT_PRESENT,
                     player.getUniqueId(), "");
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             return;
         }
         final Item entity;
@@ -907,6 +915,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
             entity = block.getWorld().dropItem(block.getLocation().add(0.5D, 0.75D, 0.5D),
                     split.singleton());
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             return;
         }
         setItemInHand(player, hand, split.remainder());
@@ -945,6 +954,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 item.setVelocity(new Vector(0.0D, 0.18D, 0.0D));
                 return;
             } catch (final RuntimeException rejected) {
+                telemetry.recordBehaviorRuntimeError();
                 return;
             }
         }
@@ -983,6 +993,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
             split = history.splitAndRecord(source, TrashHistoryEvent.ACTIVATED,
                     playerId, "");
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             return;
         }
         dropped.setItemStack(split.singleton());
@@ -1076,6 +1087,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                             player.getLocation(), overflow));
             return split.singleton();
         } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
             return null;
         }
     }

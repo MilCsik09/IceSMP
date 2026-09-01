@@ -168,6 +168,17 @@ az alábbi rések kódban visszaigazoltak, javításuk tételenként külön dö
   guild-tagság tárolása is a profilrétegen kívül él — az authority-mátrix alá
   vonásuk (szekció vagy dokumentált kivétel) tulajdonosi döntés.
 
+### Ócska-ökoszisztéma — G fázisú kiadási kapu
+
+- ✅ **Automatizált forráskapuk:** a teljes stacked regresszió, a 30 milliós
+  eloszlásszimuláció, az asset-validáció, valamint a külön Paper/Folia startup-
+  és shutdown-smoke az exact PR HEAD kötelező CI-feladata.
+- ◇ **Production acceptance:** a `docs/development/trash-production-staging.json`
+  evidencia-mátrix szerinti 2–4 órás többjátékos próba, valós kliens-UX és
+  50–60 játékosos terhelési profil továbbra is kézi kapu. Ezek átnézett
+  bizonyítékáig a deklarált `production_ready` érték helyesen `false`; CI nem
+  helyettesítheti és nem jelölheti késznek ezt a pontot.
+
 ## 2. Builderkapuk
 
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő
