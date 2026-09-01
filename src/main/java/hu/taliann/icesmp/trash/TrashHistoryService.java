@@ -2,6 +2,7 @@ package hu.taliann.icesmp.trash;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -187,6 +188,103 @@ public final class TrashHistoryService {
             if (result.remainder() != null
                     && !player.getInventory().addItem(result.remainder()).isEmpty()) {
                 throw new IllegalStateException("a Trash transform remainder nem fér el");
+            }
+            return true;
+        }, () -> player.getInventory().setContents(before));
+    }
+
+    /** Commits an arbitrary player-inventory slot projection with durable history rollback. */
+    public boolean transformInventorySlotOnSuccess(final Player player, final int slot) {
+        Objects.requireNonNull(player, "player");
+        if (slot < 0 || slot >= player.getInventory().getSize()) return false;
+        final ItemStack source = player.getInventory().getItem(slot);
+        if (source == null || itemFactory.successPhaseOf(source).isEmpty()) return false;
+        if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        final ItemStack[] before = cloneContents(player.getInventory().getContents());
+        return store.transact(() -> {
+            final ItemStack singleton = source.clone();
+            singleton.setAmount(1);
+            final SplitResult result = transformInternal(source, singleton, player.getUniqueId());
+            player.getInventory().setItem(slot, result.singleton());
+            if (result.remainder() != null
+                    && !player.getInventory().addItem(result.remainder()).isEmpty()) {
+                throw new IllegalStateException("a Trash transform remainder nem fér el");
+            }
+            return true;
+        }, () -> player.getInventory().setContents(before));
+    }
+
+    /**
+     * Splits and individualizes exactly one unit in the selected hand before a deferred effect
+     * reserves it. The player inventory projection rolls back with the durable history write.
+     */
+    public boolean individualizeHandOnSuccess(final Player player, final EquipmentSlot hand,
+                                              final TrashHistoryEvent event) {
+        Objects.requireNonNull(player, "player");
+        Objects.requireNonNull(hand, "hand");
+        Objects.requireNonNull(event, "event");
+        if (hand != EquipmentSlot.HAND && hand != EquipmentSlot.OFF_HAND) return false;
+        final ItemStack source = itemInHand(player, hand);
+        if (!itemFactory.isKnownItem(source)) return false;
+        if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        final ItemStack[] before = cloneContents(player.getInventory().getContents());
+        return store.transact(() -> {
+            final ItemStack singleton = source.clone();
+            singleton.setAmount(1);
+            individualizeInternal(singleton, event, player.getUniqueId(), "");
+            setItemInHand(player, hand, singleton);
+            final ItemStack remainder = remainderOf(source);
+            if (remainder != null && !player.getInventory().addItem(remainder).isEmpty()) {
+                throw new IllegalStateException("a Trash reservation remainder nem fér el");
+            }
+            return true;
+        }, () -> player.getInventory().setContents(before));
+    }
+
+    /** Transforms the exact helmet slot; an inventory copy cannot impersonate equipped state. */
+    public boolean transformHelmetOnSuccess(final Player player) {
+        Objects.requireNonNull(player, "player");
+        final ItemStack source = player.getInventory().getHelmet();
+        if (source == null || itemFactory.successPhaseOf(source).isEmpty()) return false;
+        final ItemStack[] before = cloneContents(player.getInventory().getContents());
+        return store.transact(() -> {
+            final ItemStack singleton = source.clone();
+            singleton.setAmount(1);
+            final SplitResult result = transformInternal(source, singleton, player.getUniqueId());
+            player.getInventory().setHelmet(result.singleton());
+            if (result.remainder() != null
+                    && !player.getInventory().addItem(result.remainder()).isEmpty()) {
+                throw new IllegalStateException("a Trash helmet transform remainder nem fér el");
+            }
+            return true;
+        }, () -> player.getInventory().setContents(before));
+    }
+
+    /**
+     * Atomically transforms one inventory Relic and restores one already-consumed vanilla input.
+     * If either projection cannot fit, both history and the post-consumption inventory roll back.
+     */
+    public boolean transformInventorySlotAndAddOnSuccess(final Player player, final int slot,
+                                                         final ItemStack restoredInput) {
+        Objects.requireNonNull(player, "player");
+        Objects.requireNonNull(restoredInput, "restoredInput");
+        if (slot < 0 || slot >= player.getInventory().getSize()
+                || restoredInput.getType().isAir() || restoredInput.getAmount() != 1) return false;
+        final ItemStack source = player.getInventory().getItem(slot);
+        if (source == null || itemFactory.successPhaseOf(source).isEmpty()) return false;
+        if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        final ItemStack[] before = cloneContents(player.getInventory().getContents());
+        return store.transact(() -> {
+            final ItemStack singleton = source.clone();
+            singleton.setAmount(1);
+            final SplitResult result = transformInternal(source, singleton, player.getUniqueId());
+            player.getInventory().setItem(slot, result.singleton());
+            if (result.remainder() != null
+                    && !player.getInventory().addItem(result.remainder()).isEmpty()) {
+                throw new IllegalStateException("a Trash transform remainder nem fér el");
+            }
+            if (!player.getInventory().addItem(restoredInput.clone()).isEmpty()) {
+                throw new IllegalStateException("a megőrzött consumable nem fér el");
             }
             return true;
         }, () -> player.getInventory().setContents(before));
@@ -482,6 +580,17 @@ public final class TrashHistoryService {
             copies[index] = contents[index] == null ? null : contents[index].clone();
         }
         return copies;
+    }
+
+    private static ItemStack itemInHand(final Player player, final EquipmentSlot hand) {
+        return hand == EquipmentSlot.OFF_HAND ? player.getInventory().getItemInOffHand()
+                : player.getInventory().getItemInMainHand();
+    }
+
+    private static void setItemInHand(final Player player, final EquipmentSlot hand,
+                                      final ItemStack item) {
+        if (hand == EquipmentSlot.OFF_HAND) player.getInventory().setItemInOffHand(item);
+        else player.getInventory().setItemInMainHand(item);
     }
 
     private static List<ItemStack> immutableClones(final List<ItemStack> items) {

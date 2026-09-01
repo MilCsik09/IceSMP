@@ -565,6 +565,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashAnomalyStateStore.java|private final Map<UUID, EnumMap<MemoryKey, Long>> states = new LinkedHashMap<>();",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "The UUID is an opaque physical item-instance key for bounded anomaly memory, not a player UUID or PlayerProfile-owned state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/trash/TrashSpatialFractureStore.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Bounded shared world-mutation recovery journal; owner UUIDs enforce the two-fractures-per-player safety cap and are not player progression or PlayerProfile authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashSpatialFractureStore.java|private final Map<UUID, Fracture> open = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "The map is keyed by an opaque fracture operation UUID; embedded owner UUIDs are bounded cap references inside the crash-recovery aggregate."
     }
   ]
 }

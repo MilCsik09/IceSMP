@@ -239,8 +239,10 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.trash.TrashHistoryStore trashHistoryStore;
     private final hu.taliann.icesmp.trash.TrashHistoryService trashHistoryService;
     private final hu.taliann.icesmp.trash.TrashAnomalyStateStore trashAnomalyStateStore;
+    private final hu.taliann.icesmp.trash.TrashSpatialFractureStore trashSpatialFractureStore;
     private final hu.taliann.icesmp.trash.TossableObjectRuntime tossableObjectRuntime;
     private final hu.taliann.icesmp.trash.TrashAnomalyRuntime trashAnomalyRuntime;
+    private final hu.taliann.icesmp.trash.TrashRelicRuntime trashRelicRuntime;
     private final hu.taliann.icesmp.trash.TrashRecyclePool trashRecyclePool;
     private final hu.taliann.icesmp.trash.TrashLootSelector trashLootSelector;
     private final hu.taliann.icesmp.trash.TrashLootService trashLootService;
@@ -457,6 +459,8 @@ public final class IceSMPCore {
         this.trashHistoryService = new hu.taliann.icesmp.trash.TrashHistoryService(
                 plugin, trashCatalog, trashItemFactory, trashHistoryStore);
         this.trashAnomalyStateStore = new hu.taliann.icesmp.trash.TrashAnomalyStateStore(plugin);
+        this.trashSpatialFractureStore =
+                new hu.taliann.icesmp.trash.TrashSpatialFractureStore(plugin);
         this.tossableObjectRuntime = new hu.taliann.icesmp.trash.TossableObjectRuntime(plugin);
         this.trashRecyclePool = new hu.taliann.icesmp.trash.TrashRecyclePool(
                 plugin, trashCatalog, trashItemFactory, trashHistoryService);
@@ -599,6 +603,7 @@ public final class IceSMPCore {
         majorEventGate.register("wild-hunt", wildHuntManager::isActive);
         majorEventGate.register("escort", escortManager::isActive);
         majorEventGate.register("cultists", cultistEventManager::isActive);
+        majorEventGate.register("blood-moon", bloodMoonManager::isActive);
         worldBossManager.setEventGate(majorEventGate);
         invasionManager.setEventGate(majorEventGate);
         wildHuntManager.setEventGate(majorEventGate);
@@ -631,6 +636,7 @@ public final class IceSMPCore {
         // mert a finálé-manager náluk később épül (kölcsönös hivatkozás a DI-sorrendben).
         this.seasonFinaleManager = new hu.taliann.icesmp.managers.SeasonFinaleManager(plugin, configManager,
                 seasonManager, worldBossManager, territoryManager, messageManager);
+        majorEventGate.register("season-finale", seasonFinaleManager::isActive);
         seasonManager.setSeasonFinale(seasonFinaleManager);
         worldBossManager.setSeasonFinale(seasonFinaleManager);
         bloodMoonManager.setSeasonFinale(seasonFinaleManager);
@@ -766,6 +772,10 @@ public final class IceSMPCore {
                 plugin, trashCatalog, trashItemFactory, trashHistoryService,
                 trashAnomalyStateStore, tossableObjectRuntime, currencyManager, factionManager,
                 kingManager, claimManager, territoryProtectionService);
+        this.trashRelicRuntime = new hu.taliann.icesmp.trash.TrashRelicRuntime(
+                plugin, trashCatalog, trashItemFactory, trashHistoryService,
+                trashSpatialFractureStore, bloodMoonManager, claimManager,
+                territoryProtectionService);
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);
@@ -812,6 +822,7 @@ public final class IceSMPCore {
                 devItemManager,
                 trashHistoryStore,
                 trashAnomalyStateStore,
+                trashSpatialFractureStore,
                 trashRecyclePool);
         this.storeCoordinator = new PersistentStoreCoordinator(persistentStores);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
@@ -845,6 +856,7 @@ public final class IceSMPCore {
                 afkManager,
                 trashAmbientManager,
                 trashAnomalyRuntime,
+                trashRelicRuntime,
                 sitManager,
                 crateManager,
                 moderationManager,
@@ -1125,6 +1137,7 @@ public final class IceSMPCore {
         schedulePetCombat();
         devItemManager.start();
         trashAnomalyRuntime.start();
+        trashRelicRuntime.start();
         scheduleAutosave();
         scheduleModerationExpiry();
         // A visszaépítés saját, sűrű ütemén fut (látványos, fokozatos gyógyulás) —
@@ -1454,6 +1467,7 @@ public final class IceSMPCore {
         shutdownStep("motdListener", motdListener::shutdown);
         shutdownStep("vanishManager", vanishManager::shutdown);
         shutdownStep("eventSpawnGuard", eventSpawnGuard::clearReservations);
+        shutdownStep("trashRelicRuntime", trashRelicRuntime::shutdown);
         shutdownStep("trashAnomalyRuntime", trashAnomalyRuntime::shutdown);
         shutdownStep("trashAmbientManager", trashAmbientManager::shutdown);
 
@@ -2076,6 +2090,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(trashAmbientManager, plugin);
         pluginManager.registerEvents(trashVendorService, plugin);
         pluginManager.registerEvents(trashAnomalyRuntime, plugin);
+        pluginManager.registerEvents(trashRelicRuntime, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SelectionWandListener(claimManager, territoryManager, currencyManager, messageManager), plugin);
         // Nether-portál világszabály: új portál nem gyújtható — csak a Kárhozat Kapuja él.
