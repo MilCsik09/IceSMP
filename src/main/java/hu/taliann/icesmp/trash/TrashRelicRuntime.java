@@ -250,10 +250,14 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                 || !pendingConsumes.add(player.getUniqueId())) return;
         final ItemStack preserved = consumed.clone();
         preserved.setAmount(1);
+        final EquipmentSlot consumedHand = event.getHand();
+        final int consumedSlot = consumedHand == EquipmentSlot.OFF_HAND
+                ? -1 : player.getInventory().getHeldItemSlot();
         final int equivalentBefore = countSimilar(player, consumed);
         player.getScheduler().run(plugin, ignored -> {
             pendingConsumes.remove(player.getUniqueId());
             if (!TrashRelicPolicy.consumptionCommitted(
+                    sameItemInConsumedSlot(player, consumedHand, consumedSlot, consumed),
                     equivalentBefore, countSimilar(player, consumed))) return;
             final int slot = findSlot(player, TrashRelicBehavior.REPEDT_BOGRE);
             if (slot < 0) return;
@@ -774,6 +778,16 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     private static ItemStack itemInHand(final Player player, final EquipmentSlot hand) {
         return hand == EquipmentSlot.OFF_HAND ? player.getInventory().getItemInOffHand()
                 : player.getInventory().getItemInMainHand();
+    }
+
+    private static boolean sameItemInConsumedSlot(final Player player,
+                                                  final EquipmentSlot hand,
+                                                  final int mainHandSlot,
+                                                  final ItemStack consumed) {
+        final ItemStack current = hand == EquipmentSlot.OFF_HAND
+                ? player.getInventory().getItemInOffHand()
+                : player.getInventory().getItem(mainHandSlot);
+        return current != null && current.isSimilar(consumed);
     }
 
     private static void setItemInHand(final Player player, final EquipmentSlot hand,

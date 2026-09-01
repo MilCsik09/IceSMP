@@ -89,11 +89,13 @@ public final class TrashRelicRegressionSuite {
     }
 
     private static void preservesTransactionalConsumeAndReservationPolicy() throws Exception {
-        check(TrashRelicPolicy.consumptionCommitted(4, 3),
+        check(TrashRelicPolicy.consumptionCommitted(true, 4, 3),
                 "committed consumable decrement was rejected");
-        check(!TrashRelicPolicy.consumptionCommitted(4, 4),
+        check(TrashRelicPolicy.consumptionCommitted(false, 1, 1),
+                "committed final consumable replacement was rejected");
+        check(!TrashRelicPolicy.consumptionCommitted(true, 4, 4),
                 "cancelled consumable use was accepted");
-        check(!TrashRelicPolicy.consumptionCommitted(0, 0),
+        check(!TrashRelicPolicy.consumptionCommitted(false, 0, 0),
                 "empty consumable snapshot was accepted");
         check(TrashRelicPolicy.mayTrackProjectile(true, 255, 256),
                 "bounded active projectile tracker was rejected");
@@ -107,6 +109,9 @@ public final class TrashRelicRegressionSuite {
         require(runtime, "priority = EventPriority.MONITOR, ignoreCancelled = true)\n"
                         + "    public void onConsume", "commit-observing consume handler");
         require(runtime, "TrashRelicPolicy.consumptionCommitted", "consume commit proof");
+        require(runtime, "player.getInventory().getHeldItemSlot()",
+                "exact consumed main-hand slot snapshot");
+        require(runtime, "sameItemInConsumedSlot", "post-consume hand replacement proof");
         require(history, "transformInventorySlotAndAddOnSuccess",
                 "atomic mug/input inventory projection");
         require(runtime, "trash_brick_reservation", "opaque brick reservation marker");
