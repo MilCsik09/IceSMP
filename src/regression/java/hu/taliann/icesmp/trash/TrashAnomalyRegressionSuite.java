@@ -24,11 +24,52 @@ public final class TrashAnomalyRegressionSuite {
     public static void main(final String[] args) throws Exception {
         preservesClosedFortyTwoBehaviorAuthority();
         preservesEveryAuthoredRuntimeBinding();
+        preservesAuthoredStackCompassEchoAndPairBehavior();
         preservesBoundedFoliaPrimitives();
         preservesDurableOpaqueMemory();
         preservesTransactionalTransforms();
         preservesSecretRuntimeBoundary();
         System.out.println("Trash anomaly regression suite passed.");
+    }
+
+    private static void preservesAuthoredStackCompassEchoAndPairBehavior() throws Exception {
+        check(!TrashAnomalyPolicy.blocksGroundMerge(false, false),
+                "equivalent fresh Anomaly entities must remain mergeable");
+        check(TrashAnomalyPolicy.blocksGroundMerge(true, false)
+                        && TrashAnomalyPolicy.blocksGroundMerge(false, true),
+                "individual runtime state must block merge from either side");
+        final TrashAnomalyPolicy.OppositePoint east = TrashAnomalyPolicy.oppositePoint(
+                0.0D, 0.0D, 10.0D, 0.0D, 100.0D);
+        check(east != null && Math.abs(east.x() + 100.0D) < 0.0001D
+                        && Math.abs(east.z()) < 0.0001D,
+                "compass projection is not the exact 180-degree opposite vector");
+        final TrashAnomalyPolicy.OppositePoint diagonal = TrashAnomalyPolicy.oppositePoint(
+                4.0D, -2.0D, 13.0D, 10.0D, 256.0D);
+        check(diagonal != null, "valid diagonal compass vector was rejected");
+        final double sourceX = 9.0D;
+        final double sourceZ = 12.0D;
+        final double projectedX = diagonal.x() - 4.0D;
+        final double projectedZ = diagonal.z() + 2.0D;
+        check(Math.abs(sourceX * projectedZ - sourceZ * projectedX) < 0.0001D
+                        && sourceX * projectedX + sourceZ * projectedZ < 0.0D,
+                "diagonal compass vector is not collinear and opposite");
+
+        final String runtime = Files.readString(RUNTIME);
+        require(runtime, "runtimeStateEntities.contains(event.getTarget().getUniqueId())",
+                "ownership-safe target runtime-state merge guard");
+        require(runtime, "releasePhysics(event.getEntity().getUniqueId())",
+                "successful merge task retirement");
+        check(!runtime.contains("|| behaviorOf(event.getEntity().getItemStack()).isPresent()"),
+                "special identity alone still blocks ground merging");
+        require(runtime, "player.sendEquipmentChange(player, hand, projected)",
+                "player-only compass needle projection");
+        require(runtime, "captured.sound(), captured.volume(), captured.pitch()",
+                "exact captured eligible sound replay");
+        check(!runtime.contains("Sound.BLOCK_AMETHYST_BLOCK_RESONATE"),
+                "delayed echo still substitutes a fixed authored sound");
+        require(runtime, "final List<Item> candidates", "bounded multi-candidate pair probe");
+        require(runtime, "claimed.compareAndSet(false, true)",
+                "single-winner compatible pair claim");
     }
 
     private static void preservesClosedFortyTwoBehaviorAuthority() {
@@ -63,6 +104,7 @@ public final class TrashAnomalyRegressionSuite {
 
     private static void preservesBoundedFoliaPrimitives() throws Exception {
         final String runtime = Files.readString(RUNTIME);
+        final String policy = Files.readString(ROOT.resolve("trash/TrashAnomalyPolicy.java"));
         final String tosses = Files.readString(TOSSES);
         require(runtime, "MAX_ACTIVE_PHYSICS_PER_WORLD = 256", "per-world physics cap");
         require(runtime, "MAX_PENDING_ECHOES = 256", "global delayed-sound cap");
@@ -84,6 +126,7 @@ public final class TrashAnomalyRegressionSuite {
                 "unbounded world scan entered Phase D");
         check(!runtime.contains("hasRuntimeState(event.getTarget())"),
                 "merge callback must not read the other Item PDC");
+        check(!policy.contains("org.bukkit"), "pure Anomaly policy gained a Bukkit dependency");
         require(tosses, "sample.getBlockX() >> 4 != origin.getBlockX() >> 4",
                 "toss block reads remain in the owned chunk");
     }
