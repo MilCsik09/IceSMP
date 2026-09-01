@@ -3,6 +3,7 @@ package hu.taliann.icesmp.trash;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -22,23 +23,33 @@ import java.util.function.Supplier;
 /** Durable hidden provenance indexed by opaque item-instance UUID. */
 public final class TrashHistoryStore implements PersistentStore {
 
-    private static final int SCHEMA_VERSION = 2;
+    private static final int SCHEMA_VERSION = 3;
+    private static final int JOURNAL_SCHEMA_VERSION = 1;
+    private static final int MAX_INSTANCES = 100_000;
     private static final int MAX_EVENTS = 64;
     private static final int MAX_OWNERS = 64;
     private static final int MAX_VENDOR_OPERATIONS = 1_024;
+    private static final int MAX_JOURNAL_RECORDS = 1_024;
     private static final int MAX_DETAIL_LENGTH = 96;
     private static final Set<Integer> OWNER_MILESTONES = Set.of(1, 3, 5, 10, 25, 50);
 
     private final JavaPlugin plugin;
     private final TrashCatalog catalog;
     private final File file;
+    private final TrashHistoryJournal journal;
     private final Map<UUID, StoredHistory> histories = new LinkedHashMap<>();
     private final Map<UUID, StoredVendorReceipt> vendorReceipts = new LinkedHashMap<>();
+    private long sequence;
+    private int journalRecords;
+    private TransactionFrame activeTransaction;
+    private boolean replayingJournal;
 
     public TrashHistoryStore(final JavaPlugin plugin, final TrashCatalog catalog) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.catalog = Objects.requireNonNull(catalog, "catalog");
         this.file = new File(plugin.getDataFolder(), "trash-history.yml");
+        this.journal = new TrashHistoryJournal(plugin,
+                new File(plugin.getDataFolder(), "trash-history.wal"));
         YamlStore.registerCriticalWrite(file);
     }
 
@@ -46,18 +57,34 @@ public final class TrashHistoryStore implements PersistentStore {
     public synchronized void load() {
         histories.clear();
         vendorReceipts.clear();
-        final YamlConfiguration yaml = YamlStore.loadTracked(file, plugin.getLogger());
-        if (!file.exists()) return;
-        if (yaml.getInt("schema-version", 0) != SCHEMA_VERSION) {
-            YamlStore.failCorrupt(file, plugin.getLogger(),
-                    "trash history schema-version must be exactly " + SCHEMA_VERSION);
+        sequence = 0L;
+        journalRecords = 0;
+        activeTransaction = null;
+        replayingJournal = false;
+        if (file.exists()) {
+            final YamlConfiguration yaml = YamlStore.loadTracked(file, plugin.getLogger());
+            if (yaml.getInt("schema-version", 0) != SCHEMA_VERSION) {
+                YamlStore.failCorrupt(file, plugin.getLogger(),
+                        "trash history schema-version must be exactly " + SCHEMA_VERSION);
+            }
+            sequence = yaml.getLong("last-sequence", -1L);
+            if (sequence < 0L) corrupt("érvénytelen Trash history snapshot sequence");
+            loadHistories(yaml.getConfigurationSection("instances"));
+            loadVendorReceipts(yaml.getConfigurationSection("vendor-operations"));
         }
-        loadHistories(yaml.getConfigurationSection("instances"));
-        loadVendorReceipts(yaml.getConfigurationSection("vendor-operations"));
+        final TrashHistoryJournal.LoadResult recovered = journal.loadAfter(sequence);
+        for (final TrashHistoryJournal.Record record : recovered.records()) {
+            applyJournalRecord(record);
+        }
+        sequence = recovered.sequence();
+        journalRecords = recovered.completeRecords();
     }
 
     private void loadHistories(final ConfigurationSection root) {
         if (root == null) return;
+        if (root.getKeys(false).size() > MAX_INSTANCES) {
+            corrupt("túl sok Trash history instance");
+        }
         for (final String rawInstanceId : root.getKeys(false)) {
             final UUID instanceId = parseUuid(rawInstanceId, "instance key");
             final ConfigurationSection section = root.getConfigurationSection(rawInstanceId);
@@ -138,25 +165,30 @@ public final class TrashHistoryStore implements PersistentStore {
 
     @Override
     public synchronized void save() {
-        persist();
+        persistSnapshotAndResetJournal();
     }
 
     /** Serializes a history mutation, its item projection and the durable write. */
     public synchronized <T> T transact(final Supplier<T> mutation,
                                        final Runnable restoreExternal) {
         Objects.requireNonNull(mutation, "mutation");
-        final Map<UUID, StoredHistory> historyBefore = new LinkedHashMap<>(histories);
-        final Map<UUID, StoredVendorReceipt> receiptsBefore =
-                new LinkedHashMap<>(vendorReceipts);
+        if (activeTransaction != null) {
+            throw new IllegalStateException("nested Trash history transaction");
+        }
+        if (journalRecords >= MAX_JOURNAL_RECORDS) persistSnapshotAndResetJournal();
+        final TransactionFrame frame = new TransactionFrame();
+        activeTransaction = frame;
         try {
             final T result = mutation.get();
-            persist();
+            if (frame.changed()) {
+                final long nextSequence = Math.addExact(sequence, 1L);
+                journal.append(nextSequence, journalPayload(frame));
+                sequence = nextSequence;
+                journalRecords++;
+            }
             return result;
         } catch (final RuntimeException | Error failure) {
-            histories.clear();
-            histories.putAll(historyBefore);
-            vendorReceipts.clear();
-            vendorReceipts.putAll(receiptsBefore);
+            rollback(frame);
             if (restoreExternal != null) {
                 try {
                     restoreExternal.run();
@@ -165,6 +197,8 @@ public final class TrashHistoryStore implements PersistentStore {
                 }
             }
             throw failure;
+        } finally {
+            activeTransaction = null;
         }
     }
 
@@ -176,11 +210,14 @@ public final class TrashHistoryStore implements PersistentStore {
         if (histories.containsKey(instanceId)) {
             throw new IllegalStateException("a Trash instance UUID már létezik");
         }
+        if (histories.size() >= MAX_INSTANCES) {
+            throw new IllegalStateException("a Trash history instance hard cap betelt");
+        }
         final long now = System.currentTimeMillis();
         final StoredHistory initial = new StoredHistory(baseId, phase, 0L, now, now,
                 List.of(), Set.of());
         final StoredHistory recorded = append(initial, event, actor, detail, now);
-        histories.put(instanceId, recorded);
+        putHistory(instanceId, recorded);
         return snapshot(instanceId, recorded);
     }
 
@@ -190,7 +227,7 @@ public final class TrashHistoryStore implements PersistentStore {
         final StoredHistory current = requireMatching(instanceId, baseId, phase);
         final StoredHistory recorded = append(current, event, actor, detail,
                 System.currentTimeMillis());
-        histories.put(instanceId, recorded);
+        putHistory(instanceId, recorded);
         return snapshot(instanceId, recorded);
     }
 
@@ -216,7 +253,7 @@ public final class TrashHistoryStore implements PersistentStore {
             current = append(current, TrashHistoryEvent.HELD_BY_KING, owner, "",
                     System.currentTimeMillis());
         }
-        histories.put(instanceId, current);
+        putHistory(instanceId, current);
         return snapshot(instanceId, current);
     }
 
@@ -232,7 +269,7 @@ public final class TrashHistoryStore implements PersistentStore {
                 current.owners());
         final StoredHistory recorded = append(transitioned, TrashHistoryEvent.TRANSFORMED,
                 actor, fromPhase + "->" + toPhase, System.currentTimeMillis());
-        histories.put(instanceId, recorded);
+        putHistory(instanceId, recorded);
         return snapshot(instanceId, recorded);
     }
 
@@ -254,9 +291,10 @@ public final class TrashHistoryStore implements PersistentStore {
         }
         final StoredVendorReceipt receipt = new StoredVendorReceipt(
                 actor, baseId, phase, units.size(), references);
-        if (vendorReceipts.putIfAbsent(operationId, receipt) != null) {
+        if (vendorReceipts.containsKey(operationId)) {
             throw new IllegalStateException("a Trash vendor receipt már létezik");
         }
+        putVendorReceipt(operationId, receipt);
     }
 
     public synchronized Optional<VendorReceipt> findVendorReceipt(final UUID operationId) {
@@ -277,7 +315,9 @@ public final class TrashHistoryStore implements PersistentStore {
     }
 
     public synchronized boolean removeVendorReceipt(final UUID operationId) {
-        return vendorReceipts.remove(operationId) != null;
+        if (!vendorReceipts.containsKey(operationId)) return false;
+        removeVendorReceiptInternal(operationId);
+        return true;
     }
 
     public synchronized Optional<Snapshot> find(final UUID instanceId) {
@@ -296,45 +336,175 @@ public final class TrashHistoryStore implements PersistentStore {
         return histories.size();
     }
 
-    private void persist() {
+    private void putHistory(final UUID instanceId, final StoredHistory history) {
+        final TransactionFrame frame = requireTransaction();
+        if (!frame.historyBefore().containsKey(instanceId)) {
+            frame.historyBefore().put(instanceId, histories.get(instanceId));
+        }
+        histories.put(instanceId, history);
+    }
+
+    private void putVendorReceipt(final UUID operationId, final StoredVendorReceipt receipt) {
+        final TransactionFrame frame = requireTransaction();
+        if (!frame.receiptBefore().containsKey(operationId)) {
+            frame.receiptBefore().put(operationId, vendorReceipts.get(operationId));
+        }
+        vendorReceipts.put(operationId, receipt);
+    }
+
+    private void removeVendorReceiptInternal(final UUID operationId) {
+        final TransactionFrame frame = requireTransaction();
+        if (!frame.receiptBefore().containsKey(operationId)) {
+            frame.receiptBefore().put(operationId, vendorReceipts.get(operationId));
+        }
+        vendorReceipts.remove(operationId);
+    }
+
+    private TransactionFrame requireTransaction() {
+        if (activeTransaction == null) {
+            throw new IllegalStateException("Trash history mutation durable transaction nélkül");
+        }
+        return activeTransaction;
+    }
+
+    private void rollback(final TransactionFrame frame) {
+        for (final Map.Entry<UUID, StoredHistory> entry : frame.historyBefore().entrySet()) {
+            if (entry.getValue() == null) histories.remove(entry.getKey());
+            else histories.put(entry.getKey(), entry.getValue());
+        }
+        for (final Map.Entry<UUID, StoredVendorReceipt> entry : frame.receiptBefore().entrySet()) {
+            if (entry.getValue() == null) vendorReceipts.remove(entry.getKey());
+            else vendorReceipts.put(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private String journalPayload(final TransactionFrame frame) {
+        final YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("schema-version", JOURNAL_SCHEMA_VERSION);
+        final List<String> removedHistories = new ArrayList<>();
+        for (final UUID instanceId : frame.historyBefore().keySet()) {
+            final StoredHistory history = histories.get(instanceId);
+            if (history == null) removedHistories.add(instanceId.toString());
+            else writeHistory(yaml, "histories." + instanceId, history);
+        }
+        yaml.set("removed-histories", removedHistories);
+        final List<String> removedReceipts = new ArrayList<>();
+        for (final UUID operationId : frame.receiptBefore().keySet()) {
+            final StoredVendorReceipt receipt = vendorReceipts.get(operationId);
+            if (receipt == null) removedReceipts.add(operationId.toString());
+            else writeVendorReceipt(yaml, "vendor-receipts." + operationId, receipt);
+        }
+        yaml.set("removed-vendor-receipts", removedReceipts);
+        return yaml.saveToString();
+    }
+
+    private void applyJournalRecord(final TrashHistoryJournal.Record record) {
+        replayingJournal = true;
+        try {
+            final YamlConfiguration yaml = new YamlConfiguration();
+            try {
+                yaml.loadFromString(record.payload());
+            } catch (final InvalidConfigurationException malformed) {
+                journal.corrupt("nem értelmezhető Trash history journal payload");
+                throw new AssertionError("unreachable", malformed);
+            }
+            if (yaml.getInt("schema-version", 0) != JOURNAL_SCHEMA_VERSION) {
+                journal.corrupt("ismeretlen Trash history journal payload schema");
+            }
+            for (final String raw : yaml.getStringList("removed-histories")) {
+                histories.remove(parseJournalUuid(raw, "removed history"));
+            }
+            final ConfigurationSection changedHistories =
+                    yaml.getConfigurationSection("histories");
+            if (changedHistories != null) {
+                final Set<String> keys = changedHistories.getKeys(false);
+                for (final String key : keys) {
+                    histories.remove(parseJournalUuid(key, "history key"));
+                }
+                if (histories.size() + keys.size() > MAX_INSTANCES) {
+                    journal.corrupt("a Trash history journal túllépi az instance hard capet");
+                }
+                loadHistories(changedHistories);
+            }
+            for (final String raw : yaml.getStringList("removed-vendor-receipts")) {
+                vendorReceipts.remove(parseJournalUuid(raw, "removed vendor receipt"));
+            }
+            final ConfigurationSection changedReceipts =
+                    yaml.getConfigurationSection("vendor-receipts");
+            if (changedReceipts != null) {
+                final Set<String> keys = changedReceipts.getKeys(false);
+                for (final String key : keys) {
+                    vendorReceipts.remove(parseJournalUuid(key, "vendor receipt key"));
+                }
+                if (vendorReceipts.size() + keys.size() > MAX_VENDOR_OPERATIONS) {
+                    journal.corrupt("a Trash history journal túllépi a vendor receipt hard capet");
+                }
+                loadVendorReceipts(changedReceipts);
+            }
+        } finally {
+            replayingJournal = false;
+        }
+    }
+
+    private UUID parseJournalUuid(final String raw, final String field) {
+        try {
+            return UUID.fromString(raw);
+        } catch (final RuntimeException invalid) {
+            journal.corrupt("érvénytelen Trash history journal " + field);
+            throw new AssertionError("unreachable", invalid);
+        }
+    }
+
+    private void persistSnapshotAndResetJournal() {
         final YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("schema-version", SCHEMA_VERSION);
+        yaml.set("last-sequence", sequence);
         for (final Map.Entry<UUID, StoredHistory> entry : histories.entrySet()) {
             final String path = "instances." + entry.getKey();
-            final StoredHistory history = entry.getValue();
-            yaml.set(path + ".trash-id", history.baseId());
-            yaml.set(path + ".phase", history.phase());
-            yaml.set(path + ".revision", history.revision());
-            yaml.set(path + ".created-at", history.createdAt());
-            yaml.set(path + ".updated-at", history.updatedAt());
-            yaml.set(path + ".owners", history.owners().stream().map(UUID::toString).toList());
-            final List<Map<String, Object>> events = new ArrayList<>(history.events().size());
-            for (final HistoryEntry event : history.events()) {
-                final Map<String, Object> serialized = new LinkedHashMap<>();
-                serialized.put("revision", event.revision());
-                serialized.put("type", event.type().name());
-                serialized.put("at", event.at());
-                if (event.actor() != null) serialized.put("actor", event.actor().toString());
-                if (!event.detail().isBlank()) serialized.put("detail", event.detail());
-                events.add(serialized);
-            }
-            yaml.set(path + ".events", events);
+            writeHistory(yaml, path, entry.getValue());
         }
         for (final Map.Entry<UUID, StoredVendorReceipt> entry : vendorReceipts.entrySet()) {
             final String path = "vendor-operations." + entry.getKey();
-            final StoredVendorReceipt receipt = entry.getValue();
-            yaml.set(path + ".actor", receipt.actor().toString());
-            yaml.set(path + ".trash-id", receipt.baseId());
-            yaml.set(path + ".phase", receipt.phase());
-            yaml.set(path + ".amount", receipt.amount());
-            yaml.set(path + ".units", receipt.units().stream()
-                    .map(unit -> unit.instanceId() + ":" + unit.revision()).toList());
+            writeVendorReceipt(yaml, path, entry.getValue());
         }
         try {
             YamlStore.saveAtomic(file, yaml);
         } catch (final IOException failure) {
             throw new IllegalStateException("Trash history mentése sikertelen", failure);
         }
+        journal.reset();
+        journalRecords = 0;
+    }
+
+    private static void writeHistory(final YamlConfiguration yaml, final String path,
+                                     final StoredHistory history) {
+        yaml.set(path + ".trash-id", history.baseId());
+        yaml.set(path + ".phase", history.phase());
+        yaml.set(path + ".revision", history.revision());
+        yaml.set(path + ".created-at", history.createdAt());
+        yaml.set(path + ".updated-at", history.updatedAt());
+        yaml.set(path + ".owners", history.owners().stream().map(UUID::toString).toList());
+        final List<Map<String, Object>> events = new ArrayList<>(history.events().size());
+        for (final HistoryEntry event : history.events()) {
+            final Map<String, Object> serialized = new LinkedHashMap<>();
+            serialized.put("revision", event.revision());
+            serialized.put("type", event.type().name());
+            serialized.put("at", event.at());
+            if (event.actor() != null) serialized.put("actor", event.actor().toString());
+            if (!event.detail().isBlank()) serialized.put("detail", event.detail());
+            events.add(serialized);
+        }
+        yaml.set(path + ".events", events);
+    }
+
+    private static void writeVendorReceipt(final YamlConfiguration yaml, final String path,
+                                           final StoredVendorReceipt receipt) {
+        yaml.set(path + ".actor", receipt.actor().toString());
+        yaml.set(path + ".trash-id", receipt.baseId());
+        yaml.set(path + ".phase", receipt.phase());
+        yaml.set(path + ".amount", receipt.amount());
+        yaml.set(path + ".units", receipt.units().stream()
+                .map(unit -> unit.instanceId() + ":" + unit.revision()).toList());
     }
 
     private StoredHistory requireMatching(final UUID instanceId, final String baseId,
@@ -410,6 +580,10 @@ public final class TrashHistoryStore implements PersistentStore {
     }
 
     private void corrupt(final String reason) {
+        if (replayingJournal) {
+            journal.corrupt(reason);
+            return;
+        }
         YamlStore.failCorrupt(file, plugin.getLogger(), reason);
     }
 
@@ -459,6 +633,17 @@ public final class TrashHistoryStore implements PersistentStore {
             Objects.requireNonNull(baseId, "baseId");
             Objects.requireNonNull(phase, "phase");
             units = List.copyOf(units);
+        }
+    }
+
+    private record TransactionFrame(Map<UUID, StoredHistory> historyBefore,
+                                    Map<UUID, StoredVendorReceipt> receiptBefore) {
+        private TransactionFrame() {
+            this(new LinkedHashMap<>(), new LinkedHashMap<>());
+        }
+
+        private boolean changed() {
+            return !historyBefore.isEmpty() || !receiptBefore.isEmpty();
         }
     }
 
