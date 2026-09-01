@@ -67,7 +67,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     private final BloodMoonManager bloodMoon;
     private final ClaimManager claims;
     private final TerritoryProtectionService territoryProtection;
-    private final TrashRuntimeTelemetry telemetry;
     private final NamespacedKey deathAnchorKey;
     private final NamespacedKey brickReservationKey;
     private final Set<UUID> effectVetoArmed = ConcurrentHashMap.newKeySet();
@@ -81,8 +80,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                              final TrashItemFactory items, final TrashHistoryService history,
                              final TrashSpatialFractureStore fractures,
                              final BloodMoonManager bloodMoon, final ClaimManager claims,
-                             final TerritoryProtectionService territoryProtection,
-                             final TrashRuntimeTelemetry telemetry) {
+                             final TerritoryProtectionService territoryProtection) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.catalog = Objects.requireNonNull(catalog, "catalog");
         this.items = Objects.requireNonNull(items, "items");
@@ -92,7 +90,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         this.claims = Objects.requireNonNull(claims, "claims");
         this.territoryProtection = Objects.requireNonNull(territoryProtection,
                 "territoryProtection");
-        this.telemetry = Objects.requireNonNull(telemetry, "telemetry");
         this.deathAnchorKey = new NamespacedKey(plugin, "trash_death_anchor_until");
         this.brickReservationKey = new NamespacedKey(plugin, "trash_brick_reservation");
     }
@@ -265,7 +262,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                 history.transformInventorySlotAndAddOnSuccess(player, slot, preserved);
             } catch (final RuntimeException rejected) {
                 // The already-committed vanilla consumption remains authoritative; no dupe/drop.
-                telemetry.recordBehaviorRuntimeError();
             }
         }, () -> pendingConsumes.remove(player.getUniqueId()));
     }
@@ -313,7 +309,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                 drops.add(result.singleton());
             }
         } catch (final RuntimeException rejected) {
-            telemetry.recordBehaviorRuntimeError();
             return;
         }
         final long until = System.currentTimeMillis() + DEATH_ANCHOR_MILLIS;
@@ -487,7 +482,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             if (!history.individualizeHandOnSuccess(player, hand,
                     TrashHistoryEvent.ACTIVATED)) return;
         } catch (final RuntimeException rejected) {
-            telemetry.recordBehaviorRuntimeError();
             return;
         }
         final ItemStack reserved = itemInHand(player, hand);
@@ -540,7 +534,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             if (owner != null) dropped.setOwner(owner);
             return true;
         } catch (final RuntimeException rejected) {
-            telemetry.recordBehaviorRuntimeError();
             return false;
         }
     }
@@ -554,7 +547,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             player.getWorld().dropItem(player.getLocation(), remnant);
             return true;
         } catch (final RuntimeException rejected) {
-            telemetry.recordBehaviorRuntimeError();
             return false;
         }
     }
@@ -595,7 +587,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         try {
             return slot >= 0 && history.transformInventorySlotOnSuccess(player, slot);
         } catch (final RuntimeException rejected) {
-            telemetry.recordBehaviorRuntimeError();
             return false;
         }
     }
@@ -678,7 +669,6 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             clearBrickReservation(player, token);
             return true;
         } catch (final RuntimeException rejected) {
-            telemetry.recordBehaviorRuntimeError();
             return false;
         }
     }
