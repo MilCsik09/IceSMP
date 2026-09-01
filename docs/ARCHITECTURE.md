@@ -49,7 +49,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
-| `trash/` | 38 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, identity-mentes aggregált runtime telemetry, opt-in Paper/Folia smoke probe, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
+| `trash/` | 41 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, bounded delta-journalos history authority, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, identity-mentes aggregált runtime telemetry, opt-in Paper/Folia smoke probe, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
 | `security/` | 1 | Immutable, permissiontől és OP-státusztól független fejlesztői authority a rejtett tartalomfelületekhez. |
 | `warrior/` | 2 | Harcos gameplay vertical slice: transiens harci állapot + konkrét runtime (Csatatempó, Berserker, Guardian). |
 | `evoker/` | 2 | Sárkányidéző gameplay vertical slice: transiens állapot + konkrét runtime (Felerősítés, Vörös–Kék Eszencia, Visszhang/Időlenyomat). |
@@ -906,9 +906,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   `minecraft:impossible` triggert és a valódi award-hívást.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 990 Java-fájl, ~174 000 sor; 95 `*Manager` osztály (a `managers/` csomag 125 fájl).
+- **Méret:** 1009 Java-fájl, ~180 000 sor; 95 `*Manager` osztály (a `managers/` csomag 125 fájl).
   Csomag-megoszlás: listeners 123, managers 125, commands 95, spells 61, gui 72, crates 14, utils 28, data 15, classrelic 14,
-  items 14, relics 12, quest 10, trash 22, integration 6.
+  items 14, relics 12, quest 10, trash 31, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és

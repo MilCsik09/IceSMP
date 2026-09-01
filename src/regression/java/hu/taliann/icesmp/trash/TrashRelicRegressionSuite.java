@@ -25,6 +25,7 @@ public final class TrashRelicRegressionSuite {
         preservesClosedTwentyThreeBehaviorAuthority();
         preservesEveryAuthoredRuntimeBinding();
         preservesBoundedTypedFoliaPrimitives();
+        preservesTransactionalConsumeAndReservationPolicy();
         preservesCrashSafeSpatialFractures();
         preservesTransactionalLifecycleProjection();
         preservesRuntimeLifecycleAndEventExclusion();
@@ -67,6 +68,10 @@ public final class TrashRelicRegressionSuite {
         require(runtime, "MAX_FIELDS_GLOBAL = 128", "global field safety cap");
         require(runtime, "MAX_NEARBY_ENTITIES = 24", "nearby entity cap");
         require(runtime, "MAX_ANCHORED_DROPS = 64", "death-bundle work cap");
+        require(runtime, "MAX_TRACKED_PROJECTILES = 256", "projectile task cap");
+        require(runtime, "projectileTrackerPermits.tryAcquire()", "atomic projectile task permit");
+        require(runtime, "hasFieldKind(FieldKind.PROJECTILE_WALL)",
+                "inactive projectile-wall fast path");
         require(runtime, "projectile.getScheduler().runAtFixedRate", "projectile owner tick");
         require(runtime, "living.getScheduler().run(plugin", "remote entity ownership hop");
         require(runtime, "player.getScheduler().run(plugin", "player ownership hop");
@@ -81,6 +86,37 @@ public final class TrashRelicRegressionSuite {
         check(!runtime.contains("getWorld().getEntities()")
                         && !runtime.contains("getLoadedChunks()"),
                 "unbounded world scan entered Phase E");
+    }
+
+    private static void preservesTransactionalConsumeAndReservationPolicy() throws Exception {
+        check(TrashRelicPolicy.consumptionCommitted(4, 3),
+                "committed consumable decrement was rejected");
+        check(!TrashRelicPolicy.consumptionCommitted(4, 4),
+                "cancelled consumable use was accepted");
+        check(!TrashRelicPolicy.consumptionCommitted(0, 0),
+                "empty consumable snapshot was accepted");
+        check(TrashRelicPolicy.mayTrackProjectile(true, 255, 256),
+                "bounded active projectile tracker was rejected");
+        check(!TrashRelicPolicy.mayTrackProjectile(false, 0, 256),
+                "projectile task started without a wall");
+        check(!TrashRelicPolicy.mayTrackProjectile(true, 256, 256),
+                "projectile task exceeded its cap");
+
+        final String runtime = Files.readString(RUNTIME);
+        final String history = Files.readString(HISTORY);
+        require(runtime, "priority = EventPriority.MONITOR, ignoreCancelled = true)\n"
+                        + "    public void onConsume", "commit-observing consume handler");
+        require(runtime, "TrashRelicPolicy.consumptionCommitted", "consume commit proof");
+        require(history, "transformInventorySlotAndAddOnSuccess",
+                "atomic mug/input inventory projection");
+        require(runtime, "trash_brick_reservation", "opaque brick reservation marker");
+        require(history, "individualizeHandOnSuccess", "single-unit brick reservation");
+        require(runtime, "consumeBrickReservation(owner, field.reservationToken())",
+                "exact brick reservation consumption");
+        require(runtime, "transformHelmetOnSuccess", "equipped helmet-only transform");
+        check(runtime.indexOf("consumeBrickReservation(owner, field.reservationToken())")
+                        < runtime.lastIndexOf("projectile.remove()"),
+                "projectile was removed before brick transformation committed");
     }
 
     private static void preservesCrashSafeSpatialFractures() throws Exception {
@@ -98,6 +134,9 @@ public final class TrashRelicRegressionSuite {
                 "bounded aperture apply");
         require(fractures, "setBlockData(data, false)", "snapshot restore");
         require(fractures, "public synchronized void recover()", "restart recovery");
+        require(fractures, "public synchronized void recoverWorld", "late world recovery");
+        require(fractures, "public synchronized void shutdown()", "shutdown restore request");
+        require(Files.readString(RUNTIME), "fractures.shutdown()", "runtime fracture shutdown");
         final String core = Files.readString(CORE);
         final int history = core.indexOf("trashHistoryStore,");
         final int anomaly = core.indexOf("trashAnomalyStateStore,", history);

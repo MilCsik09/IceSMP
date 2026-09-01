@@ -41,22 +41,22 @@ public final class TrashArchaeologyFactEngine {
         final String family = family(definition.material());
         final String domain = domain(definition);
         final ArrayList<Fact> candidates = new ArrayList<>();
-        candidates.add(new Fact("material", Category.MATERIAL, 0, 1, false,
+        candidates.add(new Fact("material", Category.MATERIAL, 0, 1, false, 0L,
                 materialObservation(definition.material(), family)));
 
         if (definition.internalKind() == TrashKind.STORY) {
-            candidates.add(new Fact("cultural_trace", Category.ORIGIN, 0, 3, true,
+            candidates.add(new Fact("cultural_trace", Category.ORIGIN, 0, 3, true, 0L,
                     archaeologyLevel < 12
                             ? "Talán ugyanabból a régi használati körből származik, mint néhány más lelet."
                             : domainObservation(domain)));
         } else if (archaeologyLevel >= 6 && !definition.sourceBias().affinities().isEmpty()) {
-            candidates.add(new Fact("wear_domain", Category.ORIGIN, 6, 2, false,
+            candidates.add(new Fact("wear_domain", Category.ORIGIN, 6, 2, false, 0L,
                     domainObservation(domain)));
         }
 
         if (snapshot != null) addHistoryFacts(snapshot, candidates);
         if (archaeologyLevel >= 30 && isUnnaturalClueCandidate(definition)) {
-            candidates.add(new Fact("material_discrepancy", Category.MATERIAL, 30, 4, true,
+            candidates.add(new Fact("material_discrepancy", Category.MATERIAL, 30, 4, true, 0L,
                     "Az anyag öregedése több ponton nem egyezik a becsült használati korral."));
         }
 
@@ -74,36 +74,51 @@ public final class TrashArchaeologyFactEngine {
 
     private static void addHistoryFacts(final TrashHistoryStore.Snapshot snapshot,
                                         final List<Fact> facts) {
-        if (snapshot.events().stream().anyMatch(event -> event.type() == TrashHistoryEvent.REPAIRED)) {
-            facts.add(new Fact("repaired", Category.HISTORY, 8, 3, true,
+        final long repaired = firstRevision(snapshot, TrashHistoryEvent.REPAIRED);
+        if (repaired > 0L) {
+            facts.add(new Fact("repaired", Category.HISTORY, 8, 3, true, repaired,
                     "A tárgyon legalább egy későbbi, eltérő technikájú javítás nyoma látszik."));
         }
-        if (snapshot.events().stream().anyMatch(event -> event.type() == TrashHistoryEvent.VENDOR_SOLD
-                || event.type() == TrashHistoryEvent.VENDOR_RECYCLED)) {
-            facts.add(new Fact("vendor_cycle", Category.PROVENANCE, 10, 3, true,
+        final long vendorCycle = firstRevision(snapshot, TrashHistoryEvent.VENDOR_SOLD,
+                TrashHistoryEvent.VENDOR_RECYCLED);
+        if (vendorCycle > 0L) {
+            facts.add(new Fact("vendor_cycle", Category.PROVENANCE, 10, 3, true, vendorCycle,
                     "A felületi szennyeződés alapján hosszabb ideig vegyes raktári készletben állhatott."));
         }
-        if (snapshot.events().stream().anyMatch(event -> event.type() == TrashHistoryEvent.HELD_BY_KING)) {
-            facts.add(new Fact("royal_contact", Category.PROVENANCE, 15, 5, true,
+        final long royalContact = firstRevision(snapshot, TrashHistoryEvent.HELD_BY_KING);
+        if (royalContact > 0L) {
+            facts.add(new Fact("royal_contact", Category.PROVENANCE, 15, 5, true, royalContact,
                     "Egy korábbi használóhoz udvari leltárjelhez hasonló nyom köthető."));
         }
-        if (snapshot.events().stream().anyMatch(event -> event.type()
-                == TrashHistoryEvent.PRESENT_AT_PLAYER_DEATH)) {
+        final long deathPresence = firstRevision(snapshot,
+                TrashHistoryEvent.PRESENT_AT_PLAYER_DEATH);
+        if (deathPresence > 0L) {
             facts.add(new Fact("death_presence", Category.PROVENANCE, 18, 4, true,
+                    deathPresence,
                     "A tárgy szennyeződési rétege egy erőszakos esemény helyszínére utal."));
         }
-        if (snapshot.events().stream().anyMatch(event -> event.type() == TrashHistoryEvent.NETHER_TRANSIT)) {
+        final long netherTransit = firstRevision(snapshot, TrashHistoryEvent.NETHER_TRANSIT);
+        if (netherTransit > 0L) {
             facts.add(new Fact("nether_transit", Category.PROVENANCE, 20, 4, true,
+                    netherTransit,
                     "A felületen rövid, szélsőséges hő- és hamuterhelés nyoma maradt."));
         }
-        if (snapshot.events().stream().anyMatch(event -> event.type() == TrashHistoryEvent.TRANSFORMED)) {
-            facts.add(new Fact("transformed", Category.HISTORY, 24, 4, true,
+        final long transformed = firstRevision(snapshot, TrashHistoryEvent.TRANSFORMED);
+        if (transformed > 0L) {
+            facts.add(new Fact("transformed", Category.HISTORY, 24, 4, true, transformed,
                     "A jelenlegi alak nem teljesen egyezik az eredeti anyageloszlással."));
         }
         if (snapshot.owners().size() >= 2) {
-            facts.add(new Fact("multiple_owners", Category.PROVENANCE, 25, 3, true,
+            facts.add(new Fact("multiple_owners", Category.PROVENANCE, 25, 3, true, 0L,
                     "Az elmúlt időszakban több, egymástól eltérő használati minta rakódott rá."));
         }
+    }
+
+    private static long firstRevision(final TrashHistoryStore.Snapshot snapshot,
+                                      final TrashHistoryEvent... types) {
+        final java.util.Set<TrashHistoryEvent> accepted = java.util.Set.of(types);
+        return snapshot.events().stream().filter(event -> accepted.contains(event.type()))
+                .mapToLong(TrashHistoryStore.HistoryEntry::revision).min().orElse(0L);
     }
 
     private static boolean isUnnaturalClueCandidate(final TrashDefinition definition) {
@@ -163,12 +178,13 @@ public final class TrashArchaeologyFactEngine {
     public enum Category { MATERIAL, ORIGIN, HISTORY, PROVENANCE }
 
     public record Fact(String id, Category category, int minLevel, int insight,
-                       boolean higherOrder, String text) {
+                       boolean higherOrder, long evidenceRevision, String text) {
         public Fact {
             Objects.requireNonNull(id, "id");
             Objects.requireNonNull(category, "category");
             Objects.requireNonNull(text, "text");
-            if (minLevel < 0 || minLevel > 50 || insight < 0 || insight > 5) {
+            if (minLevel < 0 || minLevel > 50 || insight < 0 || insight > 5
+                    || evidenceRevision < 0L) {
                 throw new IllegalArgumentException("invalid Archaeology fact");
             }
         }
@@ -181,11 +197,12 @@ public final class TrashArchaeologyFactEngine {
         }
 
         public String signature(final Fact fact) {
-            return trashId + "@" + historyRevision + ":" + fact.id();
+            return trashId + "@" + fact.evidenceRevision() + ":" + fact.id();
         }
 
         public TrashArchaeologyProfileStore.Evidence evidence() {
-            return new TrashArchaeologyProfileStore.Evidence(family, domain, historical,
+            return new TrashArchaeologyProfileStore.Evidence(
+                    trashId, family, domain, historical,
                     facts.stream().map(fact -> new TrashArchaeologyProfileStore.Discovery(
                             signature(fact), fact.insight(), fact.higherOrder())).toList());
         }

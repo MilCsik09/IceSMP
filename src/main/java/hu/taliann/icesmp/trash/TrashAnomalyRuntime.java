@@ -13,7 +13,6 @@ import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.GameEvent;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -34,6 +33,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
@@ -42,6 +43,7 @@ import org.bukkit.event.entity.ItemDespawnEvent;
 import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
@@ -49,6 +51,7 @@ import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.GenericGameEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
@@ -71,6 +74,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,6 +84,9 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
 
     private static final int MAX_ACTIVE_PHYSICS_PER_WORLD = 256;
     private static final int MAX_PENDING_ECHOES = 256;
+    private static final int MAX_RECENT_SOUNDS = 256;
+    private static final long SOUND_CAPTURE_MAX_AGE_MILLIS = 5_000L;
+    private static final double SOUND_CAPTURE_RADIUS_SQUARED = 144.0D;
     private static final double MAX_SEEK_RADIUS = 12.0D;
     private static final int MAX_NEARBY_ENTITIES = 24;
     private static final Set<TrashAnomalyBehavior> PHYSICS = EnumSet.of(
@@ -128,9 +135,13 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     private final TrashRuntimeTelemetry telemetry;
     private final NamespacedKey runtimeStateKey;
     private final Set<UUID> activePhysics = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> runtimeStateEntities = ConcurrentHashMap.newKeySet();
     private final Map<UUID, AtomicInteger> activeByWorld = new ConcurrentHashMap<>();
     private final Set<UUID> pendingEchoes = ConcurrentHashMap.newKeySet();
+    private final ConcurrentLinkedDeque<CapturedSound> recentSounds =
+            new ConcurrentLinkedDeque<>();
     private final Set<UUID> pairReservations = ConcurrentHashMap.newKeySet();
+    private final Set<CompassProjection> compassProjections = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Long> whisperCooldown = new ConcurrentHashMap<>();
     private final Map<UUID, Long> presentationCooldown = new ConcurrentHashMap<>();
     private final Map<UUID, Long> silentEventUntil = new ConcurrentHashMap<>();
@@ -189,9 +200,17 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
             }
         }
         activePhysics.clear();
+        runtimeStateEntities.clear();
         activeByWorld.clear();
         pendingEchoes.clear();
+        recentSounds.clear();
         pairReservations.clear();
+        for (final CompassProjection projection : Set.copyOf(compassProjections)) {
+            final Player player = Bukkit.getPlayer(projection.playerId());
+            if (player != null) player.getScheduler().run(plugin,
+                    ignored -> resyncCompassProjection(player, projection.hand()), null);
+        }
+        compassProjections.clear();
         whisperCooldown.clear();
         presentationCooldown.clear();
         silentEventUntil.clear();
@@ -204,6 +223,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         whisperCooldown.remove(playerId);
         presentationCooldown.remove(playerId);
         silentEventUntil.remove(playerId);
+        compassProjections.removeIf(projection -> projection.playerId().equals(playerId));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -220,7 +240,8 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
             return;
         }
         switch (behavior) {
-            case TOROTT_IRANYTU -> showOppositeDirection(player, event.getItem());
+            case TOROTT_IRANYTU -> projectOppositeDirection(
+                    player, event.getHand(), event.getItem());
             case FAGYOTT_TINTAS_CETLI -> {
                 if (isCold(player.getLocation())) quietActionBar(player, "A tinta lassan előkúszik a papíron.");
             }
@@ -315,6 +336,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSpawn(final ItemSpawnEvent event) {
         final Item item = event.getEntity();
+        if (hasRuntimeState(item)) runtimeStateEntities.add(item.getUniqueId());
         final TrashAnomalyBehavior behavior = behaviorOf(item.getItemStack()).orElse(null);
         if (behavior == null) return;
         if (behavior == TrashAnomalyBehavior.CSENDVERTE_CSENGONYELV) item.setSilent(true);
@@ -327,6 +349,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         for (final Entity entity : event.getEntities()) {
             if (++visited > MAX_ACTIVE_PHYSICS_PER_WORLD || !(entity instanceof Item item)) continue;
             item.getScheduler().run(plugin, ignored -> {
+                if (hasRuntimeState(item)) runtimeStateEntities.add(item.getUniqueId());
                 final TrashAnomalyBehavior behavior = behaviorOf(item.getItemStack()).orElse(null);
                 if (behavior == null) return;
                 if (PHYSICS.contains(behavior)) startPhysics(item, behavior);
@@ -440,12 +463,41 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEligibleBlockBreakSound(final BlockBreakEvent event) {
+        captureSound(event.getBlock().getLocation(),
+                event.getBlock().getBlockData().getSoundGroup().getBreakSound(), 1.0F, 0.8F);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEligibleBlockPlaceSound(final BlockPlaceEvent event) {
+        captureSound(event.getBlockPlaced().getLocation(),
+                event.getBlockPlaced().getBlockData().getSoundGroup().getPlaceSound(), 1.0F, 0.8F);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEligibleConsumeSound(final PlayerItemConsumeEvent event) {
+        captureSound(event.getPlayer().getLocation(), Sound.ENTITY_GENERIC_EAT, 1.0F, 1.0F);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEligibleProjectileSound(final ProjectileHitEvent event) {
+        if (!(event.getEntity() instanceof org.bukkit.entity.AbstractArrow)) return;
+        captureSound(event.getEntity().getLocation(), Sound.ENTITY_ARROW_HIT, 1.0F, 1.0F);
+    }
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onMerge(final ItemMergeEvent event) {
-        if (hasRuntimeState(event.getEntity())
-                || behaviorOf(event.getEntity().getItemStack()).isPresent()) {
+        if (TrashAnomalyPolicy.blocksGroundMerge(hasRuntimeState(event.getEntity()),
+                runtimeStateEntities.contains(event.getTarget().getUniqueId()))) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMerged(final ItemMergeEvent event) {
+        releasePhysics(event.getEntity().getUniqueId());
+        runtimeStateEntities.remove(event.getEntity().getUniqueId());
     }
 
     private boolean hasRuntimeState(final Item item) {
@@ -455,12 +507,14 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDespawn(final ItemDespawnEvent event) {
         releasePhysics(event.getEntity().getUniqueId());
+        runtimeStateEntities.remove(event.getEntity().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPickup(final EntityPickupItemEvent event) {
         final Item item = event.getItem();
         final UUID itemId = item.getUniqueId();
+        runtimeStateEntities.remove(itemId);
         item.getScheduler().run(plugin, ignored -> releasePhysicsAndRestore(item),
                 () -> releasePhysics(itemId));
     }
@@ -469,6 +523,11 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         for (final EquipmentSlot hand : List.of(EquipmentSlot.HAND, EquipmentSlot.OFF_HAND)) {
             final ItemStack stack = itemInHand(player, hand);
             final TrashAnomalyBehavior behavior = behaviorOf(stack).orElse(null);
+            if (behavior == TrashAnomalyBehavior.TOROTT_IRANYTU) {
+                projectOppositeDirection(player, hand, stack);
+                continue;
+            }
+            clearCompassProjection(player, hand);
             if (behavior == TrashAnomalyBehavior.TOROTT_ZSEBORA) {
                 final ItemStack singleton = ensureSingletonInHand(player, hand,
                         TrashHistoryEvent.ACTIVATED);
@@ -710,30 +769,47 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     private void pair(final Item source, final TrashAnomalyBehavior behavior) {
         if (!pairReservations.add(source.getUniqueId())) return;
         final TrashAnomalyBehavior opposite = opposite(behavior);
-        Item candidate = null;
+        final List<Item> candidates = new java.util.ArrayList<>();
+        int visited = 0;
         for (final Entity nearby : source.getNearbyEntities(3.0D, 2.0D, 3.0D)) {
+            if (++visited > MAX_NEARBY_ENTITIES) break;
             if (nearby instanceof Item item
-                    && !pairReservations.contains(item.getUniqueId())) {
-                candidate = item;
-                break;
-            }
+                    && pairReservations.add(item.getUniqueId())) candidates.add(item);
         }
-        if (candidate == null) {
+        if (candidates.isEmpty()) {
             pairReservations.remove(source.getUniqueId());
             return;
         }
-        if (!pairReservations.add(candidate.getUniqueId())) {
-            pairReservations.remove(source.getUniqueId());
+        final AtomicBoolean claimed = new AtomicBoolean();
+        final AtomicInteger pending = new AtomicInteger(candidates.size());
+        for (final Item candidate : candidates) {
+            try {
+                candidate.getScheduler().run(plugin, ignored -> {
+                    if (!candidate.isValid()
+                            || behaviorOf(candidate.getItemStack()).orElse(null) != opposite
+                            || !claimed.compareAndSet(false, true)) {
+                        releasePairProbe(source, candidate, claimed, pending);
+                        return;
+                    }
+                    pending.decrementAndGet();
+                    beginPair(source, candidate, behavior, opposite);
+                }, () -> releasePairProbe(source, candidate, claimed, pending));
+            } catch (final RuntimeException rejected) {
+                releasePairProbe(source, candidate, claimed, pending);
+            }
+        }
+    }
+
+    private void beginPair(final Item source, final Item counterpart,
+                           final TrashAnomalyBehavior behavior,
+                           final TrashAnomalyBehavior opposite) {
+        if (!counterpart.isValid()
+                || behaviorOf(counterpart.getItemStack()).orElse(null) != opposite) {
+            releasePair(source, counterpart);
             return;
         }
-        final Item counterpart = candidate;
-        counterpart.getScheduler().run(plugin, ignored -> {
-            if (!counterpart.isValid()
-                    || behaviorOf(counterpart.getItemStack()).orElse(null) != opposite) {
-                releasePair(source, counterpart);
-                return;
-            }
-            final Location target = counterpart.getLocation().clone();
+        final Location target = counterpart.getLocation().clone();
+        try {
             source.getScheduler().run(plugin, second -> {
                 if (!source.isValid() || behaviorOf(source.getItemStack()).orElse(null) != behavior) {
                     releasePair(source, counterpart);
@@ -746,7 +822,17 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 }
                 consumePairCandidate(source, counterpart, behavior, opposite);
             }, () -> releasePair(source, counterpart));
-        }, () -> releasePair(source, counterpart));
+        } catch (final RuntimeException rejected) {
+            releasePair(source, counterpart);
+        }
+    }
+
+    private void releasePairProbe(final Item source, final Item candidate,
+                                  final AtomicBoolean claimed, final AtomicInteger pending) {
+        pairReservations.remove(candidate.getUniqueId());
+        if (pending.decrementAndGet() == 0 && !claimed.get()) {
+            pairReservations.remove(source.getUniqueId());
+        }
     }
 
     private void consumePairCandidate(final Item source, final Item counterpart,
@@ -837,6 +923,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         entity.setUnlimitedLifetime(true);
         entity.getPersistentDataContainer().set(runtimeStateKey, PersistentDataType.STRING,
                 UUID.randomUUID().toString());
+        runtimeStateEntities.add(entity.getUniqueId());
     }
 
     private void consumeAttachedMechanism(final BlockRedstoneEvent event) {
@@ -858,6 +945,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 event.setNewCurrent(event.getOldCurrent());
                 item.setItemStack(transformed.singleton());
                 item.getPersistentDataContainer().remove(runtimeStateKey);
+                runtimeStateEntities.remove(item.getUniqueId());
                 item.setGravity(true);
                 item.setPickupDelay(0);
                 item.setUnlimitedLifetime(false);
@@ -929,24 +1017,55 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 () -> rollback(rollbackLocation, returned));
     }
 
+    private void captureSound(final Location location, final Sound sound,
+                              final float volume, final float pitch) {
+        if (location.getWorld() == null) return;
+        final long now = System.currentTimeMillis();
+        recentSounds.addLast(new CapturedSound(location.getWorld().getUID(), location.getX(),
+                location.getY(), location.getZ(), sound, volume, pitch, now));
+        while (recentSounds.size() > MAX_RECENT_SOUNDS) recentSounds.pollFirst();
+        while (true) {
+            final CapturedSound oldest = recentSounds.peekFirst();
+            if (oldest == null || now - oldest.capturedAt() <= SOUND_CAPTURE_MAX_AGE_MILLIS) break;
+            recentSounds.pollFirst();
+        }
+    }
+
+    private CapturedSound recentSoundNear(final Location location) {
+        if (location.getWorld() == null) return null;
+        final long oldestAllowed = System.currentTimeMillis() - SOUND_CAPTURE_MAX_AGE_MILLIS;
+        int visited = 0;
+        for (final java.util.Iterator<CapturedSound> iterator = recentSounds.descendingIterator();
+             iterator.hasNext() && visited++ < MAX_RECENT_SOUNDS;) {
+            final CapturedSound sound = iterator.next();
+            if (sound.capturedAt() < oldestAllowed) break;
+            if (!sound.worldId().equals(location.getWorld().getUID())) continue;
+            final double dx = sound.x() - location.getX();
+            final double dy = sound.y() - location.getY();
+            final double dz = sound.z() - location.getZ();
+            if (dx * dx + dy * dy + dz * dz <= SOUND_CAPTURE_RADIUS_SQUARED) return sound;
+        }
+        return null;
+    }
+
     private void scheduleEcho(final Player player, final EquipmentSlot hand) {
+        final CapturedSound captured = recentSoundNear(player.getLocation());
+        if (captured == null) return;
         final ItemStack singleton = ensureSingletonInHand(player, hand, TrashHistoryEvent.ACTIVATED);
         final UUID instance = singleton == null ? null : history.instanceIdOf(singleton).orElse(null);
         if (instance == null) return;
         synchronized (pendingEchoes) {
             if (pendingEchoes.size() >= MAX_PENDING_ECHOES || !pendingEchoes.add(instance)) return;
         }
-        final Location origin = player.getLocation().clone();
         final long delay = ThreadLocalRandom.current().nextLong(200L, 601L);
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
             pendingEchoes.remove(instance);
-            if (origin.getWorld() == null || !origin.getWorld().isChunkLoaded(
-                    origin.getBlockX() >> 4, origin.getBlockZ() >> 4)) return;
+            final org.bukkit.World world = Bukkit.getWorld(captured.worldId());
+            if (world == null) return;
+            final Location origin = new Location(world, captured.x(), captured.y(), captured.z());
+            if (!world.isChunkLoaded(origin.getBlockX() >> 4, origin.getBlockZ() >> 4)) return;
             Bukkit.getRegionScheduler().run(plugin, origin, region -> {
-                if (origin.getWorld() == null) return;
-                origin.getWorld().playSound(origin, Sound.BLOCK_AMETHYST_BLOCK_RESONATE,
-                        0.55F, 0.8F);
-                origin.getWorld().sendGameEvent(null, GameEvent.RESONATE_1, origin.toVector());
+                world.playSound(origin, captured.sound(), captured.volume(), captured.pitch());
             });
         }, delay);
     }
@@ -971,21 +1090,42 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         }
     }
 
-    private void showOppositeDirection(final Player player, final ItemStack compass) {
+    private void projectOppositeDirection(final Player player, final EquipmentSlot hand,
+                                          final ItemStack compass) {
         Location target = null;
         if (compass != null && compass.getItemMeta() instanceof CompassMeta meta
                 && meta.hasLodestone()) target = meta.getLodestone();
         if (target == null) target = player.getRespawnLocation();
         if (target == null) target = player.getCompassTarget();
-        final Vector direction = target.toVector().subtract(player.getLocation().toVector());
-        if (direction.lengthSquared() < 0.01D) {
-            quietActionBar(player, "A tű céltalanul remeg.");
+        final Location playerLocation = player.getLocation();
+        if (target == null || target.getWorld() == null || playerLocation.getWorld() == null
+                || !target.getWorld().equals(playerLocation.getWorld())) {
+            clearCompassProjection(player, hand);
             return;
         }
-        final double degrees = Math.toDegrees(Math.atan2(-direction.getX(), direction.getZ())) + 180.0D;
-        final String[] cardinal = {"D", "DNy", "Ny", "ÉNy", "É", "ÉK", "K", "DK"};
-        final int index = Math.floorMod((int) Math.round(degrees / 45.0D), cardinal.length);
-        quietActionBar(player, cardinal[index]);
+        final TrashAnomalyPolicy.OppositePoint opposite = TrashAnomalyPolicy.oppositePoint(
+                playerLocation.getX(), playerLocation.getZ(), target.getX(), target.getZ(), 1024.0D);
+        if (opposite == null || !(compass.getItemMeta() instanceof CompassMeta)) {
+            clearCompassProjection(player, hand);
+            return;
+        }
+        final ItemStack projected = compass.clone();
+        final CompassMeta projectedMeta = (CompassMeta) projected.getItemMeta();
+        projectedMeta.setLodestone(new Location(playerLocation.getWorld(), opposite.x(),
+                playerLocation.getY(), opposite.z()));
+        projectedMeta.setLodestoneTracked(false);
+        projected.setItemMeta(projectedMeta);
+        player.sendEquipmentChange(player, hand, projected);
+        compassProjections.add(new CompassProjection(player.getUniqueId(), hand));
+    }
+
+    private void clearCompassProjection(final Player player, final EquipmentSlot hand) {
+        if (!compassProjections.remove(new CompassProjection(player.getUniqueId(), hand))) return;
+        resyncCompassProjection(player, hand);
+    }
+
+    private void resyncCompassProjection(final Player player, final EquipmentSlot hand) {
+        player.sendEquipmentChange(player, hand, itemInHand(player, hand).clone());
     }
 
     private void lateWhistle(final Player player) {
@@ -1152,4 +1292,9 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         if (hand == EquipmentSlot.OFF_HAND) player.getInventory().setItemInOffHand(safe);
         else player.getInventory().setItemInMainHand(safe);
     }
+
+    private record CompassProjection(UUID playerId, EquipmentSlot hand) { }
+
+    private record CapturedSound(UUID worldId, double x, double y, double z, Sound sound,
+                                 float volume, float pitch, long capturedAt) { }
 }
