@@ -53,8 +53,11 @@ public final class TrashArchaeologyProfileStore {
         Objects.requireNonNull(before, "before");
         Objects.requireNonNull(evidence, "evidence");
         final LinkedHashSet<String> novel = new LinkedHashSet<>();
+        final Set<String> knownFacts = before.knowledge().stream()
+                .map(TrashArchaeologyProfileStore::factIdentity)
+                .collect(java.util.stream.Collectors.toCollection(java.util.HashSet::new));
         for (final Discovery discovery : evidence.discoveries()) {
-            if (!before.knowledge().contains(discovery.signature())) {
+            if (knownFacts.add(factIdentity(discovery.signature()))) {
                 novel.add(discovery.signature());
             }
         }
@@ -69,6 +72,8 @@ public final class TrashArchaeologyProfileStore {
         }
         final TreeSet<String> knowledge = new TreeSet<>(before.knowledge());
         knowledge.addAll(novel);
+        final boolean novelHistoricalIdentity = evidence.historical()
+                && knowledge.add("historical:" + evidence.historicalIdentity());
         if (knowledge.size() > MAX_KNOWLEDGE) {
             throw new IllegalStateException("Archaeology knowledge ledger is full");
         }
@@ -93,7 +98,7 @@ public final class TrashArchaeologyProfileStore {
         final long insight = Math.addExact(before.insight(), awarded);
         final int familiarity = Math.addExact(before.familiarity(), 1);
         final int historical = Math.addExact(before.historicalInspections(),
-                evidence.historical() ? 1 : 0);
+                novelHistoricalIdentity ? 1 : 0);
         final int level = unlocked ? Math.max(unlockedNow ? 1 : before.level(),
                 levelFor(insight)) : 0;
         final Profile after = new Profile(unlocked, level, insight, familiarity,
@@ -273,6 +278,14 @@ public final class TrashArchaeologyProfileStore {
         return normalized;
     }
 
+    /** Revision remains audit evidence, while duplicate suppression keys the information itself. */
+    private static String factIdentity(final String signature) {
+        final int revision = signature.indexOf('@');
+        final int fact = revision < 1 ? -1 : signature.indexOf(':', revision + 1);
+        if (fact < 0 || fact == signature.length() - 1) return signature;
+        return signature.substring(0, revision) + ':' + signature.substring(fact + 1);
+    }
+
     public record Profile(boolean unlocked, int level, long insight, int familiarity,
                           int historicalInspections, Set<String> families, Set<String> domains,
                           Set<String> knowledge) {
@@ -308,16 +321,17 @@ public final class TrashArchaeologyProfileStore {
         }
     }
 
-    public record Evidence(String family, String domain, boolean historical,
-                           List<Discovery> discoveries) {
+    public record Evidence(String historicalIdentity, String family, String domain,
+                           boolean historical, List<Discovery> discoveries) {
         public Evidence {
+            historicalIdentity = id(historicalIdentity);
             family = id(family);
             domain = id(domain);
             discoveries = List.copyOf(discoveries);
             if (discoveries.isEmpty()) throw new IllegalArgumentException("empty inspection");
             final Set<String> signatures = new java.util.HashSet<>();
             if (discoveries.stream().anyMatch(discovery ->
-                    !signatures.add(discovery.signature()))) {
+                    !signatures.add(factIdentity(discovery.signature())))) {
                 throw new IllegalArgumentException("duplicate inspection signature");
             }
         }

@@ -33,7 +33,7 @@ public final class TooltipPacketBridge_1_21_11
 
     private final JavaPlugin plugin;
     private final TrashItemFactory items;
-    private final ConcurrentMap<UUID, UUID> overlays = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Overlay> overlays = new ConcurrentHashMap<>();
     private final Access access;
 
     public TooltipPacketBridge_1_21_11(final JavaPlugin plugin, final TrashItemFactory items) {
@@ -67,19 +67,21 @@ public final class TooltipPacketBridge_1_21_11
         meta.lore(lore);
         display.setItemMeta(meta);
         if (!sendDisplay(player, display)) return false;
-        final UUID token = UUID.randomUUID();
-        overlays.put(player.getUniqueId(), token);
+        final Overlay overlay = new Overlay();
+        final Overlay previous = overlays.put(player.getUniqueId(), overlay);
+        if (previous != null) previous.cancel();
         try {
             final io.papermc.paper.threadedregions.scheduler.ScheduledTask expiry =
                     player.getScheduler().runDelayed(plugin, ignored -> {
-                        if (overlays.remove(player.getUniqueId(), token)) sendCanonical(player);
-                    }, () -> overlays.remove(player.getUniqueId(), token), OVERLAY_TICKS);
-            if (expiry == null && overlays.remove(player.getUniqueId(), token)) {
+                        if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player);
+                    }, () -> overlays.remove(player.getUniqueId(), overlay), OVERLAY_TICKS);
+            overlay.setTask(expiry);
+            if (expiry == null && overlays.remove(player.getUniqueId(), overlay)) {
                 sendCanonical(player);
                 return false;
             }
         } catch (final RuntimeException rejected) {
-            if (overlays.remove(player.getUniqueId(), token)) sendCanonical(player);
+            if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player);
             return false;
         }
         return true;
@@ -88,18 +90,25 @@ public final class TooltipPacketBridge_1_21_11
     @Override
     public void clear(final Player player) {
         Objects.requireNonNull(player, "player");
-        if (overlays.remove(player.getUniqueId()) != null) sendCanonical(player);
+        final Overlay overlay = overlays.remove(player.getUniqueId());
+        if (overlay != null) {
+            overlay.cancel();
+            sendCanonical(player);
+        }
     }
 
     @Override
     public void clearPlayerState(final UUID playerId) {
-        overlays.remove(playerId);
+        final Overlay overlay = overlays.remove(playerId);
+        if (overlay != null) overlay.cancel();
     }
 
     @Override
     public void shutdown() {
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            if (overlays.remove(player.getUniqueId()) == null) continue;
+            final Overlay overlay = overlays.remove(player.getUniqueId());
+            if (overlay == null) continue;
+            overlay.cancel();
             player.getScheduler().run(plugin, ignored -> sendCanonical(player), null);
         }
         overlays.clear();
@@ -160,6 +169,25 @@ public final class TooltipPacketBridge_1_21_11
             } catch (final ReflectiveOperationException | RuntimeException unavailable) {
                 return null;
             }
+        }
+    }
+
+    private static final class Overlay {
+        private io.papermc.paper.threadedregions.scheduler.ScheduledTask task;
+        private boolean cancelled;
+
+        private Overlay() { }
+
+        private synchronized void setTask(
+                final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled) {
+            if (cancelled && scheduled != null) scheduled.cancel();
+            else task = scheduled;
+        }
+
+        private synchronized void cancel() {
+            cancelled = true;
+            final io.papermc.paper.threadedregions.scheduler.ScheduledTask current = task;
+            if (current != null) current.cancel();
         }
     }
 }

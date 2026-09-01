@@ -44,7 +44,8 @@ public final class TrashArchaeologyRegressionSuite {
                 TrashArchaeologyProfileStore.Profile.empty();
         for (int inspection = 0; inspection < 10; inspection++) {
             final TrashArchaeologyProfileStore.Evidence evidence = evidence(
-                    "family" + inspection % 4, "domain" + inspection % 3,
+                    "item" + inspection, "family" + inspection % 4,
+                    "domain" + inspection % 3,
                     inspection < 3, "base@0:fact" + inspection, 3, false);
             final TrashArchaeologyProfileStore.Commit commit =
                     TrashArchaeologyProfileStore.advance(profile, evidence);
@@ -57,7 +58,7 @@ public final class TrashArchaeologyRegressionSuite {
                         && profile.historicalInspections() == 3,
                 "meaningful breadth simulation drifted");
         final TrashArchaeologyProfileStore.Evidence unlockEvidence = evidence(
-                "family0", "domain0", true, "base@1:higher", 5, true);
+                "unlock_item", "family0", "domain0", true, "base@1:higher", 5, true);
         final TrashArchaeologyProfileStore.Commit unlocked =
                 TrashArchaeologyProfileStore.advance(profile, unlockEvidence);
         check(unlocked.unlockedNow() && unlocked.profile().unlocked()
@@ -75,9 +76,28 @@ public final class TrashArchaeologyRegressionSuite {
                 Set.of("x", "y", "z"), Set.of("old"));
         final TrashArchaeologyProfileStore.Commit premature =
                 TrashArchaeologyProfileStore.advance(almost, evidence(
-                        "a", "x", true, "base@2:higher", 5, true));
+                        "premature_item", "a", "x", true, "base@2:higher", 5, true));
         check(!premature.profile().unlocked() && !premature.unlockedNow(),
                 "current inspection incorrectly satisfied its own unlock breadth");
+
+        final TrashArchaeologyProfileStore.Commit firstHistory =
+                TrashArchaeologyProfileStore.advance(
+                        TrashArchaeologyProfileStore.Profile.empty(), evidence(
+                                "same_item", "metal", "court", true,
+                                "same_item@1:repaired", 3, true));
+        final TrashArchaeologyProfileStore.Commit revisedSameHistory =
+                TrashArchaeologyProfileStore.advance(firstHistory.profile(), evidence(
+                        "same_item", "metal", "court", true,
+                        "same_item@2:vendor_cycle", 3, true));
+        check(revisedSameHistory.profile().historicalInspections() == 1,
+                "one history-bearing identity was counted as multiple historical items");
+        final TrashArchaeologyProfileStore.Commit repeatedSameFact =
+                TrashArchaeologyProfileStore.advance(revisedSameHistory.profile(), evidence(
+                        "same_item", "metal", "court", true,
+                        "same_item@65:repaired", 3, true));
+        check(repeatedSameFact.profile().equals(revisedSameHistory.profile())
+                        && repeatedSameFact.awardedInsight() == 0L,
+                "a later history revision made the same information farmable");
     }
 
     private static void preservesLevelCurveAndBoundedProfileAuthority() throws Exception {
@@ -118,8 +138,20 @@ public final class TrashArchaeologyRegressionSuite {
 
     private static void preservesFactSecrecyAndHistoryRevisionKeys() throws Exception {
         final String facts = Files.readString(FACTS);
-        require(facts, "trashId + \"@\" + historyRevision + \":\" + fact.id()",
-                "revision-aware knowledge signature");
+        require(facts, "trashId + \"@\" + fact.evidenceRevision() + \":\" + fact.id()",
+                "first-evidence-revision knowledge signature");
+        final TrashArchaeologyFactEngine.Fact material = new TrashArchaeologyFactEngine.Fact(
+                "material", TrashArchaeologyFactEngine.Category.MATERIAL,
+                0, 1, false, 0L, "material");
+        final TrashArchaeologyFactEngine.Fact repaired = new TrashArchaeologyFactEngine.Fact(
+                "repaired", TrashArchaeologyFactEngine.Category.HISTORY,
+                8, 3, true, 4L, "repaired");
+        final TrashArchaeologyFactEngine.Evaluation evaluation =
+                new TrashArchaeologyFactEngine.Evaluation("sample", 99L,
+                        "metal", "court", true, List.of(material, repaired));
+        check(evaluation.signature(material).equals("sample@0:material")
+                        && evaluation.signature(repaired).equals("sample@4:repaired"),
+                "unrelated history revision made existing facts novel again");
         require(facts, "minLevel() <= archaeologyLevel", "level-gated reinspection");
         require(facts, ".limit(8)", "bounded visible fact set");
         check(!facts.contains("Anomália") && !facts.contains("\"Trash Relic\"")
@@ -135,6 +167,9 @@ public final class TrashArchaeologyRegressionSuite {
         require(bridge, "canonicalSnapshot.clone()", "display-only clone");
         require(bridge, "sendCanonical(player)", "canonical resync");
         require(bridge, "if (access == null", "runtime probe fail-closed boundary");
+        require(bridge, "if (previous != null) previous.cancel()",
+                "single overlay-expiry task per player");
+        require(bridge, "overlay.cancel()", "overlay expiry teardown");
         check(bridge.indexOf("items.refreshPresentation(display)")
                         < bridge.indexOf("meta.lore(lore)"),
                 "presentation refresh erased the temporary observation block");
@@ -171,9 +206,11 @@ public final class TrashArchaeologyRegressionSuite {
     }
 
     private static TrashArchaeologyProfileStore.Evidence evidence(
-            final String family, final String domain, final boolean historical,
+            final String historicalIdentity, final String family, final String domain,
+            final boolean historical,
             final String signature, final int insight, final boolean higherOrder) {
-        return new TrashArchaeologyProfileStore.Evidence(family, domain, historical,
+        return new TrashArchaeologyProfileStore.Evidence(
+                historicalIdentity, family, domain, historical,
                 List.of(new TrashArchaeologyProfileStore.Discovery(
                         signature, insight, higherOrder)));
     }
