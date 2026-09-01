@@ -4,7 +4,7 @@
     "generator": "built-in OpenAI imagegen",
     "authority": "IceSMP Trash implementation design v3, section 24.4",
     "creative_layout": "reviewed 1x5 pilot sheets followed by 3x5 production sheets",
-    "runtime_processing": "deterministic equal-cell slice, binary alpha, nearest-neighbor fit, eight-colour cap"
+    "runtime_processing": "deterministic equal-cell slice, reviewed chroma-to-alpha source extraction, binary alpha, nearest-neighbor fit, eight-colour cap"
   },
   "sheets": [
     {
@@ -243,6 +243,26 @@
       "columns": 5,
       "ids": [
         "melynepi_selejtek", "a_nagyon_rossz_otlet", "szakadt_kotel", "elszakadt_virrasztokanoc", "repedt_virrasztouveg"
+      ]
+    },
+    {
+      "file": "phase-batch-001.png",
+      "rows": 3,
+      "columns": 5,
+      "ids": [
+        "kiegett_biztositek", "megrepedt_vaklencse", "par_zokni", "osszezart_lancszemek", "kilyukadt_vodor",
+        "megegett_bot", "eltort_kiskes", "horpadtabb_fazek", "gyoztes_oldal_kardja", "veres_kotes",
+        "szalkas_deszka", "torott_uveg", "leszakadt_cimke", "torott_bogre", "kopott_garas"
+      ]
+    },
+    {
+      "file": "phase-batch-002.png",
+      "rows": 3,
+      "columns": 4,
+      "ids": [
+        "ket_fel_tegla", "elhasznalt_papucs", "elgorbult_koporsoszog", "morzsolodott_koek",
+        "szetmorzsolt_viasz", "szetfoszlott_feher_szalag", "megolvadt_satorszog", "repedt_selejtek",
+        "kormos_zsinor", "elszakadt_kotel", "kialudt_kanoc", "torott_virrasztouveg"
       ]
     }
   ]

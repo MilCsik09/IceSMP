@@ -1,7 +1,0 @@
-# Live operator safety/density controls. Authored odds and identity weights remain in content/trash/catalog.yml.
-trash-runtime:
-  enabled: true
-  ambient:
-    enabled: true
-    max-per-chunk: 1
-    max-per-neighborhood: 4

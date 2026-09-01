@@ -16,13 +16,16 @@ public final class TrashDevCommand {
 
     private final TrashCatalog catalog;
     private final TrashItemFactory itemFactory;
+    private final TrashHistoryService historyService;
     private final TrashRecyclePool recyclePool;
     private final TrashLootService lootService;
 
     public TrashDevCommand(final TrashCatalog catalog, final TrashItemFactory itemFactory,
+                           final TrashHistoryService historyService,
                            final TrashRecyclePool recyclePool, final TrashLootService lootService) {
         this.catalog = java.util.Objects.requireNonNull(catalog, "catalog");
         this.itemFactory = java.util.Objects.requireNonNull(itemFactory, "itemFactory");
+        this.historyService = java.util.Objects.requireNonNull(historyService, "historyService");
         this.recyclePool = java.util.Objects.requireNonNull(recyclePool, "recyclePool");
         this.lootService = java.util.Objects.requireNonNull(lootService, "lootService");
     }
@@ -54,6 +57,14 @@ public final class TrashDevCommand {
                     + " exact instance.", NamedTextColor.GRAY));
             return;
         }
+        if (args.length >= 2 && "history".equalsIgnoreCase(args[1])) {
+            history(sender);
+            return;
+        }
+        if (args.length >= 2 && "state".equalsIgnoreCase(args[1])) {
+            state(sender, args);
+            return;
+        }
         sendUsage(sender);
     }
 
@@ -61,12 +72,17 @@ public final class TrashDevCommand {
         if (args.length == 0) return List.of("trash");
         if (args.length == 1) return matching(List.of("trash"), args[0]);
         if (!"trash".equalsIgnoreCase(args[0])) return List.of();
-        if (args.length == 2) return matching(List.of("catalog", "inspect", "give", "pool"), args[1]);
+        if (args.length == 2) {
+            return matching(List.of("catalog", "inspect", "give", "pool", "history", "state"), args[1]);
+        }
         if (args.length == 3 && ("inspect".equalsIgnoreCase(args[1])
                 || "give".equalsIgnoreCase(args[1]))) {
             final String prefix = args[2].toLowerCase(Locale.ROOT);
             return catalog.snapshot().keySet().stream().filter(id -> id.startsWith(prefix))
                     .sorted().limit(MAX_SUGGESTIONS).toList();
+        }
+        if (args.length == 3 && "state".equalsIgnoreCase(args[1])) {
+            return matching(List.of("transform"), args[2]);
         }
         return List.of();
     }
@@ -130,8 +146,73 @@ public final class TrashDevCommand {
                 + definition.vendorValue(), NamedTextColor.DARK_GRAY));
     }
 
+    private void history(final CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("A history route játékos feladót igényel.", NamedTextColor.RED));
+            return;
+        }
+        final org.bukkit.inventory.ItemStack held = player.getInventory().getItemInMainHand();
+        final TrashHistoryStore.Snapshot history;
+        try {
+            history = historyService.historyOf(held).orElse(null);
+        } catch (final RuntimeException rejected) {
+            sender.sendMessage(Component.text("A főkézben lévő Trash history authority érvénytelen.",
+                    NamedTextColor.RED));
+            return;
+        }
+        if (history == null) {
+            sender.sendMessage(Component.text("A főkézben nincs individualizált Trash history.",
+                    NamedTextColor.RED));
+            return;
+        }
+        sender.sendMessage(Component.text("=== Rejtett Trash history ===", NamedTextColor.GOLD));
+        sender.sendMessage(Component.text("instance=" + history.instanceId() + " | base="
+                + history.baseId() + " | phase=" + history.phase() + " | revision="
+                + history.revision() + " | owners=" + history.owners().size(), NamedTextColor.GRAY));
+        for (final TrashHistoryStore.HistoryEntry event : history.events()) {
+            final String actor = event.actor() == null ? "-" : event.actor().toString();
+            final String detail = event.detail().isBlank() ? "" : " | " + event.detail();
+            sender.sendMessage(Component.text("#" + event.revision() + " " + event.type()
+                    + " | actor=" + actor + detail, NamedTextColor.DARK_GRAY));
+        }
+    }
+
+    private void state(final CommandSender sender, final String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("A state route játékos feladót igényel.", NamedTextColor.RED));
+            return;
+        }
+        final org.bukkit.inventory.ItemStack held = player.getInventory().getItemInMainHand();
+        if (args.length >= 3 && "transform".equalsIgnoreCase(args[2])) {
+            try {
+                if (!historyService.transformMainHandOnSuccess(player)) {
+                    sender.sendMessage(Component.text(
+                            "Nincs authored transition, vagy nincs hely a singleton splithez.",
+                            NamedTextColor.RED));
+                    return;
+                }
+                sender.sendMessage(Component.text("Trash lifecycle transition végrehajtva.",
+                        NamedTextColor.GRAY));
+            } catch (final RuntimeException rejected) {
+                sender.sendMessage(Component.text("A Trash lifecycle transition elutasítva.",
+                        NamedTextColor.RED));
+            }
+            return;
+        }
+        final String id = itemFactory.idOf(held).orElse("");
+        final String phase = itemFactory.phaseOf(held).orElse("");
+        if (id.isBlank() || phase.isBlank()) {
+            sender.sendMessage(Component.text("A főkézben nincs ismert Trash state.", NamedTextColor.RED));
+            return;
+        }
+        sender.sendMessage(Component.text("Trash state: base=" + id + " | phase=" + phase
+                + " | tracked=" + historyService.isValidTracked(held)
+                + " | success=" + itemFactory.successPhaseOf(held).orElse("-"),
+                NamedTextColor.DARK_GRAY));
+    }
+
     private static void sendUsage(final CommandSender sender) {
-        sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|inspect [id]|give <id> [amount]|pool>",
+        sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|inspect [id]|give <id> [amount]|pool|history|state [transform]>",
                 NamedTextColor.RED));
     }
 

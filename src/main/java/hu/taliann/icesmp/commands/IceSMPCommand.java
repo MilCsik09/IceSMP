@@ -671,7 +671,7 @@ public final class IceSMPCommand implements BasicCommand {
                     "&e/icesmp client <stats|név> &7- Kliens-diagnosztika; &e... resync <név>&7."));
         }
         if (HiddenDevAuthority.mayUseHiddenContent(sender)) {
-            sender.sendMessage("§8/icesmp dev trash <catalog|inspect [id]> §7- Rejtett Trash diagnosztika.");
+            sender.sendMessage("§8/icesmp dev trash <catalog|inspect|give|pool|history|state> §7- Rejtett Trash diagnosztika.");
         }
     }
 

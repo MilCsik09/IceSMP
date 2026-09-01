@@ -72,7 +72,7 @@ val auditEquipmentAssets by tasks.registering(Exec::class) {
 
 val trashSpriteAssetAudit by tasks.registering(Exec::class) {
     group = "verification"
-    description = "Validates all 330 AI-authored Trash sprites and modern item models without writing."
+    description = "Validates all 330 base and 27 lifecycle Trash sprites and modern item models without writing."
     inputs.files(
         "scripts/process_trash_sprite_sheets.py",
         "dev-assets/trash/source/manifest.json",
@@ -1039,6 +1039,10 @@ val trashLootDistributionRegressionTest = registerRegression(
     "trashLootDistributionRegressionTest",
     "Runs the 30M-event Trash source/category/context/recycle Monte Carlo gate.",
     "hu.taliann.icesmp.trash.TrashLootDistributionRegressionSuite")
+val trashHistoryRegressionTest = registerRegression(
+    "trashHistoryRegressionTest",
+    "Runs Trash Phase C history, split, lifecycle, persistence, recycle and no-gate regressions.",
+    "hu.taliann.icesmp.trash.TrashHistoryRegressionSuite")
 
 tasks.check {
     dependsOn(auditIceSmpHudAssets)
@@ -1062,7 +1066,7 @@ tasks.check {
         configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
-        trashCatalogRegressionTest, trashLootDistributionRegressionTest,
+        trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,

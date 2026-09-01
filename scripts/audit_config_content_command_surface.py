@@ -24,7 +24,6 @@ OPERATOR_FILES = (
     "general", "economy", "factions", "block-regen", "class-gameplay", "spells-balance",
     "professions", "world", "event-spawn-safety", "pets", "crafting", "crates", "afk",
     "moderation", "motd", "professions-2", "sit", "tablist", "dev-items", "client",
-    "trash-runtime",
 )
 CONTENT_FILES = (
     "content/progression/classes.yml",
@@ -65,11 +64,6 @@ REMOVED_GAMEPLAY_GENERATORS = (
 # to close the verified quest, spell and signature-identity findings.  Keeping
 # the paths explicit makes any neighbouring gameplay drift fail closed.
 INTEGRITY_HARDENING_ALLOWED_DRIFT = {
-    # Phase B stacked descendant: bounded operator seams for the Trash runtime.
-    "trash-runtime.ambient.enabled",
-    "trash-runtime.ambient.max-per-chunk",
-    "trash-runtime.ambient.max-per-neighborhood",
-    "trash-runtime.enabled",
     "item-templates.kallan_szeletelo.item-model",
     "item-templates.kallan_szeletelo.material",
     "item-templates.kallan_szeletelo.version",

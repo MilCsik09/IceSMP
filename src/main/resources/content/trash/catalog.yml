@@ -28,6 +28,8 @@ loot-ecology:
     distance-max-blocks: 32
     ttl-min-seconds: 600
     ttl-max-seconds: 1800
+    max-per-chunk: 1
+    max-per-neighborhood: 4
 items:
   rozsdas_szog:
     display-name: Rozsdás Szög
@@ -3852,6 +3854,8 @@ items:
     internal:
       kind: ANOMALY
       behavior: MELYNEPI_KIEGETT_BIZTOSITEK
+    lifecycle:
+      on-success-transform: kiegett_biztositek
   melynepi_vaklencse:
     display-name: Mélynépi Vaklencse
     player-rarity: ocska
@@ -3865,6 +3869,8 @@ items:
     internal:
       kind: ANOMALY
       behavior: MELYNEPI_VAKLENCSE
+    lifecycle:
+      on-success-transform: megrepedt_vaklencse
   gorbe_satorszog:
     display-name: Görbe Sátorszög
     player-rarity: ocska
@@ -3930,6 +3936,8 @@ items:
     internal:
       kind: ANOMALY
       behavior: BAL_ZOKNI
+    lifecycle:
+      on-success-transform: par_zokni
   jobb_zokni:
     display-name: Jobb Zokni
     player-rarity: ocska
@@ -3943,6 +3951,8 @@ items:
     internal:
       kind: ANOMALY
       behavior: JOBB_ZOKNI
+    lifecycle:
+      on-success-transform: par_zokni
   bal_lancszem:
     display-name: Bal Láncszem
     player-rarity: ocska
@@ -3956,6 +3966,8 @@ items:
     internal:
       kind: ANOMALY
       behavior: BAL_LANCSZEM
+    lifecycle:
+      on-success-transform: osszezart_lancszemek
   jobb_lancszem:
     display-name: Jobb Láncszem
     player-rarity: ocska
@@ -3969,6 +3981,8 @@ items:
     internal:
       kind: ANOMALY
       behavior: JOBB_LANCSZEM
+    lifecycle:
+      on-success-transform: osszezart_lancszemek
   suttogo_cetli:
     display-name: Suttogó Cetli
     player-rarity: ocska
@@ -4034,6 +4048,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: LYUKAS_VODOR
+    lifecycle:
+      on-success-transform: kilyukadt_vodor
   bot:
     display-name: Bot
     player-rarity: ocska
@@ -4046,6 +4062,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: BOT
+    lifecycle:
+      on-success-transform: megegett_bot
   a_vilag_legelesebb_kese:
     display-name: A Világ Legélesebb Kése
     player-rarity: ocska
@@ -4059,6 +4077,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: A_VILAG_LEGELESEBB_KESE
+    lifecycle:
+      on-success-transform: eltort_kiskes
   a_legbiztonsagosabb_sisak:
     display-name: A Legbiztonságosabb Sisak
     player-rarity: ocska
@@ -4072,6 +4092,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: A_LEGBIZTONSAGOSABB_SISAK
+    lifecycle:
+      on-success-transform: horpadtabb_fazek
   a_kard_amely_minden_csatat_megnyer:
     display-name: A Kard, Amely Minden Csatát Megnyer
     player-rarity: ocska
@@ -4085,6 +4107,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: A_KARD_AMELY_MINDEN_CSATAT_MEGNYER
+    lifecycle:
+      on-success-transform: gyoztes_oldal_kardja
   regi_kotes:
     display-name: Régi Kötés
     player-rarity: ocska
@@ -4098,6 +4122,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: REGI_KOTES
+    lifecycle:
+      on-success-transform: veres_kotes
   torott_pajzsdeszka:
     display-name: Törött Pajzsdeszka
     player-rarity: ocska
@@ -4111,6 +4137,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: TOROTT_PAJZSDESZKA
+    lifecycle:
+      on-success-transform: szalkas_deszka
   palackozott_nem:
     display-name: Palackozott „Nem”
     player-rarity: ocska
@@ -4124,6 +4152,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: PALACKOZOTT_NEM
+    lifecycle:
+      on-success-transform: torott_uveg
   vissza_a_feladonak:
     display-name: Vissza a Feladónak
     player-rarity: ocska
@@ -4137,6 +4167,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: VISSZA_A_FELADONAK
+    lifecycle:
+      on-success-transform: leszakadt_cimke
   repedt_bogre:
     display-name: Repedt Bögre
     player-rarity: ocska
@@ -4150,6 +4182,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: REPEDT_BOGRE
+    lifecycle:
+      on-success-transform: torott_bogre
   szerencses_garas:
     display-name: Szerencsés Garas
     player-rarity: ocska
@@ -4163,6 +4197,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: SZERENCSES_GARAS
+    lifecycle:
+      on-success-transform: kopott_garas
   tegla:
     display-name: Tégla
     player-rarity: ocska
@@ -4176,6 +4212,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: TEGLA
+    lifecycle:
+      on-success-transform: ket_fel_tegla
   fel_par_papucs:
     display-name: Fél Pár Papucs
     player-rarity: ocska
@@ -4189,6 +4227,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: FEL_PAR_PAPUCS
+    lifecycle:
+      on-success-transform: elhasznalt_papucs
   koporsoszog:
     display-name: Koporsószög
     player-rarity: ocska
@@ -4202,6 +4242,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: KOPORSOSZOG
+    lifecycle:
+      on-success-transform: elgorbult_koporsoszog
   koek:
     display-name: Kőék
     player-rarity: ocska
@@ -4215,6 +4257,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: KOEK
+    lifecycle:
+      on-success-transform: morzsolodott_koek
   fekete_viaszdugo:
     display-name: Fekete Viaszdugó
     player-rarity: ocska
@@ -4228,6 +4272,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: FEKETE_VIASZDUGO
+    lifecycle:
+      on-success-transform: szetmorzsolt_viasz
   szakadt_feher_zaszlo:
     display-name: Szakadt Fehér Zászló
     player-rarity: ocska
@@ -4241,6 +4287,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: SZAKADT_FEHER_ZASZLO
+    lifecycle:
+      on-success-transform: szetfoszlott_feher_szalag
   kormos_satorszog:
     display-name: Kormos Sátorszög
     player-rarity: ocska
@@ -4254,6 +4302,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: KORMOS_SATORSZOG
+    lifecycle:
+      on-success-transform: megolvadt_satorszog
   melynepi_selejtek:
     display-name: Mélynépi Selejték
     player-rarity: ocska
@@ -4267,6 +4317,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: MELYNEPI_SELEJTEK
+    lifecycle:
+      on-success-transform: repedt_selejtek
   a_nagyon_rossz_otlet:
     display-name: A Nagyon Rossz Ötlet
     player-rarity: ocska
@@ -4280,6 +4332,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: A_NAGYON_ROSSZ_OTLET
+    lifecycle:
+      on-success-transform: kormos_zsinor
   szakadt_kotel:
     display-name: Szakadt Kötél
     player-rarity: ocska
@@ -4293,6 +4347,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: SZAKADT_KOTEL
+    lifecycle:
+      on-success-transform: elszakadt_kotel
   elszakadt_virrasztokanoc:
     display-name: Elszakadt Virrasztókanóc
     player-rarity: ocska
@@ -4306,6 +4362,8 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: ELSZAKADT_VIRRASZTOKANOC
+    lifecycle:
+      on-success-transform: kialudt_kanoc
   repedt_virrasztouveg:
     display-name: Repedt Virrasztóüveg
     player-rarity: ocska
@@ -4319,3 +4377,249 @@ items:
     internal:
       kind: TRASH_RELIC
       behavior: REPEDT_VIRRASZTOUVEG
+    lifecycle:
+      on-success-transform: torott_virrasztouveg
+lifecycle-phases:
+  kiegett_biztositek:
+    display-name: Kiégett Biztosíték
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/kiegett_biztositek
+    texture: icesmp:item/trash/kiegett_biztositek
+    vendor-value: 1
+    lore:
+    - A vékony fémszál végleg megszakadt benne.
+  megrepedt_vaklencse:
+    display-name: Megrepedt Vaklencse
+    player-rarity: ocska
+    material: AMETHYST_SHARD
+    item-model: icesmp:trash/megrepedt_vaklencse
+    texture: icesmp:item/trash/megrepedt_vaklencse
+    vendor-value: 1
+    lore:
+    - A felületén friss, csillag alakú repedés fut végig.
+  par_zokni:
+    display-name: Pár Zokni
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/par_zokni
+    texture: icesmp:item/trash/par_zokni
+    vendor-value: 2
+    lore:
+    - Végre mindkettő ugyanott van. Ettől még nem tisztábbak.
+  osszezart_lancszemek:
+    display-name: Összezárt Láncszemek
+    player-rarity: ocska
+    material: CHAIN
+    item-model: icesmp:trash/osszezart_lancszemek
+    texture: icesmp:item/trash/osszezart_lancszemek
+    vendor-value: 2
+    lore:
+    - A két szem hézag nélkül egymásba záródott.
+  kilyukadt_vodor:
+    display-name: Kilyukadt Vödör
+    player-rarity: ocska
+    material: BUCKET
+    item-model: icesmp:trash/kilyukadt_vodor
+    texture: icesmp:item/trash/kilyukadt_vodor
+    vendor-value: 1
+    lore:
+    - A fenekén most már egy egészen közönséges lyuk tátong.
+  megegett_bot:
+    display-name: Megégett Bot
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/megegett_bot
+    texture: icesmp:item/trash/megegett_bot
+    vendor-value: 1
+    lore:
+    - Az egyik vége szénné égett.
+  eltort_kiskes:
+    display-name: Eltört Kiskés
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/eltort_kiskes
+    texture: icesmp:item/trash/eltort_kiskes
+    vendor-value: 1
+    lore:
+    - A penge közepe tisztán kettépattant.
+  horpadtabb_fazek:
+    display-name: Horpadtabb Fazék
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/horpadtabb_fazek
+    texture: icesmp:item/trash/horpadtabb_fazek
+    vendor-value: 1
+    lore:
+    - A korábbi horpadások mellé került még egy.
+  gyoztes_oldal_kardja:
+    display-name: Győztes Oldal Kardja
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/gyoztes_oldal_kardja
+    texture: icesmp:item/trash/gyoztes_oldal_kardja
+    vendor-value: 2
+    lore:
+    - Ugyanaz a csorba penge, csak másik kéz nyomával.
+  veres_kotes:
+    display-name: Véres Kötés
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/veres_kotes
+    texture: icesmp:item/trash/veres_kotes
+    vendor-value: 1
+    lore:
+    - Friss, sötét folt száradt a régi vászonra.
+  szalkas_deszka:
+    display-name: Szálkás Deszka
+    player-rarity: ocska
+    material: STICK
+    item-model: icesmp:trash/szalkas_deszka
+    texture: icesmp:item/trash/szalkas_deszka
+    vendor-value: 1
+    lore:
+    - Ami még egyben tartotta, végleg széthasadt.
+  torott_uveg:
+    display-name: Törött Üveg
+    player-rarity: ocska
+    material: GLASS_BOTTLE
+    item-model: icesmp:trash/torott_uveg
+    texture: icesmp:item/trash/torott_uveg
+    vendor-value: 1
+    lore:
+    - Csak néhány tompa üvegszilánk maradt.
+  leszakadt_cimke:
+    display-name: Leszakadt Címke
+    player-rarity: ocska
+    material: PAPER
+    item-model: icesmp:trash/leszakadt_cimke
+    texture: icesmp:item/trash/leszakadt_cimke
+    vendor-value: 1
+    lore:
+    - A zsinór helyén rojtos lyuk maradt.
+  torott_bogre:
+    display-name: Törött Bögre
+    player-rarity: ocska
+    material: BRICK
+    item-model: icesmp:trash/torott_bogre
+    texture: icesmp:item/trash/torott_bogre
+    vendor-value: 1
+    lore:
+    - A repedés már a bögre egész oldalát kettéválasztja.
+  kopott_garas:
+    display-name: Kopott Garas
+    player-rarity: ocska
+    material: COPPER_INGOT
+    item-model: icesmp:trash/kopott_garas
+    texture: icesmp:item/trash/kopott_garas
+    vendor-value: 1
+    lore:
+    - A veret utolsó felismerhető vonala is lekopott.
+  ket_fel_tegla:
+    display-name: Két Fél Tégla
+    player-rarity: ocska
+    material: BRICK
+    item-model: icesmp:trash/ket_fel_tegla
+    texture: icesmp:item/trash/ket_fel_tegla
+    vendor-value: 1
+    lore:
+    - Egy törésvonal mentén pontosan két darabra vált.
+  elhasznalt_papucs:
+    display-name: Elhasznált Papucs
+    player-rarity: ocska
+    material: LEATHER
+    item-model: icesmp:trash/elhasznalt_papucs
+    texture: icesmp:item/trash/elhasznalt_papucs
+    vendor-value: 1
+    lore:
+    - A talpa végleg simára kopott.
+  elgorbult_koporsoszog:
+    display-name: Elgörbült Koporsószög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/elgorbult_koporsoszog
+    texture: icesmp:item/trash/elgorbult_koporsoszog
+    vendor-value: 1
+    lore:
+    - A hegye oldalra hajlott, mintha nagy súlyt tartott volna.
+  morzsolodott_koek:
+    display-name: Morzsolódott Kőék
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/morzsolodott_koek
+    texture: icesmp:item/trash/morzsolodott_koek
+    vendor-value: 1
+    lore:
+    - A szélei érintésre is apró szemcsékre válnak.
+  szetmorzsolt_viasz:
+    display-name: Szétmorzsolt Viasz
+    player-rarity: ocska
+    material: BLACK_DYE
+    item-model: icesmp:trash/szetmorzsolt_viasz
+    texture: icesmp:item/trash/szetmorzsolt_viasz
+    vendor-value: 1
+    lore:
+    - Fekete viaszpor tapad a tenyérhez.
+  szetfoszlott_feher_szalag:
+    display-name: Szétfoszlott Fehér Szalag
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/szetfoszlott_feher_szalag
+    texture: icesmp:item/trash/szetfoszlott_feher_szalag
+    vendor-value: 1
+    lore:
+    - Különálló, fakó szálak maradtak belőle.
+  megolvadt_satorszog:
+    display-name: Megolvadt Sátorszög
+    player-rarity: ocska
+    material: IRON_NUGGET
+    item-model: icesmp:trash/megolvadt_satorszog
+    texture: icesmp:item/trash/megolvadt_satorszog
+    vendor-value: 1
+    lore:
+    - A feje szabálytalan fémcseppé olvadt.
+  repedt_selejtek:
+    display-name: Repedt Selejték
+    player-rarity: ocska
+    material: FLINT
+    item-model: icesmp:trash/repedt_selejtek
+    texture: icesmp:item/trash/repedt_selejtek
+    vendor-value: 1
+    lore:
+    - A pontosan faragott felületen mély repedés nyílt.
+  kormos_zsinor:
+    display-name: Kormos Zsinór
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/kormos_zsinor
+    texture: icesmp:item/trash/kormos_zsinor
+    vendor-value: 1
+    lore:
+    - Rövid, megperzselt zsinórdarab.
+  elszakadt_kotel:
+    display-name: Elszakadt Kötél
+    player-rarity: ocska
+    material: STRING
+    item-model: icesmp:trash/elszakadt_kotel
+    texture: icesmp:item/trash/elszakadt_kotel
+    vendor-value: 1
+    lore:
+    - Az utolsó ép szál is elpattant.
+  kialudt_kanoc:
+    display-name: Kialudt Kanóc
+    player-rarity: ocska
+    material: CANDLE
+    item-model: icesmp:trash/kialudt_kanoc
+    texture: icesmp:item/trash/kialudt_kanoc
+    vendor-value: 1
+    lore:
+    - A vége hideg és szürke.
+  torott_virrasztouveg:
+    display-name: Törött Virrasztóüveg
+    player-rarity: ocska
+    material: GLASS_BOTTLE
+    item-model: icesmp:trash/torott_virrasztouveg
+    texture: icesmp:item/trash/torott_virrasztouveg
+    vendor-value: 1
+    lore:
+    - A repedt palack végül több darabra tört.

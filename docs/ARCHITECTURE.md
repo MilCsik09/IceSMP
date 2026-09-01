@@ -49,7 +49,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
-| `trash/` | 17 | A 330 elemű Ócska katalógus és item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
+| `trash/` | 23 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, bounded delta-journalos history authority, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
 | `security/` | 1 | Immutable, permissiontől és OP-státusztól független fejlesztői authority a rejtett tartalomfelületekhez. |
 | `warrior/` | 2 | Harcos gameplay vertical slice: transiens harci állapot + konkrét runtime (Csatatempó, Berserker, Guardian). |
 | `evoker/` | 2 | Sárkányidéző gameplay vertical slice: transiens állapot + konkrét runtime (Felerősítés, Vörös–Kék Eszencia, Visszhang/Időlenyomat). |
@@ -249,7 +249,7 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 ### 3.3 Perzisztencia — atomikus írás + életciklus SPI
 - **`storage/YamlStore.saveAtomic(file, yaml)`**: egyedi temp-fájl + atomikus rename (konkurens-biztos).
   **Minden** YAML-mentés ezen át megy — soha ne `yaml.save(file)` közvetlenül.
-- **`storage/PersistentStore { load(); save(); }`**: a 35 fájlt-író store implementálja. Az
+- **`storage/PersistentStore { load(); save(); }`**: a 36 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
 - **`storage/PersistentStoreCoordinator`**: az enable során **fail-closed** tölti be a teljes
@@ -319,10 +319,11 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 
 ### 3.3.1 Ócska loot-ökoszisztéma
 
-- **Restart-only authority:** a `content/trash/catalog.yml` egyszerre tartja a 330 identityt,
+- **Restart-only authority:** a `content/trash/catalog.yml` egyszerre tartja a 330 base identityt,
+  a 27 authored lifecycle phase-t és a phase-transformation kapcsolatokat,
   a 6,5% fishing / 11% mob / 25% ambient source-esélyt, a pontosan 100%-os zárt
   kategóriasúlyokat, az identity-affinitásokat, a 8%-os displaced rollt, az 50%-os
-  recycle-helyettesítést és az ambient idő-/távolság-/TTL-határokat. A `TrashCatalog`
+  recycle-helyettesítést, valamint az ambient idő-/távolság-/TTL- és density-határokat. A `TrashCatalog`
   mindezt egy immutable snapshotként, fail-closed tölti be.
 - **Category first:** a `TrashLootSelector` előbb kategóriát választ, utána épít cache-elt,
   source/context/displaced kulcsú identity-disztribúciót. A context ezért nem képes a zárt
@@ -339,11 +340,20 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
 - **Vendor/recycle:** a `BuyerService` a generic PDC-elutasítás előtt delegál a
   `TrashVendorService`-nek. Az authored apparent price a közös napi keretet és fizikai
   frakcióvaluta-kifizetést használja, felismerési warning nélkül. Az eladott, visszaforgatható
-  base instance az atomi `trash-recycle.yml` store-ba kerül; csak a normál identity-roll után,
-  pontosan azonos identityhez vehető ki, így a pool nem emel ritkaságot.
-- **Operator seam:** `config/trash-runtime.yml` csak master enable-t, ambient enable-t és a két
-  density capet adja. A listenerszám, authored esély, kategória, timing és identity súly nem
-  operator-tuning és nem reloadolható.
+  history-bearing instance az atomi `trash-recycle.yml` store-ba kerül; csak a normál
+  category/base-identity roll után, pontosan azonos base identityhez vehető ki, így a pool nem
+  emel ritkaságot. Egy amountból nem klónoz instance tokent: minden eligible unit külön historyt kap.
+- **History/state split:** a friss item csak stack-equivalent origin markert hord. Az első jelentős
+  event egyetlen unitot választ le, opaque instance UUID-t és monoton history revisiont ír a fizikai
+  itemre; a részletes események és owner-set a külön, atomi `trash-history.yml` authorityban élnek.
+  Stale vagy duplikált token nem mutálható. A history store a recycle store előtt töltődik.
+- **Lifecycle/repair:** az activation előbb singleton splitet végez, majd a catalog authored phase
+  prezentációját alkalmazza és `TRANSFORMED` eventtel lépteti az authorityt. Pickup csak új ownert,
+  death/Nether transit/Mending csak jelentős eventet rögzít; nincs tickes inventory scan. Minden
+  ItemMeta/PDC írás után újraalkalmazódik az `ITEM_MODEL`, így a data-component prezentáció nem vész el.
+- **Nincs runtime gate:** a rendszer nem kap master vagy ambient enable kapcsolót és nem jelenik meg
+  az admin config GUI-ban. A stack addig marad draft/unmerged, amíg a teljes implementáció elkészül;
+  a runtime density limitek is a restart-only Git-authored catalog részei.
 
 ### 3.4 Parancsok — két stílus
 - **Dispatch (preferált, alparancsos):** `AbstractDispatchCommand` bázis + `Subcommand` SPI.
@@ -866,9 +876,9 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   `minecraft:impossible` triggert és a valódi award-hívást.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 985 Java-fájl, ~173 000 sor; 95 `*Manager` osztály (a `managers/` csomag 125 fájl).
+- **Méret:** 991 Java-fájl, ~174 000 sor; 95 `*Manager` osztály (a `managers/` csomag 125 fájl).
   Csomag-megoszlás: listeners 123, managers 125, commands 95, spells 61, gui 72, crates 14, utils 28, data 15, classrelic 14,
-  items 14, relics 12, quest 10, trash 17, integration 6.
+  items 14, relics 12, quest 10, trash 23, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
   a perzisztencia-, DEV-item-, moderáció-, MOTD-, sit-, crate-, config-startup-, AFK-, HUD- és territory-capital-regressziós suite-okat.
 - **Kiegészítő ellenőrzés:** `python3 scripts/test_dev_item_state.py` és

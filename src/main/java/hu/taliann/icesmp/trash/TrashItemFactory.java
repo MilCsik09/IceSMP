@@ -45,31 +45,56 @@ public final class TrashItemFactory {
             throw new IllegalArgumentException("Trash amount must be between 1 and " + BASE_STACK_SIZE);
         }
         final TrashDefinition definition = catalog.require(rawId);
+        return createPresented(definition.id(), BASE_PHASE, definition.displayName(),
+                definition.playerRarity(), definition.material(), definition.itemModel(),
+                definition.lore(), amount);
+    }
+
+    public ItemStack createPhase(final String rawBaseId, final String rawPhase, final int amount) {
+        if (amount < 1 || amount > BASE_STACK_SIZE) {
+            throw new IllegalArgumentException("Trash amount must be between 1 and " + BASE_STACK_SIZE);
+        }
+        final TrashDefinition base = catalog.require(rawBaseId);
+        final String phase = normalize(rawPhase);
+        if (!catalog.isKnownPhase(base.id(), phase) || BASE_PHASE.equals(phase)) {
+            throw new IllegalArgumentException("a lifecycle phase nem tartozik a base identityhez: "
+                    + base.id() + "/" + rawPhase);
+        }
+        final TrashLifecyclePhase definition = catalog.requirePhase(phase);
+        return createPresented(base.id(), definition.id(), definition.displayName(),
+                definition.playerRarity(), definition.material(), definition.itemModel(),
+                definition.lore(), amount);
+    }
+
+    private ItemStack createPresented(final String baseId, final String phase,
+                                      final String displayName, final String playerRarity,
+                                      final org.bukkit.Material material, final String itemModel,
+                                      final List<String> authoredLore, final int amount) {
         final RarityPresentationService.Presentation rarity = rarityPresentations.require(
-                definition.playerRarity());
+                playerRarity);
         if (!catalog.rarityLabel().equals(rarity.label())) {
             throw new IllegalStateException("Trash rarity presentation drifted from the catalog authority");
         }
 
-        final ItemStack item = new ItemStack(definition.material(), amount);
+        final ItemStack item = new ItemStack(material, amount);
         final ItemMeta meta = item.getItemMeta();
         meta.setMaxStackSize(BASE_STACK_SIZE);
-        meta.displayName(colored(rarity.legacyColor(), definition.displayName()));
+        meta.displayName(colored(rarity.legacyColor(), displayName));
         final List<Component> lore = new ArrayList<>();
         lore.add(colored(rarity.legacyColor(), rarity.label()));
-        if (!definition.lore().isEmpty()) {
+        if (!authoredLore.isEmpty()) {
             lore.add(Component.empty());
-            definition.lore().forEach(line -> lore.add(Component.text(line, NamedTextColor.GRAY)
+            authoredLore.forEach(line -> lore.add(Component.text(line, NamedTextColor.GRAY)
                     .decoration(TextDecoration.ITALIC, false)));
         }
         meta.lore(lore);
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        pdc.set(trashIdKey, PersistentDataType.STRING, definition.id());
-        pdc.set(phaseKey, PersistentDataType.STRING, BASE_PHASE);
+        pdc.set(trashIdKey, PersistentDataType.STRING, baseId);
+        pdc.set(phaseKey, PersistentDataType.STRING, phase);
         item.setItemMeta(meta);
 
         // Data components must remain last; a subsequent ItemMeta round-trip would erase them.
-        ItemDataFactory.applyItemModel(item, definition.itemModel());
+        ItemDataFactory.applyItemModel(item, itemModel);
         ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
         return item;
     }
@@ -84,24 +109,101 @@ public final class TrashItemFactory {
 
     public boolean isBaseIdentity(final ItemStack item) {
         if (idOf(item).isEmpty()) return false;
-        final String phase = item.getItemMeta().getPersistentDataContainer().get(phaseKey,
-                PersistentDataType.STRING);
-        return BASE_PHASE.equals(phase);
+        return BASE_PHASE.equals(phaseOf(item).orElse(""));
     }
 
     public boolean isKnownItem(final ItemStack item) {
-        return idOf(item).isPresent();
+        final String id = idOf(item).orElse(null);
+        final String phase = phaseOf(item).orElse(null);
+        return id != null && phase != null && catalog.isKnownPhase(id, phase);
     }
 
-    /** Reapplies modern data components after an ItemMeta/PDC round-trip. */
-    public void refreshPresentation(final ItemStack item) {
-        final String id = idOf(item).orElseThrow(
-                () -> new IllegalArgumentException("unknown Trash item"));
-        final TrashDefinition definition = catalog.require(id);
+    public Optional<String> phaseOf(final ItemStack item) {
+        final String id = idOf(item).orElse(null);
+        if (id == null) return Optional.empty();
+        final String phase = item.getItemMeta().getPersistentDataContainer().get(phaseKey,
+                PersistentDataType.STRING);
+        if (phase == null || !catalog.isKnownPhase(id, phase)) return Optional.empty();
+        return Optional.of(phase);
+    }
+
+    public Optional<String> successPhaseOf(final ItemStack item) {
+        final String id = idOf(item).orElse(null);
+        if (id == null || !BASE_PHASE.equals(phaseOf(item).orElse(""))) return Optional.empty();
+        final String successPhase = catalog.require(id).successPhase();
+        return successPhase.isBlank() ? Optional.empty() : Optional.of(successPhase);
+    }
+
+    public String displayNameOf(final ItemStack item) {
+        final String id = idOf(item).orElseThrow(() -> new IllegalArgumentException("nem Trash item"));
+        final String phase = phaseOf(item).orElseThrow(() ->
+                new IllegalArgumentException("ismeretlen Trash lifecycle phase"));
+        return BASE_PHASE.equals(phase) ? catalog.require(id).displayName()
+                : catalog.requirePhase(phase).displayName();
+    }
+
+    public int vendorValueOf(final ItemStack item) {
+        final String id = idOf(item).orElseThrow(() -> new IllegalArgumentException("nem Trash item"));
+        final String phase = phaseOf(item).orElseThrow(() ->
+                new IllegalArgumentException("ismeretlen Trash lifecycle phase"));
+        return BASE_PHASE.equals(phase) ? catalog.require(id).vendorValue()
+                : catalog.requirePhase(phase).vendorValue();
+    }
+
+    public void applyPhase(final ItemStack item, final String rawPhase) {
+        final String id = idOf(item).orElseThrow(() -> new IllegalArgumentException("nem Trash item"));
+        final String phase = normalize(rawPhase);
+        if (!catalog.isKnownPhase(id, phase) || BASE_PHASE.equals(phase)) {
+            throw new IllegalArgumentException("a lifecycle phase nem tartozik a base identityhez: "
+                    + id + "/" + rawPhase);
+        }
+        final TrashLifecyclePhase definition = catalog.requirePhase(phase);
         final RarityPresentationService.Presentation rarity = rarityPresentations.require(
                 definition.playerRarity());
+        final ItemMeta previousMeta = item.getItemMeta();
+        item.setType(definition.material());
+        final ItemMeta meta = item.getItemMeta();
+        previousMeta.getPersistentDataContainer().copyTo(meta.getPersistentDataContainer(), true);
+        meta.setMaxStackSize(BASE_STACK_SIZE);
+        meta.displayName(colored(rarity.legacyColor(), definition.displayName()));
+        final List<Component> lore = new ArrayList<>();
+        lore.add(colored(rarity.legacyColor(), rarity.label()));
+        if (!definition.lore().isEmpty()) {
+            lore.add(Component.empty());
+            definition.lore().forEach(line -> lore.add(Component.text(line, NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false)));
+        }
+        meta.lore(lore);
+        meta.getPersistentDataContainer().set(trashIdKey, PersistentDataType.STRING, id);
+        meta.getPersistentDataContainer().set(phaseKey, PersistentDataType.STRING, phase);
+        item.setItemMeta(meta);
         ItemDataFactory.applyItemModel(item, definition.itemModel());
         ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+    }
+
+    /** Restores data-component presentation after a required ItemMeta/PDC write. */
+    public void refreshPresentation(final ItemStack item) {
+        final String id = idOf(item).orElseThrow(() -> new IllegalArgumentException("nem Trash item"));
+        final String phase = phaseOf(item).orElseThrow(() ->
+                new IllegalArgumentException("ismeretlen Trash lifecycle phase"));
+        final String itemModel;
+        final String playerRarity;
+        if (BASE_PHASE.equals(phase)) {
+            final TrashDefinition definition = catalog.require(id);
+            itemModel = definition.itemModel();
+            playerRarity = definition.playerRarity();
+        } else {
+            final TrashLifecyclePhase definition = catalog.requirePhase(phase);
+            itemModel = definition.itemModel();
+            playerRarity = definition.playerRarity();
+        }
+        final RarityPresentationService.Presentation rarity = rarityPresentations.require(playerRarity);
+        ItemDataFactory.applyItemModel(item, itemModel);
+        ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+    }
+
+    private static String normalize(final String value) {
+        return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static TextComponent colored(final String legacyColor, final String text) {

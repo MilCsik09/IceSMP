@@ -3,7 +3,6 @@ package hu.taliann.icesmp.trash;
 import hu.taliann.icesmp.integration.ProtectionBridge;
 import hu.taliann.icesmp.managers.AfkManager;
 import hu.taliann.icesmp.managers.ClaimManager;
-import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import org.bukkit.Bukkit;
@@ -42,7 +41,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
 
     private final JavaPlugin plugin;
-    private final ConfigManager configManager;
     private final TrashCatalog catalog;
     private final TrashLootService loot;
     private final TrashContextResolver contexts;
@@ -56,12 +54,11 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
     private final Map<ChunkKey, Integer> chunkCounts = new ConcurrentHashMap<>();
     private final Object densityLock = new Object();
 
-    public TrashAmbientManager(final JavaPlugin plugin, final ConfigManager configManager,
-                               final TrashCatalog catalog, final TrashLootService loot,
+    public TrashAmbientManager(final JavaPlugin plugin, final TrashCatalog catalog,
+                               final TrashLootService loot,
                                final TrashContextResolver contexts, final ClaimManager claimManager,
                                final TerritoryManager territoryManager, final AfkManager afkManager) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
-        this.configManager = Objects.requireNonNull(configManager, "configManager");
         this.catalog = Objects.requireNonNull(catalog, "catalog");
         this.loot = Objects.requireNonNull(loot, "loot");
         this.contexts = Objects.requireNonNull(contexts, "contexts");
@@ -74,7 +71,7 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMove(final PlayerMoveEvent event) {
-        if (!event.hasChangedBlock() || !enabled()) return;
+        if (!event.hasChangedBlock()) return;
         final Player player = event.getPlayer();
         if (player.getGameMode() != GameMode.SURVIVAL || afkManager.isAfk(player.getUniqueId())) return;
         final long now = System.currentTimeMillis();
@@ -90,7 +87,7 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
     }
 
     private void attemptSpawn(final Location column) {
-        if (!enabled() || column.getWorld() == null) return;
+        if (column.getWorld() == null) return;
         final World world = column.getWorld();
         final int chunkX = column.getBlockX() >> 4;
         final int chunkZ = column.getBlockZ() >> 4;
@@ -202,10 +199,9 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
 
     private boolean reserve(final ChunkKey center) {
         synchronized (densityLock) {
-            final int perChunk = Math.max(1, Math.min(16,
-                    configManager.getInt("trash-runtime.ambient.max-per-chunk", 1)));
-            final int neighborhoodCap = Math.max(1, Math.min(32,
-                    configManager.getInt("trash-runtime.ambient.max-per-neighborhood", 4)));
+            final TrashLootTuning.Ambient tuning = catalog.lootTuning().ambient();
+            final int perChunk = tuning.maxPerChunk();
+            final int neighborhoodCap = tuning.maxPerNeighborhood();
             if (chunkCounts.getOrDefault(center, 0) >= perChunk) return false;
             int neighborhood = 0;
             for (int dx = -1; dx <= 1; dx++) {
@@ -309,11 +305,6 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
     private static long randomInclusive(final int minimum, final int maximum) {
         return minimum == maximum ? minimum
                 : ThreadLocalRandom.current().nextLong(minimum, (long) maximum + 1L);
-    }
-
-    private boolean enabled() {
-        return configManager.getBoolean("trash-runtime.enabled", true)
-                && configManager.getBoolean("trash-runtime.ambient.enabled", true);
     }
 
     @Override

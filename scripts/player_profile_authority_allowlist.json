@@ -527,6 +527,11 @@
       "reason": "Bounded encounter-only contribution evidence keyed by participant UUID; it is never persisted, rejects post-close writes and is discarded when the transient boss encounter settles or shuts down. Durable personal reward eligibility lives in PlayerProfile v2 OPERATIONS receipts."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Item-instance history aggregate keyed by an opaque item UUID; owner UUIDs are bounded provenance references, not player-owned progression or profile authority."
+    },
+    {
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java|<file combines YAML persistence with player-UUID-shaped data>",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "Shared vendor/recycle transaction journal keyed by an operation UUID; player UUIDs are participants in a cross-domain recovery aggregate, not player-owned profile authority."
@@ -535,6 +540,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashAmbientManager.java|private final Map<UUID, Long> nextAttemptAt = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Transient ambient-attempt throttle for online movement sessions; it is never persisted and is removed by the registered player-state cleanup boundary."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, StoredHistory> histories = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "The UUID is an opaque physical item-instance key for the shared provenance aggregate, not a player UUID or PlayerProfile-owned state."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, StoredVendorReceipt> vendorReceipts = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Durable cross-file recovery receipts keyed by opaque vendor operation UUID; the actor UUID is a participant reference in the shared item-history aggregate."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java|private final Map<UUID, SaleTransaction> openSales = new LinkedHashMap<>();",
