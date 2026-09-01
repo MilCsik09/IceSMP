@@ -34,6 +34,7 @@ public record CharacterMenuContext(
         PetManager petManager,
         ResourceManager resourceManager,
         hu.taliann.icesmp.classrelic.ClassRelicService classRelicService,
+        hu.taliann.icesmp.trash.TrashArchaeologyService trashArchaeologyService,
         ConfigManager configManager,
         hu.taliann.icesmp.managers.RespecService respecService) {
 }

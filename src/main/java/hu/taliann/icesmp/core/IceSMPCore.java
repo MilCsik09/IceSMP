@@ -243,6 +243,11 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.trash.TossableObjectRuntime tossableObjectRuntime;
     private final hu.taliann.icesmp.trash.TrashAnomalyRuntime trashAnomalyRuntime;
     private final hu.taliann.icesmp.trash.TrashRelicRuntime trashRelicRuntime;
+    private final hu.taliann.icesmp.trash.TrashArchaeologyProfileStore trashArchaeologyProfileStore;
+    private final hu.taliann.icesmp.trash.TrashArchaeologyFactEngine trashArchaeologyFactEngine;
+    private final hu.taliann.icesmp.trash.TrashArchaeologyService trashArchaeologyService;
+    private final hu.taliann.icesmp.trash.TooltipPacketBridge_1_21_11 trashArchaeologyTooltipBridge;
+    private final hu.taliann.icesmp.trash.TrashArchaeologyListener trashArchaeologyListener;
     private final hu.taliann.icesmp.trash.TrashRecyclePool trashRecyclePool;
     private final hu.taliann.icesmp.trash.TrashLootSelector trashLootSelector;
     private final hu.taliann.icesmp.trash.TrashLootService trashLootService;
@@ -458,6 +463,18 @@ public final class IceSMPCore {
         this.trashHistoryStore = new hu.taliann.icesmp.trash.TrashHistoryStore(plugin, trashCatalog);
         this.trashHistoryService = new hu.taliann.icesmp.trash.TrashHistoryService(
                 plugin, trashCatalog, trashItemFactory, trashHistoryStore);
+        this.trashArchaeologyProfileStore =
+                new hu.taliann.icesmp.trash.TrashArchaeologyProfileStore();
+        this.trashArchaeologyFactEngine = new hu.taliann.icesmp.trash.TrashArchaeologyFactEngine(
+                trashCatalog, trashItemFactory, trashHistoryService);
+        this.trashArchaeologyService = new hu.taliann.icesmp.trash.TrashArchaeologyService(
+                trashArchaeologyProfileStore, trashArchaeologyFactEngine);
+        this.trashArchaeologyTooltipBridge =
+                new hu.taliann.icesmp.trash.TooltipPacketBridge_1_21_11(
+                        plugin, trashItemFactory);
+        this.trashArchaeologyListener = new hu.taliann.icesmp.trash.TrashArchaeologyListener(
+                plugin, trashItemFactory, trashArchaeologyService,
+                trashArchaeologyTooltipBridge);
         this.trashAnomalyStateStore = new hu.taliann.icesmp.trash.TrashAnomalyStateStore(plugin);
         this.trashSpatialFractureStore =
                 new hu.taliann.icesmp.trash.TrashSpatialFractureStore(plugin);
@@ -727,7 +744,7 @@ public final class IceSMPCore {
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
                 catalystItemFactory, spellRegistry, petManager, resourceManager, classRelicService,
-                configManager, respecService);
+                trashArchaeologyService, configManager, respecService);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
         this.chronicleManager = new hu.taliann.icesmp.managers.ChronicleManager(plugin, configManager, statsManager, seasonManager, messageManager);
         // Korszakváltás-narratíva: a szezonzárás hookja (a StatsManager itt már él).
@@ -857,6 +874,7 @@ public final class IceSMPCore {
                 trashAmbientManager,
                 trashAnomalyRuntime,
                 trashRelicRuntime,
+                trashArchaeologyListener,
                 sitManager,
                 crateManager,
                 moderationManager,
@@ -1469,6 +1487,7 @@ public final class IceSMPCore {
         shutdownStep("eventSpawnGuard", eventSpawnGuard::clearReservations);
         shutdownStep("trashRelicRuntime", trashRelicRuntime::shutdown);
         shutdownStep("trashAnomalyRuntime", trashAnomalyRuntime::shutdown);
+        shutdownStep("trashArchaeologyListener", trashArchaeologyListener::shutdown);
         shutdownStep("trashAmbientManager", trashAmbientManager::shutdown);
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
@@ -1763,8 +1782,9 @@ public final class IceSMPCore {
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
                 statsManager, claimManager, questManager, abilityCatalystListener, sinManager,
                 new hu.taliann.icesmp.trash.TrashDevCommand(
-                        trashCatalog, trashItemFactory, trashHistoryService,
-                        trashRecyclePool, trashLootService));
+                        plugin, trashCatalog, trashItemFactory, trashHistoryService,
+                        trashRecyclePool, trashLootService, trashArchaeologyService,
+                        trashArchaeologyListener));
         iceSMPCommand.setClientBridge(clientBridge);
         // Native HUD routing: a HudManager csak a seam-interfészt látja, a bridge a
         // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.
@@ -2091,6 +2111,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(trashVendorService, plugin);
         pluginManager.registerEvents(trashAnomalyRuntime, plugin);
         pluginManager.registerEvents(trashRelicRuntime, plugin);
+        pluginManager.registerEvents(trashArchaeologyListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SelectionWandListener(claimManager, territoryManager, currencyManager, messageManager), plugin);
         // Nether-portál világszabály: új portál nem gyújtható — csak a Kárhozat Kapuja él.

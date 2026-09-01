@@ -672,6 +672,7 @@ public final class IceSMPCommand implements BasicCommand {
         }
         if (HiddenDevAuthority.mayUseHiddenContent(sender)) {
             sender.sendMessage("§8/icesmp dev trash <catalog|inspect|give|pool|history|state> §7- Rejtett Trash diagnosztika.");
+            sender.sendMessage("§8/icesmp dev archaeology <unlock|setlevel|addinsight|reset|inspect|force> §7- Rejtett régészeti diagnosztika.");
         }
     }
 

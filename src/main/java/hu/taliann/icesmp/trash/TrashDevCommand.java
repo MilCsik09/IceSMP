@@ -5,34 +5,54 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletionStage;
 
 /** Hidden catalog diagnostics; item mutation stays closed until the gameplay rollout. */
 public final class TrashDevCommand {
 
     private static final int MAX_SUGGESTIONS = 40;
 
+    private final JavaPlugin plugin;
     private final TrashCatalog catalog;
     private final TrashItemFactory itemFactory;
     private final TrashHistoryService historyService;
     private final TrashRecyclePool recyclePool;
     private final TrashLootService lootService;
+    private final TrashArchaeologyService archaeology;
+    private final TrashArchaeologyListener archaeologyListener;
 
-    public TrashDevCommand(final TrashCatalog catalog, final TrashItemFactory itemFactory,
+    public TrashDevCommand(final JavaPlugin plugin, final TrashCatalog catalog,
+                           final TrashItemFactory itemFactory,
                            final TrashHistoryService historyService,
-                           final TrashRecyclePool recyclePool, final TrashLootService lootService) {
+                           final TrashRecyclePool recyclePool, final TrashLootService lootService,
+                           final TrashArchaeologyService archaeology,
+                           final TrashArchaeologyListener archaeologyListener) {
+        this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
         this.catalog = java.util.Objects.requireNonNull(catalog, "catalog");
         this.itemFactory = java.util.Objects.requireNonNull(itemFactory, "itemFactory");
         this.historyService = java.util.Objects.requireNonNull(historyService, "historyService");
         this.recyclePool = java.util.Objects.requireNonNull(recyclePool, "recyclePool");
         this.lootService = java.util.Objects.requireNonNull(lootService, "lootService");
+        this.archaeology = java.util.Objects.requireNonNull(archaeology, "archaeology");
+        this.archaeologyListener = java.util.Objects.requireNonNull(
+                archaeologyListener, "archaeologyListener");
     }
 
     public void execute(final CommandSender sender, final String[] args) {
         if (!HiddenDevAuthority.mayUseHiddenContent(sender)) return;
-        if (args.length == 0 || !"trash".equalsIgnoreCase(args[0])) {
+        if (args.length == 0) {
+            sendUsage(sender);
+            return;
+        }
+        if ("archaeology".equalsIgnoreCase(args[0])) {
+            archaeology(sender, args);
+            return;
+        }
+        if (!"trash".equalsIgnoreCase(args[0])) {
             sendUsage(sender);
             return;
         }
@@ -69,8 +89,24 @@ public final class TrashDevCommand {
     }
 
     public List<String> suggest(final String[] args) {
-        if (args.length == 0) return List.of("trash");
-        if (args.length == 1) return matching(List.of("trash"), args[0]);
+        if (args.length == 0) return List.of("trash", "archaeology");
+        if (args.length == 1) return matching(List.of("trash", "archaeology"), args[0]);
+        if ("archaeology".equalsIgnoreCase(args[0])) {
+            if (args.length == 2) {
+                return matching(List.of("unlock", "setlevel", "addinsight", "reset",
+                        "inspect", "force"), args[1]);
+            }
+            if (args.length == 3) {
+                final String prefix = args[2].toLowerCase(Locale.ROOT);
+                return org.bukkit.Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                        .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
+                        .sorted().limit(MAX_SUGGESTIONS).toList();
+            }
+            if (args.length == 4 && "setlevel".equalsIgnoreCase(args[1])) {
+                return matching(List.of("0", "1", "10", "25", "50"), args[3]);
+            }
+            return List.of();
+        }
         if (!"trash".equalsIgnoreCase(args[0])) return List.of();
         if (args.length == 2) {
             return matching(List.of("catalog", "inspect", "give", "pool", "history", "state"), args[1]);
@@ -85,6 +121,115 @@ public final class TrashDevCommand {
             return matching(List.of("transform"), args[2]);
         }
         return List.of();
+    }
+
+    private void archaeology(final CommandSender sender, final String[] args) {
+        if (args.length < 3) {
+            sendArchaeologyUsage(sender);
+            return;
+        }
+        final String action = args[1].toLowerCase(Locale.ROOT);
+        final Player target = org.bukkit.Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            sender.sendMessage(Component.text("A célpontnak online kell lennie.",
+                    NamedTextColor.RED));
+            return;
+        }
+        final String targetName = target.getName();
+        final java.util.UUID targetId = target.getUniqueId();
+        if ("inspect".equals(action)) {
+            inspectArchaeology(sender, targetId, targetName);
+            return;
+        }
+        if ("force".equals(action)) {
+            archaeologyListener.forceInspection(target);
+            sender.sendMessage(Component.text("Archaeology force inspection ütemezve: "
+                    + targetName, NamedTextColor.GRAY));
+            return;
+        }
+
+        final CompletionStage<TrashArchaeologyProfileStore.Profile> mutation;
+        try {
+            mutation = switch (action) {
+                case "unlock" -> archaeology.unlock(targetId);
+                case "reset" -> archaeology.reset(targetId);
+                case "setlevel" -> archaeology.setLevel(targetId,
+                        integerArgument(args, 3, 0, 50));
+                case "addinsight" -> archaeology.addInsight(targetId,
+                        longArgument(args, 3));
+                default -> null;
+            };
+        } catch (final IllegalArgumentException invalid) {
+            sendArchaeologyUsage(sender);
+            return;
+        }
+        if (mutation == null) {
+            sendArchaeologyUsage(sender);
+            return;
+        }
+        mutation.whenComplete((profile, failure) -> reply(sender, () -> {
+            if (failure != null || profile == null) {
+                sender.sendMessage(Component.text("Archaeology profilmutáció sikertelen.",
+                        NamedTextColor.RED));
+                return;
+            }
+            sender.sendMessage(Component.text("Archaeology profil frissítve: "
+                    + targetName + " | unlocked=" + profile.unlocked()
+                    + " | level=" + profile.level() + " | insight=" + profile.insight(),
+                    NamedTextColor.GRAY));
+        }));
+    }
+
+    private void inspectArchaeology(final CommandSender sender, final java.util.UUID targetId,
+                                    final String targetName) {
+        final TrashArchaeologyProfileStore.Profile profile;
+        try {
+            profile = archaeology.profile(targetId);
+        } catch (final RuntimeException unavailable) {
+            sender.sendMessage(Component.text("A canonical Archaeology profil nem olvasható.",
+                    NamedTextColor.RED));
+            return;
+        }
+        sender.sendMessage(Component.text("=== Rejtett Archaeology profile ===",
+                NamedTextColor.GOLD));
+        sender.sendMessage(Component.text("player=" + targetName + " | unlocked="
+                + profile.unlocked() + " | level=" + profile.level() + " | insight="
+                + profile.insight() + " | familiarity=" + profile.familiarity()
+                + " | historical=" + profile.historicalInspections(), NamedTextColor.GRAY));
+        sender.sendMessage(Component.text("families=" + profile.families() + " | domains="
+                + profile.domains() + " | knowledge=" + profile.knowledge().size(),
+                NamedTextColor.DARK_GRAY));
+        profile.knowledge().stream().sorted().limit(MAX_SUGGESTIONS).forEach(signature ->
+                sender.sendMessage(Component.text(signature, NamedTextColor.DARK_GRAY)));
+        if (profile.knowledge().size() > MAX_SUGGESTIONS) {
+            sender.sendMessage(Component.text("… további "
+                    + (profile.knowledge().size() - MAX_SUGGESTIONS) + " signature",
+                    NamedTextColor.DARK_GRAY));
+        }
+    }
+
+    private static int integerArgument(final String[] args, final int index,
+                                       final int min, final int max) {
+        if (args.length <= index) throw new IllegalArgumentException("missing integer");
+        final int value = Integer.parseInt(args[index]);
+        if (value < min || value > max) throw new IllegalArgumentException("integer range");
+        return value;
+    }
+
+    private static long longArgument(final String[] args, final int index) {
+        if (args.length <= index) throw new IllegalArgumentException("missing long");
+        final long value = Long.parseLong(args[index]);
+        if (value < 0L) throw new IllegalArgumentException("negative long");
+        return value;
+    }
+
+    private void reply(final CommandSender sender, final Runnable response) {
+        if (sender instanceof Player player) {
+            player.getScheduler().run(plugin, ignored -> response.run(), null);
+        } else {
+            org.bukkit.Bukkit.getGlobalRegionScheduler().run(
+                    plugin, ignored -> response.run());
+        }
     }
 
     private void give(final CommandSender sender, final String[] args) {
@@ -213,6 +358,12 @@ public final class TrashDevCommand {
 
     private static void sendUsage(final CommandSender sender) {
         sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|inspect [id]|give <id> [amount]|pool|history|state [transform]>",
+                NamedTextColor.RED));
+        sendArchaeologyUsage(sender);
+    }
+
+    private static void sendArchaeologyUsage(final CommandSender sender) {
+        sender.sendMessage(Component.text("Használat: /icesmp dev archaeology <unlock|setlevel|addinsight|reset|inspect|force> <player> [érték]",
                 NamedTextColor.RED));
     }
 

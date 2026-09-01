@@ -160,6 +160,17 @@ public final class ProfileGUI {
         final ProfessionSpecializationType profSpec = ctx.specializationManager().getProfessionSpecialization(target);
         lore.add(label("Szakma-spec", profSpec == null ? Component.text("nincs", NamedTextColor.GRAY) : profSpec.getDisplayName()));
 
+        try {
+            final hu.taliann.icesmp.trash.TrashArchaeologyProfileStore.Profile archaeology =
+                    ctx.trashArchaeologyService().profile(target.getUniqueId());
+            if (archaeology.unlocked()) {
+                lore.add(label("Régészet", Component.text(
+                        archaeology.level() + "/50", NamedTextColor.WHITE)));
+            }
+        } catch (final RuntimeException profileUnavailable) {
+            // The discipline remains invisible while the canonical profile session is unavailable.
+        }
+
         final boolean sinner = ctx.sinManager() != null && ctx.sinManager().isSinner(target);
         lore.add(label("Állapot", sinner
                 ? Component.text("Bűnös", NamedTextColor.RED)
