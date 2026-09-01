@@ -110,6 +110,24 @@ public final class TrashSpatialFractureStore implements PersistentStore {
         }
     }
 
+    /** Retries journal recovery when a world unavailable during startup becomes owned again. */
+    public synchronized void recoverWorld(final World world) {
+        Objects.requireNonNull(world, "world");
+        for (final Map.Entry<UUID, Fracture> entry : List.copyOf(open.entrySet())) {
+            if (entry.getValue().worldId().equals(world.getUID())) {
+                scheduleRestore(entry.getKey(), entry.getValue(), 1L);
+            }
+        }
+    }
+
+    /**
+     * Requests owner-region restoration before disable. Any request that cannot run remains in the
+     * durable journal and is retried by startup/world-load recovery instead of losing its snapshot.
+     */
+    public synchronized void shutdown() {
+        recover();
+    }
+
     private void scheduleRestore(final UUID id, final Fracture fracture, final long delay) {
         final World world = Bukkit.getWorld(fracture.worldId());
         if (world == null) return;

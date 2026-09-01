@@ -2,7 +2,9 @@ package hu.taliann.icesmp.trash;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.logging.Logger;
 
 /** Source and authority gates for the Phase C hidden instance-history boundary. */
 public final class TrashHistoryRegressionSuite {
@@ -24,6 +26,7 @@ public final class TrashHistoryRegressionSuite {
         preservesOpaquePhysicalAuthority();
         preservesSignificantEventSplitAndTransformation();
         preservesDurableBoundedHistory();
+        preservesDeltaJournalBehavior();
         preservesVendorRecycleTransactionOrder();
         preservesSignificantEventHooks();
         preservesNoGateRuntimeBoundary();
@@ -85,6 +88,8 @@ public final class TrashHistoryRegressionSuite {
                 "dedicated durable history authority");
         require(store, "MAX_EVENTS = 64", "bounded history event retention");
         require(store, "MAX_OWNERS = 64", "bounded owner retention");
+        require(store, "MAX_INSTANCES = 100_000", "bounded instance authority");
+        require(store, "MAX_JOURNAL_RECORDS = 1_024", "bounded delta journal");
         require(store, "while (events.size() > MAX_EVENTS) events.remove(0)",
                 "oldest-event pruning");
         require(store, "YamlStore.saveAtomic", "atomic history persistence");
@@ -92,7 +97,10 @@ public final class TrashHistoryRegressionSuite {
         require(store, "YamlStore.failCorrupt", "fail-closed corrupt-store handling");
         require(store, "history.revision() == revision", "exact revision match");
         require(store, "public synchronized <T> T transact", "serialized durable transaction");
-        require(store, "histories.putAll(historyBefore)", "history rollback on write failure");
+        require(store, "journal.append(nextSequence", "durable per-transaction delta append");
+        require(store, "rollback(frame)", "touched-key rollback on journal failure");
+        check(!store.contains("new LinkedHashMap<>(histories)"),
+                "history transaction must not copy the complete authority map");
         require(store, "vendor-operations.", "durable idempotent vendor receipts");
 
         final String core = Files.readString(CORE);
@@ -100,6 +108,31 @@ public final class TrashHistoryRegressionSuite {
         final int recycleStore = core.indexOf("trashRecyclePool);", historyStore);
         check(historyStore >= 0 && recycleStore > historyStore,
                 "history authority must load before exact recycle instances");
+    }
+
+    private static void preservesDeltaJournalBehavior() throws Exception {
+        final Path directory = Files.createTempDirectory("trash-history-journal-regression-");
+        final Path path = directory.resolve("trash-history.wal");
+        final TrashHistoryJournal journal = new TrashHistoryJournal(
+                Logger.getLogger("TrashHistoryRegressionSuite"), path.toFile());
+        journal.append(1L, "first");
+        journal.append(2L, "second");
+        final TrashHistoryJournal.LoadResult complete = journal.loadAfter(0L);
+        check(complete.sequence() == 2L && complete.completeRecords() == 2
+                        && complete.records().size() == 2
+                        && "first".equals(complete.records().get(0).payload())
+                        && "second".equals(complete.records().get(1).payload()),
+                "journal did not replay complete ordered frames");
+        final long completeBytes = Files.size(path);
+        Files.write(path, new byte[]{0x54, 0x52, 0x48}, StandardOpenOption.APPEND);
+        final TrashHistoryJournal.LoadResult recovered = journal.loadAfter(1L);
+        check(recovered.sequence() == 2L && recovered.records().size() == 1
+                        && recovered.records().getFirst().sequence() == 2L,
+                "journal did not skip snapshotted records or recover its complete tail");
+        check(Files.size(path) == completeBytes,
+                "journal did not truncate an incomplete crash tail");
+        journal.reset();
+        check(Files.size(path) == 0L, "journal compaction reset failed");
     }
 
     private static void preservesVendorRecycleTransactionOrder() throws Exception {
