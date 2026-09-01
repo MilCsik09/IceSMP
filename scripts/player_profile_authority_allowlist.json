@@ -555,6 +555,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java|private final Map<UUID, SaleTransaction> openSales = new LinkedHashMap<>();",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "Durable cross-domain vendor recovery operations keyed by opaque operation UUID; the embedded player UUID is a transaction participant reference, not profile-owned state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/trash/TrashAnomalyStateStore.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Anomaly memory is keyed by the opaque Phase C item-instance UUID; it is shared physical-item lifecycle state, not player-owned progression or PlayerProfile authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashAnomalyStateStore.java|private final Map<UUID, EnumMap<MemoryKey, Long>> states = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "The UUID is an opaque physical item-instance key for bounded anomaly memory, not a player UUID or PlayerProfile-owned state."
     }
   ]
 }
