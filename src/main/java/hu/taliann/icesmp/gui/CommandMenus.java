@@ -189,11 +189,13 @@ public final class CommandMenus {
         final UUID kingId = faction == null ? null : ctx.kingManager().getKing(faction);
         if (faction != null) {
             headerLore.add(label("Kassza", Component.text(ctx.currencyManager().formatBalance(ctx.treasuryManager().getBalance(faction)), NamedTextColor.WHITE)));
-            headerLore.add(label("Adókulcs", Component.text(ctx.treasuryManager().getTaxRate(faction) + "%", NamedTextColor.WHITE)));
             headerLore.add(label("Király", Component.text(kingId == null ? "nincs" : nameOf(kingId), NamedTextColor.WHITE)));
             headerLore.add(label("Raid", Component.text(ctx.raidManager().isRaidActive() ? "folyamatban" : "nincs", NamedTextColor.WHITE)));
         }
-        put(inv, holder, 4, GuiUtil.icon(Material.RED_BANNER, accent("Frakció"), headerLore), null);
+        headerLore.add(grey("Részletes állapot: /faction status"));
+        headerLore.add(click());
+        put(inv, holder, 4, GuiUtil.icon(Material.RED_BANNER, accent("Frakció"), headerLore),
+                "RUN:faction status");
 
         if (faction == null) {
             putJoinButtons(inv, holder, player, ctx, null, "Csatlakozás");

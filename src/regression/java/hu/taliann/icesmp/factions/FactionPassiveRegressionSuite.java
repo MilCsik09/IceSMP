@@ -461,23 +461,6 @@ public final class FactionPassiveRegressionSuite {
         checkDouble(0.40D, reloaded.blue().naturalExhaustionSaveChance(),
                 "reload retained stale BLUE value");
 
-        final YamlConfiguration migrated = new YamlConfiguration();
-        migrated.set("factions.passives.blue.natural-exhaustion-save-chance", 0.25D);
-        migrated.set("factions.passives.blue-hunger-slow-chance", 0.42D);
-        final ConfigHarness legacyOverride = config(migrated,
-                Set.of("factions.passives.blue-hunger-slow-chance"));
-        checkDouble(0.42D,
-                legacyOverride.config().snapshot().blue().naturalExhaustionSaveChance(),
-                "legacy BLUE override did not beat bundled new default");
-        check(legacyOverride.warnings().contains("Legacy faction-passive override"),
-                "legacy BLUE fallback did not emit a migration warning");
-        final ConfigHarness bothOverrides = config(migrated, Set.of(
-                "factions.passives.blue-hunger-slow-chance",
-                "factions.passives.blue.natural-exhaustion-save-chance"));
-        checkDouble(0.25D,
-                bothOverrides.config().snapshot().blue().naturalExhaustionSaveChance(),
-                "new BLUE override did not take precedence");
-
         final YamlConfiguration invalid = new YamlConfiguration();
         invalid.set("factions.passives.red.fire-damage-multiplier", -0.1D);
         invalid.set("factions.passives.red.fire-tick-damage-multiplier", "bad");
@@ -696,7 +679,7 @@ public final class FactionPassiveRegressionSuite {
                         Set.of("icesmp:quest_mob")),
                 new FactionPassiveSettings.Whisper(
                         true, true, 0.35D, true, true, 60_000L,
-                        0.02D, 16.0D, 1.0D));
+                        16.0D));
     }
 
     private static FactionPassiveSettings disabled(final FactionPassiveSettings base) {

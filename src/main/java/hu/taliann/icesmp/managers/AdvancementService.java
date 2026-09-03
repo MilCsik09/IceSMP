@@ -66,17 +66,17 @@ public final class AdvancementService {
             // --- Frakció-ág ---
             // A világban NÉGY hatalom van, de a játékos csak HÁROM közül választhat: a
             // Menedékben kezd (alapértelmezés), onnan a Lánghoz vagy a Fagyhoz állhat. A
-            // Kitaszítottak közé nem lépni lehet, hanem KERÜLNI — mindhárom út (bűn-küszöb,
-            // Suttogó-lelepleződés, önkéntes paktum) ugyanezt az „exiled" bejegyzést adja,
-            // és a „redeemed" annak a feloldása. A „whisperer" azért REJTETT és
+            // Kitaszított nem lehet első választás: az útját a bűnküszöb vagy a
+            // Suttogó-lelepleződés nyitja meg ugyanazzal az „exiled" bejegyzéssel; az
+            // eskü és a tagság ezután külön döntés. A „whisperer" azért REJTETT és
             // toast/chat-mentes, mert a Suttogó-státusz titkos: az álca a mechanika lényege.
             new Node("faction_join", "root", "Hovatartozás", "Kikötöttél az egyik hatalom mellett.",
                     "minecraft:white_banner", "task", false, null),
             new Node("whisperer", "faction_join", "Akit a csend befogadott",
-                    "Éjjel, sculkon, magányosan — a Suttogás megszólalt hozzád. Őrizd a titkot.",
+                    "Éjjel, sculkon — a Suttogás megszólalt hozzád. Őrizd a titkot.",
                     "minecraft:sculk_catalyst", "goal", true, null),
             new Node("exiled", "faction_join", "Kitaszítva",
-                    "Bűnök vezettek a Néma Királynő népe közé — és a paktum örök.",
+                    "Bűneid miatt száműzött lettél — a DARK eskü és tagság még külön döntés.",
                     "minecraft:wither_skeleton_skull", "challenge", true, null),
             new Node("crowned", "faction_join", "A korona súlya", "Megválasztottak a frakciód királyává.",
                     "minecraft:golden_helmet", "challenge", false, null),
@@ -84,7 +84,7 @@ public final class AdvancementService {
                     "minecraft:soul_lantern", "challenge", true, null),
             new Node("raid_win", "faction_join", "Hadizsákmány", "A frakciód megnyert egy raidet, és te ott voltál.",
                     "minecraft:iron_axe", "goal", false, null),
-            new Node("redeemed", "exiled", "Vezeklés", "Megtörted a Kitaszítottak örök paktumát — visszatértél.",
+            new Node("redeemed", "exiled", "Vezeklés", "Vezeklésed lezárta a száműzetést és a DARK esküt — visszatértél.",
                     "minecraft:totem_of_undying", "challenge", true, null),
 
             // --- Szakma-ág ---

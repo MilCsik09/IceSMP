@@ -107,7 +107,6 @@ public final class FactionTreasuryManager implements PersistentStore {
             appliedGrants.clear();
             appliedGrants.putAll(loadedGrants);
         }
-        rebuildPlayerTaxProjectionAndOutboxes();
     }
 
     @Override

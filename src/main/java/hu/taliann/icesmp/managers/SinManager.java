@@ -1,6 +1,5 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileSinStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -14,23 +13,20 @@ import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
-/** PlayerProfile-backed sin, sinner mark, DARK exile and pact domain. */
+/** PlayerProfile-backed infamy, wanted, exile and DARK-oath domain. */
 public final class SinManager {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
-    private final FactionManager factionManager;
     private final PlayerProfileSinStore sinStore = new PlayerProfileSinStore();
     private volatile SpecializationManager specializationManager;
 
     public SinManager(final JavaPlugin plugin, final ConfigManager configManager,
-                      final MessageManager messageManager,
-                      final FactionManager factionManager) {
+                      final MessageManager messageManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.messageManager = messageManager;
-        this.factionManager = factionManager;
     }
 
     public void setSpecializationManager(final SpecializationManager specializationManager) {
@@ -43,13 +39,20 @@ public final class SinManager {
         catch (final RuntimeException notReady) { return 0; }
     }
 
+    public int getInfamy(final Player player) {
+        return getSinCount(player);
+    }
+
     public int addSin(final Player player, final int amount) {
         if (player == null || amount <= 0) return getSinCount(player);
         final int exileThreshold = Math.max(0,
                 configManager.getInt("factions.sins.exile-threshold", 4));
+        final int wantedThreshold = Math.max(0,
+                configManager.getInt("factions.sins.bounty.min-sins", 3));
         try {
             final PlayerProfileSinStore.AddResult result = sinStore.add(
-                    player.getUniqueId(), amount, exileThreshold).toCompletableFuture().join();
+                    player.getUniqueId(), amount, wantedThreshold,
+                    exileThreshold).toCompletableFuture().join();
             publishResult(player.getUniqueId(), result);
             return result.state().count();
         } catch (final CompletionException failure) {
@@ -62,7 +65,10 @@ public final class SinManager {
                                                final String operationId) {
         final int exileThreshold = Math.max(0,
                 configManager.getInt("factions.sins.exile-threshold", 4));
-        return sinStore.addOnce(playerId, amount, exileThreshold, operationId)
+        final int wantedThreshold = Math.max(0,
+                configManager.getInt("factions.sins.bounty.min-sins", 3));
+        return sinStore.addOnce(playerId, amount, wantedThreshold,
+                        exileThreshold, operationId)
                 .thenApply(result -> {
                     if (result.applied()) publishResult(playerId, result.result());
                     return result.applied();
@@ -71,10 +77,6 @@ public final class SinManager {
 
     private void publishResult(final UUID playerId,
                                final PlayerProfileSinStore.AddResult result) {
-        if (result.exiled()) {
-            factionManager.publishExternalMembershipCommit(playerId,
-                    result.previousFaction().orElse(null), FactionType.DARK);
-        }
         final Player online = Bukkit.getPlayer(playerId);
         if (online == null) return;
         online.getScheduler().run(plugin, task -> {
@@ -87,10 +89,10 @@ public final class SinManager {
         AdvancementService.award(player, "exiled");
         player.sendMessage(messageManager.getMessage(
                 "sinner.exiled",
-                "<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: a Kitaszítottak közé száműztek. A paktum örök.</dark_purple>"));
+                "<dark_purple>Bűneid súlya alatt összeroskadt a becsületed: száműzött lettél. A DARK esküt külön kell letenned.</dark_purple>"));
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 "sinner.exile-broadcast",
-                "<dark_purple>{player} bűnei elérték a tűréshatárt — a Kitaszítottak közé száműzték!</dark_purple>",
+                "<dark_purple>{player} bűnei elérték a tűréshatárt — száműzött lett!</dark_purple>",
                 Map.of("player", player.getName())));
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.6F, 0.7F);
         player.getWorld().spawnParticle(Particle.SQUID_INK,
@@ -101,6 +103,18 @@ public final class SinManager {
     public boolean isSinner(final Player player) {
         if (player == null) return false;
         try { return sinStore.read(player.getUniqueId()).sinner(); }
+        catch (final RuntimeException notReady) { return false; }
+    }
+
+    public boolean isWanted(final Player player) {
+        if (player == null) return false;
+        try { return sinStore.read(player.getUniqueId()).wanted(); }
+        catch (final RuntimeException notReady) { return false; }
+    }
+
+    public boolean isExiled(final Player player) {
+        if (player == null) return false;
+        try { return sinStore.read(player.getUniqueId()).exiled(); }
         catch (final RuntimeException notReady) { return false; }
     }
 
@@ -133,7 +147,7 @@ public final class SinManager {
     }
 
     public void sealDarkPact(final Player player) {
-        if (player == null) return;
+        if (player == null || !isExiled(player)) return;
         try {
             sinStore.sealDarkPact(player.getUniqueId()).toCompletableFuture().join();
             reconcileProfileGates(player);
@@ -146,6 +160,33 @@ public final class SinManager {
         if (player == null) return false;
         try { return sinStore.read(player.getUniqueId()).darkPact(); }
         catch (final RuntimeException notReady) { return false; }
+    }
+
+    public boolean hasOath(final Player player) {
+        return hasDarkPact(player);
+    }
+
+    public void exile(final Player player) {
+        if (player == null) return;
+        final boolean alreadyExiled = isExiled(player);
+        try {
+            sinStore.exile(player.getUniqueId()).toCompletableFuture().join();
+            if (!alreadyExiled) applyExileEffects(player);
+            reconcileProfileGates(player);
+        } catch (final CompletionException failure) {
+            throw new IllegalStateException("PlayerProfile exile failed", unwrap(failure));
+        }
+    }
+
+    public void sealDarkForFactionOverride(final Player player) {
+        if (player == null) return;
+        try {
+            sinStore.sealDarkForFactionOverride(player.getUniqueId())
+                    .toCompletableFuture().join();
+            reconcileProfileGates(player);
+        } catch (final CompletionException failure) {
+            throw new IllegalStateException("PlayerProfile DARK override failed", unwrap(failure));
+        }
     }
 
     public void clearDarkPactForFactionOverride(final Player player) {

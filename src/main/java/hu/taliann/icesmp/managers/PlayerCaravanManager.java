@@ -69,6 +69,9 @@ public final class PlayerCaravanManager {
         if (faction == null) {
             return "pcaravan-no-faction";
         }
+        if (faction == FactionType.DARK) {
+            return "pcaravan-dark-exiled";
+        }
         final long now = System.currentTimeMillis();
         if (cooldownUntil.getOrDefault(faction, 0L) > now) {
             return "pcaravan-cooldown";

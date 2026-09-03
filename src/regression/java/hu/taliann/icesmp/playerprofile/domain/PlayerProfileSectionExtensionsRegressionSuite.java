@@ -29,7 +29,6 @@ public final class PlayerProfileSectionExtensionsRegressionSuite {
         hu.taliann.icesmp.playerprofile.application.PlayerProfileIntroStoreRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepositoryEnumerationRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.application.PlayerProfileStatisticsStoreRegressionSuite.main(args);
-        hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStoreRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStoreRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.application.PlayerProfileDailyQuestStoreRegressionSuite.main(args);
         hu.taliann.icesmp.playerprofile.application.PlayerProfileEconomyStoreRegressionSuite.main(args);

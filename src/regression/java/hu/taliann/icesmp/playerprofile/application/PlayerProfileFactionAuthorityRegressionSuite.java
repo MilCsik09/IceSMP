@@ -55,33 +55,39 @@ public final class PlayerProfileFactionAuthorityRegressionSuite {
 
             whispers.makeWhisperer(player).toCompletableFuture().join();
             check(whispers.read(player).whisperer(), "whisperer flag committed");
-            check(Math.abs(whispers.adjust(player, 19.5D, 20.0D)
-                    .toCompletableFuture().join().state().suspicion() - 19.5D) < 0.0001D,
-                    "suspicion uses milli-units");
-            final var exposed = whispers.adjust(player, 0.5D, 20.0D)
-                    .toCompletableFuture().join();
+            check(whispers.advance(player).toCompletableFuture().join().state().stage()
+                            == PlayerProfileWhisperStore.Stage.OBSERVED,
+                    "first evidence advances to observed");
+            check(whispers.advance(player).toCompletableFuture().join().state().stage()
+                            == PlayerProfileWhisperStore.Stage.SUSPECTED,
+                    "second evidence advances to suspected");
+            final var exposed = whispers.advance(player).toCompletableFuture().join();
             check(exposed.exposed() && !exposed.state().whisperer(),
                     "threshold atomically exposes");
-            check(exposed.state().suspicionMilli() == 0L,
-                    "exposure clears suspicion");
+            check(exposed.state().stage() == PlayerProfileWhisperStore.Stage.EXPOSED,
+                    "third evidence commits exposed stage");
 
             final var firstSin = sins.add(player, 2, 4).toCompletableFuture().join();
             check(firstSin.state().count() == 2 && firstSin.state().sinner(),
                     "sin count and mark committed");
             final var exile = sins.add(player, 2, 4).toCompletableFuture().join();
             check(exile.exiled(), "threshold exile reported");
-            check(exile.state().membership().orElseThrow() == FactionType.DARK,
-                    "threshold exile changes membership in same CAS");
-            check(exile.state().darkPact(), "threshold exile seals pact");
-            check(!sins.clearSinner(player).toCompletableFuture().join(),
-                    "pact blocks ordinary cleanse");
+            check(exile.state().membership().orElseThrow() == FactionType.RED,
+                    "threshold exile does not change membership");
+            check(exile.state().exiled() && !exile.state().darkPact(),
+                    "exile and oath remain separate");
+            check(sins.clearSinner(player).toCompletableFuture().join(),
+                    "ordinary cleanse clears infamy");
+            check(sins.read(player).exiled(), "cleanse preserves exile");
+            sins.sealDarkPact(player).toCompletableFuture().join();
+            check(sins.read(player).darkPact(), "explicit oath committed");
             sins.breakDarkPact(player).toCompletableFuture().join();
             check(!sins.read(player).sinner() && !sins.read(player).darkPact()
                     && sins.read(player).count() == 0, "penance clears all sin state");
 
             repository.invalidate(player);
             repository.loadSnapshot(player).toCompletableFuture().join();
-            check(factions.readCached(player).membership().orElseThrow() == FactionType.DARK,
+            check(factions.readCached(player).membership().orElseThrow() == FactionType.RED,
                     "membership restart durable");
             check(economy.readCached(player).milli(CurrencyType.NEUTRAL) == 75_000L,
                     "wallet restart durable");

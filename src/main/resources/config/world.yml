@@ -368,7 +368,6 @@ cultists:
       - { type: material, weight: 15, item: SCULK, min: 1, max: 4 }
       - { type: unique, weight: 10, id: emlekszilank, min: 1, max: 1 }
       - { type: unique, weight: 5, id: suttogas_meghivo, min: 1, max: 1 }
-  whisper-suspicion-relief: 15.0
   whisper-loot-rolls: 1
   success-season-points: 3
 

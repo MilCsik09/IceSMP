@@ -78,6 +78,7 @@ public final class FactionCaravanSubcommand implements FactionSubcommand {
                 case "pcaravan-disabled" -> "&cA játékos-karaván ki van kapcsolva.";
                 case "pcaravan-busy" -> "&cMár úton van egy szállítmány — várd meg a végét.";
                 case "pcaravan-no-faction" -> "&cA Menedék vendégeként nincs frakciókasszád; előbb válassz frakciót.";
+                case "pcaravan-dark-exiled" -> "&5A Kitaszítottak nem indíthatnak polgári karavánt.";
                 case "pcaravan-cooldown" -> "&cA frakciód karavánja még pihen — nézz vissza később.";
                 case "pcaravan-bad-amount" -> "&cA rakomány értéke a megengedett sávon kívül esik.";
                 case "pcaravan-poor" -> "&cNincs elég fedezet a frakciókasszában.";

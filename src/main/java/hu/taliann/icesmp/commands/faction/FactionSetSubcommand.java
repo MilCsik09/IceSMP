@@ -100,14 +100,14 @@ public final class FactionSetSubcommand implements FactionSubcommand {
             final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled =
                     onlineTarget.getScheduler().run(plugin, task -> {
                         final FactionType livePrevious = factionManager.getChosenFaction(targetId).orElse(null);
-                        // Membership persistence commits first. PDC/spec side effects must never
-                        // advertise a transition whose factions.yml write failed.
+                        // A DARK membership must never commit without its prerequisites. Sealing
+                        // them first is safe because Exile and Oath may exist without membership.
+                        if (factionType == FactionType.DARK) {
+                            sinManager.sealDarkForFactionOverride(onlineTarget);
+                        }
                         factionManager.setFaction(targetId, factionType);
                         if (livePrevious == FactionType.DARK && factionType != FactionType.DARK) {
                             sinManager.clearDarkPactForFactionOverride(onlineTarget);
-                        }
-                        if (factionType == FactionType.DARK) {
-                            sinManager.sealDarkPact(onlineTarget);
                         }
                         final hu.taliann.icesmp.managers.SpecializationManager specs = specializationManager;
                         if (specs != null) {

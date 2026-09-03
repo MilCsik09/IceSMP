@@ -14,16 +14,18 @@ factions:
   dark:
     display-name: "Kitaszított"
     full-name: "A Kitaszítottak"
-    # A DARK-belépés kétlépcsős megerősítése (a paktum örök): az első /faction join dark
-    # figyelmeztet, ennyi másodpercen belül megismételve lép csak életbe (0 = kikapcsolva).
+    # A DARK csak száműzetés + külön /faction status eskü után választható; a tagságot
+    # ezután is kétlépcsősen kell megerősíteni (0 = megerősítés kikapcsolva).
     join-confirm-seconds: 60
+    # A Kitaszítottakat a polgári boltok nem szolgálják ki; ez az egy NPC kivétel.
+    blackmarket-npc: "feketepiac"
   # ===== Frakcióváltás =====
   # Az ELSŐ csatlakozás (amikor a játékosnak még nincs frakciója) mindig ingyenes
   # és nincs rá cooldown. Ha a játékosnak MÁR van frakciója és másikba lép át
   # (frakcióváltás), azért a JELENLEGI frakciója valutájában kell fizetnie,
   # és csak cooldown-hours óránként válthat újra (money sink + a frakció-hopping
   # ellen). KIVÉTEL (a kód szerint): a Semlegesből bárhová ingyen léphetsz, és a
-  # Sötétbe lépés MINDIG ingyenes — annak a sinner-feltétel + az örök paktum az ára.
+  # Sötétbe lépés MINDIG ingyenes — annak a száműzetés, eskü és társadalmi kizárás az ára.
   switch:
     cost: 500.0
     cooldown-hours: 72.0
@@ -80,9 +82,8 @@ factions:
       # false esetén a scripted/boss/event harci tűz magasabb precedenciájú és nem tompul.
       affect-scripted-combat-fire: false
 
-    # FAGY — a fagyásvédelem erős marad, a fulladás részleges. Az éhségelőny kizárólag
-    # a felsorolt Paper EntityExhaustionEvent okokra vonatkozik: Hunger, REGEN, DAMAGED,
-    # admin- és scripted food-level változást nem töröl, ezért a food-duty is érvényesül.
+    # FAGY — a fagyásvédelem erős marad, a fulladás részleges. Az állóképességelőny
+    # kizárólag a felsorolt természetes Paper EntityExhaustionEvent okokra vonatkozik.
     blue:
       enabled: true
       freeze-damage-multiplier: 0.0
@@ -94,12 +95,6 @@ factions:
         - "SWIM"
         - "WALK_ON_WATER"
         - "WALK_UNDERWATER"
-
-    # Régi telepítések migrációja: ha config.yml-ben vagy a megmaradt régi
-    # config/factions.yml-ben csak ez a kulcs létezik, natural-exhaustion-save-chance
-    # fallbackként átveszi az értékét, warningot ír, és már csak a fenti okokra hat.
-    # Új telepítésen ne állítsd be egyszerre a jelenlegi kulccsal; az új kulcs az elsődleges.
-    # blue-hunger-slow-chance: 0.5
 
     # MENEDÉK — kisebb zuhanássebzés és kezdeményezés-mentes béke. A provokáció,
     # admin/scriptelt célzás, event- és questharc mindig magasabb precedenciájú.
@@ -162,9 +157,6 @@ factions:
           - "icesmp:minion_owner"
         quest-marker-keys:
           - "icesmp:quest_mob"
-  # ===== Állampolgári adó (todo: "itt már lenne állampolgári kötelesség") =====
-  # Időszakonként a nem mentesített frakciók polgárai a saját frakcióvalutájuk
-  # banki egyenlegének rate-percent %-át a frakciókasszába fizetik (money sink).
   # ===== A Vének Tanácsa (a Menedék "király-pótléka" — tulaj-jóváhagyás) =====
   # A NEUTRAL-nak nincs királya: hetente választott, seats fős tanács gyakorolja a
   # GAZDASÁGI jogokat (kassza-kivét saját napi kerettel, karaván-indítás, Vásár-hét
@@ -182,44 +174,17 @@ factions:
     # A király kassza-kivéte FIZIKAI veretben érkezik (bank-only szabály), és
     # naponta legfeljebb ennyit vehet ki (0 = korlátlan — nem ajánlott).
     withdraw-daily-cap: 1000.0
-  tax:
-    enabled: true
-    interval-minutes: 60
-    rate-percent: 2.0
-    # A király a /faction king tax paranccsal ennyiig állíthatja a frakció adókulcsát.
-    max-rate-percent: 10.0
-    # Fejadó: beszedésenként LEGALÁBB ennyi jár, akkor is, ha a számla üres — az üresen
-    # tartott számla így nem adóelkerülés. 0 = csak a százalékos adó él.
-    minimum-amount: 2.0
-    # Amit a számla nem fedez, eredet-frakciónként gyűlik
-    # (treasury.yml: tax-debts.<uuid>.<FACTION>), és a következő beszedésekkor az eredeti
-    # valutából az eredeti kasszába törlesztődik. Ez a bucket plafonja (0 = nincs hátralék).
-    max-arrears: 50.0
-    # Adócsalás: ha a hátralék a plafonon ragad és a beszedés SEMMIT sem tud levonni, strike
-    # jár; ennyi egymást követő strike után a Számvevők feljelentik az adócsalót → +1 bűn
-    # (a bűn-küszöb elérése a meglévő száműzetés-mechanikát indítja — Kitaszítottak közé).
-    # A strike törlődik, amint a tartozás a plafon alá kerül. 0 = kikapcsolva.
-    evasion-strikes: 3
-    exempt:
-      - "NEUTRAL"
-  # ===== Frakció-étel kötelezettség (K6 — "hazai konyha") =====
-  # A Fagy (BLUE) népe halon, a Láng (RED) népe tojás-ételen él: aki grace-hours óta nem
-  # evett ilyet, check-minutes ütemben PUHA honvágy-debuffot kap (rövid Éhség + action-bar
-  # emlékeztető). Új játékos / frissen váltó először türelmi időt kap. Minden kulcs élőben
-  # olvasódik. A K6 signature ételek kis buffot is adnak (lásd a kulcsokat lent).
-  food-duty:
-    enabled: true
-    grace-hours: 12            # ennyi valós óra hazai étel nélkül indul be a honvágy
-    check-minutes: 5           # ellenőrzés/debuff gyakorisága
-    debuff-seconds: 45         # a honvágy-Éhség hossza alkalmanként (érezhető, de nem büntető)
+  # ===== Frakció-ételek =====
+  # Nincs periodikus ételkötelezettség vagy láthatatlan időzítő. A megbízható signature
+  # ételek egyszerű, rövid buffot adnak, ha fogyasztáskor illeszkednek az aktuális tagsághoz.
+  signature-food:
     pisztrang-buff-seconds: 60 # Fagyasztott Tavi Pisztráng: felszívódás-pajzs
     rantotta-buff-seconds: 60  # Főnixtojás-Rántotta: tűz-ellenállás
     suti-speed-seconds: 30     # Tiltott Kakaóbabos Sütemény: gyorsaság II
     suti-launch-y: 0.6         # a süti "robbanásának" felfelé lökése
-    # A DARK-nak van étele (Mortengradi Hamukenyér: éjjellátás-buff), de honvágy-
-    # kötelezettsége NINCS — a Kitaszítottaknak nincs otthonuk, amire honvágyuk lehetne.
+    # DARK étel: Mortengradi Hamukenyér (éjjellátás-buff).
     hamukenyer-buff-seconds: 60
-    # 2-3. hullám — ünnepi ételek MINDEN frakciónak (a duty-t is teljesítik, ahol van):
+    # Ünnepi ételek minden frakciónak:
     # BLUE Sárkány-pörkölt: Erő | RED Vadlakoma: Gyorsaság+Tűzáll | NEUTRAL Vándorünnep
     # Lepénye: Szerencse+Gyorsaság | DARK Hamvak Lakomája: Felszívódás+Éjjellátás.
     porkolt-buff-seconds: 45
@@ -228,18 +193,11 @@ factions:
     hamulakoma-buff-seconds: 60
   # ===== A Suttogók (K9 — rejtett státusz + lelepleződés) =====
   # A Suttogó rejtett státusz a látható frakció fölött (titkos /suttogas csatorna). A Sötét
-  # Rítus: Suttogás-meghívóval (élőhalott-drop), éjjel, sculkon állva, egyedül, SHIFT+jobb
-  # katt — ára vér (rite-hp-cost). A gyanú sötét tettektől nő (rajtakapott rítus/árulás,
-  # tanú-vád), decay-minutes ütemben csökken; a küszöbnél a lelepleződés bűnökkel a
-  # Kitaszítottak közé taszít. Minden kulcs élőben olvasódik.
+  # Rítus: Suttogás-meghívóval, éjjel, sculkon állva, SHIFT+jobb katt; ára vér.
+  # Egy tanú csak ahhoz a játékoshoz kap egyszer használható bizonyítékot, akit látott.
+  # Három érvényes vád: CLEAN → OBSERVED → SUSPECTED → EXPOSED; nincs pont, decay vagy HUD.
   whisper:
     enabled: true
-    suspicion-threshold: 100.0   # e fölött: azonnali lelepleződés
-    decay-minutes: 10            # ilyen gyakran csillapodik a gyanú
-    decay-amount: 5.0            # ennyivel csökken alkalmanként
-    betrayal-suspicion: 40.0     # rajtakapott testvérgyilkosság (Suttogóként)
-    caught-rite-suspicion: 50.0  # rajtakapott Sötét Rítus (a rítus meg is hiúsul)
-    accuse-suspicion: 15.0       # egy tanú-vád súlya (csak valódi Suttogóra hat)
     # A Kitaszítottak is hallják (és használhatják) a Suttogás-csatornát: ők a Néma Királynő
     # NYÍLT népe, a rejtett Suttogók pedig ugyanannak a hálózatnak a másik fele.
     # FIGYELEM — ennek ára van: a csatorna-sor kiírja a feladó nevét, tehát a Kitaszítottak
@@ -256,24 +214,19 @@ factions:
     night-undead-disabled-during-blood-moon: true
     night-undead-break-on-damage: true
     night-undead-retaliation-seconds: 60
-    # Az "árulkodó jel": ha kívülálló látja, hogy a holtak elfordulnak a Suttogótól,
-    # kis eséllyel gyanú tapad rá — a békesség nem teljesen ingyenes. 0 = ki.
-    truce-witness-chance: 0.02
+    # Ha kívülálló látja, hogy a holtak elfordulnak, pontos bizonyítékot kap.
     truce-witness-radius: 16.0
-    truce-witness-suspicion: 1.0
     # Suttogó-erősítés: a feketepiacon a felesküdöttek CSENDES kedvezményt kapnak
     # (a kijelzett ár marad, a levonás kevesebb — semmi látható nem leplezi le őket).
-    blackmarket-npc: "feketepiac"
     blackmarket-discount-percent: 25
-    witness-seconds: 120         # a Tanú-token élettartama
-    witness-radius: 24.0         # ekkora körben kapnak tokent az árulás szemtanúi
-    rite-alone-radius: 16.0      # a rítushoz ekkora körben nem lehet más játékos
+    witness-seconds: 120         # a célhoz kötött bizonyíték élettartama
+    witness-radius: 24.0         # ekkora körben kapnak bizonyítékot az árulás tanúi
+    rite-witness-radius: 16.0    # ekkora körben észlelhetik a rítust
     rite-hp-cost: 6.0            # a vér-áldozat (HP)
-    exposure-sins: 4             # a lelepleződés bűn-terhe (a bűn-küszöb visz a DARK-ba)
     expose-broadcast: true       # szerver-broadcast a leleplezésről
   # ===== Bűn-számláló és száműzetés =====
-  # Gyilkosság = +1 bűn; a küszöb elérésekor automatikus száműzetés a Sötét
-  # frakcióba (örök sötét paktummal). Raid alatt a hadviselők közti ölés nem bűn.
+  # Gyilkosság = +1 Infamy. A Wanted és Exile külön tengely; az Exile nem vált
+  # automatikusan frakciót és nem tesz DARK esküt. Raid alatt a hadviselők közti ölés nem bűn.
   sins:
     murder-counts: true
     # A Kitaszított (DARK) áldozat ölése SOSEM bűn — a törvényen kívül áll. (Korábban

@@ -1374,7 +1374,7 @@ profession-recipes:
     result: {material: ENCHANTED_BOOK, amount: 1, enchant: "icesmp:kaosz_zabla:1", item-model: "icesmp:kaosz_zabla_tekercs"}
     ingredients: ["BOOK:1", "IRON_CHAIN:8", "MAGMA_CREAM:8", "unique:karhozat_parazs:1"]
   # ===== K6 — frakció-ételek (a kódex "konyhái"; a fogyasztási kötelezettséget a
-  # factions.food-duty vezérli — a hazai étel evése nullázza a honvágy-visszaszámlálót) =====
+  # factions.signature-food vezérli — nincs honvágy-időzítő vagy ételkötelezettség) =====
   fagyasztott_pisztrang:
     profession: cook
     kind: egyedi

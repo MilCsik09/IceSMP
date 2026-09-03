@@ -70,6 +70,17 @@ public final class ShopManager {
         return getShop(npcName) != null;
     }
 
+    /** DARK is excluded from civil vendors; its configured black market remains available. */
+    public String accessError(final Player player, final String npcName) {
+        if (player == null || !factionManager.isMember(player.getUniqueId(), FactionType.DARK)) {
+            return null;
+        }
+        final String blackmarket = configManager.getString(
+                "factions.dark.blackmarket-npc", "feketepiac");
+        return npcName != null && npcName.equalsIgnoreCase(blackmarket)
+                ? null : "shop-dark-exiled";
+    }
+
     public ConfigurationSection getShop(final String npcName) {
         if (npcName == null || configManager.getConfiguration() == null) {
             return null;
@@ -197,6 +208,10 @@ public final class ShopManager {
     }
 
     public synchronized String buy(final Player buyer, final String npcName, final int index) {
+        final String accessError = accessError(buyer, npcName);
+        if (accessError != null) {
+            return accessError;
+        }
         final ConfigurationSection shop = getShop(npcName);
         if (shop == null) {
             return "shop-closed";
@@ -228,7 +243,7 @@ public final class ShopManager {
         final WhisperManager whisperRef = whisperManager;
         if (price > 0.0D && whisperRef != null
                 && npcName != null && npcName.equalsIgnoreCase(
-                        configManager.getString("factions.whisper.blackmarket-npc", "feketepiac"))
+                        configManager.getString("factions.dark.blackmarket-npc", "feketepiac"))
                 && whisperRef.isWhispererCached(buyer.getUniqueId())) {
             final double discount = Math.max(0.0D, Math.min(90.0D,
                     configManager.getDouble("factions.whisper.blackmarket-discount-percent", 25.0D)));

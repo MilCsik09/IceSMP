@@ -40,12 +40,12 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 121 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug). |
 | `spells/` | 60 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `commands/` | 96 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
 | `quest/` | 8 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
 | `gui/` | 69 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
-| `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
+| `factions/` | 14 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, pontos Suttogó-evidence ledger, mulandó retaliation state és a központi frakció-névszín paletta; a tartós tagság és bűnállapot a PlayerProfile faction szekciójában él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 13 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…) + viselhető prezentáció. |
@@ -168,15 +168,13 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
     restartnál recoveryt ad. A wallet, market YAML és player inventory között nincs formális
     több-store atomicitás vagy exactly-once bizonyítás; a globális currency gate külön
     egyszerűsítési és runtime-validációs scope.
-  - **Frakcióváltás- és adó-WAL** (`faction-switch-journal.yml`,
-    `faction-tax-journal.yml`): a `DurableTransactionProtocol` előbb tartós prepare rekordot ír,
-    majd exact wallet before/after snapshotot commitol, ezután írja a teljes membership- vagy
-    treasury/debt snapshotot. Domain-write hiba esetén tartós wallet-kompenzáció történik; ha a
-    kompenzáció sem írható, a journal megmarad és a globális critical-write circuit fail-closed
-    állapotot tart fenn. Sikeres domain commit utáni journal-cleanup hiba nem fordítja vissza a
-    már commitolt store-okat: boot recovery az all-before/all-after kombinációt idempotensen lezárja.
-    Ez kontrollált process-crash recovery, nem hardverhibára vagy elvesző fsync-re vonatkozó
-    elosztott exactly-once garancia.
+  - **Frakcióváltás-WAL** (`faction-switch-journal.yml`): a
+    `DurableTransactionProtocol` előbb tartós prepare rekordot ír, majd exact wallet
+    before/after snapshotot commitol, ezután írja a teljes membership snapshotot.
+    Domain-write hiba esetén tartós wallet-kompenzáció történik; ha a kompenzáció sem
+    írható, a journal megmarad és a globális critical-write circuit fail-closed állapotot
+    tart fenn. A régi adósság/outbox és `faction-tax-journal.yml` formátum csak
+    kompatibilitási maradvány: nincs aktív adóütemező vagy új adótranzakció.
 
   - **Szezon–community generation commit** (`season.yml` → `community-goals.yml`): a community store tartós `season.number` markerrel jelöli, melyik szezonhoz tartozik a progressz. A zárás a community monitor alatt előbb rendezi az outboxot, majd commitolja az új `season.yml` generációt, és csak ezután nullázza/menti a community progresszt. Crash a két commit között egyetlen generációnyi marker-lemaradást hagy; bootkor ez idempotens resetként reconciliálódik. Függő régi payout, előreszaladt vagy több generációt átugró marker fail-closed.
 
@@ -352,18 +350,13 @@ Menedék vendége, de nem `NEUTRAL` polgár. A `FactionManager` API-jának szere
   hozhat létre új ingyenes első választást, és nem kerülheti meg a szezonvégi
   lockoutot vagy a szezonális váltási limitet.
 
-Quest, community goal, season source, council, tax, raid/duel/spy, caravan,
+Quest, community goal, season source, council, raid/duel/spy, caravan,
 dungeon/world-boss jutalom és minden más frakciós jogosultság ugyanebből az
 explicit modellből indul. Az onboarding fix `NEUTRAL` Creutzér-jutalma
-vendég-útravaló; nem tesz állampolgárrá. A vendég nincs az aktuális periodikus
-adóbeszedési körben, de a hiányzó assignment nem törölheti egy korábbi polgár
-adóhátralékát vagy adócsalási strike-ját. A `PlayerProfileTaxStore` minden
-tartozást és strike-ot az owner profil ECONOMY szekciójában, eredet-frakció szerint tart nyilván:
-váltáskor a régi tétel nem konvertálódik, hanem az eredeti valutából az eredeti kasszába
-törlesztődik. A legacy `tax-arrears` / `tax-evasion-strikes` import eredet-frakciója a scalar
-sémából nem bizonyítható, ezért nem kerül automatikusan új frakcióhoz. A támogatott runtime
-nem tart fenn külön YAML- vagy UUID-map authority-t: a PlayerProfile-tól független régi
-ledger/journal implementáció nincs bekötve.
+vendég-útravaló; nem tesz állampolgárrá. A periodikus adóbeszedés megszűnt.
+A `PlayerProfileTaxStore` régi debt/outbox adatai és a protokollmezők csak
+kompatibilitási formátumként maradnak, scheduler, játékosparancs és új beszedés
+nélkül. A támogatott runtime nem tart fenn külön YAML- vagy UUID-map authority-t.
 
 A `FactionManager` a teljes assignment+history generációt írja lemezre, mielőtt
 volatile live state-et vagy lifecycle-hookot publikál. Fizetős váltásnál a
@@ -432,9 +425,10 @@ a vad truce-ot felülírja**; provokáció és markerelt harci content szintén 
 A rejtett Suttogó-státusz ugyanezt a resolver/retaliation infrastruktúrát
 használja, de nem DARK polgárjog: alapból csak éjjel, targetenként `0.35`
 cancel-esélyt kap, Vérhold alatt leáll, provokációra `60 s`-re megtörik. A
-markerelt harci content itt is megelőzi. A truce tanúja külön
-`factions.whisper.truce-witness-*` gyanúágat indíthat; ez a rejtett státusz ára,
-nem faction-benefit assignment.
+markerelt harci content itt is megelőzi. A truce közeli tanúja a
+`WhisperEvidenceLedger` mulandó tanú–cél bejegyzését kapja. Egy bejegyzés csak a
+konkrét cél ellen és egyszer használható; három érvényes vád a tartós `CLEAN →
+OBSERVED → SUSPECTED → EXPOSED` állapotgépet lépteti. Nincs gyanúpont vagy decay.
 
 Minden `factions.passives.*` gameplay-érték reloadkor egyetlen config-generationből
 épülő új snapshotba kerül; `/icesmp reload` után restart nem szükséges. A
@@ -479,7 +473,7 @@ proximity/reward és más több-régiós hívási láncok valódi Folia tesztet 
 minták, amelyeket új kódnál is tartani kell:
 - **Nincs** legacy `Bukkit.getScheduler()` / `BukkitRunnable` / `runTask*` / nyers `Thread`/`Timer`/`Executor`.
 - **Nincs** szinkron `teleport(...)` — mindenhol `teleportAsync(...)`.
-- **Globális ismétlődő tickek** (`IceSMPCore`: world-events, HUD, pet, adó, gazdaság-esemény) csak
+- **Globális ismétlődő tickek** (`IceSMPCore`: world-events, HUD, pet, gazdaság-esemény) csak
   kockát dobnak / memóriabeli állapotot olvasnak; minden játékos-/entitás-munkára **hoppolnak**:
   `player.getScheduler().run(...)` (HUD, vér-hold), `pet.getScheduler().run(...)` (pet-mutáció),
   `anchor.getScheduler()` → `getRegionScheduler(location)` (world-boss / invázió mob-spawn).
@@ -932,8 +926,8 @@ Clicks only modify an in-memory per-admin session. **Save** performs one asynchr
 inventory or disconnecting writes nothing. Middle-click removes the override and restores the packaged default.
 A second admin save or external file edit makes an older session stale; stale sessions are rejected without overwriting data.
 
-Entries display whether their effect is live, applied by a reload hook, or requires a restart. In particular the faction-tax
-scheduler toggle/interval is restart-required; event safety and vanish capabilities are live/reload-safe.
+Entries display whether their effect is live, applied by a reload hook, or requires a restart. The former faction-tax
+scheduler controls are no longer exposed because the scheduler was removed; event safety and vanish capabilities are live/reload-safe.
 
 ## Frakcióhoz kötött játékosnév-színek
 
@@ -1570,8 +1564,8 @@ presentation).
 A `FACTION_STATE` a saját frakció display-projekciója a `FACTION_SCREEN` capability +
 `client.features.faction-screen` kapu mögött — az az adatkör, amit a /menu
 frakció-fejléce, a /faction king|treasury|raid status|war és az /events szezon-állása
-mutat: tagság (Menedék-vendégnél üres frakció-blokk), kincstár-egyenleg formázva +
-adókulcs, király + szavazat-tally (a menü-úttal azonos névfeloldással), szezon-állás
+mutat: tagság (Menedék-vendégnél üres frakció-blokk), kincstár-egyenleg formázva,
+király + szavazat-tally (a menü-úttal azonos névfeloldással), szezon-állás
 mind a négy frakcióra (publikus broadcast-adat — vendégnek is utazik), az élő raid
 teljes státusza és a hadi-ablak. A PlayerProfile-internals (membership-history,
 receipts, váltás-számlálók) nem kerülnek a vezetékre. Frakció-mutáció (join/leave)
@@ -1579,7 +1573,8 @@ szándékosan NEM protokoll-action: a csatlakozás forrás-kötött (a FactionSw
 csak a Menedék fővárosában validálja), egy kliens-csomag hely-authority bypass lenne
 — a váltás-folyamat a /faction és /menu validált útján marad. A perc-felbontású
 visszaszámlálók miatt a bájt-dedupe percenként legfeljebb egyszer enged ki friss
-state-et.
+state-et. A korábban kiadott kliensprotokoll adómezője bináris kompatibilitás miatt
+megmarad, de a szerver mindig `0` értéket küld és a natív UI nem jeleníti meg.
 
 ### FX-esemény csatorna (FX_EVENT, Phase 8b)
 

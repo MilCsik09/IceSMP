@@ -169,9 +169,7 @@ public final class ConfigMenuEntryRenderer {
                 || key.equals("world-events.check-interval-seconds")
                 || key.equals("settings.disable-locator-bar")
                 || key.equals("pets.companion.tick-ticks")
-                || key.equals("currency.economy-event.check-interval-minutes")
-                || key.equals("factions.tax.enabled")
-                || key.equals("factions.tax.interval-minutes")) {
+                || key.equals("currency.economy-event.check-interval-minutes")) {
             return EffectMode.RELOAD_HOOK;
         }
         return EffectMode.LIVE;

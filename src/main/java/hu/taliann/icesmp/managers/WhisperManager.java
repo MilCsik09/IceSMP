@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.factions.WhisperEvidenceLedger;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperStore;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -14,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** PlayerProfile-backed hidden whisperer role and suspicion domain. */
+/** PlayerProfile-backed hidden whisperer role with fixed, evidence-driven exposure stages. */
 public final class WhisperManager implements hu.taliann.icesmp.session.PlayerStateCleanup {
 
     private final JavaPlugin plugin;
@@ -23,12 +24,9 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
     private final SinManager sinManager;
     private final MessageManager messageManager;
     private final PlayerProfileWhisperStore whisperStore = new PlayerProfileWhisperStore();
-
-    /** Short-lived witness tokens are runtime-only and intentionally not persisted. */
-    private final Map<UUID, Long> witnessUntil = new ConcurrentHashMap<>();
+    private final WhisperEvidenceLedger evidence = new WhisperEvidenceLedger();
     /** Online routing projection rebuilt from PlayerProfile. */
     private final java.util.Set<UUID> whispererCache = ConcurrentHashMap.newKeySet();
-    private volatile long nextDecayAt;
 
     public WhisperManager(final JavaPlugin plugin, final ConfigManager configManager,
                           final FactionManager factionManager, final SinManager sinManager,
@@ -44,18 +42,18 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
         return configManager.getBoolean("factions.whisper.enabled", true);
     }
 
-    /** Cultist success reduces suspicion only after the durable section-CAS commits. */
-    public void rewardFaithful(final double relief) {
-        if (!isEnabled() || !Double.isFinite(relief) || relief <= 0.0D) return;
-        final double threshold = suspicionThreshold();
+    /** A successful cultist event removes one exposure stage and still shares its loot. */
+    public void rewardFaithful() {
+        if (!isEnabled()) return;
         for (final Player online : List.copyOf(Bukkit.getOnlinePlayers())) {
             if (!isWhispererCached(online.getUniqueId())) continue;
-            whisperStore.adjust(online.getUniqueId(), -relief, threshold)
+            whisperStore.applyCover(online.getUniqueId())
                     .whenComplete((result, failure) -> online.getScheduler().run(plugin, task -> {
                         if (failure != null || result == null || !result.state().whisperer()) return;
-                        online.sendMessage(messageManager.getMessage("whisper-queen-favor",
-                                "<dark_gray>🕯 A Kapu érzi a hűséged — a gyanú árnyéka halványul körülötted. <gray>(−{relief} gyanú)</gray></dark_gray>",
-                                Map.of("relief", String.valueOf((int) relief))));
+                        if (result.applied()) {
+                            online.sendMessage(messageManager.getMessage("whisper-queen-favor",
+                                    "<dark_gray>🕯 A Kapu érzi a hűséged — eggyel halványabb lett körülötted a gyanú.</dark_gray>"));
+                        }
                         final int lootRolls = Math.max(0,
                                 configManager.getInt("cultists.whisper-loot-rolls", 1));
                         boolean gaveAny = false;
@@ -101,6 +99,12 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
         catch (final RuntimeException notReady) { return false; }
     }
 
+    public PlayerProfileWhisperStore.Stage getStage(final Player player) {
+        if (player == null) return PlayerProfileWhisperStore.Stage.CLEAN;
+        try { return whisperStore.read(player.getUniqueId()).stage(); }
+        catch (final RuntimeException notReady) { return PlayerProfileWhisperStore.Stage.CLEAN; }
+    }
+
     public void makeWhisperer(final Player player) {
         if (player == null || !canBecomeWhisperer(player)) return;
         whisperStore.makeWhisperer(player.getUniqueId())
@@ -138,54 +142,46 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
         }
     }
 
-    public double getSuspicion(final Player player) {
-        if (player == null) return 0.0D;
-        try { return whisperStore.read(player.getUniqueId()).suspicion(); }
-        catch (final RuntimeException notReady) { return 0.0D; }
-    }
-
-    public void addSuspicion(final Player player, final double amount) {
-        if (!isEnabled() || player == null || !isWhisperer(player)
-                || !Double.isFinite(amount) || amount <= 0.0D) return;
-        whisperStore.adjust(player.getUniqueId(), amount, suspicionThreshold())
-                .whenComplete((result, failure) -> player.getScheduler().run(plugin, task -> {
+    public void recordAccusation(final Player suspect) {
+        if (!isEnabled() || suspect == null || !isWhisperer(suspect)) return;
+        whisperStore.advance(suspect.getUniqueId())
+                .whenComplete((result, failure) -> suspect.getScheduler().run(plugin, task -> {
                     if (failure != null || result == null) {
-                        plugin.getLogger().severe("PlayerProfile suspicion mutation failed for "
-                                + player.getUniqueId() + ": " + rootMessage(failure));
+                        plugin.getLogger().severe("PlayerProfile whisper accusation failed for "
+                                + suspect.getUniqueId() + ": " + rootMessage(failure));
                         return;
                     }
+                    suspect.sendMessage(messageManager.getMessage("whisper-stage-advanced",
+                            "<red>A leleplezés közelebb ért: <white>{stage}</white>.</red>",
+                            Map.of("stage", result.state().stage().displayName())));
                     if (result.exposed()) {
-                        whispererCache.remove(player.getUniqueId());
-                        applyExposure(player);
+                        whispererCache.remove(suspect.getUniqueId());
+                        applyExposure(suspect);
                     }
                 }, null));
     }
 
-    public void grantWitnessToken(final UUID playerId) {
+    public void grantEvidence(final UUID witnessId, final UUID suspectId) {
         final long seconds = Math.max(10L,
                 configManager.getLong("factions.whisper.witness-seconds", 120L));
-        witnessUntil.put(playerId, System.currentTimeMillis() + seconds * 1000L);
+        final long ttlMillis = seconds > Long.MAX_VALUE / 1_000L
+                ? Long.MAX_VALUE : seconds * 1_000L;
+        evidence.grant(witnessId, suspectId, ttlMillis);
     }
 
-    public boolean hasWitnessToken(final UUID playerId) {
-        final Long until = witnessUntil.get(playerId);
-        if (until == null) return false;
-        if (until <= System.currentTimeMillis()) {
-            witnessUntil.remove(playerId);
-            return false;
-        }
-        return true;
+    public boolean hasEvidence(final UUID witnessId, final UUID suspectId) {
+        return evidence.has(witnessId, suspectId);
     }
 
-    public void consumeWitnessToken(final UUID playerId) {
-        witnessUntil.remove(playerId);
+    public boolean consumeEvidence(final UUID witnessId, final UUID suspectId) {
+        return evidence.consume(witnessId, suspectId);
     }
 
-    /** Explicit exposure first clears PlayerProfile, then runs owner-thread effects. */
+    /** Explicit exposure first commits the final stage, then runs owner-thread effects. */
     public void expose(final Player player) {
         if (player == null || !isWhisperer(player)) return;
         whispererCache.remove(player.getUniqueId());
-        whisperStore.clear(player.getUniqueId())
+        whisperStore.forceExpose(player.getUniqueId())
                 .whenComplete((state, failure) -> player.getScheduler().run(plugin, task -> {
                     if (failure != null) {
                         reconcileMembership(player);
@@ -208,9 +204,7 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WITHER_AMBIENT, 1.0F, 0.4F);
         player.addPotionEffect(new org.bukkit.potion.PotionEffect(
                 org.bukkit.potion.PotionEffectType.BLINDNESS, 60, 0, false, false, false));
-        final int sins = Math.max(1,
-                configManager.getInt("factions.whisper.exposure-sins", 4));
-        sinManager.addSin(player, sins);
+        sinManager.exile(player);
         if (configManager.getBoolean("factions.whisper.expose-broadcast", true)) {
             Bukkit.getServer().broadcast(messageManager.getMessage(
                     "whisper-exposed",
@@ -238,42 +232,17 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
         }
     }
 
-    public void tick() {
-        if (!isEnabled()) return;
-        final long now = System.currentTimeMillis();
-        if (now < nextDecayAt) return;
-        nextDecayAt = now + Math.max(1L,
-                configManager.getLong("factions.whisper.decay-minutes", 10L)) * 60_000L;
-        final double decay = Math.max(0.0D,
-                configManager.getDouble("factions.whisper.decay-amount", 5.0D));
-        if (decay <= 0.0D) return;
-        for (final UUID playerId : List.copyOf(whispererCache)) {
-            final Player player = Bukkit.getPlayer(playerId);
-            if (player == null) continue;
-            whisperStore.adjust(playerId, -decay, suspicionThreshold())
-                    .exceptionally(failure -> {
-                        plugin.getLogger().severe("PlayerProfile whisper decay failed for "
-                                + playerId + ": " + rootMessage(failure));
-                        return null;
-                    });
-        }
-    }
-
     public boolean canBecomeWhisperer(final Player player) {
         return player != null
                 && factionManager.isEligibleForFactionBenefits(player.getUniqueId())
                 && !factionManager.isMember(player.getUniqueId(), FactionType.DARK)
+                && !sinManager.isExiled(player)
                 && !isWhisperer(player);
-    }
-
-    private double suspicionThreshold() {
-        return Math.max(1.0D,
-                configManager.getDouble("factions.whisper.suspicion-threshold", 100.0D));
     }
 
     @Override
     public void clearPlayerState(final UUID playerId) {
-        witnessUntil.remove(playerId);
+        evidence.clearPlayer(playerId);
         whispererCache.remove(playerId);
     }
 

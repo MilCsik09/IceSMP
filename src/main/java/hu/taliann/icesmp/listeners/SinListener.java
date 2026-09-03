@@ -208,7 +208,7 @@ public final class SinListener implements Listener {
         final int victimSins = sinManager.getSinCount(victim);
         final int minimum = Math.max(1,
                 configManager.getInt("factions.sins.bounty.min-sins", 3));
-        if (victimSins < minimum) {
+        if (!sinManager.isWanted(victim)) {
             return false;
         }
 

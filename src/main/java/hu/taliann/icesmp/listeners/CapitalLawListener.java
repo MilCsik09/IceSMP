@@ -229,12 +229,12 @@ public final class CapitalLawListener implements Listener {
         return zone != null && zone.type() == TerritoryType.CAPITAL && zone.faction() == FactionType.NEUTRAL;
     }
 
-    /** Körözött: elérte a vérdíj-küszöböt (factions.sins.bounty.min-sins). */
+    /** Körözött: a bűn-authority tartós Wanted tengelye aktív. */
     private boolean isWanted(final Player player) {
         if (!configManager.getBoolean("factions.sins.bounty.enabled", true)) {
             return false;
         }
-        return sinManager.getSinCount(player) >= Math.max(1, configManager.getInt("factions.sins.bounty.min-sins", 3));
+        return sinManager.isWanted(player);
     }
 
     /** Van-e nála Hamisított Menlevél (signature-tagelt feketepiac-áru). */

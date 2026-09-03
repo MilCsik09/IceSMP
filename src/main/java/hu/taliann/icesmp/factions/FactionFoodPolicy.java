@@ -33,44 +33,6 @@ public final class FactionFoodPolicy {
         return required != null && currentFaction == required;
     }
 
-    /** Revalidates a queued food-duty callback against the live config and membership. */
-    public static boolean mayRunDutyCallback(final boolean enabled,
-                                             final FactionType currentFaction) {
-        return enabled && (currentFaction == FactionType.BLUE
-                || currentFaction == FactionType.RED);
-    }
-
-    /** Converts a positive config duration without overflow; zero means fail-closed/disabled. */
-    public static long durationMillis(final long value, final long unitMillis) {
-        if (value <= 0L || unitMillis <= 0L) {
-            return 0L;
-        }
-        try {
-            return Math.multiplyExact(value, unitMillis);
-        } catch (final ArithmeticException overflow) {
-            return 0L;
-        }
-    }
-
-    /** Builds a future deadline without wrapping into the past. */
-    public static long deadline(final long now, final long delayMillis) {
-        if (now < 0L || delayMillis <= 0L) {
-            return 0L;
-        }
-        try {
-            return Math.addExact(now, delayMillis);
-        } catch (final ArithmeticException overflow) {
-            return 0L;
-        }
-    }
-
-    /** Corrupt/future timestamps and invalid durations never trigger a duty debuff. */
-    public static boolean hasGraceElapsed(final long now, final long last,
-                                          final long graceMillis) {
-        return now >= 0L && last >= 0L && graceMillis > 0L && now >= last
-                && now - last >= graceMillis;
-    }
-
     /** Converts seconds to Paper ticks without int overflow; zero means skip the effect. */
     public static int durationTicks(final int seconds) {
         if (seconds <= 0) {

@@ -33,6 +33,12 @@ public final class ShopGUI {
     public static void open(final Player viewer, final ShopManager shopManager,
                             final CurrencyManager currencyManager, final MessageManager messageManager,
                             final String npcName) {
+        final String accessError = shopManager.accessError(viewer, npcName);
+        if (accessError != null) {
+            viewer.sendMessage(messageManager.get(accessError,
+                    "&5A Kitaszítottakat a polgári kereskedők nem szolgálják ki."));
+            return;
+        }
         final List<ConfigurationSection> items = shopManager.getItems(npcName);
         final int rows = Math.max(1, Math.min(6, (int) Math.ceil(items.size() / 9.0)));
         final int size = rows * 9;

@@ -101,8 +101,6 @@ public record FactionPassiveSettings(
             boolean disabledDuringBloodMoon,
             boolean breakOnDamage,
             long retaliationMillis,
-            double witnessChance,
-            double witnessRadius,
-            double witnessSuspicion) {
+            double witnessRadius) {
     }
 }

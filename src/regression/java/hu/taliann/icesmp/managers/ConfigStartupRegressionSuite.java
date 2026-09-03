@@ -344,7 +344,9 @@ public final class ConfigStartupRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/core/ConfigRuntimeReloadBridge.java"));
         check(bridge.contains("relicManager.load()")
                         && bridge.contains("mobScalingManager")
-                        && bridge.contains("scheduleTaxCollection"),
+                        && !bridge.contains("scheduleTaxCollection")
+                        && !bridge.contains("nextDecayAt")
+                        && !bridge.contains("food-duty"),
                 "cached config systems are not applied live");
     }
 

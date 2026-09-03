@@ -2,6 +2,8 @@ package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.SpellSchool;
+import hu.taliann.icesmp.data.Territory;
+import hu.taliann.icesmp.data.TerritoryType;
 import hu.taliann.icesmp.factions.FactionCombatMarkers;
 import hu.taliann.icesmp.factions.FactionPassiveAdapterPolicy;
 import hu.taliann.icesmp.factions.FactionMembership;
@@ -10,7 +12,9 @@ import hu.taliann.icesmp.factions.FactionPassiveConfig;
 import hu.taliann.icesmp.factions.FactionPassivePolicy;
 import hu.taliann.icesmp.factions.FactionPassiveService;
 import hu.taliann.icesmp.factions.FactionPassiveSettings;
+import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.managers.WhisperManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
 import hu.taliann.icesmp.utils.PositionCache;
@@ -30,6 +34,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExhaustionEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.persistence.PersistentDataType;
@@ -58,6 +63,8 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
     private final JavaPlugin plugin;
     private final FactionManager factionManager;
     private final WhisperManager whisperManager;
+    private final BloodMoonManager bloodMoonManager;
+    private final TerritoryManager territoryManager;
     private final FactionPassiveConfig config;
     private final FactionPassivePolicy policy;
     private final FactionPassiveService state;
@@ -71,7 +78,9 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
                                   final FactionPassiveConfig config,
                                   final FactionPassivePolicy policy,
                                   final FactionPassiveService state,
-                                  final FactionMobContextResolver mobContexts) {
+                                  final FactionMobContextResolver mobContexts,
+                                  final BloodMoonManager bloodMoonManager,
+                                  final TerritoryManager territoryManager) {
         this.plugin = plugin;
         this.factionManager = factionManager;
         this.whisperManager = whisperManager;
@@ -79,6 +88,8 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         this.policy = policy;
         this.state = state;
         this.mobContexts = mobContexts;
+        this.bloodMoonManager = bloodMoonManager;
+        this.territoryManager = territoryManager;
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -100,6 +111,22 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         final double multiplier = policy.damageMultiplier(
                 factionManager.getMembership(player.getUniqueId()), channel, settings);
         applyDamageMultiplier(event, multiplier);
+    }
+
+    /** DARK pays a visible, fixed everyday healing cost outside high-stakes content. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRegainHealth(final EntityRegainHealthEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+        final Territory territory = territoryManager.getTerritoryAt(player.getLocation());
+        final boolean highStakesExempt = bloodMoonManager.isActive()
+                || territory != null && territory.type() == TerritoryType.DUNGEON;
+        final double multiplier = policy.healingMultiplier(
+                factionManager.getMembership(player.getUniqueId()), highStakesExempt);
+        if (multiplier != 1.0D) {
+            event.setAmount(event.getAmount() * multiplier);
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -336,17 +363,16 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
 
     private void recordWhisperWitness(final Player player,
                                       final FactionPassiveSettings.Whisper whisper) {
-        if (whisper.witnessChance() <= 0.0D
-                || ThreadLocalRandom.current().nextDouble() >= whisper.witnessChance()) {
+        if (whisper.witnessRadius() <= 0.0D) {
             return;
         }
         final UUID playerId = player.getUniqueId();
-        if (!PositionCache.hasNearbyPlayer(playerId, whisper.witnessRadius(),
-                witnessId -> !whisperManager.isWhispererCached(witnessId))) {
-            return;
+        for (final UUID witnessId : PositionCache.nearbyPlayerIds(
+                playerId, whisper.witnessRadius())) {
+            if (!whisperManager.isWhispererCached(witnessId)) {
+                whisperManager.grantEvidence(witnessId, playerId);
+            }
         }
-        player.getScheduler().run(plugin,
-                task -> whisperManager.addSuspicion(player, whisper.witnessSuspicion()), null);
     }
 
     private static UUID damagingPlayerId(final EntityDamageByEntityEvent event) {

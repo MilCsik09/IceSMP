@@ -142,8 +142,8 @@ Négy nagy hovatartozás alakítja a világot:
 |---|---|---|
 | 🔥 **Láng — Perinfernicitas** | `red` | a környezeti tűz, égés és magma sebzésének 25%-a, a láváénak 50%-a marad; entitás okozta tűznél 75% marad |
 | ❄️ **Fagy — Cryghaliris** | `blue` | nincs fagyássebzés, a fulladássebzés 50%-a marad; 25% esély a kijelölt természetes exhaustion elkerülésére |
-| ⚖️ **Menedék — Ryanora és Caldestera** | `neutral` | a zuhanássebzés 50%-a marad; spontán békés/semleges mob- és Enderman-szemkontaktus-aggró szűrése; adómentes polgárság |
-| 💀 **Kitaszítottak** | `dark` | a Wither-sebzés és -idő 50%-a marad; ambient városi undead-béke és enyhített éjszakai vad undead-előny, súlyos történeti és jogi árral |
+| ⚖️ **Menedék — Ryanora és Caldestera** | `neutral` | a zuhanássebzés 50%-a marad; spontán békés/semleges mob- és Enderman-szemkontaktus-aggró szűrése |
+| 💀 **Kitaszítottak** | `dark` | a Wither-sebzés és -idő 50%-a marad; ambient városi undead-béke és enyhített éjszakai vad undead-előny, állandó civil és gyógyítási árral |
 
 Belépés: `/faction join <red|blue|neutral|dark>`.
 
@@ -166,8 +166,8 @@ Belépés: `/faction join <red|blue|neutral|dark>`.
 - A Láng passzívja **nem** oltja ki az IceSMP `TUZ` varázslatiskolát, és a
   markerelt boss-/eventsebzés alapból felülírhatja a környezeti védelmet.
 - A Fagy exhaustion-előnye csak a konfigurált természetes mozgásforrásokra
-  vonatkozik. Hunger-effektet, scripted éhséget, adminműveletet vagy az
-  elmaradt hazai étel miatti food-duty következményét nem törli. A signature
+  vonatkozik. Hunger-effektet, scripted éhséget vagy adminműveletet nem töröl.
+  Nincs periodikus ételkötelezettség. A signature
   ételek buffja fogyasztáskor ellenőrzi az aktuális explicit tagságot: egy
   vendég, másik frakció tagja vagy időközben resetelt játékos nem örökli a
   tárgy korábbi tulajdonosának frakcióelőnyét.
@@ -186,12 +186,15 @@ Belépés: `/faction join <red|blue|neutral|dark>`.
 
 ### A Kitaszítottak
 
-A `dark` nem egyszerű színcsere. Bűn, száműzetés és egy sötét paktum kapcsolódik
-hozzá. Az önkéntes belépés kétszeri megerősítést kér, a paktumból pedig csak a
-játékban megismerhető vezeklés vezet ki.
+A `dark` nem egyszerű színcsere. Előbb száműzötté kell válnod, utána külön
+`/faction status eskü` paranccsal esküt tenned, végül a `/faction join dark`
+parancsot kétszer megerősítened. A száműzetés, az eskü és a tagság külön
+állapot: egyik sem váltja ki automatikusan a következőt.
 
-A csábító előnyök mellé valódi kockázat jár: a bűnös jel, a körözés és a világ
-bizalmatlansága. Ne lépj be úgy, hogy a figyelmeztetést nem olvastad el.
+A csábító előnyök mellé valódi ár jár: normál helyzetben csak a kiszámolt
+gyógyítás 70%-át kapod, a polgári kereskedők elutasítanak, játékos-karavánt nem
+indíthatsz, a komp pedig kétszeres díjat kér. Vérhold és dungeon terület alatt a
+gyógyítási hátrány nem él; a kijelölt feketepiac továbbra is kiszolgál.
 
 ### Törvény, bűn és vérdíj
 
@@ -200,6 +203,8 @@ idegen területen elkövetett lopással. Raid, törvényes hadi-ablak és körö
 bűnöző levadászása eltérő szabályokat követhet.
 
 - `/bounty` — körözöttek és vérdíjak.
+- `/faction status` — a saját tagságod, Infamy, Wanted, Exile, eskü és rejtett
+  fokozatod parancsos összesítése; ezekből nem lesz új HUD-mérő.
 - A rendszer jelzi, ha egy támadás vagy ölés bűnnek számított.
 - Sok bűn száműzetéshez vezethet.
 - A bűnpont és a sötét paktum nem feltétlenül ugyanaz: egyik eltűnése nem
@@ -301,13 +306,10 @@ Nincs vételár; amit elviszel, azt egy másik játékos neked szánta.
 
 ### Miért kerül pénzbe ennyi minden?
 
-Piaci díj, adó, frakcióváltás, claim-bővítés, rituálé, komp, ládakulcs és
-szakmai kellék is kivonhat pénzt a gazdaságból. Ezek tartják értékesnek a
-veretet. Az explicit Menedék (`NEUTRAL`) polgár adómentes; az assignment nélküli
-vendég nem tagja a polgári adóbeszedési körnek. Más frakcióknál hátralék is
-keletkezhet, ezért ne hagyd figyelmen kívül a pénzügyi figyelmeztetéseket. A
-frakcióváltás a régi tartozást nem váltja át: azt továbbra is az eredeti
-frakció valutájában, az eredeti kassza felé kell rendezni.
+Piaci díj, frakcióváltás, claim-bővítés, rituálé, komp, ládakulcs és szakmai
+kellék is kivonhat pénzt a gazdaságból. Ezek tartják értékesnek a veretet. A
+periodikus frakcióadó megszűnt; a DARK utazási ára ehelyett konkrét és azonnal
+érthető: ugyanazért a kompútért kétszeres díjat fizet.
 
 ### Ládák és kulcsok
 
@@ -745,7 +747,6 @@ ugyanez a szó taszíthatja le.*
 A Láng, Fagy és Kitaszított frakció királyt választhat. A király:
 
 - kezelheti a frakciókasszát napi korláttal;
-- adókulcsot állíthat;
 - raidet és frakciószállítmányt indíthat.
 
 A Menedéknek nincs raidindító királya; a Vének Tanácsa békés és gazdasági

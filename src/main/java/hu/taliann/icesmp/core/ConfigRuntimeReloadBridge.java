@@ -1,7 +1,6 @@
 package hu.taliann.icesmp.core;
 
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
-import hu.taliann.icesmp.listeners.FactionFoodListener;
 import hu.taliann.icesmp.listeners.MetelytepoRelicListener;
 import hu.taliann.icesmp.listeners.RelicCraftSafetyListener;
 import hu.taliann.icesmp.listeners.RelicInactivityListener;
@@ -61,10 +60,6 @@ public final class ConfigRuntimeReloadBridge {
                 if (key.startsWith("mob-scaling.")) {
                     field(core, "mobScalingManager", MobScalingManager.class).load();
                 }
-                if (key.equals("factions.tax.enabled")
-                        || key.equals("factions.tax.interval-minutes")) {
-                    reschedule(core, "scheduleTaxCollection", "taxTask");
-                }
                 if (key.startsWith("dev-items.csodalatos_bingulus.")) {
                     field(core, "devItemManager", DevItemManager.class).refreshOnlineOwner();
                 }
@@ -93,17 +88,6 @@ public final class ConfigRuntimeReloadBridge {
                         guards.tick();
                     }
                 }
-                if (key.equals("factions.food-duty.enabled")
-                        || key.equals("factions.food-duty.check-minutes")) {
-                    final FactionFoodListener food =
-                            field(core, "factionFoodListener", FactionFoodListener.class);
-                    resetLongField(food, "nextCheckAt");
-                    food.tick();
-                }
-                if (key.equals("factions.whisper.decay-minutes")) {
-                    resetLongField(field(core, "whisperManager", Object.class), "nextDecayAt");
-                }
-
                 // Operational menu: fixed-period drivers are cancelled and recreated from the
                 // freshly published config generation. All other values are read by their consumer
                 // on the next already-scheduled tick/event.
@@ -141,17 +125,12 @@ public final class ConfigRuntimeReloadBridge {
         return key.startsWith("relics.")
                 || key.startsWith("mob-scaling.")
                 || key.startsWith("dev-items.csodalatos_bingulus.")
-                || key.equals("factions.tax.enabled")
-                || key.equals("factions.tax.interval-minutes")
                 || key.equals("corruption.enabled")
                 || key.equals("corruption.interval-minutes")
                 || key.equals("dark-undead.enabled")
                 || key.equals("dark-undead.spawn-interval-seconds")
                 || key.equals("city-guards.enabled")
                 || key.equals("city-guards.step-seconds")
-                || key.equals("factions.food-duty.enabled")
-                || key.equals("factions.food-duty.check-minutes")
-                || key.equals("factions.whisper.decay-minutes")
                 || key.startsWith("hud.")
                 || key.startsWith("tablist.")
                 || key.equals("pets.companion.tick-ticks")

@@ -315,7 +315,7 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
         return true;
     }
 
-    /** Cleanse: wipes the sinner mark and sin counter (a sealed dark pact blocks it). */
+    /** Cleanse removes Infamy and Wanted; Exile and DARK Oath are separate axes. */
     private boolean tryCleanse(final Player player) {
         if (sinManager.getSinCount(player) <= 0 && !sinManager.isSinner(player)) {
             player.sendMessage(messageManager.getMessage(
@@ -324,14 +324,7 @@ public final class RitualManager implements hu.taliann.icesmp.session.PlayerStat
             ));
             return false;
         }
-        if (!sinManager.clearSinner(player)) {
-            player.sendMessage(messageManager.getMessage(
-                    "ritual-cleanse-blocked",
-                    "<red>A sötét paktum köt — ezt az oltár nem oldhatja fel, csak a vezeklés útja.</red>"
-            ));
-            return false;
-        }
-        sinManager.resetSinCount(player);
+        sinManager.clearSinner(player);
         player.sendMessage(messageManager.getMessage(
                 "ritual-cleanse-success",
                 "<gold>Az oltár feloldozott — bűneid lemosattak, a fejvadászok lekerülnek a nyomodról.</gold>"

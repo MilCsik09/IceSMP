@@ -414,8 +414,7 @@ public final class CultistEventManager {
     }
 
     private void rewardCultSuccess() {
-        whisperManager.rewardFaithful(Math.max(0.0D,
-                configManager.getDouble("cultists.whisper-suspicion-relief", 15.0D)));
+        whisperManager.rewardFaithful();
         seasonManager.addPoints(hu.taliann.icesmp.data.FactionType.DARK,
                 Math.max(0, configManager.getInt("cultists.success-season-points", 3)), "cult");
     }

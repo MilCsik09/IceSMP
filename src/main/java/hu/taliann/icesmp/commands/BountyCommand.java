@@ -47,13 +47,12 @@ public final class BountyCommand implements BasicCommand {
             return;
         }
 
-        final int minSins = Math.max(1, configManager.getInt("factions.sins.bounty.min-sins", 3));
         final double perSin = Math.max(0.0D, configManager.getDouble("factions.sins.bounty.reward-per-sin", 25.0D));
         final CurrencyType currency = resolveBountyCurrency();
 
         final List<Player> wanted = new ArrayList<>();
         for (final Player online : Bukkit.getOnlinePlayers()) {
-            if (sinManager.getSinCount(online) >= minSins) {
+            if (sinManager.isWanted(online)) {
                 wanted.add(online);
             }
         }
