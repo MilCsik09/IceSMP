@@ -43,7 +43,7 @@ public final class WorldWeaverRuntime {
         recovery = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryCoordinator(journal, snapshots, providers, types);
         recoveryListener = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryListener(recovery);
         kernel = new WorldWeaverKernel(artifacts, providers, types, snapshots, slots,
-                new WorldWeaverGUI(), new WeaverExecutionCoordinator(router, types), () -> started && !closed && journal.ready());
+                new WorldWeaverGUI(), new WeaverExecutionCoordinator(router, types, journal, () -> false), () -> started && !closed && journal.ready());
         listener = new WorldWeaverGUIListener(kernel);
         hu.taliann.icesmp.dev.artifact.DevArtifactRuntimeProbe.registerReadinessCheck("world_weaver_journal", () -> started && !closed && journal.ready());
         artifacts.bindInteractions(WorldWeaverArtifactBehavior.ID, kernel::interact, this::clearSession);

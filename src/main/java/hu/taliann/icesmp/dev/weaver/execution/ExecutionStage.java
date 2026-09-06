@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public record ExecutionStage(String id, ExecutionOwner owner, Map<String, Object> payload,
-                             StageOperation apply, Optional<StageOperation> compensate, long timeoutMillis) {
+                             StageOperation apply, Optional<StageCompensation> compensate, long timeoutMillis) {
     public ExecutionStage {
         hu.taliann.icesmp.dev.weaver.api.WeaverIds.descriptor(id); java.util.Objects.requireNonNull(owner);
         payload = hu.taliann.icesmp.dev.artifact.ArtifactStateValue.freeze(payload);

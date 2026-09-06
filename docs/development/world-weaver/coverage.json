@@ -1328,7 +1328,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
       "domain": "developer_self",
-      "source_sha256": "5acc4fbcd9cda5e84bb37acb816e2e1195a7db2a6fc269536bb294cff3040100",
+      "source_sha256": "c1815754b4c486d78c60757fe578102826ac341b62b0d11cb767e4b584fe8ec6",
       "public_methods": [
         "WorldWeaverKernel",
         "clearPlayerState",
@@ -1368,7 +1368,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "cfef8a99684df384581ceab29fc87bd109b1e3eb17b86b6529ba08bc7f630d72",
+      "source_sha256": "4c723091908982884e962e28cf369d75ef8460230ffeba8aac919501947bf54f",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
@@ -1435,9 +1435,27 @@
       "public_methods": []
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverCompensationAuthority.java",
+      "domain": "developer_self",
+      "source_sha256": "2844c30bd5067bc9b1901920bf0eda52c02692ce53a5ed2fb5a85e39bc4e9ecd",
+      "public_methods": [
+        "require"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverDurableExecutionCoordinator.java",
+      "domain": "developer_self",
+      "source_sha256": "41ff8c6a867834fcbfdff2c1ee93fb0f98055cf23b5c40bca571c1bbd0640556",
+      "public_methods": [
+        "WeaverDurableExecutionCoordinator",
+        "close",
+        "execute"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "f88e1668a8527520980c23cbff41ef6f9eb2c78d4eaf3bfb9e7b224bdbd93a55",
+      "source_sha256": "9f24f38d62074915d3795d3f52a5031b047b9bcc1dc09f1e9ecc7e326d1d3ddb",
       "public_methods": [
         "WeaverExecutionCoordinator",
         "available",

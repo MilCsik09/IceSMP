@@ -125,9 +125,53 @@ projection sequences, registered types and capacity on every load/publication.
   exclusions and classifier relaxation were not introduced. The authority audit
   reports zero unknown/stale/invalid/transition rows; its targeted gate passes.
 
+## Durable stage execution checkpoint
+
+`WorldWeaverProvider.prepareEffects` contributes a typed intent and immutable
+result-to-effect factory. The kernel passes it through the generic execution
+coordinator; the existing cosmetic path cannot execute a journal-required action.
+The production composition keeps the gameplay-integrity readiness predicate
+closed until canonical reward producers are gated. Physical issuance stays disabled.
+The conditional gate is exercised open and closed in an isolated regression.
+
+`WeaverDurableExecutionCoordinator` awaits durable PREPARED before entering any
+stage, renews the primary session on the actor owner before every target owner,
+validates immutable stage/receipt results and performs the atomic APPLIED/audit/
+COMMITTED sequence. Duplicate prepare rejection cannot settle another operation;
+only an acknowledgement belonging to this execution attempt enables its cleanup.
+
+Compensation uses a separate, expiring, operation-and-stage-bound authority. It
+cannot become an interactive `WeaverAuthorityToken`, and the provider's owner-local
+compensation checks the observed fingerprint against the acknowledged stage result.
+Acknowledged stages compensate in reverse order, including after actor logout.
+The first failed/conflicting compensation stops the reverse chain. Completed and
+uncertain effects retain quarantine and NEEDS_REVIEW after partial failure; no
+successful full receipt or fabricated applied influence is created for a failed plan.
+A wholly unstarted operation can abort and release its unused intent.
+
+A started owner timeout/shutdown skips compensation while a late effect could
+still occur. Late completion cannot advance the journal, create a success receipt
+or release source denial. Storage failure leaves durable evidence for startup
+reconciliation; it does not trigger unjournaled retries.
+
+`WeaverDurableExecutionRegressionSuite` covers the PREPARED barrier, exact successful
+commit, failed-write no-effect guarantee, duplicate committed and PREPARED IDs,
+reverse compensation after logout, external drift, started/unstarted timeout,
+actual late future completion, bounded concurrent admission and the closed/open
+integrity readiness gate. It joins the normal Gradle check graph. Native populated
+stage failure/crash and compensation tests remain required provider/runtime evidence.
+
+The prior atomic-effect head `3602a360b674192c1e53b518ecdacea14da10140` now has exact
+remote evidence: run `34067431815`, verification `101578561843`, Paper `101578561668`,
+Folia `101578561578`. Full Java compilation and all 14 Weaver suites passed; Paper
+and Folia passed readiness and clean shutdown. The sole failed full-build task was
+inherited `trashSpriteAssetAudit`. Docs `34067431800`, resource-pack `34067431817`
+and Trash `34067431842` workflows all passed. This is the preceding head's evidence,
+not populated interactive mutation proof for the new executor.
+
 ## Remaining WW-03 implementation
-- Durable mutation execution, reverse-stage compensation and started-timeout
-  reconciliation without allowing a late side effect to be reported aborted.
+- Native provider mutation/compensation and exact late-effect reconciliation evidence;
+  the generic durable execution path is implemented behind the closed integrity gate.
 - Actual projection consumers and provider effect materialization; the generic registry/store foundation is implemented.
 - Conditional Undo through normal durable execution with original receipt update
   and canonical compensating history.

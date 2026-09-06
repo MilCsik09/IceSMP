@@ -17,6 +17,10 @@ public interface WorldWeaverProvider {
     ProviderDiscovery discover(SubjectSnapshot snapshot);
     InspectionResult inspect(ProviderContext context, SubjectSnapshot snapshot, String facetId);
     PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request);
+    default hu.taliann.icesmp.dev.weaver.execution.PreparedEffects prepareEffects(final ProviderContext context, final SubjectSnapshot snapshot,
+            final ActionRequest request, final PreparedAction prepared) {
+        throw new WeaverDomainRejection("DURABLE_EFFECT_PLAN_UNAVAILABLE");
+    }
     PreparedAction prepareUndo(ProviderContext context, SubjectSnapshot snapshot, WeaverReceipt receipt);
     Optional<WeaverValueCatalog> catalog(ProviderContext context, SubjectSnapshot snapshot, String catalogId);
     ValueExportResult exportValue(ProviderContext context, SubjectSnapshot snapshot, String exportId);

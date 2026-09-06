@@ -331,7 +331,14 @@ public final class WorldWeaverKernel {
                 if (!plan.descriptor().equals(current.descriptor())) throw new IllegalArgumentException("Prepared descriptor differs from manifest");
                 return plan;
             });
-            providers.observeExecution(owner, execution.execute(owner, context, snapshot, prepared, () -> {
+            final Optional<hu.taliann.icesmp.dev.weaver.execution.PreparedEffects> effects = prepared.descriptor().requiresJournal()
+                    ? Optional.of(providers.invoke(owner, context, provider -> {
+                        final var planned = java.util.Objects.requireNonNull(provider.prepareEffects(context, snapshot, request, prepared));
+                        if ((prepared.descriptor().integrityImpacts().contains(IntegrityImpact.TAINT_CREATED) || prepared.descriptor().integrityImpacts().contains(IntegrityImpact.EVENT_ORIGIN))
+                                && planned.intent().targets().isEmpty()) throw new IllegalArgumentException("Created/event effects lack pre-mutation quarantine scope");
+                        return planned;
+                    })) : Optional.empty();
+            providers.observeExecution(owner, execution.execute(owner, context, snapshot, request, prepared, effects, () -> {
                 authorize(access);
                 return new WeaverAuthorityToken(access.artifact().owner(), access.session().id(), System.nanoTime() + 30_000_000_000L,
                         () -> valid(access) && sessions.matches(access.artifact().owner(), access.session().id(), executionView), System::nanoTime);
