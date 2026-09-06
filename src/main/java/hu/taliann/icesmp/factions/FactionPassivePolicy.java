@@ -9,6 +9,9 @@ import java.util.Set;
 /** Pure resolver for damage, exhaustion and AI decisions. */
 public final class FactionPassivePolicy {
 
+    /** DARK's fixed everyday cost; Blood Moon and dungeon encounters are exempt. */
+    public static final double DARK_NORMAL_HEALING_MULTIPLIER = 0.70D;
+
     public enum DamageChannel {
         RED_FIRE,
         RED_FIRE_TICK,
@@ -107,6 +110,14 @@ public final class FactionPassivePolicy {
             return 1.0D;
         }
         return settings.dark().witherDurationMultiplier();
+    }
+
+    public double healingMultiplier(final FactionMembership membership,
+                                    final boolean highStakesExempt) {
+        if (highStakesExempt || !membership.isMember(FactionType.DARK)) {
+            return 1.0D;
+        }
+        return DARK_NORMAL_HEALING_MULTIPLIER;
     }
 
     public double blueExhaustionSaveChance(final FactionMembership membership,

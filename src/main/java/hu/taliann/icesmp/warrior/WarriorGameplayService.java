@@ -510,7 +510,9 @@ public final class WarriorGameplayService implements Listener, PlayerStateCleanu
                                 config.getDouble("classes.warrior.berserker.defiant.heal-to-health-ratio", 0.35D)));
                         final double floor = Math.max(1.0D, liveMax * healToRatio);
                         if (player.getHealth() < floor) {
-                            player.setHealth(Math.min(liveMax, floor));
+                            hu.taliann.icesmp.utils.SpellHealingUtil.heal(player,
+                                    Math.min(liveMax, floor) - player.getHealth(),
+                                    hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
                         }
                         state(playerId).forceMaximumExhaustion();
                         player.sendActionBar(messages.getMessage("warrior.berserker.defiant",

@@ -217,14 +217,20 @@ public final class SignatureItemListener implements Listener {
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onMeleeLifesteal(final EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player attacker)) return;
+        final double dealt = event.getFinalDamage();
+        attacker.getScheduler().run(plugin, task -> healLifesteal(attacker, dealt), null);
+    }
+
+    private void healLifesteal(final Player attacker, final double dealt) {
         final ItemStack weapon = attacker.getInventory().getItemInMainHand();
         if (!AGYAR.equals(activeId(attacker, weapon, hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND))
                 || !hasEnchant(weapon, "verszomj")) return;
         final double ratio = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-lifesteal", 0.1D));
         final double cap = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-heal-cap", 2.0D));
-        final double heal = Math.min(cap, event.getFinalDamage() * ratio);
+        final double heal = Math.min(cap, dealt * ratio);
         final AttributeInstance maxHealth = attacker.getAttribute(Attribute.MAX_HEALTH);
-        if (heal > 0.0D && maxHealth != null) attacker.setHealth(Math.min(maxHealth.getValue(), attacker.getHealth() + heal));
+        if (heal > 0.0D && maxHealth != null) hu.taliann.icesmp.utils.SpellHealingUtil.heal(
+                attacker, heal, hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
     }
 
     private boolean isNeutralCapital(final org.bukkit.Location location) {

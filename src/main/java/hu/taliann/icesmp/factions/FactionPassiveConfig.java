@@ -61,7 +61,7 @@ public final class FactionPassiveConfig {
                         toggle(ROOT + "blue.enabled", true),
                         multiplier(ROOT + "blue.freeze-damage-multiplier", 0.0D),
                         multiplier(ROOT + "blue.drowning-damage-multiplier", 0.50D),
-                        blueExhaustionChance(),
+                        chance(ROOT + "blue.natural-exhaustion-save-chance", 0.25D),
                         stringSet(ROOT + "blue.affected-exhaustion-reasons", DEFAULT_EXHAUSTION_REASONS)),
                 new FactionPassiveSettings.Neutral(
                         toggle(ROOT + "neutral.enabled", true),
@@ -112,28 +112,7 @@ public final class FactionPassiveConfig {
                                 "factions.whisper.night-undead-disabled-during-blood-moon", true),
                         toggle("factions.whisper.night-undead-break-on-damage", true),
                         durationMillis("factions.whisper.night-undead-retaliation-seconds", 60L),
-                        chance("factions.whisper.truce-witness-chance", 0.02D),
-                        nonNegative("factions.whisper.truce-witness-radius", 16.0D),
-                        nonNegative("factions.whisper.truce-witness-suspicion", 1.0D)));
-    }
-
-    private double blueExhaustionChance() {
-        final String current = ROOT + "blue.natural-exhaustion-save-chance";
-        final String legacy = ROOT + "blue-hunger-slow-chance";
-        if (configManager.hasOverride(legacy) && !configManager.hasOverride(current)) {
-            logger.warning("Legacy faction-passive override: '" + legacy + "' értéke az új '"
-                    + current + "' kulcsra kerül; a jelentése már csak a felsorolt természetes "
-                    + "exhaustion okokra vonatkozik.");
-            return chance(legacy, 0.25D);
-        }
-        if (configManager.contains(current)) {
-            return chance(current, 0.25D);
-        }
-        if (configManager.contains(legacy)) {
-            logger.warning("Legacy faction-passive kulcs használatban: '" + legacy
-                    + "'; migráld erre: '" + current + "'.");
-        }
-        return chance(legacy, 0.25D);
+                        nonNegative("factions.whisper.truce-witness-radius", 16.0D)));
     }
 
     private double whisperTargetChance() {

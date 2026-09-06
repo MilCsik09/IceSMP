@@ -1,0 +1,102 @@
+package hu.taliann.icesmp.factions;
+
+import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperStore;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/** Pure contract regressions for the meter-free faction/crime/Whisper rework. */
+public final class FactionReworkRegressionSuite {
+
+    private static int assertions;
+
+    private FactionReworkRegressionSuite() {
+    }
+
+    public static void main(final String[] args) throws Exception {
+        darkHealingTradeoffIsFixedAndContextual();
+        whisperStagesAreFiniteAndReversibleBeforeExposure();
+
+        runtimeSourcesContainNoRetiredMeterLoops();
+        System.out.println("Faction rework regression suite passed. assertions=" + assertions);
+    }
+
+    private static void darkHealingTradeoffIsFixedAndContextual() {
+        final FactionPassivePolicy policy = new FactionPassivePolicy();
+        final FactionMembership dark = FactionMembership.citizen(FactionType.DARK);
+        checkDouble(0.70D, policy.healingMultiplier(dark, false),
+                "DARK everyday healing cost changed");
+        checkDouble(1.0D, policy.healingMultiplier(dark, true),
+                "high-stakes DARK healing was not exempt");
+        checkDouble(1.0D, policy.healingMultiplier(
+                FactionMembership.citizen(FactionType.RED), false),
+                "DARK healing cost leaked to RED");
+        checkDouble(1.0D, policy.healingMultiplier(FactionMembership.guest(), false),
+                "DARK healing cost leaked to guests");
+    }
+
+    private static void whisperStagesAreFiniteAndReversibleBeforeExposure() {
+        check(PlayerProfileWhisperStore.Stage.values().length == 4,
+                "Whisper stage count changed");
+        check(PlayerProfileWhisperStore.Stage.CLEAN.advance()
+                        == PlayerProfileWhisperStore.Stage.OBSERVED,
+                "first accusation stage changed");
+        check(PlayerProfileWhisperStore.Stage.OBSERVED.advance()
+                        == PlayerProfileWhisperStore.Stage.SUSPECTED,
+                "second accusation stage changed");
+        check(PlayerProfileWhisperStore.Stage.SUSPECTED.advance()
+                        == PlayerProfileWhisperStore.Stage.EXPOSED,
+                "third accusation no longer exposes");
+        check(PlayerProfileWhisperStore.Stage.EXPOSED.advance()
+                        == PlayerProfileWhisperStore.Stage.EXPOSED,
+                "exposure overflowed");
+        check(PlayerProfileWhisperStore.Stage.SUSPECTED.cover()
+                        == PlayerProfileWhisperStore.Stage.OBSERVED,
+                "cover does not remove exactly one stage");
+        check(PlayerProfileWhisperStore.Stage.CLEAN.cover()
+                        == PlayerProfileWhisperStore.Stage.CLEAN,
+                "cover underflowed");
+    }
+
+    private static void runtimeSourcesContainNoRetiredMeterLoops() throws Exception {
+        final String core = read("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java");
+        final String king = read("src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java");
+        final String status = read("src/main/java/hu/taliann/icesmp/commands/faction/FactionStatusSubcommand.java");
+        final String sins = read("src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSinStore.java");
+        final String whispers = read("src/main/java/hu/taliann/icesmp/managers/WhisperManager.java");
+        for (final String path : java.util.List.of(
+                "managers/ClassHealthService.java", "warrior/WarriorGameplayService.java",
+                "listeners/SignatureItemListener.java")) {
+            check(read("src/main/java/hu/taliann/icesmp/" + path).contains("SpellHealingUtil.heal("),
+                    "receiving healing bypass remains in " + path);
+        }
+        check(!core.contains("scheduleTaxCollection") && !core.contains("taxTask"),
+                "active tax scheduler remains");
+        check(!core.contains("factionFoodListener::tick") && !core.contains("whisperManager::tick"),
+                "retired food/Whisper tick remains");
+        check(!king.contains("\"tax\""), "king tax command remains");
+        check(status.contains("/faction status [eskü]") && status.contains("sealDarkPact"),
+                "status/oath command contract missing");
+        check(sins.contains("return count > 0") && sins.contains("boolean wanted")
+                        && sins.contains("boolean exiled") && sins.contains("boolean darkPact"),
+                "crime axes are not independent or sinner compatibility changed");
+        check(!whispers.contains("suspicion") && !whispers.contains("decay")
+                        && whispers.contains("recordAccusation"),
+                "Whisper meter/decay remains or staged accusation is missing");
+    }
+
+    private static String read(final String path) throws Exception {
+        return Files.readString(Path.of(path));
+    }
+
+    private static void checkDouble(final double expected, final double actual,
+                                    final String message) {
+        check(Math.abs(expected - actual) < 0.000_001D, message);
+    }
+
+    private static void check(final boolean condition, final String message) {
+        assertions++;
+        if (!condition) throw new AssertionError(message);
+    }
+}

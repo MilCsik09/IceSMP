@@ -34,6 +34,7 @@ public final class CultistEventManager {
     private final SeasonManager seasonManager;
     private final org.bukkit.NamespacedKey markKey;
     private final Set<UUID> cultists = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> supporters = ConcurrentHashMap.newKeySet();
 
     private volatile boolean active;
     private volatile String variant = "";
@@ -88,6 +89,31 @@ public final class CultistEventManager {
             }
         }
         return active;
+    }
+
+    /** One concrete covert delivery per event. Being online or standing nearby earns nothing. */
+    public synchronized boolean deliverOffering(final Player player, final UUID cultistId) {
+        if (!active || !("rite".equals(variant) || "courier".equals(variant))
+                || !cultists.contains(cultistId) || !whisperManager.isWhisperer(player)
+                || whisperManager.ritualPending(player.getUniqueId())) return false;
+        if (supporters.contains(player.getUniqueId())) {
+            player.sendMessage(messageManager.get("whisper-offering-already", "&7Az átadást feljegyeztük. A kultista esemény sikerét kell kivárnod."));
+            return true;
+        }
+        final var hand = player.getInventory().getItemInMainHand();
+        if (hand.getType() != org.bukkit.Material.AMETHYST_SHARD || hand.hasItemMeta()) {
+            player.sendMessage(messageManager.get("whisper-offering-item", "&7A titkos megbízáshoz egy közönséges ametisztszilánkot adj át főkézből, SHIFT + jobb kattintással."));
+            return true;
+        }
+        hand.setAmount(hand.getAmount() - 1);
+        supporters.add(player.getUniqueId());
+        player.sendMessage(messageManager.get("whisper-offering-delivered", "&5Átadtad a rituális szilánkot. Ha a kultisták célba érnek, egy gyanúfokozatot eltüntetnek és részesedsz a zsákmányból. Ha elbuknak, nincs jutalom."));
+        final Location scene = player.getEyeLocation().clone();
+        for (final Entity nearby : player.getNearbyEntities(16, 16, 16)) {
+            if (nearby instanceof Player witness) whisperManager.observe(witness.getUniqueId(),
+                    player.getUniqueId(), scene, player.getName(), 16, "whisper-witness-offering");
+        }
+        return true;
     }
 
     public boolean isCultist(final Entity entity) {
@@ -365,7 +391,7 @@ public final class CultistEventManager {
                     || courier.getLocation().distanceSquared(target) < 25.0D) {
                 final UUID id = courier.getUniqueId();
                 cultists.remove(id);
-                claimClose();
+                if (!claimClose()) { task.cancel(); return; }
                 courier.getWorld().playSound(courier.getLocation(),
                         Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 0.6F);
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(
@@ -410,8 +436,9 @@ public final class CultistEventManager {
     }
 
     private void rewardCultSuccess() {
-        whisperManager.rewardFaithful(Math.max(0.0D,
-                configManager.getDouble("cultists.whisper-suspicion-relief", 15.0D)));
+        final Set<UUID> qualified = Set.copyOf(supporters);
+        if (qualified.isEmpty()) return;
+        whisperManager.rewardFaithful(qualified);
         seasonManager.addPoints(hu.taliann.icesmp.data.FactionType.DARK,
                 Math.max(0, configManager.getInt("cultists.success-season-points", 3)), "cult");
     }
@@ -423,6 +450,7 @@ public final class CultistEventManager {
     }
 
     private void resetTransientState() {
+        supporters.clear();
         riteEndsAt = 0L;
         riteSite = null;
         variant = "";

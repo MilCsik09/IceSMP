@@ -41,12 +41,6 @@ public final class ConfigMenuHelp {
             case "health.scale-heals" -> "A fix gyógyításokat a célpont maximális HP-jához arányosítja, hogy a magas HP-s kasztok ne gyógyuljanak aránytalanul keveset.";
             case "health.scale-heals-cap" -> "A maximális szorzó, ameddig a maxHP-alapú gyógyításskálázás növelheti egy heal erejét.";
 
-            case "factions.tax.enabled" -> "Engedélyezi az időszakos állampolgári adóbeszedést a nem mentesített frakciók tagjaitól.";
-            case "factions.tax.rate-percent" -> "A játékos saját frakcióvalutás bankegyenlegének ennyi százalékát próbálja beszedni minden adóciklusban.";
-            case "factions.tax.minimum-amount" -> "Beszedésenként legalább ennyi adó keletkezik akkor is, ha a százalékos összeg kisebb. Fedezet hiányában hátralék lesz.";
-            case "factions.tax.max-arrears" -> "Egy játékos frakciónként felhalmozódó adóhátralékának felső határa. 0 a hátralék kikapcsolására használható a runtime szabály szerint.";
-            case "factions.tax.evasion-strikes" -> "Ennyi egymást követő, teljesen sikertelen plafonon ragadt beszedés után jár adócsalási bűnpont. 0 kikapcsolja a strike-büntetést.";
-            case "factions.tax.interval-minutes" -> "Két automatikus adóbeszedés közti idő percben. Módosításkor az adóütemező élőben újraindul az új periódussal.";
             case "ferry.enabled" -> "Globálisan engedélyezi a konfigurált kompútvonalak használatát és díjfizetését.";
             case "ferry.default-fee" -> "Azoknak a kompútvonalaknak az alap viteldíja, amelyeknél nincs külön útvonal-specifikus ár.";
             case "factions.council.enabled" -> "Engedélyezi a NEUTRAL Vének Tanácsának választását és gazdasági jogosultságait.";
@@ -90,21 +84,25 @@ public final class ConfigMenuHelp {
             case "factions.war-window.daily-point-cap" -> "Egy játékos naponta legfeljebb ennyi hadiablak-pontot termelhet a frakciójának.";
             case "factions.war-window.per-victim-cooldown-minutes" -> "Ugyanaz az áldozat ennyi percig nem ad újabb hadiablak-pontot ugyanannak a gyilkosnak.";
 
-            case "factions.whisper.enabled" -> "Engedélyezi a Suttogó státuszt, a gyanúgyűjtést, leleplezést és kapcsolódó kedvezményeket.";
-            case "factions.whisper.suspicion-threshold" -> "A gyanúpont, amelynél a Suttogó lelepleződik és a büntetési folyamat elindul.";
-            case "factions.whisper.betrayal-suspicion" -> "Ennyi gyanút ad egy árulásként kezelt Suttogó-akció.";
-            case "factions.whisper.accuse-suspicion" -> "Ennyi gyanút ad a tanú-vád vagy kapcsolódó feljelentési művelet.";
-            case "factions.whisper.decay-minutes" -> "Ennyi percenként csillapodik a felhalmozott gyanú a manager szabályai szerint.";
-            case "factions.whisper.exposure-sins" -> "Lelepleződéskor ennyi bűnpont kerül a Suttogóra.";
+            case "factions.whisper.enabled" -> "Engedélyezi a Suttogó státuszt, a pontos bizonyítékokat és a fix leleplezési fokozatokat.";
             case "factions.whisper.expose-broadcast" -> "Bekapcsolva a Suttogó lelepleződése szerver- vagy közösségi üzenetben is megjelenik.";
             case "factions.whisper.night-undead-truce" -> "Éjszaka esélyalapú élőhalott-békét ad az aktív Suttogónak, a magasabb precedenciájú harci kivételek nélkül.";
+            case "factions.whisper.witness-seconds" -> "Ennyi másodpercig váltható be egy célhoz kötött szemtanú-bizonyíték.";
+            case "factions.whisper.witness-radius" -> "Áruláskor ekkora körben kapnak pontos bizonyítékot a szemtanúk.";
+            case "factions.whisper.rite-witness-radius" -> "Sötét Rítuskor ekkora körben kapnak a jelenlévők pontos bizonyítékot a rítus végzője ellen.";
+            case "factions.whisper.truce-witness-radius" -> "Ekkora körből válhat bizonyítékká, ha egy kívülálló látja a Suttogó undead-békéjét. 0 kikapcsolja ezt a forrást.";
             case "cultists.whisper-loot-rolls" -> "Ennyi külön kultista-loot sorsolást kap a jogosult Suttogó az esemény jutalmazásakor.";
             case "factions.whisper.blackmarket-discount-percent" -> "A Suttogó feketepiaci vásárlásainak százalékos árkedvezménye.";
 
-            case "factions.food-duty.enabled" -> "Engedélyezi a frakció saját ételéhez kötött honvágy-kötelezettséget és elmulasztási debuffot.";
-            case "factions.food-duty.grace-hours" -> "Frakcióválasztás vagy utolsó megfelelő étkezés után ennyi óráig nem jár honvágy-büntetés.";
-            case "factions.food-duty.check-minutes" -> "Ennyi percenként ellenőrzi a rendszer a frakció-élelmezési kötelezettséget.";
-            case "factions.food-duty.debuff-seconds" -> "Egy sikertelen ellenőrzéskor adott honvágy/éhség debuff időtartama másodpercben.";
+            case "factions.signature-food.pisztrang-buff-seconds" -> "A BLUE signature pisztráng felszívódás-buffjának időtartama.";
+            case "factions.signature-food.rantotta-buff-seconds" -> "A RED signature rántotta tűzállóság-buffjának időtartama.";
+            case "factions.signature-food.suti-speed-seconds" -> "A NEUTRAL signature süti Speed II buffjának időtartama.";
+            case "factions.signature-food.suti-launch-y" -> "A NEUTRAL signature süti függőleges fellökésének erőssége.";
+            case "factions.signature-food.hamukenyer-buff-seconds" -> "A DARK signature hamukenyér éjjellátás-buffjának időtartama.";
+            case "factions.signature-food.porkolt-buff-seconds" -> "A BLUE Sárkány-pörkölt Erő buffjának időtartama.";
+            case "factions.signature-food.vadlakoma-buff-seconds" -> "A RED Vadlakoma Speed és tűzállóság buffjának időtartama.";
+            case "factions.signature-food.lepeny-buff-seconds" -> "A NEUTRAL Vándorünnep-lepény Szerencse és Speed buffjának időtartama.";
+            case "factions.signature-food.hamulakoma-buff-seconds" -> "A DARK Hamvak Lakomája felszívódás- és éjjellátás-buffjának időtartama.";
 
             case "signature.csakany.bonus-drop-chance" -> "A signature csákány extra nyersanyagdobásának 0–1 közötti esélye. 0.25 = 25%.";
             case "signature.horgaszbot.bonus-drop-chance" -> "A signature horgászbot extra fogásának 0–1 közötti esélye. 0.25 = 25%.";

@@ -6,7 +6,11 @@ Repository: `MilCsik09/IceSMP`.
 Cumulative gameplay base: `feature/trash-production-hardening` at
 `a335b3b5acaea66772534e51527a1c9233a85d1a` (PR #152).
 Immediate stacked base: `feature/world-weaver-ww01-artifact` at
-`b1476ac774f5b11c12aca0bedfe5b135f3b35f41` (PR #154).
+`8863279711c3e8d174033cbcf6ed86721ed27050` (PR #154).
+The initial phase base was `b1476ac774f5b11c12aca0bedfe5b135f3b35f41`.
+Current cumulative gameplay base is #155, `feature/faction-crime-whisperer-rework`
+at `004c12abf6e896b1931a695f980d4841bbf785e9`; the original #152 base remains
+recorded above.
 Branch: `feature/world-weaver-ww02-kernel`.
 
 WW-02 is not complete. The code-defined artifact remains disabled. The independent
@@ -81,3 +85,18 @@ Pure admission tests prove only scheduling admission/timeout decisions.
 The inherited malformed Trash sprite source PNGs remain a strict full-build
 asset gate. This phase neither modifies them nor weakens that gate. No production,
 merge-ready, reward-integrity or universal-coverage verdict is asserted.
+
+## First checkpoint remote evidence and cumulative refresh
+
+Checkpoint `e01a424cf35c6523381c0522685b80ce0e3e49e1` was published in draft
+PR #156. WorldWeaver workflow `34060525809`, verification job `101560119003`,
+compiled both full Java source sets and passed all seven new Weaver suites.
+The sole failed Gradle task was the inherited `trashSpriteAssetAudit` source-PNG
+gate. Resource-pack validation and Trash production hardening workflows passed.
+Paper `101560119327` and Folia `101560119156` DEV lifecycle probes also passed;
+those remain artifact/store probes, not WW-02 kernel/client evidence.
+
+The phase then inherits refreshed WW-01 through a non-rewriting merge, retaining
+all of #155 and the re-audited WW-00 domain routes. AGENTS/CLAUDE conflicts were
+only source-count metadata. No Java conflict resolution or gameplay override was
+needed. Exact refreshed-head CI is a separate evidence requirement.

@@ -7,7 +7,9 @@ Internal developer evidence. The lifecycle integration is implemented; exact-hea
 - Repository: `MilCsik09/IceSMP`.
 - Branch: `feature/world-weaver-ww01-artifact`; draft PR #154.
 - Base branch: `feature/world-weaver-ww00-coverage` (PR #153).
-- Base commit: `f1d7ce81939d7a0e6c7bb26780d639c5d819bcf0`.
+- Current base commit: `35f9485d276781622a41e1acda6f0e91f2f33f85`.
+- Initial phase base: `f1d7ce81939d7a0e6c7bb26780d639c5d819bcf0`.
+- Refreshed cumulative gameplay base: `feature/faction-crime-whisperer-rework`, `004c12abf6e896b1931a695f980d4841bbf785e9` (#155).
 - Original cumulative gameplay base: `feature/trash-production-hardening`, `a335b3b5acaea66772534e51527a1c9233a85d1a`.
 - Earlier data-helper checkpoint: `a2f90b3858b2e611b618bb8334026759a71e1987`.
 - Reproducible Java 21 toolchain/evidence checkpoint: `67948b9126b5b3823f0a96d802eaffde81a715af`.
@@ -60,3 +62,12 @@ Connected-client evidence remains required for forged/duplicate artifacts, full 
 - Both server jobs observed `ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS` and `ICESMP_DEV_ARTIFACT_RUNTIME_SHUTDOWN_PASS` and completed successfully. These markers do not prove cross-region connected-player interactions or forged-copy client handling.
 - Resource-pack CI run [34057010948](https://github.com/MilCsik09/IceSMP/actions/runs/34057010948) and inherited Trash runtime/regression run [34057011012](https://github.com/MilCsik09/IceSMP/actions/runs/34057011012) succeeded.
 - The broader local Python suite found one additional authority-inventory omission: the manager's ephemeral entity-interaction deduplication map lacked an exact runtime classification. Its owner-only insertion and centralized quit/kick/death/disable cleanup are implemented. The exact field is now classified with that evidence; unknown UUID maps remain review-blocking. No gameplay authority was moved into an exception.
+
+## Cumulative refresh
+
+A non-rewriting merge of refreshed WW-00 inherits PR #155. The only textual
+merge conflict was the AGENTS source count, recomputed as 1032. Core constructor
+wiring retains both the new legal/faction dependencies and the generic DEV
+artifact cleanup integration. No developer artifact gameplay behavior changes
+are introduced by this refresh. Earlier server evidence remains associated with
+its recorded commit; exact refreshed-head CI is required separately.

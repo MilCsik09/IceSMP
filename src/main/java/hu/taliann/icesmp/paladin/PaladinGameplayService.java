@@ -518,10 +518,10 @@ public final class PaladinGameplayService implements Listener, PlayerStateCleanu
 
     private void healPlayer(final UUID actor, final Player target, final double amount,
                             final boolean regen) {
-        final double maxHealth = maxHealth(target);
         final double before = target.getHealth();
-        final double after = Math.min(maxHealth, before + Math.max(0.0D, amount));
-        if (after > before) target.setHealth(after);
+        final double restored = hu.taliann.icesmp.utils.SpellHealingUtil.heal(target, amount,
+                hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
+        final double after = before + restored;
         if (regen) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
                     60, 0, false, true, true));
