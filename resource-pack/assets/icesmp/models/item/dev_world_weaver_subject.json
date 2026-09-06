@@ -1,0 +1,8 @@
+{
+  "parent": "icesmp:item/dev_world_weaver_base",
+  "textures": {
+    "core": "minecraft:block/diamond_block",
+    "edge": "minecraft:block/amethyst_block",
+    "orbit": "minecraft:block/crying_obsidian"
+  }
+}
