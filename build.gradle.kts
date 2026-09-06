@@ -582,6 +582,34 @@ val devArtifactMigrationRegressionTest = registerRegression(
     "devArtifactMigrationRegressionTest",
     "Runs strict DEV artifact schema-2 and lossless legacy reward migration regressions.",
     "hu.taliann.icesmp.dev.artifact.DevArtifactMigrationRegressionSuite")
+val weaverTypeCompatibilityRegressionTest = registerRegression(
+    "weaverTypeCompatibilityRegressionTest",
+    "Runs WeaverTypeCompatibility contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverTypeCompatibilityRegressionSuite")
+val weaverDynamicCatalogRegressionTest = registerRegression(
+    "weaverDynamicCatalogRegressionTest",
+    "Runs WeaverDynamicCatalog contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverDynamicCatalogRegressionSuite")
+val weaverAreaRegressionTest = registerRegression(
+    "weaverAreaRegressionTest",
+    "Runs WeaverArea contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverAreaRegressionSuite")
+val weaverContractRegressionTest = registerRegression(
+    "weaverContractRegressionTest",
+    "Runs WeaverContract contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverContractRegressionSuite")
+val worldWeaverAuthorityRegressionTest = registerRegression(
+    "worldWeaverAuthorityRegressionTest",
+    "Runs WorldWeaverAuthority contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WorldWeaverAuthorityRegressionSuite")
+val worldWeaverCoverageRegressionTest = registerRegression(
+    "worldWeaverCoverageRegressionTest",
+    "Runs WorldWeaverCoverage contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WorldWeaverCoverageRegressionSuite")
+val weaverFoliaOwnershipRegressionTest = registerRegression(
+    "weaverFoliaOwnershipRegressionTest",
+    "Runs WeaverFoliaOwnership contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverFoliaOwnershipRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -1087,6 +1115,7 @@ tasks.check {
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
+        weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCoverageRegressionTest, weaverFoliaOwnershipRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
         configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,

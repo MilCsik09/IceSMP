@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stage": "WW-00_SOURCE_AUDIT_ONLY",
+  "stage": "WW-02_FOUNDATION_IN_PROGRESS",
   "repository": "MilCsik09/IceSMP",
   "base_branch": "feature/trash-production-hardening",
   "base_commit": "a335b3b5acaea66772534e51527a1c9233a85d1a",
@@ -21,7 +21,7 @@
       "inspect": "PLAYER/ENTITY/BLOCK/LOCATION/WORLD owner-thread snapshot; protected entity classification",
       "planned_actions": "heal, nonlethal damage, kill, effects, freeze/fire, velocity, teleport, AI, invulnerability, gamemode/flight, target, remove, block data, effects, time/weather, sandbox stack",
       "canonical_route": "Bukkit owner scheduler; teleportAsync; manager-owned entities excluded from generic remove",
-      "rationale": "No WorldWeaver SubjectRef/snapshot/access router or vanilla adapter exists. World influence and block/spatial reward provenance must precede mutation.",
+      "rationale": "WW-02 adds immutable SubjectRefs and owner-routed vanilla snapshots. Minecraft action adapter, execution, GUI and influence gate are still in progress; no domain coverage closure is claimed.",
       "source_evidence": [],
       "implementation_evidence": []
     },
@@ -1291,6 +1291,105 @@
       "public_methods": [
         "DevArtifactPolicy"
       ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WeaverSelectionStore.java",
+      "domain": "developer_self",
+      "source_sha256": "8feb129dc94d4f8c1d28ccdc33680c106b4de3b267bb98f98b5b86681d7264e8",
+      "public_methods": [
+        "clear",
+        "current",
+        "previous",
+        "recent",
+        "select"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverCoverageRegistry.java",
+      "domain": "developer_self",
+      "source_sha256": "305a748ff1713ad6fcbcdac424a07626dd3ac48ee168e2aaa062a82785d68484",
+      "public_methods": [
+        "WorldWeaverCoverageRegistry",
+        "requireComplete"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
+      "domain": "developer_self",
+      "source_sha256": "c991b37f7cdcf83c8c3bcacd1802e9f88e92074bd31f77a2ad4b1726b8ef126f",
+      "public_methods": [
+        "Discovery",
+        "WorldWeaverProviderRegistry",
+        "actions",
+        "assessRecovery",
+        "captureContributions",
+        "catalogs",
+        "coverage",
+        "discover",
+        "exports",
+        "facets",
+        "freezeAndValidate",
+        "imports",
+        "invoke",
+        "owner",
+        "quarantined",
+        "register"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverSessionManager.java",
+      "domain": "developer_self",
+      "source_sha256": "09f9cb2fbc5e04698f7030c9bb00f1fb9dd1590d1150146a44034e433267f926",
+      "public_methods": [
+        "WorldWeaverSessionManager",
+        "active",
+        "actor",
+        "arming",
+        "artifactGeneration",
+        "artifactInstance",
+        "close",
+        "current",
+        "id",
+        "matches",
+        "mode",
+        "nextView",
+        "open",
+        "selection",
+        "shutdown",
+        "threads",
+        "viewRevision"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/api/RegistryValueCatalog.java",
+      "domain": "developer_self",
+      "source_sha256": "d6385c9994a3116b597f0e4a96060bfa1d3afdc178cdfc37d565e87ffe151262",
+      "public_methods": [
+        "RegistryValueCatalog",
+        "page",
+        "resolve",
+        "type"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverTypeRegistry.java",
+      "domain": "developer_self",
+      "source_sha256": "db224896082fec73ea498816e279d605d7f7386039487b07d8936c823c370f98",
+      "public_methods": [
+        "compatible",
+        "contains",
+        "freeze",
+        "register",
+        "require",
+        "snapshot",
+        "validate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverValueCatalog.java",
+      "domain": "developer_self",
+      "source_sha256": "3fa400d3d733d68b075842f5c6f6ff9730bc117c4db0d13b4db0ea93ee4547ea",
+      "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java",
