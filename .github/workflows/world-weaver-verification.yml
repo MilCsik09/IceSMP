@@ -129,6 +129,7 @@ jobs:
         shell: bash
         run: |
           grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS' build/dev-artifact-paper-runtime.log
+          grep -F 'ICESMP_DEV_RUNTIME_READY world_weaver_journal' build/dev-artifact-paper-runtime.log
           grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_SHUTDOWN_PASS' build/dev-artifact-paper-runtime.log
           ! grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_FAIL' build/dev-artifact-paper-runtime.log
           ! grep -E '(^|\]) (SEVERE|ERROR)' build/dev-artifact-paper-runtime.log
@@ -187,6 +188,7 @@ jobs:
         shell: bash
         run: |
           grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS' build/dev-artifact-folia-runtime.log
+          grep -F 'ICESMP_DEV_RUNTIME_READY world_weaver_journal' build/dev-artifact-folia-runtime.log
           grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_SHUTDOWN_PASS' build/dev-artifact-folia-runtime.log
           ! grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_FAIL' build/dev-artifact-folia-runtime.log
           ! grep -E '(^|\]) (SEVERE|ERROR)' build/dev-artifact-folia-runtime.log

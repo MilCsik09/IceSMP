@@ -21,5 +21,5 @@ public interface WorldWeaverProvider {
     Optional<WeaverValueCatalog> catalog(ProviderContext context, SubjectSnapshot snapshot, String catalogId);
     ValueExportResult exportValue(ProviderContext context, SubjectSnapshot snapshot, String exportId);
     ImportValidation validateImport(ProviderContext context, SubjectSnapshot snapshot, String importId, WeaverValue value);
-    RecoveryAssessment assessRecovery(ProviderContext context, SubjectSnapshot snapshot, WeaverOperationRecord operation);
+    RecoveryAssessment assessRecovery(RecoveryContext context, SubjectSnapshot snapshot, WeaverOperationRecord operation);
 }

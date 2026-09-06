@@ -37,7 +37,7 @@ public final class WeaverContractRegressionSuite {
         @Override public Optional<WeaverValueCatalog> catalog(final ProviderContext context, final SubjectSnapshot snapshot, final String catalog) { return Optional.empty(); }
         @Override public ValueExportResult exportValue(final ProviderContext context, final SubjectSnapshot snapshot, final String export) { return ValueExportResult.rejected("FIXTURE_NO_EXPORT"); }
         @Override public ImportValidation validateImport(final ProviderContext context, final SubjectSnapshot snapshot, final String importer, final WeaverValue value) { return ImportValidation.rejected("FIXTURE_NO_IMPORT"); }
-        @Override public RecoveryAssessment assessRecovery(final ProviderContext context, final SubjectSnapshot snapshot, final WeaverOperationRecord operation) {
+        @Override public RecoveryAssessment assessRecovery(final RecoveryContext context, final SubjectSnapshot snapshot, final WeaverOperationRecord operation) {
             return new RecoveryAssessment(ObservedOperationState.BEFORE, false, Optional.empty(), "fixture");
         }
     }

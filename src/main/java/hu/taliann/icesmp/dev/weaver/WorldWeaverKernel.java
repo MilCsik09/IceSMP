@@ -24,6 +24,7 @@ public final class WorldWeaverKernel {
     private final WeaverItemSlots slots;
     private final WorldWeaverGUI gui;
     private final WeaverExecutionCoordinator execution;
+    private final java.util.function.BooleanSupplier operational;
     private final WeaverParameterDialog input = new WeaverParameterDialog();
     private final WeaverRateLimiter rate = new WeaverRateLimiter(() -> System.nanoTime() / 1_000_000L);
     private final WorldWeaverSessionManager sessions = new WorldWeaverSessionManager(() -> System.nanoTime() / 1_000_000L);
@@ -33,14 +34,14 @@ public final class WorldWeaverKernel {
     private volatile boolean closed;
     public WorldWeaverKernel(final DevItemManager artifacts, final WorldWeaverProviderRegistry providers, final WeaverTypeRegistry types,
                              final SubjectSnapshotSource snapshots, final WeaverItemSlots slots, final WorldWeaverGUI gui,
-                             final WeaverExecutionCoordinator execution) {
+                             final WeaverExecutionCoordinator execution, final java.util.function.BooleanSupplier operational) {
         this.artifacts = Objects.requireNonNull(artifacts); this.providers = Objects.requireNonNull(providers); this.types = Objects.requireNonNull(types);
         this.snapshots = Objects.requireNonNull(snapshots); this.slots = Objects.requireNonNull(slots); this.gui = Objects.requireNonNull(gui);
-        this.execution = Objects.requireNonNull(execution);
+        this.execution = Objects.requireNonNull(execution); this.operational = Objects.requireNonNull(operational);
     }
     public ArtifactInteractionResult interact(final DevArtifactInteraction interaction) {
         final DevArtifactContext context = interaction.context();
-        if (closed || context.manager() != artifacts || !WorldWeaverArtifactBehavior.ID.equals(context.artifactId())
+        if (closed || !operational.getAsBoolean() || context.manager() != artifacts || !WorldWeaverArtifactBehavior.ID.equals(context.artifactId())
                 || !HiddenDevAuthority.isDeveloper(context.owner()) || context.player() == null) return ArtifactInteractionResult.AUTHORITY_REJECTED;
         final Access access = new Access(context, sessions.open(context.owner(), context.instanceId(), context.session())); active = access;
         draft = null;
@@ -69,7 +70,7 @@ public final class WorldWeaverKernel {
     }
     private boolean valid(final Access access) {
         final Access current = active;
-        return !closed && current != null && current.session() == access.session() && access.session().active()
+        return !closed && operational.getAsBoolean() && current != null && current.session() == access.session() && access.session().active()
                 && access.artifact().valid() && current.artifact().equals(access.artifact());
     }
     private ProviderContext context(final Access access) {

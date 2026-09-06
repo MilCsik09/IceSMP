@@ -229,12 +229,26 @@ public final class WorldWeaverProviderRegistry {
         }
         return Map.copyOf(facts);
     }
-    public hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment assessRecovery(final String providerId, final ProviderContext context,
+    public hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment assessRecovery(final String providerId, final RecoveryContext context,
             final SubjectSnapshot snapshot, final hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationRecord operation) {
         requireFrozen();
         final Entry entry = providers.get(providerId);
         if (entry == null || !operation.providerId().equals(providerId)) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");
-        return entry.breaker().call(() -> entry.provider().assessRecovery(context, snapshot, operation), true);
+        context.authority().require(operation);
+        if (!snapshot.ref().equals(operation.subject())) throw new SecurityException("Recovery subject differs from operation");
+        return entry.breaker().call(() -> {
+            final var assessment = Objects.requireNonNull(entry.provider().assessRecovery(context, snapshot, operation));
+            assessment.receipt().ifPresent(receipt -> {
+                receipt.before().values().forEach(types::validate); receipt.after().values().forEach(types::validate);
+                if (!receipt.operationId().equals(operation.operationId()) || !receipt.providerId().equals(providerId)
+                        || !receipt.actionId().equals(operation.request().actionId()) || !receipt.subject().equals(operation.subject())
+                        || !receipt.beforeFingerprint().equals(operation.beforeFingerprint()) || receipt.lifetime() != operation.request().lifetime()
+                        || receipt.integrityMode() != operation.request().integrityMode() || receipt.status() != ReceiptStatus.COMMITTED) {
+                    throw new IllegalArgumentException("Recovery receipt differs from operation");
+                }
+            });
+            return assessment;
+        }, true);
     }
     public Map<String, FacetDescriptor> facets() { requireFrozen(); return facets; }
     public <T> java.util.concurrent.CompletionStage<T> observeExecution(final String providerId, final java.util.concurrent.CompletionStage<T> execution) {

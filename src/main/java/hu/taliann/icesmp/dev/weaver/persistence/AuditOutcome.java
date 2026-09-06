@@ -1,0 +1,6 @@
+package hu.taliann.icesmp.dev.weaver.persistence;
+
+public enum AuditOutcome {
+    COMMITTED, ABORTED, COMPENSATED, NEEDS_REVIEW, UNDONE, CONFLICT,
+    AUTHORITY_REJECTED, VALIDATION_REJECTED, PROVIDER_ERROR, ACKNOWLEDGED
+}
