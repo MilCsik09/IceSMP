@@ -49,10 +49,30 @@ jobs:
           set -euo pipefail
           mkdir -p build/reports/world-weaver
           git rev-parse HEAD > build/reports/world-weaver/tested-head.txt
-          ./gradlew build --no-daemon --console=plain --stacktrace | tee build/reports/world-weaver/build.log
+          ./gradlew build --continue --no-daemon --console=plain --stacktrace 2>&1 | tee build/reports/world-weaver/build.log
       - name: Export resolved compile evidence for local preflight
         if: ${{ !cancelled() }}
         run: ./gradlew --init-script gradle/world-weaver-evidence.init.gradle worldWeaverCompileEvidence --no-daemon --console=plain
+      - name: Export resolved public build artifacts for offline verification
+        if: ${{ !cancelled() }}
+        shell: python
+        run: |
+          import hashlib
+          import os
+          import shutil
+          from pathlib import Path
+
+          cache = Path(os.environ.get("GRADLE_USER_HOME", str(Path.home() / ".gradle"))) / "caches/modules-2/files-2.1"
+          destination = Path("build/world-weaver-gradle-evidence")
+          for source in sorted(cache.glob("*/*/*/*/*")):
+              if not source.is_file() or source.suffix not in {".jar", ".pom", ".module"}:
+                  continue
+              group, artifact, version, digest, filename = source.relative_to(cache).parts
+              target = destination / group.replace(".", "/") / artifact / version / filename
+              if target.exists() and hashlib.sha256(target.read_bytes()).digest() != hashlib.sha256(source.read_bytes()).digest():
+                  raise RuntimeError("Conflicting resolved build artifact: " + str(target))
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(source, target)
       - name: Retain exact-head verification evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -61,5 +81,6 @@ jobs:
           path: |
             build/reports/world-weaver
             build/world-weaver-compile-evidence
+            build/world-weaver-gradle-evidence
           if-no-files-found: warn
           retention-days: 14
