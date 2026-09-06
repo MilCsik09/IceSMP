@@ -1,0 +1,9 @@
+allprojects {
+    plugins.withId('java') {
+        tasks.register('worldWeaverCompileEvidence', Copy) {
+            from(sourceSets.main.compileClasspath)
+            into(layout.buildDirectory.dir('world-weaver-compile-evidence'))
+            duplicatesStrategy = DuplicatesStrategy.FAIL
+        }
+    }
+}
