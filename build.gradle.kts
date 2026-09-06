@@ -551,6 +551,12 @@ tasks {
     }
 }
 
+val worldWeaverArchitectureAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Checks WorldWeaver generic frontend, secrecy and static Folia fences."
+    commandLine("python3", "-m", "unittest", "scripts.tests.test_world_weaver_architecture")
+}
+
 val regressionTest by sourceSets.creating {
     java.srcDir("src/regression/java")
     compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
@@ -610,6 +616,18 @@ val weaverFoliaOwnershipRegressionTest = registerRegression(
     "weaverFoliaOwnershipRegressionTest",
     "Runs WeaverFoliaOwnership contract and safety regressions.",
     "hu.taliann.icesmp.dev.weaver.WeaverFoliaOwnershipRegressionSuite")
+val weaverExecutionRegressionTest = registerRegression(
+    "weaverExecutionRegressionTest",
+    "Runs Weaver continuation, authority revalidation and fail-closed execution gates.",
+    "hu.taliann.icesmp.dev.weaver.WeaverExecutionRegressionSuite")
+val weaverGUIRegressionTest = registerRegression(
+    "weaverGUIRegressionTest",
+    "Runs generic Weaver view paging, typed parameter and immutable draft regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverGUIRegressionSuite")
+val weaverRewardIntegrityRegressionTest = registerRegression(
+    "weaverRewardIntegrityRegressionTest",
+    "Runs neutral reward-policy source/channel denials and quarantine-tail regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverRewardIntegrityRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -1120,6 +1138,8 @@ tasks.check {
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
+        weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
+        worldWeaverArchitectureAudit,
         weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCoverageRegressionTest, weaverFoliaOwnershipRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
         configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,

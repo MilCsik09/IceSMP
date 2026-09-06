@@ -28,4 +28,17 @@ public final class ProviderCircuitBreaker {
             throw new WeaverDomainRejection("PROVIDER_ERROR");
         }
     }
+    public <T> java.util.concurrent.CompletionStage<T> observe(final java.util.concurrent.CompletionStage<T> operation) {
+        return operation.handle((value, failure) -> {
+            if (failure == null) return value;
+            Throwable root = failure;
+            while (root instanceof java.util.concurrent.CompletionException && root.getCause() != null) root = root.getCause();
+            if (root instanceof WeaverDomainRejection rejected) {
+                if (rejected.code().equals("OWNER_TIMEOUT_STARTED")) failed();
+                throw rejected;
+            }
+            if (root instanceof SecurityException) throw new WeaverDomainRejection("AUTHORITY_REJECTED");
+            failed(); throw new WeaverDomainRejection("PROVIDER_ERROR");
+        });
+    }
 }

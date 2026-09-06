@@ -15,6 +15,7 @@ public final class WorldWeaverSessionManager {
         private final long artifactGeneration;
         private final WeaverSelectionStore selection = new WeaverSelectionStore();
         private final WeaverThreadCase threads = new WeaverThreadCase();
+        private final java.util.ArrayDeque<hu.taliann.icesmp.dev.weaver.api.WeaverReceipt> receipts = new java.util.ArrayDeque<>();
         private final WeaverArming arming;
         private volatile boolean active = true;
         private volatile long viewRevision;
@@ -34,7 +35,12 @@ public final class WorldWeaverSessionManager {
         public WeaverArming arming() { return arming; }
         public IntegrityMode mode() { return mode; }
         public void mode(final IntegrityMode mode) { this.mode = java.util.Objects.requireNonNull(mode); arming.clear(); }
-        private void close() { active = false; arming.clear(); selection.clear(); threads.clear(); }
+        public synchronized void receipt(final hu.taliann.icesmp.dev.weaver.api.WeaverReceipt receipt) {
+            if (!active) throw new IllegalStateException("Closed Weaver session");
+            receipts.addFirst(java.util.Objects.requireNonNull(receipt)); while (receipts.size() > 64) receipts.removeLast();
+        }
+        public synchronized java.util.List<hu.taliann.icesmp.dev.weaver.api.WeaverReceipt> receipts() { return java.util.List.copyOf(receipts); }
+        private synchronized void close() { active = false; arming.clear(); selection.clear(); threads.clear(); receipts.clear(); }
     }
     private final LongSupplier monotonicMillis;
     private Session current;

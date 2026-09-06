@@ -46,7 +46,7 @@ authority. Captured facts must carry the owning provider prefix and valid types.
 
 ## Verification
 
-Seven focused suites are registered as normal Gradle `check` dependencies:
+Ten focused suites are registered as normal Gradle `check` dependencies:
 
 - `WeaverTypeCompatibilityRegressionSuite`
 - `WeaverDynamicCatalogRegressionSuite`
@@ -55,6 +55,9 @@ Seven focused suites are registered as normal Gradle `check` dependencies:
 - `WorldWeaverAuthorityRegressionSuite`
 - `WorldWeaverCoverageRegressionSuite`
 - `WeaverFoliaOwnershipRegressionSuite`
+- `WeaverExecutionRegressionSuite`
+- `WeaverGUIRegressionSuite`
+- `WeaverRewardIntegrityRegressionSuite`
 
 Local preflight uses the full main and regression source sets, Java 21, and all 49
 real compile dependency jars exported by repository CI. No Bukkit/API stubs or
@@ -68,10 +71,11 @@ WW-02 snapshot/router code or connected-client interaction.
 
 ## Open implementation and evidence gates
 
-The actual kernel/GUI/controller, initial Minecraft actions, execution coordinator
-and reward influence basics are still WW-02 work. Journal, reconciliation,
-persistent projection and conditional undo remain WW-03. The operation records
-must never be mistaken for a working durable engine.
+The kernel/GUI, recipient-only initial Minecraft action, non-durable execution
+coordinator and neutral reward-policy foundation are now implemented. Full
+Minecraft mutation, durable influence and real reward-flow wiring remain open.
+Journal, reconciliation, persistent projection and conditional undo remain
+WW-03; the operation records are not a working durable engine.
 
 Interactive authority tokens are not recovery tokens. Offline recovery and
 compensation need a constrained operation-bound recovery authority in WW-03;
@@ -100,3 +104,86 @@ The phase then inherits refreshed WW-01 through a non-rewriting merge, retaining
 all of #155 and the re-audited WW-00 domain routes. AGENTS/CLAUDE conflicts were
 only source-count metadata. No Java conflict resolution or gameplay override was
 needed. Exact refreshed-head CI is a separate evidence requirement.
+
+## Kernel integration checkpoint
+
+`WorldWeaverRuntime` is constructed by IceSMPCore after its canonical services and
+receives provider factories from the IceSMP composition root. It contains no
+named subsystem adapter. Registration is validated after content/store load and
+before listeners admit interaction. A future subsystem adds its adapter and
+composition registration without changing the artifact/kernel/GUI/runtime.
+
+The existing DevItemManager supplies a one-time generic behavior binding. The
+WorldWeaver behavior delegates interactions and propagates unavailability,
+recovery and shutdown into the kernel; no second artifact identity authority is
+created. Issuance remains disabled by the existing code-defined flag.
+
+| Integrated path | Evidence / remaining boundary |
+|---|---|
+| Subject and Facet GUI | Owner-routed fresh snapshot; descriptor-only facet/action/catalog/export entries; all clicks cancel and require exact session/view revision |
+| Parameter input | Bounded primitive parser, compatible Thread/Subject selection, current canonical catalog resolve; native Minecraft dialog avoids chat/command logging |
+| Confirmation | Fresh snapshot before preview and before execution; stale fingerprint rejects; new draft UUID after edits; queued execution tokens also bind the view revision |
+| Quick Apply | Type/capability + provider validation discovers importers; one complete importer opens confirmation, multiple importers open a generic choice; no auto-execution |
+| Thread Case / Recent | Bounded immutable session state, F and shift-F interaction routes |
+| Receipts | Last 64 one-shot receipts in the session; this does not replace the later durable receipt store |
+| Non-durable execution | Continuation chain with actor revalidation before each owner stage; bounded owner timeouts; one operation in flight; manifest-checked receipt |
+| Provider isolation | Synchronous manifest failures and asynchronous stage errors feed the same bounded circuit breaker; expected domain/authority refusals stay separate |
+| Initial Minecraft provider | Native snapshots, canonical material/gamemode catalogs, location export and recipient-only particle/sound feedback; full vanilla manipulation remains DEFERRED_BLOCKER |
+| Reward foundation | Neutral `RewardEligibilityPolicy`/context/source/channel contract, deny-wins composition, fail-closed unavailable evidence and immutable developer influence/quarantine state |
+| Quarantine timing | Active player influence never expires by its deadline alone; ending it begins at least another five minutes; LIVE_GM does not erase SANDBOX origin |
+
+The initial adapter's registered surface declaration is not proof that the
+Minecraft domain is universally covered. The independent WW-00 matrix retains
+its full manipulation blocker. All MUTATING+, persistent or influence-bearing
+actions require the durable engine and are rejected by the current execution
+admission gate. No gameplay producer calls the new reward policy yet; the
+156 channel/source test denials prove policy behavior, not end-to-end reward
+quarantine. Current admitted feedback affects only the primary recipient's client
+and is declared SAFE / ONE_SHOT / IntegrityImpact.NONE.
+
+The static architecture suite checks frontend independence, no provider-owned
+Weaver GUI, public-doc secrecy, forbidden scheduler/future/reflection patterns
+and live-handle fields in subject/persistence code. Negative fixtures prove the
+checks reject concrete regressions. These checks supplement live evidence; they
+are not a proof of all Folia ownership paths.
+
+The native InventoryHolder retains only its three immutable identity fields plus
+a transient owner-thread inventory handle, as required by Bukkit's holder API.
+That native handle never enters session snapshots, journal payloads, Threads,
+Imprints or execution stages. The kernel retains immutable view data separately.
+
+Human/server gates still include native dialog cancellation, stale views after
+recovery/relog, forged/duplicate items, GUI interaction during cross-region
+handoff, plugin disable during an admitted operation, client model state and
+particles/sound. The code remains disabled until the later integrity, durable
+recovery and complete capability gates have evidence.
+
+## Integration preflight and findings
+
+Full Java 21 main + regression compilation passed using the 49 real CI dependency
+jars, with no excluded source and three inherited deprecation warnings. All ten
+Weaver suites and three DEV artifact/reward suites passed. Consistency reports
+0 FAIL / 0 WARN; the four static architecture tests pass. Resource-pack validation
+passes for 3,537 client files (1,947 JSON/MCMeta, 1,588 PNG and 80 equipment assets).
+
+Catalog page and resolve responses now validate type, provider/facet provenance,
+requested offset/limit and continuation bounds inside the provider circuit
+breaker. The regression injects invalid metadata, pagination and value provenance
+and verifies quarantine, while an expected missing registry value does not count
+as a provider failure. View clipping preserves Unicode code points and bounds
+titles as well as rows.
+
+Refreshed parent `05b6d5f3694f049bc50b84b6a45de47a2f7d631b` has successful Paper
+`101561997502` and Folia `101561997509` DEV probes in run `34061219404`. Full
+Java compilation and its seven Weaver suites passed in verification job
+`101561997402`; two tasks failed: the inherited malformed Trash source-PNG gate
+and a cumulative config-audit mismatch. The latter first validates the exact
+major-event extension, removes it from observed drift, then incorrectly requires
+it in the expanded allowlist inherited from #155. Its correction is a separate
+commit; no gameplay settings or acceptance thresholds need changing.
+
+No exact remote CI or connected-client evidence is asserted for this new kernel
+integration until its published commit is tested. Its full-state fingerprint is
+conservative: movement, combat and world-clock drift can invalidate confirmation.
+Action-specific state assessment must be supplied with actual manipulating
+providers; the initial recipient-only feedback does not prove that later surface.

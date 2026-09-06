@@ -268,6 +268,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.pve.EquippedCombatPowerService equippedCombatPowerService;
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchItemFactory;
     private final hu.taliann.icesmp.managers.DevItemManager devItemManager;
+    private final hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime worldWeaverRuntime;
     private final hu.taliann.icesmp.managers.GuildManager guildManager;
     private final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager;
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
@@ -902,6 +903,8 @@ public final class IceSMPCore {
         );
 
         registerSpells();
+        this.worldWeaverRuntime = new hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime(plugin, devItemManager, itemIdentityService,
+                java.util.List.of(hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider::new));
     }
 
     /**
@@ -1142,6 +1145,7 @@ public final class IceSMPCore {
         spellMasteryManager.recoverPendingOperations().toCompletableFuture().join();
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
+        worldWeaverRuntime.start();
         registerListeners();
         trashAmbientManager.start();
         // Hot plugin reloads may enable while players are already online and therefore do not emit
@@ -1481,6 +1485,7 @@ public final class IceSMPCore {
         shutdownStep("spyManager", spyManager::shutdown);
         shutdownStep("cultistEventManager", cultistEventManager::shutdown);
         shutdownStep("totemManager", totemManager::shutdown);
+        shutdownStep("worldWeaverRuntime", worldWeaverRuntime::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
         shutdownStep("sitManager", sitManager::shutdown);
         shutdownStep("professionRecipeManager", professionRecipeManager::shutdown);
@@ -2078,6 +2083,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DevItemProtectionListener(plugin, devItemManager), plugin);
+        pluginManager.registerEvents(worldWeaverRuntime.listener(), plugin);
         pluginManager.registerEvents(factionPassiveListener, plugin);
         pluginManager.registerEvents(factionFoodListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WhisperListener(plugin, configManager, whisperManager, factionManager, raidManager, uniqueMaterialFactory, messageManager), plugin);

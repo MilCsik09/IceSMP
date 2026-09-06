@@ -147,7 +147,10 @@ public final class WorldWeaverProviderRegistry {
                     found.facets().forEach(id -> owned(entry, id, facets, owners)); found.actions().forEach(id -> owned(entry, id, actions, owners));
                     found.catalogs().forEach(id -> owned(entry, id, catalogs, owners)); found.exports().forEach(id -> owned(entry, id, exports, owners));
                     found.imports().forEach(id -> owned(entry, id, imports, owners)); found.blockedActions().keySet().forEach(id -> owned(entry, id, actions, owners));
-                    for (final String action : found.actions()) if (!found.facets().contains(actions.get(action).facetId())) throw new IllegalArgumentException("Action without discovered facet");
+                    for (final String action : found.actions()) {
+                        if (!found.facets().contains(actions.get(action).facetId())) throw new IllegalArgumentException("Action without discovered facet");
+                        if (!actions.get(action).subjects().contains(snapshot.ref().kind())) throw new IllegalArgumentException("Discovered action rejects subject kind");
+                    }
                     for (final String catalog : found.catalogs()) if (!found.facets().contains(catalogs.get(catalog).facetId())) throw new IllegalArgumentException("Catalog without discovered facet");
                     for (final String export : found.exports()) if (!found.facets().contains(exports.get(export).facetId())) throw new IllegalArgumentException("Export without discovered facet");
                     for (final String importer : found.imports()) if (!found.actions().contains(imports.get(importer).actionId())) throw new IllegalArgumentException("Importer without discovered action");
@@ -164,6 +167,44 @@ public final class WorldWeaverProviderRegistry {
         if (entry == null) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");
         Objects.requireNonNull(context).authority().requireValid();
         return entry.breaker().call(() -> action.apply(entry.provider()), false);
+    }
+    public CatalogPage catalogPage(final ProviderContext context, final SubjectSnapshot snapshot,
+                                   final String catalogId, final CatalogQuery query) {
+        final String owner = owner(catalogId);
+        return invoke(owner, context, provider -> {
+            final WeaverValueCatalog catalog = checkedCatalog(provider, context, snapshot, catalogId);
+            final CatalogPage page = Objects.requireNonNull(catalog.page(query));
+            if (page.offset() != query.offset() || page.entries().size() > query.limit()
+                    || (page.hasNext() && page.entries().size() != query.limit())) {
+                throw new IllegalArgumentException("Catalog violated requested page bounds");
+            }
+            page.entries().forEach(entry -> checkedCatalogValue(catalogId, entry.value()));
+            return page;
+        });
+    }
+    public WeaverValue resolveCatalog(final ProviderContext context, final SubjectSnapshot snapshot,
+                                      final String catalogId, final String stableId) {
+        WeaverIds.content(stableId);
+        return invoke(owner(catalogId), context, provider -> {
+            final WeaverValue value = checkedCatalog(provider, context, snapshot, catalogId).resolve(stableId)
+                    .orElseThrow(() -> new WeaverDomainRejection("STALE_CATALOG_VALUE"));
+            checkedCatalogValue(catalogId, value); return value;
+        });
+    }
+    private WeaverValueCatalog checkedCatalog(final WorldWeaverProvider provider, final ProviderContext context,
+                                              final SubjectSnapshot snapshot, final String id) {
+        final CatalogDescriptor descriptor = catalogs.get(id);
+        if (descriptor == null) throw new WeaverDomainRejection("UNKNOWN_CATALOG");
+        final WeaverValueCatalog catalog = provider.catalog(context, snapshot, id)
+                .orElseThrow(() -> new WeaverDomainRejection("CATALOG_UNAVAILABLE"));
+        if (!descriptor.type().equals(catalog.type())) throw new IllegalArgumentException("Catalog type differs from manifest");
+        return catalog;
+    }
+    private void checkedCatalogValue(final String id, final WeaverValue value) {
+        final CatalogDescriptor descriptor = catalogs.get(id);
+        types.validate(value);
+        if (!descriptor.type().equals(value.type()) || !owners.get(id).equals(value.sourceProvider())
+                || !descriptor.facetId().equals(value.sourceFacet())) throw new IllegalArgumentException("Catalog value differs from manifest");
     }
     public Map<String, WeaverValue> captureContributions(final hu.taliann.icesmp.dev.weaver.subject.SubjectRef subject) {
         requireFrozen();
@@ -196,6 +237,11 @@ public final class WorldWeaverProviderRegistry {
         return entry.breaker().call(() -> entry.provider().assessRecovery(context, snapshot, operation), true);
     }
     public Map<String, FacetDescriptor> facets() { requireFrozen(); return facets; }
+    public <T> java.util.concurrent.CompletionStage<T> observeExecution(final String providerId, final java.util.concurrent.CompletionStage<T> execution) {
+        requireFrozen(); final Entry entry = providers.get(providerId);
+        if (entry == null) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");
+        return entry.breaker().observe(execution);
+    }
     public Map<String, ActionDescriptor> actions() { requireFrozen(); return actions; }
     public Map<String, CatalogDescriptor> catalogs() { requireFrozen(); return catalogs; }
     public Map<String, ExportDescriptor> exports() { requireFrozen(); return exports; }
