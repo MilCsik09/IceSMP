@@ -50,4 +50,13 @@ Internal developer evidence. The lifecycle integration is implemented; exact-hea
 
 ## Remaining acceptance gates
 
-Record the new exact-head full-build and Paper/Folia results before any server-runtime verdict. Connected-client evidence remains required for forged/duplicate artifacts, full inventory, cursor/offhand/container, death/relog, stale inputs and visual appearance. Broader WorldWeaver acceptance (kernel, provider coverage, reward influence, persistence/journal/undo, Thread/AREA/Binding/Fork and production epoch) remains open in its assigned later phases. The corrupted baseline Trash sprite sources are still a separate failing resource gate.
+Connected-client evidence remains required for forged/duplicate artifacts, full inventory, cursor/offhand/container, death/relog, stale inputs and visual appearance. Broader WorldWeaver acceptance (kernel, provider coverage, reward influence, persistence/journal/undo, Thread/AREA/Binding/Fork and production epoch) remains open in its assigned later phases. The corrupted baseline Trash sprite sources are still a separate failing resource gate.
+
+## Exact runtime evidence — lifecycle head `800b0ae12e18e0e6f798f22dfe2f6b4c966a8f54`
+
+- [WorldWeaver run 34057010953](https://github.com/MilCsik09/IceSMP/actions/runs/34057010953): full Java/main/regression compilation and all executed Java regressions succeeded. The only failed Gradle task was `trashSpriteAssetAudit`, retaining the pre-existing corrupt source PNG gate.
+- [Paper job 101550637015](https://github.com/MilCsik09/IceSMP/actions/runs/34057010953/job/101550637015): **PASS for the bounded artifact runtime probe and durable shutdown only**.
+- [Folia job 101550637010](https://github.com/MilCsik09/IceSMP/actions/runs/34057010953/job/101550637010): **PASS for the same probe and durable shutdown only**, Folia `1.21.11-14-ver/1.21.11@529aabc`.
+- Both server jobs observed `ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS` and `ICESMP_DEV_ARTIFACT_RUNTIME_SHUTDOWN_PASS` and completed successfully. These markers do not prove cross-region connected-player interactions or forged-copy client handling.
+- Resource-pack CI run [34057010948](https://github.com/MilCsik09/IceSMP/actions/runs/34057010948) and inherited Trash runtime/regression run [34057011012](https://github.com/MilCsik09/IceSMP/actions/runs/34057011012) succeeded.
+- The broader local Python suite found one additional authority-inventory omission: the manager's ephemeral entity-interaction deduplication map lacked an exact runtime classification. Its owner-only insertion and centralized quit/kick/death/disable cleanup are implemented. The exact field is now classified with that evidence; unknown UUID maps remain review-blocking. No gameplay authority was moved into an exception.
