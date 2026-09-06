@@ -53,6 +53,12 @@ jobs:
       - name: Export resolved compile evidence for local preflight
         if: ${{ !cancelled() }}
         run: ./gradlew --init-script gradle/world-weaver-evidence.init.gradle worldWeaverCompileEvidence --no-daemon --console=plain
+      - name: Retain the Java 21 toolchain for reproducible offline verification
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p build/reports/world-weaver
+          tar -czf build/reports/world-weaver/java21-toolchain.tar.gz -C "$JAVA_HOME" .
+          sha256sum build/reports/world-weaver/java21-toolchain.tar.gz > build/reports/world-weaver/java21-toolchain.sha256
       - name: Export resolved public build artifacts for offline verification
         if: ${{ !cancelled() }}
         shell: python
