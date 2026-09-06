@@ -620,6 +620,7 @@ These are unresolved implementation seams. This audit does not mark them fixed, 
 - `python3 scripts/test_resource_pack.py`: 18 tests passed (tooling tests, not a WorldWeaver asset proof).
 - No Java, bundled gameplay content, Gradle build definition or resource-pack file has changed in WW-00.
 - Local wrapper build attempted: blocked downloading Gradle (`Network is unreachable`). Installed Gradle 9.4.1 offline build attempted: run-paper 3.0.2 plugin is not cached. Paper/optional dependency jars are not available locally.
+- First WW-00 CI run [34031913646](https://github.com/MilCsik09/IceSMP/actions/runs/34031913646) compiled the unchanged Java sources, but the full build failed because the new workflow's shallow checkout omitted the historical config-migration baseline. The workflow now fetches history; the existing audit is retained unchanged. Resolved compile evidence is exported even when another verification gate fails, without changing the failed build result. A green rerun is still required.
 
 ### Existing baseline CI proof — exact scope
 
