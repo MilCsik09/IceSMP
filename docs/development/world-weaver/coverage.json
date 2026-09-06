@@ -1279,6 +1279,20 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/artifact/DevArtifactOwnerPolicy.java",
+      "domain": "developer_self",
+      "source_sha256": "2106247edac13fb5eea2bb0694f60cf01fd052b5fd16370d1f709c545231ecaf",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/artifact/DevArtifactPolicy.java",
+      "domain": "developer_self",
+      "source_sha256": "8bfbb5cfc8ad6ed787847103d18ea7fd5b58bd68d01bd2466cf6a20c8625760a",
+      "public_methods": [
+        "DevArtifactPolicy"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java",
       "domain": "class",
       "source_sha256": "7e79ec76bd8ce5f078c2718f6effde0f67fbd83ef27aa28dfc018067e7b96deb",
