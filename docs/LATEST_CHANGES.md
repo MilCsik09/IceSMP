@@ -2,6 +2,13 @@
 
 ## Frakció–Suttogó javítás, 2026-09-06
 
+Az eredeti W1–W33 követelmények visszanyerése után a készre jelentés pontosítva:
+a fő állapotmodell implementált, a teljes rework átvétele még nyitott.
+A felfedezhetőség, tanúzás, önkéntes visszaút és régiadat-kezelés fennmaradó
+feladatai a [ROADMAP-ben](../ROADMAP.md#frakcióbűnsuttogó-rework-átvételi-kapui) szerepelnek.
+A teljes titkos küldetéshálózat nem kötelező: egy működő kultista megbízás az
+eredeti W18 szerinti minimum.
+
 A részletes szabályok: [FACTION_REWORK.md](FACTION_REWORK.md). Nincs új HUD vagy
 frakciómérő. A DARK 70%-os normál gyógyítása a saját kasztgyógyításokra is érvényes;
 civil boltok, Tanács, karavánok és fővárosok a száműzetést is figyelembe veszik.

@@ -1,9 +1,27 @@
 # Frakció-, bűn- és Suttogó-rendszer rework
 
-Ez a dokumentum a RED, BLUE, NEUTRAL és DARK frakció új, végleges játékmeneti
+Ez a dokumentum a RED, BLUE, NEUTRAL és DARK frakció jelenleg implementált játékmeneti
 modelljét írja le. A cél egy könnyen érthető, HUD-mérők és aktív frakcióképességek
 nélküli rendszer, amelyben minden oldal más helyzetben erős, és egyik se legyen általánosan
 jobb a többinél. Ez balance-cél; az élő játékpróba még hátravan.
+
+### A terv és a megvalósítás határa
+
+Az [eredeti beszélgetés](https://chatgpt.com/share/6a90b142-b5f4-83eb-9beb-84a7a5471cba)
+Faction/Crime-terve és W1–W33 Suttogó-követelményei ismét elérhetők. A későbbi
+felhasználói egyszerűsítés felülírja a frakciómérőket, a számszerű Suttogó-gyanút
+és annak időbeli csökkenését. A DARK civil ellenséges jogállása szintén a későbbi
+döntés szerint marad; a korábbi „nem Wanted DARK normál PvP-jogállású” javaslat
+nem a végleges irány.
+
+W18 legalább egy korlátozott aktív titkos feladatot kér. A kultista ametisztátadás
+ezt a minimumot megvalósítja; teljes szabotázs-/információ-/küldetéshálózat és
+forgó titkos boltkészlet nem kötelező pótlás. W3–W4 felfedezhetőségi részletei,
+W8 eseményhez kötött bizonyítéka, W9 teljes láthatósági szabálya és W28 önkéntes
+visszaútja viszont nem tekinthetők lezártnak. Az eredeti terv a régi profilok
+biztonságos átvezetését is kéri. Ezek konkrét feladatait a
+[ROADMAP](../ROADMAP.md#frakcióbűnsuttogó-rework-átvételi-kapui) tartalmazza.
+Az alábbi implementált-elemek lista nem jelenti az eredeti terv teljes átvételét.
 
 ## Tervezési alapelvek
 
@@ -120,6 +138,11 @@ lezárul, ha valamelyik feltétel megszűnik; fejlődése megmarad.
 - A közeli tanú nem szakítja meg a rítust. Ehelyett pontos bizonyítékot kap a rítust
   végző játékos ellen.
 
+A jelenlegi időkapu csak `NORMAL` világban kér éjszakát; Nether/End környezetben
+sculkon nappal is elindulhat a rítus. A magány a titkosságot segíti, nem belépési
+előfeltétel. Ez a kód tényleges működése; az eredeti W5 szigorúbb magányfeltétele
+és a dimenziók lore-indoklása külön tisztázandó tétel a ROADMAP-ben.
+
 ### Pontos bizonyíték
 
 A régi általános „tanú-token” helyett a bizonyíték két UUID-hoz kötött:
@@ -128,6 +151,8 @@ A régi általános „tanú-token” helyett a bizonyíték két UUID-hoz köt�
 - kit látott.
 
 A bizonyíték időkorlátos, egyszer használható, és másik játékos ellen nem váltható be.
+A jelenlegi rekord lejáratot és felhasználási jelzőt tárol; eseménytípus vagy
+eseményazonosító még nincs benne. A tanú–cél kötés ezért önmagában nem teljes W8-megfelelés.
 A gyanúsított tartós profiljában él, ezért egyik fél kilépése és a restart sem törli.
 Ugyanaz a tanú–gyanúsított pár a nyom élettartamán belül nem kap új, farmolható
 bizonyítékot; az elhasznált nyugta a lejáratig megmarad. Falon át nincs bizonyíték:
@@ -209,7 +234,12 @@ Profilolvasási hiba esetén hibát jelez, nem állít valótlan `CLEAN` állapo
 
 A régi adósság/outbox és protokollmezők kompatibilitási okból a tartós formátumban
 megmaradhatnak, de nincs őket meghajtó runtime scheduler, játékosparancs vagy HUD-kijelzés.
-Migráció nem része ennek a változtatásnak.
+Ez a változtatás nem valósít meg teljes régiadat-migrációt. Az eredeti terv ezt
+kéri; nem felhasználó által elvetett követelmény. A `processOutbox` pénzügyi
+segédmetódusnak nincs aktív hívója, ezért a megmaradt régi tételek rendezését sem
+a `load()`, sem a kiürített `collectTaxes()` nem végzi el. A már levont pénzt nem
+szabad egyszerűen törölni vagy ismét beszedni; az ellenőrzött átvezetés külön
+kiadási feltétel a ROADMAP-ben.
 
 ## Parancsok
 
