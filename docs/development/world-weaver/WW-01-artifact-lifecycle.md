@@ -1,41 +1,53 @@
 # WW-01 — DEV artifact lifecycle implementation status
 
-Internal developer evidence. This phase is IN PROGRESS and is not production-enabled.
+Internal developer evidence. The lifecycle integration is implemented; exact-head server/client acceptance is still open. WorldWeaver remains code-disabled. This is not a production-readiness verdict.
 
 ## Exact dependency
 
 - Repository: `MilCsik09/IceSMP`.
-- Branch: `feature/world-weaver-ww01-artifact`.
+- Branch: `feature/world-weaver-ww01-artifact`; draft PR #154.
 - Base branch: `feature/world-weaver-ww00-coverage` (PR #153).
 - Base commit: `f1d7ce81939d7a0e6c7bb26780d639c5d819bcf0`.
 - Original cumulative gameplay base: `feature/trash-production-hardening`, `a335b3b5acaea66772534e51527a1c9233a85d1a`.
+- Earlier data-helper checkpoint: `a2f90b3858b2e611b618bb8334026759a71e1987`.
+- Reproducible Java 21 toolchain/evidence checkpoint: `67948b9126b5b3823f0a96d802eaffde81a715af`.
 
-## First reviewable checkpoint
+## Implementation evidence
 
-This checkpoint introduces the data and persistence contracts that the existing `DevItemManager` will use. They are not registered as a second gameplay manager. The existing manager and Bingulus behavior are still unchanged and are not yet connected to these helpers.
-
-| Requirement | Implementation evidence | Status |
+| Requirement | Implementation | Evidence and limit |
 |---|---|---|
-| Fixed/configured owner policies | `FixedArtifactOwner`, `ConfiguredArtifactOwner`; fixed policy never calls configuration | Implemented data contract; primary-developer registration pending |
-| Definition/presentation/policy sources | `DevArtifactDefinition`, presentation and policy records/sources | Implemented data contracts |
-| Four model states and precedence | `DevArtifactPresentation.ModelState` and exhaustive eight-input precedence regression | State model implemented; resource-pack assets pending |
-| No live object in persisted state | `ArtifactStateValue` recursively copies bounded YAML-safe values, rejects arbitrary objects/non-finite numbers | Implemented data boundary |
-| Durable identity publication | `DevArtifactLedger.commit` writes candidate snapshot through its serial executor before publishing identity | Tested helper; manager writer/scheduler integration pending |
-| Conditional mutation | Expected revision, one pending operation per artifact, monotonic revision | Tested helper |
-| Failure isolation at state boundary | Writer/queue failure closes ledger; failed candidate never publishes; accepted writes drain before final save | Tested helper; plugin shutdown integration pending |
-| Legacy migration | `DevArtifactStateCodec`: strict legacy Bingulus identity, pending exact-item encoder, progress and pity; schema 2 retains other artifacts | Tested pure codec; Bukkit exact-item adapter/persistence migration pending |
-| Shared singleton lifecycle | Existing `DevItemManager` | Refactor pending |
-| Bingulus extraction | Existing reward behavior must retain its semantics | Pending |
-| WorldWeaver physical shell | Primary owner, authoritative instance, recovery, interaction routing | Pending |
+| One shared identity/lifecycle authority | Existing `DevItemManager` owns registration, identity ledger, issue/recover, tick dispatch and shutdown | Complete Java source compilation; in-game lifecycle evidence still required |
+| Separate behavior adapters | `BingulusRewardBehavior`, `WorldWeaverArtifactBehavior`, generic interaction/context/registration contracts | Existing reward state suite plus extracted-behavior migration tests |
+| Fixed primary developer | WorldWeaver definition uses `FixedArtifactOwner(HiddenDevAuthority.PRIMARY_DEVELOPER)`; startup rejects a mismatching persisted fixed owner | Fixed/configured policy regression; no permissions or OP grant |
+| Physical authority | Issued identity, owner, instance, current login generation, exact item presentation/components, one visible copy, owner scheduler and active inventory/main-hand checks | Forged marker tests; physical clone/creative-client cases require client evidence |
+| Recovery | Shared manager removes foreign/stale items, rotates missing/duplicate instances durably before insertion, retains state on full inventory; drop/container/ender/death routes guarded | Implementation and compile evidence; full-inventory/death/relog client matrix not yet observed |
+| Schema 2 | `DevArtifactStateCodec` + existing `YamlStore.saveAtomic`, serialized bounded I/O executor | Pure migration/round-trip tests; new real Bukkit/YAML runtime probe awaits exact-head CI |
+| Legacy preservation | Existing Bingulus ID/PDC keys, owner/instance, progress, pity and exact pending bytes survive; reward factories and rarity selection remain canonical | Existing reward suite, migration suite, real-item serialization probe |
+| Owner-safe continuations | `DevArtifactContext` carries immutable IDs; `ArtifactSessionFence` invalidates logout/death/disable generations; each resumed action resolves and validates on the owner | Session regression, no new blocking future wait or legacy scheduler; server/client scheduling evidence open |
+| Durable publication and close | Candidate publishes after atomic write; admission and executor submission share a lock; shutdown closes admission and drains accepted writes before final snapshot | Injected writer/queue failure, concurrent close-vs-submit test, reentrant continuation and two-artifact serialization tests |
+| Generic interaction dispatch | Right-click air/block/entity, sneak flag and F route as immutable interaction data through the existing protection listener; entity-event deduplication | Compile evidence; Subject/Thread GUI intentionally belongs to WW-02/WW-07 |
+| Four modern states | Idle/subject/thread/canon modern item definitions with shared asymmetric echo/amethyst geometry; no numeric CustomModelData | Resource-pack validator and asset-link regression; human visual acceptance required |
+| Failure isolation | Adapter exceptions quarantine that adapter; state-store failure suspends shared durable mutations; generic bounded public-log messages contain no hidden content | Pure storage failure tests; broader provider circuit breaker belongs to WW-08 |
 
-## Verification scope
+## Finding-driven corrections
 
-- `DevArtifactLifecycleRegressionSuite`: fixed-owner policy independence, unissued/foreign/forged identity markers, immutable snapshots, YAML-safe bounds, durable publication ordering, injected fsync failure, stale revision, concurrent operation refusal, reentrant continuation, two-artifact serialized writes, shutdown drain, executor rejection, model-state precedence.
-- `DevArtifactMigrationRegressionSuite`: exact pending payload retained without reroll/rebuild, owner/instance/progress/pity preservation, valid unissued migration, schema-2 restart round-trip and unknown artifact retention, invalid/missing/partial legacy state, unsupported schema and arbitrary live-object rejection.
-- Both suites executed with Java 21 and passed; both are registered as Gradle `check` dependencies. A successful data-helper test is not an in-game forged-copy, Folia scheduling, restart or full-inventory recovery proof.
-- The base's complete Java source set compiled locally with the exact 49 resolved compile dependencies exported by CI. The full main and regression source sets, including this checkpoint, compiled with Java 21 against those dependencies with 0 errors (3 existing deprecation warnings). Both new suites and the existing Bingulus reward suite passed. Exact-head CI must still be recorded before phase completion.
-- Base CI run [34046069105](https://github.com/MilCsik09/IceSMP/actions/runs/34046069105) retains a failed `trashSpriteAssetAudit` for two pre-existing corrupted source PNGs. No gate is removed or skipped.
+1. **Accepted-write/shutdown race:** the data-helper checkpoint reserved a mutation before submitting it to the executor, permitting a concurrent close to overtake it. Submission and admission now share the ledger lock. A two-thread regression exercises this ordering.
+2. **Old Bingulus crash replay:** the old manager inserted the item before clearing the pending reward, with an explicit comment that no transaction layer existed. A crash/write failure could replay that exact pending item. The extracted behavior durably records a delivery ambiguity fence before touching inventory. Normal success completes progress/pity through the shared store. A callback known not to have begun compensates only the unchanged claim. An actually ambiguous interrupted delivery preserves its exact pending payload as `NEEDS_REVIEW` and cannot run again automatically. This narrowly changes failure behavior to preserve the no-duplicate invariant; it does not change reward selection, mint a receipt, delete history or grant a replacement reward. Review resolution remains part of the later developer surface.
+3. **Physical offhand escape:** the existing generic inventory guards did not distinguish an artifact that must remain out of offhand. Swap, inventory click/drag and recovery now enforce the descriptor's main-hand policy.
+4. **Late continuation authority:** queued work no longer carries a live Player through a storage stage. Retired login generations, changed owner/instance, pending identity writes and missing physical items reject resumed behavior.
+
+## Verification ledger
+
+- Complete main/regression source sets compiled locally using Java 21 and the exact 49 compile dependencies exported by CI: 0 errors, 3 existing deprecation warnings.
+- `DevArtifactLifecycleRegressionSuite`, `DevArtifactMigrationRegressionSuite`, existing `DevItemRewardRegressionSuite`: passed locally. Their scope includes state/authority/failure contracts, not a connected Minecraft client.
+- `python3 scripts/check_consistency.py`: 0 FAIL / 0 WARN.
+- `python3 scripts/audit_world_weaver_coverage.py`: 0 inventory errors; 55 domains and **51 DEFERRED_BLOCKER** remain. Lifecycle code does not close provider coverage.
+- `python3 scripts/resource_pack.py validate`: new modern item/model graph validated.
+- `scripts/tests/test_dev_artifact_assets.py`: four code-defined states resolve to distinct modern model textures.
+- The local Gradle wrapper cannot download its distribution (`Network is unreachable`); no mocked API or filtered source compilation is used. The exact-head GitHub full build remains the required build evidence.
+- CI run [34055083190](https://github.com/MilCsik09/IceSMP/actions/runs/34055083190), at the earlier workflow checkpoint, compiled both source sets; its full build retained the pre-existing `trashSpriteAssetAudit` failure. No gate is removed or skipped.
+- The WorldWeaver workflow now includes dedicated lock-pinned Paper 1.21.11 and Folia 1.21.11 jobs. `DevArtifactRuntimeProbe` tests the assembled manager, real detached Bukkit item components/byte round-trip, exact legacy payload conversion, schema-2 YAML and final durable shutdown. It has no reflection or player mutation and never enables WorldWeaver.
 
 ## Remaining acceptance gates
 
-Manager/factory/listener integration; owner-safe async continuations; actual schema-2 file migration; behavior extraction; all physical singleton recovery/forgery/inventory routes; four modern model assets; boot/shutdown probes on Paper and Folia; in-game client evidence. WW-01 is not complete until those gates have implementation and evidence.
+Record the new exact-head full-build and Paper/Folia results before any server-runtime verdict. Connected-client evidence remains required for forged/duplicate artifacts, full inventory, cursor/offhand/container, death/relog, stale inputs and visual appearance. Broader WorldWeaver acceptance (kernel, provider coverage, reward influence, persistence/journal/undo, Thread/AREA/Binding/Fork and production epoch) remains open in its assigned later phases. The corrupted baseline Trash sprite sources are still a separate failing resource gate.

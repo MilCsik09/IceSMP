@@ -14,6 +14,8 @@ public final class DevArtifactMigrationRegressionSuite {
         schemaTwoRoundTripPreservesOtherArtifacts();
         invalidLegacyStateDoesNotInventDefaults();
         unsupportedSchemaAndUnsafeValuesFail();
+        deliveryClaimSurvivesRestartAndPreventsReplay();
+        extractedBehaviorLoadsExactSchemaWithoutRebuildingRewards();
         System.out.println("DEV artifact migration regression suite passed.");
     }
 
@@ -92,6 +94,39 @@ public final class DevArtifactMigrationRegressionSuite {
         try { action.run(); } catch (final RuntimeException expected) { return; }
         throw new AssertionError("Invalid state loaded");
     }
+    private static void deliveryClaimSurvivesRestartAndPreventsReplay() {
+        final DevArtifactState before = migrate(legacy()).get("csodalatos_bingulus");
+        final Map<String, Object> claim = BingulusDeliveryFence.claim(before.behaviorState());
+        final DevArtifactState claimed = before.next(OWNER, INSTANCE, true, claim);
+        final DevArtifactState restarted = DevArtifactStateCodec.decode(
+                DevArtifactStateCodec.encode(Map.of("csodalatos_bingulus", claimed)), item -> "unused")
+                .get("csodalatos_bingulus");
+        check(BingulusDeliveryFence.held(restarted.behaviorState()), "restart lost inventory-delivery fence");
+        try { BingulusDeliveryFence.claim(restarted.behaviorState()); }
+        catch (final IllegalStateException expected) {
+            check(DevArtifactStateCodec.map(restarted.behaviorState(), "pending")
+                    .equals(DevArtifactStateCodec.map(before.behaviorState(), "pending")), "ambiguous exact reward was lost");
+            return;
+        }
+        throw new AssertionError("ambiguous inventory mutation was replayed");
+    }
+
+    private static void extractedBehaviorLoadsExactSchemaWithoutRebuildingRewards() {
+        final BingulusRewardBehavior behavior = new BingulusRewardBehavior(null, null, null, null, null, null, null);
+        final Map<String, Object> migrated = new LinkedHashMap<>(migrate(legacy()).get("csodalatos_bingulus").behaviorState());
+        migrated.put("pending", Map.of("rarity", "epikus", "entry", "unique:fixture:2", "item", "AQIDBA=="));
+        final DevArtifactState issued = new DevArtifactState(OWNER, INSTANCE, true, 0, migrated);
+        behavior.validateState(issued);
+        behavior.loadBehaviorState(migrated);
+        check(behavior.saveBehaviorState().equals(migrated), "extracted behavior changed pending/progress/pity");
+        migrated.put("progress-millis", 0L);
+        check(behavior.saveBehaviorState().get("progress-millis").equals(599_123L), "behavior retained caller's mutable map");
+        behavior.validateState(new DevArtifactState(OWNER, INSTANCE, false, 0, behavior.initialState()));
+        try { behavior.validateState(new DevArtifactState(OWNER, INSTANCE, false, 0, issued.behaviorState())); }
+        catch (final IllegalArgumentException expected) { return; }
+        throw new AssertionError("unissued behavior accepted reward progress");
+    }
+
     private static void check(final boolean condition, final String message) {
         if (!condition) throw new AssertionError(message);
     }

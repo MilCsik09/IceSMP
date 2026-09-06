@@ -48,7 +48,7 @@ public final class DevArtifactLedger {
         return true;
     }
 
-    public CompletionStage<DevArtifactState> commit(final String id, final long expectedRevision,
+    public synchronized CompletionStage<DevArtifactState> commit(final String id, final long expectedRevision,
                                                     final UnaryOperator<DevArtifactState> mutation) {
         final CompletableFuture<DevArtifactState> result = new CompletableFuture<>();
         final DevArtifactState before;
@@ -92,7 +92,7 @@ public final class DevArtifactLedger {
         return result;
     }
 
-    public CompletionStage<Void> save(final boolean close) {
+    public synchronized CompletionStage<Void> save(final boolean close) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
         synchronized (this) {
             if (!healthy || closed) return CompletableFuture.failedFuture(new IllegalStateException("Artifact store unavailable"));

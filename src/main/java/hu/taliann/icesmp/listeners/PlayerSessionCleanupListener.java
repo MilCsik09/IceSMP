@@ -68,7 +68,8 @@ public final class PlayerSessionCleanupListener implements Listener {
                                         final hu.taliann.icesmp.managers.SoulforgeManager soulforgeManager,
                                         final SpellRegistry spellRegistry,
                                         final hu.taliann.icesmp.classspec.integration.BukkitClassSpecSectionSessionBridge profileSessionBridge,
-                                        final hu.taliann.icesmp.client.IceSmpClientBridge clientBridge) {
+                                        final hu.taliann.icesmp.client.IceSmpClientBridge clientBridge,
+                                        final hu.taliann.icesmp.managers.DevItemManager devItemManager) {
         this.stateOwners = List.of(abilityCatalystListener, jobManager, currencyManager, factionManager,
                 factionPassiveListener, metelytepoManager, relicManager,
                 craftingRestrictionManager, resourceManager, partyManager, claimManager,
@@ -78,7 +79,7 @@ public final class PlayerSessionCleanupListener implements Listener {
                 crateManager, moderationManager,
                 vanishManager, invseeManager,
                 whisperManager, guildManager, honorDuelManager, spyManager, combatTagManager,
-                classHealthService, lowHealthBorderListener, soulforgeManager, clientBridge);
+                classHealthService, lowHealthBorderListener, soulforgeManager, clientBridge, devItemManager);
         this.spellRegistry = spellRegistry;
         this.invseeManager = invseeManager;
         this.moderationManager = moderationManager;

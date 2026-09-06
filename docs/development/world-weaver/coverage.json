@@ -34,7 +34,7 @@
       "inspect": "authoritative instance, behavior state, sessions, receipts, diagnostics",
       "planned_actions": "recover, clear session, arming, vanish, Thread/Imprint/Binding/Fork controls",
       "canonical_route": "Generalize existing DevItemManager; preserve Bingulus pending/pity; HiddenDevAuthority; ModerationManager + VanishManager",
-      "rationale": "Current DevItemManager is Bingulus-specific and owner-configurable. Its owner UUID differs from PRIMARY_DEVELOPER. It must not become the WorldWeaver authority. Issuance writes synchronously today.",
+      "rationale": "WW-01 now generalizes the existing manager/factory with schema-2 durable identity, isolated Bingulus behavior and fixed PRIMARY_DEVELOPER artifact registration. The developer Self provider, arming, influence gates and physical client acceptance remain unimplemented/unverified; coverage stays DEFERRED_BLOCKER.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
         "src/main/java/hu/taliann/icesmp/security/HiddenDevAuthority.java",
@@ -1722,8 +1722,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java",
       "domain": "developer_self",
-      "source_sha256": "1185c74c792dba22730c08c28f268f7b0013725ca47045554b89a77e84909d74",
+      "source_sha256": "e667e0a4cfdc50695ddb3bccaa76b5f759ab6f6e90658c525ebe7ee221f929b6",
       "public_methods": [
+        "create",
         "createBingulus",
         "instanceOf",
         "isBingulus",
@@ -2325,19 +2326,34 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
       "domain": "developer_self",
-      "source_sha256": "60a0006cb43f9a4c75c4b23bf7c13f9cff9b390953811ee7bd91e5daea5f1ea1",
+      "source_sha256": "d23ff2e72e9758e20e2ef284103ad3544f11538e3b720bc35693c0b502ddefea",
       "public_methods": [
+        "Diagnostics",
+        "clearPlayerState",
+        "commitBehavior",
+        "compensateUnstartedBehavior",
+        "contextPlayer",
+        "contextValid",
+        "diagnostics",
         "giveToOwner",
         "handleJoin",
         "handleRespawn",
+        "interact",
         "isOwner",
         "itemFactory",
         "load",
+        "mainHandOnly",
+        "onOwner",
         "ownerUuid",
         "refreshOnlineOwner",
+        "register",
+        "renderState",
         "save",
         "shutdown",
-        "start"
+        "start",
+        "state",
+        "stateSnapshot",
+        "updateBehavior"
       ]
     },
     {

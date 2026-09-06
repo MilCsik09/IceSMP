@@ -15,7 +15,7 @@ public record DevArtifactPresentation(String material, String displayName, List<
         models = Map.copyOf(models);
         if (!models.containsKey(ModelState.IDLE)) throw new IllegalArgumentException("Missing idle model");
         for (final String model : models.values()) {
-            if (!model.matches("[a-z0-9_.-]+:[a-z0-9_/.-]+")) {
+            if (!model.isBlank() && !model.matches("[a-z0-9_.-]+:[a-z0-9_/.-]+")) {
                 throw new IllegalArgumentException("Invalid artifact item-model");
             }
         }

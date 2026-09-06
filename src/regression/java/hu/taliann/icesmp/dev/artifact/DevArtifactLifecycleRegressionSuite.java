@@ -25,6 +25,8 @@ public final class DevArtifactLifecycleRegressionSuite {
         shutdownDrainsAcceptedMutationAndRefusesNewWork();
         executorRejectionFailsClosed();
         modelStatePrecedence();
+        retiredSessionsNeverAuthorizeLaterLogins();
+        concurrentCloseCannotOvertakeAcceptedSubmission();
         System.out.println("DEV artifact lifecycle regression suite passed.");
     }
 
@@ -162,6 +164,60 @@ public final class DevArtifactLifecycleRegressionSuite {
                     : mask == 1 ? "SUBJECT_LOCKED" : "IDLE";
             check(state.name().equals(expected), "model state priority drift");
         }
+    }
+
+    private static void retiredSessionsNeverAuthorizeLaterLogins() {
+        final ArtifactSessionFence sessions = new ArtifactSessionFence();
+        final long first = sessions.ensure(OWNER);
+        check(first == sessions.ensure(OWNER), "refresh replaced live session");
+        check(!sessions.matches(new UUID(7, 7), first), "other owner reused session");
+        sessions.close(OWNER);
+        check(!sessions.matches(OWNER, first), "logout retained authority");
+        final long second = sessions.ensure(OWNER);
+        check(second != first && !sessions.matches(OWNER, first), "relogin accepted retired continuation");
+        sessions.clear();
+        check(!sessions.matches(OWNER, second), "disable retained authority");
+        check(sessions.ensure(OWNER) != second, "cleanup reused previous nonce");
+        for (int i = 1; i < 32; i++) sessions.ensure(new UUID(99, i));
+        rejects(() -> sessions.ensure(new UUID(99, 33)));
+    }
+
+    private static void concurrentCloseCannotOvertakeAcceptedSubmission() {
+        final java.util.concurrent.CountDownLatch admission = new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.CountDownLatch closed = new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.atomic.AtomicInteger submissions = new java.util.concurrent.atomic.AtomicInteger();
+        final java.util.concurrent.ConcurrentLinkedQueue<Runnable> queue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+        final List<Map<String, DevArtifactState>> disk = new ArrayList<>();
+        final DevArtifactLedger ledger = new DevArtifactLedger(Map.of("artifact", initial()), action -> {
+            if (submissions.incrementAndGet() == 1) {
+                admission.countDown();
+                await(release);
+            }
+            queue.add(action);
+        }, disk::add);
+        final Thread mutation = new Thread(() -> ledger.commit("artifact", 0,
+                state -> state.next(OWNER, INSTANCE, true, state.behaviorState())));
+        final Thread close = new Thread(() -> { ledger.save(true); closed.countDown(); });
+        mutation.start();
+        await(admission);
+        close.start();
+        boolean overtaken;
+        try { overtaken = closed.await(150, java.util.concurrent.TimeUnit.MILLISECONDS); }
+        catch (final InterruptedException failure) { throw new AssertionError(failure); }
+        finally { release.countDown(); }
+        await(closed);
+        try { mutation.join(5000); close.join(5000); }
+        catch (final InterruptedException failure) { throw new AssertionError(failure); }
+        check(!overtaken, "close overtook accepted but not yet submitted mutation");
+        check(queue.size() == 2, "accepted operation lost during close");
+        queue.remove().run(); queue.remove().run();
+        check(disk.getLast().get("artifact").issued(), "close snapshot preceded accepted issuance");
+    }
+
+    private static void await(final java.util.concurrent.CountDownLatch latch) {
+        try { check(latch.await(5, java.util.concurrent.TimeUnit.SECONDS), "test continuation timed out"); }
+        catch (final InterruptedException failure) { throw new AssertionError(failure); }
     }
 
     private static void rejects(final Runnable action) {

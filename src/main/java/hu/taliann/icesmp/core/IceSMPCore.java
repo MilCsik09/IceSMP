@@ -892,7 +892,8 @@ public final class IceSMPCore {
                 soulforgeManager,
                 spellRegistry,
                 profileSessionBridge,
-                clientBridge
+                clientBridge,
+                devItemManager
         );
 
         registerSpells();
