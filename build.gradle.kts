@@ -705,10 +705,6 @@ val playerProfileFactionAuthorityRegressionTest = registerRegression(
     "playerProfileFactionAuthorityRegressionTest",
     "Runs faction, sinner, whisper and cross-section switch authority regressions.",
     "hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionAuthorityRegressionSuite")
-val playerProfileFactionFoodRegressionTest = registerRegression(
-    "playerProfileFactionFoodRegressionTest",
-    "Runs faction-food timestamp and faction-binding authority regressions.",
-    "hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStoreRegressionSuite")
 val playerProfileFullAuthorityRegressionTest = registerRegression(
     "playerProfileFullAuthorityRegressionTest",
     "Runs final PlayerProfile operation, budget, wallet and bounty recovery regressions.",
@@ -805,6 +801,15 @@ val factionPassiveHardeningRegressionTest = registerRegression(
     "factionPassiveHardeningRegressionTest",
     "Runs pure adapter, retaliation, Blood Moon and signature-food hardening regressions.",
     "hu.taliann.icesmp.factions.FactionPassiveHardeningRegressionSuite")
+val whisperIntegrityRegressionTest = registerRegression(
+    "whisperIntegrityRegressionTest", "Runs real profile/WAL whisper integrity and participation regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperIntegrityRegressionSuite",
+)
+
+val factionReworkRegressionTest = registerRegression(
+    "factionReworkRegressionTest",
+    "Runs meter-free faction, crime-axis and exact-evidence Whisper regressions.",
+    "hu.taliann.icesmp.factions.FactionReworkRegressionSuite")
 val factionTreasuryRegressionTest = registerRegression(
     "factionTreasuryRegressionTest",
     "Runs faction tax origin, collection and recovery regressions.",
@@ -1094,6 +1099,7 @@ tasks.check {
         trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
         trashAnomalyRegressionTest, trashRelicRegressionTest, trashArchaeologyRegressionTest,
         trashProductionHardeningRegressionTest,
+        factionReworkRegressionTest, whisperIntegrityRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
@@ -1105,7 +1111,7 @@ tasks.check {
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,
         playerProfileDailyQuestRegressionTest, playerProfileEconomyRegressionTest, playerProfileFactionAuthorityRegressionTest,
-        playerProfileFactionFoodRegressionTest, playerProfileFullAuthorityRegressionTest, playerProfileIntroRegressionTest,
+        playerProfileFullAuthorityRegressionTest, playerProfileIntroRegressionTest,
         playerProfileModerationRegressionTest, playerProfileCrateRegressionTest, playerProfileDeathEscrowRegressionTest,
         playerProfileQuestRegressionTest, playerProfileWeeklyGoalRegressionTest, playerProfileStatisticsRegressionTest,
         playerProfileTaxRegressionTest, playerProfileRepositoryEnumerationRegressionTest, playerProfileYamlRegressionTest,

@@ -71,6 +71,30 @@ public final class PlayerProfileFactionStore {
                 });
     }
 
+    /** Exile, oath, expected membership and season counter are checked in the same final commit. */
+    public CompletionStage<Boolean> joinDark(final UUID playerId, final FactionType expected,
+                                            final long season, final int maxSwitches) {
+        return PlayerProfileAuthority.current().mutateSectionConditional(playerId, ProfileSectionId.FACTION,
+                FactionSection.class, current -> {
+                    final State before = decode(current);
+                    if (before.membership().orElse(null) != expected || expected == FactionType.DARK
+                            || !Boolean.TRUE.equals(current.extensions().get("sin.exiled"))
+                            || !Boolean.TRUE.equals(current.extensions().get("sin.dark-pact"))) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    final LinkedHashMap<String, Long> cooldowns = new LinkedHashMap<>(current.cooldowns());
+                    if (before.everChosen()) {
+                        final long count = cooldowns.getOrDefault(SWITCH_SEASON, 0L) == season
+                                ? cooldowns.getOrDefault(SWITCH_COUNT, 0L) : 0L;
+                        if (maxSwitches > 0 && count >= maxSwitches) return PlayerProfileService.ConditionalMutation.unchanged(false);
+                        cooldowns.put(SWITCH_SEASON, season);
+                        cooldowns.put(SWITCH_COUNT, Math.addExact(count, 1L));
+                    }
+                    return PlayerProfileService.ConditionalMutation.changed(
+                            assign(current, FactionType.DARK, System.currentTimeMillis(), cooldowns), true);
+                });
+    }
+
     public CompletionStage<State> remove(final UUID playerId) {
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.FACTION, FactionSection.class, current -> {

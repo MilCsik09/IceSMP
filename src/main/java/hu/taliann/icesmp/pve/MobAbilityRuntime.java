@@ -998,9 +998,8 @@ public final class MobAbilityRuntime implements Listener {
 
     private static void heal(final LivingEntity entity, final double amount) {
         if (!entity.isValid() || entity.isDead() || amount <= 0.0D) return;
-        final var max = entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
-        entity.setHealth(Math.min(max == null ? entity.getHealth() : max.getValue(),
-                entity.getHealth() + amount));
+        hu.taliann.icesmp.utils.SpellHealingUtil.heal(entity, amount,
+                hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
     }
 
     private void impactPlayers(final Mob caster, final Location center,

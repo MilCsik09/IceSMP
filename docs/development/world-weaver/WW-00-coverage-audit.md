@@ -9,21 +9,22 @@ This is an implementation input, not a production acceptance report. `DEFERRED_B
 ## Exact source authority
 
 - Repository: `MilCsik09/IceSMP`.
-- Base PR: #152, open/draft/unmerged; no newer open cumulative PR found on 2026-09-06.
-- Base branch: `feature/trash-production-hardening`.
-- Base commit: `a335b3b5acaea66772534e51527a1c9233a85d1a`.
-- Base tree: `99cdf8036c9b4b0fa322e7c8f867e29a2e96e24f`.
+- Current base PR: #155, open/draft/unmerged, refreshed on 2026-09-06 after its publication.
+- Original audit base: #152 at `a335b3b5acaea66772534e51527a1c9233a85d1a`.
+- Base branch: `feature/faction-crime-whisperer-rework`.
+- Base commit: `004c12abf6e896b1931a695f980d4841bbf785e9`.
+- Base tree: `caebe9f201b161fa6bc17869931a78e4d632444c`.
 - Work branch: `feature/world-weaver-ww00-coverage`.
 - Normative v2: [design-v2.md](design-v2.md), read in full before this audit.
 - Original attachment SHA-256: `fd636ab41e0defe6ae48ac41320b275fccc151fcee2d751df2f9eaa9eb98061b`.
 - Repository design copy strips only trailing whitespace from six metadata-header Markdown hard breaks; normative wording is unchanged. Both digests are retained in coverage.json.
 - No master/staging merge or unrelated sibling-branch merge was performed.
 
-Open stack checked: #140 → #141 → #142 → #143 → #144 → #146 → #147 → #148 → #149 → #150 → #151 → #152. #145 is a messaging sibling, not the cumulative head. The separate faction rework branch has no newer open cumulative PR and was not silently merged into this task.
+Open stack checked: #140 → #141 → #142 → #143 → #144 → #146 → #147 → #148 → #149 → #150 → #151 → #152. #145 is a messaging sibling, not the cumulative head. The faction/crime/Whisperer rework is now published as #155 directly on #152. The WW-00 branch incorporates its exact published head by a non-rewriting merge; the later WorldWeaver phases inherit it. The #155 source branch is untouched.
 
 ## Inventory boundary and result
 
-- 1,009 main Java files at the base.
+- 1,010 main Java files at the refreshed base.
 - 262 source-pinned authority/helper entries: the 246 Manager/Service/Registry/Runtime/Coordinator/Authority/Catalog/Policy/Store candidates plus 16 explicitly reviewed non-suffix seams.
 - 414 distinct project components constructed/referenced across IceSMP, IceSMPBootstrap, IceSMPCore and PrologueRuntime have bootstrap role/domain assignments.
 - 55 domain decisions; 51 current `DEFERRED_BLOCKER`; 4 `NO_RUNTIME_SURFACE`; 0 implemented providers.
@@ -127,10 +128,10 @@ The source checker is WW-00 tooling. It is not the required runtime `WorldWeaver
 
 ### faction
 
-- Inspect: membership, passive settings, semantic context, targeting trace.
+- Inspect: canonical/effective membership; passive/food/target decision; civilian access and DARK prerequisite traces.
 - Actions to implement: project faction, contexts, scripted target/peace through existing policy, canonical membership.
-- Domain route: FactionManager + PlayerProfileFactionStore conditional transaction; FactionPassiveListener/FactionMobContextResolver effective consumers.
-- Coverage rationale / current gap: FactionManager.setFaction and switchFactionDurably block via join. Add asynchronous expected-revision entry at the same domain boundary, preserving guild, history and hooks. Never project CROWN_CURSE.
+- Domain route: FactionManager / PlayerProfileFactionStore joinDark durable commit; FactionPassivePolicy and SinManager.hasCivilAccess; projections must not rewrite legal or reward identity.
+- Coverage rationale / current gap: PR #155 changes passive balance, civil exclusion and DARK joining prerequisites. Canonical transaction adapters must preserve independent membership, Exile and Oath and publish hooks only after durable commit..
 - Source: [FactionManager](../../../src/main/java/hu/taliann/icesmp/managers/FactionManager.java), [FactionRelationManager](../../../src/main/java/hu/taliann/icesmp/managers/FactionRelationManager.java), [FactionPassiveService](../../../src/main/java/hu/taliann/icesmp/factions/FactionPassiveService.java), [FactionMobContextResolver](../../../src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java), [FactionPassiveConfig](../../../src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java).
 
 ### trash
@@ -175,10 +176,10 @@ The source checker is WW-00 tooling. It is not the required runtime `WorldWeaver
 
 ### class
 
-- Inspect: class/spec/doctrine/talent/resources/cooldowns/mastery/spell grants and gate trace.
+- Inspect: class/spec/talents/resources/cooldowns and sealed specialization cause; effective DARK healing multiplier.
 - Actions to implement: conditional class/spec/doctrine/talent/xp/grants; bounded runtime resource/cooldown adjustments; favorites.
-- Domain route: ClassSpecProfileGateway typed asynchronous requests and per-class GameplayService APIs; talent/cooldown stores remain domain-owned.
-- Coverage rationale / current gap: Profile CAS alone does not provide WorldWeaver expected revision/observed recovery. Runtime resources and cooldown setters require bounded semantic domain ports and player quarantine; never reset private spell state maps.
+- Domain route: SpecializationManager / class-spec runtime; ClassHealthService and SpellHealingUtil canonical healing route.
+- Coverage rationale / current gap: PR #155 centralizes DARK healing and introduces missing-Oath specialization seal. Both are current projection consumers to audit; WorldWeaver must not bypass them through direct heal/slot writes..
 - Source: [JobManager](../../../src/main/java/hu/taliann/icesmp/managers/JobManager.java), [SpecializationManager](../../../src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java), [TalentManager](../../../src/main/java/hu/taliann/icesmp/managers/TalentManager.java), [ResourceManager](../../../src/main/java/hu/taliann/icesmp/managers/ResourceManager.java), [SpellRegistry](../../../src/main/java/hu/taliann/icesmp/managers/SpellRegistry.java), [SpellMasteryManager](../../../src/main/java/hu/taliann/icesmp/managers/SpellMasteryManager.java), [SpellFavoritesManager](../../../src/main/java/hu/taliann/icesmp/managers/SpellFavoritesManager.java), [ClassHealthService](../../../src/main/java/hu/taliann/icesmp/managers/ClassHealthService.java), [ResourceBonusService](../../../src/main/java/hu/taliann/icesmp/managers/ResourceBonusService.java), [RespecService](../../../src/main/java/hu/taliann/icesmp/managers/RespecService.java), [ClassSpecProfileGateway](../../../src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java), [DefaultClassSpecProfileGateway](../../../src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java).
 
 ### profession
@@ -279,18 +280,18 @@ The source checker is WW-00 tooling. It is not the required runtime `WorldWeaver
 
 ### politics
 
-- Inspect: king/council/votes/tax/treasury/arrears.
+- Inspect: council eligibility/votes, king state, treasury and legacy tax liability inspection.
 - Actions to implement: conditional king/vote/tax/treasury changes and compensating actions.
-- Domain route: KingManager.setKing/vote; CouncilManager.vote/onMembershipChange; FactionTreasuryManager.setTaxRate/depositOnce/withdraw.
-- Coverage rationale / current gap: Crown/faction hooks, treasury balances and election eligibility cannot be reset via private maps. Expected revision and observable durable boundary required.
+- Domain route: CouncilManager civil-law policy; FactionTreasuryManager native treasury transactions; retired membership-tax producer remains retired.
+- Coverage rationale / current gap: PR #155 removes personal king withdrawal and retires membership-tax production. WorldWeaver must not reactivate the producer or erase remaining historical profile liability/receipts..
 - Source: [KingManager](../../../src/main/java/hu/taliann/icesmp/managers/KingManager.java), [CouncilManager](../../../src/main/java/hu/taliann/icesmp/managers/CouncilManager.java), [FactionTreasuryManager](../../../src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java).
 
 ### crime_whisper
 
-- Inspect: sin/pact/wanted/whisper/suspicion/evidence/exposure/crown curse/spy state.
-- Actions to implement: conditional sin/pact/whisper/suspicion/exposure; runtime spy controls.
-- Domain route: SinManager; PlayerProfileSinStore; WhisperManager; PlayerProfileWhisperStore; CrownCurseManager lifecycle.
-- Coverage rationale / current gap: CROWN_CURSE has a dedicated lifecycle, so its context is inspectable but not freely projectable. Preserve immutable criminal history and pending punishment effects.
+- Inspect: Independent Infamy/Wanted/Exile/DARK Oath; Whisper exposure stage, witness/suspect evidence and consumed status, rite before/after receipt, return cooldown and hidden alias.
+- Actions to implement: conditional legal-axis changes, exposure/cover, evidence inspection, rite recovery controls and hidden role mutation through async canonical services; never synthetic natural evidence.
+- Domain route: PlayerProfileSinStore / PlayerProfileWhisperStore conditional FACTION transactions; manager runtime reconciliation; never blocking SinManager wrappers on region thread.
+- Coverage rationale / current gap: PR #155 replaces suspicion score and implicit DARK membership with distinct legal axes and durable evidence/rite state. Developer canonical mutations require expected-revision async APIs and observed-state recovery; no fake sightings, accusations, rites or reward receipts..
 - Source: [SinManager](../../../src/main/java/hu/taliann/icesmp/managers/SinManager.java), [WhisperManager](../../../src/main/java/hu/taliann/icesmp/managers/WhisperManager.java), [CrownCurseManager](../../../src/main/java/hu/taliann/icesmp/managers/CrownCurseManager.java), [SpyManager](../../../src/main/java/hu/taliann/icesmp/managers/SpyManager.java).
 
 ### war_raid_duel
@@ -303,10 +304,10 @@ The source checker is WW-00 tooling. It is not the required runtime `WorldWeaver
 
 ### season
 
-- Inspect: season day/points/end/finale/modifier/chronicle/monument.
+- Inspect: season lifecycle, normalized faction points, active population, per-player qualifying contributions and reward eligibility.
 - Actions to implement: bounded modifier projection; conditional season points and lifecycle actions via canonical coordinator.
-- Domain route: SeasonManager.setSeasonTransitionCoordinator/addExactPointsOnce; existing season/finale/monument/chronicle authorities.
-- Coverage rationale / current gap: Global season completion fans out to treasury/community/history. Must preserve the real transition/outbox and use compensating events; never rewind immutable chronicle/monument history.
+- Domain route: SeasonManager and PlayerProfileSeasonParticipationStore record/load/contributions/active; canonical FACTION profile transaction.
+- Coverage rationale / current gap: PR #155 adds a bounded persistent contribution authority tied to current faction join time. Inspect and semantic developer surfaces plus source integrity gates are required; SANDBOX must not create qualifying contribution receipts..
 - Source: [SeasonManager](../../../src/main/java/hu/taliann/icesmp/managers/SeasonManager.java), [SeasonFinaleManager](../../../src/main/java/hu/taliann/icesmp/managers/SeasonFinaleManager.java), [SeasonMonumentManager](../../../src/main/java/hu/taliann/icesmp/managers/SeasonMonumentManager.java), [ChronicleManager](../../../src/main/java/hu/taliann/icesmp/managers/ChronicleManager.java), [HolidayService](../../../src/main/java/hu/taliann/icesmp/managers/HolidayService.java), [SeasonalModifierService](../../../src/main/java/hu/taliann/icesmp/managers/SeasonalModifierService.java), [SeasonStoryTeller](../../../src/main/java/hu/taliann/icesmp/managers/SeasonStoryTeller.java).
 
 ### prologue_doom
@@ -487,10 +488,10 @@ The source checker is WW-00 tooling. It is not the required runtime `WorldWeaver
 
 ### event.cultists
 
-- Inspect: isActive/isCultist.
+- Inspect: event lifecycle/variant, cultist membership, qualified offering supporters and reward source.
 - Actions to implement: forceStart; add stopExpectedInstance.
-- Domain route: CultistEventManager existing lifecycle, using new typed WeaverEventAdapter.
-- Coverage rationale / current gap: Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.
+- Domain route: CultistEventManager lifecycle and deliverOffering; WhisperManager.rewardFaithful only qualified participants.
+- Coverage rationale / current gap: PR #155 requires actual offering delivery for cover and loot. SANDBOX-origin event/offerings must be excluded from cover, loot and season credit; no synthetic supporter or reward receipt..
 - Source: [CultistEventManager](../../../src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java).
 
 ### event.economy
@@ -656,3 +657,31 @@ Baseline evidence verifies unchanged code only. It does not establish WorldWeave
 Architecture: NOT IMPLEMENTED. Gameplay capability: NOT IMPLEMENTED. Authority/security: NOT VERIFIED. Folia: NOT VERIFIED for WorldWeaver. Reward integrity: NOT IMPLEMENTED. Persistence: NOT IMPLEMENTED. Dynamic extensibility: NOT IMPLEMENTED. Full-stack merge readiness: NO. Production readiness: NO.
 
 Required human/client evidence remains design sections 53 and 56: cross-region actor/target, unload/restart, forged/duplicate artifact, client model/interaction/GUI, prototype escape attempts, projection consumer separation, event reward zero, crash/recovery/undo drift. Static source checks are not substitutes.
+
+## Cumulative base refresh — PR #155
+
+The source inventory was refreshed against `004c12abf6e896b1931a695f980d4841bbf785e9`.
+`PlayerProfileFactionFoodStore` is removed upstream; its retired food state is not
+reintroduced. `PlayerProfileSeasonParticipationStore` is a new canonical authority
+assigned to `season`. The authority total remains 262. Domain count remains 55;
+all 51 implementation blockers remain explicit.
+
+| Changed surface | Required WorldWeaver integration |
+|---|---|
+| Infamy, Wanted, Exile, DARK Oath | Distinct inspect/conditional mutation fields through the typed legal profile authority; membership is separate |
+| Whisper exposure stage and witness/suspect evidence | Canonical durable evidence/consumption, no synthetic natural observation or accusation |
+| Whisper rite and return cooldown | Read pending before/after receipt; observed-state recovery; never spoof a completed rite |
+| Civil access and DARK specialization gates | Preserve the canonical legal/membership/Oath decisions in faction, class and vendor consumers |
+| DARK healing | Use the shared ClassHealthService / SpellHealingUtil path and audit direct vanilla heal effects |
+| Season participation | Inspect canonical per-player contribution state; quarantine every SANDBOX source before qualifying credit |
+| Cultist delivery | Event-owned supporter qualification; gate cover, loot and season credit together |
+| Retired membership tax / king withdrawal | Do not reactivate retired producers; retain historical liability and receipts |
+
+The existing synchronous `SinManager` wrappers still contain blocking future
+waits. WorldWeaver may not call those wrappers on a region thread: its canonical
+mutation adapter must use an expected-revision asynchronous domain entry point
+and reconcile runtime hooks after commit. This is a concrete open capability
+blocker in `crime_whisper`, to be closed by implementation before release.
+
+The changed source hashes and public-method navigation lists are recorded in
+`coverage.json`; they are inventory evidence, not a reward/Folia safety verdict.

@@ -43,6 +43,13 @@ public final class ShopManager {
     /** A karaván-látogatás készlet-sorsolási magja (rotáló kínálat — CaravanManager adja). */
     private java.util.function.LongSupplier caravanStockSeed;
 
+    private volatile SinManager civilLaw;
+    public void setCivilLaw(final SinManager law) { civilLaw = java.util.Objects.requireNonNull(law); }
+    private boolean civilAccess(final java.util.UUID id) {
+        final SinManager law = civilLaw;
+        return law != null && law.hasCivilAccess(id);
+    }
+
     public void setCaravanStockSeed(final java.util.function.LongSupplier caravanStockSeed) {
         this.caravanStockSeed = caravanStockSeed;
     }
@@ -68,6 +75,17 @@ public final class ShopManager {
     /** Whether an NPC name has a configured, enabled shop. */
     public boolean hasShop(final String npcName) {
         return getShop(npcName) != null;
+    }
+
+    /** DARK is excluded from civil vendors; its configured black market remains available. */
+    public String accessError(final Player player, final String npcName) {
+        if (player == null || civilAccess(player.getUniqueId())) {
+            return null;
+        }
+        final String blackmarket = configManager.getString(
+                "factions.dark.blackmarket-npc", "feketepiac");
+        return npcName != null && npcName.equalsIgnoreCase(blackmarket)
+                ? null : "shop-dark-exiled";
     }
 
     public ConfigurationSection getShop(final String npcName) {
@@ -197,6 +215,10 @@ public final class ShopManager {
     }
 
     public synchronized String buy(final Player buyer, final String npcName, final int index) {
+        final String accessError = accessError(buyer, npcName);
+        if (accessError != null) {
+            return accessError;
+        }
         final ConfigurationSection shop = getShop(npcName);
         if (shop == null) {
             return "shop-closed";
@@ -228,7 +250,7 @@ public final class ShopManager {
         final WhisperManager whisperRef = whisperManager;
         if (price > 0.0D && whisperRef != null
                 && npcName != null && npcName.equalsIgnoreCase(
-                        configManager.getString("factions.whisper.blackmarket-npc", "feketepiac"))
+                        configManager.getString("factions.dark.blackmarket-npc", "feketepiac"))
                 && whisperRef.isWhispererCached(buyer.getUniqueId())) {
             final double discount = Math.max(0.0D, Math.min(90.0D,
                     configManager.getDouble("factions.whisper.blackmarket-discount-percent", 25.0D)));

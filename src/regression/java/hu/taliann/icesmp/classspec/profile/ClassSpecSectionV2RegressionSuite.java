@@ -114,7 +114,7 @@ public final class ClassSpecSectionV2RegressionSuite {
 
         final SealReason both = new SealReason(Map.of(
                 SealCause.FACTION_MISSING, "dark",
-                SealCause.SINNER_MARK_MISSING, "sinner"), "gates");
+                SealCause.DARK_OATH_MISSING, "sinner"), "gates");
         check(both.causes().size() == 2, "complete seal set");
         check(both.gateRestorableOnly(), "restorable gates");
     }

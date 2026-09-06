@@ -187,8 +187,9 @@ public final class ClassHealthService implements hu.taliann.icesmp.session.Playe
                 if (maxHealth == null || player.getHealth() >= maxHealth.getValue()) {
                     return;
                 }
-                player.setHealth(Math.min(maxHealth.getValue(),
-                        player.getHealth() + maxHealth.getValue() * percent / 100.0D));
+                hu.taliann.icesmp.utils.SpellHealingUtil.heal(player,
+                        maxHealth.getValue() * percent / 100.0D,
+                        hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
             }, null);
         }
     }

@@ -435,6 +435,10 @@ public final class RaidManager implements PersistentStore {
      * @param deathLocation where the victim fell
      * @return true if the kill scored points (inside the zone / unbound raid)
      */
+    public void recordSeasonContribution(final UUID playerId, final FactionType faction) {
+        if (isParticipant(playerId)) seasonManager.recordContribution(playerId, faction, "raid");
+    }
+
     public synchronized boolean recordKill(final FactionType killerFaction, final Location deathLocation) {
         // synchronized with endRaid(): a kill is either fully counted before the raid closes
         // or ignored after, never merged into 'points' after the payout snapshot was taken.

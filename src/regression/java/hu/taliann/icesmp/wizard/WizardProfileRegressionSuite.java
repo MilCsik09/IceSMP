@@ -293,7 +293,7 @@ public final class WizardProfileRegressionSuite {
 
     private static final Map<GateState.Gate, String> DARK_GATE_IDS = Map.of(
             GateState.Gate.FACTION, "dark_faction",
-            GateState.Gate.SINNER, "sinner_mark",
+            GateState.Gate.OATH, "sinner_mark",
             GateState.Gate.QUEST, "dark_initiation");
 
     private static GateSnapshot satisfiedGates() {

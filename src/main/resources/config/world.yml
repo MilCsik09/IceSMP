@@ -262,6 +262,8 @@ world-events:
     mob-lifespan-seconds: 600
   season:
     enabled: true
+    population-reference: 5   # e fölött sqrt(létszám/5) pont-osztó; minimum 1 pont
+    minimum-contributions: 3 # legalább 3 igazolt kategória/nap teljesítés
     length-days: 60
     treasury-reward: 1000.0
     champion-buff-minutes: 30
@@ -270,7 +272,7 @@ world-events:
       raid:
         red: 1.0
         blue: 1.0
-        neutral: 0.5
+        neutral: 0.0
         dark: 1.0
       world-boss:
         red: 1.0
@@ -537,7 +539,6 @@ cultists:
       id: suttogas_meghivo
       min: 1
       max: 1
-  whisper-suspicion-relief: 15.0
   whisper-loot-rolls: 1
   success-season-points: 3
 corruption:
