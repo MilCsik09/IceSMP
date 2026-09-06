@@ -7,6 +7,9 @@ profession-materials:
     - '&7Egy hang, amit csak te hallasz. Hívás,'
     - '&7amit nem lehet visszautasítani — csak követni.'
     - '&8Éjjel, a mélység sötétjén (sculk), egyedül…'
+    - '&7Tartsd főkézben: SHIFT + jobb kattintás.'
+    - '&7A rítus egy meghívót és saját életerőt áldoz fel.'
+    - '&8Aki valóban lát, bizonyítékot szerezhet ellened.'
   emlekszilank:
     material: AMETHYST_SHARD
     display-name: '&dOpálos Emlékszilánk'

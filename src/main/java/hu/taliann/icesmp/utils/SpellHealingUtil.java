@@ -9,6 +9,13 @@ import org.bukkit.entity.LivingEntity;
 /** Common, modifier-aware healing primitive for spell outputs. */
 public final class SpellHealingUtil {
 
+    private static volatile java.util.function.ToDoubleFunction<LivingEntity> receivingMultiplier = target -> 1.0D;
+
+    /** Installed by the faction adapter; called only on the healed entity owner thread. */
+    public static void setReceivingMultiplier(final java.util.function.ToDoubleFunction<LivingEntity> resolver) {
+        receivingMultiplier = java.util.Objects.requireNonNull(resolver);
+    }
+
     private SpellHealingUtil() {
     }
 
@@ -24,11 +31,11 @@ public final class SpellHealingUtil {
      * @return the effective health restored after max-health clamping
      */
     public static double heal(final LivingEntity target, final double baseAmount, final CastModifiers modifiers) {
-        if (target == null || !Double.isFinite(baseAmount) || baseAmount <= 0.0D) {
+        if (target == null || target.isDead() || !Double.isFinite(baseAmount) || baseAmount <= 0.0D) {
             return 0.0D;
         }
         final CastModifiers effective = modifiers == null ? CastModifiers.IDENTITY : modifiers;
-        final double scaledAmount = baseAmount * effective.healingMultiplier();
+        final double scaledAmount = baseAmount * effective.healingMultiplier() * receivingMultiplier.applyAsDouble(target);
         if (!Double.isFinite(scaledAmount) || scaledAmount <= 0.0D) {
             return 0.0D;
         }

@@ -434,6 +434,7 @@ public final class CommunityGoalManager implements PersistentStore {
             return;
         }
         if (applied.completions().isEmpty()) {
+            recordPersonalContribution(player);
             requestSave();
             return;
         }
@@ -447,6 +448,7 @@ public final class CommunityGoalManager implements PersistentStore {
             pendingCompletions.subList(outboxMark, pendingCompletions.size()).clear();
             return;
         }
+        if (applied.changed()) recordPersonalContribution(player);
         flushPendingCompletions();
     }
 
@@ -482,8 +484,14 @@ public final class CommunityGoalManager implements PersistentStore {
             pendingCompletions.subList(outboxMark, pendingCompletions.size()).clear();
             return false;
         }
+        if (applied.changed()) recordPersonalContribution(player);
         flushPendingCompletions();
         return true;
+    }
+
+    private void recordPersonalContribution(final Player player) {
+        factionManager.getChosenFaction(player.getUniqueId()).ifPresent(
+                side -> seasonManager.recordContribution(player.getUniqueId(), side, "community"));
     }
 
     private AppliedContribution applyContribution(final Player player, final String objectiveType,

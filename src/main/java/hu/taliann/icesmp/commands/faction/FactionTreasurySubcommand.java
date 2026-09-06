@@ -124,9 +124,8 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
         }
         // The crowned king commands their own faction's treasury; admins can always withdraw.
         // A Menedéknek nincs királya — ott a Vének Tanácsának tagjai vehetnek ki (saját kerettel).
-        if (!player.hasPermission(ADMIN_PERMISSION) && !kingManager.isKing(player)
-                && !isNeutralCouncillor(player)) {
-            player.sendMessage(messageManager.get("messages.faction-treasury-king-only", "&cA kasszából csak a frakció királya (a Menedékben: a Vének Tanácsa) vagy admin vehet ki."));
+        if (!player.hasPermission(ADMIN_PERMISSION)) {
+            player.sendMessage(messageManager.get("messages.faction-treasury-king-only", "&cA közös kasszából személyes kivét nem jár. Ezt a karbantartó műveletet csak admin használhatja."));
             return true;
         }
 
@@ -229,8 +228,7 @@ public final class FactionTreasurySubcommand implements FactionSubcommand {
 
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
-        final boolean canWithdraw = sender.hasPermission(ADMIN_PERMISSION)
-                || (sender instanceof Player player && kingManager.isKing(player));
+        final boolean canWithdraw = sender.hasPermission(ADMIN_PERMISSION);
         // Két hosszal: 0 = "/faction treasury " (üres prefix), 1 = gépelés közben (args[0] prefix).
         if (args.length <= 1 && canWithdraw) {
             final String prefix = args.length == 0 ? "" : args[0].toLowerCase();

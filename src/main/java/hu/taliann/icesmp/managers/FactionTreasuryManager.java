@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Shared faction treasury plus PlayerProfile-owned tax debt/outbox coordinator.
+ * Shared faction treasury. Membership-tax production is retired.
  *
  * <p>The YAML store contains only global treasury balances, tax rates and idempotent shared-grant
  * receipts. Player debt, evasion strikes, wallet deduction and settlement outboxes live solely in
@@ -107,7 +107,6 @@ public final class FactionTreasuryManager implements PersistentStore {
             appliedGrants.clear();
             appliedGrants.putAll(loadedGrants);
         }
-        rebuildPlayerTaxProjectionAndOutboxes();
     }
 
     @Override
@@ -223,135 +222,18 @@ public final class FactionTreasuryManager implements PersistentStore {
                 .getOrDefault(originFaction, 0.0D);
     }
 
-    public void collectTaxes() {
-        final var config = configManager.snapshot();
-        final var live = config.configuration();
-        if (live == null || !live.getBoolean("factions.tax.enabled", true)
-                || YamlStore.hasCriticalWriteFailure()) return;
-        final Set<String> exempt = live.getStringList("factions.tax.exempt").stream()
-                .map(value -> value.toUpperCase(Locale.ROOT)).collect(java.util.stream.Collectors.toSet());
-        final double minimum = nonNegativeConfig("factions.tax.minimum-amount", 2.0D);
-        final double maxArrears = nonNegativeConfig("factions.tax.max-arrears", 50.0D);
-        final int threshold = nonNegativeIntConfig("factions.tax.evasion-strikes", 3);
-        final Map<UUID, FactionType> assignments = factionManager.getFactionAssignments();
-        final String run = Long.toUnsignedString(System.currentTimeMillis(), 36);
-
-        PlayerProfileAuthority.current().repository().listPlayerIds().thenAccept(ids -> {
-            for (final UUID playerId : ids) {
-                final FactionType currentFaction = assignments.get(playerId);
-                final EnumSet<FactionType> origins = EnumSet.noneOf(FactionType.class);
-                try { origins.addAll(taxStore.origins(playerId)); }
-                catch (final RuntimeException notReady) { continue; }
-                if (currentFaction != null && !exempt.contains(currentFaction.name()))
-                    origins.add(currentFaction);
-                for (final FactionType origin : origins) {
-                    final double assessment;
-                    if (currentFaction == origin && !exempt.contains(origin.name())) {
-                        final CurrencyType currency = CurrencyType.fromFactionType(origin);
-                        final double wallet;
-                        try { wallet = economyStore.readCached(playerId).amount(currency); }
-                        catch (final RuntimeException notReady) { continue; }
-                        final double percent = getTaxRate(origin) <= 0.0D ? 0.0D
-                                : Math.floor(wallet * getTaxRate(origin)) / 100.0D;
-                        assessment = Math.max(percent, minimum);
-                    } else assessment = 0.0D;
-                    final String operationId = "tax:" + run + ':' + playerId + ':'
-                            + origin.name().toLowerCase(Locale.ROOT);
-                    taxStore.collect(playerId, origin, assessment, maxArrears, threshold,
-                                    operationId)
-                            .whenComplete((collection, failure) -> {
-                                if (failure != null || collection == null) {
-                                    plugin.getLogger().severe("PlayerProfile tax collection failed for "
-                                            + playerId + '/' + origin + ": " + rootMessage(failure));
-                                    return;
-                                }
-                                refreshArrears(playerId);
-                                if (collection.outbox() != null)
-                                    processOutbox(playerId, collection.outbox());
-                                notifyTax(playerId, origin, collection);
-                            });
-                }
-            }
-        }).exceptionally(failure -> {
-            plugin.getLogger().severe("PlayerProfile tax owner enumeration failed: "
-                    + rootMessage(failure));
-            return null;
-        });
-    }
+    /** Membership taxes are retired permanently; legacy config cannot restart the producer. */
+    public void collectTaxes() { }
 
     private void processOutbox(final UUID playerId,
                                final PlayerProfileTaxStore.Outbox outbox) {
         if (outbox.paidMilli() > 0L && !depositOnce("tax-credit:" + outbox.operationId(),
                 outbox.origin(), outbox.paid())) return;
-        final CompletableFuture<Boolean> sin = outbox.reportSin()
-                ? sinManager.addSinOnce(playerId, 1, "tax-sin:" + outbox.operationId())
-                .toCompletableFuture()
-                : CompletableFuture.completedFuture(false);
-        sin.thenCompose(ignored -> taxStore.settle(playerId, outbox.operationId()))
-                .whenComplete((settled, failure) -> {
-                    if (failure != null) {
-                        plugin.getLogger().severe("Tax outbox remains pending for " + playerId
-                                + '/' + outbox.operationId() + ": " + rootMessage(failure));
-                        return;
-                    }
-                    if (outbox.reportSin()) {
-                        final Player online = Bukkit.getPlayer(playerId);
-                        if (online != null) online.getScheduler().run(plugin, task ->
-                                online.sendMessage(messageManager.getMessage("faction-tax-evasion",
-                                        "&4⚖ Adócsalás! &cA Számvevők feljelentettek — bűnt róttak fel neked.")), null);
-                    }
-                });
-    }
-
-    private void notifyTax(final UUID playerId, final FactionType origin,
-                           final PlayerProfileTaxStore.Collection collection) {
-        if (!collection.changed() || collection.paidMilli() == 0L
-                && collection.owedAfterMilli() <= collection.owedBeforeMilli()) return;
-        final Player online = Bukkit.getPlayer(playerId);
-        if (online == null) return;
-        final CurrencyType currency = CurrencyType.fromFactionType(origin);
-        online.getScheduler().run(plugin, task -> {
-            if (!online.isOnline()) return;
-            online.sendMessage(collection.owedAfterMilli() > 0L
-                    ? messageManager.getMessage("faction-tax-arrears",
-                    "&6Állampolgári adó: &f{amount} {currency}&6 levonva, hátralékod: &c{arrears} {currency}&7.",
-                    Map.of("amount", currencyManager.formatBalance(collection.paid()),
-                            "arrears", currencyManager.formatBalance(collection.owedAfter()),
-                            "currency", currency.getDisplayName()))
-                    : messageManager.getMessage("faction-tax-notice",
-                    "&6Állampolgári adó levonva: &f{amount} {currency}&7.",
-                    Map.of("amount", currencyManager.formatBalance(collection.paid()),
-                            "currency", currency.getDisplayName())));
-        }, null);
-    }
-
-    private void rebuildPlayerTaxProjectionAndOutboxes() {
-        PlayerProfileAuthority.current().repository().listPlayerIds().thenAccept(ids -> {
-            for (final UUID playerId : ids) {
-                PlayerProfileAuthority.current().repository().loadSnapshot(playerId)
-                        .thenAccept(profile -> {
-                            refreshArrears(playerId);
-                            for (final PlayerProfileTaxStore.Outbox outbox : taxStore.pending(playerId))
-                                processOutbox(playerId, outbox);
-                        }).exceptionally(failure -> {
-                            plugin.getLogger().severe("Tax profile rebuild failed for " + playerId
-                                    + ": " + rootMessage(failure));
-                            return null;
-                        });
-            }
+        // Already deducted money may be settled, but no tax-related crime is ever generated.
+        taxStore.settle(playerId, outbox.operationId()).whenComplete((settled, failure) -> {
+            if (failure != null) plugin.getLogger().severe("Tax financial settlement pending for "
+                    + playerId + '/' + outbox.operationId() + ": " + rootMessage(failure));
         });
-    }
-
-    private void refreshArrears(final UUID playerId) {
-        try {
-            final EnumMap<FactionType, Double> values = new EnumMap<>(FactionType.class);
-            for (final PlayerProfileTaxStore.Debt debt : taxStore.debts(playerId))
-                values.put(debt.origin(), debt.amount());
-            if (values.isEmpty()) arrearsProjection.remove(playerId);
-            else arrearsProjection.put(playerId, Map.copyOf(values));
-        } catch (final RuntimeException notReady) {
-            arrearsProjection.remove(playerId);
-        }
     }
 
     private double readNonNegative(final YamlConfiguration yaml, final String path,

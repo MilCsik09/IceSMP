@@ -1,5 +1,7 @@
 # IceSMP
 
+Részletes frakció-, bűn- és Suttogó-rework: [docs/FACTION_REWORK.md](docs/FACTION_REWORK.md).
+
 > *Két mondat rombolta le a régi világot. A harmadikat senki élő nem akarja hallani.*
 
 Egy megrepedt Élet Fája, négy egymásnak feszülő hatalom és üresen álló trónok:

@@ -50,15 +50,15 @@ public enum SpecializationType {
     private final Component displayName;
     private final JobType parentJob;
     private final FactionType requiredFaction;
-    private final boolean requiresSinner;
+    private final boolean requiresDarkOath;
 
     SpecializationType(final String id, final String displayName, final JobType parentJob,
-                       final FactionType requiredFaction, final boolean requiresSinner) {
+                       final FactionType requiredFaction, final boolean requiresDarkOath) {
         this.id = id;
         this.displayName = MiniMessage.miniMessage().deserialize(displayName);
         this.parentJob = parentJob;
         this.requiredFaction = requiredFaction;
-        this.requiresSinner = requiresSinner;
+        this.requiresDarkOath = requiresDarkOath;
     }
 
     public String getId() {
@@ -77,8 +77,8 @@ public enum SpecializationType {
         return requiredFaction;
     }
 
-    public boolean requiresSinner() {
-        return requiresSinner;
+    public boolean requiresDarkOath() {
+        return requiresDarkOath;
     }
 
     public static SpecializationType fromId(final String id) {

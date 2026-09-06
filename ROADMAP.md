@@ -645,3 +645,23 @@ magyarázata és a Néma Királynő végjátéka; ezek nem #121 hiányosságok.
 - Economy graph/dead-content authority: `docs/development/professions-2-economy-graph.json`.
 - Runtime staging remains required for multiplayer throughput, real market prices, disconnect/packet-sync and 50–60-player balance.
 - Equipment Resource Pack 2.0 and crafting-order escrow marketplace remain future stacked scopes.
+
+## Frakció–bűn–Suttogó rework átvételi kapui
+
+- 🚧 A `#152` alapból örökölt `dev-assets/trash/source/phase-batch-001.png` és
+  `phase-batch-002.png` sérült. Az eredeti, teljes képbájtok helyreállítása kell a
+  `trashSpriteAssetAudit` és a teljes `build` lezárásához. A frakciójavítás nem írja át
+  a képeket és nem kapcsolja ki a kaput.
+- ◇ Folia staging: két régiót érintő tanúzás; restart és lemezhiba a rítus előtt/közben;
+  három hiteles vád, civil száműzetés, külön Eskü és megerősített DARK-tagság;
+  önvédelem, NPC-bolt, Tanács, karaván, komp, civil fővárosi belépés/respawn.
+- ◇ Builder: civil CAPITAL-zónák, biztonságos `/territory setspawn dark`, elérhető
+  feketepiac és működő kultista rítus/hírvivő.
+- ◇ Balance: azonos szintű/felszerelésű RED, BLUE, NEUTRAL, DARK játékosokkal PvP,
+  hétköznapi PvE és Blood Moon/dungeon gyógyítás. Mérni kell a túlélést, jutalmat és
+  frakcióváltási arányt; „nincs legjobb frakció” még nem igazolt szerveres eredmény.
+- ◇ Szezon: legalább két eltérő létszámú frakció, offline jutalomjogosultság,
+  tagságváltás, három személyes hozzájárulás és az egészpontos normalizálás próbája.
+- ⏸ Az eredeti teljes 692 soros terv/W1–W33 tételes szövegéhez való megfelelés csak
+  az eredeti dokumentum elérhetővé válása után zárható; a jelenlegi szabályokat a
+  [FACTION_REWORK](docs/FACTION_REWORK.md) rögzíti.
