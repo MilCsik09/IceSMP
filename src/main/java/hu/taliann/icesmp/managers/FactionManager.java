@@ -119,6 +119,15 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         this.membershipChangeHook = membershipChangeHook == null ? ignored -> { } : membershipChangeHook;
     }
 
+    public java.util.concurrent.CompletionStage<Boolean> joinDarkDurably(final UUID playerId,
+                                                                         final FactionType expected) {
+        final long season = seasonManager == null ? 0L : seasonManager.getSeasonStart();
+        return factionStore.joinDark(playerId, expected, season, getMaxSwitchesPerSeason()).thenApply(committed -> {
+            if (committed) publishExternalMembershipCommit(playerId, expected, FactionType.DARK);
+            return committed;
+        });
+    }
+
     public void setFaction(final UUID uuid, final FactionType factionType) {
         final UUID playerId = Objects.requireNonNull(uuid, "player UUID");
         final FactionType target = Objects.requireNonNull(factionType, "chosen faction");

@@ -49,6 +49,69 @@ import java.util.function.BooleanSupplier;
  */
 public final class SeasonManager implements PersistentStore, org.bukkit.event.Listener {
 
+    private final hu.taliann.icesmp.playerprofile.application.PlayerProfileSeasonParticipationStore participation =
+            new hu.taliann.icesmp.playerprofile.application.PlayerProfileSeasonParticipationStore();
+
+    private final Map<UUID, hu.taliann.icesmp.playerprofile.application.PlayerProfileSeasonParticipationStore.State>
+            participationProjection = new ConcurrentHashMap<>();
+    private final AtomicBoolean participationLoading = new AtomicBoolean();
+    private volatile boolean participationReady;
+
+    public void clearParticipationProjection(final UUID playerId) { participationProjection.remove(playerId); }
+
+    private void loadParticipation() {
+        if (participationReady || !participationLoading.compareAndSet(false, true)) return;
+        hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.current().repository().listPlayerIds()
+                .thenCompose(ids -> {
+                    final var tasks = ids.stream().map(id -> participation.load(id).thenAccept(state -> {
+                        state.ifPresent(value -> participationProjection.merge(id, value, (old, loaded) ->
+                                old.lastActive() > loaded.lastActive() ? old : loaded));
+                    }).toCompletableFuture()).toArray(CompletableFuture[]::new);
+                    return CompletableFuture.allOf(tasks);
+                }).whenComplete((ignored, failure) -> {
+                    participationReady = failure == null;
+                    participationLoading.set(false);
+                    if (failure != null) plugin.getLogger().warning("Season participation load failed; closing is deferred: " + failure.getMessage());
+                });
+    }
+
+    public int minimumContributions() { return Math.max(1, configManager.getInt("world-events.season.minimum-contributions", 3)); }
+
+    public void recordContribution(final UUID playerId, final FactionType faction, final String source) {
+        final int season = getSeasonNumber();
+        if (faction == null || source == null) return;
+        if (faction == FactionType.NEUTRAL && java.util.Set.of("raid", "war", "spy").contains(source)) return;
+        participation.record(playerId, faction, season, source).thenCompose(recorded -> participation.load(playerId))
+                .thenAccept(state -> state.ifPresent(value -> participationProjection.put(playerId, value)))
+                .exceptionally(failure -> {
+            plugin.getLogger().warning("Season participation save failed for " + playerId + ": " + failure.getMessage());
+            return null;
+        });
+    }
+
+    private int activePopulation(final FactionType faction) {
+        final long now = System.currentTimeMillis();
+        int count = 0;
+        for (final var member : factionManager.getFactionAssignments().entrySet()) {
+            if (member.getValue() != faction) continue;
+            final var state = participationProjection.get(member.getKey());
+            if (!participationReady || state != null && state.season() == seasonNumber
+                    && state.faction().equals(faction.name()) && state.lastActive() > now - 7L * 86_400_000L) count++;
+        }
+        return count;
+    }
+
+    public int personalContributions(final UUID playerId) {
+        final FactionType faction = factionManager.getChosenFaction(playerId).orElse(null);
+        return contributionCount(playerId, faction, getSeasonNumber());
+    }
+
+    private int contributionCount(final UUID playerId, final FactionType faction, final int season) {
+        final var state = participationProjection.get(playerId);
+        return faction != null && state != null && state.season() == season && state.faction().equals(faction.name())
+                ? state.activities().size() : 0;
+    }
+
     private static final String MEMBER_OPERATION_TYPE = "season-member-reward";
 
     private record RewardItem(Material material, int amount) {
@@ -285,6 +348,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             return 0;
         }
         final String sourceKey = source == null || source.isBlank() ? "other" : source;
+        if (faction == FactionType.NEUTRAL && java.util.Set.of("raid", "war", "spy").contains(sourceKey)) return 0;
         final double weight = Math.max(0.0D, configManager.getDouble(
                 "world-events.season.source-weights." + sourceKey + "."
                         + faction.name().toLowerCase(java.util.Locale.ROOT), 1.0D));
@@ -300,7 +364,9 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
                             "world-events.season-finale.top2-point-multiplier", 2.0D)));
         }
         final long scaledLong = Math.round(weighted * timeMultiplier);
-        return (int) Math.min(Integer.MAX_VALUE, Math.max(weighted, scaledLong));
+        final int referencePopulation = Math.max(1, configManager.getInt("world-events.season.population-reference", 5));
+        final double divisor = Math.sqrt(Math.max(1.0D, (double) activePopulation(faction) / referencePopulation));
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(1L, Math.round(Math.max(weighted, scaledLong) / divisor)));
     }
 
     public boolean addExactPointsOnce(final String grantId, final FactionType faction,
@@ -453,6 +519,8 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     }
 
     public void tick() {
+        loadParticipation();
+        if (!participationReady) return;
         processPendingSeasonRewards();
         queueOnlineMemberClaims();
         if (!configManager.getBoolean("world-events.season.enabled", true)) return;
@@ -607,6 +675,8 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             for (final Map.Entry<UUID, FactionType> member
                     : factionManager.getFactionAssignments().entrySet()) {
                 if (member.getValue() != champion) continue;
+                final int minimum = minimumContributions();
+                if (contributionCount(member.getKey(), champion, closingSeason) < minimum) continue;
                 final UUID grantId = UUID.nameUUIDFromBytes((batchId + ":" + member.getKey())
                         .getBytes(StandardCharsets.UTF_8));
                 claims.put(grantId, new MemberRewardClaim(

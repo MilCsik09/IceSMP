@@ -2,9 +2,9 @@
   "schema_version": 1,
   "stage": "WW-00_SOURCE_AUDIT_ONLY",
   "repository": "MilCsik09/IceSMP",
-  "base_branch": "feature/trash-production-hardening",
-  "base_commit": "a335b3b5acaea66772534e51527a1c9233a85d1a",
-  "base_tree": "99cdf8036c9b4b0fa322e7c8f867e29a2e96e24f",
+  "base_branch": "feature/faction-crime-whisperer-rework",
+  "base_commit": "004c12abf6e896b1931a695f980d4841bbf785e9",
+  "base_tree": "caebe9f201b161fa6bc17869931a78e4d632444c",
   "design": {
     "path": "docs/development/world-weaver/design-v2.md",
     "sha256": "ec26e42da5796f327694de45f7566d6c3a3a861e10da9389a5f184320b41b2ca",
@@ -71,10 +71,10 @@
       "target_level": "FULL_PROVIDER",
       "planned_provider": "FactionWeaverProvider",
       "phase": "WW-04",
-      "inspect": "membership, passive settings, semantic context, targeting trace",
+      "inspect": "canonical/effective membership; passive/food/target decision; civilian access and DARK prerequisite traces",
       "planned_actions": "project faction, contexts, scripted target/peace through existing policy, canonical membership",
-      "canonical_route": "FactionManager + PlayerProfileFactionStore conditional transaction; FactionPassiveListener/FactionMobContextResolver effective consumers",
-      "rationale": "FactionManager.setFaction and switchFactionDurably block via join. Add asynchronous expected-revision entry at the same domain boundary, preserving guild, history and hooks. Never project CROWN_CURSE.",
+      "canonical_route": "FactionManager / PlayerProfileFactionStore joinDark durable commit; FactionPassivePolicy and SinManager.hasCivilAccess; projections must not rewrite legal or reward identity",
+      "rationale": "PR #155 changes passive balance, civil exclusion and DARK joining prerequisites. Canonical transaction adapters must preserve independent membership, Exile and Oath and publish hooks only after durable commit.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
         "src/main/java/hu/taliann/icesmp/managers/FactionRelationManager.java",
@@ -191,10 +191,10 @@
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ClassWeaverProvider",
       "phase": "WW-09",
-      "inspect": "class/spec/doctrine/talent/resources/cooldowns/mastery/spell grants and gate trace",
+      "inspect": "class/spec/talents/resources/cooldowns and sealed specialization cause; effective DARK healing multiplier",
       "planned_actions": "conditional class/spec/doctrine/talent/xp/grants; bounded runtime resource/cooldown adjustments; favorites",
-      "canonical_route": "ClassSpecProfileGateway typed asynchronous requests and per-class GameplayService APIs; talent/cooldown stores remain domain-owned",
-      "rationale": "Profile CAS alone does not provide WorldWeaver expected revision/observed recovery. Runtime resources and cooldown setters require bounded semantic domain ports and player quarantine; never reset private spell state maps.",
+      "canonical_route": "SpecializationManager / class-spec runtime; ClassHealthService and SpellHealingUtil canonical healing route",
+      "rationale": "PR #155 centralizes DARK healing and introduces missing-Oath specialization seal. Both are current projection consumers to audit; WorldWeaver must not bypass them through direct heal/slot writes.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/JobManager.java",
         "src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java",
@@ -425,10 +425,10 @@
       "target_level": "FULL_PROVIDER",
       "planned_provider": "PoliticsWeaverProvider",
       "phase": "WW-09",
-      "inspect": "king/council/votes/tax/treasury/arrears",
+      "inspect": "council eligibility/votes, king state, treasury and legacy tax liability inspection",
       "planned_actions": "conditional king/vote/tax/treasury changes and compensating actions",
-      "canonical_route": "KingManager.setKing/vote; CouncilManager.vote/onMembershipChange; FactionTreasuryManager.setTaxRate/depositOnce/withdraw",
-      "rationale": "Crown/faction hooks, treasury balances and election eligibility cannot be reset via private maps. Expected revision and observable durable boundary required.",
+      "canonical_route": "CouncilManager civil-law policy; FactionTreasuryManager native treasury transactions; retired membership-tax producer remains retired",
+      "rationale": "PR #155 removes personal king withdrawal and retires membership-tax production. WorldWeaver must not reactivate the producer or erase remaining historical profile liability/receipts.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/KingManager.java",
         "src/main/java/hu/taliann/icesmp/managers/CouncilManager.java",
@@ -442,10 +442,10 @@
       "target_level": "FULL_PROVIDER",
       "planned_provider": "CrimeWeaverProvider",
       "phase": "WW-09",
-      "inspect": "sin/pact/wanted/whisper/suspicion/evidence/exposure/crown curse/spy state",
-      "planned_actions": "conditional sin/pact/whisper/suspicion/exposure; runtime spy controls",
-      "canonical_route": "SinManager; PlayerProfileSinStore; WhisperManager; PlayerProfileWhisperStore; CrownCurseManager lifecycle",
-      "rationale": "CROWN_CURSE has a dedicated lifecycle, so its context is inspectable but not freely projectable. Preserve immutable criminal history and pending punishment effects.",
+      "inspect": "Independent Infamy/Wanted/Exile/DARK Oath; Whisper exposure stage, witness/suspect evidence and consumed status, rite before/after receipt, return cooldown and hidden alias",
+      "planned_actions": "conditional legal-axis changes, exposure/cover, evidence inspection, rite recovery controls and hidden role mutation through async canonical services; never synthetic natural evidence",
+      "canonical_route": "PlayerProfileSinStore / PlayerProfileWhisperStore conditional FACTION transactions; manager runtime reconciliation; never blocking SinManager wrappers on region thread",
+      "rationale": "PR #155 replaces suspicion score and implicit DARK membership with distinct legal axes and durable evidence/rite state. Developer canonical mutations require expected-revision async APIs and observed-state recovery; no fake sightings, accusations, rites or reward receipts.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/SinManager.java",
         "src/main/java/hu/taliann/icesmp/managers/WhisperManager.java",
@@ -478,18 +478,19 @@
       "target_level": "FULL_PROVIDER",
       "planned_provider": "SeasonWeaverProvider",
       "phase": "WW-09",
-      "inspect": "season day/points/end/finale/modifier/chronicle/monument",
+      "inspect": "season lifecycle, normalized faction points, active population, per-player qualifying contributions and reward eligibility",
       "planned_actions": "bounded modifier projection; conditional season points and lifecycle actions via canonical coordinator",
-      "canonical_route": "SeasonManager.setSeasonTransitionCoordinator/addExactPointsOnce; existing season/finale/monument/chronicle authorities",
-      "rationale": "Global season completion fans out to treasury/community/history. Must preserve the real transition/outbox and use compensating events; never rewind immutable chronicle/monument history.",
+      "canonical_route": "SeasonManager and PlayerProfileSeasonParticipationStore record/load/contributions/active; canonical FACTION profile transaction",
+      "rationale": "PR #155 adds a bounded persistent contribution authority tied to current faction join time. Inspect and semantic developer surfaces plus source integrity gates are required; SANDBOX must not create qualifying contribution receipts.",
       "source_evidence": [
-        "src/main/java/hu/taliann/icesmp/managers/SeasonManager.java",
-        "src/main/java/hu/taliann/icesmp/managers/SeasonFinaleManager.java",
-        "src/main/java/hu/taliann/icesmp/managers/SeasonMonumentManager.java",
         "src/main/java/hu/taliann/icesmp/managers/ChronicleManager.java",
         "src/main/java/hu/taliann/icesmp/managers/HolidayService.java",
+        "src/main/java/hu/taliann/icesmp/managers/SeasonFinaleManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/SeasonManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/SeasonMonumentManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/SeasonStoryTeller.java",
         "src/main/java/hu/taliann/icesmp/managers/SeasonalModifierService.java",
-        "src/main/java/hu/taliann/icesmp/managers/SeasonStoryTeller.java"
+        "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSeasonParticipationStore.java"
       ],
       "implementation_evidence": []
     },
@@ -849,10 +850,10 @@
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
-      "inspect": "isActive/isCultist",
+      "inspect": "event lifecycle/variant, cultist membership, qualified offering supporters and reward source",
       "planned_actions": "forceStart; add stopExpectedInstance",
-      "canonical_route": "CultistEventManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "canonical_route": "CultistEventManager lifecycle and deliverOffering; WhisperManager.rewardFaithful only qualified participants",
+      "rationale": "PR #155 requires actual offering delivery for cover and loot. SANDBOX-origin event/offerings must be excluded from cover, loot and season credit; no synthetic supporter or reward receipt.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java"
       ],
@@ -984,8 +985,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/assassin/AssassinGameplayService.java",
       "domain": "class",
-      "source_sha256": "fcdf8183adcb8516f9c6cda342d5a65e806265be7dfc69cf4ce4729e9ca7920a",
+      "source_sha256": "f1cedd6784e139e5c0678ea99f26e458f5e7f788c6b72cbc433f46f3a4d76578",
       "public_methods": [
+        "AssassinGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -1234,8 +1236,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java",
       "domain": "class",
-      "source_sha256": "c82dba4faff9dea17f765d417e26142273f997f2ec5c342207cf74a678420666",
+      "source_sha256": "9d17f712d1ccf0a86a37220680e0ba6089d698e9fa46d8ca5f05004f5f674035",
       "public_methods": [
+        "DeathKnightGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -1258,8 +1261,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/demonhunter/DemonHunterGameplayService.java",
       "domain": "class",
-      "source_sha256": "4da5fa6b7fea10984becda1192886b6c9d55f78914402813439cd1c557e7e8e0",
+      "source_sha256": "153bc2853229c887fdfa486b6ebc43763881410bec540d35a15b5371f84cc62e",
       "public_methods": [
+        "DemonHunterGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -1281,8 +1285,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java",
       "domain": "class",
-      "source_sha256": "7e79ec76bd8ce5f078c2718f6effde0f67fbd83ef27aa28dfc018067e7b96deb",
+      "source_sha256": "42172b00fba25ea3059ad3d7828dc351c76ab38aea97d10aa2d6543f7f8a0bbc",
       "public_methods": [
+        "DruidGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -1307,8 +1312,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java",
       "domain": "class",
-      "source_sha256": "f3bf161c40e027fe0b3a406fc8ae00216e223bb30610790cec01683b42a54567",
+      "source_sha256": "0ad3507baa2c93e884fe3bfc35b3646c2f83597cf63c44a6b2e7a09e03d72dde",
       "public_methods": [
+        "EvokerGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -1349,14 +1355,10 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionFoodPolicy.java",
       "domain": "faction",
-      "source_sha256": "ad1a63bb41b252dcef37c32c8376586511fe5ac13c24588ea29f11f10aabbd19",
+      "source_sha256": "83c8d6c0acaa79fa7c27f4b9d51ed7bc0a24b1e7a4d7889683acbcbd59d03fea",
       "public_methods": [
-        "deadline",
-        "durationMillis",
         "durationTicks",
-        "hasGraceElapsed",
         "mayApplyBuff",
-        "mayRunDutyCallback",
         "requiredFaction"
       ]
     },
@@ -1386,8 +1388,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
       "domain": "faction",
-      "source_sha256": "b7a6fb289cae644c1deda9f07d47fc9dd7727438798dae79a824ba5a6aa110f0",
+      "source_sha256": "0438da8ab2bed2099233f641b829cc992fe3add09edd1b8eaef12f1aefbdaf2c",
       "public_methods": [
+        "FactionPassiveConfig",
         "reload",
         "snapshot"
       ]
@@ -1395,13 +1398,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionPassivePolicy.java",
       "domain": "faction",
-      "source_sha256": "7c5d35098b7493b4784738609365cf39717e165e30fd820fe3dc3a5e7195bceb",
+      "source_sha256": "a9c173ebdf28641b5864ab5f48a89cd2824f564551e2dc6628f7ab4a0f4514b3",
       "public_methods": [
         "TargetContext",
         "blueExhaustionSaveChance",
         "canAlertDarkUndead",
         "damageMultiplier",
         "hasExcludedContent",
+        "healingMultiplier",
         "resolveTarget",
         "witherDurationMultiplier"
       ]
@@ -2004,8 +2008,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ClassHealthService.java",
       "domain": "class",
-      "source_sha256": "a22ed6312a31ea6a4ff9c79b91cddd0812b57e0d2275ede928127dbe34908b9f",
+      "source_sha256": "8d2b85c1cbef9d793781575b14a09050b25f08c9773874622612acced62f332c",
       "public_methods": [
+        "ClassHealthService",
         "apply",
         "cachedDamageBonus",
         "clearPlayerState",
@@ -2017,10 +2022,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CombatTagManager.java",
       "domain": "war_raid_duel",
-      "source_sha256": "bcf5e7e29c81c6f6c86504c5b105bde11667fbae96dbf1d4068d0624d26571e7",
+      "source_sha256": "b84892d73bc93db43c7931e1ac7c49ebba52a01b85eb1ba75feec43b76d5cd91",
       "public_methods": [
+        "CombatTagManager",
         "clearPlayerState",
         "isEnabled",
+        "isSelfDefense",
         "isTagged",
         "minFightSeconds",
         "pairFightSeconds",
@@ -2031,8 +2038,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java",
       "domain": "goals",
-      "source_sha256": "10077885b2956ba42fe7d6bddc825541a50164c4beba7449c6d47adc3dac7bc6",
+      "source_sha256": "e02c3bc55d2af70451bd59508706bc1ee46bcd3cbe49ecdb9c7ebc2ab13966e4",
       "public_methods": [
+        "CommunityGoalManager",
         "commitSeasonTransition",
         "contribute",
         "contributeOnce",
@@ -2086,8 +2094,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java",
       "domain": "event.corruption",
-      "source_sha256": "101bd605b3305105651391dc6bee5765a6f0aa4a3273931e8d446c931b7296fa",
+      "source_sha256": "14371e1a38f68033f826cc80ec664390da45bba54c6cdd1406b3a0f527ed85f8",
       "public_methods": [
+        "CorruptionManager",
         "forceSpawn",
         "forceSpawnAt",
         "forgetCorruptMob",
@@ -2109,8 +2118,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CouncilManager.java",
       "domain": "politics",
-      "source_sha256": "99adf1fe85fef1078c7cb99a6270713600f02a6d7d053f955fd7e2030580204b",
+      "source_sha256": "1b0e61eb77e067261a18ebfa1f4e597cdffb693dc73a389bbf178ffeb4d513e5",
       "public_methods": [
+        "CouncilManager",
         "councillorNames",
         "councillors",
         "isCouncillor",
@@ -2118,6 +2128,7 @@
         "load",
         "onMembershipChange",
         "save",
+        "setCivilLaw",
         "tick",
         "vote",
         "votesFor"
@@ -2208,8 +2219,10 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java",
       "domain": "event.cultists",
-      "source_sha256": "260ca548d9232c523a4777acf0c0599955f1495d02a3e8ce87a541996c1f8147",
+      "source_sha256": "2d86785053a4f9433ae5bb8373fcfe8b4ea18adbb6b89dd6ad186bcdf92836f8",
       "public_methods": [
+        "CultistEventManager",
+        "deliverOffering",
         "forceStart",
         "isActive",
         "isCultist",
@@ -2498,8 +2511,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
       "domain": "faction",
-      "source_sha256": "03a3d86c6925df76a830cf57c17df2c799af251b382cc70c92a7c7779c6d58c5",
+      "source_sha256": "1976175fbb9d70a1d909ccd994317efa73f693ab413c0fb829877670e155a75b",
       "public_methods": [
+        "FactionManager",
         "cleanup",
         "clearPlayerState",
         "describeAvailableFactions",
@@ -2520,6 +2534,7 @@
         "isEligibleForFactionBenefits",
         "isInSeasonEndLockout",
         "isMember",
+        "joinDarkDurably",
         "load",
         "publishExternalMembershipCommit",
         "reconcileMembershipHistory",
@@ -2547,8 +2562,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java",
       "domain": "politics",
-      "source_sha256": "d4c1f49186dfcda3a63dff87c0807e6076af2f7357f68d1c5a335b6140409d69",
+      "source_sha256": "763aa06132b3fab19648256ed5e672724da9534a91e070a58e71385c49d970cd",
       "public_methods": [
+        "FactionTreasuryManager",
         "collectTaxes",
         "deposit",
         "depositOnce",
@@ -2565,8 +2581,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FerryManager.java",
       "domain": "player_runtime",
-      "source_sha256": "1f0e88e545efa817bc223241e72c0e74109a8136c05065085adeac42c12faac3",
+      "source_sha256": "be07837e9c188f9de95d634fa5422f349923150776e1002a1e60692111449b5d",
       "public_methods": [
+        "FerryManager",
         "ride",
         "routeIds",
         "routeName"
@@ -2635,8 +2652,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HonorDuelManager.java",
       "domain": "war_raid_duel",
-      "source_sha256": "cd71da0fe49536da7483bbd04d6dd57d70e3fa7b2327f8f3f45dfa17d86f0f5d",
+      "source_sha256": "4e5247653116091ee83ba788459b92c3d49814384842f52087d81debb511c258",
       "public_methods": [
+        "HonorDuelManager",
         "accept",
         "challenge",
         "clearPlayerState",
@@ -3137,12 +3155,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/PlayerCaravanManager.java",
       "domain": "event.player_caravan",
-      "source_sha256": "edd1efee93ff90e441c41c7a19ba138cb09c25c644a8374b3d8e2594f0f3ec27",
+      "source_sha256": "465e028b3ec752590bdf039f17dadd1c9f14c9696f0aaf8b8e6f204540a73763",
       "public_methods": [
+        "PlayerCaravanManager",
         "isActive",
         "isConvoy",
         "onConvoyKilled",
         "send",
+        "setCivilLaw",
         "shutdown",
         "tick"
       ]
@@ -3327,9 +3347,10 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/RaidManager.java",
       "domain": "war_raid_duel",
-      "source_sha256": "a9ed27ffc4ff1c45c1c35a747311449fc2a5e0f7bcc6908943b6ddef62271c26",
+      "source_sha256": "202565eb67efeac37081bcbf8b69497e5def7622ac102636e45ad841b27a08ed",
       "public_methods": [
         "ActiveRaid",
+        "RaidManager",
         "countParticipants",
         "endRaid",
         "getActiveRaid",
@@ -3345,6 +3366,7 @@
         "maxPerSide",
         "onMembershipChange",
         "recordKill",
+        "recordSeasonContribution",
         "save",
         "setWinHook",
         "shutdown",
@@ -3472,8 +3494,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/RitualManager.java",
       "domain": "soulforge_ritual",
-      "source_sha256": "921e796c97f4f138e4b434b70c44d444fdb12c5412a6c1067df4d1e49bb5d8bb",
+      "source_sha256": "47b864e9b25093a3ea59925cfb3026e4fae7fea6b0767c6e9eaabcfb8491f41c",
       "public_methods": [
+        "RitualManager",
         "clearPlayerState",
         "setCursedGearService",
         "setPaktDependencies",
@@ -3499,13 +3522,15 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonManager.java",
       "domain": "season",
-      "source_sha256": "0496d2f0ca10d8c5b41f88ce0c639947254513d93891cf99ed95c4cdc581aff9",
+      "source_sha256": "8f66fd36aaae0219a258ee5ac8f350cc4dcecb07fd2e4f9032dde2c39ef4ddc6",
       "public_methods": [
+        "SeasonManager",
         "addExactPointsOnce",
         "addPoints",
         "addPointsOnce",
         "calculatePointsDelta",
         "calculatePointsDeltas",
+        "clearParticipationProjection",
         "getPoints",
         "getSeasonDay",
         "getSeasonEndMillis",
@@ -3513,7 +3538,10 @@
         "getSeasonStart",
         "isGrandFinaleWindow",
         "load",
+        "minimumContributions",
         "onJoin",
+        "personalContributions",
+        "recordContribution",
         "save",
         "setMonumentManager",
         "setSeasonFinale",
@@ -3573,8 +3601,10 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ShopManager.java",
       "domain": "economy",
-      "source_sha256": "99f916e46c08e24cd70ae3567231d82aead71f9ad0981c2e8e5f32740de195e4",
+      "source_sha256": "1c6af7aa2c0572a2cd9351bf67fddef4bc0400416a74ee6385bfcb29354eb8d3",
       "public_methods": [
+        "ShopManager",
+        "accessError",
         "buy",
         "getAmount",
         "getItems",
@@ -3586,6 +3616,7 @@
         "resolveCurrency",
         "setCaravanActiveCheck",
         "setCaravanStockSeed",
+        "setCivilLaw",
         "setEscortBonusCheck",
         "setUniqueMaterialFactory",
         "setWhisperManager"
@@ -3594,19 +3625,28 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SinManager.java",
       "domain": "crime_whisper",
-      "source_sha256": "87b2b288c76546a9c11f65609b48ff85acd8a56a0e9ce7d40bca9cd82b7f2852",
+      "source_sha256": "d17133bc00558e6bffcc312d4eda4faf024376cfd128b8e07ca939a85b5024c7",
       "public_methods": [
+        "SinManager",
         "addSin",
         "addSinOnce",
         "breakDarkPact",
         "clearDarkPactForFactionOverride",
         "clearSinner",
+        "exile",
+        "getInfamy",
         "getSinCount",
+        "hasCivilAccess",
         "hasDarkPact",
+        "hasOath",
+        "isCivilOutcast",
+        "isExiled",
         "isSinner",
+        "isWanted",
         "markAsSinner",
         "reduceSin",
         "resetSinCount",
+        "sealDarkForFactionOverride",
         "sealDarkPact",
         "setSpecializationManager"
       ]
@@ -3676,8 +3716,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java",
       "domain": "class",
-      "source_sha256": "f2476133905635f98f27c34434abe92429ccfbc71cfd4212b8bc446a27953de8",
+      "source_sha256": "3d9ced9f59ab4b40f76084b7952bf7fbc827d42eb3eb1e11e2a65ab1e03f2f04",
       "public_methods": [
+        "SpecializationManager",
         "activeDoctrine",
         "applyClassSpecializationUnlocks",
         "applyClassSpecializationUnlocksV2",
@@ -3778,8 +3819,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SpyManager.java",
       "domain": "crime_whisper",
-      "source_sha256": "334f719831b43396dd64bdaeebcb19c834dfb0b342b7f75789c7db8275b5a527",
+      "source_sha256": "ec397a11dd71912239d95dd45a2878606822bef2e555fcb30a91f28ba88aa1f7",
       "public_methods": [
+        "SpyManager",
         "clearPlayerState",
         "isSpying",
         "reveal",
@@ -3976,8 +4018,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WarWindowManager.java",
       "domain": "war_raid_duel",
-      "source_sha256": "201282a9fa4ccbb741b82e59d1c3a6a471b4857e80758259d02d3a72cea3a236",
+      "source_sha256": "c8bbbc29e26df10c653d17348e9bf3903a4585b6c435c045b5bdc75d9fa52155",
       "public_methods": [
+        "WarWindowManager",
         "forceEnd",
         "forceStart",
         "handleWarKill",
@@ -3994,27 +4037,30 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WhisperManager.java",
       "domain": "crime_whisper",
-      "source_sha256": "28520f83e3c9ae0b4b9eacdc073d887d43d2654678a864fbd89f1103efb8448c",
+      "source_sha256": "a46d18b4c8f7d58afd5571f03b74c265bb5c326ef81fce5f7b41c1df1844d0c5",
       "public_methods": [
-        "addSuspicion",
+        "WhisperManager",
+        "beginRite",
         "canBecomeWhisperer",
         "canHearWhispers",
         "canHearWhispersCached",
         "clearPlayerState",
-        "consumeWitnessToken",
         "deliverWhisper",
         "expose",
-        "getSuspicion",
-        "grantWitnessToken",
+        "getStage",
+        "grantEvidence",
         "handleJoin",
-        "hasWitnessToken",
+        "hasEvidence",
         "isEnabled",
         "isWhisperer",
         "isWhispererCached",
         "makeWhisperer",
+        "observe",
         "reconcileMembership",
+        "recordAccusation",
+        "returnRemainingMillis",
         "rewardFaithful",
-        "tick"
+        "ritualPending"
       ]
     },
     {
@@ -4039,8 +4085,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java",
       "domain": "event.world_boss",
-      "source_sha256": "9924781e1b22c00ce7b4378296f6bc237c91d9404b2fa685395b91bf158bf8b4",
+      "source_sha256": "1eebdec734c1a5af7100a95489e5445fe1b459ad19b98f1e8cf0190e04ffd817",
       "public_methods": [
+        "WorldBossManager",
         "archetypeDisplayNames",
         "archetypeId",
         "encounterSnapshot",
@@ -4103,8 +4150,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java",
       "domain": "class",
-      "source_sha256": "1a820e2ebd0ecc9128be1784f6e44565a5ed8b6a42cbb4f6c0ab1184ba8a771c",
+      "source_sha256": "00be30dc1ece1b871a02c4f5e7c72da5cb1043312c6f480867b81e45fb7e06dd",
       "public_methods": [
+        "MonkGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -4130,8 +4178,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java",
       "domain": "class",
-      "source_sha256": "80070f7e97ae1181bffae9d16dc535e8138c0582c00490240fecffbbc5f94f5c",
+      "source_sha256": "7ae79ea2ddb995d55c346ce1e37c887e02a8bfa3830e7e477656539b409fb76d",
       "public_methods": [
+        "PaladinGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -4219,7 +4268,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileBountyStore.java",
       "domain": "crime_whisper",
-      "source_sha256": "05a8624f47dea599115c5cc3ca18d98b0df4b7f00508ce59a011ed2ea4ab5bad",
+      "source_sha256": "921c70d02e01abe1e018a4e33b4b7a6bac301b50fd90cbf65575a422239aec72",
       "public_methods": [
         "PendingBounty",
         "Reservation",
@@ -4342,22 +4391,13 @@
       ]
     },
     {
-      "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionFoodStore.java",
-      "domain": "faction",
-      "source_sha256": "1a5c6ead8c8228766e33291161bbed96fbb42f92c9de07c590404223cb00cd11",
-      "public_methods": [
-        "FoodState",
-        "read",
-        "record"
-      ]
-    },
-    {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java",
       "domain": "faction",
-      "source_sha256": "262b04959ff7a24ff5ce64e34ffea6651155b8b83e4ce7786c88c1e4dab0e9a5",
+      "source_sha256": "edee3a7069b8d51d11cfb2d6a6e61616fd5c12ea70ebb26f2d4839ea2d9b3949",
       "public_methods": [
         "State",
         "assign",
+        "joinDark",
         "lastPaidSwitchAt",
         "load",
         "readCached",
@@ -4460,6 +4500,18 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSeasonParticipationStore.java",
+      "domain": "season",
+      "source_sha256": "c702b30e3e47e300e0d83dd79664cee5c7c534ae3bfdef1ed02faae414914c72",
+      "public_methods": [
+        "State",
+        "active",
+        "contributions",
+        "load",
+        "record"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileService.java",
       "domain": "profile_infrastructure",
       "source_sha256": "6634876b565cf722c0246bef91954575e4ec1477e5002a6f9d89657aec8bdaa1",
@@ -4490,7 +4542,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSinStore.java",
       "domain": "crime_whisper",
-      "source_sha256": "1b34021a9de5cf6ec1836b9a9906ca8d262d03a85b48ed9477279f9b23fd8058",
+      "source_sha256": "3c4026ff9a781b545070983132c76a2a87a95dbb9ed4bc5cda4b9c5004373061",
       "public_methods": [
         "AddOnceResult",
         "AddResult",
@@ -4500,11 +4552,14 @@
         "breakDarkPact",
         "clearDarkPactForFactionOverride",
         "clearSinner",
+        "exile",
         "markSinner",
         "read",
         "reduce",
         "resetCount",
-        "sealDarkPact"
+        "sealDarkForFactionOverride",
+        "sealDarkPact",
+        "sinner"
       ]
     },
     {
@@ -4626,15 +4681,31 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileWhisperStore.java",
       "domain": "crime_whisper",
-      "source_sha256": "4726862001cd91e05ae3b6ed5cdb6aa9b9e5b24c106255571bff1eeaf0954b3d",
+      "source_sha256": "da6014c2abd62c6021eebbe3564caddcb8468f2f72193f3b0fee34b13515dbb0",
       "public_methods": [
+        "Accusation",
         "Adjustment",
+        "CoverResult",
+        "PlayerProfileWhisperStore",
+        "Rite",
         "State",
-        "adjust",
+        "accuse",
+        "advance",
+        "applyCover",
+        "canEnter",
+        "channelAlias",
         "clear",
+        "cover",
+        "displayName",
+        "finishRite",
+        "forceExpose",
+        "grantEvidence",
+        "hasEvidence",
         "makeWhisperer",
+        "pendingRite",
+        "prepareRite",
         "read",
-        "suspicion"
+        "returnRemainingMillis"
       ]
     },
     {
@@ -4654,8 +4725,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/priest/PriestGameplayService.java",
       "domain": "class",
-      "source_sha256": "0a64b7a130da6a9ab04a118ee1cbf17d3a7814f8da9ef621dd1fa00b74dc211b",
+      "source_sha256": "61cd314aec7e5b2bd9c1467011a4e4100feb6d91313294d359bbfa7c181c5be2",
       "public_methods": [
+        "PriestGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -5000,8 +5072,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "50387cfced0af2d6f1becafc531aa988d15f18fc3a2b3b79dda0bbddf8892019",
+      "source_sha256": "8c3161a3edeb38cb1944c3009c7a8aa08f9b88cc9731599b4605041c113663f8",
       "public_methods": [
+        "MobAbilityRuntime",
         "activeAbilityIds",
         "activeStateCount",
         "activeStateSummary",
@@ -5579,8 +5652,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/warlock/WarlockGameplayService.java",
       "domain": "class",
-      "source_sha256": "e026916e573eecee096e59d4eac568d5325faec97e09c8bfe67066ebc82a36e7",
+      "source_sha256": "e41c8bc59bf1059c0157de46ac00bc3a1c6eead29dea316196c784cb53cd5479",
       "public_methods": [
+        "WarlockGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -5604,8 +5678,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java",
       "domain": "class",
-      "source_sha256": "71f98c17b7734ccd6e9380ab5068b926ce3e035aad1577bd02aa73d5887fffb5",
+      "source_sha256": "ac1be96cce85fb620e85dd385777fa6430af9d69fb430896a09762d5612eac46",
       "public_methods": [
+        "WarriorGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -5629,8 +5704,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/wizard/WizardGameplayService.java",
       "domain": "class",
-      "source_sha256": "6af4ebdb26f92cd6f49cc1d200728b0a0d5aa14614b570b93811c78e5a2e4492",
+      "source_sha256": "65718b6bb772332d07b1d15c035deb085cf7f6f6f382e4022dc71ca59621cdfc",
       "public_methods": [
+        "WizardGameplayService",
         "activeSpellIds",
         "afterCast",
         "beforeCast",
@@ -9680,5 +9756,10 @@
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
     }
-  ]
+  ],
+  "original_base": {
+    "branch": "feature/trash-production-hardening",
+    "commit": "a335b3b5acaea66772534e51527a1c9233a85d1a",
+    "tree": "99cdf8036c9b4b0fa322e7c8f867e29a2e96e24f"
+  }
 }

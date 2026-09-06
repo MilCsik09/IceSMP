@@ -291,7 +291,8 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
         final double gainCap = maxHealth * Math.max(0.0D, Math.min(100.0D, restoreCapPercent)) / 100.0D;
         final double target = state.consumeImprintRestore(now, player.getHealth(), gainCap);
         if (target <= 0.0D) return;
-        player.setHealth(Math.min(maxHealth, target));
+        hu.taliann.icesmp.utils.SpellHealingUtil.heal(player, Math.min(maxHealth, target) - player.getHealth(),
+                hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
         if ("tiszta_ido".equals(doctrine(playerId, 50))) {
             player.removePotionEffect(PotionEffectType.POISON);
             player.removePotionEffect(PotionEffectType.WITHER);
@@ -340,10 +341,10 @@ public final class EvokerGameplayService implements Listener, PlayerStateCleanup
 
     private static boolean healEntity(final Player target, final double amount,
                                       final boolean absorption) {
-        final double maxHealth = maxHealth(target);
         final double before = target.getHealth();
-        final double after = Math.min(maxHealth, before + Math.max(0.0D, amount));
-        if (after > before) target.setHealth(after);
+        final double restored = hu.taliann.icesmp.utils.SpellHealingUtil.heal(target, amount,
+                hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
+        final double after = before + restored;
         if (absorption) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION,
                     100, 0, false, true, true));

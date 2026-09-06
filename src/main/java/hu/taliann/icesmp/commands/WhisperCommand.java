@@ -1,6 +1,5 @@
 package hu.taliann.icesmp.commands;
 
-import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.WhisperManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -17,23 +16,20 @@ import java.util.Locale;
  * /suttogas — K9 Suttogó-csatorna és tanú-vád.
  * <ul>
  *   <li>{@code /suttogas <üzenet>} — a titkos csatorna: csak Suttogók hallják.</li>
- *   <li>{@code /suttogas vad <játékos>} — Tanú-token beváltása: a vád gyanút ad a
- *       megvádoltra (ha tényleg Suttogó); a token elfogy, hamis vád nem árt senkinek,
- *       csak elpazarolja a tokent.</li>
+ *   <li>{@code /suttogas vad <játékos>} — pontos, célhoz kötött bizonyíték beváltása;
+ *       minden érvényes vád pontosan egy leleplezési fokozatot léptet.</li>
  * </ul>
- * A parancs a hívó saját régió-szálán fut; a megvádolt gyanú-írása a cél schedulerén.
+ * A parancs a hívó saját régió-szálán fut; a megvádolt állapotírása a cél schedulerén.
  */
 public final class WhisperCommand implements BasicCommand {
 
     private final org.bukkit.plugin.java.JavaPlugin plugin;
-    private final ConfigManager configManager;
     private final WhisperManager whisperManager;
     private final MessageManager messageManager;
 
-    public WhisperCommand(final org.bukkit.plugin.java.JavaPlugin plugin, final ConfigManager configManager,
+    public WhisperCommand(final org.bukkit.plugin.java.JavaPlugin plugin,
                           final WhisperManager whisperManager, final MessageManager messageManager) {
         this.plugin = plugin;
-        this.configManager = configManager;
         this.whisperManager = whisperManager;
         this.messageManager = messageManager;
     }
@@ -52,9 +48,25 @@ public final class WhisperCommand implements BasicCommand {
             accuse(player, args[1]);
             return;
         }
+        if (args.length == 1 && List.of("állapot", "allapot", "status").contains(args[0].toLowerCase(Locale.ROOT))) {
+            try {
+                final long remaining = whisperManager.returnRemainingMillis(player);
+                player.sendMessage(messageManager.get("whisper-status", "&7Suttogó állapot: &f%s &7| Új rítus várakozása: &f%s mp",
+                        whisperManager.getStage(player).displayName(), String.valueOf((remaining + 999L) / 1000L)));
+            } catch (final RuntimeException unavailable) {
+                player.sendMessage(messageManager.get("whisper-profile-unavailable", "&cA titkos profil most nem érhető el. Próbáld újra."));
+            }
+            return;
+        }
+        if (args.length == 1 && List.of("megbízás", "megbizas", "mission").contains(args[0].toLowerCase(Locale.ROOT))) {
+            if (whisperManager.isWhisperer(player)) player.sendMessage(messageManager.get("whisper-mission",
+                    "&5Titkos megbízás: aktív kultista rítusnál vagy hírvivőnél adj át egy közönséges ametisztszilánkot (főkéz, SHIFT + jobb katt). Sikeres esemény: egy fokozat fedezék és zsákmány. A szemtanúk pontos bizonyítékot kapnak. Eseményenként egy átadás számít."));
+            else player.sendMessage(messageManager.get("whisper-not-heard", "&8…csak a szél zúg."));
+            return;
+        }
         if (args.length == 0) {
             player.sendMessage(messageManager.get("whisper-usage",
-                    "&7/suttogas <üzenet> &8— titkos csatorna &7| /suttogas vád <játékos> &8— tanú-vád"));
+                    "&7/suttogas <üzenet> &8— titkos csatorna &7| /suttogas vád <játékos> &8— tanú-vád &7| /suttogas állapot"));
             return;
         }
         if (!whisperManager.canHearWhispers(player)) {
@@ -77,11 +89,6 @@ public final class WhisperCommand implements BasicCommand {
     }
 
     private void accuse(final Player accuser, final String targetName) {
-        if (!whisperManager.hasWitnessToken(accuser.getUniqueId())) {
-            accuser.sendMessage(messageManager.get("whisper-no-token",
-                    "&cA vádhoz friss szemtanú-emlék kell — előbb LÁTNOD kell egy sötét tettet."));
-            return;
-        }
         final Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
             // A shippelt messages/profession.yml-ben ez a kulcs %s-t tartalmaz — argumentum
@@ -90,19 +97,23 @@ public final class WhisperCommand implements BasicCommand {
                     "&cNincs ilyen online játékos: &f%s", targetName));
             return;
         }
-        whisperManager.consumeWitnessToken(accuser.getUniqueId());
-        final double amount = Math.max(0.0D, configManager.getDouble("factions.whisper.accuse-suspicion", 15.0D));
-        // A megvádolt MÁSIK entitás — a gyanú-írás a saját régió-szálán (Folia).
-        target.getScheduler().run(plugin, task -> whisperManager.addSuspicion(target, amount), null);
-        // A vádló sosem tudja meg, talált-e — a nyomozás bizonytalansága a játék része.
-        accuser.sendMessage(messageManager.get("whisper-accused",
-                "&7A vádad elhangzott a Számvevők előtt. Hogy igaz volt-e… az idő megmutatja."));
+        whisperManager.recordAccusation(accuser.getUniqueId(), target.getUniqueId())
+                .whenComplete((accepted, failure) -> accuser.getScheduler().run(plugin, task -> {
+                    if (failure != null) {
+                        accuser.sendMessage(messageManager.get("whisper-accusation-failed",
+                                "&cNem kaptunk sikeres mentési visszaigazolást. A vád biztonságosan újrapróbálható."));
+                    } else if (!Boolean.TRUE.equals(accepted)) {
+                        accuser.sendMessage(messageManager.get("whisper-no-token",
+                                "&cEhhez a játékoshoz nincs friss, pontos szemtanú-bizonyítékod."));
+                    } else accuser.sendMessage(messageManager.get("whisper-accused",
+                            "&7A vádad elhangzott a Számvevők előtt. Hogy igaz volt-e… az idő megmutatja."));
+                }, null));
     }
 
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
-            return List.of("vád");
+            return List.of("vád", "állapot", "megbízás");
         }
         if (args.length == 2 && isAccuseKeyword(args[0])) {
             return Bukkit.getOnlinePlayers().stream().map(Player::getName)

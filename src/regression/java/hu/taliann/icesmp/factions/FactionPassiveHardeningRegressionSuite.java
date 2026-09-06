@@ -21,7 +21,6 @@ public final class FactionPassiveHardeningRegressionSuite {
         whisperRetaliationPreservesWildTruceConstraints();
         vanillaRetaliationReasonsReachUnbreakableTruces();
         signatureFoodUsesLiveMembership();
-        foodDutyCallbackUsesLiveConfigAndMembership();
         foodDurationsFailClosedOnOverflow();
         taxEvasionSinStaysPendingUntilOwnerAck();
         treasuryAmountsStayFinite();
@@ -95,7 +94,7 @@ public final class FactionPassiveHardeningRegressionSuite {
         final FactionPassiveSettings configured = new FactionPassiveSettings(
                 base.enabled(), base.red(), base.blue(), base.neutral(), base.dark(),
                 new FactionPassiveSettings.Whisper(true, true, 0.35D,
-                        true, false, 60_000L, 0.02D, 16.0D, 1.0D));
+                        true, false, 60_000L, 16.0D));
         final FactionPassivePolicy.TargetContext night = whisperContext(false, true);
         final FactionPassivePolicy.TargetContext day = whisperContext(false, false);
         final FactionPassivePolicy.TargetContext bloodMoon = whisperContext(true, true);
@@ -194,31 +193,7 @@ public final class FactionPassiveHardeningRegressionSuite {
                 "forged/partial metadata was accepted");
     }
 
-    private static void foodDutyCallbackUsesLiveConfigAndMembership() {
-        check(FactionFoodPolicy.mayRunDutyCallback(true, FactionType.BLUE)
-                        && FactionFoodPolicy.mayRunDutyCallback(true, FactionType.RED),
-                "eligible citizen food-duty callback was rejected");
-        check(!FactionFoodPolicy.mayRunDutyCallback(false, FactionType.BLUE),
-                "queued food-duty callback ignored a live reload disable");
-        check(!FactionFoodPolicy.mayRunDutyCallback(true, null)
-                        && !FactionFoodPolicy.mayRunDutyCallback(true, FactionType.NEUTRAL)
-                        && !FactionFoodPolicy.mayRunDutyCallback(true, FactionType.DARK),
-                "guest or non-duty faction received a food-duty callback");
-    }
-
     private static void foodDurationsFailClosedOnOverflow() {
-        check(FactionFoodPolicy.durationMillis(5L, 60_000L) == 300_000L,
-                "normal food-duty interval conversion changed");
-        check(FactionFoodPolicy.durationMillis(Long.MAX_VALUE, 60_000L) == 0L
-                        && FactionFoodPolicy.durationMillis(0L, 60_000L) == 0L,
-                "invalid/overflowing food-duty interval did not fail closed");
-        check(FactionFoodPolicy.deadline(1_000L, 300_000L) == 301_000L
-                        && FactionFoodPolicy.deadline(Long.MAX_VALUE - 1L, 2L) == 0L,
-                "food-duty deadline wrapped into the past");
-        check(FactionFoodPolicy.hasGraceElapsed(10_000L, 1_000L, 9_000L)
-                        && !FactionFoodPolicy.hasGraceElapsed(10_000L, 10_001L, 1L)
-                        && !FactionFoodPolicy.hasGraceElapsed(10_000L, -1L, 1L),
-                "future/corrupt food-duty timestamp triggered a debuff");
         check(FactionFoodPolicy.durationTicks(60) == 1_200
                         && FactionFoodPolicy.durationTicks(Integer.MAX_VALUE) == 0
                         && FactionFoodPolicy.durationTicks(0) == 0,
@@ -299,7 +274,7 @@ public final class FactionPassiveHardeningRegressionSuite {
                                 true, true, true, true, true, true, true),
                         Set.of("icesmp:scripted_combat"), Set.of("icesmp:quest_mob")),
                 new FactionPassiveSettings.Whisper(true, true, 0.35D,
-                        true, true, 60_000L, 0.02D, 16.0D, 1.0D));
+                        true, true, 60_000L, 16.0D));
     }
 
     private static void check(final boolean condition, final String message) {

@@ -1,5 +1,21 @@
 # IceSMP — a világ rendszerei
 
+## Frakció–Suttogó javítás, 2026-09-06
+
+A részletes szabályok: [FACTION_REWORK.md](FACTION_REWORK.md). Nincs új HUD vagy
+frakciómérő. A DARK 70%-os normál gyógyítása a saját kasztgyógyításokra is érvényes;
+civil boltok, Tanács, karavánok és fővárosok a száműzetést is figyelembe veszik.
+A sötét specializációk feltétele DARK + Sötét Eskü, a párbaj nem bűntisztítás, és a
+NEUTRAL frakcióváltásnak azonos ára van. A személyes kasszakivét csak adminművelet.
+
+A Suttogó-bizonyíték tartós és pontos; beváltása, a harmadik fokozat, száműzetés és
+24 órás visszatérési várakozás egy mentés. A rítus mentési sorrendje javítva, a tárgy
+lore-ja leírja a SHIFT + jobb kattintást. A chat álneves. `/suttogas állapot` és
+`/suttogas megbízás` ad részletes tájékoztatást. Kultista jutalom csak az átadással
+minősített résztvevőnek jár. A ligapont csökkenő létszámhozamot kap, a személyes
+bajnoki jutalom alapból három igazolt kategória/nap hozzájárulást igényel.
+
+
 <!-- icesmp-doc-id: reference.feature-catalogue -->
 
 > *A Fa visszahívott, de nem mondta meg, mivé kell válnod.*
@@ -965,9 +981,9 @@ Belépés/kilépés/váltás, frakciókapcsolatok, étel/passzív/spawn hatások
 - **Így találkozol vele:** `/faction`; főmenü frakciónézete. Parancs: /faction (alias: /f).
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Tagságváltás, join/quit, combat, fogyasztás, spawn és passzív esemény.
-- **Passzív defaultok:** RED környezeti hőnél `0.25/0.25/0.50/0.25` megtartott FIRE/FIRE_TICK/LAVA/HOT_FLOOR sebzés, entitás-tűznél `0.75`; a `TUZ` spelliskola változatlan. BLUE: fagyás `0`, fulladás `0.50`, a konfigurált természetes exhaustion okoknál `25%` megtakarítás. NEUTRAL: zuhanás `0.50`, csak spontán békés/semleges aggró és Enderman-szemkontaktus szűrhető. DARK: Wither sebzés/idő `0.50/0.50`, markerelt ambient undead-béke `60 s` megtorlással és `16` blokkos riadóval, vad undeadnél éjszakai `50%` target-cancel.
+- **Passzív defaultok:** RED környezeti hőnél `0.25/0.25/0.50/0.25` megtartott FIRE/FIRE_TICK/LAVA/HOT_FLOOR sebzés, entitás-tűznél `0.75`; a `TUZ` spelliskola változatlan. BLUE: fagyás `0`, fulladás `0.50`, a konfigurált természetes exhaustion okoknál `25%` megtakarítás. NEUTRAL: zuhanás `0.50`, csak spontán békés/semleges aggró és Enderman-szemkontaktus szűrhető. DARK: Wither sebzés/idő `0.50/0.50`, markerelt ambient undead-béke `60 s` megtorlással és `16` blokkos riadóval, vad undeadnél éjszakai `50%` target-cancel; normál gyógyítás `0.70` (Vérhold/DUNGEON kivétel), polgári bolt és karaván tiltás, kijelölt feketepiac és `2×` kompár.
 - **Harci precedencia:** admin/scriptelt célzás → markerelt boss/dungeon/rontás/invázió/event/quest → koronaátok → provokáció/megtorlás → Vérhold → ambient polgárjog → vad passzív → vanilla. Vérhold alatt az ambient és a vad DARK truce alapból egyaránt megszűnik. A passzív nem támadhatatlanság.
-- **Jogosultság és tartósság:** a signature-food buff fogyasztáskor élő tagságot kér; a frakcióváltás assignment+history snapshotot és wallet-WAL-t használ. Sikertelen tartós írás nem publikál sikeres váltást és nem indít lifecycle jutalmat.
+- **Jogosultság és tartósság:** a signature-food buff fogyasztáskor élő tagságot kér; nincs food-duty állapot vagy periodikus adó. A frakcióváltás assignment+history snapshotot és wallet-WAL-t használ. Infamy, Wanted, Exile, Oath és Membership külön tengely; a DARK útja Exile → eskü → megerősített join. Sikertelen tartós írás nem publikál sikeres váltást és nem indít lifecycle jutalmat.
 - **Ami még kellhet hozzá:** Frakcióspawnokat, védett területeket és váltási feltételeket elő kell készíteni.
 - **Fontos határ:** Az automatizált policy- és regressziós tesztek nem bizonyítják a productionközeli mob-AI-t, többjátékos viselkedést vagy szezonbalanszt; ehhez az admin acceptance mátrix szerinti staging playtest kell.
 
@@ -975,8 +991,8 @@ Belépés/kilépés/váltás, frakciókapcsolatok, étel/passzív/spawn hatások
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.faction`; `icesmp.admin.war`; `icesmp.faction.admin`; `király`; `király vagy icesmp.admin.faction`; `király vagy tanácstag`
-- Config: `factions.*`, különösen `factions.passives.*`, továbbá relation-, food- és spawn-definíciók.
-- Tartós állapot: Az explicit tagság és utolsó választás egy durable generáció; fizetős váltás exact wallet/membership WAL-lal recoveryzhető. A vendégállapot assignment hiánya. A provokációs/truce-state játékos–mob páronként mulandó és lifecycle cleanupot kap.
+- Config: `factions.*`, különösen `factions.passives.*`, továbbá relation-, signature-food- és spawn-definíciók.
+- Tartós állapot: Az explicit tagság és utolsó választás egy durable generáció; fizetős váltás exact wallet/membership WAL-lal recoveryzhető. Az Infamy, Wanted, Exile és DARK-eskü külön állapot, a vendégállapot pedig assignment hiánya. A provokációs/truce-state és a célhoz kötött Suttogó-bizonyíték mulandó, lifecycle cleanupot kap.
 - Reload: Minden frakciópasszív gameplay-érték ugyanabból az atomikusan publikált config-generationből frissül; restart nem kell. Ez nem helyettesíti az aktív combat alatti staging reloadtesztet.
 
 </details>
@@ -1000,7 +1016,7 @@ Céhkezelés, vezetői/királyi műveletek, tanács, treasury és közösségi p
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.faction`
 - Config: `factions.*`, guild-, king-, council- és treasury-definíciók.
-- Tartós állapot: Céh, vezetés és tanács tartós; a treasury, az eredet-frakciós adósság és a walletet is érintő adóbeszedés write-ahead journallal, startup recoveryvel és fail-closed kritikus írási körrel védett. Ismeretlen eredetű fejlesztői legacy adósság karanténban marad, és nem kötődik automatikusan későbbi frakcióhoz.
+- Tartós állapot: Céh, vezetés, tanács és treasury tartós. A periodikus adóbeszedés és a királyi adókulcs-parancs megszűnt; a korábbi adósság/outbox mezők csak olvasási és tárolási kompatibilitásként maradnak, aktív scheduler nélkül.
 - Reload: Policy reloadolható; vezetői állapotváltozás staging- és permissiontesztet igényel.
 
 </details>

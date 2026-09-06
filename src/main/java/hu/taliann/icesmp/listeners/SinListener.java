@@ -64,6 +64,9 @@ public final class SinListener implements Listener {
         this.messageManager = messageManager;
     }
 
+    private volatile hu.taliann.icesmp.managers.CombatTagManager combatTags;
+    public void setCombatTagManager(final hu.taliann.icesmp.managers.CombatTagManager tags) { combatTags = tags; }
+
     public void setHonorDuelManager(
             final hu.taliann.icesmp.managers.HonorDuelManager honorDuelManager) {
         this.honorDuelManager = honorDuelManager;
@@ -94,6 +97,7 @@ public final class SinListener implements Listener {
 
         if (raidManager.isSanctionedKill(killer.getUniqueId(), victim.getUniqueId())) {
             final boolean scored = raidManager.recordKill(killerFaction, victim.getLocation());
+            if (scored) raidManager.recordSeasonContribution(killer.getUniqueId(), killerFaction);
             killer.getScheduler().run(plugin, task -> {
                 statsManager.recordRaidKill(killer);
                 killer.sendMessage(messageManager.getMessage(
@@ -112,7 +116,7 @@ public final class SinListener implements Listener {
                 if (duelRef.settleKill(killer, victim)) {
                     killer.sendMessage(messageManager.getMessage(
                             "duel-honor-won",
-                            "<gold>⚔ A becsület-párbaj a tiéd — egy bűnöd letörölve. <gray>A sértett fél elégtételt kapott.</gray></gold>"));
+                            "<gold>⚔ A becsület-párbaj a tiéd — a jogi állapotod változatlan. <gray>A sértett fél elégtételt kapott.</gray></gold>"));
                 }
             }, null);
             return;
@@ -164,9 +168,12 @@ public final class SinListener implements Listener {
             return;
         }
 
+        final var tags = combatTags;
+        if (tags != null && tags.isSelfDefense(killer.getUniqueId(), victim.getUniqueId())) return;
+        if (sinManager.isExiled(victim)) return;
+
         final boolean betrayal = killerFaction != null
-                && killerFaction == victimFaction
-                && killerFaction != FactionType.NEUTRAL;
+                && killerFaction == victimFaction;
         final int weight;
         final String messageKey;
         final String messageDefault;
@@ -208,7 +215,7 @@ public final class SinListener implements Listener {
         final int victimSins = sinManager.getSinCount(victim);
         final int minimum = Math.max(1,
                 configManager.getInt("factions.sins.bounty.min-sins", 3));
-        if (victimSins < minimum) {
+        if (!sinManager.isWanted(victim)) {
             return false;
         }
 

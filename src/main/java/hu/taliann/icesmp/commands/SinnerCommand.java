@@ -64,11 +64,12 @@ public final class SinnerCommand implements BasicCommand {
                 }
                 case "status" -> sender.sendMessage(messageManager.getMessage(
                         "sinner.status",
-                        "<gray>{player}: bűnös: <white>{sinner}</white> | bűnök: <white>{count}</white> | sötét paktum: <white>{pact}</white></gray>",
+                        "<gray>{player}: Infamy: <white>{count}</white> | Wanted: <white>{wanted}</white> | Exile: <white>{exiled}</white> | DARK eskü: <white>{pact}</white></gray>",
                         java.util.Map.of(
                                 "player", target.getName(),
-                                "sinner", sinManager.isSinner(target) ? "igen" : "nem",
                                 "count", String.valueOf(sinManager.getSinCount(target)),
+                                "wanted", sinManager.isWanted(target) ? "igen" : "nem",
+                                "exiled", sinManager.isExiled(target) ? "igen" : "nem",
                                 "pact", sinManager.hasDarkPact(target) ? "igen" : "nem"
                         )
                 ));
@@ -81,14 +82,7 @@ public final class SinnerCommand implements BasicCommand {
                     ));
                 }
                 case "clear" -> {
-                    if (!sinManager.clearSinner(target)) {
-                        sender.sendMessage(messageManager.getMessage(
-                                "sinner.clear-blocked-dark-pact",
-                                "<dark_purple>A sötét paktum örök: <white>{player}</white> bűne nem tisztítható le.</dark_purple>",
-                                java.util.Map.of("player", target.getName())
-                        ));
-                        return;
-                    }
+                    sinManager.clearSinner(target);
                     sender.sendMessage(messageManager.getMessage(
                             "sinner.clear-success",
                             "<green>A jatekos megtisztult: <white>{player}</white></green>",

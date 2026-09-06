@@ -57,7 +57,7 @@ public record GateSnapshot(GateState state, Map<GateState.Gate, String> gateIds)
     private static SealCause causeFor(final GateState.Gate gate) {
         return switch (gate) {
             case FACTION -> SealCause.FACTION_MISSING;
-            case SINNER -> SealCause.SINNER_MARK_MISSING;
+            case OATH -> SealCause.DARK_OATH_MISSING;
             case QUEST -> SealCause.QUEST_REQUIREMENT_MISSING;
         };
     }
@@ -65,7 +65,7 @@ public record GateSnapshot(GateState state, Map<GateState.Gate, String> gateIds)
     private static GateState.Gate gateFor(final SealCause cause) {
         return switch (cause) {
             case FACTION_MISSING -> GateState.Gate.FACTION;
-            case SINNER_MARK_MISSING -> GateState.Gate.SINNER;
+            case DARK_OATH_MISSING -> GateState.Gate.OATH;
             case QUEST_REQUIREMENT_MISSING -> GateState.Gate.QUEST;
             default -> throw new IllegalArgumentException("Seal cause is not gate-restorable: " + cause);
         };
@@ -74,7 +74,7 @@ public record GateSnapshot(GateState state, Map<GateState.Gate, String> gateIds)
     private static GateState.Condition condition(final GateState state, final GateState.Gate gate) {
         return switch (gate) {
             case FACTION -> state.faction();
-            case SINNER -> state.sinner();
+            case OATH -> state.oath();
             case QUEST -> state.quest();
         };
     }

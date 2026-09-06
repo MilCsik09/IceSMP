@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -25,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * kell állni (max-board-distance), a menet rövid cooldownnal jár.
  */
 public final class FerryManager {
+
+    private static final double DARK_FARE_MULTIPLIER = 2.0D;
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -100,8 +103,11 @@ public final class FerryManager {
         }
 
         // Viteldíj a banki egyenlegből (elég — money sink, mint a boltoknál).
-        final double fee = Math.max(0.0D, configManager.getDouble("ferry.routes." + routeId + ".fee",
+        double fee = Math.max(0.0D, configManager.getDouble("ferry.routes." + routeId + ".fee",
                 configManager.getDouble("ferry.default-fee", 15.0D)));
+        if (factionManager.isMember(player.getUniqueId(), FactionType.DARK)) {
+            fee *= DARK_FARE_MULTIPLIER;
+        }
         if (fee > 0.0D) {
             final CurrencyType currency = CurrencyType.fromFactionType(factionManager.getEconomyFaction(player.getUniqueId()));
             if (!currencyManager.deductFromBalance(player.getUniqueId(), currency, fee)) {
