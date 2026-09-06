@@ -38,7 +38,10 @@ public final class YamlWeaverJournalStorage implements WeaverJournalStorage {
     @Override public void writeAudit(final Map<String, WeaverAuditEntry> audit) throws Exception { write(auditFile, codec.encodeAudit(audit)); }
     private Map<String, Object> read(final File file) throws Exception {
         if (Files.size(file.toPath()) > MAX_BYTES) throw new IllegalArgumentException("Internal state byte cap");
-        return WeaverJournalCodec.map(detach(YamlStore.loadTracked(file, logger), 0, new int[]{0}));
+        final Map<String, Object> parsed = WeaverJournalCodec.map(detach(YamlStore.loadTracked(file, logger), 0, new int[]{0}));
+        if (!parsed.containsKey("storage-schema")) return parsed;
+        if (!parsed.keySet().equals(Set.of("storage-schema", "document")) || !Integer.valueOf(1).equals(parsed.get("storage-schema"))) throw new IllegalArgumentException("Unknown internal storage envelope");
+        return WeaverJournalCodec.map(mapKeys(parsed.get("document"), false));
     }
     private static Object detach(final Object value, final int depth, final int[] count) {
         if (depth > 32 || ++count[0] > 250_000) throw new IllegalArgumentException("Internal state nesting cap");
@@ -55,8 +58,30 @@ public final class YamlWeaverJournalStorage implements WeaverJournalStorage {
                 || detached instanceof Double number && Double.isFinite(number)) return detached;
         throw new IllegalArgumentException("Invalid YAML value");
     }
+    /** Bukkit expands dotted keys and recognizes serialization maps; encoded keys prevent both interpretations. */
+    private static Object mapKeys(final Object value, final boolean encode) {
+        if (value instanceof Map<?, ?> map) {
+            final Map<String, Object> result = new LinkedHashMap<>();
+            map.forEach((key, item) -> {
+                if (!(key instanceof String text)) throw new IllegalArgumentException("Invalid document key");
+                final String converted;
+                if (encode) converted = "k_" + Base64.getUrlEncoder().withoutPadding().encodeToString(text.getBytes(StandardCharsets.UTF_8));
+                else {
+                    if (!text.startsWith("k_") || text.length() > 4096) throw new IllegalArgumentException("Invalid encoded document key");
+                    final byte[] bytes = Base64.getUrlDecoder().decode(text.substring(2)); converted = new String(bytes, StandardCharsets.UTF_8);
+                    if (!("k_" + Base64.getUrlEncoder().withoutPadding().encodeToString(converted.getBytes(StandardCharsets.UTF_8))).equals(text)) throw new IllegalArgumentException("Noncanonical document key");
+                }
+                if (result.put(converted, mapKeys(item, encode)) != null) throw new IllegalArgumentException("Duplicate document key");
+            }); return result;
+        }
+        if (value instanceof List<?> list) {
+            final List<Object> result = new ArrayList<>(); list.forEach(item -> result.add(mapKeys(item, encode))); return result;
+        }
+        return value;
+    }
     private static void write(final File file, final Map<String, Object> data) throws Exception {
-        final YamlConfiguration yaml = new YamlConfiguration(); data.forEach(yaml::set);
+        final YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("storage-schema", 1); yaml.set("document", mapKeys(data, true));
         if (yaml.saveToString().getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) throw new IllegalArgumentException("Internal state byte cap");
         YamlStore.saveAtomic(file, yaml);
     }

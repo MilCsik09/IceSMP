@@ -61,8 +61,8 @@ public final class WeaverRecoveryCoordinator {
         final CompletionStage<WeaverOperationRecord> changed;
         if (assessment.observed() == ObservedOperationState.APPLIED) {
             if (operation.status() == OperationStatus.PREPARED) {
-                if (assessment.receipt().isEmpty()) return review(operation);
-                changed = journal.applied(operation.operationId(), operation.revision(), assessment.receipt().get(), System.currentTimeMillis());
+                if (assessment.receipt().isEmpty() || operation.request().lifetime() != Lifetime.ONE_SHOT && assessment.effects().isEmpty()) return review(operation);
+                changed = journal.applied(operation.operationId(), operation.revision(), assessment.receipt().get(), assessment.effects().orElseGet(WeaverEffectCommit::none), System.currentTimeMillis());
             } else {
                 if (assessment.receipt().isPresent() && !assessment.receipt().get().equals(operation.receipt().orElseThrow())) return review(operation);
                 changed = CompletableFuture.completedFuture(operation);

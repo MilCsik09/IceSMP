@@ -4,6 +4,8 @@ import hu.taliann.icesmp.dev.weaver.api.*;
 import hu.taliann.icesmp.dev.weaver.execution.OperationRecoveryPayload;
 import hu.taliann.icesmp.dev.weaver.subject.SubjectKeyCodec;
 import java.util.*;
+import hu.taliann.icesmp.dev.weaver.integrity.*;
+import hu.taliann.icesmp.dev.weaver.projection.WeaverProjection;
 
 /** Explicit schema decoding rejects unknown fields, lossy numbers and arbitrary object deserialization. */
 public final class WeaverJournalCodec {
@@ -12,19 +14,54 @@ public final class WeaverJournalCodec {
     public Map<String, Object> encodeState(final WeaverJournalState state) {
         final Map<String, Object> operations = new TreeMap<>();
         state.operations().forEach((id, record) -> operations.put(id.toString(), operation(record)));
-        return Map.of("schema-version", 1, "revision", state.revision(), "operations", operations);
+        final WeaverEffectCodec effects = new WeaverEffectCodec(this);
+        final Map<String, Object> intents = new TreeMap<>(), projections = new TreeMap<>(), influences = new TreeMap<>();
+        state.intents().forEach((id, value) -> intents.put(id.toString(), effects.intent(value)));
+        state.projections().forEach((id, value) -> projections.put(id.toString(), effects.projection(value)));
+        state.influences().forEach((id, value) -> influences.put(id.toString(), effects.influence(value)));
+        return Map.of("schema-version", 2, "revision", state.revision(), "operations", operations, "projection-sequence", state.projectionSequence(),
+                "intents", intents, "projections", projections, "influences", influences);
     }
     public WeaverJournalState decodeState(final Map<String, Object> data) {
-        keys(data, "schema-version", "revision", "operations"); schema(data);
+        final long version = number(data, "schema-version");
+        if (version == 1) keys(data, "schema-version", "revision", "operations");
+        else if (version == 2) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences");
+        else throw new IllegalArgumentException("Unknown journal schema");
         final Map<UUID, WeaverOperationRecord> operations = new HashMap<>(); final Map<UUID, WeaverReceipt> receipts = new HashMap<>();
         final Map<String, Object> values = map(data.get("operations"));
         if (values.size() > WeaverJournalState.MAX_OPERATIONS) throw new IllegalArgumentException("Journal capacity exceeded");
         values.forEach((id, value) -> {
             final WeaverOperationRecord record = operation(map(value));
-            if (!UUID.fromString(id).equals(record.operationId()) || operations.put(record.operationId(), record) != null) throw new IllegalArgumentException("Duplicate operation identity");
+            if (!id.equals(record.operationId().toString()) || operations.put(record.operationId(), record) != null) throw new IllegalArgumentException("Duplicate operation identity");
             record.receipt().ifPresent(receipt -> { if (receipts.put(receipt.receiptId(), receipt) != null) throw new IllegalArgumentException("Duplicate receipt identity"); });
         });
-        return new WeaverJournalState(number(data, "revision"), operations, receipts);
+        final Map<UUID, WeaverEffectIntent> intents = new HashMap<>();
+        final Map<UUID, WeaverProjection> projections = new HashMap<>(); final Map<UUID, WeaverInfluenceRecord> influences = new HashMap<>();
+        if (version == 1) {
+            for (final WeaverOperationRecord operation : operations.values()) {
+                if (operation.request().integrityMode() != IntegrityMode.SANDBOX || operation.status() == OperationStatus.ABORTED) continue;
+                if (operation.request().lifetime() != Lifetime.ONE_SHOT) throw new IllegalArgumentException("Legacy persistent/session operation requires explicit recovery migration");
+                final WeaverInfluenceTarget target = WeaverInfluenceTarget.subject(operation.subject());
+                if (operation.receipt().isEmpty() && (operation.status() == OperationStatus.PREPARED || operation.status() == OperationStatus.NEEDS_REVIEW)) {
+                    intents.put(operation.operationId(), new WeaverEffectIntent(Set.of(target)));
+                }
+                if (operation.receipt().isPresent()) {
+                    final WeaverReceipt receipt = operation.receipt().get();
+                    final DeveloperInfluence origin = new DeveloperInfluence(operation.operationId(), IntegrityMode.SANDBOX, operation.request().actionId(), operation.actorId(), receipt.createdAt());
+                    final UUID id = UUID.nameUUIDFromBytes(("weaver-schema1:" + operation.operationId()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    final WeaverInfluenceRecord applied = WeaverInfluenceRecord.applied(origin, target, operation.request().lifetime() != Lifetime.ONE_SHOT && operation.status() != OperationStatus.COMPENSATED);
+                    influences.put(id, new WeaverInfluenceRecord(id, origin, target, applied.active(), target.monotonic() ? 0 : Math.addExact(operation.updatedAt(), PlayerQuarantine.MINIMUM_TAIL_MILLIS)));
+                }
+            }
+        } else {
+            final WeaverEffectCodec effects = new WeaverEffectCodec(this);
+            final Map<String, Object> intentRows = map(data.get("intents")), projectionRows = map(data.get("projections")), influenceRows = map(data.get("influences"));
+            if (intentRows.size() > WeaverJournalState.MAX_OPERATIONS || projectionRows.size() > 1280 || influenceRows.size() > WeaverJournalState.MAX_INFLUENCES) throw new IllegalArgumentException("Effect capacity exceeded");
+            intentRows.forEach((id, value) -> { final UUID decoded = uuid(Map.of("id", id), "id"); intents.put(decoded, effects.intent(value)); });
+            projectionRows.forEach((id, value) -> { final WeaverProjection decoded = effects.projection(map(value)); if (!id.equals(decoded.projectionId().toString())) throw new IllegalArgumentException("Projection key mismatch"); projections.put(decoded.projectionId(), decoded); });
+            influenceRows.forEach((id, value) -> { final WeaverInfluenceRecord decoded = effects.influence(map(value)); if (!id.equals(decoded.id().toString())) throw new IllegalArgumentException("Influence key mismatch"); influences.put(decoded.id(), decoded); });
+        }
+        return new WeaverJournalState(number(data, "revision"), operations, receipts, version == 1 ? 0 : number(data, "projection-sequence"), intents, projections, influences);
     }
     public Map<String, Object> encodeAudit(final Map<String, WeaverAuditEntry> audit) {
         final Map<String, Object> entries = new TreeMap<>();
@@ -87,13 +124,13 @@ public final class WeaverJournalCodec {
                 readValues(map(row.get("before"))), readValues(map(row.get("after"))), undo.isEmpty() ? Optional.empty() : Optional.of(new UndoSpec(text(undo, "action"), text(undo, "expected"), readValues(map(undo.get("parameters"))))),
                 number(row, "created"), ReceiptStatus.valueOf(text(row, "status")));
     }
-    private Map<String, Object> values(final Map<String, WeaverValue> values) {
+    Map<String, Object> values(final Map<String, WeaverValue> values) {
         final Map<String, Object> result = new TreeMap<>();
         values.forEach((id, value) -> { types.validate(value); result.put(id, Map.of("type", value.type().canonical(), "payload", value.payload(), "provider", value.sourceProvider(),
                 "facet", value.sourceFacet(), "capabilities", value.sourceCapabilities().stream().sorted().toList(), "captured", value.capturedAt())); });
         return Map.copyOf(result);
     }
-    private Map<String, WeaverValue> readValues(final Map<String, Object> values) {
+    Map<String, WeaverValue> readValues(final Map<String, Object> values) {
         if (values.size() > 128) throw new IllegalArgumentException("Typed fact cap");
         final Map<String, WeaverValue> result = new TreeMap<>();
         values.forEach((id, item) -> {
@@ -113,23 +150,23 @@ public final class WeaverJournalCodec {
         return Collections.unmodifiableMap(result);
     }
     private static void schema(final Map<String, Object> data) { if (number(data, "schema-version") != 1) throw new IllegalArgumentException("Unknown journal schema"); }
-    private static void keys(final Map<String, Object> data, final String... keys) {
+    static void keys(final Map<String, Object> data, final String... keys) {
         if (!data.keySet().equals(Set.of(keys))) throw new IllegalArgumentException("Unknown or missing journal fields");
     }
-    private static String text(final Map<String, Object> data, final String key) {
+    static String text(final Map<String, Object> data, final String key) {
         if (!(data.get(key) instanceof String value)) throw new IllegalArgumentException("Expected text"); return value;
     }
-    private static long number(final Map<String, Object> data, final String key) {
+    static long number(final Map<String, Object> data, final String key) {
         final Object value = data.get(key);
         if (value instanceof Integer integer) return integer.longValue();
         if (value instanceof Long number) return number;
         throw new IllegalArgumentException("Expected exact integer");
     }
-    private static UUID uuid(final Map<String, Object> data, final String key) {
+    static UUID uuid(final Map<String, Object> data, final String key) {
         final String text = text(data, key); final UUID value = UUID.fromString(text);
         if (!value.toString().equals(text)) throw new IllegalArgumentException("Noncanonical UUID"); return value;
     }
-    private static boolean bool(final Map<String, Object> data, final String key) {
+    static boolean bool(final Map<String, Object> data, final String key) {
         if (!(data.get(key) instanceof Boolean value)) throw new IllegalArgumentException("Expected boolean"); return value;
     }
 }

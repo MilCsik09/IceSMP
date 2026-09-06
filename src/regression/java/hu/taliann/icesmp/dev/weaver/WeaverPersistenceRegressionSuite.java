@@ -23,7 +23,7 @@ public final class WeaverPersistenceRegressionSuite {
     }
     static WeaverOperationRecord prepared() {
         return new WeaverOperationRecord(UUID.randomUUID(), HiddenDevAuthority.PRIMARY_DEVELOPER, "fixture", new ActionRequest("fixture.mutate", Map.of("count", new WeaverValue(WeaverTypeId.parse("weaver:int@1"), Map.of("value", 7L), "fixture", "fixture.state", Set.of(), 1)), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX),
-                new EntityRef(UUID.randomUUID()), "before", Optional.empty(), new OperationRecoveryPayload(1, Map.of("expected", "after", "numeric", Map.of("small-long", 1L, "int", 2, "list", List.of(3L, 4.5D, true)))), OperationStatus.PREPARED, 0, 1, 1, Optional.empty(), false);
+                new EntityRef(UUID.randomUUID()), "before", Optional.empty(), new OperationRecoveryPayload(1, Map.of("expected", "after", "dotted.key", Map.of("==", "literal-not-bukkit-object", "nested.field", List.of(Map.of("x.y", 1))), "numeric", Map.of("small-long", 1L, "int", 2, "list", List.of(3L, 4.5D, true)))), OperationStatus.PREPARED, 0, 1, 1, Optional.empty(), false);
     }
     static WeaverReceipt receipt(final WeaverOperationRecord operation) {
         return new WeaverReceipt(UUID.randomUUID(), operation.operationId(), operation.providerId(), operation.request().actionId(), operation.subject(), RiskLevel.MUTATING,
@@ -70,7 +70,7 @@ public final class WeaverPersistenceRegressionSuite {
         check(codec.decodeAudit(codec.encodeAudit(storage.audit)).equals(storage.audit), "audit codec round trip");
         check(new WeaverValue(WeaverTypeId.parse("weaver:int@1"), Map.of("value", 7), "fixture", "fixture.state", Set.of(), 1)
                 .equals(prepared.request().parameters().get("count")), "Integer/Long semantic identity differs across YAML load");
-        final Map<String, Object> future = new HashMap<>(codec.encodeState(storage.state)); future.put("schema-version", 2);
+        final Map<String, Object> future = new HashMap<>(codec.encodeState(storage.state)); future.put("schema-version", 3);
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> codec.decodeState(future));
         final Map<String, Object> unknown = new HashMap<>(codec.encodeState(storage.state)); unknown.put("raw-object", new Object());
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> codec.decodeState(unknown));

@@ -1341,7 +1341,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "99f86c4b7114d2dd93b833286785eef7c77d101869d86114971170c318d151c4",
+      "source_sha256": "45e89ec8811126c28d70c2c53ec5f3fb5c125f8cb80918d4d99437e232474cf8",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -1359,6 +1359,7 @@
         "invoke",
         "observeExecution",
         "owner",
+        "projectionConsumers",
         "quarantined",
         "register",
         "resolveCatalog"
@@ -1367,7 +1368,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "8b16f3fbc342b030024cfb9217deae258654581212f660c66d3f6adbd11b4cc6",
+      "source_sha256": "cfef8a99684df384581ceab29fc87bd109b1e3eb17b86b6529ba08bc7f630d72",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
@@ -1455,7 +1456,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "c62cb86b4412db46af2d56a45c92e942b888a1b3bf44974243374b3c0c95f14e",
+      "source_sha256": "0522ceaa5f8633525335f00dbce62ac66540d33cc024a51d8ed5596e086920f0",
       "public_methods": [
         "WeaverRecoveryCoordinator",
         "close",
@@ -1469,17 +1470,32 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "50c934f7a7a114fc3235a3283609c370631a18dd9a49e29483cb0cce7ec85c70",
+      "source_sha256": "e0739251169955bb6a31028133346d838b3d99a3443799739114a20cedb8d925",
       "public_methods": [
         "WeaverJournal",
         "applied",
         "close",
+        "expireProjections",
         "finishAudit",
+        "influenceIndex",
         "load",
         "prepare",
         "ready",
         "resolve",
         "snapshot"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/ProjectionConsumerRegistry.java",
+      "domain": "developer_self",
+      "source_sha256": "914f3851f8ca400e3bc98cab6d6590a6d2cdfd696424da8c69e25ed516aeaae0",
+      "public_methods": [
+        "ProjectionConsumerRegistry",
+        "freeze",
+        "register",
+        "require",
+        "snapshot",
+        "validate"
       ]
     },
     {

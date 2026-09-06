@@ -17,6 +17,7 @@ public final class WorldWeaverProviderRegistry {
         public Discovery { providers = Map.copyOf(providers); errors = Map.copyOf(errors); }
     }
     private final WeaverTypeRegistry types;
+    private hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry projectionConsumers;
     private final LongSupplier clock;
     private final Map<String, Entry> providers = new LinkedHashMap<>();
     private Map<String, FacetDescriptor> facets = Map.of();
@@ -102,6 +103,14 @@ public final class WorldWeaverProviderRegistry {
                 }
             }
         }
+        final var consumers = new hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry(types);
+        for (final Entry entry : providers.values()) if (entry.provider() instanceof hu.taliann.icesmp.dev.weaver.projection.WeaverProjectionProvider projectionProvider) {
+            for (final var consumer : List.copyOf(projectionProvider.projectionConsumers())) {
+                if (!consumer.providerId().equals(entry.id())) throw new IllegalArgumentException("Foreign projection consumer");
+                consumers.register(consumer);
+            }
+        }
+        consumers.freeze(actionMap); projectionConsumers = consumers;
         types.freeze(); facets = Map.copyOf(facetMap); actions = Map.copyOf(actionMap); catalogs = Map.copyOf(catalogMap);
         exports = Map.copyOf(exportMap); imports = Map.copyOf(importMap); owners = Map.copyOf(ownerMap); frozen = true;
     }
@@ -134,6 +143,7 @@ public final class WorldWeaverProviderRegistry {
         if (result == null || !entry.id().equals(owners.get(id))) throw new IllegalArgumentException("Missing or foreign descriptor reference");
         return result;
     }
+    public hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry projectionConsumers() { requireFrozen(); return projectionConsumers; }
     private void requireFrozen() { if (!frozen) throw new IllegalStateException("Provider registry is not validated"); }
     public Discovery discover(final SubjectSnapshot snapshot) {
         requireFrozen();
@@ -246,6 +256,15 @@ public final class WorldWeaverProviderRegistry {
                         || receipt.integrityMode() != operation.request().integrityMode() || receipt.status() != ReceiptStatus.COMMITTED) {
                     throw new IllegalArgumentException("Recovery receipt differs from operation");
                 }
+            });
+            assessment.effects().ifPresent(effects -> {
+                final WeaverReceipt receipt = assessment.receipt().orElseThrow();
+                for (final var projection : effects.projections()) {
+                    if (!projection.influence().operationId().equals(operation.operationId()) || !projection.subject().equals(operation.subject())
+                            || !projection.providerId().equals(providerId) || projection.createdAt() != receipt.createdAt()) throw new IllegalArgumentException("Recovery projection differs from operation");
+                    try { projectionConsumers.validate(projection); } catch (final WeaverDomainRejection invalid) { throw new IllegalArgumentException("Recovery projection lacks consumer"); }
+                }
+                for (final var influence : effects.influences()) if (!influence.influence().operationId().equals(operation.operationId())) throw new IllegalArgumentException("Recovery influence differs from operation");
             });
             return assessment;
         }, true);
