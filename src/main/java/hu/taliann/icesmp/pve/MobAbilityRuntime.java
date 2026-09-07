@@ -837,7 +837,7 @@ public final class MobAbilityRuntime implements Listener {
         int affected = 0;
         for (final Entity entity : mob.getNearbyEntities(radius, radius, radius)) {
             if (!(entity instanceof Player player) || ++affected > 32) continue;
-            affectPlayer(player.getUniqueId(), sources, duration * 50L, owned -> {
+            affectPlayer(player.getUniqueId(), sources, duration * 50L, potionLifetime(effect), owned -> {
                 if (survivor(owned) && within(owned, center, radius)) {
                     owned.addPotionEffect(new PotionEffect(effect, duration, amplifier,
                             false, true, true));
@@ -1141,7 +1141,7 @@ public final class MobAbilityRuntime implements Listener {
         for (final Entity nearby : caster.getNearbyEntities(
                 definition.radius(), definition.radius(), definition.radius())) {
             if (!(nearby instanceof Player player)) continue;
-            affectPlayer(player.getUniqueId(), sources, duration * 50L, owned -> {
+            affectPlayer(player.getUniqueId(), sources, duration * 50L, potionLifetime(PotionEffectType.POISON), owned -> {
                 if (!survivor(owned) || !within(owned, center, definition.radius())) return;
                 owned.damage(definition.power());
                 owned.addPotionEffect(new PotionEffect(PotionEffectType.POISON,
@@ -1178,18 +1178,29 @@ public final class MobAbilityRuntime implements Listener {
         final double x = at.getX() - center.x(), y = at.getY() - center.y(), z = at.getZ() - center.z();
         return x * x + y * y + z * z <= radius * radius;
     }
+    private static GameplayEffectLifetime potionLifetime(final PotionEffectType effect) {
+        return new GameplayEffectLifetime("icesmp:pve_potion_effect@1", Map.of("potion", org.bukkit.Registry.EFFECT.getKey(effect).toString()));
+    }
     private void affectPlayer(final UUID id, final List<RewardSource> sources, final long duration, final java.util.function.Consumer<Player> effect) {
-        affectLiving(id, true, sources, duration, entity -> { if (entity instanceof Player player) effect.accept(player); });
+        affectLiving(id, true, sources, duration, java.util.Optional.empty(), entity -> { if (entity instanceof Player player) effect.accept(player); });
+    }
+    private void affectPlayer(final UUID id, final List<RewardSource> sources, final long duration, final GameplayEffectLifetime lifetime,
+            final java.util.function.Consumer<Player> effect) {
+        affectLiving(id, true, sources, duration, java.util.Optional.of(lifetime), entity -> { if (entity instanceof Player player) effect.accept(player); });
     }
     private void affectLiving(final UUID id, final boolean player, final List<RewardSource> sources, final long duration,
             final java.util.function.Consumer<LivingEntity> effect) {
+        affectLiving(id, player, sources, duration, java.util.Optional.empty(), effect);
+    }
+    private void affectLiving(final UUID id, final boolean player, final List<RewardSource> sources, final long duration,
+            final java.util.Optional<GameplayEffectLifetime> lifetime, final java.util.function.Consumer<LivingEntity> effect) {
         final Entity handle = Bukkit.getEntity(id);
         if (handle == null) return;
         handle.getScheduler().run(plugin, task -> {
             final LivingEntity target = ownedLiving(id, player); if (target == null) return;
             final var causal = new java.util.LinkedHashSet<>(sources); causal.addAll(BukkitRewardSources.causal(target));
             final RewardSource identity = player ? new RewardSource.Player(id) : new RewardSource.Entity(id);
-            GameplayEffectGate.prepare(new GameplayEffectContext(List.copyOf(causal), java.util.Set.of(identity), duration))
+            GameplayEffectGate.prepare(new GameplayEffectContext(List.copyOf(causal), java.util.Set.of(identity), duration, lifetime))
                     .whenComplete((permit, failure) -> {
                         if (failure != null || permit == null) return;
                         final Entity current = Bukkit.getEntity(id); if (current == null) return;

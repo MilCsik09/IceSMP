@@ -44,8 +44,10 @@
         "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java"
       ],
       "implementation_evidence": [
-        "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java"
+        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceDispatcher.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
+        "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java"
       ]
     },
     {
@@ -70,16 +72,17 @@
         "src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerService.java"
       ],
       "implementation_evidence": [
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
         "src/main/java/hu/taliann/icesmp/pve/CanonicalMobProfile.java",
         "src/main/java/hu/taliann/icesmp/pve/EffectiveMobProjection.java",
-        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
         "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
         "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlProbe.java",
-        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java"
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java"
       ]
     },
     {
@@ -1436,7 +1439,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "b200676c93c4c30efebb0c33b184e95a42fd373489c35e5d9d6c648042775304",
+      "source_sha256": "09d44b7858d596ceb9a0a3a5057dbdaa9ecaac014a80977d6dcd50b3d7368c0b",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -1454,6 +1457,7 @@
         "imports",
         "invoke",
         "observeExecution",
+        "observeInfluence",
         "owner",
         "projectionConsumers",
         "quarantined",
@@ -1461,13 +1465,14 @@
         "reconcileProjections",
         "register",
         "requireSnapshotAvailable",
-        "resolveCatalog"
+        "resolveCatalog",
+        "resolveInfluenceLifetime"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "864273fea695c90ef360b7787b1f5309e943d42ca2e5a74b03152db59f816bcd",
+      "source_sha256": "d509ce9d3f9f8290e05bf1894d59cac5818beed9b004196a1e3ff48ad513ec08",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
@@ -1638,6 +1643,16 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceDispatcher.java",
+      "domain": "developer_self",
+      "source_sha256": "b5ef181d99294bf8a35f5935b7e1434f237b00b67bf3021f76b0846df7d1f8f0",
+      "public_methods": [
+        "WeaverInfluenceDispatcher",
+        "close",
+        "pulse"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
       "domain": "developer_self",
       "source_sha256": "7488f566aeaaff0164c4ad5eb28ccc5b275c03b1f352bea7fb1e526da810e0f5",
@@ -1650,13 +1665,22 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
+      "domain": "developer_self",
+      "source_sha256": "53c7779c26acf143ba0b2e99fdb3c8602fe483025b700355170eb53a64f8df48",
+      "public_methods": [
+        "submit"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "1897029f657f5a5a769b25a77f5c5e114616a70cb549a3e609c9675c06511cac",
+      "source_sha256": "fa1b254f967cd0be6d9f8a0968f2ffec13d2927043c13bf96e2da44d794939f0",
       "public_methods": [
         "WeaverJournal",
         "applied",
         "close",
+        "endObservedInfluence",
         "expireProjections",
         "finishAudit",
         "influenceIndex",
@@ -1781,6 +1805,18 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
+      "domain": "pve",
+      "source_sha256": "cfc9ceeedba51f6784bc85d5534f335cd92d27e66c2acb602230b801ec32669e",
+      "public_methods": [
+        "canonicalBytes",
+        "influenceLifetimes",
+        "observeInfluence",
+        "type",
+        "validate"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
       "domain": "pve",
       "source_sha256": "700f4cdd6cea9d29243ba0670c97c17e92bc6faf2497464e30c202ad943005b2",
@@ -1806,7 +1842,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "domain": "pve",
-      "source_sha256": "0bbd3b3058b78819ddb51a251a93cdb9673bfc680ebcf8c5b0c367a36f3f0bc6",
+      "source_sha256": "f461f07adfdaa3019a9de040a31bd2222cc3db2f7961ca4fea8dcaa2a929e55f",
       "public_methods": [
         "PvEWeaverProvider",
         "assessRecovery",
@@ -1818,7 +1854,9 @@
         "discover",
         "exportValue",
         "id",
+        "influenceLifetimes",
         "inspect",
+        "observeInfluence",
         "prepare",
         "prepareEffects",
         "prepareUndo",
@@ -2103,9 +2141,11 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
       "domain": "developer_self",
-      "source_sha256": "95acbfbb7f5260e5d97882059791c5c048beeded2d62b47cf1bfc031b087759a",
+      "source_sha256": "e3a51c5d6da7ee46a3f3a30c44733988a64c635610d3f0485b70aa8e054f6cf3",
       "public_methods": [
+        "activeFor",
         "close",
+        "fence",
         "install",
         "prepare"
       ]
@@ -5827,7 +5867,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "d3f4df1cf29564528a6c2312a65efd5867db77be23121e250e0662951165d2b0",
+      "source_sha256": "4b62e28477aa9d9ab61d6032f9046d3f0af1392436c055c10b0665724bfd4a0f",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
@@ -6566,7 +6606,9 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceDispatcher.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
@@ -6575,6 +6617,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",

@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.dev.weaver.provider;
 
 import hu.taliann.icesmp.dev.weaver.api.*;
+import hu.taliann.icesmp.dev.weaver.integrity.*;
 import hu.taliann.icesmp.dev.weaver.execution.*;
 import hu.taliann.icesmp.dev.weaver.projection.*;
 import java.util.concurrent.*;
@@ -16,7 +17,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** Registry publications are immutable; native mob reads occur only through the owner snapshot hook. */
-public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnapshotContributor, WeaverProjectionProvider {
+public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnapshotContributor, WeaverProjectionProvider, WeaverInfluenceObserverProvider {
     public static final String FACET = "pve.runtime";
     public static final WeaverTypeId ABILITY = WeaverTypeId.parse("icesmp:pve_ability_ref@1");
     public static final WeaverTypeId TEMPLATE = WeaverTypeId.parse("icesmp:pve_template_ref@1");
@@ -27,9 +28,10 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
     private final ProviderContribution contribution;
     private final Optional<PvEProjectionActions> mutations;
     private final Optional<PvERuntimeActions> controls;
+    private final Optional<PvEInfluenceLifetimeObserver> lifetimeObserver;
     private final Function<Set<SubjectRef>, CompletionStage<Void>> reconcile;
     private record Ports(PvEMobProjectionSource source, Function<SubjectRef, Map<String, WeaverValue>> snapshots,
-                         Function<Set<SubjectRef>, CompletionStage<Void>> reconcile, PvERuntimeActions.Port controls) { }
+                         Function<Set<SubjectRef>, CompletionStage<Void>> reconcile, PvERuntimeActions.Port controls, PvEInfluenceLifetimeObserver observer) { }
 
     public PvEWeaverProvider(final WeaverProviderServices services, final MobAbilityRegistry abilities, final MobTemplateRegistry templates,
             final MobScalingManager scaling, final MobAbilityRuntime runtime) {
@@ -37,7 +39,7 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
     }
     private PvEWeaverProvider(final WeaverTypeRegistry types, final Supplier<Map<String, MobAbilityDefinition>> abilities,
             final Supplier<Map<String, MobTemplate>> templates, final Ports ports) {
-        this(types, abilities, templates, ports.snapshots(), Optional.of(ports.source()), ports.reconcile(), Optional.of(ports.controls()));
+        this(types, abilities, templates, ports.snapshots(), Optional.of(ports.source()), ports.reconcile(), Optional.of(ports.controls()), Optional.of(ports.observer()));
     }
     PvEWeaverProvider(final WeaverTypeRegistry types, final Supplier<Map<String, MobAbilityDefinition>> abilities,
             final Supplier<Map<String, MobTemplate>> templates, final Function<SubjectRef, Map<String, WeaverValue>> snapshots) {
@@ -52,6 +54,13 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
             final Supplier<Map<String, MobTemplate>> templates, final Function<SubjectRef, Map<String, WeaverValue>> snapshots,
             final Optional<PvEMobProjectionSource> source, final Function<Set<SubjectRef>, CompletionStage<Void>> reconcile,
             final Optional<PvERuntimeActions.Port> controlPort) {
+        this(types, abilities, templates, snapshots, source, reconcile, controlPort, Optional.empty());
+    }
+    private PvEWeaverProvider(final WeaverTypeRegistry types, final Supplier<Map<String, MobAbilityDefinition>> abilities,
+            final Supplier<Map<String, MobTemplate>> templates, final Function<SubjectRef, Map<String, WeaverValue>> snapshots,
+            final Optional<PvEMobProjectionSource> source, final Function<Set<SubjectRef>, CompletionStage<Void>> reconcile,
+            final Optional<PvERuntimeActions.Port> controlPort, final Optional<PvEInfluenceLifetimeObserver> lifetimeObserver) {
+        this.lifetimeObserver = lifetimeObserver;
         this.snapshots = Objects.requireNonNull(snapshots); this.reconcile = Objects.requireNonNull(reconcile);
         mutations = source.map(port -> new PvEProjectionActions(port, snapshots, abilities));
         controls = controlPort.map(port -> new PvERuntimeActions(types, port, snapshots));
@@ -106,7 +115,13 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
             if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) throw new WeaverDomainRejection("ENTITY_UNAVAILABLE");
             if (!(entity instanceof Mob mob) || !mob.isValid() || mob.isDead()) throw new WeaverDomainRejection("ENTITY_UNAVAILABLE");
             return runtime.control(mob, request, admission);
-        });
+        }, new PvEInfluenceLifetimeObserver(services));
+    }
+    @Override public List<InfluenceLifetimeDescriptor> influenceLifetimes() {
+        return lifetimeObserver.map(PvEInfluenceLifetimeObserver::influenceLifetimes).orElse(List.of());
+    }
+    @Override public CompletionStage<InfluenceObservation> observeInfluence(final WeaverInfluenceRecord influence) {
+        return lifetimeObserver.map(observer -> observer.observeInfluence(influence)).orElseGet(() -> CompletableFuture.completedFuture(InfluenceObservation.unavailable()));
     }
     private static <T> void register(final WeaverTypeRegistry types, final Map<String, WeaverValueCatalog> catalogs, final String id, final WeaverTypeId type, final String capability,
             final Supplier<Map<String, T>> registry, final Function<T, Component> label) {

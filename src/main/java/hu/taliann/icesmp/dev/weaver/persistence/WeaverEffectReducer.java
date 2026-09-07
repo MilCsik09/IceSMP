@@ -10,7 +10,7 @@ final class WeaverEffectReducer {
     private WeaverEffectReducer() { }
     /** Adds only derived quarantine; canonical receipts and original operation revisions remain untouched. */
     static WeaverJournalState propagated(final WeaverJournalState state, final Set<DeveloperInfluence> origins,
-            final Set<hu.taliann.icesmp.integrity.RewardSource> targets, final long until) {
+            final Set<hu.taliann.icesmp.integrity.RewardSource> targets, final long until, final Optional<WeaverValue> observedLifetime) {
         if (origins.isEmpty() || origins.size() > 128 || targets.isEmpty() || targets.size() > 32) throw new WeaverDomainRejection("PROPAGATION_CAPACITY");
         final Set<DeveloperInfluence> recorded = new HashSet<>(); state.influences().values().forEach(value -> recorded.add(value.influence()));
         final Map<UUID, WeaverInfluenceRecord> influences = new HashMap<>(state.influences());
@@ -19,12 +19,13 @@ final class WeaverEffectReducer {
             WeaverJournalState.origin(state.operations(), origin);
             for (final var source : targets) {
                 final var target = propagationTarget(source);
-                final UUID id = propagatedId(origin, target);
+                final Optional<WeaverValue> lifetime = target.monotonic() ? Optional.empty() : observedLifetime;
+                final UUID id = propagatedId(origin, target, lifetime);
                 final var previous = influences.get(id);
-                if (previous != null && (!previous.influence().equals(origin) || !previous.target().equals(target))) throw new WeaverDomainRejection("PROPAGATION_CONFLICT");
+                if (previous != null && (!previous.influence().equals(origin) || !previous.target().equals(target) || !previous.observedLifetime().equals(lifetime))) throw new WeaverDomainRejection("PROPAGATION_CONFLICT");
                 final long deadline = target.monotonic() ? 0 : Math.max(until, Math.addExact(origin.appliedAt(), PlayerQuarantine.MINIMUM_TAIL_MILLIS));
-                influences.put(id, new WeaverInfluenceRecord(id, origin, target, previous != null && previous.active(),
-                        previous == null ? deadline : Math.max(previous.quarantinedUntil(), deadline)));
+                influences.put(id, new WeaverInfluenceRecord(id, origin, target, lifetime.isPresent() || previous != null && previous.active(),
+                        previous == null ? deadline : Math.max(previous.quarantinedUntil(), deadline), lifetime));
             }
         }
         final long reserved = state.intents().values().stream().mapToLong(intent -> intent.targets().size()).sum();
@@ -34,8 +35,14 @@ final class WeaverEffectReducer {
                 state.intents(), state.projections(), influences, state.effectDeltas());
     }
     static UUID propagatedId(final DeveloperInfluence origin, final WeaverInfluenceTarget target) {
-        return UUID.nameUUIDFromBytes(CanonicalValueBytes.encode(Map.of("schema", "weaver-derived-influence@1",
-                "operation", origin.operationId().toString(), "target", WeaverEffectCodec.target(target))));
+        return propagatedId(origin, target, Optional.empty());
+    }
+    static UUID propagatedId(final DeveloperInfluence origin, final WeaverInfluenceTarget target, final Optional<WeaverValue> lifetime) {
+        final Map<String, Object> identity = new HashMap<>(Map.of("schema", "weaver-derived-influence@1",
+                "operation", origin.operationId().toString(), "target", WeaverEffectCodec.target(target)));
+        lifetime.ifPresent(value -> identity.put("lifetime", Map.of("type", value.type().canonical(), "provider", value.sourceProvider(),
+                "facet", value.sourceFacet(), "parameters", value.payload())));
+        return UUID.nameUUIDFromBytes(CanonicalValueBytes.encode(identity));
     }
     static WeaverInfluenceTarget propagationTarget(final hu.taliann.icesmp.integrity.RewardSource source) {
         return WeaverInfluenceTarget.exact(source instanceof hu.taliann.icesmp.integrity.RewardSource.Location point
@@ -125,7 +132,8 @@ final class WeaverEffectReducer {
             for (final var entry : delta.endedBefore().entrySet()) {
                 final WeaverInfluenceRecord current = influences.get(entry.getKey()), before = entry.getValue();
                 if (current == null || !current.influence().equals(before.influence()) || !current.target().equals(before.target())) throw new WeaverDomainRejection("CONFLICT");
-                influences.put(entry.getKey(), new WeaverInfluenceRecord(before.id(), before.influence(), before.target(), before.active(), Math.max(before.quarantinedUntil(), current.quarantinedUntil())));
+                influences.put(entry.getKey(), new WeaverInfluenceRecord(before.id(), before.influence(), before.target(), before.active(),
+                        Math.max(before.quarantinedUntil(), current.quarantinedUntil()), before.observedLifetime()));
             }
             end(influences, operation.operationId(), operation.updatedAt());
         }
@@ -155,7 +163,7 @@ final class WeaverEffectReducer {
                 && other.undoClaim().get().receiptId().equals(claim.receiptId()) && Set.of(OperationStatus.PREPARED, OperationStatus.APPLIED, OperationStatus.NEEDS_REVIEW).contains(other.status())) throw new WeaverDomainRejection("UNDO_ALREADY_PENDING");
     }
     private static void end(final Map<UUID, WeaverInfluenceRecord> influences, final UUID origin, final long now) {
-        influences.replaceAll((id, influence) -> influence.influence().operationId().equals(origin)
+        influences.replaceAll((id, influence) -> influence.influence().operationId().equals(origin) && influence.observedLifetime().isEmpty()
                 ? influence.ended(Math.max(now, influence.influence().appliedAt())) : influence);
     }
 }

@@ -207,3 +207,57 @@ the inherited Trash source-sheet audit failure. The authored PvE audit now follo
 both native `history.consumed`/`history.consume` calls and the bounded once-only set
 implementation; its substantive threshold/pause/cast-epoch gate is preserved and the
 audit passes locally. Resource pack 34119895538 and Trash 34119895617 passed.
+
+## Observed native effect lifetimes
+
+Continuation base `f1be063fe5664fc7471a94933ab4b22d90ded9f5`. Its exact-head
+WorldWeaver run 34122353832 passed Paper native 101743075597, Folia native
+101743075550 and artifact jobs 101743075406 / 101743075179. Native evidence now
+includes the actual clean ally buff on a second mob. Verification 101743075471
+failed only the inherited `phase-batch-001.png` Trash source-image audit. Resource
+pack 34122353760 and Trash 34122353799 passed. These are base-commit results;
+this continuation requires fresh CI. No native tainted-player playtest is claimed.
+
+The earlier refusal for lingering player potions is now replaced by an explicit
+provider-owned observed-lifetime consumer. `GameplayEffectLifetime` is a bounded,
+namespaced schema and immutable parameter recipe. The generic provider registry
+validates type, provider, facet, capability and supported influence scope; it has
+no PvE branch. `PvEInfluenceLifetimeObserver` registers
+`icesmp:pve_potion_effect@1`, validating the potion key against `Registry.EFFECT`.
+The native poison/composite potion paths supply this recipe. Unregistered lingering
+world/spatial effects still refuse; entity/item/event lineage remains monotonic.
+
+Journal schema 4 persists the typed recipe with the derived influence. Schemas
+1–3 remain readable; unknown historical provider/content types remain opaque
+quarantine evidence. Player influence stays active regardless of wall-clock or
+nominal tick duration. The native observer resolves only the UUID on EntityOwner
+and reads actual potion presence there. Offline/unavailable players remain pending;
+no chunks are forced or native effects replayed. Up to sixteen observations run
+sequentially per round-robin maintenance pulse, with a five-second owner/provider
+bound and circuit-breaker isolation.
+
+Before reading absence, the owner acquires a neutral target observation fence.
+Effect permits cannot cross that fence, including player/entity identity aliases
+and policy replacement. The fence survives until the exact-record conditional end
+has received durable acknowledgement; shutdown does not release an in-flight write
+prematurely. An ended record retains at least five minutes of quarantine, and an
+older effect permit cannot use merely that tail to apply a new lingering effect.
+Changed influence evidence rejects the end. Provider/owner late completions release
+their unconsumed fences, including started timeouts and shutdown. Removing or
+compensating a projection does not end its already-applied native potion influence.
+
+Verification: Java 21 full main/regression compile, all 32 Weaver/provider suites,
+four native runtime suites, four architecture tests, authored PvE audit and
+consistency (0 FAIL / 0 WARN) passed locally. The new normal Gradle check task
+`weaverObservedInfluenceRegressionTest` passes 155 assertions: all 26 reward
+channels, actual-end/tail boundaries, two distinct lifetime identities, same-effect
+deduplication, exact-state conflicts, 128-fence and 16-observation caps, held fsync,
+before/after write failures, real YAML restart, schema 3 migration, removed content,
+projection expiry/compensation, provider timeout and owner shutdown custody.
+Inventory: 322 authorities / 55 domains / 51 blockers; 1232 main Java files.
+
+Remaining release gates include actual tainted-player potion/logout/restart tests
+on Paper and Folia, complete causal creation/DOT propagation, every non-kill
+producer/outbox route, and cross-region combat continuation. Clean native shield
+and ally tests do not establish those gates. Gameplay admission and artifact
+issuance remain disabled; this is not complete WW-04 or zero-leak acceptance.

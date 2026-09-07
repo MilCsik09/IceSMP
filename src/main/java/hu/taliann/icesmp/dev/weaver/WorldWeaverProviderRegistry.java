@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.dev.weaver;
 
 import hu.taliann.icesmp.dev.weaver.api.*;
+import hu.taliann.icesmp.dev.weaver.integrity.*;
+import hu.taliann.icesmp.integrity.*;
 import hu.taliann.icesmp.dev.weaver.execution.ProviderCircuitBreaker;
 import hu.taliann.icesmp.dev.weaver.subject.SubjectSnapshot;
 import hu.taliann.icesmp.dev.weaver.subject.WeaverSubjectKind;
@@ -18,6 +20,7 @@ public final class WorldWeaverProviderRegistry {
     }
     private final WeaverTypeRegistry types;
     private hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry projectionConsumers;
+    private Map<WeaverTypeId, InfluenceLifetimeDescriptor> influenceLifetimes = Map.of();
     private final LongSupplier clock;
     private final Map<String, Entry> providers = new LinkedHashMap<>();
     private Map<String, FacetDescriptor> facets = Map.of();
@@ -111,6 +114,16 @@ public final class WorldWeaverProviderRegistry {
             }
         }
         consumers.freeze(actionMap); projectionConsumers = consumers;
+        final Map<WeaverTypeId, InfluenceLifetimeDescriptor> lifetimes = new HashMap<>();
+        for (final Entry entry : providers.values()) if (entry.provider() instanceof WeaverInfluenceObserverProvider observer) {
+            for (final var descriptor : List.copyOf(observer.influenceLifetimes())) {
+                types.require(descriptor.type());
+                if (!entry.id().equals(descriptor.providerId()) || !entry.contribution().facets().stream().anyMatch(facet -> facet.id().equals(descriptor.facetId()))
+                        || lifetimes.size() >= 256 || lifetimes.putIfAbsent(descriptor.type(), descriptor) != null)
+                    throw new IllegalArgumentException("Invalid or duplicate influence lifetime consumer");
+            }
+        }
+        influenceLifetimes = Map.copyOf(lifetimes);
         types.freeze(); facets = Map.copyOf(facetMap); actions = Map.copyOf(actionMap); catalogs = Map.copyOf(catalogMap);
         exports = Map.copyOf(exportMap); imports = Map.copyOf(importMap); owners = Map.copyOf(ownerMap); frozen = true;
     }
@@ -302,6 +315,55 @@ public final class WorldWeaverProviderRegistry {
         if (!frozen) throw new WeaverDomainRejection("PROVIDER_NOT_READY"); final Entry entry = providers.get(providerId);
         if (entry == null) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");
         return entry.breaker().call(read, false);
+    }
+    public WeaverValue resolveInfluenceLifetime(final GameplayEffectContext context) {
+        requireFrozen();
+        final var lifetime = context.lifetime().orElseThrow(() -> new WeaverDomainRejection("LIFETIME_CONSUMER_UNAVAILABLE"));
+        final var type = WeaverTypeId.parse(lifetime.type()); final var descriptor = influenceLifetimes.get(type);
+        if (descriptor == null) throw new WeaverDomainRejection("LIFETIME_CONSUMER_UNAVAILABLE");
+        return readConsumer(descriptor.providerId(), () -> {
+            for (final RewardSource source : context.targets()) if (!WeaverInfluenceTarget.exact(source).monotonic()) {
+                final InfluenceScope scope = source instanceof RewardSource.Player ? InfluenceScope.PLAYER
+                        : source instanceof RewardSource.World ? InfluenceScope.WORLD : InfluenceScope.SPATIAL;
+                if (!descriptor.scopes().contains(scope)) throw new WeaverDomainRejection("LIFETIME_TARGET_UNAVAILABLE");
+            }
+            final Map<String, Object> payload = new HashMap<>(); payload.putAll(lifetime.parameters());
+            final var value = new WeaverValue(type, payload, descriptor.providerId(), descriptor.facetId(), Set.of("weaver.influence_lifetime"), 0);
+            if (!types.require(type).validate(value.payload()).valid()) throw new WeaverDomainRejection("LIFETIME_CONTENT_UNAVAILABLE");
+            return value;
+        });
+    }
+    public java.util.concurrent.CompletionStage<InfluenceObservation> observeInfluence(final WeaverInfluenceRecord influence) {
+        requireFrozen();
+        final var value = influence.observedLifetime().orElse(null);
+        final var descriptor = value == null ? null : influenceLifetimes.get(value.type());
+        final var entry = descriptor == null ? null : providers.get(descriptor.providerId());
+        if (entry == null || !(entry.provider() instanceof WeaverInfluenceObserverProvider observer))
+            return java.util.concurrent.CompletableFuture.completedFuture(InfluenceObservation.unavailable());
+        try {
+            final var observed = entry.breaker().call(() -> {
+                final var target = influence.target();
+                final InfluenceScope scope = target.area().isPresent() || target.source() instanceof RewardSource.Location ? InfluenceScope.SPATIAL
+                        : target.source() instanceof RewardSource.Player ? InfluenceScope.PLAYER : InfluenceScope.WORLD;
+                if (target.monotonic() || !descriptor.scopes().contains(scope)) throw new WeaverDomainRejection("LIFETIME_TARGET_UNAVAILABLE");
+                if (!value.sourceProvider().equals(entry.id()) || !value.sourceFacet().equals(descriptor.facetId())
+                        || !value.sourceCapabilities().equals(Set.of("weaver.influence_lifetime"))
+                        || !types.require(value.type()).validate(value.payload()).valid()) throw new WeaverDomainRejection("LIFETIME_CONTENT_UNAVAILABLE");
+                return java.util.Objects.requireNonNull(observer.observeInfluence(influence));
+            }, false);
+            final var bounded = new java.util.concurrent.CompletableFuture<InfluenceObservation>();
+            bounded.orTimeout(5, java.util.concurrent.TimeUnit.SECONDS);
+            observed.whenComplete((result, failure) -> {
+                if (failure != null) { if (result != null) result.close(); bounded.completeExceptionally(failure); return; }
+                try {
+                    java.util.Objects.requireNonNull(result);
+                    if (result.status() == InfluenceObservation.Status.ENDED && !result.fence().orElseThrow().activeFor(influence.target().source()))
+                        throw new IllegalArgumentException("Foreign or retired lifetime observation fence");
+                    if (!bounded.complete(result)) result.close();
+                } catch (final RuntimeException invalid) { if (result != null) result.close(); bounded.completeExceptionally(invalid); }
+            });
+            return entry.breaker().observe(bounded);
+        } catch (final RuntimeException unavailable) { return java.util.concurrent.CompletableFuture.completedFuture(InfluenceObservation.unavailable()); }
     }
     public java.util.concurrent.CompletionStage<Void> reconcileProjections(final String providerId, final Set<hu.taliann.icesmp.dev.weaver.subject.SubjectRef> subjects) {
         requireFrozen(); final Entry entry = providers.get(providerId); final var selected = Set.copyOf(subjects);
