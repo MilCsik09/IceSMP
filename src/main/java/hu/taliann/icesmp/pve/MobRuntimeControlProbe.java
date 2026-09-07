@@ -63,8 +63,11 @@ public final class MobRuntimeControlProbe {
         for (final var template : templates.all().values().stream().sorted(Comparator.comparing(MobTemplate::mobId)).toList()) {
             final var selected = MobAbilityRuntime.effectiveDefinitions(new EffectiveMobProjection(template.mobId(), template.rank(), Optional.of(template.archetype()),
                     template.abilityIdsFor(template.rank()), template.behavior(), Set.of()), abilities::require);
-            final var ability = selected.stream().filter(a -> a.kind() == MobAbilityDefinition.Kind.SUMMON
-                    && a.targetRule() == MobAbilityDefinition.TargetRule.SELF && a.conditions().isEmpty() && a.maxSummons() > 0).findFirst();
+            final var ability = selected.stream().filter(a -> a.kind() == MobAbilityDefinition.Kind.COMPOSITE
+                    && !a.actions().isEmpty() && a.actions().stream().allMatch(action -> action.type() == MobTechniqueAction.Type.SUMMON_TEMPLATE)
+                    && a.targetRule() == MobAbilityDefinition.TargetRule.SELF
+                    && a.conditions().stream().allMatch(condition -> condition.type() == MobTechniqueCondition.Type.HEALTH_BELOW)
+                    && a.maxSummons() > 0).findFirst();
             if (ability.isPresent()) return new AllyChoice(template.mobId(), ability.get().abilityId(), ability.get().telegraphTicks());
         }
         throw new IllegalStateException("NATIVE_SUMMON_FIXTURE_UNAVAILABLE");
@@ -205,6 +208,10 @@ public final class MobRuntimeControlProbe {
     private void summonCast(AllyChoice choice) {
         try {
             final Mob summoner = mob(summonerId);
+            final double threshold = abilities.require(choice.ability()).conditions().stream().mapToDouble(MobTechniqueCondition::value).min().orElse(1.0D);
+            final var maximum = summoner.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            check(maximum != null && maximum.getValue() > 1.0D, "SUMMON_FIXTURE_HEALTH_UNAVAILABLE");
+            summoner.setHealth(Math.max(1.0D, maximum.getValue() * threshold * 0.8D));
             runtime.control(summoner, request(summoner, Kind.FORCE_ABILITY, choice.ability()), () -> { });
             later(summonerId, choice.telegraph() + 5, this::summonExecuted);
         } catch (Throwable failure) { failed(failure); }
@@ -215,7 +222,7 @@ public final class MobRuntimeControlProbe {
             final Set<UUID> children = new HashSet<>();
             for (final var entity : summoner.getNearbyEntities(6, 8, 6)) {
                 if (!(entity instanceof Mob child) || !Bukkit.isOwnedByCurrentRegion(child)
-                        || !MobAbilityRuntime.summonOrigin(child).filter(summonerId::equals).isPresent()) continue;
+                        || !AuthoredCreatureSpawnService.summonOrigin(child).filter(summonerId::equals).isPresent()) continue;
                 children.add(child.getUniqueId()); createdChildren = Set.copyOf(children);
                 check(!child.isPersistent(), "SUMMON_RESTART_GHOST");
                 check(hu.taliann.icesmp.integrity.BukkitRewardSources.causal(child).contains(new hu.taliann.icesmp.integrity.RewardSource.Entity(summonerId)),
@@ -223,7 +230,7 @@ public final class MobRuntimeControlProbe {
                 spawns.detach(child); child.remove();
             }
             check(!children.isEmpty() && children.size() <= 8, "NATIVE_CREATION_GATE_DID_NOT_EXECUTE");
-            spawns.cleanupSummons(fixtureOwner);
+            spawns.cleanupSummons(summonerId); spawns.cleanupSummons(fixtureOwner);
             Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> finish(Bukkit.getEntity(entityId) == null
                     && Bukkit.getEntity(allyCasterId) == null && Bukkit.getEntity(summonerId) == null
                     && createdChildren.stream().allMatch(id -> Bukkit.getEntity(id) == null), "NATIVE_LIFECYCLE"), 5);
@@ -237,6 +244,7 @@ public final class MobRuntimeControlProbe {
     private void finish(boolean success, String code) {
         if (!finished.compareAndSet(false, true)) return;
         spawns.cleanupSummons(fixtureOwner);
+        if (summonerId != null) spawns.cleanupSummons(summonerId);
         createdChildren.forEach(id -> hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id));
         final FixtureChunk fixture = fixtureChunk;
         if (fixture != null) {

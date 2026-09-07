@@ -353,3 +353,37 @@ loading. Fresh exact-head Paper/Folia evidence is required before claiming that 
 Full tainted projectile-impact/player quarantine, cross-region creation/impact,
 all reward producer/outbox paths, and later WW phases remain unfinished. Neither this
 checkpoint nor its fixtures justify zero-leak, full-domain or production acceptance.
+
+## Final owner source revalidation and native summon fixture
+
+Base `8aed92cc45ca6ad772b57527aa30b9d82a50295c`, run 34128193351:
+artifact Paper 101761744797 / Folia 101761744992 passed. Both native jobs
+101761744820 / 101761744687 failed at NATIVE_SUMMON_FIXTURE_UNAVAILABLE: no
+currently installed kit has the legacy bare SUMMON kind selected by the fixture.
+This is not evidence that native summon execution passed. Verification 101761744420
+failed only the inherited Trash source-image audit; resource pack 34128193286 and
+Trash 34128193339 passed.
+
+The fixture now selects an installed COMPOSITE whose actions are all canonical
+SUMMON_TEMPLATE and whose conditions are absent or HEALTH_BELOW. It sets the isolated
+fixture mob's native health below that actual threshold before forcing the ability.
+Production conditions are not bypassed. Children are inspected through the canonical
+authored summon-origin API and both parent/child lifecycle indexes are cleaned.
+Exact-head Paper/Folia evidence remains required for the corrected fixture.
+
+A source can move into a different influenced location while waiting for IO or an
+owner continuation. Final effect permits now accept a fresh immutable source capture
+in addition to the original provenance. The journal rejects fresh PREPARED uncertainty
+or any newly observed developer origin that was not durably admitted. Native impact
+and creation owners capture current provenance immediately before claiming the permit;
+no foreign live read or region-thread IO wait is introduced. Known admitted lineage
+still succeeds once. Policy and observation fences remain mandatory.
+
+Full Java 21 compile and seven affected suites passed. Derived influence now has
+195 assertions, including movement into an already-tainted source, fresh PREPARED
+uncertainty, a new canonical parent origin, unchanged-source single use, bounded
+fresh capture and immutable input. Observed lifetime 155, causal capture 50, native
+source contract 28, native control 22, provider controls 104 and Folia ownership also
+pass. Four architecture checks, authored PvE audit, inventory and consistency are
+locally green. Coverage remains 323 authorities / 55 domains / 51 blockers; broader
+native damage/player-impact propagation and all remaining phase gates are unchanged.

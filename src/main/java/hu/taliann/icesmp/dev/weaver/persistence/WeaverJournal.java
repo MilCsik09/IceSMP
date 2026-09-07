@@ -88,12 +88,16 @@ public final class WeaverJournal {
     private GameplayEffectPermit effectPermit(final GameplayEffectContext context, final Set<DeveloperInfluence> admitted, final long admissionUntil,
             final Optional<WeaverValue> observedLifetime) {
         final long issued = System.nanoTime();
-        return GameplayEffectPermit.guarded(() -> {
+        return GameplayEffectPermit.guardedSources(currentSources -> {
             if (!ready() || System.nanoTime() - issued >= TimeUnit.SECONDS.toNanos(5)) return false;
             final long now = effectClock.getAsLong(); if (now < 0 || now > admissionUntil) return false;
             final Publication current = publication;
             final var source = current.influence().trace(context.sources(), now);
             if (source.uncertain() || !admitted.containsAll(source.origins())) return false;
+            if (!currentSources.isEmpty()) {
+                final var fresh = current.influence().trace(currentSources, now);
+                if (fresh.uncertain() || !admitted.containsAll(fresh.origins())) return false;
+            }
             for (final DeveloperInfluence origin : admitted) for (final RewardSource target : context.targets()) {
                 final var exact = WeaverEffectReducer.propagationTarget(target);
                 final var lifetime = exact.monotonic() ? Optional.<WeaverValue>empty() : observedLifetime;

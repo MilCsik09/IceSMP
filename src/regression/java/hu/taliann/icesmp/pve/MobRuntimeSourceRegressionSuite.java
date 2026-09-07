@@ -62,7 +62,8 @@ public final class MobRuntimeSourceRegressionSuite {
                 "ability/summon lifecycle is not bounded or cleaned");
         check(runtime.contains("projectile.setPickupStatus")
                         && runtime.contains("final LivingEntity entity = ownedLiving(id, player)")
-                        && runtime.contains("entity != null && permit.claim()")
+                        && runtime.contains("permit.claim(currentSources)")
+                        && runtime.contains("currentSources = BukkitRewardSources.causal(entity)")
                         && !runtime.contains("createExplosion"),
                 "ability/affix runtime can leak projectiles, cross-region mutation or terrain damage");
 
@@ -82,7 +83,8 @@ public final class MobRuntimeSourceRegressionSuite {
 
         final String creation = runtime.substring(runtime.indexOf("private void prepareCreation"), runtime.indexOf("private void launchBurst"));
         check(creation.contains("GameplayEffectGate.prepare(context)") && creation.contains("new RewardSource.Entity(id)")
-                        && creation.indexOf("!permit.claim()") < creation.indexOf("creation.accept(owned)")
+                        && creation.contains("if (!permit.claim(currentSources)) return")
+                        && creation.indexOf("!permit.claim(currentSources)") < creation.indexOf("creation.accept(owned)")
                         && creation.contains("current.castEpoch != epoch") && creation.contains("Bukkit.isOwnedByCurrentRegion(resolved)"),
                 "native child creation bypassed durable parent admission or final owner/generation");
         check(authoredSpawns.contains("created -> stampOrigin(created, request)") && authoredSpawns.contains("public static java.util.Optional<UUID> summonOrigin")

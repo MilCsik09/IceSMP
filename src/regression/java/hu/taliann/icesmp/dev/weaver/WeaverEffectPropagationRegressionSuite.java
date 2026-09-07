@@ -60,7 +60,7 @@ public final class WeaverEffectPropagationRegressionSuite {
         await(restart.close());
         final var shutdown = await(journal.prepareDerivedEffect(context)); await(journal.close());
         check(!shutdown.claim(), "shutdown permit remained usable");
-        failures(); publicationFence(); slowAcknowledgement(); bindings();
+        failures(); publicationFence(); slowAcknowledgement(); bindings(); freshSources();
         System.out.println("Derived influence propagation passed: " + assertions + " assertions; durable all-scope targets, transitive origin, no receipt mutation, one-use admission, publication race, crash uncertainty and real YAML restart.");
     }
     private static void failures() throws Exception {
@@ -127,6 +127,39 @@ public final class WeaverEffectPropagationRegressionSuite {
         final var permit = await(journal.prepareDerivedEffect(new GameplayEffectContext(List.of(new RewardSource.Entity(root.entityId())), Set.of(target), 0)));
         check(!permit.claim() && journal.ready(), "slow fsync spent the tail before an effect was admitted");
         check(journal.influenceIndex().quarantined(target, clock.get()), "slow acknowledgement removed conservative evidence");
+        await(journal.close());
+    }
+    private static void freshSources() throws Exception {
+        final var journal = new WeaverJournal(new Storage(), ignored -> { }, () -> 100L); await(journal.load());
+        final var entity = new RewardSource.Entity(UUID.randomUUID()); final var destination = new RewardSource.World(UUID.randomUUID());
+        final var context = new GameplayEffectContext(List.of(entity), Set.of(entity), 0);
+        // The source was already tainted; the native owner enters it only after preparing its permit.
+        final var worldProjection = operation(new WorldRef(destination.id()), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
+        await(journal.prepare(worldProjection));
+        final var applied = await(journal.applied(worldProjection.operationId(), 0, receipt(worldProjection), 2));
+        await(journal.finishAudit(worldProjection.operationId(), applied.revision()));
+        try (final var binding = GameplayEffectGate.install(journal::prepareDerivedEffect)) {
+            final var old = await(GameplayEffectGate.prepare(context));
+            check(!old.claim(List.of(entity, destination)) && !old.claim(), "movement into a tainted source bypassed final owner capture");
+            final var prepared = operation(new WorldRef(UUID.randomUUID()), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX); await(journal.prepare(prepared));
+            final var uncertain = await(GameplayEffectGate.prepare(context));
+            check(!uncertain.claim(List.of(new RewardSource.World(((WorldRef) prepared.subject()).worldId()))), "fresh PREPARED source ignored");
+            final var safe = await(GameplayEffectGate.prepare(context));
+            check(safe.claim(List.of(entity)) && !safe.claim(List.of(entity)), "unchanged fresh source cannot claim once");
+            final var parent = new RewardSource.Entity(UUID.randomUUID());
+            final var root = operation(new EntityRef(parent.id()), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
+            apply(journal, root, WeaverEffectCommit.none());
+            final var lineage = await(GameplayEffectGate.prepare(new GameplayEffectContext(List.of(parent), Set.of(entity), 0)));
+            check(lineage.claim(List.of(entity, parent)), "already admitted original lineage rejected on fresh capture");
+            final var newOrigin = new RewardSource.Entity(UUID.randomUUID());
+            final var delayed = await(GameplayEffectGate.prepare(new GameplayEffectContext(List.of(parent), Set.of(entity), 0)));
+            apply(journal, operation(new EntityRef(newOrigin.id()), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX), WeaverEffectCommit.none());
+            check(!delayed.claim(List.of(entity, newOrigin)), "new canonical parent origin bypassed prepared lineage");
+            final var oversized = GameplayEffectPermit.guardedSources(values -> true);
+            check(!oversized.claim(java.util.Collections.nCopies(65, entity)), "fresh source cap ignored");
+            final var immutable = GameplayEffectPermit.guardedSources(values -> { values.clear(); return true; });
+            check(!immutable.claim(new ArrayList<>(List.of(entity))), "fresh capture list remained mutable");
+        }
         await(journal.close());
     }
     private static void check(boolean condition, String message) { assertions++; if (!condition) throw new AssertionError(message); }

@@ -886,7 +886,11 @@ public final class MobAbilityRuntime implements Listener {
                 if (resolved == null || !Bukkit.isOwnedByCurrentRegion(resolved) || !(resolved instanceof Mob owned)
                         || !owned.isValid() || owned.isDead()) return;
                 final RuntimeState current = states.get(id);
-                if (current == null || current.castEpoch != epoch || current.paused || !permit.claim()) return;
+                if (current == null || current.castEpoch != epoch || current.paused) return;
+                final List<RewardSource> currentSources;
+                try { currentSources = BukkitRewardSources.causal(owned); }
+                catch (final RuntimeException | LinkageError unavailable) { return; }
+                if (!permit.claim(currentSources)) return;
                 try { creation.accept(owned); }
                 catch (final RuntimeException rejected) { reportCastFailure(definition.abilityId(), "creation", rejected); }
             }, null);
@@ -1275,7 +1279,11 @@ public final class MobAbilityRuntime implements Listener {
                         final Entity current = Bukkit.getEntity(id); if (current == null) return;
                         current.getScheduler().run(plugin, owned -> {
                             final LivingEntity entity = ownedLiving(id, player);
-                            if (entity != null && permit.claim()) effect.accept(entity);
+                            if (entity == null) return;
+                            final List<RewardSource> currentSources;
+                            try { currentSources = BukkitRewardSources.causal(entity); }
+                            catch (final RuntimeException | LinkageError unavailable) { return; }
+                            if (permit.claim(currentSources)) effect.accept(entity);
                         }, null);
                     });
         }, null);

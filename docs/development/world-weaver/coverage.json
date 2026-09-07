@@ -1678,7 +1678,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "fa1b254f967cd0be6d9f8a0968f2ffec13d2927043c13bf96e2da44d794939f0",
+      "source_sha256": "5305246095a3407632990fef9eb090bb6c34f96e4c331988d501c5a3d2c9a7cb",
       "public_methods": [
         "WeaverJournal",
         "applied",
@@ -2146,7 +2146,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
       "domain": "developer_self",
-      "source_sha256": "e3a51c5d6da7ee46a3f3a30c44733988a64c635610d3f0485b70aa8e054f6cf3",
+      "source_sha256": "6b619dd1cc3b7aaf060f35995d1246d66a66d7e3e8923dd2e318f3e7ddd329c6",
       "public_methods": [
         "activeFor",
         "close",
@@ -5884,7 +5884,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "72d9a1597780eeaffb6ec5ff803e7f95f74b20333ecad37ae4e4725796471a10",
+      "source_sha256": "72f0e12762f9490eee7ba1fd0d2623cddfa16232f7b850b025a185ac5c94014a",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",

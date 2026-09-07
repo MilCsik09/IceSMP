@@ -52,10 +52,10 @@ public final class GameplayEffectGate {
         try {
             return Objects.requireNonNull(binding.policy.apply(context)).handle((permit, failure) -> {
                 if (failure != null || permit == null) return GameplayEffectPermit.denied();
-                return GameplayEffectPermit.guarded(() -> {
+                return GameplayEffectPermit.guardedSources(currentSources -> {
                     synchronized (FENCES) {
                         return POLICY.get() == binding && context.targets().stream().noneMatch(target -> FENCES.containsKey(normalize(target)))
-                                && permit.claim() && POLICY.get() == binding;
+                                && permit.claim(currentSources) && POLICY.get() == binding;
                     }
                 });
             });
