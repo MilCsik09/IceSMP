@@ -91,6 +91,12 @@ public final class MobRuntimeSourceRegressionSuite {
                         && runtime.contains("minion.setPersistent(false)") && runtime.contains("projectile.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED)"),
                 "summon origin is not pre-activation canonical metadata or transient/projectile safety regressed");
 
+        final String retiredCleanup = authoredSpawns.substring(authoredSpawns.indexOf("private void forget("), authoredSpawns.indexOf("private static String id("));
+        check(!authoredSpawns.contains("ConcurrentHashMap<UUID, Mob>") && !retiredCleanup.contains("getPersistentDataContainer")
+                        && !retiredCleanup.contains("Bukkit.") && authoredSpawns.contains("() -> forget(entityId, parentId)")
+                        && authoredSpawns.contains("Bukkit.isOwnedByCurrentRegion(entity)"),
+                "summon retirement retained or read a live entity without its owner");
+
         check(boss.contains("EncounterScalingPolicy.snapshot")
                         && boss.contains("ContributionLedger")
                         && boss.contains("recordBossDamage")

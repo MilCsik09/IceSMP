@@ -387,3 +387,33 @@ source contract 28, native control 22, provider controls 104 and Folia ownership
 pass. Four architecture checks, authored PvE audit, inventory and consistency are
 locally green. Coverage remains 323 authorities / 55 domains / 51 blockers; broader
 native damage/player-impact propagation and all remaining phase gates are unchanged.
+
+## Summon retirement ownership cleanup
+
+Base `da2a33df591005d014195f4d52d082a5e207b4fc`, WorldWeaver run 34129174734:
+Paper native 101764898646 and Folia native 101764898528 now pass the actual
+canonical composite summon fixture, including native health-condition admission,
+created children, provider-read parent provenance, nonpersistent lifetime and cleanup.
+Artifact jobs 101764898539 / 101764898130 also pass. Verification 101764898588
+passes the 195-assertion propagation suite and fails only inherited Trash source PNG
+validation. Resource pack 34129174738 / Trash 34129174753 pass. This is isolated
+clean native evidence, not full tainted projectile/player or populated-server proof.
+
+Review of that canonical lifecycle found its retired callback read the retired mob's
+PDC and a second map retained live Mob handles. `AuthoredCreatureSpawnService` now
+keeps only its existing owner-to-child UUID index. Lifespan, refresh and pause hops
+carry IDs, resolve on the entity owner before live reads, and forget unavailable or
+retired IDs without Bukkit access. Null scheduler admissions also retire the index
+entry. Parent cleanup fences queued child pause/resume through current membership.
+Atomic per-owner index updates prevent a concurrent empty-set removal from discarding
+another child registration. The canonical summon-owner metadata remains the source
+of durable provenance; no parallel authority is introduced.
+
+Java 21 full compile, four affected source/causal/owner/provider suites, authored PvE
+audit, coverage and consistency pass locally. The native source contract now has 29
+assertions, including the absence of live-Mob storage and Bukkit/PDC reads from retired
+cleanup. The profile authority guard has 673 findings and zero unknown/stale/invalid/
+transition findings. Fresh Paper/Folia evidence is required for this cleanup commit.
+Coverage remains 323 authorities / 55 domains / 51 blockers. The same unfinished
+native damage propagation, cross-region continuation and later-phase requirements
+remain open; no production or complete-phase verdict is made.
