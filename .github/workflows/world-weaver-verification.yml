@@ -7,6 +7,9 @@ on:
       - "src/regression/java/**"
       - "docs/development/world-weaver/**"
       - "scripts/audit_world_weaver_coverage.py"
+      - "scripts/audit_config_content_command_surface.py"
+      - "scripts/process_trash_sprite_sheets.py"
+      - "scripts/tests/test_trash_sprite_validation.py"
       - "gradle/world-weaver-evidence.init.gradle"
       - ".github/workflows/world-weaver-verification.yml"
   workflow_dispatch:
@@ -41,6 +44,8 @@ jobs:
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
       - name: Verify audited source inventory
         run: python3 scripts/audit_world_weaver_coverage.py
+      - name: Verify sprite validation constraints on pinned Pillow
+        run: python3 -m unittest scripts.tests.test_trash_sprite_validation
       - name: Repository consistency
         run: python3 scripts/check_consistency.py
       - name: Full build and existing regressions
