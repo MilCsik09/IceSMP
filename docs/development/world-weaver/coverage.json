@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stage": "WW03_DURABLE_IN_PROGRESS",
+  "stage": "WW04_PVE_FACTION_INTEGRITY_IN_PROGRESS",
   "repository": "MilCsik09/IceSMP",
   "base_branch": "feature/faction-crime-whisperer-rework",
   "base_commit": "004c12abf6e896b1931a695f980d4841bbf785e9",
@@ -54,7 +54,7 @@
       "inspect": "canonical/effective template/rank/archetype/ability/level/affix/behavior/cast/source",
       "planned_actions": "force_ability, add/remove ability, rank/archetype/template projection, refresh, export/import, fork",
       "canonical_route": "MobAbilityRuntime.triggerTechnique/startCast; canonical registry enumeration; separate MobRuntimeProjectionSource consumer",
-      "rationale": "No effective projection port. forceTemplate/forceRankedLevel write canonical combat identity and are unsuitable for projections; reward and Bestiary must retain canonical identity. triggerTechnique is constrained to the current kit/typed trigger.",
+      "rationale": "WW-04 registers canonical registry-backed ability/template/rank/archetype catalogs, owner-only native snapshots and typed exports. The published catalog/inspection surface is an intermediate checkpoint, not full PvE coverage. Effective projection consumers, gameplay imports/mutations, reward propagation and native/client evidence remain required; canonical scaling/loot/Bestiary identity is untouched.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRegistry.java",
@@ -66,7 +66,9 @@
         "src/main/java/hu/taliann/icesmp/pve/EncounterRewardDeliveryService.java",
         "src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerService.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java"
+      ]
     },
     {
       "id": "faction",
@@ -1594,6 +1596,28 @@
         "prepareUndo",
         "supportedKinds",
         "validateImport"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+      "domain": "pve",
+      "source_sha256": "e1874578ceba31066a82270648a471c0f0b9db3ffc4194bb741ee53ec07ee9ed",
+      "public_methods": [
+        "PvEWeaverProvider",
+        "captureOnOwner",
+        "catalog",
+        "contribution",
+        "contractVersion",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareUndo",
+        "supportedKinds",
+        "validateImport",
+        "assessRecovery"
       ]
     },
     {
@@ -6105,6 +6129,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
@@ -6200,6 +6225,7 @@
       "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java",
       "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassivePolicy.java",
@@ -7258,6 +7284,12 @@
         "developer_self"
       ],
       "rationale": "Internal WorldWeaver composition/root lifecycle. Artifact authority remains DevItemManager; gameplay domain coverage is not closed by the frontend."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+      "domains": [
+        "pve"
+      ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",

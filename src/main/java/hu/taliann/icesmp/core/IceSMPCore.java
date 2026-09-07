@@ -904,7 +904,8 @@ public final class IceSMPCore {
 
         registerSpells();
         this.worldWeaverRuntime = new hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime(plugin, devItemManager, itemIdentityService,
-                java.util.List.of(hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider::new));
+                java.util.List.of(hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider::new,
+                        types -> new hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProvider(types, mobAbilityRegistry, mobTemplateRegistry, mobScalingManager, mobAbilityRuntime)));
     }
 
     /**
