@@ -54,11 +54,11 @@ public final class MobRuntimeControlProbe {
             world.getChunkAtAsync(x >> 4, z >> 4).thenRun(() -> Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
                 final var current = Bukkit.getWorld(worldId);
                 if (current == null) { finish(false, "WORLD_UNAVAILABLE"); return; }
-                Bukkit.getRegionScheduler().execute(plugin, current, x >> 4, z >> 4, () -> spawn(worldId, x, y, z, choice));
+                Bukkit.getRegionScheduler().execute(plugin, current, x >> 4, z >> 4, () -> spawn(worldId, x, y, z, choice, 0));
             })).exceptionally(failure -> { finish(false, "FIXTURE_CHUNK_FAILURE"); return null; });
         } catch (Throwable failure) { failed(failure); }
     }
-    private void spawn(UUID worldId, int x, int y, int z, Choice choice) {
+    private void spawn(UUID worldId, int x, int y, int z, Choice choice, int attempt) {
         if (finished.get()) return;
         try {
             final var world = Bukkit.getWorld(worldId);
@@ -66,9 +66,17 @@ public final class MobRuntimeControlProbe {
             check(Bukkit.isOwnedByCurrentRegion(world, x >> 4, z >> 4), "FIXTURE_REGION_REQUIRED");
             // A completed async load is not a lease: the empty server may unload before this continuation.
             // Only this explicitly enabled CI fixture loads/pins a chunk, and releases its own ticket below.
-            check(world.addPluginChunkTicket(x >> 4, z >> 4, plugin), "FIXTURE_TICKET_ALREADY_OWNED");
-            fixtureChunk = new FixtureChunk(worldId, x >> 4, z >> 4);
-            check(world.isChunkLoaded(x >> 4, z >> 4), "FIXTURE_CHUNK_UNAVAILABLE");
+            if (fixtureChunk == null) {
+                check(world.addPluginChunkTicket(x >> 4, z >> 4, plugin), "FIXTURE_TICKET_ALREADY_OWNED");
+                fixtureChunk = new FixtureChunk(worldId, x >> 4, z >> 4);
+            }
+            // Folia ticket admission and full/entity-loaded publication occur in separate region ticks.
+            if (!world.isChunkLoaded(x >> 4, z >> 4) || !world.getChunkAt(x >> 4, z >> 4).isEntitiesLoaded()) {
+                check(attempt < 100, "FIXTURE_CHUNK_UNAVAILABLE");
+                Bukkit.getRegionScheduler().runDelayed(plugin, world, x >> 4, z >> 4,
+                        task -> spawn(worldId, x, y, z, choice, attempt + 1), 2);
+                return;
+            }
             final double height = Math.max(world.getMinHeight() + 3, Math.min(world.getMaxHeight() - 3, y));
             final var request = AuthoredCreatureSpawnService.Request.template("runtime_control_probe", fixtureOwner.toString(), "probe",
                     choice.template(), 10, AuthoredCreatureSpawnService.RewardOwner.NONE, true, 1, 1, 400).summonedBy(fixtureOwner);

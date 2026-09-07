@@ -5654,7 +5654,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
       "domain": "pve",
-      "source_sha256": "fe64be87ff5fe59e31d12181e922d99e471031c7e988b5784a92a8b05772f3a5",
+      "source_sha256": "10240254dd44786f00595714e7763a8359de99fb29a68ef48baa10baff29f124",
       "public_methods": [
         "Request",
         "applyParticipantModifier",
@@ -5798,7 +5798,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "8934f14633caf252d6c08ad49bf49b79797e4d59819894ef536d3455d5c30dd1",
+      "source_sha256": "2130f4bff8ffc54a2abcc66922098a2408d5729915d200317ca7cee7b7ccc4d7",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",

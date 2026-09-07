@@ -710,3 +710,26 @@ individual world, region and loaded-chunk failures have separate codes. Async lo
 completion alone is not a lifetime guarantee across scheduled continuations. This
 load/pin is isolated CI setup, not WorldWeaver runtime chunk-loading behavior.
 The follow-up requires its own Paper/Folia evidence; no failure is hidden or waived.
+
+
+### Native ownership and delayed failure hardening
+
+Base `1c0e3d583caa005eef0d635cfb5868eb609cfd65`, run 34118885040:
+Paper native control job 101732052094 now passes the actual cast/cooldown/target
+probe. Both artifact lifecycle jobs pass. Folia native job 101732051889 reaches the
+separate FIXTURE_CHUNK_UNAVAILABLE diagnostic: a ticket is accepted before the
+full/entity-loaded state is published. The fixture now waits using bounded owner
+continuations (100 attempts, two ticks each); it does not block a region thread.
+New-head Folia evidence remains required.
+
+A native owner audit found the authored post-spawn callback read a moved entity
+before checking ownership. It now uses the entity scheduler directly. The shared
+cast admission checks cached target ownership for every caller, and rechecks after
+the telegraph. A lost target owner cancels safely, retaining cooldown. Delayed
+execution uses a generation/identity guard and a finally block, so exceptions cannot
+leave the entity casting forever or clear a replacement cast. Cast failures have a
+128-entry reporting bound and expose only exception class, not arbitrary payloads.
+Cross-region continuation remains a capability gate; safe cancellation is not claimed
+as full support. Full Java 21 compilation and six affected native/provider/ownership suites pass,
+along with four architecture checks and the 316-authority inventory audit.
+This checkpoint still requires its own Paper/Folia native evidence.

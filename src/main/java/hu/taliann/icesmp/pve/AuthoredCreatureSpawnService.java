@@ -162,15 +162,11 @@ public final class AuthoredCreatureSpawnService {
                     request.lifespanTicks());
         }
         abilities.attach(mob);
-        final Location spawnOwner = location.clone();
-        plugin.getServer().getRegionScheduler().runDelayed(plugin, spawnOwner, task -> {
+        // A creature may move before the post-spawn refresh; its entity scheduler follows ownership.
+        mob.getScheduler().runDelayed(plugin, task -> {
             if (!mob.isValid() || mob.isDead()) return;
-            if (Bukkit.isOwnedByCurrentRegion(mob)) {
-                abilities.refreshProfile(mob);
-            } else {
-                mob.getScheduler().run(plugin, owned -> abilities.refreshProfile(mob), null);
-            }
-        }, 1L);
+            abilities.refreshProfile(mob);
+        }, null, 1L);
         CombatTelemetry.record("authored_template_spawn", template == null ? type.name() : template.mobId());
         return mob;
     }

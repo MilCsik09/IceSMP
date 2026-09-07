@@ -452,6 +452,8 @@ public final class MobAbilityRuntime implements Listener {
                               final RuntimeState state, final Location target) {
         if (state.paused || state.casting || state.tick < state.recoveryUntilTick
                 || state.tick < state.readyAtTick.getOrDefault(chosen.abilityId(), 0L)) return false;
+        // Every native caller shares this admission. Cached provoker locations can outlive ownership.
+        if (target != null && !Bukkit.isOwnedByCurrentRegion(target)) return false;
         state.casting = true;
         state.currentAbility = chosen;
         final long castEpoch = ++state.castEpoch;
@@ -461,18 +463,31 @@ public final class MobAbilityRuntime implements Listener {
         try {
             telegraph(mob, chosen, target);
             final ScheduledTask scheduled = mob.getScheduler().runDelayed(plugin, task -> {
-                if (projectionSourceBound && mob.isValid() && !mob.isDead()) reconcileProjection(mob);
-                if (state.castEpoch != castEpoch) return;
-                if (mob.isValid() && !mob.isDead()) {
-                    execute(mob, chosen, target, state);
-                    CombatTelemetry.record("technique_execute", chosen.abilityId());
-                    if (state.effective.rank().bossLike()) {
-                        CombatTelemetry.record("boss_technique", chosen.abilityId());
+                if (state.castEpoch != castEpoch || states.get(mob.getUniqueId()) != state) return;
+                try {
+                    if (projectionSourceBound && mob.isValid() && !mob.isDead()) reconcileProjection(mob);
+                    if (state.castEpoch != castEpoch) return;
+                    // Region ownership may change during the telegraph; do not touch the former region.
+                    if (target != null && !Bukkit.isOwnedByCurrentRegion(target)) {
+                        CombatTelemetry.record("technique_target_owner_changed", chosen.abilityId());
+                        return;
+                    }
+                    if (mob.isValid() && !mob.isDead()) {
+                        execute(mob, chosen, target, state);
+                        CombatTelemetry.record("technique_execute", chosen.abilityId());
+                        if (state.effective.rank().bossLike()) {
+                            CombatTelemetry.record("boss_technique", chosen.abilityId());
+                        }
+                    }
+                } catch (final RuntimeException failed) {
+                    reportCastFailure(chosen.abilityId(), "execute", failed);
+                } finally {
+                    if (state.castEpoch == castEpoch) {
+                        state.recoveryUntilTick = state.tick + chosen.recoveryTicks();
+                        state.currentAbility = null;
+                        state.casting = false;
                     }
                 }
-                state.recoveryUntilTick = state.tick + chosen.recoveryTicks();
-                state.currentAbility = null;
-                state.casting = false;
             }, () -> {
                 if (state.castEpoch == castEpoch) {
                     state.currentAbility = null;
@@ -488,12 +503,16 @@ public final class MobAbilityRuntime implements Listener {
             state.currentAbility = null;
             state.casting = false;
             detach(state);
-            CombatTelemetry.record("technique_schedule_rejected", chosen.abilityId());
-            if (reportedScheduleRejections.add(chosen.abilityId())) {
-                plugin.getLogger().warning("Mob technique schedule rejected ["
-                        + chosen.abilityId() + "]: " + rejected);
-            }
+            reportCastFailure(chosen.abilityId(), "schedule", rejected);
             return false;
+        }
+    }
+
+    private void reportCastFailure(final String ability, final String stage, final RuntimeException failure) {
+        CombatTelemetry.record("technique_" + stage + "_rejected", ability);
+        synchronized (reportedScheduleRejections) {
+            if (reportedScheduleRejections.size() < 128 && reportedScheduleRejections.add(ability))
+                plugin.getLogger().warning("Mob technique " + stage + " rejected [" + ability + "]: " + failure.getClass().getSimpleName());
         }
     }
 
