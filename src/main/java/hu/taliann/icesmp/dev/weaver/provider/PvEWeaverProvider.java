@@ -2,6 +2,7 @@ package hu.taliann.icesmp.dev.weaver.provider;
 
 import hu.taliann.icesmp.dev.weaver.api.*;
 import hu.taliann.icesmp.dev.weaver.integrity.*;
+import hu.taliann.icesmp.integrity.*;
 import hu.taliann.icesmp.dev.weaver.execution.*;
 import hu.taliann.icesmp.dev.weaver.projection.*;
 import java.util.concurrent.*;
@@ -17,7 +18,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** Registry publications are immutable; native mob reads occur only through the owner snapshot hook. */
-public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnapshotContributor, WeaverProjectionProvider, WeaverInfluenceObserverProvider {
+public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnapshotContributor, WeaverProjectionProvider, WeaverInfluenceObserverProvider, WeaverCausalSourceProvider {
     public static final String FACET = "pve.runtime";
     public static final WeaverTypeId ABILITY = WeaverTypeId.parse("icesmp:pve_ability_ref@1");
     public static final WeaverTypeId TEMPLATE = WeaverTypeId.parse("icesmp:pve_template_ref@1");
@@ -116,6 +117,18 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
             if (!(entity instanceof Mob mob) || !mob.isValid() || mob.isDead()) throw new WeaverDomainRejection("ENTITY_UNAVAILABLE");
             return runtime.control(mob, request, admission);
         }, new PvEInfluenceLifetimeObserver(services));
+    }
+    @Override public Set<GameplaySourceSubject.Kind> causalSourceKinds() { return Set.of(GameplaySourceSubject.Kind.MOB); }
+    @Override public List<RewardSource> captureCausalSources(final GameplaySourceSubject subject) {
+        final var live = Bukkit.getEntity(subject.id());
+        if (live == null || !Bukkit.isOwnedByCurrentRegion(live)) throw new WeaverDomainRejection("ENTITY_UNAVAILABLE");
+        if (!(live instanceof Mob)) throw new WeaverDomainRejection("SOURCE_KIND_CHANGED");
+        final Set<RewardSource> result = new LinkedHashSet<>();
+        try {
+            AuthoredCreatureSpawnService.summonOrigin(live).ifPresent(id -> result.add(new RewardSource.Entity(id)));
+            MobAbilityRuntime.summonOrigin(live).ifPresent(id -> result.add(new RewardSource.Entity(id)));
+        } catch (final IllegalArgumentException corrupt) { throw new WeaverDomainRejection("SOURCE_PROVENANCE_INVALID"); }
+        return List.copyOf(result);
     }
     @Override public List<InfluenceLifetimeDescriptor> influenceLifetimes() {
         return lifetimeObserver.map(PvEInfluenceLifetimeObserver::influenceLifetimes).orElse(List.of());

@@ -47,7 +47,8 @@
         "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceDispatcher.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
-        "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java"
+        "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
+        "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java"
       ]
     },
     {
@@ -1439,12 +1440,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "09d44b7858d596ceb9a0a3a5057dbdaa9ecaac014a80977d6dcd50b3d7368c0b",
+      "source_sha256": "1c169083354d98ba774b1e1c774695b1a695d0bdd8f30cab9b10944df6bdabd6",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
         "actions",
         "assessRecovery",
+        "captureCausalSources",
         "captureContributions",
         "captureRecoveryContributions",
         "catalogPage",
@@ -1472,9 +1474,10 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "d509ce9d3f9f8290e05bf1894d59cac5818beed9b004196a1e3ff48ad513ec08",
+      "source_sha256": "b36ef716bf42669a80bb74d7daad200f024098a2a0a59199e2499c9c0783c973",
       "public_methods": [
         "WorldWeaverRuntime",
+        "captureCausalSources",
         "listener",
         "prepareEffect",
         "recoveryListener",
@@ -1842,12 +1845,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "domain": "pve",
-      "source_sha256": "f461f07adfdaa3019a9de040a31bd2222cc3db2f7961ca4fea8dcaa2a929e55f",
+      "source_sha256": "5541f23f7210f1be80896197ac855ef0f604f824a37de2e4c1f39ab602e88974",
       "public_methods": [
         "PvEWeaverProvider",
         "assessRecovery",
+        "captureCausalSources",
         "captureOnOwner",
         "catalog",
+        "causalSourceKinds",
         "contractVersion",
         "contribution",
         "coverage",
@@ -2119,7 +2124,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
       "domain": "developer_self",
-      "source_sha256": "77fe99cbfe17ceb0037e0978e07a5db9f3180b46fdafd8e5bdf6e5eeead218e3",
+      "source_sha256": "104dce66d396e65899ff54e7657bb44a985719c4636e977813ac60ac715e55f9",
       "public_methods": [
         "allowed",
         "causal",
@@ -2158,6 +2163,16 @@
         "close",
         "evaluate",
         "evaluateSources",
+        "install"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java",
+      "domain": "developer_self",
+      "source_sha256": "799ab1bfe0a1c9927c204246e1cc1ab94a4c27e205117f6bd89f689647a9b94a",
+      "public_methods": [
+        "capture",
+        "close",
         "install"
       ]
     },
@@ -5723,8 +5738,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
       "domain": "pve",
-      "source_sha256": "10240254dd44786f00595714e7763a8359de99fb29a68ef48baa10baff29f124",
+      "source_sha256": "e8dca0ab6a42bb965e161d8a70e5cb1926954265608d5f1462b65a4f470fef23",
       "public_methods": [
+        "AuthoredCreatureSpawnService",
         "Request",
         "applyParticipantModifier",
         "cleanupSummons",
@@ -5736,6 +5752,7 @@
         "rewardOwner",
         "spawn",
         "statProvenance",
+        "summonOrigin",
         "summonedBy",
         "template"
       ]
@@ -5867,7 +5884,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "3c9a2baa79f718ff19e6d1dfaabdfec93ab99873f1ac9fc436acebf09809bc90",
+      "source_sha256": "72d9a1597780eeaffb6ec5ff803e7f95f74b20333ecad37ae4e4725796471a10",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
@@ -5892,6 +5909,7 @@
         "refreshProfile",
         "resume",
         "shutdown",
+        "summonOrigin",
         "trigger",
         "triggerTechnique"
       ]
@@ -6631,6 +6649,7 @@
     "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
     "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
     "src/main/java/hu/taliann/icesmp/integrity/GameplayRewardGate.java",
+    "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java",
     "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
     "src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java",
     "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java",

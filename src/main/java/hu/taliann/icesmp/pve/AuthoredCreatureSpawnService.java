@@ -126,7 +126,9 @@ public final class AuthoredCreatureSpawnService {
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
             throw new IllegalArgumentException("authored creature is not a spawnable Mob: " + type);
         }
-        final Mob mob = (Mob) location.getWorld().spawn(location, entityClass.asSubclass(Mob.class));
+        if (!Bukkit.isOwnedByCurrentRegion(location) || !location.getWorld().isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4))
+            throw new IllegalStateException("Authored spawn owner and loaded chunk required");
+        final Mob mob = location.getWorld().spawn(location, entityClass.asSubclass(Mob.class), created -> stampOrigin(created, request));
         EventSpawnGuard.prepare(mob);
         final boolean genericReward = request.rewardOwner() == RewardOwner.GENERIC;
         if (template != null) {
@@ -140,13 +142,7 @@ public final class AuthoredCreatureSpawnService {
             scaling.applyEncounterModifier(mob, request.participantHealthMultiplier(),
                     request.participantDamageMultiplier(), request.sourceId() + ":participants");
         }
-        final var pdc = mob.getPersistentDataContainer();
-        pdc.set(sourceKey, PersistentDataType.STRING, request.sourceId());
-        pdc.set(encounterKey, PersistentDataType.STRING, request.encounterId());
-        pdc.set(roleKey, PersistentDataType.STRING, request.role());
-        pdc.set(rewardOwnerKey, PersistentDataType.STRING, request.rewardOwner().name());
         if (request.summonOwner() != null) {
-            pdc.set(summonOwnerKey, PersistentDataType.STRING, request.summonOwner().toString());
             activeSummonIds.computeIfAbsent(request.summonOwner(),
                             ignored -> ConcurrentHashMap.newKeySet())
                     .add(mob.getUniqueId());
@@ -169,6 +165,17 @@ public final class AuthoredCreatureSpawnService {
         }, null, 1L);
         CombatTelemetry.record("authored_template_spawn", template == null ? type.name() : template.mobId());
         return mob;
+    }
+
+    /** Spawn consumer runs before world activation, so causal/reward identity exists before spawn listeners. */
+    private void stampOrigin(final Mob mob, final Request request) {
+        if (request.transientEntity()) mob.setPersistent(false);
+        final var pdc = mob.getPersistentDataContainer();
+        pdc.set(sourceKey, PersistentDataType.STRING, request.sourceId());
+        pdc.set(encounterKey, PersistentDataType.STRING, request.encounterId());
+        pdc.set(roleKey, PersistentDataType.STRING, request.role());
+        pdc.set(rewardOwnerKey, PersistentDataType.STRING, request.rewardOwner().name());
+        if (request.summonOwner() != null) pdc.set(summonOwnerKey, PersistentDataType.STRING, request.summonOwner().toString());
     }
 
     public void cleanupSummons(final UUID owner) {
@@ -208,6 +215,15 @@ public final class AuthoredCreatureSpawnService {
                 if (paused) abilities.pause(add); else abilities.resume(add);
             }, () -> activeSummonMobs.remove(id, add));
         }
+    }
+
+    public static java.util.Optional<UUID> summonOrigin(final Entity entity) {
+        if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) throw new IllegalStateException("Authored origin owner required");
+        final String raw = entity.getPersistentDataContainer().get(NamespacedKey.fromString("icesmp:authored_summon_owner"), PersistentDataType.STRING);
+        if (raw == null) return java.util.Optional.empty();
+        final UUID id = UUID.fromString(raw);
+        if (!id.toString().equals(raw)) throw new IllegalArgumentException("Invalid authored summon origin");
+        return java.util.Optional.of(id);
     }
 
     public static RewardOwner rewardOwner(final Entity entity) {

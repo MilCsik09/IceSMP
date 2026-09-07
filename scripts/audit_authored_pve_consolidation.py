@@ -178,7 +178,12 @@ def main() -> None:
             and "pendingThresholds" in runtime
             and "castEpoch" in runtime and "state.paused" in runtime,
             "threshold/pause/cast-epoch lifecycle proof missing")
-    require("player.getScheduler().run" in runtime and "Bukkit.getScheduler" not in runtime,
+    effect_admission = runtime[runtime.index("    private void affectLiving("):runtime.index("    private static boolean survivor(")]
+    require("handle.getScheduler().run" in effect_admission and "current.getScheduler().run" in effect_admission
+            and "final LivingEntity entity = ownedLiving(id, player)" in effect_admission
+            and "entity != null && permit.claim()" in effect_admission
+            and "Bukkit.isOwnedByCurrentRegion(entity)" in effect_admission
+            and "Bukkit.getScheduler" not in runtime,
             "area/effect action is not remote-player ownership safe")
     require("maximum-summons-per-cast" in runtime and "cleanupSummons" in runtime,
             "summon cap/owner cleanup proof missing")

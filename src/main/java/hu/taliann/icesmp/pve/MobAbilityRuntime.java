@@ -655,18 +655,8 @@ public final class MobAbilityRuntime implements Listener {
                     definition.power(), true);
             case PROJECTILE_BURST -> {
                 if (target == null || target.getWorld() != mob.getWorld()) return;
-                final Vector center = target.toVector().subtract(mob.getEyeLocation().toVector())
-                        .normalize();
-                final int count = Math.max(1, Math.min(5, (int) Math.round(
-                        definition.tuning().getOrDefault("projectiles", 3.0D))));
-                for (int index = 0; index < count; index++) {
-                    final Vector spread = center.clone().add(new Vector(
-                            (index - (count - 1) / 2.0D) * 0.08D, 0.02D * index, 0.0D));
-                    final Arrow projectile = mob.launchProjectile(Arrow.class,
-                            spread.normalize().multiply(1.2D));
-                    projectile.setDamage(definition.power());
-                    projectile.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-                }
+                final RewardSource.Location destination = point(target);
+                prepareCreation(mob, definition, owned -> launchBurst(owned, definition, destination));
             }
             case SHIELD -> mob.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,
                     Math.max(40, (int) Math.min(400, definition.cooldownTicks() / 2)),
@@ -848,6 +838,9 @@ public final class MobAbilityRuntime implements Listener {
 
     private void summonTemplateAdds(final Mob mob, final MobAbilityDefinition definition,
                                     final MobTechniqueAction action) {
+        prepareCreation(mob, definition, owned -> createTemplateAdds(owned, definition, action));
+    }
+    private void createTemplateAdds(final Mob mob, final MobAbilityDefinition definition, final MobTechniqueAction action) {
         final AuthoredCreatureSpawnService spawns = AuthoredCreatureSpawnService.current();
         if (spawns == null) return;
         final int globalMaximum = Math.max(0, Math.min(8,
@@ -861,6 +854,7 @@ public final class MobAbilityRuntime implements Listener {
             final Location at = mob.getLocation().clone().add(
                     ThreadLocalRandom.current().nextDouble(-2.5D, 2.5D), 0.0D,
                     ThreadLocalRandom.current().nextDouble(-2.5D, 2.5D));
+            if (!ownedSpawnPoint(at)) continue;
             try {
                 spawns.spawn(at, AuthoredCreatureSpawnService.Request.template(
                         "ability_summon", "summon:" + mob.getUniqueId(), "add",
@@ -869,9 +863,47 @@ public final class MobAbilityRuntime implements Listener {
                         1.0D, 1.0D, lifespan).summonedBy(mob.getUniqueId()));
                 CombatTelemetry.record("authored_summon", action.reference());
             } catch (final RuntimeException invalid) {
-                plugin.getLogger().warning("Authored summon failed closed: " + action.reference()
-                        + " (" + invalid.getMessage() + ")");
+                reportCastFailure(definition.abilityId(), "summon", invalid);
             }
+        }
+    }
+
+    private static boolean ownedSpawnPoint(final Location location) {
+        return location.getWorld() != null && Bukkit.isOwnedByCurrentRegion(location)
+                && location.getWorld().isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+    }
+    /** The known parent becomes durably monotonic before native creation assigns a child UUID. */
+    private void prepareCreation(final Mob caster, final MobAbilityDefinition definition, final java.util.function.Consumer<Mob> creation) {
+        final UUID id = caster.getUniqueId(); final RuntimeState state = states.get(id);
+        if (state == null) return;
+        final long epoch = state.castEpoch;
+        final var context = new GameplayEffectContext(BukkitRewardSources.causal(caster), java.util.Set.of(new RewardSource.Entity(id)), 0);
+        GameplayEffectGate.prepare(context).whenComplete((permit, failure) -> {
+            if (failure != null || permit == null) return;
+            final Entity handle = Bukkit.getEntity(id); if (handle == null) return;
+            handle.getScheduler().run(plugin, task -> {
+                final Entity resolved = Bukkit.getEntity(id);
+                if (resolved == null || !Bukkit.isOwnedByCurrentRegion(resolved) || !(resolved instanceof Mob owned)
+                        || !owned.isValid() || owned.isDead()) return;
+                final RuntimeState current = states.get(id);
+                if (current == null || current.castEpoch != epoch || current.paused || !permit.claim()) return;
+                try { creation.accept(owned); }
+                catch (final RuntimeException rejected) { reportCastFailure(definition.abilityId(), "creation", rejected); }
+            }, null);
+        });
+    }
+    private void launchBurst(final Mob caster, final MobAbilityDefinition definition, final RewardSource.Location target) {
+        if (!caster.getWorld().getUID().equals(target.world())) return;
+        final Vector center = new Vector(target.x(), target.y(), target.z()).subtract(caster.getEyeLocation().toVector());
+        if (center.lengthSquared() <= 0.01D) return;
+        center.normalize();
+        final int count = Math.max(1, Math.min(5, (int) Math.round(definition.tuning().getOrDefault("projectiles", 3.0D))));
+        for (int index = 0; index < count; index++) {
+            final Vector spread = center.clone().add(new Vector((index - (count - 1) / 2.0D) * 0.08D, 0.02D * index, 0.0D));
+            caster.launchProjectile(Arrow.class, spread.normalize().multiply(1.2D), projectile -> {
+                projectile.setDamage(definition.power());
+                projectile.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+            });
         }
     }
 
@@ -911,6 +943,9 @@ public final class MobAbilityRuntime implements Listener {
     }
 
     private void summonAdds(final Mob mob, final MobAbilityDefinition definition) {
+        prepareCreation(mob, definition, owned -> createAdds(owned, definition));
+    }
+    private void createAdds(final Mob mob, final MobAbilityDefinition definition) {
         final int count = Math.min(definition.maxSummons(), Math.max(0,
                 config.getInt("mob-scaling.abilities.maximum-summons-per-cast", 3)));
         final long lifespan = Math.max(40L, config.getLong(
@@ -919,12 +954,17 @@ public final class MobAbilityRuntime implements Listener {
             final Location at = mob.getLocation().clone().add(
                     ThreadLocalRandom.current().nextDouble(-2.5D, 2.5D), 0.0D,
                     ThreadLocalRandom.current().nextDouble(-2.5D, 2.5D));
-            final Skeleton add = mob.getWorld().spawn(at, Skeleton.class);
+            if (!ownedSpawnPoint(at)) continue;
+            final String ownerId = mob.getUniqueId().toString();
+            final Skeleton add = mob.getWorld().spawn(at, Skeleton.class, (Skeleton minion) -> {
+                minion.setPersistent(false);
+                minion.getPersistentDataContainer().set(summonOwnerKey, PersistentDataType.STRING, ownerId);
+            });
             EventSpawnGuard.prepare(add);
-            add.getPersistentDataContainer().set(summonOwnerKey, PersistentDataType.STRING,
-                    mob.getUniqueId().toString());
+            final UUID addId = add.getUniqueId();
             add.getScheduler().runDelayed(plugin, task -> {
-                if (add.isValid()) add.remove();
+                final Entity owned = Bukkit.getEntity(addId);
+                if (owned != null && Bukkit.isOwnedByCurrentRegion(owned) && owned.isValid()) owned.remove();
             }, null, lifespan);
         }
     }
@@ -933,7 +973,9 @@ public final class MobAbilityRuntime implements Listener {
     public void onAffixDamage(final EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof LivingEntity attacker) || !(event.getEntity() instanceof Player player)) return;
         final UUID attackerId = attacker.getUniqueId(), playerId = player.getUniqueId();
-        final List<RewardSource> victimSources = BukkitRewardSources.causal(player);
+        final List<RewardSource> victimSources;
+        try { victimSources = BukkitRewardSources.causal(player); }
+        catch (final RuntimeException | LinkageError unavailable) { return; }
         final double healing = Math.min(12.0D, event.getFinalDamage() * 0.25D);
         // Damage events belong to the victim; affix/profile reads belong to the attacker.
         attacker.getScheduler().run(plugin, task -> {
@@ -941,7 +983,9 @@ public final class MobAbilityRuntime implements Listener {
             if (resolved == null || !Bukkit.isOwnedByCurrentRegion(resolved)
                     || !(resolved instanceof LivingEntity owned) || !owned.isValid() || owned.isDead()) return;
             final List<EliteAffix> affixes = scaling.getAffixes(owned);
-            final var causal = new java.util.LinkedHashSet<>(victimSources); causal.addAll(BukkitRewardSources.causal(owned));
+            final var causal = new java.util.LinkedHashSet<>(victimSources);
+            try { causal.addAll(BukkitRewardSources.causal(owned)); }
+            catch (final RuntimeException | LinkageError unavailable) { return; }
             final List<RewardSource> sources = List.copyOf(causal);
             if (affixes.contains(EliteAffix.FROSTBOUND)) {
                 affectPlayer(playerId, sources, 2500, potionLifetime(PotionEffectType.SLOWNESS), target -> {
@@ -1076,6 +1120,15 @@ public final class MobAbilityRuntime implements Listener {
         }
         final AuthoredCreatureSpawnService spawns = AuthoredCreatureSpawnService.current();
         if (spawns != null) spawns.cleanupSummons(event.getEntity().getUniqueId());
+    }
+
+    public static java.util.Optional<UUID> summonOrigin(final Entity entity) {
+        if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) throw new IllegalStateException("Summon origin owner required");
+        final String raw = entity.getPersistentDataContainer().get(NamespacedKey.fromString("icesmp:mob_summon_owner"), PersistentDataType.STRING);
+        if (raw == null) return java.util.Optional.empty();
+        final UUID id = UUID.fromString(raw);
+        if (!id.toString().equals(raw)) throw new IllegalArgumentException("Invalid summon origin");
+        return java.util.Optional.of(id);
     }
 
     public void shutdown() {

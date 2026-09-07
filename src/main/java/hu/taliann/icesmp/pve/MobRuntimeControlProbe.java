@@ -24,6 +24,8 @@ public final class MobRuntimeControlProbe {
     private final AtomicBoolean finished = new AtomicBoolean();
     private volatile UUID entityId;
     private volatile UUID allyCasterId;
+    private volatile UUID summonerId;
+    private volatile Set<UUID> createdChildren = Set.of();
     private volatile FixtureChunk fixtureChunk;
     private MobRuntimeControlProbe(JavaPlugin plugin, MobAbilityRuntime runtime, AuthoredCreatureSpawnService spawns,
             MobTemplateRegistry templates, MobAbilityRegistry abilities) {
@@ -57,11 +59,21 @@ public final class MobRuntimeControlProbe {
         }
         throw new IllegalStateException("NATIVE_ALLY_FIXTURE_UNAVAILABLE");
     }
+    private AllyChoice summonChoice() {
+        for (final var template : templates.all().values().stream().sorted(Comparator.comparing(MobTemplate::mobId)).toList()) {
+            final var selected = MobAbilityRuntime.effectiveDefinitions(new EffectiveMobProjection(template.mobId(), template.rank(), Optional.of(template.archetype()),
+                    template.abilityIdsFor(template.rank()), template.behavior(), Set.of()), abilities::require);
+            final var ability = selected.stream().filter(a -> a.kind() == MobAbilityDefinition.Kind.SUMMON
+                    && a.targetRule() == MobAbilityDefinition.TargetRule.SELF && a.conditions().isEmpty() && a.maxSummons() > 0).findFirst();
+            if (ability.isPresent()) return new AllyChoice(template.mobId(), ability.get().abilityId(), ability.get().telegraphTicks());
+        }
+        throw new IllegalStateException("NATIVE_SUMMON_FIXTURE_UNAVAILABLE");
+    }
     private void begin() {
         try {
             check(Bukkit.isGlobalTickThread() && Bukkit.getOnlinePlayers().isEmpty(), "ISOLATED_GLOBAL_OWNER_REQUIRED");
             final var world = Bukkit.getWorlds().getFirst(); final var point = world.getSpawnLocation(); final var choice = choice();
-            final UUID worldId = world.getUID(); final int x = point.getBlockX(), y = point.getBlockY() + 4, z = point.getBlockZ();
+            final UUID worldId = world.getUID(); final int x = (point.getBlockX() & ~15) + 8, y = point.getBlockY() + 4, z = (point.getBlockZ() & ~15) + 8;
             // Test setup creates one loaded fixture chunk. Runtime actions themselves never request a chunk load.
             world.getChunkAtAsync(x >> 4, z >> 4).thenRun(() -> Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
                 final var current = Bukkit.getWorld(worldId);
@@ -118,6 +130,9 @@ public final class MobRuntimeControlProbe {
             final Mob mob = mob(); final CanonicalMobProfile canonical = runtime.canonicalProfile(mob);
             check(runtime.activeAbilityIds(mob).containsAll(List.of(choice.shield(), choice.target())), "NATIVE_KIT_MISMATCH");
             check(AuthoredCreatureSpawnService.rewardOwner(mob) == AuthoredCreatureSpawnService.RewardOwner.NONE, "FIXTURE_REWARD_OWNER");
+            check(AuthoredCreatureSpawnService.summonOrigin(mob).orElseThrow().equals(fixtureOwner), "FIXTURE_CANONICAL_SUMMON_ORIGIN");
+            check(hu.taliann.icesmp.integrity.BukkitRewardSources.causal(mob).contains(new hu.taliann.icesmp.integrity.RewardSource.Entity(fixtureOwner)),
+                    "FIXTURE_PROVIDER_CAUSAL_ORIGIN");
             denied(mob, Kind.FORCE_ABILITY, choice.target());
             denied(mob, Kind.FORCE_ABILITY, "runtime_probe_not_in_kit");
             runtime.pause(mob); denied(mob, Kind.FORCE_ABILITY, choice.shield()); runtime.resume(mob);
@@ -176,11 +191,42 @@ public final class MobRuntimeControlProbe {
                 try {
                     final Mob ally = mob(target);
                     check(ally.hasPotionEffect(PotionEffectType.STRENGTH), "NATIVE_EFFECT_GATE_DID_NOT_EXECUTE");
-                    spawns.detach(ally); spawns.cleanupSummons(fixtureOwner);
-                    Bukkit.getGlobalRegionScheduler().runDelayed(plugin, later -> finish(Bukkit.getEntity(entityId) == null
-                            && Bukkit.getEntity(allyCasterId) == null, "NATIVE_LIFECYCLE"), 5);
+                    final AllyChoice choice = summonChoice();
+                    final var request = AuthoredCreatureSpawnService.Request.template("runtime_control_probe", fixtureOwner.toString(), "summon_probe",
+                            choice.template(), 10, AuthoredCreatureSpawnService.RewardOwner.NONE, true, 1, 1, 400).summonedBy(fixtureOwner);
+                    final Mob summoner = spawns.spawn(ally.getLocation(), request);
+                    check(summoner != null, "SUMMON_FIXTURE_SPAWN_FAILED"); summonerId = summoner.getUniqueId();
+                    summoner.setAI(false); summoner.setGravity(false); summoner.setInvulnerable(true);
+                    later(summonerId, 3, () -> summonCast(choice));
                 } catch (Throwable failure) { failed(failure); }
             }, () -> finish(false, "ALLY_TARGET_RETIRED"));
+        } catch (Throwable failure) { failed(failure); }
+    }
+    private void summonCast(AllyChoice choice) {
+        try {
+            final Mob summoner = mob(summonerId);
+            runtime.control(summoner, request(summoner, Kind.FORCE_ABILITY, choice.ability()), () -> { });
+            later(summonerId, choice.telegraph() + 5, this::summonExecuted);
+        } catch (Throwable failure) { failed(failure); }
+    }
+    private void summonExecuted() {
+        try {
+            final Mob summoner = mob(summonerId); runtime.pause(summoner);
+            final Set<UUID> children = new HashSet<>();
+            for (final var entity : summoner.getNearbyEntities(6, 8, 6)) {
+                if (!(entity instanceof Mob child) || !Bukkit.isOwnedByCurrentRegion(child)
+                        || !MobAbilityRuntime.summonOrigin(child).filter(summonerId::equals).isPresent()) continue;
+                children.add(child.getUniqueId()); createdChildren = Set.copyOf(children);
+                check(!child.isPersistent(), "SUMMON_RESTART_GHOST");
+                check(hu.taliann.icesmp.integrity.BukkitRewardSources.causal(child).contains(new hu.taliann.icesmp.integrity.RewardSource.Entity(summonerId)),
+                        "SUMMON_NATIVE_ORIGIN_MISSING");
+                spawns.detach(child); child.remove();
+            }
+            check(!children.isEmpty() && children.size() <= 8, "NATIVE_CREATION_GATE_DID_NOT_EXECUTE");
+            spawns.cleanupSummons(fixtureOwner);
+            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> finish(Bukkit.getEntity(entityId) == null
+                    && Bukkit.getEntity(allyCasterId) == null && Bukkit.getEntity(summonerId) == null
+                    && createdChildren.stream().allMatch(id -> Bukkit.getEntity(id) == null), "NATIVE_LIFECYCLE"), 5);
         } catch (Throwable failure) { failed(failure); }
     }
     private void later(UUID id, long ticks, Runnable action) {
@@ -191,6 +237,7 @@ public final class MobRuntimeControlProbe {
     private void finish(boolean success, String code) {
         if (!finished.compareAndSet(false, true)) return;
         spawns.cleanupSummons(fixtureOwner);
+        createdChildren.forEach(id -> hu.taliann.icesmp.utils.TransientEntities.removeById(plugin, id));
         final FixtureChunk fixture = fixtureChunk;
         if (fixture != null) {
             final var world = Bukkit.getWorld(fixture.world());

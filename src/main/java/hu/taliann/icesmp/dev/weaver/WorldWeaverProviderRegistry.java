@@ -21,6 +21,7 @@ public final class WorldWeaverProviderRegistry {
     private final WeaverTypeRegistry types;
     private hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry projectionConsumers;
     private Map<WeaverTypeId, InfluenceLifetimeDescriptor> influenceLifetimes = Map.of();
+    private Map<GameplaySourceSubject.Kind, List<Entry>> causalSources = Map.of();
     private final LongSupplier clock;
     private final Map<String, Entry> providers = new LinkedHashMap<>();
     private Map<String, FacetDescriptor> facets = Map.of();
@@ -123,6 +124,13 @@ public final class WorldWeaverProviderRegistry {
                     throw new IllegalArgumentException("Invalid or duplicate influence lifetime consumer");
             }
         }
+        final Map<GameplaySourceSubject.Kind, List<Entry>> sourceConsumers = new EnumMap<>(GameplaySourceSubject.Kind.class);
+        for (final Entry entry : providers.values()) if (entry.provider() instanceof WeaverCausalSourceProvider sourceProvider) {
+            for (final var kind : Set.copyOf(sourceProvider.causalSourceKinds())) sourceConsumers.computeIfAbsent(kind, ignored -> new ArrayList<>()).add(entry);
+        }
+        final Map<GameplaySourceSubject.Kind, List<Entry>> immutableSources = new EnumMap<>(GameplaySourceSubject.Kind.class);
+        sourceConsumers.forEach((kind, entries) -> immutableSources.put(kind, List.copyOf(entries)));
+        causalSources = Map.copyOf(immutableSources);
         influenceLifetimes = Map.copyOf(lifetimes);
         types.freeze(); facets = Map.copyOf(facetMap); actions = Map.copyOf(actionMap); catalogs = Map.copyOf(catalogMap);
         exports = Map.copyOf(exportMap); imports = Map.copyOf(importMap); owners = Map.copyOf(ownerMap); frozen = true;
@@ -315,6 +323,20 @@ public final class WorldWeaverProviderRegistry {
         if (!frozen) throw new WeaverDomainRejection("PROVIDER_NOT_READY"); final Entry entry = providers.get(providerId);
         if (entry == null) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");
         return entry.breaker().call(read, false);
+    }
+    public List<RewardSource> captureCausalSources(final GameplaySourceSubject subject) {
+        requireFrozen(); Objects.requireNonNull(subject);
+        final Set<RewardSource> sources = new LinkedHashSet<>();
+        for (final var entry : causalSources.getOrDefault(subject.kind(), List.of())) {
+            final var contribution = entry.breaker().call(() -> {
+                final var values = List.copyOf(((WeaverCausalSourceProvider) entry.provider()).captureCausalSources(subject));
+                if (values.size() > 16) throw new IllegalArgumentException("Provider source provenance cap");
+                return values;
+            }, false);
+            sources.addAll(contribution);
+            if (sources.size() > 32) throw new WeaverDomainRejection("SOURCE_PROVENANCE_CAPACITY");
+        }
+        return List.copyOf(sources);
     }
     public WeaverValue resolveInfluenceLifetime(final GameplayEffectContext context) {
         requireFrozen();

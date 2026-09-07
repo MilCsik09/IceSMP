@@ -271,6 +271,7 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime worldWeaverRuntime;
     private final hu.taliann.icesmp.integrity.GameplayRewardGate.Binding rewardEligibilityBinding;
     private final hu.taliann.icesmp.integrity.GameplayEffectGate.Binding effectEligibilityBinding;
+    private final hu.taliann.icesmp.integrity.GameplaySourceCaptureGate.Binding sourceCaptureBinding;
     private final hu.taliann.icesmp.managers.GuildManager guildManager;
     private final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager;
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
@@ -917,6 +918,7 @@ public final class IceSMPCore {
                         services -> new hu.taliann.icesmp.dev.weaver.provider.FactionWeaverProvider(services, factionManager, factionMobContextResolver, factionPassiveConfig)));
         rewardEligibilityBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(worldWeaverRuntime.rewardEligibility());
         effectEligibilityBinding = hu.taliann.icesmp.integrity.GameplayEffectGate.install(worldWeaverRuntime::prepareEffect);
+        sourceCaptureBinding = hu.taliann.icesmp.integrity.GameplaySourceCaptureGate.install(worldWeaverRuntime::captureCausalSources);
     }
 
     /**
@@ -1502,6 +1504,7 @@ public final class IceSMPCore {
         shutdownStep("totemManager", totemManager::shutdown);
         shutdownStep("rewardEligibility", rewardEligibilityBinding::close);
         shutdownStep("effectEligibility", effectEligibilityBinding::close);
+        shutdownStep("sourceCapture", sourceCaptureBinding::close);
         shutdownStep("worldWeaverRuntime", worldWeaverRuntime::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
         shutdownStep("sitManager", sitManager::shutdown);

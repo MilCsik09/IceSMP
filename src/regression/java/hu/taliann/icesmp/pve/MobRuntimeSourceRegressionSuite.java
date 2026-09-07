@@ -80,6 +80,15 @@ public final class MobRuntimeSourceRegressionSuite {
                         && volatileEffect.contains("affected >= 32") && !volatileEffect.contains("player.damage("),
                 "delayed volatile lost lineage, owner/chunk checks or bounded effect admission");
 
+        final String creation = runtime.substring(runtime.indexOf("private void prepareCreation"), runtime.indexOf("private void launchBurst"));
+        check(creation.contains("GameplayEffectGate.prepare(context)") && creation.contains("new RewardSource.Entity(id)")
+                        && creation.indexOf("!permit.claim()") < creation.indexOf("creation.accept(owned)")
+                        && creation.contains("current.castEpoch != epoch") && creation.contains("Bukkit.isOwnedByCurrentRegion(resolved)"),
+                "native child creation bypassed durable parent admission or final owner/generation");
+        check(authoredSpawns.contains("created -> stampOrigin(created, request)") && authoredSpawns.contains("public static java.util.Optional<UUID> summonOrigin")
+                        && runtime.contains("minion.setPersistent(false)") && runtime.contains("projectile.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED)"),
+                "summon origin is not pre-activation canonical metadata or transient/projectile safety regressed");
+
         check(boss.contains("EncounterScalingPolicy.snapshot")
                         && boss.contains("ContributionLedger")
                         && boss.contains("recordBossDamage")

@@ -284,9 +284,72 @@ admission. Each final target owner rechecks survival and distance. No live Locat
 or Player is retained by the delayed/target stages, and no chunk is force-loaded.
 
 Full Java 21 compile, eight affected native/provider/integrity/ownership suites,
-four architecture checks, authored PvE audit, coverage and consistency pass locally.
-The native source-contract suite now has 26 assertions and follows the actual
+four architecture checks, coverage and consistency passed locally. The authored
+PvE audit was incorrectly summarized as passing here: exact-head CI found its stale
+`player.getScheduler().run` source token. The following continuation fixes and reruns
+that audit against both real owner hops and final permit admission.
+The native source-contract suite at this checkpoint has 26 assertions and follows the actual
 owner-resolving effect helper; these static guards are not native player execution
 evidence. Frostbound/Vampiric/Volatile cross-region tainted-player playtests remain
 required. Projectile/summon creation, the broader damage/progression ingress audit
 and all subsequent provider phases remain open. Gameplay admission stays closed.
+
+## Canonical source lineage and native creation admission
+
+Base `b2c920c5174003a17b587ff5ec0f223adda89ad4`, WorldWeaver run 34125919264:
+Paper native 101754435876 / Folia native 101754436120 and artifact lifecycle
+101754435976 / 101754436018 passed. Verification 101754435553 failed the stale
+owner-hop source token in `authoredPveConsolidationAudit` and the inherited Trash
+source-image audit. Resource pack 34125919238 and Trash 34125919380 passed.
+The stale audit now checks both actual entity scheduler hops, owner resolution and
+final one-use permit; it passes without weakening the foreign-access prohibition.
+
+A native spawn assigns its entity UUID during creation, so the implementation first
+makes its already-known parent entity's influence durable and monotonic. Only the
+acknowledged permit can enter native creation, after an owner UUID hop and cast-epoch,
+pause, lifecycle and final source checks. Burst arrows and both summon paths use this
+route. Clean creation still requires no journal write. Child origins reuse native
+projectile `getOwnerUniqueId()` and the two existing canonical summon-owner fields;
+no fabricated event, reward receipt, new UUID identity or second gameplay authority
+is introduced. Every further generation first makes its own known parent monotonic,
+so expired world/player/spatial origins cannot wash descendants. This is conservative:
+later taint on the same recorded parent also quarantines its remaining descendants.
+
+`WeaverCausalSourceProvider` is the minimal owner-read extension required to consume
+those canonical metadata APIs. The generic registry selects immutable source kinds,
+not subsystem IDs; callbacks receive only UUID/kind and re-resolve on the owner.
+The PvE adapter reads native `summonOrigin` APIs. Vanilla projectile owner UUIDs are
+captured directly on the projectile owner. Provider contributions are bounded to 16,
+the combined result to 32, and the neutral capture binding fails closed on unavailable,
+retired, invalid or broken capture. The provider circuit breaker isolates relevant
+source kinds; unrelated player source capture still works when a mob consumer fails.
+Malformed native provenance is a per-source domain refusal, not an implicit clean
+result. This extension changes no artifact or GUI implementation.
+
+Authored spawn source/encounter/reward/parent identity is now stamped by its existing
+canonical service's pre-activation spawn consumer. Legacy skeleton summon parent
+identity is likewise present before activation. Transient summons become nonpersistent
+there, avoiding a restart orphan if the lifespan callback is lost. Arrows retain the
+native pickup prohibition. Spawn points must already be loaded and owned; foreign
+spawn placement currently refuses. Death capture expands nonplayer causes only on
+their owner; unavailable foreign causal state refuses reward capture instead of being
+read or treated as clean. Full cross-region continuation remains an explicit scope gate.
+
+Java 21 full compilation and all 33 Weaver/provider plus four native suites passed
+locally. Five affected suites were rerun after final source/probe changes: causal source
+50 assertions, observed lifetime 155, derived influence 188, native source contract
+28 and provider controls 104. The causal suite covers a held fsync before creation,
+all 26 reward channels after world expiry, descendants, real YAML restart without a
+live parent, unchanged receipts/history, provider cap/error isolation and binding
+retirement. Four architecture checks, authored PvE audit, profile authority guard
+(675 findings; zero unknown/stale/invalid/transition), coverage and consistency pass.
+Inventory: 323 authorities / 55 domains / 51 blockers; 1235 main Java files.
+
+The native probe now additionally checks canonical/provider summon origin and forces
+a registry-selected actual SUMMON technique through the clean creation gate. It checks
+nonpersistent children, inherited native parent identity and cleanup. Fixture placement
+uses the center of its existing pinned chunk; this is test setup, not runtime force
+loading. Fresh exact-head Paper/Folia evidence is required before claiming that probe.
+Full tainted projectile-impact/player quarantine, cross-region creation/impact,
+all reward producer/outbox paths, and later WW phases remain unfinished. Neither this
+checkpoint nor its fixtures justify zero-leak, full-domain or production acceptance.

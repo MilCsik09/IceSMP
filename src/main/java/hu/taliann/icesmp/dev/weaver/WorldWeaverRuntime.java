@@ -90,6 +90,10 @@ public final class WorldWeaverRuntime {
             final hu.taliann.icesmp.integrity.GameplayEffectContext context) {
         return journal.prepareDerivedEffect(context);
     }
+    public java.util.List<hu.taliann.icesmp.integrity.RewardSource> captureCausalSources(final hu.taliann.icesmp.integrity.GameplaySourceSubject subject) {
+        if (closed || !started || !journal.ready()) throw new IllegalStateException("Source capture unavailable");
+        return providers.captureCausalSources(subject);
+    }
     public hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryListener recoveryListener() { return recoveryListener; }
     public void shutdown() {
         closed = true; started = false;
