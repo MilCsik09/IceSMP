@@ -610,6 +610,31 @@
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java|public EffectiveMobProjection resolve(final CanonicalMobProfile canonical, final List<WeaverProjection> active) {",
       "category": "RUNTIME",
       "reason": "Exact reviewed pure combat projection reduction over immutable inputs. It selects canonical registry content and has no player profile, live Bukkit object or persistence mutation port."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java|@Override public FactionMembership resolve(UUID playerId, FactionMembership canonical) {",
+      "category": "RUNTIME",
+      "reason": "Read-only fold of immutable journal membership projections over canonical PlayerProfile membership; resolve is not a filesystem operation and writes no profile state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java|@Override public Set<ContentContext> resolve(UUID entityId, Set<ContentContext> canonical) {",
+      "category": "RUNTIME",
+      "reason": "Read-only fold of immutable entity context projections; resolve is not a filesystem operation and stores no player state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java|Set<ContentContext> resolve(UUID entityId, Set<ContentContext> canonical);",
+      "category": "RUNTIME",
+      "reason": "Pure UUID and immutable enum-set projection port; no YAML access or player state ownership."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java|FactionMembership resolve(UUID playerId, FactionMembership canonical);",
+      "category": "RUNTIME",
+      "reason": "Pure membership projection callback; canonical membership remains PlayerProfile-owned and the port exposes no persistence mutation."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|try { return Objects.requireNonNull(membershipProjection.resolve(playerId, canonical)); }",
+      "category": "RUNTIME",
+      "reason": "Read-only invocation of the membership projection callback for passive runtime consumers; no filesystem or PlayerProfile mutation."
     }
   ]
 }

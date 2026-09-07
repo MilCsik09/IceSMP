@@ -35,6 +35,21 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     private volatile SeasonManager seasonManager;
     private volatile Consumer<UUID> membershipChangeHook = ignored -> { };
     private volatile GuildManager guildManager;
+    private volatile hu.taliann.icesmp.factions.FactionMembershipProjectionSource membershipProjection =
+            hu.taliann.icesmp.factions.FactionMembershipProjectionSource.canonical();
+    private boolean membershipProjectionBound;
+
+    public synchronized void bindMembershipProjection(final hu.taliann.icesmp.factions.FactionMembershipProjectionSource source) {
+        if (membershipProjectionBound) throw new IllegalStateException("Faction membership projection already bound");
+        membershipProjection = Objects.requireNonNull(source); membershipProjectionBound = true;
+    }
+
+    /** Passive, damage/environment and mob targeting only. All durable/identity callers use getMembership. */
+    public FactionMembership getEffectiveMembership(final UUID playerId) {
+        final FactionMembership canonical = getMembership(playerId);
+        try { return Objects.requireNonNull(membershipProjection.resolve(playerId, canonical)); }
+        catch (final RuntimeException | LinkageError unavailable) { return FactionMembership.guest(); }
+    }
 
     public FactionManager(final JavaPlugin plugin, final ConfigManager configManager,
                           final CurrencyManager currencyManager) {
@@ -84,6 +99,8 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
                 .flatMap(PlayerProfileFactionStore.State::membership);
         return chosen.map(FactionMembership::citizen).orElseGet(FactionMembership::guest);
     }
+
+    public boolean isMembershipReady(final UUID playerId) { return state(playerId).isPresent(); }
 
     public Optional<FactionType> getChosenFaction(final UUID uuid) {
         return state(uuid).flatMap(PlayerProfileFactionStore.State::membership);

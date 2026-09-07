@@ -84,7 +84,7 @@
       "inspect": "canonical/effective membership; passive/food/target decision; civilian access and DARK prerequisite traces",
       "planned_actions": "project faction, contexts, scripted target/peace through existing policy, canonical membership",
       "canonical_route": "FactionManager / PlayerProfileFactionStore joinDark durable commit; FactionPassivePolicy and SinManager.hasCivilAccess; projections must not rewrite legal or reward identity",
-      "rationale": "PR #155 changes passive balance, civil exclusion and DARK joining prerequisites. Canonical transaction adapters must preserve independent membership, Exile and Oath and publish hooks only after durable commit.",
+      "rationale": "PR #155 changes passive balance, civil exclusion and DARK joining prerequisites. Canonical transaction adapters must preserve independent membership, Exile and Oath and publish hooks only after durable commit. Effective membership/context projections now feed the canonical passive/target policy, with typed imports and journal-backed conditional sever. The domain remains blocked for safe canonical membership transactions, scripted target/peace controls and populated native evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
         "src/main/java/hu/taliann/icesmp/managers/FactionRelationManager.java",
@@ -92,7 +92,15 @@
         "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
         "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java",
+        "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProjectionRegressionSuite.java"
+      ]
     },
     {
       "id": "trash",
@@ -1674,6 +1682,43 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
+      "domain": "faction",
+      "source_sha256": "53af75e9a8945aa2805cb9a9c644f2a112f8acb12727b4ac5b878ee76d6833cf",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
+      "domain": "faction",
+      "source_sha256": "700798e5c8d5b29c760d22d13d8b9fef3da541fa911b712df643e82a371bd12d",
+      "public_methods": [
+        "resolve"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+      "domain": "faction",
+      "source_sha256": "b375d0c604fdee8634a7f78ca2216d034db4fe93eac0fa4cb4556104a2362a23",
+      "public_methods": [
+        "assessRecovery",
+        "captureOnOwner",
+        "catalog",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareEffects",
+        "prepareUndo",
+        "projectionConsumers",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "domain": "minecraft",
       "source_sha256": "72f36001e0f1df3338789bd4453838c91e5b00845cede241102e73e71b8fa2dd",
@@ -1807,6 +1852,12 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
+      "domain": "faction",
+      "source_sha256": "86a2ad7e1460e7be17e47ff012d24293fd3510ed10010efcc6b1f2addf53158b",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionDisplayColorPolicy.java",
       "domain": "faction",
       "source_sha256": "924e385866f878155a92cd947965947f1de9b8f890abea648eb58f9fef41ecf4",
@@ -1827,13 +1878,23 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
+      "domain": "faction",
+      "source_sha256": "4031c8e0358abe3cc22c40cb08f0d30614e940eaff2e9d1ca963825ffe3642be",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "domain": "faction",
-      "source_sha256": "e3108926d565f75c22c3d4d62fa2acba18c816a442df3d08b01a0708ed5623d2",
+      "source_sha256": "20ae6a68693766ae5ea5691823d7b7a6be29de73af417280f0324ef8b4c57c1f",
       "public_methods": [
+        "bindContextProjection",
         "contentContexts",
+        "effectiveContentContexts",
+        "effectiveExplicitCombatContexts",
         "explicitCombatContexts",
         "isAmbientUndead",
+        "isEffectivelyNeutralMob",
         "isNeutralMob",
         "isUndead",
         "resolve",
@@ -3054,14 +3115,15 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
       "domain": "faction",
-      "source_sha256": "1976175fbb9d70a1d909ccd994317efa73f693ab413c0fb829877670e155a75b",
+      "source_sha256": "b405740cdaed8f5953dd5733096ff66883298c14415904d388095eafd59c423d",
       "public_methods": [
-        "FactionManager",
+        "bindMembershipProjection",
         "cleanup",
         "clearPlayerState",
         "describeAvailableFactions",
         "getChosenFaction",
         "getEconomyFaction",
+        "getEffectiveMembership",
         "getFactionAssignments",
         "getLastChosenFaction",
         "getMaxSwitchesPerSeason",
@@ -3077,6 +3139,7 @@
         "isEligibleForFactionBenefits",
         "isInSeasonEndLockout",
         "isMember",
+        "isMembershipReady",
         "joinDarkDurably",
         "load",
         "publishExternalMembershipCommit",
@@ -6360,11 +6423,16 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/projection/WeaverProjectionDispatcher.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
+    "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
     "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
@@ -6466,6 +6534,7 @@
       "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java",
       "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
@@ -7527,6 +7596,12 @@
         "developer_self"
       ],
       "rationale": "Internal WorldWeaver composition/root lifecycle. Artifact authority remains DevItemManager; gameplay domain coverage is not closed by the frontend."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+      "domains": [
+        "faction"
+      ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",

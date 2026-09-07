@@ -277,3 +277,71 @@ Preceding exact head `2ec371dd590867b69a5785503800b7955f74b210` CI: verification
 task is inherited `trashSpriteAssetAudit`. Resource pack `34082608949` and Trash
 hardening `34082608953` PASS. New-head CI and populated Paper/Folia/client evidence
 remain required. No full WW-04, integrity closure or production readiness is claimed.
+
+## Faction projection and native policy checkpoint
+
+Base: `feature/world-weaver-ww04-pve-faction-integrity` at
+`e0f701afd89f2b600165dc914c81faa8f1c75b4e`. This checkpoint stays in stacked PR #158,
+whose immediate dependency is WW-03 #157 at `db8d8f906bb829dfa410793033545b2a7e40237f`.
+Exact resulting head/tree and CI are recorded in the PR body after publication.
+
+`FactionWeaverProvider` registers through the existing provider composition root.
+The artifact, kernel, runtime coordinator and generic GUI need no Faction branching.
+The provider contributes owner-thread immutable canonical/effective inspect,
+registry-backed faction/context catalogs, two typed Thread exports/imports, membership
+projection, add/remove context and explicit clear actions. Multiple simultaneous
+contexts still require the WW-07 export picker. `CROWN_CURSE` is excluded from both
+the codec/catalog and native projection port; unreviewed future context enums remain
+canonical by default.
+
+| Projection | Effective consumer | Canonical consumers excluded |
+| --- | --- | --- |
+| Player membership | `FactionManager.getEffectiveMembership`, consumed by `FactionPassiveListener` damage, environment, healing, exhaustion, wither and target policy | Membership/history, tax, treasury, season, quest, territory ownership, HUD identity, spawn identity and signature-food identity |
+| Six whitelisted entity contexts | `FactionMobContextResolver` effective target/truce/neutral classification and passive combat exclusions | Canonical event membership/markers, reward identity and Crown Curse lifecycle |
+
+Native policy uses the existing `FactionPassivePolicy` and retaliation service.
+It reads effective projections on its next policy decision; immediate reselection of
+an already active target is not claimed. Canonical spawn/projectile marker producers
+continue reading canonical contexts, so a projected context cannot become a durable
+canonical marker. Membership consumer faults grant no faction passive; context faults
+force the existing explicit-combat decision and cannot grant a truce. No second
+hostility authority, domain PDC write or natural-history spoof is introduced.
+
+Owner stages validate current canonical/projection fingerprints. APPLIED publishes the
+projection and influence atomically in the existing journal; no pre-publication native
+mutation occurs. Session cleanup removes the projection while preserving influence
+quarantine. Conditional receipt Undo severs only the acknowledged projection; external
+membership/context/projection drift returns CONFLICT. Explicit clear preserves all
+receipts/history and influence. Persistent unavailable entities/players remain pending
+until load; recovery assesses observed state and never replays the mutation.
+
+`FactionWeaverProjectionRegressionSuite` passes 101 assertions using the real provider,
+projection source, canonical passive policy, journal, YAML codec, Undo and recovery:
+RED fire multiplier, DARK ambient truce exclusion, typed Thread compatibility,
+canonical identity preservation, Crown prohibition, ordered add/remove, clear,
+quarantine, Undo/drift, stale owner capture, session cleanup and eight before/after
+write crash boundaries with unavailable-player recovery. All 41 relevant suites pass,
+including existing faction, Whisperer, profile faction, Weaver, PvE and artifact suites.
+Full Java 21 source compilation passes against 49 real dependencies with only three
+inherited warnings. Coverage inventory is 311 authorities, 55 domains, 51 blockers;
+this is an inventory check, not universal capability acceptance.
+
+Preceding exact head `e0f701afd89f2b600165dc914c81faa8f1c75b4e` CI: verification run
+`34083313247`, Paper job `101622569798` and Folia job `101622570049` succeeded.
+Verification `101622570088` compiled and passed stored-content isolation regression;
+its sole failed task is inherited `trashSpriteAssetAudit`. Resource-pack run
+`34083313256`, Trash hardening `34083313222` and docs `34083313227` succeeded.
+These native probes prove clean-store readiness and shutdown only. New-head CI,
+populated native projection/reward/crash probes and client interactions remain gates.
+
+Remaining WW-04 scope includes conditional canonical faction transactions, scripted
+target/peace controls, complete passive consumer review, PvE force/refresh and complete
+reward/causal propagation. The WW-00 Faction domain remains DEFERRED_BLOCKER. Artifact
+issuance and durable gameplay admission remain off. This checkpoint does not claim
+WW-04 completion, reward leak closure, merge readiness or production readiness.
+
+Final local preflight: consistency zero FAIL/WARN, four architecture tests pass and
+PlayerProfile authority guard/self-test pass (667 findings, zero unknown/stale/invalid/
+transition). Five exact read-only projection `resolve(UUID, ...)` signatures/calls
+needed reviewed RUNTIME overrides because the existing file-path heuristic also
+matches method names; the heuristic and fail-closed default are unchanged.

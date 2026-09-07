@@ -906,7 +906,8 @@ public final class IceSMPCore {
         registerSpells();
         this.worldWeaverRuntime = new hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime(plugin, devItemManager, itemIdentityService,
                 java.util.List.of(services -> new hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider(services.types()),
-                        services -> new hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProvider(services, mobAbilityRegistry, mobTemplateRegistry, mobScalingManager, mobAbilityRuntime)));
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProvider(services, mobAbilityRegistry, mobTemplateRegistry, mobScalingManager, mobAbilityRuntime),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.FactionWeaverProvider(services, factionManager, factionMobContextResolver, factionPassiveConfig)));
         rewardEligibilityBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(worldWeaverRuntime.rewardEligibility());
     }
 

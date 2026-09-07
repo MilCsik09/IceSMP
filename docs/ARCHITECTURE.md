@@ -45,7 +45,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `quest/` | 10 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, közös quest-valuta resolver, az izolált content-integrity runtime probe, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
 | `gui/` | 72 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
-| `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta; a tartós tagság és bűnállapot a PlayerProfile faction szekciójában él. |
+| `factions/` | 15 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta; a tartós tagság és bűnállapot a PlayerProfile faction szekciójában él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
@@ -908,7 +908,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   `minecraft:impossible` triggert és a valódi award-hívást.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 1209 Java-fájl, ~180 000 sor; 96 `*Manager` osztály (a `managers/` csomag 125 fájl).
+- **Méret:** 1214 Java-fájl, ~180 000 sor; 96 `*Manager` osztály (a `managers/` csomag 125 fájl).
   Csomag-megoszlás: listeners 123, managers 125, commands 95, spells 61, gui 72, crates 14, utils 28, data 15, classrelic 14,
   items 14, relics 12, quest 10, trash 31, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a

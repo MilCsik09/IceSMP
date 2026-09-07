@@ -560,7 +560,7 @@ public final class FactionPassiveRegressionSuite {
                         && compactListener.contains("clearTargetIfStillProtected(")
                         && compactListener.contains("if(scheduled==null)"),
                 "delayed cleanup does not revalidate live policy or scheduler rejection");
-        check(compactListener.contains("contentContexts(mob,liveSettings,playerId)")
+        check(compactListener.contains("effectiveContentContexts(mob,liveSettings,playerId)")
                         && compactListener.contains("canAlertDarkUndead("),
                 "queued alert ignores live membership/config/content exclusions");
         check(compactListener.contains(
