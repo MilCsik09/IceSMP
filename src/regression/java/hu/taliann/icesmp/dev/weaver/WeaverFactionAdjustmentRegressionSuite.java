@@ -26,6 +26,7 @@ public final class WeaverFactionAdjustmentRegressionSuite {
         admissionAndHistory();
         revisionAndConcurrentWriters();
         outboxRetentionAndDrift();
+        membershipWhisperAtomicity();
         walBoundary(false);
         walBoundary(true);
         System.out.println("Faction adjustment passed: " + assertions + " assertions; real profile WAL, final authority admission, exact revision/ABA, compensating history, concurrent CAS and observed restart recovery.");
@@ -192,6 +193,39 @@ public final class WeaverFactionAdjustmentRegressionSuite {
             check(h.failure(h.factions.completeAdjustmentEffects(PLAYER, request)) instanceof AdjustmentRejected, "cleanup acknowledgement ignored external membership drift");
             check(bytes(driftRoot).equals(before) && h.factions.pendingAdjustmentEffects(PLAYER).equals(List.of(request)), "drift discarded unfinished outbox");
         } finally { delete(driftRoot); }
+    }
+
+    private static void membershipWhisperAtomicity() throws Exception {
+        for (int route = 0; route < 4; route++) {
+            final Path root = Files.createTempDirectory("weaver-faction-whisper-");
+            try (final Harness h = new Harness(root, YamlPlayerProfileRepository.FaultInjector.none())) {
+                h.finish(h.factions.assign(PLAYER, FactionType.RED));
+                final var whispers = new PlayerProfileWhisperStore();
+                h.finish(whispers.makeWhisperer(PLAYER)); h.finish(whispers.advance(PLAYER));
+                check(whispers.read(PLAYER).whisperer(), "fixture has no canonical whisper role");
+                if (route == 0 || route == 2) {
+                    final var sins = new PlayerProfileSinStore();
+                    h.finish(sins.add(PLAYER, 4, 4)); h.finish(sins.sealDarkPact(PLAYER));
+                }
+                final var before = h.profile();
+                final MembershipAdjustment adjustment = route < 2 ? h.request(route == 0 ? FactionType.DARK : null) : null;
+                if (adjustment != null) h.finish(h.factions.adjustMembership(PLAYER, adjustment));
+                else if (route == 2) check(h.finish(h.factions.joinDark(PLAYER, FactionType.RED, 1, 2)), "native DARK route failed");
+                else h.finish(h.factions.remove(PLAYER));
+                check(!whispers.read(PLAYER).whisperer() && whispers.read(PLAYER).stage() == PlayerProfileWhisperStore.Stage.CLEAN,
+                        "membership committed before canonical whisper cleanup");
+                check(h.profile().faction().revision() == before.faction().revision() + 1, "whisper cleanup needed a second faction revision");
+                final var after = h.profile(); final var disk = bytes(root);
+                h.finish(whispers.clear(PLAYER));
+                check(h.profile().faction().revision() == after.faction().revision() && bytes(root).equals(disk), "native follow-up drifted acknowledged faction state");
+                check(Objects.equals(h.profile().faction().value().extensions().get("sin.exiled"), before.faction().value().extensions().get("sin.exiled"))
+                        && Objects.equals(h.profile().faction().value().extensions().get("sin.dark-pact"), before.faction().value().extensions().get("sin.dark-pact")), "whisper cleanup rewrote legal axes");
+                if (adjustment != null) {
+                    check(h.factions.observeAdjustment(PLAYER, adjustment) == AdjustmentObservation.APPLIED, "canonical cleanup invalidated operation observation");
+                    h.finish(h.factions.completeAdjustmentEffects(PLAYER, adjustment));
+                }
+            } finally { delete(root); }
+        }
     }
 
     private static final class Harness implements AutoCloseable {

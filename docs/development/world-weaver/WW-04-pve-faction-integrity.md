@@ -443,3 +443,38 @@ Whisperer cleanup performing a second asynchronous faction revision. Those route
 must be corrected and acknowledged before the provider exposes canonical membership.
 The new outbox supplies durable evidence for that work; it does not claim the native
 cleanup already runs. Artifact issuance and gameplay admission remain disabled.
+
+## Native membership cleanup consistency checkpoint
+
+Base: `b2eda52fcf3a802d54aed0f18328b8ba43e7e92f`, WW-04 #158.
+Native membership publication schedules Whisperer cleanup. Previously this could
+commit a second faction revision after the acknowledged membership transaction,
+making the operation's own post-commit cleanup look like external drift. The
+Whisperer authority now exposes its canonical membership reconciliation as a pure
+section transformation. The existing faction assignment/removal paths compose it
+before their single WAL commit, including normal DARK join and explicit adjustment.
+Civil membership preserves the role; DARK/guest uses the same canonical cleanup rule
+as before. Crime/exile/oath and unrelated section fields stay intact. Later native
+cleanup is a verified no-op and cannot invalidate the acknowledged revision.
+
+Council save previously logged IOException and returned normally, which could let a
+durable cleanup coordinator acknowledge a failed write. It now propagates the
+failure, matching the other canonical political/guild stores. No private map or raw
+YAML mutation is introduced by the provider.
+
+The real faction profile regression now passes 170 assertions. Four extra native and
+adjustment routes prove membership/Whisperer atomicity, independent legal axes,
+post-commit cleanup idempotence and exact operation observation. All 58 relevant
+suites pass. Full Java 21 compile, four architecture checks, authority guard (669,
+zero unknown/stale/invalid/transition), coverage (311 authorities, 55 domains, 51
+blockers, zero errors) and consistency (zero FAIL/WARN) pass. A populated native
+Council filesystem-failure probe remains required; compilation and profile tests do
+not claim that evidence.
+
+Prior exact head `b2eda52fcf3a802d54aed0f18328b8ba43e7e92f`: CI run `34086789649`;
+Paper `101632247594` and Folia `101632247727` succeeded. Verification `101632247779`
+compiled and passed the 113-assertion faction outbox test; its only failed task is
+inherited `trashSpriteAssetAudit`. Resource pack `34086789632` and Trash
+`34086789655` succeeded. New-head CI remains required. Native role-admission fencing
+and durable cleanup coordinator/provider action integration continue; this checkpoint
+does not mark those surfaces or WW-04 complete.

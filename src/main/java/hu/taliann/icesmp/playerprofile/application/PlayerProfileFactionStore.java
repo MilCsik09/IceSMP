@@ -192,9 +192,9 @@ public final class PlayerProfileFactionStore {
             }
             final FactionSection next = adjustment.target().isPresent()
                     ? assign(current, adjustment.target().orElseThrow(), adjustment.occurredAt(), current.cooldowns())
-                    : new FactionSection("", current.lastChosenFaction(), current.everChosen(),
+                    : new PlayerProfileWhisperStore().reconcileMembership(new FactionSection("", current.lastChosenFaction(), current.everChosen(),
                             current.joinedAt(), adjustment.occurredAt(), current.history(),
-                            current.reputation(), current.cooldowns(), current.extensions());
+                            current.reputation(), current.cooldowns(), current.extensions()));
             final MembershipView after = new MembershipView(Math.addExact(adjustment.expectedRevision(), 1), decode(next));
             return adjustmentPlan(adjustment, adjustment.expectedRevision(), next,
                     new AdjustmentResult(after, false), commitAdmission);
@@ -309,10 +309,10 @@ public final class PlayerProfileFactionStore {
                     if (before.membership().isEmpty()) {
                         return PlayerProfileService.ConditionalMutation.unchanged(before);
                     }
-                    final FactionSection next = new FactionSection("",
+                    final FactionSection next = new PlayerProfileWhisperStore().reconcileMembership(new FactionSection("",
                             current.lastChosenFaction(), current.everChosen(),
                             current.joinedAt(), System.currentTimeMillis(), current.history(),
-                            current.reputation(), current.cooldowns(), current.extensions());
+                            current.reputation(), current.cooldowns(), current.extensions()));
                     return PlayerProfileService.ConditionalMutation.changed(next, decode(next));
                 });
     }
@@ -422,9 +422,9 @@ public final class PlayerProfileFactionStore {
             history.add(target.name());
             if (history.size() > 128) history.remove(0);
         }
-        return new FactionSection(target.name(), target.name(), true, now,
+        return new PlayerProfileWhisperStore().reconcileMembership(new FactionSection(target.name(), target.name(), true, now,
                 current.membershipId().isBlank() ? current.leftAt() : now,
-                history, current.reputation(), cooldowns, current.extensions());
+                history, current.reputation(), cooldowns, current.extensions()));
     }
 
     private static FactionSection copyWithCooldowns(final FactionSection current,

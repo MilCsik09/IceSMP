@@ -195,6 +195,7 @@ public final class CouncilManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Nem sikerült menteni a council.yml-t: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save council.yml", exception);
         }
     }
 
