@@ -77,7 +77,18 @@ the actual achievement manager from the global owner. It verifies native wallet 
 settlement and no-op repeat, then performs its existing chunk/entity cleanup and shutdown.
 The workflow requires the additional `ICESMP_KNOWLEDGE_REWARD_RUNTIME_PROBE_PASS` marker
 with explicit `offline_profile_currency_settlement` scope. No connected player,
-developer authority or gameplay-enable bypass is synthesized. Fresh CI is required.
+developer authority or gameplay-enable bypass is synthesized.
+
+Exact head `727d09d4521a7b29dc28e48d7967cf1e0c47442c`, tree
+`5704b18071076954a225a031af20a1cc6826f04e`, run
+[34135423917](https://github.com/MilCsik09/IceSMP/actions/runs/34135423917):
+Paper native job 101785129189 and Folia native job 101785129090 both passed.
+Their decoded logs contain the required offline-profile settlement marker, native PvE
+proof and clean shutdown. Artifact jobs 101785128874 / 101785129104 also passed.
+Verification 101785129066 failed only `trashSpriteAssetAudit` on the inherited damaged
+source PNG; the new knowledge regression passed. Resource pack 34135423931 and Trash
+34135423928 passed. This evidence is restricted to the stated isolated native fixture;
+it does not establish connected-player or full knowledge/provider acceptance.
 
 Exact preceding base run 34133008127: native Paper 101777386387 / Folia
 101777386469 and artifact 101777386402 / 101777386463 passed. Verification

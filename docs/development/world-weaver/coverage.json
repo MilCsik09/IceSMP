@@ -4009,7 +4009,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/QuestManager.java",
       "domain": "knowledge",
-      "source_sha256": "013b6c60ec4eccf753f215f7e5b34043229ff954b267c05bf9da1cea3f33e4f6",
+      "source_sha256": "a7271be4d926d94a07f9441b9b9f64218fe51a7d7f8d84be263d7bb26586fb9f",
       "public_methods": [
         "QuestMeta",
         "abandon",
@@ -5249,7 +5249,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileQuestStore.java",
       "domain": "knowledge",
-      "source_sha256": "650efdb50b14abee71feccc3d52de818937342026d983582f622863dc43d3058",
+      "source_sha256": "0c6a3a0a9b206b112df5e64d60d668ad920ec38a731d1e651b0252e887dc8073",
       "public_methods": [
         "CompletionReceipt",
         "State",
@@ -5257,6 +5257,7 @@
         "accept",
         "active",
         "complete",
+        "completeIfReady",
         "completed",
         "completedSeason",
         "discover",
