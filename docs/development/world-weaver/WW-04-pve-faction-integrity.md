@@ -345,3 +345,58 @@ PlayerProfile authority guard/self-test pass (667 findings, zero unknown/stale/i
 transition). Five exact read-only projection `resolve(UUID, ...)` signatures/calls
 needed reviewed RUNTIME overrides because the existing file-path heuristic also
 matches method names; the heuristic and fail-closed default are unchanged.
+
+## Conditional faction profile transaction checkpoint
+
+Base/head dependency: `c0170b3ddd598ea83da5408d8a711dc0ab7ca183` on WW-04 #158.
+`PlayerProfileFactionStore` now exposes typed immutable membership revision views,
+explicit adjustment requests and observed BEFORE/APPLIED/CONFLICT assessment. The
+existing `PlayerProfileTransactionManager` and repository commit membership, logical
+history and the operation receipt in the same multi-section WAL. Exact faction
+section revision, expected membership and operation identity are required. This is
+an explicit domain adjustment, not a paid switch: wallet, switch counters, reputation,
+crime/exile/oath and other faction axes are preserved. DARK still requires the
+canonical exile and oath predicates. Removal retains historical identity. A reverse
+adjustment appends logical history and retains the original receipt; it cannot erase
+history or overwrite external revision drift, including membership ABA.
+
+Finding corrected: a valid authority at stage entry could expire while the profile
+transaction waited for storage. `TransactionPlan` carries a non-persistent, thread-safe
+admission callback to the existing repository. It executes under the final profile
+lock, after CAS validation and before the first WAL write. Queued logout, expiry,
+revocation or callback failure writes no mutation, operation receipt or revision.
+Existing accepted receipt/WAL replay does not re-run admission. Existing trusted
+domain transaction constructors keep their prior behavior. No world callback or
+Bukkit handle enters this persistence API.
+
+`WeaverFactionAdjustmentRegressionSuite` uses the actual authority, service,
+transaction manager and YAML repository with a controlled executor and existing WAL
+fault hooks. Its 77 assertions cover queued session loss, expired/revoked tokens,
+accepted replay, identity collision, DARK policy, compensating/removal history,
+independent faction-axis preservation, exact revision/ABA, concurrent CAS winner,
+failed admission and before/after-manifest restart assessment. Initial test fixtures
+were corrected to account for cached snapshot reads and storage-normalized timestamp
+precision; the final assertions verify exact disk bytes plus all mutation values and
+revisions. No production validation was relaxed.
+
+This checkpoint adds the safe profile primitive. The provider's canonical action is
+not yet exposed: existing membership publication also removes guild/political roles
+and invokes runtime cleanup. Durable observed completion of these post-commit effects
+must be integrated before claiming a complete canonical membership route. Existing
+projection actions and the generic frontend remain unchanged. No WW-04 closure or
+production enable is claimed.
+
+Exact prior head CI (`c0170b3ddd598ea83da5408d8a711dc0ab7ca183`): run `34085265831`;
+Paper `101627971196` and Folia `101627971023` succeeded. Verification `101627971246`
+compiled main/regression sources and passed the 101-assertion Faction projection
+suite; its only failed task is inherited `trashSpriteAssetAudit`. Resource pack
+`34085265750` and Trash hardening `34085265755` succeeded. Docs run `34085265887`
+was still running at observation. Clean-store native probes are not populated
+canonical mutation or crash evidence.
+
+Final local verification: full Java 21 main/regression compile passes (49 real
+dependencies, three inherited warnings); all 58 Weaver, faction and PlayerProfile
+suites pass. Four architecture tests, authority guard/self-test (669 findings, zero
+unknown/stale/invalid/transition), coverage (311 authorities, 55 domains, 51 blockers,
+zero audit errors) and consistency (zero FAIL/WARN) pass. New regression is a normal
+Gradle check dependency. Exact new-head CI remains required after publication.

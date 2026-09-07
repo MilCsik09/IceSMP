@@ -3,6 +3,8 @@ package hu.taliann.icesmp.playerprofile.application;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
+import hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation;
+import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSnapshot;
 import hu.taliann.icesmp.playerprofile.domain.section.EconomySection;
 import hu.taliann.icesmp.playerprofile.domain.section.FactionSection;
 import hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager;
@@ -55,6 +57,136 @@ public final class PlayerProfileFactionStore {
     public CompletionStage<State> load(final UUID playerId) {
         return PlayerProfileAuthority.current().repository().loadSnapshot(playerId)
                 .thenApply(profile -> decode(profile.faction().value()));
+    }
+
+    public record MembershipView(long sectionRevision, State state) {
+        public MembershipView {
+            if (sectionRevision < 0) throw new IllegalArgumentException("negative faction revision");
+            Objects.requireNonNull(state, "state");
+        }
+    }
+
+    /** An explicit adjustment is not a paid switch and never rewinds history or other faction axes. */
+    public record MembershipAdjustment(UUID operationId, long expectedRevision,
+                                       Optional<FactionType> expectedMembership,
+                                       Optional<FactionType> target, long occurredAt) {
+        public MembershipAdjustment {
+            Objects.requireNonNull(operationId, "operationId");
+            Objects.requireNonNull(expectedMembership, "expectedMembership");
+            Objects.requireNonNull(target, "target");
+            if (expectedRevision < 0 || expectedRevision == Long.MAX_VALUE || occurredAt < 1
+                    || expectedMembership.equals(target)) {
+                throw new IllegalArgumentException("invalid faction adjustment");
+            }
+        }
+
+        public String receiptId() { return "faction-adjustment:" + operationId; }
+
+        public String fingerprint() {
+            final String identity = "faction-adjustment-v1\n" + operationId + "\n"
+                    + expectedRevision + "\n" + expectedMembership.map(Enum::name).orElse("GUEST")
+                    + "\n" + target.map(Enum::name).orElse("GUEST") + "\n" + occurredAt;
+            try {
+                return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                        .digest(identity.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            } catch (final java.security.NoSuchAlgorithmException impossible) {
+                throw new IllegalStateException(impossible);
+            }
+        }
+    }
+
+    public enum AdjustmentObservation { BEFORE, APPLIED, CONFLICT }
+
+    public record AdjustmentResult(MembershipView after, boolean replayed) {
+        public AdjustmentResult { Objects.requireNonNull(after, "after"); }
+    }
+
+    public static final class AdjustmentRejected extends IllegalStateException {
+        private final String code;
+        private AdjustmentRejected(final String code) { super(code); this.code = code; }
+        public String code() { return code; }
+    }
+
+    public MembershipView membershipView(final UUID playerId) {
+        return membershipView(PlayerProfileAuthority.current().requireCached(playerId));
+    }
+
+    public AdjustmentObservation observeAdjustment(final UUID playerId,
+                                                    final MembershipAdjustment adjustment) {
+        return observeAdjustment(PlayerProfileAuthority.current().requireCached(playerId), adjustment);
+    }
+
+    /** Membership, append-only logical history and operation identity share the canonical profile WAL. */
+    public CompletionStage<AdjustmentResult> adjustMembership(final UUID playerId,
+                                                             final MembershipAdjustment adjustment) {
+        return adjustMembership(playerId, adjustment, () -> { });
+    }
+
+    public CompletionStage<AdjustmentResult> adjustMembership(final UUID playerId,
+                                                             final MembershipAdjustment adjustment,
+                                                             final Runnable commitAdmission) {
+        Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(adjustment, "adjustment");
+        Objects.requireNonNull(commitAdmission, "commitAdmission");
+        return PlayerProfileAuthority.current().transact(playerId, snapshot -> {
+            final AdjustmentObservation observed = observeAdjustment(snapshot, adjustment);
+            if (observed == AdjustmentObservation.CONFLICT) throw new AdjustmentRejected("CONFLICT");
+            final FactionSection current = snapshot.faction().value();
+            if (observed == AdjustmentObservation.APPLIED) {
+                // The transaction manager verifies the existing receipt before considering any update.
+                return adjustmentPlan(adjustment, snapshot.faction().revision(), current,
+                        new AdjustmentResult(membershipView(snapshot), true), commitAdmission);
+            }
+            if (adjustment.target().orElse(null) == FactionType.DARK
+                    && (!Boolean.TRUE.equals(current.extensions().get("sin.exiled"))
+                    || !Boolean.TRUE.equals(current.extensions().get("sin.dark-pact")))) {
+                throw new AdjustmentRejected("DARK_OATH_REQUIRED");
+            }
+            if (adjustment.occurredAt() < Math.max(current.joinedAt(), current.leftAt())) {
+                throw new AdjustmentRejected("CONFLICT");
+            }
+            final FactionSection next = adjustment.target().isPresent()
+                    ? assign(current, adjustment.target().orElseThrow(), adjustment.occurredAt(), current.cooldowns())
+                    : new FactionSection("", current.lastChosenFaction(), current.everChosen(),
+                            current.joinedAt(), adjustment.occurredAt(), current.history(),
+                            current.reputation(), current.cooldowns(), current.extensions());
+            final MembershipView after = new MembershipView(Math.addExact(adjustment.expectedRevision(), 1), decode(next));
+            return adjustmentPlan(adjustment, adjustment.expectedRevision(), next,
+                    new AdjustmentResult(after, false), commitAdmission);
+        });
+    }
+
+    private static PlayerProfileTransactionManager.TransactionPlan<AdjustmentResult> adjustmentPlan(
+            final MembershipAdjustment adjustment, final long revision, final FactionSection next,
+            final AdjustmentResult result, final Runnable commitAdmission) {
+        return new PlayerProfileTransactionManager.TransactionPlan<>(adjustment.receiptId(),
+                "faction-membership-adjustment", adjustment.fingerprint(),
+                List.of(new PlayerProfileTransactionManager.SectionUpdate(ProfileSectionId.FACTION, revision, next)), result, commitAdmission);
+    }
+
+    private static MembershipView membershipView(final PlayerProfileSnapshot snapshot) {
+        if (!snapshot.faction().health().usable() || !snapshot.operations().health().usable()) {
+            throw new AdjustmentRejected("PROFILE_UNAVAILABLE");
+        }
+        return new MembershipView(snapshot.faction().revision(), decode(snapshot.faction().value()));
+    }
+
+    private static AdjustmentObservation observeAdjustment(final PlayerProfileSnapshot snapshot,
+                                                           final MembershipAdjustment adjustment) {
+        Objects.requireNonNull(adjustment, "adjustment");
+        final MembershipView view = membershipView(snapshot);
+        final PlayerProfileOperation receipt = snapshot.operations().value().operations().get(adjustment.receiptId());
+        if (receipt != null) {
+            return receipt.status() == PlayerProfileOperation.Status.COMMITTED
+                    && receipt.type().equals("faction-membership-adjustment")
+                    && receipt.fingerprint().equals(adjustment.fingerprint())
+                    && view.sectionRevision() == adjustment.expectedRevision() + 1
+                    && view.state().membership().equals(adjustment.target())
+                    ? AdjustmentObservation.APPLIED : AdjustmentObservation.CONFLICT;
+        }
+        return view.sectionRevision() == adjustment.expectedRevision()
+                && view.state().membership().equals(adjustment.expectedMembership())
+                ? AdjustmentObservation.BEFORE : AdjustmentObservation.CONFLICT;
     }
 
     public CompletionStage<State> assign(final UUID playerId, final FactionType target) {

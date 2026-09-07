@@ -151,13 +151,19 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
 
 
     public CompletionStage<PlayerProfileSnapshot> commitSections(UUID id,long expectedGeneration,Map<ProfileSectionId,ProfileSectionSnapshot<?>> replacements,String operationId,String fingerprint){
-        Objects.requireNonNull(id);Objects.requireNonNull(replacements);return submit(id,()->withLock(id,()->commitSectionsLocked(id,expectedGeneration,replacements,operationId,fingerprint)));
+        return commitSections(id,expectedGeneration,replacements,operationId,fingerprint,()->{});
     }
-    private PlayerProfileSnapshot commitSectionsLocked(UUID id,long expectedGeneration,Map<ProfileSectionId,ProfileSectionSnapshot<?>> replacements,String operationId,String fingerprint)throws Exception{
+    public CompletionStage<PlayerProfileSnapshot> commitSections(UUID id,long expectedGeneration,Map<ProfileSectionId,ProfileSectionSnapshot<?>> replacements,String operationId,String fingerprint,Runnable commitAdmission){
+        Objects.requireNonNull(id);Objects.requireNonNull(replacements);Objects.requireNonNull(commitAdmission);return submit(id,()->withLock(id,()->commitSectionsLocked(id,expectedGeneration,replacements,operationId,fingerprint,commitAdmission)));
+    }
+    private PlayerProfileSnapshot commitSectionsLocked(UUID id,long expectedGeneration,Map<ProfileSectionId,ProfileSectionSnapshot<?>> replacements,String operationId,String fingerprint,Runnable commitAdmission)throws Exception{
         PlayerProfileSnapshot durable=loadLocked(id,true);if(durable.profileRevision()!=expectedGeneration)throw new PlayerProfileRepositoryException.RevisionConflict(expectedGeneration,durable.profileRevision(),"stale profile generation");
         EnumMap<ProfileSectionId,ProfileSectionSnapshot<?>> nextMap=new EnumMap<>(durable.sectionMap());Instant now=clock.instant();
         for(var e:replacements.entrySet()){ProfileSectionSnapshot<?> current=durable.section(e.getKey()).orElseThrow();ProfileSectionSnapshot<?> next=e.getValue();if(!current.health().usable())throw new PlayerProfileRepositoryException.Quarantined(e.getKey().id()+" section quarantined");if(next.sectionId()!=e.getKey()||next.revision()!=Math.addExact(current.revision(),1L))throw new IllegalArgumentException("invalid section CAS transition for "+e.getKey().id());nextMap.put(e.getKey(),new ProfileSectionSnapshot<>(e.getKey(),next.schema(),next.revision(),now,next.value(),SectionHealth.healthy(),next.extensions()));}
-        long nextGeneration=Math.addExact(durable.profileRevision(),1L);PlayerProfileSnapshot candidate=PlayerProfileSnapshot.fromMap(id,nextGeneration,durable.createdAt(),now,nextMap);commitMultiple(id,durable,candidate,replacements.keySet(),operationId,fingerprint);cache.put(id,candidate);return candidate;
+        long nextGeneration=Math.addExact(durable.profileRevision(),1L);PlayerProfileSnapshot candidate=PlayerProfileSnapshot.fromMap(id,nextGeneration,durable.createdAt(),now,nextMap);
+        // Runs after queue/CAS and before the first WAL write; accepted recovery never reruns admission.
+        commitAdmission.run();
+        commitMultiple(id,durable,candidate,replacements.keySet(),operationId,fingerprint);cache.put(id,candidate);return candidate;
     }
     private void commitMultiple(UUID id,PlayerProfileSnapshot before,PlayerProfileSnapshot after,Set<ProfileSectionId> changed,String operationId,String fingerprint)throws Exception{
         Path wal=profileDir(id).resolve("wal").resolve(operationWalName(required(operationId,"operationId")));if(Files.exists(wal)){recoverWal(id);if(Files.exists(wal))throw new PlayerProfileRepositoryException("transaction WAL still active");}Files.createDirectories(wal.resolve("old"));Files.createDirectories(wal.resolve("new"));
