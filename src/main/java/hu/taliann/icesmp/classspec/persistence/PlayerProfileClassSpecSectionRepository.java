@@ -41,12 +41,25 @@ public final class PlayerProfileClassSpecSectionRepository implements ClassSpecS
     @Override
     public CompletionStage<ClassSpecSection> save(final UUID playerId, final long expectedRevision,
                                                   final ClassSpecSection nextProfile) {
+        return save(playerId, expectedRevision, nextProfile, null);
+    }
+
+    @Override
+    public CompletionStage<ClassSpecSection> saveReward(final UUID playerId, final long expectedRevision,
+            final ClassSpecSection nextProfile, final hu.taliann.icesmp.integrity.RewardContext reward) {
+        return save(playerId, expectedRevision, nextProfile, Objects.requireNonNull(reward));
+    }
+
+    private CompletionStage<ClassSpecSection> save(final UUID playerId, final long expectedRevision,
+            final ClassSpecSection nextProfile, final hu.taliann.icesmp.integrity.RewardContext reward) {
         Objects.requireNonNull(nextProfile, "nextProfile");
         final ProfileSectionSnapshot<ClassSpecSection> next = new ProfileSectionSnapshot<>(
                 ProfileSectionId.CLASS_SPEC, ProfileSectionId.CLASS_SPEC.currentSchema(), nextProfile.revision(),
                 Instant.now(), nextProfile, SectionHealth.healthy());
-        return repository.saveSection(playerId, ProfileSectionId.CLASS_SPEC, expectedRevision, next)
-                .thenCompose(result -> switch (result.status()) {
+        final var save = reward == null
+                ? repository.saveSection(playerId, ProfileSectionId.CLASS_SPEC, expectedRevision, next)
+                : repository.saveRewardSection(playerId, ProfileSectionId.CLASS_SPEC, expectedRevision, next, reward);
+        return save.thenCompose(result -> switch (result.status()) {
                     case COMMITTED -> CompletableFuture.completedFuture(result.snapshot().classSpec().value());
                     case STALE_REVISION, STALE_GENERATION -> CompletableFuture.failedFuture(
                             new ProfileRepositoryException.RevisionConflict(expectedRevision,

@@ -209,3 +209,15 @@ reward finding or enable physical issuance/durable gameplay admission.
 Physical artifact issuance and durable gameplay admission remain disabled. No merge,
 release, universal capability, reward-leak closure or production-readiness verdict is
 asserted by this checkpoint.
+
+
+## Serialized profile reward admission
+
+The checkpoint after `920fb92151a4ae347ec5bfc64e46f41dcdc4d49c` carries class/pet
+reward provenance into the existing profile repository's serialized WAL admission,
+with explicit denial distinct from persistence failure. Existing accepted receipts
+survive later quarantine and restart. It also gates Bingulus progress/delivery and
+pet ritual drops across owner continuations. Evidence and remaining producer routes
+are in `WW-04-reward-ingress.md`. The 67-suite local run is green; native populated
+reward evidence and full integrity closure remain required. Coverage: 306 authorities,
+55 domains, 51 blockers. Artifact issuance and durable gameplay admission remain off.

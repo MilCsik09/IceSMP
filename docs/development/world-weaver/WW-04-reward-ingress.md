@@ -40,8 +40,10 @@ instead of carrying the original live Player into the callback.
 | Dungeon boss loot | `DungeonLootListener` passes eligibility into the existing boss lifecycle's reward flag | Lifecycle still completes when reward denied; native evidence required |
 | Dungeon bonus loot | Existing `MobKillUtil.eligibleKill` now includes influence | Downstream item acquisition provenance |
 | Trash mob flavor drop | Existing FLAVOR context + `claimOnce` now include influence | Canonical Trash item provenance and later transformations |
-| Class XP kill ingress | `ClassXpListener` CLASS_XP check on killer owner, same source context | Carry context through asynchronous profile mutation/reservation; non-kill XP sources |
-| Pet XP kill ingress | `PetXpListener` PET_XP check on owner; credited companion identity unchanged | Companion source propagation; profile commit/reservation context and capture drops |
+| Class XP | `ClassXpListener` → `JobManager` → typed gateway request → real YAML reward CAS, with full kill source context | Non-kill upstream provenance and native execution evidence |
+| Pet XP | Exact companion plus kill provenance through `PetManager` and the serialized profile reward CAS | Durable companion influence propagation and native evidence |
+| Pet ritual/equipment drops | Immutable serialized item and reward context across the region continuation; recheck before drop, no unloaded chunk force load | Native cross-region output evidence |
+| Bingulus rewards | Pause timer before progress/roll; recheck before delivery claim and after storage continuation; preserve pending item/pity/progress on refusal | Native pause/resume and pending-delivery playtest |
 | Bestiary kill ingress | `BestiaryListener` BESTIARY check on owner | Canonical record/milestone reservation and legitimate pending payout handling |
 | Mob tracking ingress | `StatsCombatListener` uses the now-gated tracking KillContext | Profile counter settlement; non-mob and other metric origins |
 | Quest kill ingress | `QuestProgressListener` QUEST_PROGRESS check on owner | Context through quest/profile mutation and reward outbox; non-kill objectives |
@@ -61,7 +63,7 @@ producer list is the WW-00 reward/progression ingress and settlement audit.
   Preserve valid preexisting outboxes; no receipt spoofing or blanket deletion.
 - Gate every non-kill quest, profession/gathering, achievement/discovery,
   community/weekly/server challenge, personal loot, crate, currency faucet,
-  parkour, raid/war/event and developer-item reward path.
+  parkour and raid/war/event reward path. Bingulus entry/delivery is now gated; its native evidence remains required.
 - Propagate durable influence before projectile/summon/DOT/potion/item/event/spatial
   child effects. Direct death provenance alone does not close delayed or indirect
   gameplay influence.
@@ -92,3 +94,54 @@ bounded dispatcher suites; its only failed task was inherited `trashSpriteAssetA
 Resource pack `34080004725`, Trash hardening `34080004732` and docs inventory
 `34080004637` succeeded. These are clean-store readiness/shutdown checks, not
 populated reward or client gameplay proof.
+
+## Profile admission checkpoint
+
+Based on `920fb92151a4ae347ec5bfc64e46f41dcdc4d49c`. Class/pet reward requests now
+carry immutable `RewardContext` through both the gateway queue and the storage queue.
+The existing `YamlPlayerProfileRepository` checks it under its canonical per-profile
+lock after revision validation and immediately before `commitSingle` writes the WAL.
+This is the reward admission point. A quarantine published after admission does not
+retroactively revoke the accepted canonical WAL/receipt. A quarantine visible before
+admission rejects the candidate without changing XP, receipts, revisions or session
+health. There is no secondary reward receipt store or authority.
+
+The guarded storage interfaces fail closed by default; an implementation lacking
+serialized reward admission cannot silently delegate to an ordinary save. Recipient
+and channel must match the class/pet mutation. Compatibility ADD/delta calls retain
+recipient quarantine; owner-side manager defaults also capture world/location.
+Kill callers pass the complete detached victim/causal source context. Canonical
+explicit SET remains a domain mutation; reward-generated clamped SET still carries
+its reward context. No new developer command or alternate mutation authority exists.
+
+Existing parameter-bound operation receipts are checked before attempting another
+save. Accepted receipts replay under later quarantine without rewriting the reward.
+Profile format, operation identifiers and receipt identity remain unchanged.
+The admission context is transient immutable input; accepted outcome durability is
+owned by the existing WAL and operation receipt, not by a fabricated eligibility token.
+
+`WeaverProfileRewardAdmissionRegressionSuite` uses the real gateway, both production
+adapters and YAML repository with an injected executor and existing WAL fault hook.
+51 assertions cover causal and recipient quarantine while queued, exact companion XP,
+unchanged disk bytes and revision/receipt on refusal, session usability, wrong
+recipient/channel, compatibility ADD, unbound/unsupported policy, restart replay,
+parameter mismatch and lost acknowledgement after the accepted manifest write.
+It is a normal Gradle check dependency. All 67 relevant Weaver, artifact, PvE,
+PlayerProfile, class/spec, AFK, Trash and Evoker suites passed; full Java 21 compile
+passed against 49 real dependencies (three inherited warnings). Four architecture
+checks, authority guard/self-test (658 findings, zero unknown/stale/invalid/transition)
+and consistency (zero FAIL/WARN) passed. This evidence does not establish all-domain
+reward leak closure or native populated server behavior.
+
+The coverage audit now tracks five canonical repository/adapter ports explicitly
+under profile infrastructure and the existing Bingulus behavior under developer self:
+306 authorities, 55 domains, 51 implementation blockers. Persistence ports are not
+raw developer editors; their gameplay surfaces remain owned by the corresponding
+class/pet and later domain providers. Source changes were reviewed and rehashed.
+
+Exact preceding head CI `920fb92151a4ae347ec5bfc64e46f41dcdc4d49c`: verification run
+`34081527215`; Paper `101617584458` and Folia `101617584580` PASS; verification job
+`101617584635` compiled and passed the reward gateway suite, with only inherited
+`trashSpriteAssetAudit` failing. Resource pack `34081527251` and Trash hardening
+`34081527275` PASS. CI for this new checkpoint remains required; native populated
+reward, causal propagation and client gates remain open.

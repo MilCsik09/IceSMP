@@ -1070,7 +1070,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
       "domain": "class",
-      "source_sha256": "b395866692d779ad0061d684bbd441f385cc2d2100099ae2c6e4c229af6229d3",
+      "source_sha256": "fcb4b155f883dd1209dccbbf463d30af9b4e85fd53155a2a07796b2b2cead1e9",
       "public_methods": [
         "ClassAssignmentRequest",
         "ClassExperienceRequest",
@@ -1097,11 +1097,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecSectionMutationStore.java",
       "domain": "class",
-      "source_sha256": "803af3076fa267479e1d984727ec6120aebc47e5bd17c756f274d50eb6fb6d14",
+      "source_sha256": "900d70c7bd3c0cc72c7704b9135ca6cfaf24b9b7dbb088a10f85fbd97272345a",
       "public_methods": [
         "committed",
         "conflict",
         "failed",
+        "rewardDenied",
         "stopped"
       ]
     },
@@ -1116,7 +1117,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
       "domain": "class",
-      "source_sha256": "aa04e5623f1601319dd09013b1722b5f7dc1f686b2a25b908a20db282af4ec79",
+      "source_sha256": "8fa7050ce9fd27b73ade19c44eeafd6845e03a9b31755f40b4ee64ec7e929565",
       "public_methods": [
         "activeCompanion",
         "activeMechanic",
@@ -1235,6 +1236,52 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionMutationStoreAdapter.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "8d5ee1cd54ecb677d45bc4894d7d93074f9d423699a47e5ba9608005e416b5d7",
+      "public_methods": [
+        "blockSession",
+        "cached",
+        "quarantineEvidenceId",
+        "quarantineReason",
+        "recover",
+        "save",
+        "saveReward",
+        "sessionBlockReason"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionRepository.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "7bce6dc39654d8cb292ed85e6a3218ef978761d1e970ee3598c6c3c869135de6",
+      "public_methods": [
+        "found",
+        "missing",
+        "quarantined"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/classspec/persistence/PlayerProfileClassSpecSectionRepository.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "eea85b0dc17f4c76ab59e73e215b23f79b030baf3fe42b82b9af8e64fe5bb4f4",
+      "public_methods": [
+        "blockSession",
+        "cached",
+        "flush",
+        "flushAll",
+        "invalidate",
+        "load",
+        "quarantine",
+        "quarantineEvidenceId",
+        "quarantineReason",
+        "recover",
+        "save",
+        "saveReward",
+        "sessionBlockReason",
+        "shutdown"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/client/ClientSessionRegistry.java",
       "domain": "transport_infrastructure",
       "source_sha256": "8d994f0d2197861d16409c815c533abf24698f060ff9c68d07e13025c06d3741",
@@ -1295,6 +1342,26 @@
         "reconcileProfile",
         "setCombatTracker",
         "shutdown"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/artifact/BingulusRewardBehavior.java",
+      "domain": "developer_self",
+      "source_sha256": "e5c53638d5704455507948d9b73c3da4e1d36a8fa686825902a2130c4c2f4a39",
+      "public_methods": [
+        "artifactId",
+        "definition",
+        "initialState",
+        "loadBehaviorState",
+        "onConfigurationReload",
+        "onInteract",
+        "onIssued",
+        "onRecovered",
+        "onUnavailable",
+        "saveBehaviorState",
+        "shutdown",
+        "tick",
+        "validateState"
       ]
     },
     {
@@ -3259,7 +3326,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/JobManager.java",
       "domain": "class",
-      "source_sha256": "77cb52de933da6a72aea1bc0b72305d0038687765d125d0905e7ae443661224f",
+      "source_sha256": "394ca7c58d3705557d56d955f6a2b25ccede46cafa397a786970f1055747fe80",
       "public_methods": [
         "addXpToJobResultV2",
         "addXpToJobV2",
@@ -3555,7 +3622,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/PetManager.java",
       "domain": "pets",
-      "source_sha256": "9f10351db93a26a419c0b60d14bb38383483be74373832dcc4f9869c73bb5ca5",
+      "source_sha256": "c2d7e1a292880b11736acf4a9bb839dcb34b4b783c609d02af8201849f97710f",
       "public_methods": [
         "PetKillAttribution",
         "PetMutationResult",
@@ -5185,6 +5252,38 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "4be1723eed9d3fa56c483787b51cd88490f7f050ddebacc201f45844665dc4ea",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "9697b31e65b04027e0d4cfb0a0f41f9aa780c38eb4d967aa3aa148426e763b58",
+      "public_methods": [
+        "afterManifestMovedBeforeCleanup",
+        "afterSectionsMovedBeforeManifest",
+        "cached",
+        "commitSections",
+        "find",
+        "findByName",
+        "flush",
+        "flushAll",
+        "invalidate",
+        "listPlayerIds",
+        "load",
+        "loadSection",
+        "postVisitDirectory",
+        "quarantineSection",
+        "recoverSection",
+        "saveRewardSection",
+        "saveSection",
+        "shutdown",
+        "visitFile"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionManager.java",
       "domain": "profile_infrastructure",
       "source_sha256": "c18ecd34cd414857909192dbf2c4ef31c5d7d5ba9a4eaf63bf3b16319d935705",
@@ -6249,6 +6348,10 @@
   "supplemental_authorities": [
     "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
+    "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionMutationStoreAdapter.java",
+    "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionRepository.java",
+    "src/main/java/hu/taliann/icesmp/classspec/persistence/PlayerProfileClassSpecSectionRepository.java",
+    "src/main/java/hu/taliann/icesmp/dev/artifact/BingulusRewardBehavior.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
@@ -6273,6 +6376,8 @@
     "src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java",
     "src/main/java/hu/taliann/icesmp/managers/MajorEventGate.java",
     "src/main/java/hu/taliann/icesmp/managers/SeasonStoryTeller.java",
+    "src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java",
+    "src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",

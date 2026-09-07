@@ -75,13 +75,27 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
         return submit(id,()->withLock(id,()->saveLocked(id,section,expectedRevision,expectedGeneration,next)));
     }
 
+    @Override public CompletionStage<SectionSaveResult> saveRewardSection(UUID id, ProfileSectionId section,
+            long expectedRevision, ProfileSectionSnapshot<?> next, hu.taliann.icesmp.integrity.RewardContext reward) {
+        Objects.requireNonNull(id); Objects.requireNonNull(section); Objects.requireNonNull(next); Objects.requireNonNull(reward);
+        if (!id.equals(reward.recipient()) || next.sectionId() != section) throw new IllegalArgumentException("Reward save target mismatch");
+        return submit(id, () -> withLock(id, () -> saveLocked(id, section, expectedRevision, -1, next, reward)));
+    }
+
     private SectionSaveResult saveLocked(UUID id,ProfileSectionId section,long expectedRevision,long expectedGeneration,ProfileSectionSnapshot<?> next)throws Exception{
+        return saveLocked(id, section, expectedRevision, expectedGeneration, next, null);
+    }
+    private SectionSaveResult saveLocked(UUID id,ProfileSectionId section,long expectedRevision,long expectedGeneration,ProfileSectionSnapshot<?> next,
+            hu.taliann.icesmp.integrity.RewardContext reward)throws Exception{
         PlayerProfileSnapshot durable=loadLocked(id,true);ProfileSectionSnapshot<?> current=durable.section(section).orElseThrow();
         if(!current.health().usable())return new SectionSaveResult(SectionSaveResult.Status.SECTION_QUARANTINED,durable,current.health().diagnostic(),current.health().evidenceId());
         if(expectedGeneration>=0&&durable.profileRevision()!=expectedGeneration)return new SectionSaveResult(SectionSaveResult.Status.STALE_GENERATION,durable,"stale profile generation","");
         if(current.revision()!=expectedRevision)return new SectionSaveResult(SectionSaveResult.Status.STALE_REVISION,durable,"stale section revision","");
         long wanted=Math.addExact(expectedRevision,1L);if(next.revision()!=wanted)return new SectionSaveResult(SectionSaveResult.Status.REJECTED,durable,"section revision must advance exactly once","");
         long nextGeneration=Math.addExact(durable.profileRevision(),1L);Instant now=clock.instant();ProfileSectionSnapshot<?> normalized=new ProfileSectionSnapshot<>(section,next.schema(),next.revision(),now,next.value(),SectionHealth.healthy(),next.extensions());PlayerProfileSnapshot candidate=durable.withSection(normalized,nextGeneration,now);
+        // Admission linearizes here. A later quarantine must not revoke this accepted WAL/replay.
+        if (reward != null && !hu.taliann.icesmp.integrity.GameplayRewardGate.evaluate(reward).allowed())
+            throw new hu.taliann.icesmp.integrity.RewardEligibilityDeniedException();
         commitSingle(id,durable,candidate,section);cache.put(id,candidate);return new SectionSaveResult(SectionSaveResult.Status.COMMITTED,candidate,"","");
     }
 

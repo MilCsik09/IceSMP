@@ -21,6 +21,13 @@ public interface PlayerProfileRepository {
     CompletionStage<Optional<ProfileSectionSnapshot<?>>> loadSection(UUID playerId, ProfileSectionId section);
     CompletionStage<SectionSaveResult> saveSection(UUID playerId, ProfileSectionId section, long expectedRevision, ProfileSectionSnapshot<?> next);
     CompletionStage<SectionSaveResult> saveSection(UUID playerId, ProfileSectionId section, long expectedRevision, long expectedGeneration, ProfileSectionSnapshot<?> next);
+    /** Checks immutable reward provenance inside the serialized storage admission, before the WAL. */
+    default CompletionStage<SectionSaveResult> saveRewardSection(UUID playerId, ProfileSectionId section,
+            long expectedRevision, ProfileSectionSnapshot<?> next,
+            hu.taliann.icesmp.integrity.RewardContext reward) {
+        return java.util.concurrent.CompletableFuture.failedFuture(
+                new hu.taliann.icesmp.integrity.RewardEligibilityDeniedException());
+    }
     CompletionStage<QuarantineResult> quarantineSection(UUID playerId,ProfileSectionId section,byte[] originalPayload,String reason);
     CompletionStage<RecoveryResult> recoverSection(UUID playerId,ProfileSectionId section,String evidenceId,String auditId);
     Optional<PlayerProfileSnapshot> cached(UUID playerId);

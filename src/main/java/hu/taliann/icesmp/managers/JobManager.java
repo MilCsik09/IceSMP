@@ -143,6 +143,12 @@ public final class JobManager implements PlayerStateCleanup {
                 .thenApply(ProfileMutationResult::durableOutcomeAccepted);
     }
 
+    public CompletionStage<Boolean> addXpToJobV2(final Player player, final int amount,
+            final String operationId, final hu.taliann.icesmp.integrity.RewardContext reward) {
+        return addXpToJobResultV2(player, amount, operationId, reward)
+                .thenApply(ProfileMutationResult::durableOutcomeAccepted);
+    }
+
     public CompletionStage<Boolean> setXpV2(final Player player, final int xp,
                                              final String operationId) {
         return setXpResultV2(player, xp, operationId)
@@ -151,12 +157,21 @@ public final class JobManager implements PlayerStateCleanup {
 
     public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> addXpToJobResultV2(
             final Player player, final int amount, final String operationId) {
+        return addXpToJobResultV2(player, amount, operationId,
+                hu.taliann.icesmp.integrity.BukkitRewardSources.entity(
+                        hu.taliann.icesmp.integrity.RewardChannel.CLASS_XP, player).forRecipient(player.getUniqueId()));
+    }
+
+    public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> addXpToJobResultV2(
+            final Player player, final int amount, final String operationId,
+            final hu.taliann.icesmp.integrity.RewardContext reward) {
+        reward.require(hu.taliann.icesmp.integrity.RewardChannel.CLASS_XP, player.getUniqueId());
         if (amount <= 0 || !hasPrimaryJob(player)) {
             return CompletableFuture.completedFuture(ProfileMutationResult.rejected(
                     gateway().diagnostic(player.getUniqueId()), "class XP target is unavailable"));
         }
         return mutateXpResult(player, ClassSpecProfileGateway.ClassExperienceRequest.Mode.ADD,
-                amount, operationId);
+                amount, operationId, Optional.of(reward));
     }
 
     public CompletionStage<ProfileMutationResult<ProfileDiagnostic>> setXpResultV2(
@@ -166,13 +181,14 @@ public final class JobManager implements PlayerStateCleanup {
                     gateway().diagnostic(player.getUniqueId()), "class XP target is unavailable"));
         }
         return mutateXpResult(player, ClassSpecProfileGateway.ClassExperienceRequest.Mode.SET,
-                xp, operationId);
+                xp, operationId, Optional.empty());
     }
 
     private CompletionStage<ProfileMutationResult<ProfileDiagnostic>> mutateXpResult(
             final Player player,
             final ClassSpecProfileGateway.ClassExperienceRequest.Mode requestedMode,
-            final int requestedValue, final String operationId) {
+            final int requestedValue, final String operationId,
+            final Optional<hu.taliann.icesmp.integrity.RewardContext> reward) {
         final int baseXp = Math.max(1, configManager.getInt("classes.leveling.base-xp", 100));
         final int increment = Math.max(0, configManager.getInt(
                 "classes.leveling.increment-per-level", 20));
@@ -221,7 +237,7 @@ public final class JobManager implements PlayerStateCleanup {
         }
         return gateway.mutateClassExperience(player.getUniqueId(),
                 new ClassSpecProfileGateway.ClassExperienceRequest(mode, value, baseXp,
-                        increment, secondSpecUnlockLevel, operationId))
+                        increment, secondSpecUnlockLevel, operationId, reward))
                 .thenCompose(result -> {
                     if (!result.runtimeGenerationUsable()) return CompletableFuture.completedFuture(result);
                     return schedulePlayer(player, () -> { }).thenCompose(ignored -> {

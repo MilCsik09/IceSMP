@@ -75,7 +75,8 @@ public final class ClassXpListener implements Listener {
             }
 
             jobManager.addXpToJobV2(killer, totalXp,
-                    "mob-kill:" + killer.getUniqueId() + ":" + victimId)
+                    "mob-kill:" + killer.getUniqueId() + ":" + victimId,
+                    kill.rewardContext(hu.taliann.icesmp.integrity.RewardChannel.CLASS_XP))
                     .exceptionally(failure -> { plugin.getLogger().warning("Class XP commit failed: " + failure.getMessage()); return false; });
         });
     }

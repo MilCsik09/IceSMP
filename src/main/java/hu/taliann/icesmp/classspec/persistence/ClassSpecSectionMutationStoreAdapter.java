@@ -35,13 +35,25 @@ public final class ClassSpecSectionMutationStoreAdapter implements ClassSpecSect
     @Override
     public CompletionStage<SaveResult> save(final UUID playerId, final long expectedRevision,
                                             final ClassSpecSection candidate) {
-        return repository.save(playerId, expectedRevision, candidate)
-                .handle((durable, failure) -> {
+        return mapSave(playerId, repository.save(playerId, expectedRevision, candidate));
+    }
+
+    @Override
+    public CompletionStage<SaveResult> saveReward(final UUID playerId, final long expectedRevision,
+            final ClassSpecSection candidate, final hu.taliann.icesmp.integrity.RewardContext reward) {
+        return mapSave(playerId, repository.saveReward(playerId, expectedRevision, candidate, reward));
+    }
+
+    private CompletionStage<SaveResult> mapSave(final UUID playerId, final CompletionStage<ClassSpecSection> save) {
+        return save.handle((durable, failure) -> {
                     if (failure == null) {
                         return SaveResult.committed(durable);
                     }
                     final Throwable root = unwrap(failure);
                     final ClassSpecSection current = repository.cached(playerId).orElse(null);
+                    if (root instanceof hu.taliann.icesmp.integrity.RewardEligibilityDeniedException) {
+                        return SaveResult.rewardDenied(current);
+                    }
                     if (root instanceof ProfileRepositoryException.RevisionConflict conflict) {
                         return SaveResult.conflict(current, conflict.actual());
                     }
