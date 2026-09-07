@@ -1262,6 +1262,10 @@ val trashRelicRegressionTest = registerRegression(
     "trashRelicRegressionTest",
     "Runs all 23 Phase E behavior, primitive, Folia, persistence and secrecy gates.",
     "hu.taliann.icesmp.trash.TrashRelicRegressionSuite")
+val trashRuleFieldRegressionTest = registerRegression(
+    "trashRuleFieldRegressionTest",
+    "Runs canonical transient rule-field geometry, hard caps, exclusive claims, conditional removal and shutdown.",
+    "hu.taliann.icesmp.trash.TrashRuleFieldRegressionSuite")
 val trashArchaeologyRegressionTest = registerRegression(
     "trashArchaeologyRegressionTest",
     "Runs Phase F hidden progression, Brush session, overlay, secrecy and lifecycle gates.",
@@ -1301,7 +1305,7 @@ tasks.check {
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
-        trashAnomalyRegressionTest, trashRelicRegressionTest, trashArchaeologyRegressionTest,
+        trashAnomalyRegressionTest, trashRelicRegressionTest, trashRuleFieldRegressionTest, trashArchaeologyRegressionTest,
         trashProductionHardeningRegressionTest,
         factionReworkRegressionTest, whisperIntegrityRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,

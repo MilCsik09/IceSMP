@@ -127,8 +127,8 @@
       "phase": "WW-05",
       "inspect": "hidden identity/kind/behavior/phase/instance/revision/history/provenance/memory/rule fields",
       "planned_actions": "individualize, activate, transition, repair, sandbox copy, four rule field kinds, export/import, fork",
-      "canonical_route": "TrashHistoryService individualize/transform/repair; extract TrashAnomalyActivationService/TrashRelicActivationService/TrashRuleFieldService from existing runtime",
-      "rationale": "Anomaly and relic actions are currently event-handler/private-runtime routes. Provider must share extracted canonical activation APIs; fake events and natural-history spoofing prohibited.",
+      "canonical_route": "TrashHistoryService individualize/transform/repair; native TrashRuleFieldService owns detached bounded field state and claims. Extract shared Anomaly/Relic activation services before registering the provider.",
+      "rationale": "The native relic runtime now delegates rule-field registration, geometry queries, claims, expiry, conditional removal and shutdown to one Bukkit-free service with world UUID/coordinates. Anomaly/relic activation still needs shared canonical API extraction; provider, journal integration, source influence and projectile handoff/unload/disable verification remain required. Fake events and natural-history spoofing are prohibited.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
@@ -145,7 +145,8 @@
         "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java",
-        "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java"
+        "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
+        "src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java"
       ],
       "implementation_evidence": []
     },
@@ -6614,8 +6615,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "565a123046e00d044c16841dde64c0f2345984bc016cbc6e3ee8963c7186224e",
+      "source_sha256": "404b18ea8f241a819b9f0188a9e0d69a0773e9d59bc276f18b516841650df1a4",
       "public_methods": [
+        "TrashRelicRuntime",
         "blocksCombatAt",
         "claimBestBucket",
         "clearPlayerState",
@@ -6631,10 +6633,36 @@
         "onSpawn",
         "onUse",
         "onWorldLoad",
+        "ruleFields",
         "shutdown",
         "start",
         "suppressesAcousticsAt"
       ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java",
+      "domain": "trash",
+      "public_methods": [
+        "Point",
+        "RuleField",
+        "Snapshot",
+        "TrashRuleFieldService",
+        "active",
+        "activeAt",
+        "add",
+        "claim",
+        "close",
+        "contains",
+        "expire",
+        "hasCapacity",
+        "hasKind",
+        "isClaimed",
+        "releaseClaim",
+        "remove",
+        "removeIdle",
+        "snapshot"
+      ],
+      "source_sha256": "93c3307ae07f44e882df243dfc59cf34e926f4e0858a71c0cbbace0e4986c1b8"
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",

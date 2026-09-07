@@ -64,8 +64,12 @@ public final class TrashRelicRegressionSuite {
 
     private static void preservesBoundedTypedFoliaPrimitives() throws Exception {
         final String runtime = Files.readString(RUNTIME);
-        require(runtime, "MAX_FIELDS_PER_WORLD = 32", "per-world field cap");
-        require(runtime, "MAX_FIELDS_GLOBAL = 128", "global field safety cap");
+        final String fields = Files.readString(ROOT.resolve("trash/TrashRuleFieldService.java"));
+        require(fields, "MAX_FIELDS_PER_WORLD = 32", "per-world field cap");
+        require(fields, "MAX_FIELDS_GLOBAL = 128", "global field safety cap");
+        require(runtime, "ruleFields.add(field)", "native field creation shares canonical service");
+        require(runtime, "ruleFields.activeAt(point(location), kind)", "native effective field consumer");
+        check(!fields.contains("org.bukkit"), "field authority retains live Bukkit handles");
         require(runtime, "MAX_NEARBY_ENTITIES = 24", "nearby entity cap");
         require(runtime, "MAX_ANCHORED_DROPS = 64", "death-bundle work cap");
         require(runtime, "MAX_TRACKED_PROJECTILES = 256", "projectile task cap");

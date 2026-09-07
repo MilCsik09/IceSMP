@@ -89,8 +89,11 @@ public final class TrashProductionHardeningRegressionSuite {
                 "Anomaly hot runtime gained a global world/entity scan");
 
         final String relic = source("TrashRelicRuntime.java");
-        require(relic, "MAX_FIELDS_PER_WORLD = 32", "temporary field world cap");
-        require(relic, "MAX_FIELDS_GLOBAL = 128", "temporary field global cap");
+        final String fields = source("TrashRuleFieldService.java");
+        require(fields, "MAX_FIELDS_PER_WORLD = 32", "temporary field world cap");
+        require(fields, "MAX_FIELDS_GLOBAL = 128", "temporary field global cap");
+        require(relic, "ruleFields.claim(point(location), kind)", "native wall claim shares field authority");
+        check(!relic.contains("record RuleField") && !fields.contains("org.bukkit"), "parallel field authority or live field handle");
         require(relic, "MAX_NEARBY_ENTITIES = 24", "Relic candidate scan cap");
         check(!relic.contains("Bukkit.getWorlds()")
                         && !relic.contains("getWorld().getEntities()"),
