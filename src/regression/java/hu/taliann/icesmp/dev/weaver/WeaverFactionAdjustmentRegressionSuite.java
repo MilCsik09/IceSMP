@@ -5,6 +5,7 @@ import hu.taliann.icesmp.playerprofile.application.*;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore.*;
 import hu.taliann.icesmp.playerprofile.domain.*;
 import hu.taliann.icesmp.playerprofile.domain.section.FactionSection;
+import hu.taliann.icesmp.playerprofile.domain.section.OperationSection;
 import hu.taliann.icesmp.playerprofile.persistence.YamlPlayerProfileRepository;
 import hu.taliann.icesmp.playerprofile.transaction.YamlPlayerProfileTransactionManager;
 import hu.taliann.icesmp.security.HiddenDevAuthority;
@@ -24,6 +25,7 @@ public final class WeaverFactionAdjustmentRegressionSuite {
     public static void main(String[] args) throws Exception {
         admissionAndHistory();
         revisionAndConcurrentWriters();
+        outboxRetentionAndDrift();
         walBoundary(false);
         walBoundary(true);
         System.out.println("Faction adjustment passed: " + assertions + " assertions; real profile WAL, final authority admission, exact revision/ABA, compensating history, concurrent CAS and observed restart recovery.");
@@ -54,18 +56,28 @@ public final class WeaverFactionAdjustmentRegressionSuite {
             check(!red.replayed() && red.after().state().membership().orElseThrow() == FactionType.RED, "canonical assignment failed");
             check(red.after().sectionRevision() == initial.faction().revision() + 1, "section did not advance exactly once");
             check(h.profile().operations().value().operations().get(denied.receiptId()).fingerprint().equals(denied.fingerprint()), "canonical operation receipt missing");
+            check(h.factions.pendingAdjustmentEffects(PLAYER).equals(List.of(denied)), "adjustment outbox was not atomic with membership");
+            check(!h.factions.adjustmentEffectsCompleted(PLAYER, denied), "new profile commit fabricated domain cleanup");
             token.revoke(); final var acceptedDisk = bytes(root);
             check(h.finish(h.factions.adjustMembership(PLAYER, denied, token::requireValid)).replayed(), "accepted receipt replay reran admission");
             check(bytes(root).equals(acceptedDisk), "accepted replay rewrote history");
             final var collision = new MembershipAdjustment(denied.operationId(), denied.expectedRevision(), denied.expectedMembership(), Optional.of(FactionType.BLUE), denied.occurredAt());
             check(h.failure(h.factions.adjustMembership(PLAYER, collision)) instanceof AdjustmentRejected, "operation identity collision accepted");
-            final var dark = h.request(FactionType.DARK);
+            check(bytes(root).equals(acceptedDisk), "rejected collision mutated state");
+            final var blocked = h.request(FactionType.BLUE);
+            check(h.failure(h.factions.adjustMembership(PLAYER, blocked)) instanceof AdjustmentRejected r && r.code().equals("FACTION_EFFECTS_PENDING"), "pending cleanup allowed overlapping adjustment");
+            check(h.finish(h.factions.completeAdjustmentEffects(PLAYER, denied)), "domain effect acknowledgement failed");
+            check(!h.finish(h.factions.completeAdjustmentEffects(PLAYER, denied)), "duplicate completion wrote another acknowledgement");
+            check(h.factions.pendingAdjustmentEffects(PLAYER).isEmpty() && h.factions.adjustmentEffectsCompleted(PLAYER, denied), "completed effects remained pending");
+            final var dark = h.request(FactionType.DARK); final var beforeDark = bytes(root);
             check(h.failure(h.factions.adjustMembership(PLAYER, dark)) instanceof AdjustmentRejected r && r.code().equals("DARK_OATH_REQUIRED"), "DARK bypassed exile/oath");
-            check(bytes(root).equals(acceptedDisk), "rejected collision/oath mutated state");
+            check(bytes(root).equals(beforeDark), "rejected oath mutated state");
             final var blue = h.request(FactionType.BLUE);
             h.finish(h.factions.adjustMembership(PLAYER, blue));
+            h.finish(h.factions.completeAdjustmentEffects(PLAYER, blue));
             final var compensate = h.request(FactionType.RED);
             h.finish(h.factions.adjustMembership(PLAYER, compensate));
+            h.finish(h.factions.completeAdjustmentEffects(PLAYER, compensate));
             check(h.factions.readCached(PLAYER).history().equals(List.of(FactionType.RED, FactionType.BLUE, FactionType.RED)), "compensating adjustment erased logical history");
             check(h.profile().operations().value().operations().containsKey(blue.receiptId()), "compensation removed original receipt");
             check(h.factions.observeAdjustment(PLAYER, blue) == AdjustmentObservation.CONFLICT, "compensated state still observed as original current state");
@@ -76,6 +88,8 @@ public final class WeaverFactionAdjustmentRegressionSuite {
             check(h.factions.readCached(PLAYER).lastChosen().equals(beforeRemove.lastChosen()) && h.factions.readCached(PLAYER).everChosen(), "removal reset historical membership identity");
             h.repository.invalidate(PLAYER); h.finish(h.repository.loadSnapshot(PLAYER));
             check(h.factions.observeAdjustment(PLAYER, remove) == AdjustmentObservation.APPLIED, "restart could not observe canonical removal");
+            check(h.factions.pendingAdjustmentEffects(PLAYER).equals(List.of(remove)), "restart lost pending domain effects");
+            h.finish(h.factions.completeAdjustmentEffects(PLAYER, remove));
             final var sins = new PlayerProfileSinStore();
             h.finish(sins.add(PLAYER, 4, 4)); h.finish(sins.sealDarkPact(PLAYER));
             final var factionBeforeDark = h.profile().faction().value();
@@ -108,6 +122,7 @@ public final class WeaverFactionAdjustmentRegressionSuite {
             check(h.factions.observeAdjustment(PLAYER, first) == AdjustmentObservation.APPLIED
                     && h.factions.observeAdjustment(PLAYER, second) == AdjustmentObservation.CONFLICT, "concurrent loser overwrote winner");
             check(!h.profile().operations().value().operations().containsKey(second.receiptId()), "loser received a receipt");
+            h.finish(h.factions.completeAdjustmentEffects(PLAYER, first));
             final var denied = h.request(FactionType.RED); final var before = bytes(root);
             check(h.failure(h.factions.adjustMembership(PLAYER, denied, () -> { throw new LinkageError("fixture unavailable"); })) instanceof LinkageError,
                     "failing admission did not fail closed");
@@ -135,10 +150,48 @@ public final class WeaverFactionAdjustmentRegressionSuite {
             check(recovered.factions.observeAdjustment(PLAYER, request) == (afterManifest ? AdjustmentObservation.APPLIED : AdjustmentObservation.BEFORE), "WAL observed state mismatch");
             check(recovered.factions.readCached(PLAYER).membership().equals(afterManifest ? Optional.of(FactionType.RED) : Optional.empty()), "WAL recovered mixed membership");
             check(recovered.profile().operations().value().operations().containsKey(request.receiptId()) == afterManifest, "WAL recovered a ghost or lost receipt");
+            check(recovered.factions.pendingAdjustmentEffects(PLAYER).equals(afterManifest ? List.of(request) : List.of()), "WAL lost or invented domain effects");
             final var disk = bytes(root);
             if (afterManifest) check(recovered.finish(recovered.factions.adjustMembership(PLAYER, request, () -> { throw new AssertionError("replay called admission"); })).replayed(), "accepted WAL replay was not idempotent");
             check(bytes(root).equals(disk), "observation/replay changed durable state");
         } finally { delete(root); }
+    }
+
+    private static void outboxRetentionAndDrift() throws Exception {
+        final Path root = Files.createTempDirectory("weaver-faction-outbox-");
+        try (final Harness h = new Harness(root, YamlPlayerProfileRepository.FaultInjector.none())) {
+            final var request = h.request(FactionType.RED);
+            h.finish(h.factions.adjustMembership(PLAYER, request));
+            h.finish(h.authority.mutateSection(PLAYER, ProfileSectionId.OPERATIONS, OperationSection.class, current -> {
+                final Map<String, PlayerProfileOperation> ledger = new LinkedHashMap<>(current.operations());
+                final Instant now = Instant.now();
+                for (int i = 0; i < 511; i++) {
+                    final String id = "fixture-pending-" + i;
+                    ledger.put(id, new PlayerProfileOperation(id, "fixture", PlayerProfileOperation.Status.PREPARED, id, now, now, Map.of()));
+                }
+                return new OperationSection(ledger, current.extensions());
+            }));
+            final var operations = new PlayerProfileOperationStore(); final var before = bytes(root);
+            check(h.failure(operations.prepare(PLAYER, "fixture-513", "fixture", "fixture-513", Map.of()))
+                    instanceof hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager.LedgerSaturated,
+                    "operation store evicted a committed pending domain outbox");
+            check(bytes(root).equals(before) && h.factions.pendingAdjustmentEffects(PLAYER).equals(List.of(request)), "saturation lost pending evidence");
+            h.finish(h.factions.completeAdjustmentEffects(PLAYER, request));
+            h.finish(operations.prepare(PLAYER, "fixture-513", "fixture", "fixture-513", Map.of()));
+            check(h.profile().operations().value().operations().size() == 512
+                    && !h.profile().operations().value().operations().containsKey(request.receiptId()), "completed outbox did not release bounded retention slot");
+            check(h.factions.observeAdjustment(PLAYER, request) == AdjustmentObservation.CONFLICT, "evicted identity was guessed as applied");
+            final var badState = new PlayerProfileOperation("fixture-unknown", "fixture", PlayerProfileOperation.Status.COMMITTED, "unknown", Instant.EPOCH, Instant.EPOCH, Map.of("effects-state", "future-state"));
+            check(badState.requiresReconciliation(), "unknown effect state was evictable");
+        } finally { delete(root); }
+        final Path driftRoot = Files.createTempDirectory("weaver-faction-outbox-drift-");
+        try (final Harness h = new Harness(driftRoot, YamlPlayerProfileRepository.FaultInjector.none())) {
+            final var request = h.request(FactionType.RED); h.finish(h.factions.adjustMembership(PLAYER, request));
+            h.finish(h.factions.assign(PLAYER, FactionType.BLUE));
+            final var before = bytes(driftRoot);
+            check(h.failure(h.factions.completeAdjustmentEffects(PLAYER, request)) instanceof AdjustmentRejected, "cleanup acknowledgement ignored external membership drift");
+            check(bytes(driftRoot).equals(before) && h.factions.pendingAdjustmentEffects(PLAYER).equals(List.of(request)), "drift discarded unfinished outbox");
+        } finally { delete(driftRoot); }
     }
 
     private static final class Harness implements AutoCloseable {

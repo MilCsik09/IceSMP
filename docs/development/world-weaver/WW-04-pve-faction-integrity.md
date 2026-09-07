@@ -400,3 +400,46 @@ suites pass. Four architecture tests, authority guard/self-test (669 findings, z
 unknown/stale/invalid/transition), coverage (311 authorities, 55 domains, 51 blockers,
 zero audit errors) and consistency (zero FAIL/WARN) pass. New regression is a normal
 Gradle check dependency. Exact new-head CI remains required after publication.
+
+## Faction adjustment outbox retention checkpoint
+
+Base: `099b00fa6cf1bf6e72824f775adc776255fcbafc`, same WW-04 #158 branch.
+The canonical adjustment receipt now carries bounded, versioned domain-effect
+metadata in the existing operation ledger. Membership, logical history, operation
+identity and pending-effect intent commit atomically. Typed reconstruction verifies
+request identity/fingerprint; an acknowledgement changes only operation metadata,
+uses the profile CAS and requires the exact applied faction revision. It never
+rewrites membership. Duplicate acknowledgement is a no-op; external drift is
+CONFLICT and keeps pending evidence. Further explicit adjustments refuse while an
+older domain cleanup remains unresolved.
+
+Both existing ledger writers now preserve PREPARED receipts and committed receipts
+with unfinished effects. Unknown effect states also remain pinned. At 512 unfinished
+receipts the next transaction/prepare fails before any effect; completing an outbox
+makes its bounded slot evictable. An evicted receipt is never guessed as evidence of
+application. Existing transaction constructors still produce the same empty metadata
+and trusted admission behavior. This is a canonical operation outbox, not a second
+membership or WorldWeaver authority.
+
+The faction adjustment suite now passes 113 assertions, adding atomic outbox/restart
+reconstruction, pending overlap refusal, idempotent acknowledgement, both operation
+ledger retention paths, unknown state pinning and completion drift. Existing profile
+transaction regression passes 50 assertions, including 512 committed pending-effect
+receipts as well as 512 PREPARED receipts. All 58 Weaver/Faction/PlayerProfile suites
+pass. Full Java 21 compile, four architecture tests, authority guard/self-test (669,
+zero unknown/stale/invalid/transition), coverage (311 authorities, 55 domains, 51
+blockers, zero errors) and consistency (zero FAIL/WARN) pass.
+
+Exact prior head `099b00fa6cf1bf6e72824f775adc776255fcbafc` CI: run `34086019371`;
+Paper `101630098491` and Folia `101630098628` succeeded. Verification `101630098639`
+compiled and passed the 77-assertion adjustment test; sole failed task remains inherited
+`trashSpriteAssetAudit`. Resource pack `34086019406` and Trash `34086019331` succeeded;
+docs `34086019349` were still running when observed. New-head and populated native
+operation evidence remain required.
+
+The native post-commit integration is still being completed. Review identified
+membership-bound guild/vote/raid admission races, Council save error suppression and
+Whisperer cleanup performing a second asynchronous faction revision. Those routes
+must be corrected and acknowledged before the provider exposes canonical membership.
+The new outbox supplies durable evidence for that work; it does not claim the native
+cleanup already runs. Artifact issuance and gameplay admission remain disabled.

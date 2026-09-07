@@ -5001,21 +5001,24 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java",
       "domain": "faction",
-      "source_sha256": "26485e54ed2d7376eb8a121138ba83e0c4433e96159ab4f4f7c95d44ea499538",
+      "source_sha256": "58c310568bbaccf8109dce90d73eeece92ec2590bba61b54243bb84ac9a7417d",
       "public_methods": [
         "AdjustmentResult",
         "MembershipAdjustment",
         "MembershipView",
         "State",
         "adjustMembership",
+        "adjustmentEffectsCompleted",
         "assign",
         "code",
+        "completeAdjustmentEffects",
         "fingerprint",
         "joinDark",
         "lastPaidSwitchAt",
         "load",
         "membershipView",
         "observeAdjustment",
+        "pendingAdjustmentEffects",
         "readCached",
         "receiptId",
         "recordSeasonSwitch",
@@ -5074,7 +5077,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileOperationStore.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "271c988ce31745f3dc954f203be7c7fba0de9b2a1757ebb9254fdac633a6b792",
+      "source_sha256": "a2c41a8c93384de2efa0fad0d798d4f45ce527dbd5a857ac684e5f5dbf8f1413",
       "public_methods": [
         "byTypeAndStatus",
         "commit",
@@ -5360,7 +5363,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionManager.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "5e40294499dd030e56c1b50c6798eb92a525595e20e5ee6659516c235936b853",
+      "source_sha256": "a6c60838efa59eaa32ece1fddb26abefca1a21a6fa42731aeac9432bcee02cd8",
       "public_methods": [
         "LedgerSaturated",
         "TransactionPlan"
@@ -5369,7 +5372,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/transaction/YamlPlayerProfileTransactionManager.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "6b83ea0c2b923348d790dbd835e5d961d1b6b1829c2e0daa0435845db52117e6",
+      "source_sha256": "5278bb5f49a9628c9a574acf7555e94aa3f7e846455990373528971aab9f7d43",
       "public_methods": [
         "execute"
       ]

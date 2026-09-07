@@ -7,6 +7,7 @@ import hu.taliann.icesmp.playerprofile.domain.PlayerProfileOperation;
 import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSnapshot;
 import hu.taliann.icesmp.playerprofile.domain.section.EconomySection;
 import hu.taliann.icesmp.playerprofile.domain.section.FactionSection;
+import hu.taliann.icesmp.playerprofile.domain.section.OperationSection;
 import hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager;
 
 import java.util.ArrayList;
@@ -116,6 +117,46 @@ public final class PlayerProfileFactionStore {
         return observeAdjustment(PlayerProfileAuthority.current().requireCached(playerId), adjustment);
     }
 
+    public List<MembershipAdjustment> pendingAdjustmentEffects(final UUID playerId) {
+        final PlayerProfileSnapshot snapshot = PlayerProfileAuthority.current().requireCached(playerId);
+        membershipView(snapshot);
+        return snapshot.operations().value().operations().values().stream()
+                .filter(receipt -> receipt.type().equals("faction-membership-adjustment") && receipt.requiresReconciliation())
+                .sorted(java.util.Comparator.comparing(PlayerProfileOperation::createdAt))
+                .map(PlayerProfileFactionStore::adjustmentFromReceipt).toList();
+    }
+
+    public boolean adjustmentEffectsCompleted(final UUID playerId, final MembershipAdjustment adjustment) {
+        final PlayerProfileSnapshot snapshot = PlayerProfileAuthority.current().requireCached(playerId);
+        return observeAdjustment(snapshot, adjustment) == AdjustmentObservation.APPLIED
+                && "completed".equals(snapshot.operations().value().operations().get(adjustment.receiptId()).metadata().get("effects-state"));
+    }
+
+    /** Called only after the canonical domain consumers have durably acknowledged their cleanup. */
+    public CompletionStage<Boolean> completeAdjustmentEffects(final UUID playerId,
+                                                              final MembershipAdjustment adjustment) {
+        final PlayerProfileAuthority authority = PlayerProfileAuthority.current();
+        return authority.mutateSectionConditional(playerId, ProfileSectionId.OPERATIONS,
+                OperationSection.class, operations -> {
+                    final PlayerProfileSnapshot current = authority.requireCached(playerId);
+                    if (!current.operations().value().equals(operations)
+                            || observeAdjustment(current, adjustment) != AdjustmentObservation.APPLIED) {
+                        throw new AdjustmentRejected("CONFLICT");
+                    }
+                    final PlayerProfileOperation receipt = operations.operations().get(adjustment.receiptId());
+                    adjustmentFromReceipt(receipt);
+                    if ("completed".equals(receipt.metadata().get("effects-state"))) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    final Map<String, String> metadata = new LinkedHashMap<>(receipt.metadata());
+                    metadata.put("effects-state", "completed");
+                    final Map<String, PlayerProfileOperation> next = new LinkedHashMap<>(operations.operations());
+                    next.put(receipt.operationId(), new PlayerProfileOperation(receipt.operationId(), receipt.type(), receipt.status(),
+                            receipt.fingerprint(), receipt.createdAt(), java.time.Instant.now(), metadata));
+                    return PlayerProfileService.ConditionalMutation.changed(new OperationSection(next, operations.extensions()), true);
+                });
+    }
+
     /** Membership, append-only logical history and operation identity share the canonical profile WAL. */
     public CompletionStage<AdjustmentResult> adjustMembership(final UUID playerId,
                                                              final MembershipAdjustment adjustment) {
@@ -136,6 +177,10 @@ public final class PlayerProfileFactionStore {
                 // The transaction manager verifies the existing receipt before considering any update.
                 return adjustmentPlan(adjustment, snapshot.faction().revision(), current,
                         new AdjustmentResult(membershipView(snapshot), true), commitAdmission);
+            }
+            if (snapshot.operations().value().operations().values().stream().anyMatch(receipt ->
+                    receipt.type().equals("faction-membership-adjustment") && receipt.requiresReconciliation())) {
+                throw new AdjustmentRejected("FACTION_EFFECTS_PENDING");
             }
             if (adjustment.target().orElse(null) == FactionType.DARK
                     && (!Boolean.TRUE.equals(current.extensions().get("sin.exiled"))
@@ -161,7 +206,37 @@ public final class PlayerProfileFactionStore {
             final AdjustmentResult result, final Runnable commitAdmission) {
         return new PlayerProfileTransactionManager.TransactionPlan<>(adjustment.receiptId(),
                 "faction-membership-adjustment", adjustment.fingerprint(),
-                List.of(new PlayerProfileTransactionManager.SectionUpdate(ProfileSectionId.FACTION, revision, next)), result, commitAdmission);
+                List.of(new PlayerProfileTransactionManager.SectionUpdate(ProfileSectionId.FACTION, revision, next)), result, commitAdmission,
+                Map.of("effects-schema", "1", "effects-state", "pending", "adjustment-id", adjustment.operationId().toString(),
+                        "expected-revision", Long.toString(adjustment.expectedRevision()),
+                        "expected-membership", adjustment.expectedMembership().map(Enum::name).orElse("GUEST"),
+                        "target-membership", adjustment.target().map(Enum::name).orElse("GUEST"),
+                        "occurred-at", Long.toString(adjustment.occurredAt())));
+    }
+
+    private static MembershipAdjustment adjustmentFromReceipt(final PlayerProfileOperation receipt) {
+        try {
+            final Map<String, String> metadata = receipt.metadata();
+            if (receipt.status() != PlayerProfileOperation.Status.COMMITTED
+                    || !receipt.type().equals("faction-membership-adjustment")
+                    || !"1".equals(metadata.get("effects-schema"))
+                    || !java.util.Set.of("pending", "completed").contains(metadata.get("effects-state"))) {
+                throw new AdjustmentRejected("FACTION_EFFECTS_UNAVAILABLE");
+            }
+            final var adjustment = new MembershipAdjustment(UUID.fromString(metadata.get("adjustment-id")),
+                    Long.parseLong(metadata.get("expected-revision")), membershipId(metadata.get("expected-membership")),
+                    membershipId(metadata.get("target-membership")), Long.parseLong(metadata.get("occurred-at")));
+            if (!adjustment.receiptId().equals(receipt.operationId()) || !adjustment.fingerprint().equals(receipt.fingerprint())) {
+                throw new AdjustmentRejected("FACTION_EFFECTS_UNAVAILABLE");
+            }
+            return adjustment;
+        } catch (final IllegalArgumentException | NullPointerException malformed) {
+            throw new AdjustmentRejected("FACTION_EFFECTS_UNAVAILABLE");
+        }
+    }
+
+    private static Optional<FactionType> membershipId(final String id) {
+        return "GUEST".equals(id) ? Optional.empty() : Optional.of(FactionType.valueOf(id));
     }
 
     private static MembershipView membershipView(final PlayerProfileSnapshot snapshot) {

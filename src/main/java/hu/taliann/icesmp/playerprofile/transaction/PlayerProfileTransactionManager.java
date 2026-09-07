@@ -7,9 +7,9 @@ import java.util.concurrent.CompletionStage;
 public interface PlayerProfileTransactionManager {
     <T> CompletionStage<T> execute(UUID playerId, ProfileTransactionWork<T> transaction);
 
-    /** Clean fail-before-mutation signal when every bounded operation-ledger slot is still PREPARED. */
+    /** Clean fail-before-mutation signal when every operation-ledger slot needs reconciliation. */
     final class LedgerSaturated extends IllegalStateException {
-        public LedgerSaturated() { super("player profile operation ledger saturated by PREPARED receipts"); }
+        public LedgerSaturated() { super("player profile operation ledger saturated by unfinished receipts"); }
     }
 
     @FunctionalInterface interface ProfileTransactionWork<T>{TransactionPlan<T> prepare(PlayerProfileSnapshot snapshot);}
@@ -18,11 +18,14 @@ public interface PlayerProfileTransactionManager {
     }
     /** Admission is a non-blocking, thread-safe check under final storage CAS, never a world callback. */
     record TransactionPlan<T>(String operationId,String type,String fingerprint,List<SectionUpdate> updates,T result,
-                              Runnable commitAdmission){
+                              Runnable commitAdmission,Map<String,String> operationMetadata){
         public TransactionPlan(String operationId,String type,String fingerprint,List<SectionUpdate> updates,T result){
-            this(operationId,type,fingerprint,updates,result,()->{});
+            this(operationId,type,fingerprint,updates,result,()->{},Map.of());
         }
-        public TransactionPlan{operationId=require(operationId,"operationId");type=require(type,"type");fingerprint=require(fingerprint,"fingerprint");updates=List.copyOf(updates);Objects.requireNonNull(commitAdmission,"commitAdmission");if(updates.isEmpty())throw new IllegalArgumentException("transaction requires updates");Set<ProfileSectionId> seen=EnumSet.noneOf(ProfileSectionId.class);for(SectionUpdate u:updates)if(!seen.add(u.section()))throw new IllegalArgumentException("duplicate section update");}
+        public TransactionPlan(String operationId,String type,String fingerprint,List<SectionUpdate> updates,T result,Runnable commitAdmission){
+            this(operationId,type,fingerprint,updates,result,commitAdmission,Map.of());
+        }
+        public TransactionPlan{operationId=require(operationId,"operationId");type=require(type,"type");fingerprint=require(fingerprint,"fingerprint");updates=List.copyOf(updates);Objects.requireNonNull(commitAdmission,"commitAdmission");operationMetadata=ImmutableValues.strings(operationMetadata,64);if(updates.isEmpty())throw new IllegalArgumentException("transaction requires updates");Set<ProfileSectionId> seen=EnumSet.noneOf(ProfileSectionId.class);for(SectionUpdate u:updates)if(!seen.add(u.section()))throw new IllegalArgumentException("duplicate section update");}
         private static String require(String v,String n){if(v==null||v.isBlank())throw new IllegalArgumentException(n+" cannot be blank");return v.trim();}
     }
 }

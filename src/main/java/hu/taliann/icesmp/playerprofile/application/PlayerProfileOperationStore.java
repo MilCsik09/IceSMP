@@ -166,8 +166,7 @@ public final class PlayerProfileOperationStore {
         }
         final ArrayList<PlayerProfileOperation> terminal = new ArrayList<>(
                 operations.values().stream()
-                        .filter(operation -> operation.status()
-                                != PlayerProfileOperation.Status.PREPARED)
+                        .filter(operation -> !operation.requiresReconciliation())
                         .toList());
         terminal.sort(Comparator.comparing(PlayerProfileOperation::updatedAt));
         if (terminal.isEmpty()) {

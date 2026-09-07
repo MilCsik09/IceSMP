@@ -22,7 +22,8 @@ public final class PlayerProfileTransactionRegressionSuite {
         crossSectionCommitAndIdempotency();
         invalidPlansAndStaleRevision();
         parallelSectionCas();
-        preparedLedgerSaturationFailsBeforeMutation();
+        preparedLedgerSaturationFailsBeforeMutation(false);
+        preparedLedgerSaturationFailsBeforeMutation(true);
         crashBeforeManifestRollsBack();
         crashAfterManifestFinalizes();
         System.out.println("PlayerProfile transaction regression suite passed. assertions=" + assertions);
@@ -136,7 +137,7 @@ public final class PlayerProfileTransactionRegressionSuite {
         }
     }
 
-    private static void preparedLedgerSaturationFailsBeforeMutation() throws Exception {
+    private static void preparedLedgerSaturationFailsBeforeMutation(boolean pendingEffects) throws Exception {
         Path root = Files.createTempDirectory("pp-tx-ledger-saturated-");
         YamlPlayerProfileRepository repo = repository(root, YamlPlayerProfileRepository.FaultInjector.none());
         try {
@@ -145,8 +146,8 @@ public final class PlayerProfileTransactionRegressionSuite {
             for (int i = 0; i < 512; i++) {
                 String id = "prepared-" + i;
                 receipts.put(id, new PlayerProfileOperation(id, "regression",
-                        PlayerProfileOperation.Status.PREPARED, "fp-" + i,
-                        NOW, NOW, Map.of()));
+                        pendingEffects ? PlayerProfileOperation.Status.COMMITTED : PlayerProfileOperation.Status.PREPARED, "fp-" + i,
+                        NOW, NOW, pendingEffects ? Map.of("effects-state", "pending") : Map.of()));
             }
             OperationSection saturated = new OperationSection(receipts,
                     initial.operations().value().extensions());
@@ -157,7 +158,7 @@ public final class PlayerProfileTransactionRegressionSuite {
             check(join(repo.saveSection(PLAYER, ProfileSectionId.OPERATIONS,
                             initial.operations().revision(), saturatedSnapshot)).status()
                             == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED,
-                    "512 PREPARED receipts form a valid bounded profile");
+                    "512 unfinished receipts form a valid bounded profile");
 
             YamlPlayerProfileTransactionManager tx = new YamlPlayerProfileTransactionManager(repo, CLOCK);
             PlayerProfileSnapshot beforeRejected = join(repo.load(PLAYER));
@@ -176,7 +177,7 @@ public final class PlayerProfileTransactionRegressionSuite {
             PlayerProfileOperation first = recoveredReceipts.get("prepared-0");
             recoveredReceipts.put("prepared-0", new PlayerProfileOperation(first.operationId(),
                     first.type(), PlayerProfileOperation.Status.COMMITTED, first.fingerprint(),
-                    first.createdAt(), NOW.plusSeconds(1), first.metadata()));
+                    first.createdAt(), NOW.plusSeconds(1), pendingEffects ? Map.of("effects-state", "completed") : first.metadata()));
             OperationSection recovered = new OperationSection(recoveredReceipts,
                     afterRejected.operations().value().extensions());
             ProfileSectionSnapshot<OperationSection> recoveredSnapshot = new ProfileSectionSnapshot<>(
