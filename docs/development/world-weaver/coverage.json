@@ -1330,6 +1330,21 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/data/Territory.java",
+      "domain": "territory",
+      "public_methods": [
+        "Territory",
+        "capital",
+        "contains",
+        "equals",
+        "hasYBounds",
+        "hashCode",
+        "isPolygon",
+        "polygon"
+      ],
+      "source_sha256": "ee25c4011403e47ddcc40a719b8a494872493dbe38666609086d3716da4d0d56"
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java",
       "domain": "class",
       "source_sha256": "9d17f712d1ccf0a86a37220680e0ba6089d698e9fa46d8ca5f05004f5f674035",
@@ -4703,10 +4718,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java",
       "domain": "territory",
-      "source_sha256": "03329c6152fbaf0f5c86f8de47b0ea5e7f6cece227b96f694f51f03f1ccaf850",
+      "source_sha256": "99b2a1da53233791696bcaa318a0be732698cb43fadb3b7a9c403408fe6a3742",
       "public_methods": [
         "FactionSpawn",
+        "TerritoryManager",
         "addPoint",
+        "adjustConditionally",
+        "adjustmentReceipt",
+        "adjustmentStateAvailable",
         "all",
         "clearPlayerState",
         "clearPoints",
@@ -6213,6 +6232,31 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustment.java",
+      "domain": "territory",
+      "public_methods": [
+        "apply"
+      ],
+      "source_sha256": "74386ab9f51bd37de4c8853d856f3850716f85b766eeab41f38dd3d35ad0b7d7"
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentReceipt.java",
+      "domain": "territory",
+      "public_methods": [
+        "TerritoryAdjustmentReceipt"
+      ],
+      "source_sha256": "cb0a24bc84d12cea0dd451020ca3dfdffdf2830ea720a1b40ba9e9b2c3e6f482"
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentResult.java",
+      "domain": "territory",
+      "public_methods": [
+        "TerritoryAdjustmentResult",
+        "rejected"
+      ],
+      "source_sha256": "8e51b06e2e31b938d58a7d9261f0047126e918bba01d9a407f57ef5fa5dd2587"
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryProtectionPolicy.java",
       "domain": "territory",
       "source_sha256": "a1626a9b49615aaa4a36b00ab90aafc3efe1f1fb640ca83cb064434dadc9aa7c",
@@ -6223,6 +6267,14 @@
         "deniesRegeneration",
         "evaluate"
       ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryRevision.java",
+      "domain": "territory",
+      "public_methods": [
+        "fingerprint"
+      ],
+      "source_sha256": "bbd93bb61a55e56ba75d418b97d74558811ecbf355db36baf087d0d4ef09fc7d"
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
@@ -6690,6 +6742,7 @@
     "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionMutationStoreAdapter.java",
     "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionRepository.java",
     "src/main/java/hu/taliann/icesmp/classspec/persistence/PlayerProfileClassSpecSectionRepository.java",
+    "src/main/java/hu/taliann/icesmp/data/Territory.java",
     "src/main/java/hu/taliann/icesmp/dev/artifact/BingulusRewardBehavior.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
@@ -6735,6 +6788,10 @@
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustment.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentReceipt.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentResult.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryRevision.java",
     "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
