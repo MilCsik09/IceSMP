@@ -99,7 +99,7 @@ public final class WorldWeaverKernel {
             if (snapshot.ref() instanceof AreaRef area && (current.descriptor().areaSupport() == AreaSupport.ENTITY_FANOUT || current.descriptor().areaSupport() == AreaSupport.BLOCK_FANOUT)) {
                 return areas.collect(authority, area, current.descriptor()).thenApply(collection -> new ActionCapture(collection.decorate(snapshot), Optional.of(collection)));
             }
-            return java.util.concurrent.CompletableFuture.completedFuture(new ActionCapture(snapshot, Optional.empty()));
+            return java.util.concurrent.CompletableFuture.completedFuture(new ActionCapture(current.descriptor().revisionScope().apply(snapshot), Optional.empty()));
         }).whenComplete((captured, failure) -> access.artifact().onOwner(player -> {
             if (!valid(access) || !sessions.matches(access.artifact().owner(), access.session().id(), request)) return;
             try {

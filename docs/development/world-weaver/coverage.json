@@ -1328,7 +1328,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
       "domain": "developer_self",
-      "source_sha256": "4c312e18be8c56489036d583f1e2189f559682b0869e8c6a21f7ff61c3dc95bd",
+      "source_sha256": "042ac6b951fdb5713510fb4df811ed1965b0cecf2210ac43d65579deea6928b3",
       "public_methods": [
         "WorldWeaverKernel",
         "clearPlayerState",
@@ -1447,7 +1447,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
       "domain": "developer_self",
-      "source_sha256": "e9e51c0ca10cb53feda1245b3352d4795541be961b7777ca4e13055021de03b7",
+      "source_sha256": "c5fa36b56aa4f5c6f145729e76810bcbc5651ecbe49b545956da0fc682976fe3",
       "public_methods": [
         "WeaverAreaEngine",
         "chunks",
@@ -1497,7 +1497,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "205594703ef4a257f7024254b62c08730f28ed7ddd64dfd882a4ddc3d0eb1cab",
+      "source_sha256": "c412631ad9d376b2ecd4fce178df5a608ff81fc66332025201f7fdaf44062575",
       "public_methods": [
         "WeaverRecoveryCoordinator",
         "close",

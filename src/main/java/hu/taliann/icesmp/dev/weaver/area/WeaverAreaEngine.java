@@ -51,7 +51,7 @@ public final class WeaverAreaEngine implements AutoCloseable {
             }
             return WeaverBoundedTasks.map(refs.stream().sorted(Comparator.comparing(SubjectKeyCodec::encode)).toList(), limits.concurrency(), ref ->
                     router.submit(SubjectRoute.owner(ref), authority.actor(), Duration.ofSeconds(5), () -> {
-                        require(authority); final SubjectSnapshot snapshot = access.snapshotOnOwner(ref);
+                        require(authority); final SubjectSnapshot snapshot = descriptor.revisionScope().apply(access.snapshotOnOwner(ref));
                         if (!snapshot.ref().equals(ref)) throw new IllegalArgumentException("AREA snapshot identity changed");
                         if (!WeaverAreaCollection.contains(area, snapshot)) return CompletableFuture.completedFuture(new TargetResult(ref, Optional.empty(), Optional.of("LEFT_AREA")));
                         return CompletableFuture.completedFuture(new TargetResult(ref, Optional.of(snapshot), Optional.empty()));
@@ -72,12 +72,12 @@ public final class WeaverAreaEngine implements AutoCloseable {
             final SubjectSnapshot before = collection.targets().get(i); final ExecutionStage stage = prepared.stages().get(i);
             if (!stage.owner().equals(SubjectRoute.owner(before.ref())) || prepared.descriptor().requiresJournal() && stage.compensate().isEmpty()) throw new IllegalArgumentException("AREA child ownership or compensation missing");
             guarded.add(new ExecutionStage(stage.id(), stage.owner(), stage.payload(), (context, payload) -> {
-                require(context.authority()); final SubjectSnapshot current = access.snapshotOnOwner(before.ref());
+                require(context.authority()); final SubjectSnapshot current = prepared.descriptor().revisionScope().apply(access.snapshotOnOwner(before.ref()));
                 if (!current.ref().equals(before.ref()) || !WeaverAreaCollection.contains(collection.area(), current)
                         || !current.revisionFingerprint().equals(before.revisionFingerprint())) throw new WeaverDomainRejection("CONFLICT");
                 return stage.apply().execute(new ExecutionContext(context.authority(), current, List.of()), payload);
             }, stage.compensate().map(compensation -> (context, payload) -> {
-                final SubjectSnapshot current = access.snapshotOnOwner(before.ref());
+                final SubjectSnapshot current = prepared.descriptor().revisionScope().apply(access.snapshotOnOwner(before.ref()));
                 if (!current.ref().equals(before.ref())) throw new WeaverDomainRejection("CONFLICT");
                 context.requireCurrentFingerprint(current.revisionFingerprint());
                 return compensation.execute(new CompensationContext(context.authority(), context.stageId(), before, context.applied()), payload);
@@ -107,7 +107,7 @@ public final class WeaverAreaEngine implements AutoCloseable {
         return WeaverBoundedTasks.map(evidence.targets(), descriptor.areaLimits().orElseThrow().concurrency(), ref ->
                 router.submit(SubjectRoute.owner(ref), context.operation().actorId(), Duration.ofSeconds(5), () -> {
                     if (closed) throw new WeaverDomainRejection("AREA_CLOSED"); context.authority().require(context.operation());
-                    final SubjectSnapshot snapshot = access.snapshotOnOwner(ref);
+                    final SubjectSnapshot snapshot = descriptor.revisionScope().apply(access.snapshotOnOwner(ref));
                     if (!snapshot.ref().equals(ref)) throw new IllegalArgumentException("AREA recovery target identity");
                     return CompletableFuture.completedFuture(snapshot);
                 })).thenApply(targets -> new WeaverAreaCollection(area, descriptor.areaSupport(), targets, evidence.skippedChunks(), evidence.skippedTargets()));

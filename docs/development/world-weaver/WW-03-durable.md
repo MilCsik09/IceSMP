@@ -298,12 +298,49 @@ and passed the Undo suite; the sole failed task was inherited `trashSpriteAssetA
 Resource-pack workflow `34071177569` succeeded. These are preceding-head clean-store
 probes, not a populated AREA acceptance result.
 
+## Action revision dependency checkpoint
+
+The native snapshot includes location, fire/freeze ticks, health and world time.
+Hashing every inspect fact for every action made unrelated movement/time changes
+invalidate confirmations and inverses. `ActionDescriptor.revisionScope` now declares
+an optional schema-versioned set of relevant fact keys. `WeaverRevisionScope` hashes
+those typed payloads and the complete stable SubjectRef deterministically, retaining
+all facts for inspection. Missing dependencies reject the action; schema/type,
+identity, item-slot revision/fingerprint and selected-field changes remain conflicts.
+The default retains the full existing fingerprint byte-for-byte. Existing receipts
+are not reinterpreted or migrated to a weaker revision rule.
+
+The generic fresh-action and recovery routes apply descriptor scopes to immutable
+owner-captured snapshots. AREA collection, child admission, compensation and recovery
+apply the same child scope before aggregating membership/revisions. No scope reads
+live Bukkit data or names a gameplay provider. Canonical transaction adapters must
+include the revisions/fingerprints required by their own domain API; declaring a
+scope cannot override a domain conflict or bypass conditional Undo. Providers must
+produce after fingerprints using the corresponding scope. Current descriptors keep
+the full default until their actual dependency choice is implemented and tested.
+
+`WeaverRevisionRegressionSuite` proves unchanged selected state survives unrelated
+movement, while selected-field drift, type/scope schema changes and different subject
+or ITEM_SLOT identity fail comparison. It also tests idempotence, retained inspect
+facts, default compatibility and a scoped receipt going through ordinary provider
+Undo and durable execution after movement, with relevant drift still rejected.
+It is a normal Gradle check dependency. Full Java 21 main/regression compilation,
+all 18 Weaver and three DEV suites (21 passed), four architecture checks, the
+650-row PlayerProfile gate, source inventory and consistency passed locally.
+
+The preceding AREA head `b8a8ff05d25cf866d481ca2a0a8d0a6c1d6bd638` has exact remote
+evidence: run `34073063138`; Paper `101593893738` and Folia `101593893813` succeeded
+with readiness/shutdown. Verification `101593893661` compiled all sources and passed
+the new AREA execution suite; only inherited `trashSpriteAssetAudit` failed.
+Resource-pack `34073063036` and Trash `34073063016` workflows succeeded. These probes
+still establish clean-store startup, not populated gameplay manipulation.
+
 ## Remaining WW-03 implementation
 - Native provider mutation/compensation and exact late-effect reconciliation evidence;
   the generic durable execution path is implemented behind the closed integrity gate.
 - Actual projection consumers and provider effect materialization; the generic registry/store foundation is implemented.
 - Provider-specific canonical compensating history and native Undo evidence; the generic durable Undo path is implemented.
-- Action-specific revision scopes: full snapshots currently conflict on unrelated movement/time changes; adapters must retain exact relevant drift checks.
+- Provider-specific revision dependencies and native mutation/Undo evidence; the generic descriptor scope route is implemented.
 - Native AREA provider effects/recovery and client evidence; bounded generic collection, guarded children, Undo and recovery routes are implemented.
 - Receipt retention protected by unresolved operation/projection/Undo references.
 - Real crash/restart/disable evidence for those integrated paths.

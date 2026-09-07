@@ -59,7 +59,7 @@ public final class WeaverRecoveryCoordinator {
                     return areas.recover(context, descriptor).thenCompose(collection -> settle(operation,
                             providers.assessRecovery(operation.providerId(), context, collection.decorate(snapshot), operation, Optional.of(collection))));
                 }
-                final RecoveryAssessment assessment = providers.assessRecovery(operation.providerId(), context, snapshot, operation);
+                final RecoveryAssessment assessment = providers.assessRecovery(operation.providerId(), context, descriptor == null ? snapshot : descriptor.revisionScope().apply(snapshot), operation);
                 return settle(operation, assessment);
             });
         } catch (final RuntimeException failure) {
