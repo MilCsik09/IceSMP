@@ -44,5 +44,6 @@ public record WeaverOperationRecord(UUID operationId, UUID actorId, String provi
         if (beforeFingerprint == null || beforeFingerprint.isBlank() || beforeFingerprint.length() > 256
                 || afterFingerprint.filter(s -> s.isBlank() || s.length() > 256).isPresent()
                 || revision < 0 || preparedAt < 0 || updatedAt < preparedAt) throw new IllegalArgumentException("Invalid durable operation bounds");
+        WeaverOperationScope.reservations(subject, beforeFingerprint, request.lifetime(), recoveryPayload);
     }
 }

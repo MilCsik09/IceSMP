@@ -377,7 +377,7 @@ public final class WorldWeaverKernel {
                         final Set<hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceTarget> targets = new HashSet<>(planned.intent().targets());
                         targets.add(hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceTarget.subject(snapshot.ref()));
                         for (final SubjectSnapshot target : captured.collection().get().targets()) if (target.ref() instanceof EntityRef || target.ref() instanceof PlayerRef) targets.add(hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceTarget.subject(target.ref()));
-                        return new hu.taliann.icesmp.dev.weaver.execution.PreparedEffects(new hu.taliann.icesmp.dev.weaver.integrity.WeaverEffectIntent(targets), planned.factory());
+                        return new hu.taliann.icesmp.dev.weaver.execution.PreparedEffects(new hu.taliann.icesmp.dev.weaver.integrity.WeaverEffectIntent(targets), planned.factory(), planned.projectionReservations());
                     })) : Optional.empty();
             providers.observeExecution(owner, execution.execute(owner, context, snapshot, request, prepared, effects, claim, () -> {
                 authorize(access);

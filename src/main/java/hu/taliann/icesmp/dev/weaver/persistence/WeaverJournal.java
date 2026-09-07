@@ -51,6 +51,7 @@ public final class WeaverJournal {
         if (prepared.status() != OperationStatus.PREPARED || prepared.revision() != 0) return CompletableFuture.failedFuture(new WeaverDomainRejection("INVALID_PREPARED_RECORD"));
         return submit(true, () -> {
             if (state.operations().containsKey(prepared.operationId()) || audit.values().stream().anyMatch(entry -> entry.operationId().equals(prepared.operationId()))) throw new WeaverDomainRejection("DUPLICATE_OPERATION");
+            final var effectiveIntent = WeaverOperationScope.intent(prepared, intent);
             final Set<UUID> protectedHistory = new HashSet<>();
             prepared.undoClaim().ifPresent(claim -> { final WeaverReceipt original = state.receipts().get(claim.receiptId()); if (original != null) protectedHistory.add(original.operationId()); });
             WeaverJournalState admitted = WeaverJournalRetention.trim(state, System.currentTimeMillis(), WeaverJournalState.MAX_RECEIPTS - 1, WeaverJournalState.MAX_OPERATIONS - 1, protectedHistory);
@@ -59,17 +60,22 @@ public final class WeaverJournal {
                 throw new WeaverDomainRejection("JOURNAL_CAPACITY");
             }
             final long reservedInfluences = admitted.intents().values().stream().mapToLong(value -> value.targets().size()).sum();
-            if (admitted.influences().size() + reservedInfluences + intent.targets().size() + 1 > WeaverJournalState.MAX_INFLUENCES) throw new WeaverDomainRejection("INFLUENCE_CAPACITY");
+            if (admitted.influences().size() + reservedInfluences + effectiveIntent.targets().size() > WeaverJournalState.MAX_INFLUENCES) throw new WeaverDomainRejection("INFLUENCE_CAPACITY");
             if (prepared.request().lifetime() != Lifetime.ONE_SHOT) {
-                final var pending = state.operations().values().stream().filter(operation -> operation.status() == OperationStatus.PREPARED && operation.request().lifetime() != Lifetime.ONE_SHOT).toList();
-                final long subjectCount = state.projections().values().stream().filter(projection -> projection.subject().equals(prepared.subject())).count()
-                        + pending.stream().filter(operation -> operation.subject().equals(prepared.subject())).count();
+                final var requested = WeaverOperationScope.reservations(prepared);
+                final var pending = state.operations().values().stream().filter(operation -> (operation.status() == OperationStatus.PREPARED
+                        || operation.status() == OperationStatus.NEEDS_REVIEW && operation.receipt().isEmpty()) && operation.request().lifetime() != Lifetime.ONE_SHOT).toList();
+                final Map<hu.taliann.icesmp.dev.weaver.subject.SubjectRef, Integer> subjectCounts = new HashMap<>();
+                state.projections().values().forEach(projection -> subjectCounts.merge(projection.subject(), 1, Integer::sum));
+                pending.forEach(operation -> WeaverOperationScope.reservations(operation).forEach((ref, count) -> subjectCounts.merge(ref, count, Integer::sum)));
                 final long lifetimeCount = state.projections().values().stream().filter(projection -> projection.lifetime() == prepared.request().lifetime()).count()
-                        + pending.stream().filter(operation -> operation.request().lifetime() == prepared.request().lifetime()).count();
-                if (subjectCount >= 32 || lifetimeCount >= (prepared.request().lifetime() == Lifetime.SESSION ? 256 : 1024)) throw new WeaverDomainRejection("PROJECTION_CAPACITY");
+                        + pending.stream().filter(operation -> operation.request().lifetime() == prepared.request().lifetime())
+                                .mapToInt(operation -> WeaverOperationScope.reservations(operation).values().stream().mapToInt(Integer::intValue).sum()).sum();
+                if (requested.entrySet().stream().anyMatch(entry -> subjectCounts.getOrDefault(entry.getKey(), 0) + entry.getValue() > 32)
+                        || lifetimeCount + requested.values().stream().mapToInt(Integer::intValue).sum() > (prepared.request().lifetime() == Lifetime.SESSION ? 256 : 1024)) throw new WeaverDomainRejection("PROJECTION_CAPACITY");
             }
             while (true) {
-                final WeaverJournalState next = WeaverEffectReducer.prepared(admitted, prepared, intent);
+                final WeaverJournalState next = WeaverEffectReducer.prepared(admitted, prepared, effectiveIntent);
                 try { storage.validateStateCapacity(next); publish(next); return prepared; }
                 catch (final WeaverDomainRejection rejected) {
                     if (!rejected.code().equals("JOURNAL_BYTE_CAPACITY")) throw rejected;

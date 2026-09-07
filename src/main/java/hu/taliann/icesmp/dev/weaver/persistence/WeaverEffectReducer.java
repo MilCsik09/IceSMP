@@ -23,20 +23,24 @@ final class WeaverEffectReducer {
         if (receipt.status() != ReceiptStatus.COMMITTED || receipt.createdAt() < operation.preparedAt()) throw new WeaverDomainRejection("INVALID_APPLIED_RECEIPT");
         final DeveloperInfluence origin = new DeveloperInfluence(operation.operationId(), operation.request().integrityMode(), operation.request().actionId(), operation.actorId(), receipt.createdAt());
         final Map<UUID, WeaverProjection> projections = new HashMap<>(state.projections());
+        final var scope = WeaverOperationScope.fingerprints(operation.subject(), operation.beforeFingerprint(), operation.recoveryPayload());
+        final var reservations = WeaverOperationScope.reservations(operation);
+        final Map<hu.taliann.icesmp.dev.weaver.subject.SubjectRef, Integer> addedCounts = new HashMap<>();
         final Set<UUID> endedOrigins = new HashSet<>(); final Map<UUID, WeaverProjection> removedBefore = new HashMap<>();
         for (final UUID id : effects.removedProjections()) {
             final WeaverProjection removed = projections.get(id);
-            if (removed == null || !removed.providerId().equals(operation.providerId()) || !removed.subject().equals(operation.subject())) throw new WeaverDomainRejection("PROJECTION_CONFLICT");
+            if (removed == null || !removed.providerId().equals(operation.providerId()) || !scope.containsKey(removed.subject())) throw new WeaverDomainRejection("PROJECTION_CONFLICT");
             removedBefore.put(id, removed); projections.remove(id); endedOrigins.add(removed.influence().operationId());
         }
         long sequence = state.projectionSequence();
         for (final WeaverProjection projection : effects.projections().stream().sorted(Comparator.comparingLong(WeaverProjection::sequence)).toList()) {
             if (!projection.influence().equals(origin) || projection.sequence() != Math.addExact(sequence, 1)
-                    || state.projections().containsKey(projection.projectionId()) || !projection.subject().equals(operation.subject())) throw new WeaverDomainRejection("PROJECTION_CONFLICT");
+                    || state.projections().containsKey(projection.projectionId()) || !projection.canonicalFingerprintAtApply().equals(scope.get(projection.subject()))
+                    || addedCounts.merge(projection.subject(), 1, Integer::sum) > reservations.getOrDefault(projection.subject(), 0)) throw new WeaverDomainRejection("PROJECTION_CONFLICT");
             sequence = projection.sequence(); projections.put(projection.projectionId(), projection);
         }
         final Set<WeaverInfluenceTarget> targets = new HashSet<>(state.intents().getOrDefault(operation.operationId(), WeaverEffectIntent.none()).targets());
-        if (!effects.projections().isEmpty()) targets.add(WeaverInfluenceTarget.subject(operation.subject()));
+        effects.projections().forEach(projection -> targets.add(WeaverInfluenceTarget.subject(projection.subject())));
         final Map<UUID, WeaverInfluenceRecord> influences = new HashMap<>(state.influences());
         final Set<WeaverInfluenceTarget> supplied = new HashSet<>();
         for (final WeaverInfluenceRecord influence : effects.influences()) {

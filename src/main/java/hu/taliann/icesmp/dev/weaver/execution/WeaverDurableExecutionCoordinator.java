@@ -46,7 +46,8 @@ public final class WeaverDurableExecutionCoordinator {
         final WeaverOperationRecord operation;
         try {
             operation = new WeaverOperationRecord(prepared.operationId(), context.authority().actor(), providerId, request, snapshot.ref(), snapshot.revisionFingerprint(),
-                    Optional.empty(), prepared.recoveryPayload(), OperationStatus.PREPARED, 0, now, now, Optional.empty(), false, undoClaim);
+                    Optional.empty(), WeaverOperationScope.attach(snapshot.ref(), snapshot.revisionFingerprint(), request.lifetime(), prepared.recoveryPayload(), effects.projectionReservations()),
+                    OperationStatus.PREPARED, 0, now, now, Optional.empty(), false, undoClaim);
         } catch (final RuntimeException failure) { inFlight.set(false); return CompletableFuture.failedFuture(failure); }
         final List<StageResult> results = new ArrayList<>(); final AtomicBoolean entered = new AtomicBoolean(), preparedAcknowledged = new AtomicBoolean();
         final CompletionStage<WeaverReceipt> execution = journal.prepare(operation, effects.intent()).thenCompose(ignored -> {

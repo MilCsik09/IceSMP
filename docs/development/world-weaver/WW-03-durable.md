@@ -381,6 +381,58 @@ only failed task was inherited `trashSpriteAssetAudit`. Docs `34073935329`, reso
 pack `34073935301`, and Trash hardening `34073935326` workflows succeeded. These are
 clean-store probes, not populated mutation/crash acceptance for the current change.
 
+## AREA projection scope and capacity checkpoint
+
+The existing journal allowed projection effects only on `operation.subject`, which
+is the AREA ref for fanout. That prevented an adapter from publishing projections
+on selected children. `WeaverAreaRecoveryEvidence` schema 2 now persists each
+selected child's action-scoped before fingerprint along with the existing stable
+membership. Schema 1 remains readable with explicitly absent child revisions;
+recovery never fabricates them or grants legacy data permission to add child effects.
+
+`WeaverOperationScope` resolves only the original subject and children with durable
+revision evidence. Projection additions must match the appropriate child fingerprint;
+removals must belong to that acknowledged scope and provider. Journal validation,
+effect before-images, compensation and YAML reload apply the same relation. The
+projection-consumer registry maps fanout actions to actual child kinds while still
+requiring each emitted field/type to have a registered consumer. A provider may
+publish a consumer for its compatible subset of the fanout kind envelope; this does
+not authorize unsupported selected children or supply a gameplay implementation.
+
+`PreparedEffects` can declare bounded per-target projection reservations. The normal
+durable executor records them under a reserved recovery key before PREPARED; provider
+payloads cannot spoof that key. Defaults reserve one projection for the original
+subject, or one per selected AREA child. Explicit reservations can bundle up to 32
+per subject and 128 per effect commit. Requested targets must be in the durable scope.
+ONE_SHOT actions cannot add projections. Pending PREPARED and unresolved NEEDS_REVIEW
+operations retain reservations; actual plus pending totals enforce both lifetime and
+per-subject caps before any owner stage. Applied effect counts cannot exceed the
+acknowledged reservation. AREA influence intent includes every selected entity/player
+and the parent spatial scope before mutation. Existing payload byte bounds can reject
+large plans before execution; target caps do not override storage/rate limits.
+
+`WeaverProjectionScopeRegressionSuite` proves 128 child projection materialization,
+129 parent/child influence targets, foreign-child and wrong-revision refusal, exact
+child sever/compensation, actual YAML round trip, 256 SESSION reservations, unresolved
+reservation retention, 32 per-subject reservations, effect overrun rejection, legacy
+schema behavior and reserved-key rejection. Eight before/after-write crash boundaries
+retain complete child quarantine and atomic receipt/effects. A guarded AREA plan also
+runs through the real durable coordinator and consumer registry with automatically
+persisted child reservations. This is a fixture consumer, not a native PvE acceptance.
+
+Full Java 21 main/regression compilation passed with zero errors and three inherited
+warnings. All 20 Weaver and three DEV suites passed (23); four architecture checks,
+the 650-row profile gate, source inventory (290 authorities, 55 domains, 51 remaining
+implementation blockers, zero inventory errors), and consistency (zero FAIL/WARN)
+passed locally. New suite is a normal Gradle check dependency.
+
+Preceding retention head `b330799e6161823030afbacac0754844ab573f90`: run `34075073677`;
+Paper `101599481669` and Folia `101599481667` succeeded with readiness/clean shutdown.
+Verification `101599481578` compiled both source sets and passed retention regressions;
+only inherited `trashSpriteAssetAudit` failed. Resource-pack `34075073731` and Trash
+hardening `34075073678` succeeded. These are clean-store probes, not populated AREA
+projection or gameplay recovery evidence.
+
 ## Remaining WW-03 implementation
 - Native provider mutation/compensation and exact late-effect reconciliation evidence;
   the generic durable execution path is implemented behind the closed integrity gate.

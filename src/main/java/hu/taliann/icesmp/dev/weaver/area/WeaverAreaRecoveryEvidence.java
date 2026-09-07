@@ -8,11 +8,18 @@ import java.util.*;
 
 /** Recovery captures the acknowledged target set, never newly arrived entities or newly loaded skipped chunks. */
 public record WeaverAreaRecoveryEvidence(AreaRef area, AreaSupport support, List<SubjectRef> targets,
-                                         Map<RegionOwner, String> skippedChunks, Map<SubjectRef, String> skippedTargets) {
+                                         Map<RegionOwner, String> skippedChunks, Map<SubjectRef, String> skippedTargets,
+                                         Map<SubjectRef, String> beforeFingerprints) {
+    public WeaverAreaRecoveryEvidence(final AreaRef area, final AreaSupport support, final List<SubjectRef> targets,
+            final Map<RegionOwner, String> skippedChunks, final Map<SubjectRef, String> skippedTargets) {
+        this(area, support, targets, skippedChunks, skippedTargets, Map.of());
+    }
     public static final String KEY = "weaver.area";
     public WeaverAreaRecoveryEvidence {
         Objects.requireNonNull(area); Objects.requireNonNull(support); targets = List.copyOf(targets);
-        skippedChunks = Map.copyOf(skippedChunks); skippedTargets = Map.copyOf(skippedTargets);
+        skippedChunks = Map.copyOf(skippedChunks); skippedTargets = Map.copyOf(skippedTargets); beforeFingerprints = Map.copyOf(beforeFingerprints);
+        if (!beforeFingerprints.isEmpty() && !beforeFingerprints.keySet().equals(Set.copyOf(targets))) throw new IllegalArgumentException("Incomplete AREA before fingerprints");
+        for (final String fingerprint : beforeFingerprints.values()) if (fingerprint.isBlank() || fingerprint.length() > 256) throw new IllegalArgumentException("AREA before fingerprint bounds");
         final int cap = support == AreaSupport.ENTITY_FANOUT ? 128 : support == AreaSupport.BLOCK_FANOUT ? 4096 : 0;
         if (cap == 0 || targets.size() + skippedTargets.size() > cap || skippedChunks.size() > 9 || targets.stream().distinct().count() != targets.size()) throw new IllegalArgumentException("AREA recovery bounds");
         for (final SubjectRef ref : targets) if (!WeaverAreaCollection.kind(support, ref) || skippedTargets.containsKey(ref)
@@ -22,10 +29,14 @@ public record WeaverAreaRecoveryEvidence(AreaRef area, AreaSupport support, List
         for (final String code : skippedTargets.values()) if (!code.matches("[A-Z_]{1,64}")) throw new IllegalArgumentException("AREA skip code");
     }
     public static WeaverAreaRecoveryEvidence of(final WeaverAreaCollection collection) {
-        return new WeaverAreaRecoveryEvidence(collection.area(), collection.support(), collection.targets().stream().map(SubjectSnapshot::ref).toList(), collection.skippedChunks(), collection.skippedTargets());
+        final Map<SubjectRef, String> fingerprints = new LinkedHashMap<>(); collection.targets().forEach(snapshot -> fingerprints.put(snapshot.ref(), snapshot.revisionFingerprint()));
+        return new WeaverAreaRecoveryEvidence(collection.area(), collection.support(), collection.targets().stream().map(SubjectSnapshot::ref).toList(), collection.skippedChunks(), collection.skippedTargets(), fingerprints);
     }
     public Map<String, Object> encode() {
-        return Map.of("schema", 1, "support", support.name(), "targets", targets.stream().map(SubjectKeyCodec::payload).toList(),
+        final boolean complete = beforeFingerprints.keySet().equals(Set.copyOf(targets));
+        final List<?> rows = complete ? targets.stream().map(ref -> Map.of("ref", SubjectKeyCodec.payload(ref), "before", beforeFingerprints.get(ref))).toList()
+                : targets.stream().map(SubjectKeyCodec::payload).toList();
+        return Map.of("schema", complete ? 2 : 1, "support", support.name(), "targets", rows,
                 "skipped-chunks", skippedChunks.entrySet().stream().sorted(Comparator.comparingInt((Map.Entry<RegionOwner, String> entry) -> entry.getKey().chunkX()).thenComparingInt(entry -> entry.getKey().chunkZ()))
                         .map(entry -> Map.of("x", entry.getKey().chunkX(), "z", entry.getKey().chunkZ(), "code", entry.getValue())).toList(),
                 "skipped-targets", skippedTargets.entrySet().stream().sorted(Comparator.comparing(entry -> SubjectKeyCodec.encode(entry.getKey())))
@@ -33,9 +44,18 @@ public record WeaverAreaRecoveryEvidence(AreaRef area, AreaSupport support, List
     }
     public static WeaverAreaRecoveryEvidence decode(final AreaRef area, final Object encoded) {
         final Map<String, Object> data = WeaverJournalCodec.map(encoded);
-        if (!data.keySet().equals(Set.of("schema", "support", "targets", "skipped-chunks", "skipped-targets"))
-                || integer(data.get("schema")) != 1) throw new IllegalArgumentException("AREA recovery schema");
-        final List<SubjectRef> targets = list(data.get("targets"), 4096).stream().map(value -> SubjectKeyCodec.decodePayload(WeaverJournalCodec.map(value))).toList();
+        final int schema = integer(data.get("schema"));
+        if (!data.keySet().equals(Set.of("schema", "support", "targets", "skipped-chunks", "skipped-targets")) || schema < 1 || schema > 2) throw new IllegalArgumentException("AREA recovery schema");
+        final List<SubjectRef> targets = new ArrayList<>(); final Map<SubjectRef, String> fingerprints = new LinkedHashMap<>();
+        for (final Object value : list(data.get("targets"), 4096)) {
+            final Map<String, Object> row = WeaverJournalCodec.map(value);
+            if (schema == 1) targets.add(SubjectKeyCodec.decodePayload(row));
+            else {
+                if (!row.keySet().equals(Set.of("ref", "before"))) throw new IllegalArgumentException("AREA target schema");
+                final SubjectRef ref = SubjectKeyCodec.decodePayload(WeaverJournalCodec.map(row.get("ref"))); targets.add(ref);
+                if (fingerprints.putIfAbsent(ref, (String) row.get("before")) != null) throw new IllegalArgumentException("Duplicate AREA target");
+            }
+        }
         final Map<RegionOwner, String> chunks = new LinkedHashMap<>();
         for (final Object value : list(data.get("skipped-chunks"), 9)) {
             final var row = WeaverJournalCodec.map(value);
@@ -46,7 +66,7 @@ public record WeaverAreaRecoveryEvidence(AreaRef area, AreaSupport support, List
             final var row = WeaverJournalCodec.map(value);
             if (!row.keySet().equals(Set.of("ref", "code")) || skipped.putIfAbsent(SubjectKeyCodec.decodePayload(WeaverJournalCodec.map(row.get("ref"))), (String) row.get("code")) != null) throw new IllegalArgumentException("AREA duplicate/unknown skipped target");
         }
-        return new WeaverAreaRecoveryEvidence(area, AreaSupport.valueOf((String) data.get("support")), targets, chunks, skipped);
+        return new WeaverAreaRecoveryEvidence(area, AreaSupport.valueOf((String) data.get("support")), targets, chunks, skipped, fingerprints);
     }
     private static int integer(final Object value) {
         if (!(value instanceof Integer || value instanceof Long)) throw new IllegalArgumentException("AREA recovery integer"); return Math.toIntExact(((Number) value).longValue());

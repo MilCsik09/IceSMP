@@ -36,6 +36,8 @@ public record WeaverJournalState(long revision, Map<UUID, WeaverOperationRecord>
             if (!entry.getKey().equals(entry.getValue().receiptId()) || (!operations.containsKey(entry.getValue().operationId()) || !operations.get(entry.getValue().operationId()).receipt().filter(entry.getValue()::equals).isPresent())) throw new IllegalArgumentException("Receipt has no journal operation");
         }
         final Map<UUID, Set<WeaverInfluenceTarget>> evidenceByOperation = new HashMap<>(); final Set<EvidenceKey> activeEvidence = new HashSet<>();
+        final Map<UUID, Map<SubjectRef, String>> scopes = new HashMap<>();
+        operations.forEach((id, operation) -> scopes.put(id, WeaverOperationScope.fingerprints(operation.subject(), operation.beforeFingerprint(), operation.recoveryPayload())));
         for (final WeaverInfluenceRecord influence : influences.values()) {
             evidenceByOperation.computeIfAbsent(influence.influence().operationId(), ignored -> new HashSet<>()).add(influence.target());
             if (influence.active()) activeEvidence.add(new EvidenceKey(influence.influence(), influence.target()));
@@ -61,15 +63,18 @@ public record WeaverJournalState(long revision, Map<UUID, WeaverOperationRecord>
         for (final var entry : effectDeltas.entrySet()) {
             final WeaverOperationRecord operation = operations.get(entry.getKey());
             if (operation == null || operation.receipt().isEmpty()) throw new IllegalArgumentException("Orphaned effect delta");
+            final Map<SubjectRef, Integer> addedCounts = new HashMap<>(); final var reservations = WeaverOperationScope.reservations(operation);
             for (final WeaverProjection added : entry.getValue().added().values()) {
                 origin(operations, added.influence());
                 if (!added.influence().operationId().equals(operation.operationId()) || !added.providerId().equals(operation.providerId())
-                        || !added.subject().equals(operation.subject()) || added.lifetime() != operation.request().lifetime()
-                        || !added.canonicalFingerprintAtApply().equals(operation.beforeFingerprint())) throw new IllegalArgumentException("Foreign added effect origin");
+                        || added.lifetime() != operation.request().lifetime()
+                        || !added.canonicalFingerprintAtApply().equals(scopes.get(operation.operationId()).get(added.subject()))) throw new IllegalArgumentException("Foreign added effect origin");
+                if (operation.recoveryPayload().fields().containsKey(WeaverOperationScope.RESERVATIONS)
+                        && addedCounts.merge(added.subject(), 1, Integer::sum) > reservations.getOrDefault(added.subject(), 0)) throw new IllegalArgumentException("Added effects exceeded prepared capacity");
             }
             for (final WeaverProjection removed : entry.getValue().removed().values()) {
                 origin(operations, removed.influence());
-                if (!removed.providerId().equals(operation.providerId()) || !removed.subject().equals(operation.subject())) throw new IllegalArgumentException("Foreign removed projection");
+                if (!removed.providerId().equals(operation.providerId()) || !scopes.get(operation.operationId()).containsKey(removed.subject())) throw new IllegalArgumentException("Foreign removed projection");
             }
             for (final WeaverInfluenceRecord ended : entry.getValue().endedBefore().values()) origin(operations, ended.influence());
         }
@@ -93,8 +98,8 @@ public record WeaverJournalState(long revision, Map<UUID, WeaverOperationRecord>
         for (final var entry : projections.entrySet()) {
             final WeaverProjection projection = entry.getValue(); final WeaverOperationRecord operation = origin(operations, projection.influence());
             if (!entry.getKey().equals(projection.projectionId()) || projection.sequence() > projectionSequence || !sequences.add(projection.sequence())
-                    || !operation.providerId().equals(projection.providerId()) || !operation.subject().equals(projection.subject())
-                    || operation.request().lifetime() != projection.lifetime() || !operation.beforeFingerprint().equals(projection.canonicalFingerprintAtApply())
+                    || !operation.providerId().equals(projection.providerId())
+                    || operation.request().lifetime() != projection.lifetime() || !projection.canonicalFingerprintAtApply().equals(scopes.get(operation.operationId()).get(projection.subject()))
                     || operation.receipt().isEmpty() || operation.status() == OperationStatus.COMPENSATED) throw new IllegalArgumentException("Projection origin mismatch");
             if (projection.lifetime() == Lifetime.SESSION) sessions++; else persistent++;
             if (subjectCounts.merge(projection.subject(), 1, Integer::sum) > 32) throw new IllegalArgumentException("Projection subject capacity exceeded");

@@ -18,7 +18,7 @@ public final class ProjectionConsumerRegistry {
             for (final String id : consumer.actions()) {
                 final ActionDescriptor action = actions.get(id);
                 if (action == null || action.lifetimes().equals(Set.of(Lifetime.ONE_SHOT)) || !action.undoable()
-                        || !consumer.subjects().containsAll(action.subjects())) throw new IllegalArgumentException("Projection action lacks a compatible reversible manifest");
+                        || Collections.disjoint(consumer.subjects(), targetKinds(action))) throw new IllegalArgumentException("Projection action lacks a compatible reversible manifest");
             }
         }
         this.actions = Map.copyOf(actions); frozen = true;
@@ -28,12 +28,27 @@ public final class ProjectionConsumerRegistry {
         final ProjectionConsumerDescriptor descriptor = consumers.get(id);
         if (descriptor == null) throw new WeaverDomainRejection("PROJECTION_CONSUMER_UNAVAILABLE"); return descriptor;
     }
+    private static Set<hu.taliann.icesmp.dev.weaver.subject.WeaverSubjectKind> targetKinds(final ActionDescriptor action) {
+        final var result = new HashSet<>(action.subjects());
+        if (result.contains(hu.taliann.icesmp.dev.weaver.subject.WeaverSubjectKind.AREA)) {
+            if (action.areaSupport() == AreaSupport.ENTITY_FANOUT) {
+                result.remove(hu.taliann.icesmp.dev.weaver.subject.WeaverSubjectKind.AREA);
+                result.add(hu.taliann.icesmp.dev.weaver.subject.WeaverSubjectKind.ENTITY);
+                result.add(hu.taliann.icesmp.dev.weaver.subject.WeaverSubjectKind.PLAYER);
+            } else if (action.areaSupport() == AreaSupport.BLOCK_FANOUT) {
+                result.remove(hu.taliann.icesmp.dev.weaver.subject.WeaverSubjectKind.AREA);
+                result.add(hu.taliann.icesmp.dev.weaver.subject.WeaverSubjectKind.BLOCK);
+            }
+        }
+        return Set.copyOf(result);
+    }
     public void validate(final WeaverProjection projection) {
         final List<ProjectionConsumerDescriptor> matching;
         synchronized (this) {
             if (!frozen) throw new IllegalStateException("Projection consumers not validated");
             final ActionDescriptor action = actions.get(projection.actionId());
-            if (action == null || !action.lifetimes().contains(projection.lifetime()) || !action.integrityModes().contains(projection.influence().mode())) throw new WeaverDomainRejection("PROJECTION_MANIFEST_MISMATCH");
+            if (action == null || !action.lifetimes().contains(projection.lifetime()) || !action.integrityModes().contains(projection.influence().mode())
+                    || !targetKinds(action).contains(projection.subject().kind())) throw new WeaverDomainRejection("PROJECTION_MANIFEST_MISMATCH");
             matching = consumers.values().stream().filter(consumer -> consumer.providerId().equals(projection.providerId())
                     && consumer.actions().contains(projection.actionId()) && consumer.subjects().contains(projection.subject().kind())).toList();
         }

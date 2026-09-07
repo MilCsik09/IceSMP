@@ -1328,7 +1328,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
       "domain": "developer_self",
-      "source_sha256": "042ac6b951fdb5713510fb4df811ed1965b0cecf2210ac43d65579deea6928b3",
+      "source_sha256": "21a412bfec72e481934dac25bbeb8d0c6e195c9696b6859fafa6931a54d6c868",
       "public_methods": [
         "WorldWeaverKernel",
         "clearPlayerState",
@@ -1468,7 +1468,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverDurableExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "4f95fcf069b0b416a003ae078057e4fd76ab974e362bee1d35993f2c3d865fd3",
+      "source_sha256": "d15de0090db1d8918e07ea59192a7ec516385102c56782e22331e6f3218032c5",
       "public_methods": [
         "WeaverDurableExecutionCoordinator",
         "close",
@@ -1526,7 +1526,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "0960acca1a28bdf5f9b1cd79dc8bb5e0f34b0aa25b6261cf8c976f54a606cc17",
+      "source_sha256": "e4f8dfe980e3050d79736f150d8687126dcf54310efe3341a950c8337dc1610d",
       "public_methods": [
         "WeaverJournal",
         "applied",
@@ -1550,9 +1550,22 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
+      "domain": "developer_self",
+      "source_sha256": "5e9fbc0f8a12254bd59bc746022699af2511f07c374ec8d46ce490e102ec4678",
+      "public_methods": [
+        "attach",
+        "contains",
+        "fingerprints",
+        "intent",
+        "matches",
+        "reservations"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/ProjectionConsumerRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "914f3851f8ca400e3bc98cab6d6590a6d2cdfd696424da8c69e25ed516aeaae0",
+      "source_sha256": "e159c91f57530465496bafc5bc81126c215118d6fa4a36da2d43de8c37029241",
       "public_methods": [
         "ProjectionConsumerRegistry",
         "freeze",
@@ -6090,6 +6103,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
