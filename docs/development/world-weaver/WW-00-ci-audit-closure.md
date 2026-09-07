@@ -8,3 +8,9 @@ Findings from exact WW-00 head `198e812e0041e5674b6ecab2d2f3a8a491b4de9a`, run 3
 Six fixture tests cover accepted binary alpha/eight tones, transparent colour exclusion, rejected missing/partial alpha, ninth tone, wrong dimensions/mode, and incomplete catalog counts. The unavailable flattened-data API is deliberately forbidden in the fixtures. The WorldWeaver CI executes these tests with its existing pinned Pillow; neither dependencies nor acceptance are weakened.
 
 Local tests pass with ResourceWarning treated as error; the unchanged full source/output gate passes 330 identities and 27 phases; config audit passes 24,634 leaves. This patch changes tooling and internal evidence only. Refreshed exact-head CI must still confirm execution on actual Pillow 11.3. Native/client gameplay, universal coverage and production acceptance remain open.
+
+## Exact CI confirmation and test-discovery dependency
+
+WW-00 `4fd031d091307bbb437be79e8ec6030dd7d89d21`: WorldWeaver verification run 34147622694, job 101822946401 succeeds, including the new pixel fixtures on actual Pillow 11.3 and the full build. The fixes also reached WW-04 `86d52f0f9e1cb40f06bc705b09dfe85c122a5a05`: run 34147743245 has successful verification and Paper/Folia artifact/native-PvE jobs; resource pack run 34147743278 and Trash run 34147743243 succeed. These retain their existing limited native scopes.
+
+Docs inventory run 34147743250 fails only its Python unit-test step: automatic discovery imports the new pixel fixture, but that workflow installed PyYAML without Pillow. Install the same pinned Pillow there; do not skip tests or weaken the final outcome policy. The reported 74 inventory findings are report-mode output, not the cause of this run failure. A fresh docs run remains required.
