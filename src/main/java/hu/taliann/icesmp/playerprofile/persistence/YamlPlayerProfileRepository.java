@@ -36,6 +36,7 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
     public YamlPlayerProfileRepository(Path root,Clock clock,ExecutorService io,FaultInjector faultInjector){this.root=Objects.requireNonNull(root).toAbsolutePath().normalize();this.clock=Objects.requireNonNull(clock);this.io=Objects.requireNonNull(io);this.faultInjector=Objects.requireNonNull(faultInjector);}
 
     @Override public CompletionStage<PlayerProfileSnapshot> load(UUID id){Objects.requireNonNull(id);PlayerProfileSnapshot hit=cache.get(id);if(hit!=null)return CompletableFuture.completedFuture(hit);return submit(id,()->withLock(id,()->loadLocked(id,true)));}
+    @Override public CompletionStage<PlayerProfileSnapshot> refreshSnapshot(UUID id){Objects.requireNonNull(id);return submit(id,()->withLock(id,()->loadLocked(id,true)));}
     @Override public CompletionStage<Optional<PlayerProfileSnapshot>> find(UUID id){
         Objects.requireNonNull(id);PlayerProfileSnapshot hit=cache.get(id);if(hit!=null)return CompletableFuture.completedFuture(Optional.of(hit));
         if(!Files.exists(profileDir(id).resolve("manifest.yml")))return CompletableFuture.completedFuture(Optional.empty());

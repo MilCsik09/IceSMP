@@ -640,6 +640,12 @@ public final class IceSMPCore {
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);
         professionManager.setMessageManager(messageManager); // szintlépés/fokozat üzenetek
         factionManager.setGuildManager(guildManager);
+        factionManager.bindMembershipRuntime(claim ->
+                guildManager.withMembershipAdmissionBarrier(() ->
+                        councilManager.withMembershipAdmissionBarrier(() ->
+                                kingManager.withMembershipAdmissionBarrier(() ->
+                                        raidManager.withMembershipAdmissionBarrier(claim)))),
+                () -> { councilManager.save(); kingManager.save(); });
         questManager.setGuildManager(guildManager); // quest-teljesítés céh-XP
         professionRecipeBookListener.setBestiaryManager(bestiaryManager); // recept-lajstrom
         professionRecipeBookListener.setJobManager(jobManager); // kaszt-zárt receptek

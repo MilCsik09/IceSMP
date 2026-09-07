@@ -18,6 +18,10 @@ public interface PlayerProfileRepository {
                 new UnsupportedOperationException("profile enumeration unsupported"));
     }
     default CompletionStage<PlayerProfileSnapshot> loadSnapshot(UUID playerId){return load(playerId);}
+    /** Observes durable WAL state without first discarding the active cached read authority. */
+    default CompletionStage<PlayerProfileSnapshot> refreshSnapshot(UUID playerId) {
+        return java.util.concurrent.CompletableFuture.failedFuture(new UnsupportedOperationException("durable profile refresh unsupported"));
+    }
     CompletionStage<Optional<ProfileSectionSnapshot<?>>> loadSection(UUID playerId, ProfileSectionId section);
     CompletionStage<SectionSaveResult> saveSection(UUID playerId, ProfileSectionId section, long expectedRevision, ProfileSectionSnapshot<?> next);
     CompletionStage<SectionSaveResult> saveSection(UUID playerId, ProfileSectionId section, long expectedRevision, long expectedGeneration, ProfileSectionSnapshot<?> next);

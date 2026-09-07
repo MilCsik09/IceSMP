@@ -10,7 +10,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,7 +26,8 @@ public final class SpyManager implements PlayerStateCleanup {
     private final TerritoryManager territoryManager;
     private final PlayerProfileCooldownStore cooldowns = new PlayerProfileCooldownStore();
     private final Map<UUID, Long> activeUntil = new ConcurrentHashMap<>();
-    private final Set<UUID> pendingStarts = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, UUID> pendingStarts = new ConcurrentHashMap<>();
+    private final Object disguiseLock = new Object();
 
     public SpyManager(final JavaPlugin plugin, final ConfigManager configManager,
                       final RaidManager raidManager, final MessageManager messageManager,
@@ -52,7 +52,7 @@ public final class SpyManager implements PlayerStateCleanup {
         if (!configManager.getBoolean("spy.enabled", true)) return "spy-disabled";
         if (!factionManager.hasChosenFaction(player.getUniqueId())) return "spy-no-faction";
         if (!SpyDisguise.isAvailable()) return "spy-no-library";
-        if (isSpying(player.getUniqueId()) || pendingStarts.contains(player.getUniqueId()))
+        if (isSpying(player.getUniqueId()) || pendingStarts.containsKey(player.getUniqueId()))
             return "spy-active";
         if (raidManager.isRaidActive()) return "spy-raid";
         final long now = System.currentTimeMillis();
@@ -68,17 +68,26 @@ public final class SpyManager implements PlayerStateCleanup {
         final long cooldownMinutes = Math.max(1,
                 configManager.getInt("spy.cooldown-minutes", 15));
         final long nextReady = Math.addExact(now, cooldownMinutes * 60_000L);
-        if (!pendingStarts.add(player.getUniqueId())) return "spy-active";
+        final UUID playerId = player.getUniqueId();
+        final UUID requestId = UUID.randomUUID();
+        final FactionType expectedMembership = factionManager.getChosenFaction(playerId).orElse(null);
+        synchronized (disguiseLock) {
+            if (!factionManager.isMember(playerId, expectedMembership)) return "spy-no-faction";
+            if (isSpying(playerId) || pendingStarts.putIfAbsent(playerId, requestId) != null) return "spy-active";
+        }
         cooldowns.reserve(player.getUniqueId(), PlayerProfileCooldownStore.Domain.FACTION,
                         COOLDOWN, now, nextReady)
                 .whenComplete((accepted, failure) -> player.getScheduler().run(plugin, task -> {
-                    pendingStarts.remove(player.getUniqueId());
-                    if (failure != null || !Boolean.TRUE.equals(accepted)) {
-                        player.sendMessage(messageManager.get("spy-error.spy-cooldown",
-                                "&cAz álca-mester még pihen — nézz vissza később."));
-                        return;
+                    synchronized (disguiseLock) {
+                        if (!pendingStarts.remove(playerId, requestId)) return;
+                        if (failure != null || !Boolean.TRUE.equals(accepted)) {
+                            player.sendMessage(messageManager.get("spy-error.spy-cooldown",
+                                    "&cAz álca-mester még pihen — nézz vissza később."));
+                            return;
+                        }
+                        if (!factionManager.isMember(playerId, expectedMembership)) return;
+                        applyDisguise(player, targetFaction, now);
                     }
-                    applyDisguise(player, targetFaction, now);
                 }, null));
         return null;
     }
@@ -129,27 +138,38 @@ public final class SpyManager implements PlayerStateCleanup {
 
     public void reveal(final Player player, final String messageKey,
                        final String messageDefault) {
-        if (activeUntil.remove(player.getUniqueId()) == null) return;
-        SpyDisguise.remove(player);
-        player.sendMessage(messageManager.getMessage(messageKey, messageDefault));
+        synchronized (disguiseLock) {
+            pendingStarts.remove(player.getUniqueId());
+            if (activeUntil.remove(player.getUniqueId()) == null) return;
+            SpyDisguise.remove(player);
+            player.sendMessage(messageManager.getMessage(messageKey, messageDefault));
+        }
     }
 
     @Override
     public void clearPlayerState(final UUID playerId) {
-        pendingStarts.remove(playerId);
-        if (activeUntil.remove(playerId) == null) return;
-        final Player online = org.bukkit.Bukkit.getPlayer(playerId);
-        if (online != null)
-            online.getScheduler().run(plugin, task -> SpyDisguise.remove(online), null);
+        synchronized (disguiseLock) {
+            pendingStarts.remove(playerId);
+            if (activeUntil.remove(playerId) == null) return;
+            final Player online = org.bukkit.Bukkit.getPlayer(playerId);
+            if (online != null)
+                online.getScheduler().run(plugin, task -> {
+                    synchronized (disguiseLock) {
+                        if (!activeUntil.containsKey(playerId)) SpyDisguise.remove(online);
+                    }
+                }, null);
+        }
     }
 
     public void shutdown() {
-        for (final UUID playerId : activeUntil.keySet()) {
-            final Player online = org.bukkit.Bukkit.getPlayer(playerId);
-            if (online != null)
-                online.getScheduler().run(plugin, task -> SpyDisguise.remove(online), null);
+        synchronized (disguiseLock) {
+            for (final UUID playerId : activeUntil.keySet()) {
+                final Player online = org.bukkit.Bukkit.getPlayer(playerId);
+                if (online != null)
+                    online.getScheduler().run(plugin, task -> SpyDisguise.remove(online), null);
+            }
+            activeUntil.clear();
+            pendingStarts.clear();
         }
-        activeUntil.clear();
-        pendingStarts.clear();
     }
 }

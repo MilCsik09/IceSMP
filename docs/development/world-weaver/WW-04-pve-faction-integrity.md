@@ -478,3 +478,63 @@ inherited `trashSpriteAssetAudit`. Resource pack `34086789632` and Trash
 `34086789655` succeeded. New-head CI remains required. Native role-admission fencing
 and durable cleanup coordinator/provider action integration continue; this checkpoint
 does not mark those surfaces or WW-04 complete.
+
+## Native membership admission and cleanup continuation checkpoint
+
+Base: `23ec613c541af7b374d89ab35cf994e0d8818edc`, WW-04 #158.
+`FactionManager` now owns a bounded transition runtime over its existing profile
+store. Claiming a transition runs under the canonical Guild, Council, King and Raid
+admission locks, in that order, before the asynchronous profile write is queued.
+A guild creation/cost operation already holding its lock finishes before the claim;
+new affected role admissions cannot race past the claim. The runtime keeps at most
+128 in-flight/paused leases, each tied to an exact operation UUID. Duplicate rejected
+calls cannot pause, release or steal the original running lease.
+
+The facade uses the existing membership-change hook and Guild reconciliation, then
+explicitly flushes Guild/Council/King snapshots before acknowledging the canonical
+outbox. A failed write retains pending evidence. Retry flushes the domain snapshots
+even when an earlier attempt changed memory before failing to persist it. Recovery
+refreshes the real profile/WAL without first discarding the active cached read view;
+it assesses BEFORE/APPLIED/CONFLICT and never resubmits membership mutation. Lost
+acknowledgement of already completed cleanup does not run cleanup again. A fresh
+conflict with no matching unfinished outbox releases only the transient admission
+lease; a true partial cleanup keeps its durable evidence and remains blocked.
+
+| Native surface | Admission/cleanup behavior |
+| --- | --- |
+| Guild create/accept and member capabilities | Existing synchronized admission; pending membership grants no guild access. Canonical reconciliation has a private canonical lookup so cleanup still reaches the stored membership. |
+| Council votes | Membership checks and vote publication share the existing Council lock. |
+| King votes/crowning | Final membership check under election lock. Rejected crowning returns a result; admin command and election broadcast do not report false success. |
+| Raid participation | Final membership eligibility under the existing Raid lock. |
+| Faction benefits/paired membership | Pending transition grants no membership-dependent eligibility; canonical identity getters remain separate. |
+| Whisperer | Post-commit reconciliation reads canonical membership, so the temporary eligibility fence cannot erase a valid civil role. |
+| Spy disguise | Pending activation has an exact operation UUID; membership is rechecked on owner callback. Activation and cleanup share a lock, and an old callback/removal cannot resurrect an invalidated activation or remove a newer active disguise. |
+
+Faction reads now prefer the current immutable profile cache over the rebuildable
+all-owner mirror. The domain runtime uses UUIDs/immutable profile values and is
+entered through profile/IO authority; GUI/artifact/kernel dispatch is unchanged.
+This checkpoint does not yet connect autonomous startup outbox draining or expose
+the provider's canonical action. Those remain the next integration steps. A true
+external drift with unfinished side effects retains an explicit review requirement;
+it is never force-undone or silently discarded.
+
+Verification: full Java 21 compile passes against 49 real dependencies with the same
+three inherited warnings. The 58-suite run passed 57 and identified an existing
+source-order test that compared unrelated methods across the entire FactionManager
+file. Its original durable-setter ordering condition is retained and scoped to the
+actual setter. The final seven affected Faction/runtime suites all pass, including
+the 369-assertion real profile/outbox/runtime test. That test covers pre-WAL authority
+loss, duplicate mutation/recovery ownership, failed cleanup retry, before/after
+membership WAL and cleanup-acknowledgement loss, drift and bounded leases. Four
+architecture checks, authority guard/self-test (671 findings, zero unknown/stale/
+invalid/transition), coverage (313 authorities, 55 domains, 51 blockers, zero errors)
+and consistency (zero FAIL/WARN) pass. Native client concurrency, LibsDisguises callback
+and populated domain filesystem-failure probes remain explicit evidence gates; the
+profile fixture is not presented as a live Guild/Spy client test.
+
+Prior exact head `23ec613c541af7b374d89ab35cf994e0d8818edc`: CI run `34087191108`;
+Paper `101633373097` and Folia `101633373192` succeeded. Verification `101633372946`
+compiled and passed the 170-assertion test; its only failed task remains inherited
+`trashSpriteAssetAudit`. Resource pack `34087191038`, Trash `34087191036` and docs
+`34087191042` succeeded. New-head CI remains required. Artifact issuance, gameplay
+admission and production enable remain off; no full WW-04/coverage/release verdict.

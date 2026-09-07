@@ -226,12 +226,18 @@ public final class KingManager implements PersistentStore {
         // tranzakció: két régió-szál küszöb-közeli egyidejű szavazata lock nélkül dupla
         // koronázást vagy a ballot-törléssel elvesző szavazatot adhatna.
         synchronized (electionLock) {
+            if (!factionManager.isMember(voter.getUniqueId(), faction)
+                    || !factionManager.isMember(candidate, faction)) return false;
             resetExpiredTerm(faction);
             votes.computeIfAbsent(faction, key -> new ConcurrentHashMap<>()).put(voter.getUniqueId(), candidate);
             recount(faction);
             save();
         }
         return true;
+    }
+
+    public void withMembershipAdmissionBarrier(final Runnable claim) {
+        synchronized (electionLock) { java.util.Objects.requireNonNull(claim).run(); }
     }
 
     /**
@@ -262,8 +268,8 @@ public final class KingManager implements PersistentStore {
      * @param faction the faction
      * @param king the new king, or null to clear the throne
      */
-    public void setKing(final FactionType faction, final UUID king) {
-        crown(faction, king);
+    public boolean setKing(final FactionType faction, final UUID king) {
+        return crown(faction, king);
     }
 
     /**
@@ -275,13 +281,14 @@ public final class KingManager implements PersistentStore {
      *
      * @param king the new king, or null to empty the throne
      */
-    private void crown(final FactionType faction, final UUID king) {
+    private boolean crown(final FactionType faction, final UUID king) {
         if (faction == null) {
-            return;
+            return false;
         }
 
         // Reentráns a vote() lockja alól; az admin setKing útján ez az egyetlen kapu.
         synchronized (electionLock) {
+            if (king != null && !factionManager.isMember(king, faction)) return false;
             final long now = System.currentTimeMillis();
             if (king == null) {
                 kings.remove(faction);
@@ -301,6 +308,7 @@ public final class KingManager implements PersistentStore {
                 AdvancementService.award(crowned, "crowned");
             }
         }
+        return true;
     }
 
     /**
@@ -363,7 +371,7 @@ public final class KingManager implements PersistentStore {
             return;
         }
 
-        crown(faction, leader);
+        if (!crown(faction, leader)) return;
 
         // Folia: the server-wide broadcast and the (potentially blocking) offline-name lookup
         // must not run on the voting player's region thread — hop to the global region scheduler.

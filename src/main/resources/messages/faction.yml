@@ -48,6 +48,7 @@ messages:
   faction-king-info: '&6%s uralkodója: &f%s'
   faction-king-none: 'nincs (szavazz: /faction king vote <játékos>)'
   faction-king-set-success: '&aUralkodó beállítva: &f%s &7-> &e%s'
+  faction-king-set-rejected: '&cA célpont jelenlegi frakciótagsága nem teszi lehetővé a koronázást.'
   faction-king-set-usage: '&cHasználat: /faction king set <frakció> <játékos>'
   faction-king-tally-line: '&7 - %s: &f%s szavazat'
   faction-king-vote-failed: '&cNem szavazhatsz: a jelöltnek a te frakciód tagjának kell lennie (és a frakciódnak lehet uralkodója).'

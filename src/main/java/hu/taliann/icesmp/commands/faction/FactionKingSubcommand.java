@@ -146,7 +146,11 @@ public final class FactionKingSubcommand implements FactionSubcommand {
             return true;
         }
 
-        kingManager.setKing(faction, target.getUniqueId());
+        if (!kingManager.setKing(faction, target.getUniqueId())) {
+            sender.sendMessage(messageManager.get("messages.faction-king-set-rejected",
+                    "&cA célpont jelenlegi frakciótagsága nem teszi lehetővé a koronázást."));
+            return true;
+        }
         sender.sendMessage(messageManager.get("messages.faction-king-set-success", "&aUralkodó beállítva: &f%s &7-> &e%s", faction.getDisplayName(), target.getName()));
         return true;
     }

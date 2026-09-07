@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.dev.weaver;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.factions.FactionMembershipAdjustmentRuntime;
+import hu.taliann.icesmp.factions.FactionMembershipTransitionGate;
 import hu.taliann.icesmp.playerprofile.application.*;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore.*;
 import hu.taliann.icesmp.playerprofile.domain.*;
@@ -27,6 +29,9 @@ public final class WeaverFactionAdjustmentRegressionSuite {
         revisionAndConcurrentWriters();
         outboxRetentionAndDrift();
         membershipWhisperAtomicity();
+        nativeContinuationAndAdmission();
+        nativeRecoveryBoundaries();
+        transitionLeaseBounds();
         walBoundary(false);
         walBoundary(true);
         System.out.println("Faction adjustment passed: " + assertions + " assertions; real profile WAL, final authority admission, exact revision/ABA, compensating history, concurrent CAS and observed restart recovery.");
@@ -226,6 +231,107 @@ public final class WeaverFactionAdjustmentRegressionSuite {
                 }
             } finally { delete(root); }
         }
+    }
+
+    private static void nativeContinuationAndAdmission() throws Exception {
+        final Path root = Files.createTempDirectory("weaver-faction-native-continuation-");
+        try (final Harness h = new Harness(root, YamlPlayerProfileRepository.FaultInjector.none())) {
+            final AtomicInteger cleanup = new AtomicInteger(); final AtomicBoolean failCleanup = new AtomicBoolean();
+            final Object roles = new Object();
+            final var runtime = new FactionMembershipAdjustmentRuntime(h.factions, claim -> { synchronized (roles) { claim.run(); } }, id -> {
+                check(runtimeProfileApplied(h), "cleanup ran before durable membership");
+                cleanup.incrementAndGet();
+                if (failCleanup.getAndSet(false)) throw new IllegalStateException("fixture domain save failed");
+            });
+            final var request = h.request(FactionType.RED);
+            final var first = runtime.adjust(PLAYER, request, () -> { });
+            check(runtime.pending(PLAYER), "queued adjustment did not close role admission");
+            check(h.failure(runtime.adjust(PLAYER, request, () -> { })) instanceof FactionMembershipAdjustmentRuntime.Rejected,
+                    "duplicate mutation entered a running lease");
+            check(h.failure(runtime.reconcile(PLAYER, request)) instanceof FactionMembershipAdjustmentRuntime.Rejected,
+                    "duplicate rejection released or paused the original lease");
+            h.finish(first);
+            check(!runtime.pending(PLAYER) && cleanup.get() == 1 && h.factions.adjustmentEffectsCompleted(PLAYER, request), "completed native effects did not release admission");
+            check(h.finish(runtime.adjust(PLAYER, request, () -> { throw new AssertionError("accepted receipt admission replayed"); })).replayed(), "accepted native receipt replay failed");
+            check(cleanup.get() == 1, "accepted native receipt repeated cleanup");
+            final var next = h.request(FactionType.BLUE); failCleanup.set(true);
+            h.failure(runtime.adjust(PLAYER, next, () -> { }));
+            check(runtime.pending(PLAYER) && h.factions.observeAdjustment(PLAYER, next) == AdjustmentObservation.APPLIED,
+                    "failed domain write lost applied membership evidence");
+            final long revision = h.profile().faction().revision();
+            final var recovery = runtime.reconcile(PLAYER, next);
+            check(!recovery.toCompletableFuture().isDone(), "recovery used cached evidence instead of serialized durable refresh");
+            check(h.failure(runtime.reconcile(PLAYER, next)) instanceof FactionMembershipAdjustmentRuntime.Rejected,
+                    "duplicate recovery entered the same unfinished effect");
+            check(h.finish(recovery) == AdjustmentObservation.APPLIED, "native cleanup recovery failed");
+            check(!runtime.pending(PLAYER) && h.profile().faction().revision() == revision && cleanup.get() == 3,
+                    "native recovery replayed membership or skipped required cleanup flush");
+            final var denied = h.request(FactionType.RED); final var before = bytes(root);
+            check(h.failure(runtime.adjust(PLAYER, denied, () -> { throw new SecurityException("fixture revoked"); })) instanceof SecurityException,
+                    "native admission bypassed final authority");
+            check(h.finish(runtime.reconcile(PLAYER, denied)) == AdjustmentObservation.BEFORE && !runtime.pending(PLAYER),
+                    "unapplied mutation recovery did not release its lease");
+            check(bytes(root).equals(before) && cleanup.get() == 3, "BEFORE recovery mutated state");
+            final var superseded = h.request(FactionType.RED);
+            h.finish(h.authority.putExtension(PLAYER, ProfileSectionId.FACTION, FactionSection.class, "fixture.new-axis", 1L));
+            h.failure(runtime.adjust(PLAYER, superseded, () -> { }));
+            check(h.failure(runtime.reconcile(PLAYER, superseded)) instanceof FactionMembershipAdjustmentRuntime.Rejected
+                    && !runtime.pending(PLAYER), "unapplied revision conflict permanently locked membership admission");
+            final var drift = h.request(FactionType.RED); failCleanup.set(true); h.failure(runtime.adjust(PLAYER, drift, () -> { }));
+            h.finish(h.factions.assign(PLAYER, FactionType.NEUTRAL));
+            final int calls = cleanup.get(); final var driftDisk = bytes(root);
+            check(h.failure(runtime.reconcile(PLAYER, drift)) instanceof FactionMembershipAdjustmentRuntime.Rejected,
+                    "native recovery overwrote external membership drift");
+            check(runtime.pending(PLAYER) && cleanup.get() == calls && bytes(root).equals(driftDisk), "conflicting native cleanup discarded evidence");
+        } finally { delete(root); }
+    }
+
+    private static boolean runtimeProfileApplied(Harness h) {
+        return !h.factions.pendingAdjustmentEffects(PLAYER).isEmpty();
+    }
+
+    private static void nativeRecoveryBoundaries() throws Exception {
+        for (int boundary = 0; boundary < 3; boundary++) {
+            final int point = boundary;
+            final Path root = Files.createTempDirectory("weaver-faction-native-recovery-");
+            final AtomicBoolean armed = new AtomicBoolean(); final AtomicInteger cleanup = new AtomicInteger();
+            final var fault = new YamlPlayerProfileRepository.FaultInjector() {
+                @Override public void afterSectionsMovedBeforeManifest(UUID id, Set<ProfileSectionId> changed) throws IOException {
+                    if (point == 0 && armed.getAndSet(false)) throw new IOException("fixture before membership manifest");
+                }
+                @Override public void afterManifestMovedBeforeCleanup(UUID id, Set<ProfileSectionId> changed) throws IOException {
+                    if ((point == 1 && changed.contains(ProfileSectionId.FACTION)
+                            || point == 2 && changed.equals(Set.of(ProfileSectionId.OPERATIONS))) && armed.getAndSet(false)) {
+                        throw new IOException("fixture accepted WAL acknowledgement loss");
+                    }
+                }
+            };
+            try (final Harness h = new Harness(root, fault)) {
+                final var runtime = new FactionMembershipAdjustmentRuntime(h.factions, Runnable::run, id -> cleanup.incrementAndGet());
+                final var request = h.request(FactionType.RED); armed.set(true);
+                h.failure(runtime.adjust(PLAYER, request, () -> { }));
+                check(runtime.pending(PLAYER), "ambiguous failure released native admission");
+                final var recovered = h.finish(runtime.reconcile(PLAYER, request));
+                check(recovered == (point == 0 ? AdjustmentObservation.BEFORE : AdjustmentObservation.APPLIED), "native WAL assessment mismatch");
+                check(cleanup.get() == (point == 0 ? 0 : 1), "accepted effect acknowledgement loss repeated cleanup");
+                check(h.profile().faction().revision() == (point == 0 ? 0 : 1), "native recovery repeated membership WAL");
+                check(!runtime.pending(PLAYER), "settled native recovery retained admission lease");
+            } finally { delete(root); }
+        }
+    }
+
+    private static void transitionLeaseBounds() {
+        final var gate = new FactionMembershipTransitionGate(); final UUID operation = UUID.randomUUID();
+        final List<UUID> players = new ArrayList<>();
+        for (int i = 0; i < 128; i++) { final UUID id = new UUID(10, i); players.add(id); check(gate.claim(id, operation), "bounded lease rejected early"); }
+        check(!gate.claim(UUID.randomUUID(), operation), "transition lease cap exceeded");
+        final UUID player = players.getFirst();
+        check(!gate.release(player, UUID.randomUUID()) && gate.pending(player), "foreign operation released a live lease");
+        check(!gate.resume(player, operation), "running lease was resumed concurrently");
+        gate.pause(player, operation);
+        check(!gate.resume(player, UUID.randomUUID()) && gate.resume(player, operation), "paused lease was stolen or could not resume");
+        check(gate.release(player, operation) && gate.claim(player, UUID.randomUUID()), "settled lease did not release capacity");
+        check(!gate.release(player, operation), "old operation released replacement lease");
     }
 
     private static final class Harness implements AutoCloseable {

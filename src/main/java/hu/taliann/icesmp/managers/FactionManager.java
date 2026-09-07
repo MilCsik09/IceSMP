@@ -35,6 +35,14 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     private volatile SeasonManager seasonManager;
     private volatile Consumer<UUID> membershipChangeHook = ignored -> { };
     private volatile GuildManager guildManager;
+    private volatile Consumer<Runnable> membershipAdmissionBarrier = ignored -> {
+        throw new IllegalStateException("Faction membership admission is not installed");
+    };
+    private volatile Runnable membershipEffectsPersistence = () -> {
+        throw new IllegalStateException("Faction membership persistence is not installed");
+    };
+    private boolean membershipRuntimeBound;
+    private final hu.taliann.icesmp.factions.FactionMembershipAdjustmentRuntime membershipAdjustments;
     private volatile hu.taliann.icesmp.factions.FactionMembershipProjectionSource membershipProjection =
             hu.taliann.icesmp.factions.FactionMembershipProjectionSource.canonical();
     private boolean membershipProjectionBound;
@@ -56,6 +64,46 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.configManager = Objects.requireNonNull(configManager, "configManager");
         this.currencyManager = Objects.requireNonNull(currencyManager, "currencyManager");
+        this.membershipAdjustments = new hu.taliann.icesmp.factions.FactionMembershipAdjustmentRuntime(
+                factionStore, claim -> membershipAdmissionBarrier.accept(claim), this::completeMembershipConsumers);
+    }
+
+    public synchronized void bindMembershipRuntime(final Consumer<Runnable> admissionBarrier,
+                                                   final Runnable effectsPersistence) {
+        if (membershipRuntimeBound) throw new IllegalStateException("Faction membership runtime already bound");
+        membershipAdmissionBarrier = Objects.requireNonNull(admissionBarrier);
+        membershipEffectsPersistence = Objects.requireNonNull(effectsPersistence);
+        membershipRuntimeBound = true;
+    }
+
+    public java.util.concurrent.CompletionStage<PlayerProfileFactionStore.AdjustmentResult> adjustMembershipDurably(
+            final UUID playerId, final PlayerProfileFactionStore.MembershipAdjustment request, final Runnable commitAdmission) {
+        return membershipAdjustments.adjust(playerId, request, commitAdmission);
+    }
+
+    public java.util.concurrent.CompletionStage<PlayerProfileFactionStore.AdjustmentObservation> reconcileMembershipAdjustment(
+            final UUID playerId, final PlayerProfileFactionStore.MembershipAdjustment request) {
+        return membershipAdjustments.reconcile(playerId, request);
+    }
+
+    public PlayerProfileFactionStore.MembershipView membershipView(final UUID playerId) {
+        return factionStore.membershipView(playerId);
+    }
+
+    public boolean hasPendingMembershipTransition(final UUID playerId) { return membershipAdjustments.pending(playerId); }
+
+    private void completeMembershipConsumers(final UUID playerId) {
+        final PlayerProfileFactionStore.State committed = factionStore.membershipView(playerId).state();
+        projection.put(playerId, committed);
+        final FactionType target = committed.membership().orElse(null);
+        if (target != null) publishMembershipChange(playerId, target, true);
+        else {
+            membershipChangeHook.accept(playerId);
+            if (guildManager != null) guildManager.reconcileFaction(playerId, null);
+        }
+        // Retry flushes even if an earlier attempt changed memory before its durable write failed.
+        if (guildManager != null) guildManager.save();
+        membershipEffectsPersistence.run();
     }
 
     public void setSeasonManager(final SeasonManager seasonManager) {
@@ -107,16 +155,17 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     }
 
     public boolean isEligibleForFactionBenefits(final UUID uuid) {
-        return getChosenFaction(uuid).isPresent();
+        return !hasPendingMembershipTransition(uuid) && getChosenFaction(uuid).isPresent();
     }
 
     public boolean isMember(final UUID uuid, final FactionType faction) {
-        return faction != null && getChosenFaction(uuid).orElse(null) == faction;
+        return faction != null && !hasPendingMembershipTransition(uuid) && getChosenFaction(uuid).orElse(null) == faction;
     }
 
     public boolean sameChosenFaction(final UUID first, final UUID second) {
         final FactionType faction = getChosenFaction(first).orElse(null);
-        return faction != null && faction == getChosenFaction(second).orElse(null);
+        return faction != null && !hasPendingMembershipTransition(first) && !hasPendingMembershipTransition(second)
+                && faction == getChosenFaction(second).orElse(null);
     }
 
     /** Immutable derived projection; PlayerProfile remains the sole durable authority. */
@@ -332,14 +381,12 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
 
     private Optional<PlayerProfileFactionStore.State> state(final UUID playerId) {
         if (playerId == null) return Optional.empty();
-        final PlayerProfileFactionStore.State projected = projection.get(playerId);
-        if (projected != null) return Optional.of(projected);
         try {
             final PlayerProfileFactionStore.State cached = factionStore.readCached(playerId);
             projection.put(playerId, cached);
             return Optional.of(cached);
         } catch (final RuntimeException notReady) {
-            return Optional.empty();
+            return Optional.ofNullable(projection.get(playerId));
         }
     }
 

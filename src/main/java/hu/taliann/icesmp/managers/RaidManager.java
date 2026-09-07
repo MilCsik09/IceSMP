@@ -305,7 +305,8 @@ public final class RaidManager implements PersistentStore {
         }
 
         final FactionType side = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
-        if (side != raid.attacker() && side != raid.defender()) {
+        if ((side != raid.attacker() && side != raid.defender())
+                || !factionManager.isMember(player.getUniqueId(), side)) {
             return "faction-raid-not-party";
         }
 
@@ -325,6 +326,10 @@ public final class RaidManager implements PersistentStore {
 
         participants.put(player.getUniqueId(), side);
         return null;
+    }
+
+    public synchronized void withMembershipAdmissionBarrier(final Runnable claim) {
+        java.util.Objects.requireNonNull(claim).run();
     }
 
     public long countParticipants(final FactionType side) {
