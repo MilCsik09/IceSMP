@@ -27,6 +27,12 @@ public final class BukkitRewardSources {
         try { return GameplayRewardGate.evaluateSources(entity(channel, source)).allowed(); }
         catch (final RuntimeException | LinkageError unavailable) { return false; }
     }
+    /** Capture a block's stable position without retaining the live block into profile IO. */
+    public static List<RewardSource> block(final org.bukkit.block.Block block) {
+        if (block == null || !Bukkit.isOwnedByCurrentRegion(block)) throw new IllegalStateException("Reward block owner required");
+        final UUID world = block.getWorld().getUID();
+        return List.of(new RewardSource.World(world), new RewardSource.Location(world, block.getX(), block.getY(), block.getZ()));
+    }
     public static RewardSourceContext death(final RewardChannel channel, final org.bukkit.entity.LivingEntity victim) {
         final var context = entity(channel, victim); final var killer = victim.getKiller();
         final Set<RewardSource> sources = new LinkedHashSet<>(context.sources());

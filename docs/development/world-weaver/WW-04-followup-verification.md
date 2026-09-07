@@ -20,3 +20,12 @@ regression suites pass locally. Fresh exact-head CI remains required.
 Coverage remains 323 authorities / 55 domains / 51 blockers. Native damage
 propagation, non-kill rewards, subsequent provider phases and client evidence are
 still open. Physical artifact issuance and durable gameplay admission stay off.
+
+## Source assertion fix verified
+
+Commit `f03f6e232fbd0ca02cb4d4f58ff6c4b31ce132a6`, run 34131213466:
+native Paper 101771529791 / Folia 101771529589 and artifact Paper
+101771529409 / Folia 101771529647 passed. Verification 101771529690 now
+fails only inherited `trashSpriteAssetAudit`; both corrected lifecycle suites pass.
+Resource pack 34131213457, Trash hardening 34131213435 and docs inventory
+34131213496 passed. This closes the assertion finding without changing gameplay.

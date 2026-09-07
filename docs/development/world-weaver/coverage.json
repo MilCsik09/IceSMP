@@ -2124,9 +2124,10 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
       "domain": "developer_self",
-      "source_sha256": "104dce66d396e65899ff54e7657bb44a985719c4636e977813ac60ac715e55f9",
+      "source_sha256": "f413c22be25291bb210574cee62a55a308a5a8988584a389b2a42e23dbae19a7",
       "public_methods": [
         "allowed",
+        "block",
         "causal",
         "death",
         "deathAllowed",
@@ -3928,7 +3929,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java",
       "domain": "profession",
-      "source_sha256": "c03bffb98ca5aba0a690ada12ee2abeb4a4fd4c0700397863eac5db19ba91c49",
+      "source_sha256": "1d782836ee5856c60b5d47cb74394b0e05b29fe95be2b9d98160f10f46876269",
       "public_methods": [
         "XpBreakdown",
         "XpChange",
@@ -3992,7 +3993,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ProfessionWeeklyGoalManager.java",
       "domain": "goals",
-      "source_sha256": "f2ebab513f68d8b4addce4e4502b1d4730a7000ee47478e1d933adcb2d36bbb1",
+      "source_sha256": "175ca52207c6143779a45c40588d87b8bd3d7f4665546c6ba7b21b2f5086305d",
       "public_methods": [
         "add",
         "counterOf",
@@ -5001,7 +5002,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileAuthority.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "a61106cc6935bc0b51a668de8a0d2684c9aa498a174d3901696ca024a6f681f2",
+      "source_sha256": "26e103454e6a5836a77ceff7fdebbc3dea119d18aae8131bc8629f6fef3cc0de",
       "public_methods": [
         "booleanExtension",
         "current",
@@ -5010,6 +5011,7 @@
         "installed",
         "longExtension",
         "mutateExtensions",
+        "mutateRewardSectionConditional",
         "mutateSection",
         "mutateSectionConditional",
         "playerId",
@@ -5285,7 +5287,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileService.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "6634876b565cf722c0246bef91954575e4ec1477e5002a6f9d89657aec8bdaa1",
+      "source_sha256": "3fe8dc6958852ea662c5566b57bd2985e7e80668e6d1a3ec2790d18204756d30",
       "public_methods": [
         "PlayerProfileSession",
         "adminProfile",
@@ -5298,6 +5300,7 @@
         "isCurrentSession",
         "join",
         "load",
+        "mutateRewardSectionConditional",
         "mutateSection",
         "mutateSectionConditional",
         "publicProfile",
@@ -5440,7 +5443,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileWeeklyGoalStore.java",
       "domain": "goals",
-      "source_sha256": "0f61cf43d973b4353306fc590bf72601be4380c87cbaf9e954d9932a61270d1a",
+      "source_sha256": "de929ee525e096d1426322a74514b1d4c53b67c51defb2a6b43c46662af2f4f5",
       "public_methods": [
         "ClaimedReward",
         "award",
@@ -5483,7 +5486,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "0496df5dd7d7f985bdf4d166b32ddf442d5692e1e43a1a8e0b69a406d244e1d1",
+      "source_sha256": "c1d78cd96816385fcf5d68795522c2928c6a1acc02191466ceb8d6db176a3f22",
       "public_methods": [
         "refreshSnapshot"
       ]
@@ -5491,7 +5494,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "6e764c69b0e6c18b037efbf933ad42a0626e85efbb21471b20107190806671e8",
+      "source_sha256": "5d8202bd280200d7db809a4c2a81fbe66176df73f7fe799791a463e0e9688610",
       "public_methods": [
         "afterManifestMovedBeforeCleanup",
         "afterSectionsMovedBeforeManifest",

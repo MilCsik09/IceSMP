@@ -78,9 +78,13 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
 
     @Override public CompletionStage<SectionSaveResult> saveRewardSection(UUID id, ProfileSectionId section,
             long expectedRevision, ProfileSectionSnapshot<?> next, hu.taliann.icesmp.integrity.RewardContext reward) {
+        return saveRewardSection(id, section, expectedRevision, -1, next, reward);
+    }
+    @Override public CompletionStage<SectionSaveResult> saveRewardSection(UUID id, ProfileSectionId section,
+            long expectedRevision, long expectedGeneration, ProfileSectionSnapshot<?> next, hu.taliann.icesmp.integrity.RewardContext reward) {
         Objects.requireNonNull(id); Objects.requireNonNull(section); Objects.requireNonNull(next); Objects.requireNonNull(reward);
         if (!id.equals(reward.recipient()) || next.sectionId() != section) throw new IllegalArgumentException("Reward save target mismatch");
-        return submit(id, () -> withLock(id, () -> saveLocked(id, section, expectedRevision, -1, next, reward)));
+        return submit(id, () -> withLock(id, () -> saveLocked(id, section, expectedRevision, expectedGeneration, next, reward)));
     }
 
     private SectionSaveResult saveLocked(UUID id,ProfileSectionId section,long expectedRevision,long expectedGeneration,ProfileSectionSnapshot<?> next)throws Exception{

@@ -6,6 +6,7 @@ import hu.taliann.icesmp.playerprofile.application.PlayerProfileWeeklyGoalStore;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.integrity.*;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -19,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -64,12 +66,19 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
 
     /** Hozzájárulás (a ProfessionXpListener hívja a játékos saját régió-szálán). */
     public void add(final Player player, final ProfessionType profession, final int units) {
+        final RewardContext reward;
+        try { reward = BukkitRewardSources.entity(RewardChannel.WEEKLY_GOAL, player).forRecipient(player.getUniqueId()); }
+        catch (RuntimeException | LinkageError unavailable) { return; }
+        add(player, profession, units, reward);
+    }
+
+    public void add(final Player player, final ProfessionType profession, final int units, final RewardContext reward) {
+        Objects.requireNonNull(reward).require(RewardChannel.WEEKLY_GOAL, player.getUniqueId());
         if (units <= 0 || !configManager.getBoolean("profession-weekly.enabled", true)) {
             return;
         }
         if (PlayerProfileAuthority.installed().isEmpty()) {
-            // Tartós hozzájárulás-tár nélkül a memóriabeli számláló az egyetlen igazság.
-            counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
+            // A durable contribution is required before its shared counter can advance.
             return;
         }
         // A hét azonosítója a művelet ELEJÉN rögzül, és a globális számláló csak a tartós
@@ -78,18 +87,24 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
         // pedig a régi hét munkáját írná az új hét számlálójára.
         final long operationWeek = week;
         final UUID playerId = player.getUniqueId();
-        weeklyStore.recordContribution(playerId, profession, units, operationWeek)
+        weeklyStore.recordContribution(playerId, profession, units, operationWeek, reward)
                 .whenComplete((total, failure) -> {
                     if (failure != null) {
+                        if (rewardDenied(failure)) return;
                         plugin.getLogger().severe("Heti céh-hozzájárulás mentése sikertelen: "
                                 + playerId + ": " + failure.getMessage());
                         return;
                     }
-                    if (operationWeek != week) {
-                        return;
+                    synchronized (this) {
+                        if (operationWeek != week) return;
+                        counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
                     }
-                    counters.computeIfAbsent(profession, key -> new AtomicLong()).addAndGet(units);
                 });
+    }
+
+    private static boolean rewardDenied(Throwable failure) {
+        while (failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null) failure = failure.getCause();
+        return failure instanceof RewardEligibilityDeniedException;
     }
 
     public long counterOf(final ProfessionType profession) {
@@ -187,12 +202,9 @@ public final class ProfessionWeeklyGoalManager implements PersistentStore, Liste
                     if (claimed == null || claimed.isEmpty()) {
                         return;
                     }
-                    professionManager.runOnOwnerThread(player, () -> {
-                        if (!player.isOnline()) {
-                            return;
-                        }
+                    professionManager.runOnOwnerThread(playerId, owned -> {
                         for (final PlayerProfileWeeklyGoalStore.ClaimedReward reward : claimed) {
-                            player.sendMessage(messageManager.getMessage(
+                            owned.sendMessage(messageManager.getMessage(
                                     "profession-weekly-reward",
                                     "<gold>⚒ Szakma-céh jutalom: <white>+{xp} {profession} XP</white> a heti közös célért!</gold>",
                                     Map.of("xp", String.valueOf(reward.xp()),

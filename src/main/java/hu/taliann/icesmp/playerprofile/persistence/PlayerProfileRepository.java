@@ -32,6 +32,13 @@ public interface PlayerProfileRepository {
         return java.util.concurrent.CompletableFuture.failedFuture(
                 new hu.taliann.icesmp.integrity.RewardEligibilityDeniedException());
     }
+    /** Generation-fenced reward CAS; unsupported stores must not fall back to an ordinary save. */
+    default CompletionStage<SectionSaveResult> saveRewardSection(UUID playerId, ProfileSectionId section,
+            long expectedRevision, long expectedGeneration, ProfileSectionSnapshot<?> next,
+            hu.taliann.icesmp.integrity.RewardContext reward) {
+        return java.util.concurrent.CompletableFuture.failedFuture(
+                new hu.taliann.icesmp.integrity.RewardEligibilityDeniedException());
+    }
     CompletionStage<QuarantineResult> quarantineSection(UUID playerId,ProfileSectionId section,byte[] originalPayload,String reason);
     CompletionStage<RecoveryResult> recoverSection(UUID playerId,ProfileSectionId section,String evidenceId,String auditId);
     Optional<PlayerProfileSnapshot> cached(UUID playerId);
