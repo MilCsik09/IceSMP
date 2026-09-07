@@ -77,9 +77,13 @@ replay before clean shutdown. CI requires
 `ICESMP_QUEST_STATISTICS_RUNTIME_PROBE_PASS scope=offline_profile_atomic_settlement`.
 No Player, developer token or Bukkit gameplay event is fabricated. This checks native
 profile transaction wiring, not a connected player's quest manager/item behavior.
-Fresh exact-head CI is required for this extension. Exact preceding queue head results
-are recorded in `WW-04-quest-queue.md`; its native/artifact jobs passed and only inherited
-Trash source PNG validation failed the full verification job.
+Exact head `5b77faecfd152cd05e8492aac7cefd5a3d95b269`, tree
+`69975f162b5bc2edc805cea6d2ffa42c800722fe`, CI run `34140237008`:
+Paper native job `101800347236` and Folia native job `101800347304` both emitted
+this marker and stopped cleanly. Artifact lifecycle jobs `101800347298` (Paper)
+and `101800347226` (Folia) also passed. Full verification job `101800347317`
+failed only `trashSpriteAssetAudit`, the inherited damaged source PNG gate.
+This is offline profile evidence, not connected-player completion evidence.
 
 ## Remaining scope
 

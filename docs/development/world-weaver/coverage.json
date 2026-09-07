@@ -798,11 +798,15 @@
       "inspect": "isActive/getProgress/getTarget",
       "planned_actions": "forceStart; add stopExpectedInstance",
       "canonical_route": "ServerChallengeManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Native per-run UUID, source-gated progress, terminal lifecycle and final owner reward admission are implemented. Provider start still needs durable origin/instance before first effect and expected-instance stop; complete event adapter and real recipient runtime evidence remain required.",
       "source_evidence": [
-        "src/main/java/hu/taliann/icesmp/managers/ServerChallengeManager.java"
+        "src/main/java/hu/taliann/icesmp/managers/ServerChallengeManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/ServerChallengeRun.java",
+        "src/main/java/hu/taliann/icesmp/listeners/ServerChallengeListener.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/regression/java/hu/taliann/icesmp/managers/ServerChallengeIntegrityRegressionSuite.java"
+      ]
     },
     {
       "id": "event.escort",
@@ -4347,7 +4351,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ServerChallengeManager.java",
       "domain": "event.server_challenge",
-      "source_sha256": "25a381adfd88e592c3d0cc47dcaf161b716fe8b847ab16e009c9d705cbdbdf13",
+      "source_sha256": "8dc42e89f7f0f0c114c364f4e279bdfff465fa1f60bea3451bb23ceae2b99b1e",
       "public_methods": [
         "describeGoal",
         "forceStart",
@@ -4359,6 +4363,18 @@
         "showTo",
         "shutdown",
         "tick"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/managers/ServerChallengeRun.java",
+      "domain": "event.server_challenge",
+      "source_sha256": "1abbe9ef4346482c62cb71806bc02cf48e3875da461926fdb1b0ce630b9b48c6",
+      "public_methods": [
+        "expire",
+        "record",
+        "rewardAllowed",
+        "snapshot",
+        "stop"
       ]
     },
     {
@@ -6667,6 +6683,7 @@
     "src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java",
     "src/main/java/hu/taliann/icesmp/managers/MajorEventGate.java",
     "src/main/java/hu/taliann/icesmp/managers/SeasonStoryTeller.java",
+    "src/main/java/hu/taliann/icesmp/managers/ServerChallengeRun.java",
     "src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java",
     "src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",

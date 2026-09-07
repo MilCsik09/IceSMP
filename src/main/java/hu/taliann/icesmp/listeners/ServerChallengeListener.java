@@ -3,6 +3,9 @@ package hu.taliann.icesmp.listeners;
 import hu.taliann.icesmp.managers.ServerChallengeManager;
 import hu.taliann.icesmp.managers.ServerChallengeManager.ChallengeType;
 import org.bukkit.GameMode;
+import hu.taliann.icesmp.integrity.*;
+import java.util.LinkedHashSet;
+import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Monster;
@@ -17,7 +20,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 /**
  * Feeds the {@link ServerChallengeManager} counter: hostile kills, ore mines and
  * crop harvests each count toward the active goal. Handlers run on the acting
- * region thread and the counter is atomic, so counting is Folia-safe. Joining
+ * region thread; the manager admits immutable provenance under its transition lock. Joining
  * players are shown the live boss bar.
  */
 public final class ServerChallengeListener implements Listener {
@@ -31,10 +34,11 @@ public final class ServerChallengeListener implements Listener {
     /** Hostile mob slain by a player → SLAY progress. */
     @EventHandler(ignoreCancelled = true)
     public void onDeath(final EntityDeathEvent event) {
-        if (event.getEntity() instanceof Monster
-                && hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKill(event.getEntity()) != null) {
-            serverChallengeManager.record(ChallengeType.SLAY);
-        }
+        if (!(event.getEntity() instanceof Monster)) return;
+        try {
+            final var kill = hu.taliann.icesmp.utils.MobKillUtil.eligibleTrackingKill(event.getEntity());
+            if (kill != null) serverChallengeManager.record(ChallengeType.SLAY, kill.rewardContext(RewardChannel.SERVER_CHALLENGE));
+        } catch (final RuntimeException | LinkageError unavailable) { return; }
     }
 
     /** Ore mined / mature crop harvested by a survival player → MINE / HARVEST progress. */
@@ -49,10 +53,16 @@ public final class ServerChallengeListener implements Listener {
             return;
         }
         final Block block = event.getBlock();
+        final RewardContext contribution;
+        try {
+            final var sources = new LinkedHashSet<>(BukkitRewardSources.causal(player));
+            sources.addAll(BukkitRewardSources.block(block));
+            contribution = new RewardContext(RewardChannel.SERVER_CHALLENGE, player.getUniqueId(), List.copyOf(sources));
+        } catch (final RuntimeException | LinkageError unavailable) { return; }
         if (block.getType().name().endsWith("_ORE")) {
-            serverChallengeManager.record(ChallengeType.MINE);
+            serverChallengeManager.record(ChallengeType.MINE, contribution);
         } else if (isMatureCrop(block)) {
-            serverChallengeManager.record(ChallengeType.HARVEST);
+            serverChallengeManager.record(ChallengeType.HARVEST, contribution);
         }
     }
 
