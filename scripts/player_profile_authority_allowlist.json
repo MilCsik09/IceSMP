@@ -582,6 +582,11 @@
       "reason": "Player-only offhand display-overlay expiry handles are transient presentation state; replacement, slot/inventory changes, session teardown and plugin shutdown cancel them, while canonical knowledge remains in Profile v2."
     },
     {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/DevItemManager.java|private final Map<UUID, InputStamp> inputs = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "One immutable input stamp per authorized artifact owner deduplicates the two entity-interaction callbacks. It contains tick/kind/entity UUID only, never profile or progression data. DevItemManager.clearPlayerState removes it on the centralized quit/kick/death path, and shutdown clears the map; only a validated owner interaction can insert it."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|private final Map<UUID, Long> leaveConfirmation = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Thirty-second, player-owned confirmation prompt only. Consumed on repeat command and removed on quit; restart merely requires confirming again. Role, evidence and return cooldown remain exclusively in PlayerProfileWhisperStore WAL."

@@ -574,6 +574,14 @@ val devItemRewardRegressionTest = registerRegression(
     "devItemRewardRegressionTest",
     "Runs focused DEV-item state, retry and scheduler-gate regressions.",
     "hu.taliann.icesmp.managers.DevItemRewardRegressionSuite")
+val devArtifactLifecycleRegressionTest = registerRegression(
+    "devArtifactLifecycleRegressionTest",
+    "Runs DEV artifact owner-policy, immutable-state and durable publication regressions.",
+    "hu.taliann.icesmp.dev.artifact.DevArtifactLifecycleRegressionSuite")
+val devArtifactMigrationRegressionTest = registerRegression(
+    "devArtifactMigrationRegressionTest",
+    "Runs strict DEV artifact schema-2 and lossless legacy reward migration regressions.",
+    "hu.taliann.icesmp.dev.artifact.DevArtifactMigrationRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -1083,6 +1091,7 @@ tasks.check {
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
+        devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
         configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,

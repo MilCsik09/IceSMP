@@ -1,0 +1,8 @@
+{
+  "parent": "icesmp:item/dev_world_weaver_base",
+  "textures": {
+    "core": "minecraft:block/ochre_froglight",
+    "edge": "minecraft:block/gold_block",
+    "orbit": "minecraft:block/redstone_block"
+  }
+}

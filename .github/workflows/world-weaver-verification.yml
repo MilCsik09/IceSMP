@@ -58,6 +58,12 @@ jobs:
       - name: Export resolved compile evidence for local preflight
         if: ${{ !cancelled() }}
         run: ./gradlew --init-script gradle/world-weaver-evidence.init.gradle worldWeaverCompileEvidence --no-daemon --console=plain
+      - name: Retain the Java 21 toolchain for reproducible offline verification
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p build/reports/world-weaver
+          tar -czf build/reports/world-weaver/java21-toolchain.tar.gz -C "$JAVA_HOME" .
+          sha256sum build/reports/world-weaver/java21-toolchain.tar.gz > build/reports/world-weaver/java21-toolchain.sha256
       - name: Export resolved public build artifacts for offline verification
         if: ${{ !cancelled() }}
         shell: python
@@ -88,4 +94,112 @@ jobs:
             build/world-weaver-compile-evidence
             build/world-weaver-gradle-evidence
           if-no-files-found: warn
+          retention-days: 14
+
+  paper-runtime:
+    name: Paper 1.21.11 DEV artifact lifecycle runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Checkout tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Boot isolated Paper runtime and shut down through the probe
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.dev-artifact-runtime=true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p run build
+          printf 'eula=true\n' > run/eula.txt
+          timeout 480s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            | tee build/dev-artifact-paper-runtime.log
+
+      - name: Require Paper proof marker and clean shutdown
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS' build/dev-artifact-paper-runtime.log
+          grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_SHUTDOWN_PASS' build/dev-artifact-paper-runtime.log
+          ! grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_FAIL' build/dev-artifact-paper-runtime.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' build/dev-artifact-paper-runtime.log
+
+      - name: Retain exact Paper runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-artifact-paper-${{ github.run_id }}
+          path: build/dev-artifact-paper-runtime.log
+          retention-days: 14
+
+  folia-runtime:
+    name: Folia 1.21.11 DEV artifact lifecycle runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime asset dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Boot lock-pinned Folia runtime and shut down through the probe
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.dev-artifact-runtime=true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p run build
+          printf 'eula=true\n' > run/eula.txt
+          timeout 600s ./gradlew --no-daemon --console=plain \
+            --init-script gradle/run-folia.init.gradle runFolia \
+            | tee build/dev-artifact-folia-runtime.log
+
+      - name: Require Folia proof marker and clean shutdown
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS' build/dev-artifact-folia-runtime.log
+          grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_SHUTDOWN_PASS' build/dev-artifact-folia-runtime.log
+          ! grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_FAIL' build/dev-artifact-folia-runtime.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' build/dev-artifact-folia-runtime.log
+
+      - name: Retain exact Folia runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-artifact-folia-${{ github.run_id }}
+          path: build/dev-artifact-folia-runtime.log
           retention-days: 14

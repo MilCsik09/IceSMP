@@ -1,6 +1,9 @@
 package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.managers.ConfigManager;
+import hu.taliann.icesmp.dev.artifact.BingulusRewardBehavior;
+import hu.taliann.icesmp.dev.artifact.DevArtifactDefinition;
+import hu.taliann.icesmp.dev.artifact.DevArtifactPresentation;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -40,18 +43,21 @@ public final class DevItemFactory {
     }
 
     public ItemStack createBingulus(final UUID owner, final UUID instanceId) {
-        final String base = "dev-items." + BINGULUS_ID + ".item.";
-        final Material material = Material.matchMaterial(
-                configManager.getString(base + "material", "HEART_OF_THE_SEA").toUpperCase(Locale.ROOT));
+        return create(BingulusRewardBehavior.definition(configManager), owner, instanceId, DevArtifactPresentation.ModelState.IDLE);
+    }
+
+    public ItemStack create(final DevArtifactDefinition definition, final UUID owner, final UUID instanceId,
+                            final DevArtifactPresentation.ModelState state) {
+        final DevArtifactPresentation presentation = definition.presentationSource().current();
+        final Material material = Material.matchMaterial(presentation.material().toUpperCase(Locale.ROOT));
         final ItemStack item = new ItemStack(material == null || material.isAir() ? Material.HEART_OF_THE_SEA : material);
         final ItemMeta meta = item.getItemMeta();
 
-        meta.displayName(LEGACY.deserialize(configManager.getString(
-                        base + "display-name", "&d&lCsodálatos Bingulus"))
+        meta.displayName(LEGACY.deserialize(presentation.displayName())
                 .decoration(TextDecoration.ITALIC, false));
 
         final List<Component> lore = new ArrayList<>();
-        for (final String line : configManager.getStringList(base + "lore")) {
+        for (final String line : presentation.lore()) {
             lore.add(LEGACY.deserialize(line).decoration(TextDecoration.ITALIC, false));
         }
         meta.lore(lore.isEmpty() ? null : lore);
@@ -60,12 +66,12 @@ public final class DevItemFactory {
         meta.setMaxStackSize(1);
 
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        pdc.set(itemIdKey, PersistentDataType.STRING, BINGULUS_ID);
+        pdc.set(itemIdKey, PersistentDataType.STRING, definition.id());
         pdc.set(ownerKey, PersistentDataType.STRING, owner.toString());
         pdc.set(instanceKey, PersistentDataType.STRING, instanceId.toString());
         item.setItemMeta(meta);
 
-        final String model = configManager.getString(base + "item-model", "icesmp:csodalatos_bingulus");
+        final String model = presentation.model(state);
         if (!model.isBlank()) {
             ItemDataFactory.applyItemModel(item, model);
         }
