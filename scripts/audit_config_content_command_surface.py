@@ -667,7 +667,6 @@ def build_report(baseline: str) -> dict[str, Any]:
         if (old_leaves.get(major_event_path) != major_events_before
                 or new_leaves.get(major_event_path) != major_events_after):
             raise AssertionError("unexpected cumulative major-event lifecycle drift")
-        drift.remove(major_event_path)
     unexpected_drift = sorted(key for key in drift
                               if key not in INTEGRITY_HARDENING_ALLOWED_DRIFT
                               and not key.startswith(INTEGRITY_HARDENING_ALLOWED_DRIFT_PREFIXES))
