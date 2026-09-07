@@ -152,6 +152,7 @@ public final class WorldWeaverProviderRegistry {
         for (final Entry entry : providers.values()) {
             if (!entry.kinds().contains(snapshot.ref().kind())) continue;
             try {
+                requireSnapshotAvailable(snapshot, entry.id());
                 final ProviderDiscovery result = entry.breaker().call(() -> {
                     final ProviderDiscovery found = Objects.requireNonNull(entry.provider().discover(snapshot));
                     found.facets().forEach(id -> owned(entry, id, facets, owners)); found.actions().forEach(id -> owned(entry, id, actions, owners));
@@ -217,6 +218,14 @@ public final class WorldWeaverProviderRegistry {
                 || !descriptor.facetId().equals(value.sourceFacet())) throw new IllegalArgumentException("Catalog value differs from manifest");
     }
     public Map<String, WeaverValue> captureContributions(final hu.taliann.icesmp.dev.weaver.subject.SubjectRef subject) {
+        return captureContributions(subject, Optional.empty());
+    }
+    /** The operation-scoped recovery token permits only its provider's owner-thread observation. */
+    public Map<String, WeaverValue> captureRecoveryContributions(final RecoveryContext context) {
+        context.authority().require(context.operation());
+        return captureContributions(context.operation().subject(), Optional.of(context.operation().providerId()));
+    }
+    private Map<String, WeaverValue> captureContributions(final hu.taliann.icesmp.dev.weaver.subject.SubjectRef subject, final Optional<String> recoveringProvider) {
         requireFrozen();
         final Map<String, WeaverValue> facts = new TreeMap<>();
         for (final Entry entry : providers.values()) {
@@ -226,18 +235,29 @@ public final class WorldWeaverProviderRegistry {
                     final Map<String, WeaverValue> values = Map.copyOf(contributor.captureOnOwner(subject));
                     if (values.size() > 128) throw new IllegalArgumentException("Provider snapshot fact cap");
                     values.forEach((key, value) -> {
-                        if (!key.startsWith(entry.id() + ".") || !value.sourceProvider().equals(entry.id())) throw new IllegalArgumentException("Foreign snapshot fact");
+                        if (!key.startsWith(entry.id() + ".") || !value.sourceProvider().equals(entry.id()) || key.endsWith(".snapshot_unavailable")) throw new IllegalArgumentException("Foreign/reserved snapshot fact");
                         types.validate(value);
                     });
                     return values;
-                }, false);
+                }, recoveringProvider.filter(entry.id()::equals).isPresent());
                 if (facts.size() + captured.size() > 200) throw new WeaverDomainRejection("SNAPSHOT_FACT_CAP");
                 facts.putAll(captured);
             } catch (final WeaverDomainRejection failure) {
                 if (failure.code().equals("SNAPSHOT_FACT_CAP")) throw failure;
+                if (facts.size() >= 200) throw new WeaverDomainRejection("SNAPSHOT_FACT_CAP");
+                facts.put(snapshotUnavailableKey(entry.id()), new WeaverValue(WeaverTypeId.parse("weaver:text@1"),
+                        Map.of("value", failure.code()), entry.id(), entry.id(), Set.of(), System.currentTimeMillis()));
             }
         }
         return Map.copyOf(facts);
+    }
+    private static String snapshotUnavailableKey(final String provider) {
+        final String key = provider + ".snapshot_unavailable";
+        return key.length() <= 96 ? key : UUID.nameUUIDFromBytes(provider.getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".snapshot_unavailable";
+    }
+    public static void requireSnapshotAvailable(final hu.taliann.icesmp.dev.weaver.subject.SubjectSnapshot snapshot, final String provider) {
+        final var failure = snapshot.facts().get(snapshotUnavailableKey(provider));
+        if (failure != null) throw new WeaverDomainRejection((String) failure.payload().get("value"));
     }
     public hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment assessRecovery(final String providerId, final RecoveryContext context,
             final SubjectSnapshot snapshot, final hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationRecord operation) {

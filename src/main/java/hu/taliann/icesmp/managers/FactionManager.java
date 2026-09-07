@@ -42,6 +42,7 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
         throw new IllegalStateException("Faction membership persistence is not installed");
     };
     private boolean membershipRuntimeBound;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask membershipRecoveryTask;
     private final hu.taliann.icesmp.factions.FactionMembershipAdjustmentRuntime membershipAdjustments;
     private volatile hu.taliann.icesmp.factions.FactionMembershipProjectionSource membershipProjection =
             hu.taliann.icesmp.factions.FactionMembershipProjectionSource.canonical();
@@ -91,6 +92,28 @@ public final class FactionManager implements PlayerStateCleanup, PersistentStore
     }
 
     public boolean hasPendingMembershipTransition(final UUID playerId) { return membershipAdjustments.pending(playerId); }
+
+    /** Started after every canonical role store loads; storage continuations never block a region. */
+    public synchronized void startMembershipRecovery() {
+        if (!membershipRuntimeBound || membershipRecoveryTask != null) throw new IllegalStateException("Faction recovery lifecycle invalid");
+        membershipRecoveryTask = plugin.getServer().getAsyncScheduler().runAtFixedRate(plugin,
+                task -> membershipAdjustments.pulse(), 0, 1, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    public synchronized void stopMembershipRecovery() {
+        membershipAdjustments.close();
+        if (membershipRecoveryTask != null) { membershipRecoveryTask.cancel(); membershipRecoveryTask = null; }
+    }
+
+    public PlayerProfileFactionStore.AdjustmentObservation observeMembershipAdjustment(final UUID playerId,
+            final PlayerProfileFactionStore.MembershipAdjustment request) {
+        return factionStore.observeAdjustment(playerId, request);
+    }
+
+    public boolean membershipAdjustmentEffectsCompleted(final UUID playerId,
+            final PlayerProfileFactionStore.MembershipAdjustment request) {
+        return factionStore.adjustmentEffectsCompleted(playerId, request);
+    }
 
     private void completeMembershipConsumers(final UUID playerId) {
         final PlayerProfileFactionStore.State committed = factionStore.membershipView(playerId).state();

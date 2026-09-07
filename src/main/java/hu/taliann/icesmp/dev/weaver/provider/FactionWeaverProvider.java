@@ -23,24 +23,33 @@ public final class FactionWeaverProvider implements WorldWeaverProvider, WeaverS
     private final Map<String, WeaverValueCatalog> catalogs;
     private final Function<SubjectRef, Map<String, WeaverValue>> snapshots;
     private final FactionProjectionActions mutations;
+    private final Optional<FactionCanonicalActions> canonical;
     private final ProviderContribution contribution;
-    private record Ports(FactionRuntimeProjectionSource source, Function<SubjectRef, Map<String, WeaverValue>> snapshots) { }
+    private record Ports(FactionRuntimeProjectionSource source, Function<SubjectRef, Map<String, WeaverValue>> snapshots, FactionCanonicalActions.Port canonical) { }
 
     public FactionWeaverProvider(WeaverProviderServices services, FactionManager factions, FactionMobContextResolver contexts, FactionPassiveConfig config) {
         this(services.types(), nativePorts(services, factions, contexts, config));
     }
-    private FactionWeaverProvider(WeaverTypeRegistry types, Ports ports) { this(types, ports.source(), ports.snapshots()); }
+    private FactionWeaverProvider(WeaverTypeRegistry types, Ports ports) { this(types, ports.source(), ports.snapshots(), Optional.of(ports.canonical())); }
     FactionWeaverProvider(WeaverTypeRegistry types, FactionRuntimeProjectionSource source, Function<SubjectRef, Map<String, WeaverValue>> snapshots) {
+        this(types, source, snapshots, Optional.empty());
+    }
+    FactionWeaverProvider(WeaverTypeRegistry types, FactionRuntimeProjectionSource source, Function<SubjectRef, Map<String, WeaverValue>> snapshots,
+            Optional<FactionCanonicalActions.Port> canonicalPort) {
         this.snapshots = Objects.requireNonNull(snapshots); mutations = new FactionProjectionActions(source, snapshots);
+        canonical = canonicalPort.map(FactionCanonicalActions::new);
         final Map<String, WeaverValueCatalog> all = new LinkedHashMap<>();
         register(types, all, "faction.memberships", FACTION, "faction.membership", () -> enums(Set.of(FactionType.values())), value -> Component.text(value.getDisplayName()));
         register(types, all, "faction.contexts", CONTEXT, "faction.context", () -> enums(FactionContextProjectionSource.projectable()), value -> Component.text(value.name()));
         catalogs = Map.copyOf(all);
+        final List<ActionDescriptor> actions = new ArrayList<>(mutations.descriptors());
+        canonical.ifPresent(c -> actions.addAll(c.descriptors()));
         contribution = new ProviderContribution(List.of(new FacetDescriptor(FACET, Component.text("Frakció"), Component.text("Tagság és szemantikus mobkontextus"), 20)),
-                mutations.descriptors(), all.entrySet().stream().map(e -> new CatalogDescriptor(e.getKey(), FACET, Component.text(e.getKey()), e.getValue().type())).toList(),
+                actions, all.entrySet().stream().map(e -> new CatalogDescriptor(e.getKey(), FACET, Component.text(e.getKey()), e.getValue().type())).toList(),
                 List.of(new ExportDescriptor("faction.export_membership", FACET, FACTION, Set.of("faction.membership")),
                         new ExportDescriptor("faction.export_context", FACET, CONTEXT, Set.of("faction.context"))), mutations.imports(),
-                mutations.descriptors().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(ActionDescriptor::id, a -> "faction.journal_projection")));
+                actions.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(ActionDescriptor::id,
+                        a -> canonical.filter(c -> c.owns(a.id())).isPresent() ? "faction.profile_transaction" : "faction.journal_projection")));
     }
     private static Ports nativePorts(WeaverProviderServices services, FactionManager factions, FactionMobContextResolver contexts, FactionPassiveConfig config) {
         final var source = new FactionRuntimeProjectionSource(services.projections(), System::currentTimeMillis);
@@ -54,10 +63,27 @@ public final class FactionWeaverProvider implements WorldWeaverProvider, WeaverS
             if (!live.isValid() || live.isDead()) throw new WeaverDomainRejection("ENTITY_UNAVAILABLE");
             if (ref instanceof PlayerRef) {
                 if (!(live instanceof Player) || !factions.isMembershipReady(id)) throw new WeaverDomainRejection("PROFILE_UNAVAILABLE");
-                return membershipFacts(ref, factions.getMembership(id), source, System.currentTimeMillis());
+                final long now = System.currentTimeMillis();
+                final hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore.MembershipView view;
+                try { view = factions.membershipView(id); }
+                catch (RuntimeException failure) { throw FactionCanonicalActions.rejection(failure); }
+                final var membership = view.state().membership().map(FactionMembership::citizen).orElseGet(FactionMembership::guest);
+                final Map<String, WeaverValue> facts = new HashMap<>(membershipFacts(ref, membership, source, now));
+                facts.putAll(FactionCanonicalActions.facts(view, factions.hasPendingMembershipTransition(id), now));
+                return Map.copyOf(facts);
             }
             if (!(live instanceof Mob)) return Map.of();
             return contextFacts(ref, contexts.contentContexts(live, config.snapshot()), source, System.currentTimeMillis());
+        }, new FactionCanonicalActions.Port() {
+            public java.util.concurrent.CompletionStage<hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore.AdjustmentResult> adjust(UUID player,
+                    hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore.MembershipAdjustment request, Runnable admission) {
+                return factions.adjustMembershipDurably(player, request, admission);
+            }
+            public hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore.AdjustmentObservation observe(UUID player,
+                    hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore.MembershipAdjustment request) { return factions.observeMembershipAdjustment(player, request); }
+            public boolean completed(UUID player, hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore.MembershipAdjustment request) {
+                return factions.membershipAdjustmentEffectsCompleted(player, request);
+            }
         });
     }
     private static <T> void register(WeaverTypeRegistry types, Map<String, WeaverValueCatalog> catalogs, String id, WeaverTypeId type, String capability,
@@ -103,7 +129,7 @@ public final class FactionWeaverProvider implements WorldWeaverProvider, WeaverS
         final Set<String> covered = new HashSet<>(Set.of(FACET)); contribution.actions().forEach(a -> covered.add(a.id()));
         contribution.catalogs().forEach(c -> covered.add(c.id())); contribution.exports().forEach(e -> covered.add(e.id())); contribution.imports().forEach(i -> covered.add(i.id()));
         return new ProviderCoverage("faction.registered_surface", CoverageLevel.FULL_PROVIDER,
-                "Typed membership/context projection, canonical/effective inspect, Thread and conditional sever. WW-00 remains blocked pending canonical transactions, scripted target controls and native evidence.", covered);
+                "Typed projection, canonical/effective inspect, Thread/sever and LIVE_GM profile transactions. WW-00 remains blocked pending scripted target controls and native evidence.", covered);
     }
     @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef ref) { return Map.copyOf(snapshots.apply(ref)); }
     @Override public ProviderDiscovery discover(SubjectSnapshot snapshot) {
@@ -111,7 +137,8 @@ public final class FactionWeaverProvider implements WorldWeaverProvider, WeaverS
         final Set<String> exports = new HashSet<>();
         if (snapshot.facts().containsKey("faction.membership")) exports.add("faction.export_membership");
         if (snapshot.facts().containsKey("faction.context")) exports.add("faction.export_context");
-        final var visible = mutations.visible(snapshot.ref().kind());
+        final Set<String> visible = new HashSet<>(mutations.visible(snapshot.ref().kind()));
+        canonical.ifPresent(c -> visible.addAll(c.visible(snapshot)));
         return new ProviderDiscovery(Set.of(FACET), visible, Set.of(snapshot.ref() instanceof PlayerRef ? "faction.memberships" : "faction.contexts"), exports,
                 mutations.imports().stream().filter(i -> visible.contains(i.actionId())).map(ImportDescriptor::id).collect(java.util.stream.Collectors.toUnmodifiableSet()), Map.of());
     }
@@ -127,10 +154,16 @@ public final class FactionWeaverProvider implements WorldWeaverProvider, WeaverS
         final var value = snapshot.facts().get(id.equals("faction.export_membership") ? "faction.membership" : "faction.context");
         return value != null && context.types().compatible(value, descriptor.outputType(), descriptor.capabilities()) ? ValueExportResult.exported(value) : ValueExportResult.rejected("EXPORT_UNAVAILABLE");
     }
-    @Override public PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request) { return mutations.prepare(context, snapshot, request); }
-    @Override public PreparedEffects prepareEffects(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request, PreparedAction prepared) { return mutations.effects(context, snapshot, request, prepared); }
+    @Override public PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request) {
+        return canonical.filter(c -> c.owns(request.actionId())).map(c -> c.prepare(context, snapshot, request)).orElseGet(() -> mutations.prepare(context, snapshot, request));
+    }
+    @Override public PreparedEffects prepareEffects(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request, PreparedAction prepared) {
+        return canonical.filter(c -> c.owns(request.actionId())).map(c -> c.effects(context)).orElseGet(() -> mutations.effects(context, snapshot, request, prepared));
+    }
     @Override public List<ProjectionConsumerDescriptor> projectionConsumers() { return mutations.consumers(); }
     @Override public PreparedAction prepareUndo(ProviderContext context, SubjectSnapshot snapshot, WeaverReceipt receipt) { context.authority().requireValid(); return mutations.undo(context, snapshot, receipt); }
     @Override public ImportValidation validateImport(ProviderContext context, SubjectSnapshot snapshot, String id, WeaverValue value) { context.authority().requireValid(); return mutations.validateImport(context, snapshot, id, value); }
-    @Override public RecoveryAssessment assessRecovery(RecoveryContext context, SubjectSnapshot snapshot, WeaverOperationRecord operation) { return mutations.assess(context, snapshot, operation); }
+    @Override public RecoveryAssessment assessRecovery(RecoveryContext context, SubjectSnapshot snapshot, WeaverOperationRecord operation) {
+        return canonical.filter(c -> c.owns(operation.request().actionId())).map(c -> c.assess(context, snapshot, operation)).orElseGet(() -> mutations.assess(context, snapshot, operation));
+    }
 }

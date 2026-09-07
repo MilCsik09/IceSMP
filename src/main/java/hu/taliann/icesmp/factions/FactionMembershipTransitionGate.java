@@ -38,6 +38,11 @@ public final class FactionMembershipTransitionGate {
         return active.containsKey(Objects.requireNonNull(playerId));
     }
 
+    public synchronized boolean paused(final UUID playerId, final UUID operationId) {
+        final Lease lease = active.get(Objects.requireNonNull(playerId));
+        return lease != null && lease.operationId().equals(operationId) && !lease.running();
+    }
+
     public synchronized boolean release(final UUID playerId, final UUID operationId) {
         final Lease lease = active.get(Objects.requireNonNull(playerId));
         return lease != null && lease.operationId().equals(Objects.requireNonNull(operationId)) && active.remove(playerId, lease);

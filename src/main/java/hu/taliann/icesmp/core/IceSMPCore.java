@@ -1147,6 +1147,7 @@ public final class IceSMPCore {
         // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
         // letting later gameplay run against an empty/default manager and overwrite the evidence.
         storeCoordinator.loadAll();
+        factionManager.startMembershipRecovery();
         // A class-relic katalógus kereszt-validációja a generikus relic-registryt kérdezi,
         // ezért csak a RelicManager (persistent store) betöltése UTÁN futhat.
         classRelicService.reload();
@@ -1376,6 +1377,7 @@ public final class IceSMPCore {
      * Disables the plugin core by saving all manager data.
      */
     public void disable() {
+        factionManager.stopMembershipRecovery();
         // A passzívok per-player megtorlási/célzási állapota nem perzisztens. Sikertelen
         // enable után is takarítani kell, különben hot-reloadnál régi célok maradhatnak.
         factionPassiveListener.clearAllState();

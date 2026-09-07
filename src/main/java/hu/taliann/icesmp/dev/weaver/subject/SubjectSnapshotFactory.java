@@ -24,7 +24,18 @@ public final class SubjectSnapshotFactory implements SubjectSnapshotSource {
     @Override public CompletionStage<SubjectSnapshot> capture(final UUID actor, final SubjectRef ref) {
         return router.submit(SubjectRoute.owner(ref), actor, Duration.ofSeconds(5), () -> CompletableFuture.completedFuture(captureOnOwner(ref)));
     }
+    @Override public CompletionStage<SubjectSnapshot> captureRecovery(final RecoveryContext context) {
+        context.authority().require(context.operation());
+        final var ref = context.operation().subject();
+        return router.submit(SubjectRoute.owner(ref), context.operation().actorId(), Duration.ofSeconds(5), () -> {
+            context.authority().require(context.operation());
+            return CompletableFuture.completedFuture(captureOnOwner(ref, Optional.of(context)));
+        });
+    }
     public SubjectSnapshot captureOnOwner(final SubjectRef ref) {
+        return captureOnOwner(ref, Optional.empty());
+    }
+    private SubjectSnapshot captureOnOwner(final SubjectRef ref, final Optional<RecoveryContext> recovery) {
         final long now = System.currentTimeMillis();
         final Map<String, WeaverValue> facts = new TreeMap<>();
         switch (ref) {
@@ -63,7 +74,7 @@ public final class SubjectSnapshotFactory implements SubjectSnapshotSource {
                 facts.put("minecraft.area", value("area", SubjectKeyCodec.payload(area), now));
             }
         }
-        final Map<String, WeaverValue> contributions = providers.captureContributions(ref);
+        final Map<String, WeaverValue> contributions = recovery.map(providers::captureRecoveryContributions).orElseGet(() -> providers.captureContributions(ref));
         for (final var entry : contributions.entrySet()) {
             if (facts.putIfAbsent(entry.getKey(), entry.getValue()) != null) throw new WeaverDomainRejection("DUPLICATE_SNAPSHOT_FACT");
         }

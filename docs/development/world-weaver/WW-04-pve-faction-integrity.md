@@ -538,3 +538,71 @@ compiled and passed the 170-assertion test; its only failed task remains inherit
 `trashSpriteAssetAudit`. Resource pack `34087191038`, Trash `34087191036` and docs
 `34087191042` succeeded. New-head CI remains required. Artifact issuance, gameplay
 admission and production enable remain off; no full WW-04/coverage/release verdict.
+
+## Canonical provider and autonomous observed recovery checkpoint
+
+Base: `b476763d9d8fdc45b2464f2f831d8c34ed8e6b6c`, WW-04 #158. The restored
+worktree retains that exact pushed ancestry; the separate older WW-03 worktree was
+preserved. The canonical provider now publishes `faction.set_membership_canonical`
+and `faction.remove_membership_canonical` through ordinary descriptors and the
+existing generic parameter/confirmation interface. Both require CANONICAL risk,
+LIVE_GM, ONE_SHOT, rate cost 10, and a PLAYER subject. There is no AREA variant or
+automatic Undo; the confirmation explains potential role loss, while reversal is
+an explicit compensating membership transaction preserving history.
+
+The owner snapshot contains one immutable profile membership/revision view and the
+native pending-effects flag. Mutation enters ProfileOwner only after durable
+PREPARED and invokes FactionManager's canonical transaction port. Final authority
+is checked inside profile WAL admission. The receipt follows acknowledged native
+role cleanup. Exact revision and expected membership reject stale/ABA state; the
+recovery payload must agree with the original action parameters and operation UUID.
+LIVE_GM creates no new sandbox influence and cannot erase existing influence.
+
+Native async maintenance begins only after all canonical role stores load. Each
+pulse admits at most eight paused transient leases and eight durable profile owners,
+using sequential continuations and one in-flight sweep. It discovers unfinished
+native outboxes after restart, observes actual WAL state, retries idempotent cleanup
+and acknowledgement, and never resubmits the membership mutation. Shutdown rejects
+queued, unaccepted WAL work and leaves accepted unfinished outboxes durable. Genuine
+external drift with unfinished side effects retains the native eligibility fence
+and review evidence; no force overwrite or implicit cleanup ordering is used.
+
+The generic recovery coordinator retains unavailable profiles/outboxes as
+PENDING_PROFILE and retries at most eight per pulse. Overlapping pulses cannot
+duplicate reads. Provider snapshot refusal remains an immutable bounded status
+fact: it hides only that provider's interactive surface, preserves healthy facts,
+does not count expected profile delay as a circuit-breaker fault, and reaches
+recovery before revision scoping. Long provider IDs remain supported and providers
+cannot forge the reserved availability marker. Operation-scoped recovery authority
+permits owner-thread observation of its own quarantined provider only; it does not
+reset the breaker, enable actions or bypass another provider's quarantine.
+
+Two concrete crash findings were fixed. Receipt creation time now uses the durable
+execution timestamp instead of the earlier membership event time. The canonical
+plan decoder accepts the kernel-owned, independently validated projection-reservation
+envelope while still rejecting unknown provider fields and request/payload mismatch.
+
+Verification: full Java 21 main/regression compile passes with three inherited
+warnings. All 41 selected Weaver, artifact, Faction, profile WAL and lifecycle suites
+pass. The real canonical provider/profile/journal fixture passes 128 assertions,
+including eight before/after journal-write failures, offline player and unavailable
+profile/outbox recovery, cleanup acknowledgement, request mismatch and external
+membership drift. Native maintenance/profile tests pass 428 assertions. Generic
+snapshot isolation, quarantined scoped recovery, stale recovery authority and
+overlapping profile maintenance are covered. Six affected suites were rerun after
+the final fail-closed discovery correction; all pass. Four architecture checks,
+authority guard/self-test (672 findings; zero unknown/stale/invalid/transition),
+coverage (313 authorities, 55 domains, 51 blockers, zero audit errors) and consistency
+(zero FAIL/WARN) pass. The canonical suite is a normal Gradle check dependency.
+
+Exact prior-head CI `b476763d9d8fdc45b2464f2f831d8c34ed8e6b6c`: run 34089741723;
+Paper 101640635905 and Folia 101640635857 succeeded. Verification 101640635688
+compiled and passed the 369-assertion native profile/runtime suite; its failed task
+remains inherited `trashSpriteAssetAudit`. Resource pack 34089741773, Trash
+34089741715 and docs 34089741767 succeeded. This new checkpoint requires its own CI.
+Local wrapper download is network-blocked; installed offline Gradle encounters an
+existing shared-cache lock, so the isolated Java 21 preflight is not represented as
+a Gradle build. Populated role-store failure, connected-client interaction and
+Paper/Folia concurrency remain evidence gates. PvE force/refresh, scripted target
+controls and complete reward/propagation coverage remain active WW-04 work. Artifact
+issuance and gameplay execution remain disabled; no phase/release completion claim.

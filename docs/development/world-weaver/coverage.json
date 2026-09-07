@@ -83,8 +83,8 @@
       "phase": "WW-04",
       "inspect": "canonical/effective membership; passive/food/target decision; civilian access and DARK prerequisite traces",
       "planned_actions": "project faction, contexts, scripted target/peace through existing policy, canonical membership",
-      "canonical_route": "FactionManager / PlayerProfileFactionStore joinDark durable commit; FactionPassivePolicy and SinManager.hasCivilAccess; projections must not rewrite legal or reward identity",
-      "rationale": "PR #155 changes passive balance, civil exclusion and DARK joining prerequisites. Canonical transaction adapters must preserve independent membership, Exile and Oath and publish hooks only after durable commit. Effective membership/context projections now feed the canonical passive/target policy, with typed imports and journal-backed conditional sever. The domain remains blocked for safe canonical membership transactions, scripted target/peace controls and populated native evidence.",
+      "canonical_route": "FactionManager.adjustMembershipDurably / PlayerProfileFactionStore exact revision WAL; native role-cleanup outbox; FactionPassivePolicy and SinManager preserve independent legal and reward identity",
+      "rationale": "Effective membership/context projections feed the existing passive/target policy with typed imports and journal-backed conditional sever. LIVE_GM-only canonical set/remove now use the native revision-checked profile transaction and acknowledged role-cleanup outbox, with owner-routed generic actions and observed restart recovery. Exile, Oath and immutable history remain independent. Scripted target/peace controls and populated native evidence remain required; full domain acceptance is not claimed.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
         "src/main/java/hu/taliann/icesmp/managers/FactionRelationManager.java",
@@ -103,7 +103,9 @@
         "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java",
         "src/regression/java/hu/taliann/icesmp/dev/weaver/WeaverFactionAdjustmentRegressionSuite.java",
         "src/main/java/hu/taliann/icesmp/factions/FactionMembershipAdjustmentRuntime.java",
-        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipTransitionGate.java"
+        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipTransitionGate.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionCanonicalActions.java",
+        "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverCanonicalRegressionSuite.java"
       ]
     },
     {
@@ -1427,13 +1429,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "766d9c8c690559805824acf02ee87f5b19f4fa1e776fee81d902e3451af1970f",
+      "source_sha256": "b200676c93c4c30efebb0c33b184e95a42fd373489c35e5d9d6c648042775304",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
         "actions",
         "assessRecovery",
         "captureContributions",
+        "captureRecoveryContributions",
         "catalogPage",
         "catalogs",
         "coverage",
@@ -1450,13 +1453,14 @@
         "readConsumer",
         "reconcileProjections",
         "register",
+        "requireSnapshotAvailable",
         "resolveCatalog"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "30ee6775167f31a54401ffddfd9f16526c24cfc523b673124b6c1a85ec512f1a",
+      "source_sha256": "cc1bf59bd8f9e7489efb19b37fd06e2b493fbc8c45fa6b98fce841c2ab44ffed",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
@@ -1598,12 +1602,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "c412631ad9d376b2ecd4fce178df5a608ff81fc66332025201f7fdaf44062575",
+      "source_sha256": "41be529538159ae38849525ba218b9437ee880ed13d5dac38917de43db8f33d5",
       "public_methods": [
         "WeaverRecoveryCoordinator",
         "close",
         "entityAvailable",
         "pending",
+        "profilesAvailable",
         "reconcile",
         "start",
         "worldAvailable"
@@ -1702,7 +1707,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
       "domain": "faction",
-      "source_sha256": "b375d0c604fdee8634a7f78ca2216d034db4fe93eac0fa4cb4556104a2362a23",
+      "source_sha256": "ca8dc61428a03e5dcc4bf68822255c6b746871165bfec22c6f5bf7b865077c2e",
       "public_methods": [
         "assessRecovery",
         "captureOnOwner",
@@ -1788,11 +1793,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
       "domain": "minecraft",
-      "source_sha256": "7c75bd624e0698cae6a27b4e59c0be254777f96cc6bac2858c5629da793e2afc",
+      "source_sha256": "0b0c4e93a6aef98efbf2e92a9d51fcfd653dce956d438764d1f94372668639ba",
       "public_methods": [
         "SubjectSnapshotFactory",
         "capture",
-        "captureOnOwner"
+        "captureOnOwner",
+        "captureRecovery"
       ]
     },
     {
@@ -1884,12 +1890,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionMembershipAdjustmentRuntime.java",
       "domain": "faction",
-      "source_sha256": "4d6b0a812f9318d79c51fbb7ee9c93e1b5b208bdbdd8f2985c70b7f2add1ff32",
+      "source_sha256": "15dc9d6879c8d2a4850faf010690f2afbe9acc536a7c59aa7711f8e07652e4d2",
       "public_methods": [
-        "pending",
         "adjust",
-        "reconcile",
-        "code"
+        "close",
+        "code",
+        "pending",
+        "pulse",
+        "reconcile"
       ]
     },
     {
@@ -1901,13 +1909,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionMembershipTransitionGate.java",
       "domain": "faction",
-      "source_sha256": "0e9061447642898f79746ce0ddf426c4c35c9281b3e245f40a3fb34558d7544d",
+      "source_sha256": "ebd6c24b8e06fb403369342749fa88caab2955432a59424ccb4a8f3befb65dbb",
       "public_methods": [
         "claim",
-        "resume",
         "pause",
+        "paused",
         "pending",
-        "release"
+        "release",
+        "resume"
       ]
     },
     {
@@ -3143,7 +3152,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
       "domain": "faction",
-      "source_sha256": "61589454f11e238c93dfb0a41d5b9b5fcad794d79ba4d36d28c1a9165606c5cb",
+      "source_sha256": "a21d73adec29fba7c3df762b2f9b503df814050dc3a5d47a0011b3690f178feb",
       "public_methods": [
         "adjustMembershipDurably",
         "bindMembershipProjection",
@@ -3173,7 +3182,9 @@
         "isMembershipReady",
         "joinDarkDurably",
         "load",
+        "membershipAdjustmentEffectsCompleted",
         "membershipView",
+        "observeMembershipAdjustment",
         "publishExternalMembershipCommit",
         "reconcileMembershipAdjustment",
         "reconcileMembershipHistory",
@@ -3186,6 +3197,8 @@
         "setGuildManager",
         "setMembershipChangeHook",
         "setSeasonManager",
+        "startMembershipRecovery",
+        "stopMembershipRecovery",
         "switchFactionDurably"
       ]
     },

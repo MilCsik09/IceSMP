@@ -31,6 +31,7 @@ public final class WeaverFactionAdjustmentRegressionSuite {
         membershipWhisperAtomicity();
         nativeContinuationAndAdmission();
         nativeRecoveryBoundaries();
+        nativeMaintenanceRecovery();
         transitionLeaseBounds();
         walBoundary(false);
         walBoundary(true);
@@ -332,6 +333,54 @@ public final class WeaverFactionAdjustmentRegressionSuite {
         check(!gate.resume(player, UUID.randomUUID()) && gate.resume(player, operation), "paused lease was stolen or could not resume");
         check(gate.release(player, operation) && gate.claim(player, UUID.randomUUID()), "settled lease did not release capacity");
         check(!gate.release(player, operation), "old operation released replacement lease");
+    }
+
+    private static void nativeMaintenanceRecovery() throws Exception {
+        final Path root = Files.createTempDirectory("weaver-faction-maintenance-");
+        final AtomicInteger cleanup = new AtomicInteger();
+        try (final Harness h = new Harness(root, YamlPlayerProfileRepository.FaultInjector.none())) {
+            final var runtime = new FactionMembershipAdjustmentRuntime(h.factions, Runnable::run, id -> cleanup.incrementAndGet());
+            final var denied = h.request(FactionType.RED);
+            h.failure(runtime.adjust(PLAYER, denied, () -> { throw new SecurityException("revoked"); }));
+            check(runtime.pending(PLAYER), "unassessed admission failure lost lease");
+            h.finish(runtime.pulse());
+            check(!runtime.pending(PLAYER) && cleanup.get() == 0, "maintenance replayed denied mutation or kept BEFORE lease");
+            final var accepted = h.request(FactionType.RED);
+            h.finish(h.factions.adjustMembership(PLAYER, accepted));
+            final var restarted = new FactionMembershipAdjustmentRuntime(h.factions, Runnable::run, id -> cleanup.incrementAndGet());
+            final var sweep = restarted.pulse();
+            check(restarted.pulse().toCompletableFuture().isDone(), "overlapping sweep queued unbounded work");
+            h.finish(sweep);
+            check(cleanup.get() == 1 && h.factions.adjustmentEffectsCompleted(PLAYER, accepted) && !restarted.pending(PLAYER),
+                    "startup discovery did not acknowledge native effects");
+            final var disk = bytes(root); h.finish(restarted.pulse());
+            check(cleanup.get() == 1 && bytes(root).equals(disk), "settled periodic recovery wrote state again");
+            final var queued = restarted.adjust(PLAYER, h.request(FactionType.BLUE), () -> { });
+            restarted.close();
+            check(h.failure(queued) instanceof FactionMembershipAdjustmentRuntime.Rejected, "shutdown admitted queued WAL mutation");
+            check(bytes(root).equals(disk) && h.factions.membershipView(PLAYER).state().membership().orElseThrow() == FactionType.RED,
+                    "shutdown changed canonical profile");
+            h.finish(restarted.pulse());
+            check(h.failure(restarted.reconcile(PLAYER, accepted)) instanceof FactionMembershipAdjustmentRuntime.Rejected,
+                    "closed runtime admitted cleanup");
+            runtime.close();
+        } finally { delete(root); }
+        final Path many = Files.createTempDirectory("weaver-faction-bounded-sweep-");
+        try (final Harness h = new Harness(many, YamlPlayerProfileRepository.FaultInjector.none())) {
+            final AtomicInteger recovered = new AtomicInteger();
+            for (int i = 0; i < 17; i++) {
+                final UUID id = new UUID(0, 1000 + i); h.finish(h.repository.loadSnapshot(id));
+                final var view = h.factions.membershipView(id);
+                h.finish(h.factions.adjustMembership(id, new MembershipAdjustment(UUID.randomUUID(), view.sectionRevision(),
+                        view.state().membership(), Optional.of(FactionType.BLUE), System.currentTimeMillis())));
+            }
+            final var runtime = new FactionMembershipAdjustmentRuntime(h.factions, Runnable::run, id -> recovered.incrementAndGet());
+            h.finish(runtime.pulse());
+            check(recovered.get() > 0 && recovered.get() <= 8, "durable owner fanout was unbounded");
+            h.finish(runtime.pulse()); h.finish(runtime.pulse());
+            check(recovered.get() == 17, "bounded sweep starved later owners");
+            runtime.close();
+        } finally { delete(many); }
     }
 
     private static final class Harness implements AutoCloseable {

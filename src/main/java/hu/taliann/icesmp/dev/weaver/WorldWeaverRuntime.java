@@ -73,6 +73,7 @@ public final class WorldWeaverRuntime {
         if (!closed && journal.ready() && maintaining.compareAndSet(false, true)) {
             journal.expireProjections(System.currentTimeMillis(), false)
                     .thenCompose(ignored -> closed ? java.util.concurrent.CompletableFuture.completedFuture(null) : projectionDispatcher.pulse(journal.snapshot().projections()))
+                    .thenCompose(ignored -> closed ? java.util.concurrent.CompletableFuture.completedFuture(null) : recovery.profilesAvailable())
                     .whenComplete((ignored, failure) -> maintaining.set(false));
         }
     }
