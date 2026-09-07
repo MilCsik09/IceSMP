@@ -1,0 +1,7 @@
+# WW-03 cumulative refresh — internal developer evidence
+
+Branch `feature/world-weaver-ww03-durable`, PR #157. Prior head `db8d8f906bb829dfa410793033545b2a7e40237f`; dependency #156 `976b1ccc9cc3b6567cf956cefd5187059c2e78ed`, carrying cumulative #155 `2a78eb6071db063740ce1f8e6889b03d9741dbb0`. Non-rewriting merge performed in an isolated detached worktree; the existing dirty WW-03 worktree is untouched.
+
+The authority allowlist merge retains both the journal operation-UUID CAS classification and the native Whisper withdrawal prompt classification. All main/regression Java 21 sources compile. All twenty current kernel/durable suites pass, including PREPARED-before-effect, journal/restart, observed-state recovery with unloaded subjects pending, persisted influence, scoped projection, retention, AREA fanout/reservations, revision drift and conditional Undo. Four architecture tests pass. Source inventory: 291 authorities / 55 domains / 51 unresolved capabilities / zero errors. Profile guard: 651 classified / zero unknown, stale, invalid or transition entries. Consistency: zero FAIL/WARN.
+
+Full CI is not yet green: refreshed lower-phase CI identified a Pillow API compatibility failure in the asset audit and a config-audit expected-drift mismatch. Both require a code fix without relaxing the gate. Connected/populated Paper/Folia/client tests remain separate acceptance evidence. No production enable, forced undo, mutation replay or later phase completion is implied by this refresh.

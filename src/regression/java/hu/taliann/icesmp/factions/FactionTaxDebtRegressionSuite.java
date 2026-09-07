@@ -90,10 +90,10 @@ public final class FactionTaxDebtRegressionSuite {
         final String source = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java"));
         check(source.contains("PlayerProfileTaxStore")
-                        && source.contains("public void collectTaxes() { }")
+                        && !source.contains("collectTaxes(")
                         && !source.contains("taxStore.collect(")
                         && !source.contains("sinManager.addSin")
-                        && source.contains("taxStore.settle("),
+                        && !source.contains("taxStore.settle("),
                 "retired membership-tax producer or crime route became active");
         check(!source.contains("FactionTaxDebtLedger")
                         && !source.contains("FactionTaxJournal")
@@ -102,8 +102,8 @@ public final class FactionTaxDebtRegressionSuite {
                         && !source.contains("putUnresolvedLegacy")
                         && !source.contains("resolveLegacyOrigin"),
                 "legacy tax debt authority, journal or migration remains in production manager");
-        check(source.contains("outbox.origin(), outbox.paid()"),
-                "financial-only settlement lost the originating treasury");
+        check(!source.contains("tax-rates.") && !source.contains("arrearsProjection"),
+                "fresh-start treasury retains retired membership-tax state");
     }
 
     private static void legacyTaxAuthorityIsRemoved() {

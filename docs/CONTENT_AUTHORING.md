@@ -156,3 +156,12 @@ hozza létre.
 
 Az auditok kimenete review evidence. A gameplay forrása mindig a fent felsorolt
 handcrafted fájl, nem a report, manifest vagy audit script.
+
+### Civil vezeklés jogi kapui
+
+A quest-szerződés opcionális `requires-atonement: true` mezője Infamy > 0, Exile
+vagy Eskü esetén engedi a felvételt és teljesítést. A `forbids-faction: DARK`
+a sötét tagságot kizárja mindkét ellenőrzésnél. Mindkettő szerkeszthető a meglévő
+quest-admin felületen; a kanonikus minta `quests.civil_penance`. `QUEST_BOARD`
+forrás és `AUTO` leadás biztosítja, hogy a civil fővárosból kizárt játékos is
+elkezdhesse a jóvátételt. Új állandó HUD, reputáció vagy pénzjutalom nem tartozik hozzá.

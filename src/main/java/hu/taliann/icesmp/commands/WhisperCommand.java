@@ -44,6 +44,10 @@ public final class WhisperCommand implements BasicCommand {
             player.sendMessage(messageManager.get("whisper-disabled", "&7A Suttogás most néma."));
             return;
         }
+        if (args.length == 1 && List.of("megtagadás", "megtagadas", "leave").contains(args[0].toLowerCase(Locale.ROOT))) {
+            whisperManager.requestWithdrawal(player);
+            return;
+        }
         if (args.length >= 2 && isAccuseKeyword(args[0])) {
             accuse(player, args[1]);
             return;
@@ -56,6 +60,8 @@ public final class WhisperCommand implements BasicCommand {
             } catch (final RuntimeException unavailable) {
                 player.sendMessage(messageManager.get("whisper-profile-unavailable", "&cA titkos profil most nem érhető el. Próbáld újra."));
             }
+            player.sendMessage(messageManager.get("whisper-status-help",
+                    "&7Három hiteles vád száműz. A nyomok lejárnak, a fokozat csak sikeres kultista támogatással csökken. &f/suttogas megbízás &7| Privát kilépés: &f/suttogas megtagadás"));
             return;
         }
         if (args.length == 1 && List.of("megbízás", "megbizas", "mission").contains(args[0].toLowerCase(Locale.ROOT))) {
@@ -90,7 +96,7 @@ public final class WhisperCommand implements BasicCommand {
 
     private void accuse(final Player accuser, final String targetName) {
         final Player target = Bukkit.getPlayerExact(targetName);
-        if (target == null) {
+        if (target == null || !accuser.canSee(target)) {
             // A shippelt messages/profession.yml-ben ez a kulcs %s-t tartalmaz — argumentum
             // nélkül a formázás kimarad, és a játékos a nyers %s-t látná.
             accuser.sendMessage(messageManager.get("player-not-found",
@@ -113,10 +119,12 @@ public final class WhisperCommand implements BasicCommand {
     @Override
     public @NonNull Collection<String> suggest(final @NonNull CommandSourceStack commandSourceStack, final @NonNull String[] args) {
         if (args.length <= 1) {
-            return List.of("vád", "állapot", "megbízás");
+            return List.of("vád", "állapot", "megbízás", "megtagadás");
         }
         if (args.length == 2 && isAccuseKeyword(args[0])) {
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+            return Bukkit.getOnlinePlayers().stream()
+                    .filter(target -> commandSourceStack.getSender() instanceof Player viewer && viewer.canSee(target))
+                    .map(Player::getName)
                     .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT)))
                     .map(String::valueOf).toList();
         }

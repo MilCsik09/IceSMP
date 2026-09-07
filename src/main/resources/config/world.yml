@@ -452,6 +452,7 @@ server-challenge:
     mine: true
     harvest: true
 escort:
+  force-use-player-anchor: false
   enabled: true
   interval-minutes: 120
   max-duration-minutes: 15

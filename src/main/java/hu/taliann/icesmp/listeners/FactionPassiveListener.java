@@ -367,11 +367,11 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         }
         player.getScheduler().run(plugin, task -> {
             final UUID playerId = player.getUniqueId();
-            final org.bukkit.Location scene = player.getEyeLocation().clone();
-            final String name = player.getName();
+            final var scene = whisperManager.capture(player,
+                    hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperStore.EvidenceType.UNDEAD);
             for (final UUID witnessId : PositionCache.nearbyPlayerIds(playerId, whisper.witnessRadius())) {
                 if (!whisperManager.isWhispererCached(witnessId)) whisperManager.observe(
-                        witnessId, playerId, scene, name, whisper.witnessRadius(), "whisper-witness-undead");
+                        witnessId, scene, Math.min(64.0D, whisper.witnessRadius()), "whisper-witness-undead");
             }
         }, null);
     }

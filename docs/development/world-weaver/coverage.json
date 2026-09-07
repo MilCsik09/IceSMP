@@ -3,8 +3,8 @@
   "stage": "WW03_DURABLE_IN_PROGRESS",
   "repository": "MilCsik09/IceSMP",
   "base_branch": "feature/faction-crime-whisperer-rework",
-  "base_commit": "004c12abf6e896b1931a695f980d4841bbf785e9",
-  "base_tree": "caebe9f201b161fa6bc17869931a78e4d632444c",
+  "base_commit": "2a78eb6071db063740ce1f8e6889b03d9741dbb0",
+  "base_tree": "6389054ac358fdddb066c665dcee9d6acab4679e",
   "design": {
     "path": "docs/development/world-weaver/design-v2.md",
     "sha256": "ec26e42da5796f327694de45f7566d6c3a3a861e10da9389a5f184320b41b2ca",
@@ -448,12 +448,13 @@
       "inspect": "Independent Infamy/Wanted/Exile/DARK Oath; Whisper exposure stage, witness/suspect evidence and consumed status, rite before/after receipt, return cooldown and hidden alias",
       "planned_actions": "conditional legal-axis changes, exposure/cover, evidence inspection, rite recovery controls and hidden role mutation through async canonical services; never synthetic natural evidence",
       "canonical_route": "PlayerProfileSinStore / PlayerProfileWhisperStore conditional FACTION transactions; manager runtime reconciliation; never blocking SinManager wrappers on region thread",
-      "rationale": "PR #155 replaces suspicion score and implicit DARK membership with distinct legal axes and durable evidence/rite state. Developer canonical mutations require expected-revision async APIs and observed-state recovery; no fake sightings, accusations, rites or reward receipts.",
+      "rationale": "PR #155 replaces suspicion score and implicit DARK membership with distinct legal axes and durable evidence/rite state. Developer canonical mutations require expected-revision async APIs and observed-state recovery; no fake sightings, accusations, rites or reward receipts. PR #155 refresh 2a78 adds typed incident evidence, withdrawal with retained legal history/24h return cooldown, witnessed-candidate interruption, join/respawn grace, and chunk-owned sightline traversal. These must use actual native lifecycle/incident identity, never manufactured observations. Native Scene/rite callbacks retain Bukkit references and synchronous legal wrappers remain excluded from WorldWeaver owner-thread invocation; asynchronous revision-safe adapters and influence propagation are still required.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/SinManager.java",
         "src/main/java/hu/taliann/icesmp/managers/WhisperManager.java",
         "src/main/java/hu/taliann/icesmp/managers/CrownCurseManager.java",
-        "src/main/java/hu/taliann/icesmp/managers/SpyManager.java"
+        "src/main/java/hu/taliann/icesmp/managers/SpyManager.java",
+        "src/main/java/hu/taliann/icesmp/factions/WhisperSightline.java"
       ],
       "implementation_evidence": []
     },
@@ -1760,6 +1761,15 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/factions/WhisperSightline.java",
+      "domain": "crime_whisper",
+      "source_sha256": "794865105e2a950bc93390e2710ecb2985b8efc041834a3d00d619e88a326f3d",
+      "public_methods": [
+        "cells",
+        "visible"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/gui/AdvancedConfigPolicy.java",
       "domain": "configuration",
       "source_sha256": "6174de0c703a4ca2bfdcb796a0378767f0427a2a4f36cb53c9dc7e76b0d8263d",
@@ -2568,9 +2578,8 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java",
       "domain": "event.cultists",
-      "source_sha256": "2d86785053a4f9433ae5bb8373fcfe8b4ea18adbb6b89dd6ad186bcdf92836f8",
+      "source_sha256": "def905c8351fcc61b94fcfaa297f714f8334c75553f2556b40d6519bb01e43ec",
       "public_methods": [
-        "CultistEventManager",
         "deliverOffering",
         "forceStart",
         "isActive",
@@ -2928,19 +2937,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java",
       "domain": "politics",
-      "source_sha256": "763aa06132b3fab19648256ed5e672724da9534a91e070a58e71385c49d970cd",
+      "source_sha256": "439b803bde91f85d128443b8572ed897bb2d254d60c7853c0857ca35a3408547",
       "public_methods": [
-        "FactionTreasuryManager",
-        "collectTaxes",
         "deposit",
         "depositOnce",
-        "getArrears",
         "getBalance",
-        "getTaxRate",
         "load",
         "requestSave",
         "save",
-        "setTaxRate",
         "withdraw"
       ]
     },
@@ -3184,8 +3188,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/KingManager.java",
       "domain": "politics",
-      "source_sha256": "6b4598c27b8cb4e86478d91db89bd0ef4f26ac81b461dd2e3a00aa8b5538e50f",
+      "source_sha256": "232339cb6dc7cfcb29b224935f8497e280471f842a488e4748dfc9948ff7d117",
       "public_methods": [
+        "electionQuorum",
         "getKing",
         "getTally",
         "isFactionExcluded",
@@ -3193,7 +3198,9 @@
         "load",
         "millisOnThrone",
         "onMembershipChange",
+        "requiredVotes",
         "save",
+        "setActivePopulation",
         "setKing",
         "vote"
       ]
@@ -3614,7 +3621,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/QuestManager.java",
       "domain": "knowledge",
-      "source_sha256": "013b6c60ec4eccf753f215f7e5b34043229ff954b267c05bf9da1cea3f33e4f6",
+      "source_sha256": "c00eb3977be08c4509c65556d8a86ed5fbc0fc86359e89d45c60f6392185ea25",
       "public_methods": [
         "QuestMeta",
         "abandon",
@@ -3888,9 +3895,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonManager.java",
       "domain": "season",
-      "source_sha256": "8f66fd36aaae0219a258ee5ac8f350cc4dcecb07fd2e4f9032dde2c39ef4ddc6",
+      "source_sha256": "8c630bb1f3af9b301c727983950abee724c9233af453a12f60706e972ed98e5d",
       "public_methods": [
-        "SeasonManager",
+        "activePopulation",
         "addExactPointsOnce",
         "addPoints",
         "addPointsOnce",
@@ -3967,15 +3974,15 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ShopManager.java",
       "domain": "economy",
-      "source_sha256": "1c6af7aa2c0572a2cd9351bf67fddef4bc0400416a74ee6385bfcb29354eb8d3",
+      "source_sha256": "c959ee5b7c8fab32ef3117bc44917bf3ae1ab237e0de54a4e3d69b752c258177",
       "public_methods": [
-        "ShopManager",
         "accessError",
         "buy",
         "getAmount",
         "getItems",
         "getMaterial",
         "getPrice",
+        "getPriceFor",
         "getShop",
         "getTitle",
         "hasShop",
@@ -3991,15 +3998,16 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SinManager.java",
       "domain": "crime_whisper",
-      "source_sha256": "d17133bc00558e6bffcc312d4eda4faf024376cfd128b8e07ca939a85b5024c7",
+      "source_sha256": "387bc5ab16c53c299e778898bbadf10043fa1d6eff5e01bace6b3caa499d00d7",
       "public_methods": [
-        "SinManager",
         "addSin",
         "addSinOnce",
+        "bountyDescription",
         "breakDarkPact",
         "clearDarkPactForFactionOverride",
         "clearSinner",
         "exile",
+        "exileThreshold",
         "getInfamy",
         "getSinCount",
         "hasCivilAccess",
@@ -4014,7 +4022,8 @@
         "resetSinCount",
         "sealDarkForFactionOverride",
         "sealDarkPact",
-        "setSpecializationManager"
+        "setSpecializationManager",
+        "wantedThreshold"
       ]
     },
     {
@@ -4403,20 +4412,21 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WhisperManager.java",
       "domain": "crime_whisper",
-      "source_sha256": "a46d18b4c8f7d58afd5571f03b74c265bb5c326ef81fce5f7b41c1df1844d0c5",
+      "source_sha256": "fe8c9ec8b6702c8a7eea8beedf79f0aff89737638b962fba94732d344af6d7c5",
       "public_methods": [
-        "WhisperManager",
+        "Scene",
         "beginRite",
         "canBecomeWhisperer",
         "canHearWhispers",
         "canHearWhispersCached",
+        "capture",
         "clearPlayerState",
         "deliverWhisper",
         "expose",
         "getStage",
-        "grantEvidence",
         "handleJoin",
         "hasEvidence",
+        "hint",
         "isEnabled",
         "isWhisperer",
         "isWhispererCached",
@@ -4424,9 +4434,12 @@
         "observe",
         "reconcileMembership",
         "recordAccusation",
+        "requestWithdrawal",
+        "respawned",
         "returnRemainingMillis",
         "rewardFaithful",
-        "ritualPending"
+        "ritualPending",
+        "setVanishedPredicate"
       ]
     },
     {
@@ -5047,12 +5060,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileWhisperStore.java",
       "domain": "crime_whisper",
-      "source_sha256": "da6014c2abd62c6021eebbe3564caddcb8468f2f72193f3b0fee34b13515dbb0",
+      "source_sha256": "1150a6395532e1481122067b185bc1b2cfb37315c7dbfdad41fd946f01e10dd4",
       "public_methods": [
         "Accusation",
         "Adjustment",
         "CoverResult",
-        "PlayerProfileWhisperStore",
+        "Incident",
         "Rite",
         "State",
         "accuse",
@@ -5067,11 +5080,13 @@
         "forceExpose",
         "grantEvidence",
         "hasEvidence",
+        "interruptCandidate",
         "makeWhisperer",
         "pendingRite",
         "prepareRite",
         "read",
-        "returnRemainingMillis"
+        "returnRemainingMillis",
+        "withdraw"
       ]
     },
     {
@@ -6108,6 +6123,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
+    "src/main/java/hu/taliann/icesmp/factions/WhisperSightline.java",
     "src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java",
     "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java",
     "src/main/java/hu/taliann/icesmp/items/MoneyPouchItemFactory.java",
@@ -10146,5 +10162,12 @@
     "branch": "feature/trash-production-hardening",
     "commit": "a335b3b5acaea66772534e51527a1c9233a85d1a",
     "tree": "99cdf8036c9b4b0fa322e7c8f867e29a2e96e24f"
-  }
+  },
+  "base_refresh_history": [
+    {
+      "branch": "feature/faction-crime-whisperer-rework",
+      "commit": "004c12abf6e896b1931a695f980d4841bbf785e9",
+      "tree": "caebe9f201b161fa6bc17869931a78e4d632444c"
+    }
+  ]
 }

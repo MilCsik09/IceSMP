@@ -31,13 +31,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Shared faction treasury. Membership-tax production is retired.
- *
- * <p>The YAML store contains only global treasury balances, tax rates and idempotent shared-grant
- * receipts. Player debt, evasion strikes, wallet deduction and settlement outboxes live solely in
- * each owner's EconomySection.</p>
- */
+/** Shared balances and idempotent grants; fresh installations have no membership-tax state. */
 public final class FactionTreasuryManager implements PersistentStore {
 
     private final JavaPlugin plugin;
@@ -49,11 +43,7 @@ public final class FactionTreasuryManager implements PersistentStore {
     private final File storageFile;
     private final Object stateLock = new Object();
     private final Map<FactionType, Double> balances = new EnumMap<>(FactionType.class);
-    private final Map<FactionType, Double> taxRates = new EnumMap<>(FactionType.class);
     private final Map<String, Long> appliedGrants = new LinkedHashMap<>();
-    private final Map<UUID, Map<FactionType, Double>> arrearsProjection =
-            new ConcurrentHashMap<>();
-    private final PlayerProfileTaxStore taxStore = new PlayerProfileTaxStore();
     private final PlayerProfileEconomyStore economyStore = new PlayerProfileEconomyStore();
     private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
@@ -78,13 +68,9 @@ public final class FactionTreasuryManager implements PersistentStore {
     public void load() {
         final YamlConfiguration yaml = YamlStore.loadTracked(storageFile, plugin.getLogger());
         final EnumMap<FactionType, Double> loadedBalances = new EnumMap<>(FactionType.class);
-        final EnumMap<FactionType, Double> loadedRates = new EnumMap<>(FactionType.class);
         for (final FactionType faction : FactionType.values()) {
             loadedBalances.put(faction, readNonNegative(yaml,
                     "treasury." + faction.name(), 0.0D));
-            loadedRates.put(faction, readNonNegative(yaml,
-                    "tax-rates." + faction.name(),
-                    nonNegativeConfig("factions.tax.rate-percent", 2.0D)));
         }
         final LinkedHashMap<String, Long> loadedGrants = new LinkedHashMap<>();
         final ConfigurationSection grants = yaml.getConfigurationSection("applied-grants");
@@ -102,8 +88,6 @@ public final class FactionTreasuryManager implements PersistentStore {
         synchronized (stateLock) {
             balances.clear();
             balances.putAll(loadedBalances);
-            taxRates.clear();
-            taxRates.putAll(loadedRates);
             appliedGrants.clear();
             appliedGrants.putAll(loadedGrants);
         }
@@ -116,9 +100,6 @@ public final class FactionTreasuryManager implements PersistentStore {
             for (final FactionType faction : FactionType.values()) {
                 yaml.set("treasury." + faction.name(),
                         balances.getOrDefault(faction, 0.0D));
-                yaml.set("tax-rates." + faction.name(),
-                        taxRates.getOrDefault(faction,
-                                nonNegativeConfig("factions.tax.rate-percent", 2.0D)));
             }
             appliedGrants.forEach((id, timestamp) ->
                     yaml.set("applied-grants." + id, timestamp));
@@ -143,26 +124,6 @@ public final class FactionTreasuryManager implements PersistentStore {
         synchronized (stateLock) {
             return faction == null ? 0.0D : balances.getOrDefault(faction, 0.0D);
         }
-    }
-
-    public double getTaxRate(final FactionType faction) {
-        synchronized (stateLock) {
-            return faction == null
-                    ? nonNegativeConfig("factions.tax.rate-percent", 2.0D)
-                    : taxRates.getOrDefault(faction,
-                    nonNegativeConfig("factions.tax.rate-percent", 2.0D));
-        }
-    }
-
-    public double setTaxRate(final FactionType faction, final double ratePercent) {
-        if (faction == null || !Double.isFinite(ratePercent) || ratePercent < 0.0D) {
-            return faction == null ? 0.0D : getTaxRate(faction);
-        }
-        final double maximum = nonNegativeConfig("factions.tax.max-rate-percent", 10.0D);
-        final double applied = Math.min(maximum, ratePercent);
-        synchronized (stateLock) { taxRates.put(faction, applied); }
-        requestSave();
-        return applied;
     }
 
     public boolean depositOnce(final String grantId, final FactionType faction,
@@ -210,32 +171,6 @@ public final class FactionTreasuryManager implements PersistentStore {
         return true;
     }
 
-    public double getArrears(final UUID playerId) {
-        if (playerId == null) return 0.0D;
-        return arrearsProjection.getOrDefault(playerId, Map.of()).values().stream()
-                .mapToDouble(Double::doubleValue).sum();
-    }
-
-    public double getArrears(final UUID playerId, final FactionType originFaction) {
-        if (playerId == null || originFaction == null) return 0.0D;
-        return arrearsProjection.getOrDefault(playerId, Map.of())
-                .getOrDefault(originFaction, 0.0D);
-    }
-
-    /** Membership taxes are retired permanently; legacy config cannot restart the producer. */
-    public void collectTaxes() { }
-
-    private void processOutbox(final UUID playerId,
-                               final PlayerProfileTaxStore.Outbox outbox) {
-        if (outbox.paidMilli() > 0L && !depositOnce("tax-credit:" + outbox.operationId(),
-                outbox.origin(), outbox.paid())) return;
-        // Already deducted money may be settled, but no tax-related crime is ever generated.
-        taxStore.settle(playerId, outbox.operationId()).whenComplete((settled, failure) -> {
-            if (failure != null) plugin.getLogger().severe("Tax financial settlement pending for "
-                    + playerId + '/' + outbox.operationId() + ": " + rootMessage(failure));
-        });
-    }
-
     private double readNonNegative(final YamlConfiguration yaml, final String path,
                                    final double fallback) {
         final Object raw = yaml.get(path);
@@ -247,23 +182,6 @@ public final class FactionTreasuryManager implements PersistentStore {
             return fallback;
         }
         return number.doubleValue();
-    }
-
-    private double nonNegativeConfig(final String path, final double fallback) {
-        final Object raw = configManager.snapshot().configuration() == null ? fallback
-                : configManager.snapshot().configuration().get(path);
-        if (raw instanceof Number number && Double.isFinite(number.doubleValue())
-                && number.doubleValue() >= 0.0D) return number.doubleValue();
-        return fallback;
-    }
-
-    private int nonNegativeIntConfig(final String path, final int fallback) {
-        final Object raw = configManager.snapshot().configuration() == null ? fallback
-                : configManager.snapshot().configuration().get(path);
-        if (raw instanceof Number number && number.doubleValue() >= 0.0D
-                && number.doubleValue() <= Integer.MAX_VALUE
-                && number.doubleValue() == Math.rint(number.doubleValue())) return number.intValue();
-        return fallback;
     }
 
     private static String rootMessage(final Throwable failure) {

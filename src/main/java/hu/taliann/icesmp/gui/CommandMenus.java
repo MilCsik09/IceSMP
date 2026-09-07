@@ -187,6 +187,8 @@ public final class CommandMenus {
                         List.of(grey("Saját fokozat és visszatérési várakozás."), click())), "RUN:suttogas állapot");
                 put(inv, holder, 25, GuiUtil.icon(Material.AMETHYST_SHARD, title("Titkos megbízás"),
                         List.of(grey("Kultista átadás: feladat és kockázat."), click())), "RUN:suttogas megbízás");
+                put(inv, holder, 23, GuiUtil.icon(Material.MILK_BUCKET, title("Kapcsolat megszakítása"),
+                        List.of(grey("Privát kilépés; külön megerősítést kér."), click())), "RUN:suttogas megtagadás");
             }
         } catch (final RuntimeException unavailable) { /* No secret UI from an unreadable profile. */ }
 

@@ -5,23 +5,20 @@ modelljét írja le. A cél egy könnyen érthető, HUD-mérők és aktív frakc
 nélküli rendszer, amelyben minden oldal más helyzetben erős, és egyik se legyen általánosan
 jobb a többinél. Ez balance-cél; az élő játékpróba még hátravan.
 
-### A terv és a megvalósítás határa
+### Aktuális követelmény, 2026-09-07
 
-Az [eredeti beszélgetés](https://chatgpt.com/share/6a90b142-b5f4-83eb-9beb-84a7a5471cba)
-Faction/Crime-terve és W1–W33 Suttogó-követelményei ismét elérhetők. A későbbi
-felhasználói egyszerűsítés felülírja a frakciómérőket, a számszerű Suttogó-gyanút
-és annak időbeli csökkenését. A DARK civil ellenséges jogállása szintén a későbbi
-döntés szerint marad; a korábbi „nem Wanted DARK normál PvP-jogállású” javaslat
-nem a végleges irány.
+A tulajdonos pontosítása szerint a szerver még nem indult el. **Tiszta telepítésre
+készülünk: nincs régi profil-, tagságiadó- vagy outbox-migrációs követelmény.**
+Ez felülírja a szeptember 6-i audit erre vonatkozó kötelező tételét. Az új rendszer
+saját WAL-ja, tranzakció-helyreállítása és újraindítás utáni adatbiztonsága megmarad.
 
-W18 legalább egy korlátozott aktív titkos feladatot kér. A kultista ametisztátadás
-ezt a minimumot megvalósítja; teljes szabotázs-/információ-/küldetéshálózat és
-forgó titkos boltkészlet nem kötelező pótlás. W3–W4 felfedezhetőségi részletei,
-W8 eseményhez kötött bizonyítéka, W9 teljes láthatósági szabálya és W28 önkéntes
-visszaútja viszont nem tekinthetők lezártnak. Az eredeti terv a régi profilok
-biztonságos átvezetését is kéri. Ezek konkrét feladatait a
-[ROADMAP](../ROADMAP.md#frakcióbűnsuttogó-rework-átvételi-kapui) tartalmazza.
-Az alábbi implementált-elemek lista nem jelenti az eredeti terv teljes átvételét.
+A [beszélgetés](https://chatgpt.com/share/6a90b142-b5f4-83eb-9beb-84a7a5471cba)
+W1–W33 követelményeit a később elfogadott egyszerű modell szerint valósítjuk meg:
+négy fokozat, nincs rejtett pontszám, nincs új HUD, nincs frakcióaktív. W18 minimuma
+az aktív kultista átadás; teljes titkos küldetéshálózat és forgó boltkészlet nem szükséges.
+A discovery, tanúellenőrzés, eseményazonos nyom, önkéntes visszaút és civil vezeklés
+kódja elkészült. A tényleges világ és többjátékos balance átvétele külön feladat;
+a végrehajtható kapuk a [ROADMAP](../ROADMAP.md#frakcióbűnsuttogó-rework-átvételi-kapui) részei.
 
 ## Tervezési alapelvek
 
@@ -124,24 +121,26 @@ lezárul, ha valamelyik feltétel megszűnik; fejlődése megmarad.
 
 ## Suttogó-rendszer
 
-### Belépés
+### Belépés és felfedezés
 
-- Csak explicit, nem DARK frakciótag válhat Suttogóvá.
-- Száműzött játékos nem kezdhet új Suttogó-rítust. Leleplezés után a száműzetés
-  feloldása mellett fix 24 órát is várni kell; ezt a fedezék nem rövidíti.
-- A rítus éjjel, sculk vagy sculk catalyst blokkon, főkézben tartott meghívóval,
-  **SHIFT + jobb kattintással** és HP-áldozattal indul. A tárgy lore-ja ezt kiírja.
-- A HP-ellenőrzés és a tartós előkészítés megelőzi a fogyasztást. A sikerjelzés és
-  a rítus bizonyítéka csak a tartós szerepváltás után keletkezik.
-- A félbeszakadt rítus exact előtte/utána inventory-bizonylattal helyreállítható.
-  Ismeretlen vagy kevert inventory-állapotnál zárolás és adminvizsgálat következik.
-- A közeli tanú nem szakítja meg a rítust. Ehelyett pontos bizonyítékot kap a rítust
-  végző játékos ellen.
-
-A jelenlegi időkapu csak `NORMAL` világban kér éjszakát; Nether/End környezetben
-sculkon nappal is elindulhat a rítus. A magány a titkosságot segíti, nem belépési
-előfeltétel. Ez a kód tényleges működése; az eredeti W5 szigorúbb magányfeltétele
-és a dimenziók lore-indoklása külön tisztázandó tétel a ROADMAP-ben.
+- Csak explicit RED/BLUE/NEUTRAL tag, száműzetés és aktív visszatérési várakozás nélkül.
+- A normál világ éjszakája, sculk/sculk catalyst, főkézben a meghívó, **SHIFT + jobb kattintás**.
+  Nether és End nem ad állandó éjszakai belépési kiskaput.
+- A meghívó misztikus lore-ja meghajlást, jobb kezet, magányt és vért említ. A megfelelő
+  helyre lépés, meghívó kiválasztása vagy jobb kattintás legfeljebb percenként ad privát
+  rövid actionbart és hangot. Nincs állandó kijelzés vagy másnak látható discovery-jel.
+- A magány azt jelenti, hogy nincs valódi, azonosításra képes szemtanú a konfigurált
+  sugáron belül. A fal mögötti, más világban lévő, halott, spectator, láthatatlan vagy
+  moderation vanish alatt álló szereplő nem szemtanú. Belépés/respawn után 10 másodperc
+  nyugalmi idő kell; ezalatt rítus és bizonyítékkeletkezés sincs.
+- Valódi tanú esetén a jelölt rítusa megszakad, nem fogy a meghívó vagy HP. A jelölt
+  privát üzenetet és tartós 60 másodperces újrapróbálkozási várakozást kap; nincs hamis
+  Suttogó-fokozat, bűnpont, Eskü vagy automatikus DARK-tagság.
+- A tanúk aszinkron vizsgálata után újra ellenőrizzük a helyet, időt és erőforrásokat.
+  Sikert csak a meghívó/HP mentése és a tartós szerepcommit után jelzünk.
+- Újraindításkor a rítus előtte/utána inventory-bizonylata dönt az el nem költött
+  áldozat lezárásáról vagy a már kifizetett szerep helyreállításáról. Ismeretlen, kevert
+  mentési állapot továbbra is adminvizsgálatot kér; automatikus vak visszaadás nincs.
 
 ### Pontos bizonyíték
 
@@ -151,21 +150,25 @@ A régi általános „tanú-token” helyett a bizonyíték két UUID-hoz köt�
 - kit látott.
 
 A bizonyíték időkorlátos, egyszer használható, és másik játékos ellen nem váltható be.
-A jelenlegi rekord lejáratot és felhasználási jelzőt tárol; eseménytípus vagy
-eseményazonosító még nincs benne. A tanú–cél kötés ezért önmagában nem teljes W8-megfelelés.
+A rekord esemény-UUID-t, típust (`BETRAYAL`, `OFFERING`, `UNDEAD`), észlelési időt,
+lejáratot és felhasználási jelzőt tárol. A lejárat az eredeti észleléstől számít;
+egy késleltetett vagy újrajátszott callback nem hosszabbítja meg. Beváltható nyom
+csak aktív rejtett szerep ellen menthető.
 A gyanúsított tartós profiljában él, ezért egyik fél kilépése és a restart sem törli.
 Ugyanaz a tanú–gyanúsított pár a nyom élettartamán belül nem kap új, farmolható
 bizonyítékot; az elhasznált nyugta a lejáratig megmarad. Falon át nincs bizonyíték:
-a tanú saját Folia-régióján ellenőrzött rálátás kell. Nem birtokolt régiót keresztező
-sugár bizonytalan, ezért nem ad bizonyítékot.
+a sugár által érintett blokkokat a saját Folia-régiójukon ellenőrizzük. A régióhatár
+önmagában nem védelem; betöltetlen vagy határidőn belül nem ellenőrizhető rész nem
+adhat bizonyítékot. A vizsgálat legfeljebb 64 blokkos és időkorlátos.
 A `/suttogas vád <játékos>` először pontos online célpontot old fel, majd csak a
 tanú–cél párhoz tartozó bizonyítékot váltja be a fokozatváltozással egy mentésben.
 A cél időközbeni kilépése nem szakítja ketté ezt a tranzakciót. Hamis vagy rossz célpontú vád nem
 mozgat állapotot.
 
+A jelölt rítusának megfigyelése megszakítja a belépést, és nem ad aktív szerep elleni nyomot.
+
 Bizonyíték keletkezik:
 
-- látott Sötét Rítusnál;
 - látott frakcióárulásnál;
 - a titkos ametisztátadás megfigyelésénél;
 - amikor egy kívülálló közelről látja, hogy az éjszakai undead-békesség egy
@@ -175,7 +178,7 @@ Bizonyíték keletkezik:
 
 | Állapot | Jelentés | Következő érvényes vád |
 | --- | --- | --- |
-| `CLEAN` | nincs aktív nyom | `OBSERVED` |
+| `CLEAN` | nincs fennmaradó hiteles vád; friss, még be nem váltott nyom lehet | `OBSERVED` |
 | `OBSERVED` | egy hiteles megfigyelés | `SUSPECTED` |
 | `SUSPECTED` | két hiteles megfigyelés | `EXPOSED` |
 | `EXPOSED` | a szerep lelepleződött és megszűnt | végállapot |
@@ -232,14 +235,10 @@ Profilolvasási hiba esetén hibát jelez, nem állít valótlan `CLEAN` állapo
 - konfigurálható gyanúküszöb és leleplezési bűnpont;
 - frakcióhoz kötött aktív képességek és új HUD-mérők.
 
-A régi adósság/outbox és protokollmezők kompatibilitási okból a tartós formátumban
-megmaradhatnak, de nincs őket meghajtó runtime scheduler, játékosparancs vagy HUD-kijelzés.
-Ez a változtatás nem valósít meg teljes régiadat-migrációt. Az eredeti terv ezt
-kéri; nem felhasználó által elvetett követelmény. A `processOutbox` pénzügyi
-segédmetódusnak nincs aktív hívója, ezért a megmaradt régi tételek rendezését sem
-a `load()`, sem a kiürített `collectTaxes()` nem végzi el. A már levont pénzt nem
-szabad egyszerűen törölni vagy ismét beszedni; az ellenőrzött átvezetés külön
-kiadási feltétel a ROADMAP-ben.
+Tiszta indulásnál nincs visszamenőleges tagsági adó, adótartozás vagy pénzügyi
+rendezőfutás. A kasszából eltávolítottuk a holt adókulcs-, hátralék- és outbox-helper
+útvonalakat is. A kasszajóváírások idempotens bizonylatai más, aktív gazdasági
+műveletek adatbiztonságát szolgálják.
 
 ## Parancsok
 
@@ -249,8 +248,38 @@ kiadási feltétel a ROADMAP-ben.
 | `/faction status eskü` | Exile után rögzíti a DARK esküt |
 | `/faction join dark` | Exile + Oath után kétlépcsősen megerősíti a tényleges tagságot |
 | `/suttogas állapot` | a saját fokozat és a fix visszatérési várakozás |
+| `/suttogas megtagadás` | kétszer megerősített privát kilépés, jogi reset nélkül |
 | `/suttogas megbízás` | a kultista átadás szabályai és kockázata |
 | `/suttogas vád <játékos>` | az adott célhoz kötött bizonyítékot egyszer beváltja, és egy fokozatot léptet |
+
+### Jogi visszaút és választási egyensúly
+
+A `/faction status` a következő Wanted/Exile küszöbig hiányzó Infamyt, aktuális
+vérdíjat és a visszaút helyét is kiírja. A `/quest log` **Megbízások** fülén a
+`civil_penance` (Civil vezeklés — Jóvátétel) 30 legalább 3-as szintű mob legyőzésével
+feloldozza a civil játékost. Csak rendezetlen jogi állapotban indulhat és teljesülhet;
+DARK nem választhatja, nincs pénz-/XP-jutalma. Ismételhető, a frissen felvett feladat
+új teljesítést kér. A DARK útja a meglévő Vezeklés I–III. lánc. A Suttogó szerepet
+és annak várakozását a bűntisztítás nem törli.
+
+A választási küszöb `max(2, min-votes, ceil(aktív tagok / 3))`. Az aktív létszám a
+szezonhoz és frakcióhoz kötött, utóbbi hét napos részvételi projekcióból származik.
+Példák alapbeállítással: 2 aktív tag → 2 szavazat; 12 → 4; 60 → 20. A király élő
+mandátuma alatt nincs új koronázás ugyanazzal a két szavazóval; admin felülbírálat
+külön jogosultság. A `/faction king` megmutatja az aktuális küszöböt.
+
+### Megszerzési gyakoriság és a titkos előny ára
+
+A jelenlegi kultista loot esélye 35%, a meghívó súlya 5 az összesen 100 súlyból:
+egy jogosult ölési lootpróbán **1,75%** a meghívó esélye (átlagosan 57,14 próba).
+Ez feltételes esély; a kultisták eseményenkénti száma és a tényleges ölési részvétel
+meghatározza az óránkénti mennyiséget. Nem garantált eseményenkénti vagy óránkénti drop.
+
+Áruláskor csak a tényleges Suttogóból felcsapó lélekjel megfigyelése ad nyomot;
+egy közönséges civil ölés önmagában nem bizonyít rejtett tagságot. A feketepiaci
+kedvezmény a civil fedezet fenntartásáért jár. DARK-ként megszűnik, cserébe a nyílt
+DARK-tartalmak és passzívok érhetők el. A bolti ár és terhelés ugyanazt a meglévő
+árazási útvonalat használja; új kedvezményszorzó nincs.
 
 ## Konfigurációs felület
 

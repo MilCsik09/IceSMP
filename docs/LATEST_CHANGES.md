@@ -1,5 +1,23 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A teljes build korábbi két sérült Trash-forráslapját új imagegen-változat váltja:
+`dev-assets/trash/source/phase-batch-001-v2.png` és `phase-batch-002-v2.png`.
+Az eredeti tárgy-ID-k és sorrend megmaradnak; 27 fázisikon újragenerált. A promptok,
+stílusreferencia és feldolgozás a `dev-assets/trash/source/manifest.json` részei.
+Ez új forrás, nem az elveszett eredeti bájtok helyreállításának állítása.
+
+## Frakció–Suttogó kiegészítések, 2026-09-07
+
+Tiszta indulás: a korábbi tagságiadó- és profilmigráció nem követelmény. Elkészült
+a magányos, normál világbeli éjszakai rítus, a ritka privát discovery-hint, az
+eseményazonos bizonyíték, a vanish/invisibility/respawn kizárás és a régiónkénti
+rálátás. `/suttogas megtagadás`: kétszer megerősített kilépés, 24 órás várakozás,
+bűntisztítás nélkül. `/faction status`: következő jogi küszöb, vérdíj és a vezeklés
+helye. A civil jóvátétel DARK-belépés nélkül is elérhető a `/quest log` Megbízások
+fülén. A választás aktív létszámhoz igazodik, és megtartja az élő mandátumot.
+Részletes szabályok és korlátok: [FACTION_REWORK](FACTION_REWORK.md).
+
+
 ## Frakció–Suttogó javítás, 2026-09-06
 
 Az eredeti W1–W33 követelmények visszanyerése után a készre jelentés pontosítva:
@@ -17,7 +35,7 @@ NEUTRAL frakcióváltásnak azonos ára van. A személyes kasszakivét csak admi
 
 A Suttogó-bizonyíték tartós és pontos; beváltása, a harmadik fokozat, száműzetés és
 24 órás visszatérési várakozás egy mentés. A rítus mentési sorrendje javítva, a tárgy
-lore-ja leírja a SHIFT + jobb kattintást. A chat álneves. `/suttogas állapot` és
+lore-ja misztikus utalásokat ad; helyes körülményeknél percenként legfeljebb egy privát hint segít. A chat álneves. `/suttogas állapot` és
 `/suttogas megbízás` ad részletes tájékoztatást. Kultista jutalom csak az átadással
 minősített résztvevőnek jár. A ligapont csökkenő létszámhozamot kap, a személyes
 bajnoki jutalom alapból három igazolt kategória/nap hozzájárulást igényel.
