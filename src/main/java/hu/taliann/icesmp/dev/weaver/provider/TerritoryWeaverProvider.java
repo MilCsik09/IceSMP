@@ -23,6 +23,7 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
     static final WeaverRevisionScope SCOPE = new WeaverRevisionScope(1, Set.of(CANONICAL, PROJECTIONS, WORLD));
     private final TerritoryManager manager;
     private final Function<WorldRef, String> worldNames;
+    private final BiFunction<TerritoryRuntimeProjectionSource, SubjectRef, Map<String, WeaverValue>> localSnapshots;
     private final TerritoryRuntimeProjectionSource source;
     private final TerritoryProjectionActions actions;
     private final TerritoryCanonicalActions canonical;
@@ -35,11 +36,16 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
             final var world = Bukkit.getWorld(ref.worldId());
             if (world == null) throw new WeaverDomainRejection("WORLD_UNAVAILABLE");
             return world.getName();
-        });
+        }, (source, ref) -> TerritorySubjectInspection.capture(ref, manager, protection, source));
         protection.bindRuleProjection((world, territory, rule) -> services.readConsumer("territory", () -> source.resolve(world, territory, rule)));
     }
     TerritoryWeaverProvider(WeaverTypeRegistry types, TerritoryManager manager, TerritoryRuntimeProjectionSource source, Function<WorldRef, String> worldNames) {
+        this(types, manager, source, worldNames, (projection, ref) -> Map.of());
+    }
+    TerritoryWeaverProvider(WeaverTypeRegistry types, TerritoryManager manager, TerritoryRuntimeProjectionSource source, Function<WorldRef, String> worldNames,
+            BiFunction<TerritoryRuntimeProjectionSource, SubjectRef, Map<String, WeaverValue>> localSnapshots) {
         this.manager = Objects.requireNonNull(manager); this.source = Objects.requireNonNull(source); this.worldNames = Objects.requireNonNull(worldNames);
+        this.localSnapshots = Objects.requireNonNull(localSnapshots);
         types.register(ScalarTypeCodec.reference(TERRITORY, key -> territories().containsKey(key)));
         types.register(ScalarTypeCodec.reference(RULE, key -> rules().containsKey(key)));
         types.register(TerritoryRuntimeProjectionSource.codec());
@@ -87,7 +93,7 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
         } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
     @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef subject) {
-        if (!(subject instanceof WorldRef world)) return Map.of();
+        if (!(subject instanceof WorldRef world)) return Map.copyOf(localSnapshots.apply(source, subject));
         final String name = worldNames.apply(world); final var zones = territories(); final var active = source.active(world); final long now = System.currentTimeMillis();
         final var revisions = zones.values().stream().filter(z -> z.world().equals(name)).sorted(Comparator.comparing(Territory::id)).map(TerritoryRevision::fingerprint).toList();
         final Map<String, WeaverValue> facts = new HashMap<>();
@@ -110,7 +116,7 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
     }
     @Override public String id() { return "territory"; }
     @Override public int contractVersion() { return 1; }
-    @Override public Set<WeaverSubjectKind> supportedKinds() { return Set.of(WeaverSubjectKind.WORLD); }
+    @Override public Set<WeaverSubjectKind> supportedKinds() { return Set.of(WeaverSubjectKind.WORLD, WeaverSubjectKind.PLAYER, WeaverSubjectKind.ENTITY, WeaverSubjectKind.BLOCK, WeaverSubjectKind.LOCATION); }
     @Override public ProviderContribution contribution() { return contribution; }
     @Override public ProviderCoverage coverage() {
         final Set<String> surfaces = new HashSet<>(Set.of(FACET, "territory.export_rule", "territory.import_rule"));
@@ -119,7 +125,10 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
                 "World-owned protection projection, typed rule import/export and native LIVE_GM conditional transactions. WW-00 remains blocked pending location trace and native runtime evidence.", surfaces);
     }
     @Override public ProviderDiscovery discover(SubjectSnapshot snapshot) {
-        if (!(snapshot.ref() instanceof WorldRef) || !snapshot.facts().containsKey(CANONICAL)) return new ProviderDiscovery(Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of());
+        if (!(snapshot.ref() instanceof WorldRef)) return snapshot.facts().containsKey("territory.zone_revision")
+                ? new ProviderDiscovery(Set.of(FACET), Set.of(), Set.of(), Set.of(), Set.of(), Map.of())
+                : new ProviderDiscovery(Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of());
+        if (!snapshot.facts().containsKey(CANONICAL)) return new ProviderDiscovery(Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of());
         final Set<String> visible = new HashSet<>(Set.of(TerritoryProjectionActions.APPLY, TerritoryProjectionActions.CLEAR)); canonical.descriptors().forEach(a -> visible.add(a.id()));
         return new ProviderDiscovery(Set.of(FACET), visible, catalogs.keySet(),
                 snapshot.facts().containsKey(RULE_VALUE) ? Set.of("territory.export_rule") : Set.of(), Set.of("territory.import_rule"), Map.of());
