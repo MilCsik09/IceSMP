@@ -551,6 +551,12 @@ tasks {
     }
 }
 
+val worldWeaverArchitectureAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Checks WorldWeaver generic frontend, secrecy and static Folia fences."
+    commandLine("python3", "-m", "unittest", "scripts.tests.test_world_weaver_architecture")
+}
+
 val regressionTest by sourceSets.creating {
     java.srcDir("src/regression/java")
     compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
@@ -582,6 +588,46 @@ val devArtifactMigrationRegressionTest = registerRegression(
     "devArtifactMigrationRegressionTest",
     "Runs strict DEV artifact schema-2 and lossless legacy reward migration regressions.",
     "hu.taliann.icesmp.dev.artifact.DevArtifactMigrationRegressionSuite")
+val weaverTypeCompatibilityRegressionTest = registerRegression(
+    "weaverTypeCompatibilityRegressionTest",
+    "Runs WeaverTypeCompatibility contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverTypeCompatibilityRegressionSuite")
+val weaverDynamicCatalogRegressionTest = registerRegression(
+    "weaverDynamicCatalogRegressionTest",
+    "Runs WeaverDynamicCatalog contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverDynamicCatalogRegressionSuite")
+val weaverAreaRegressionTest = registerRegression(
+    "weaverAreaRegressionTest",
+    "Runs WeaverArea contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverAreaRegressionSuite")
+val weaverContractRegressionTest = registerRegression(
+    "weaverContractRegressionTest",
+    "Runs WeaverContract contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverContractRegressionSuite")
+val worldWeaverAuthorityRegressionTest = registerRegression(
+    "worldWeaverAuthorityRegressionTest",
+    "Runs WorldWeaverAuthority contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WorldWeaverAuthorityRegressionSuite")
+val worldWeaverCoverageRegressionTest = registerRegression(
+    "worldWeaverCoverageRegressionTest",
+    "Runs WorldWeaverCoverage contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WorldWeaverCoverageRegressionSuite")
+val weaverFoliaOwnershipRegressionTest = registerRegression(
+    "weaverFoliaOwnershipRegressionTest",
+    "Runs WeaverFoliaOwnership contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverFoliaOwnershipRegressionSuite")
+val weaverExecutionRegressionTest = registerRegression(
+    "weaverExecutionRegressionTest",
+    "Runs Weaver continuation, authority revalidation and fail-closed execution gates.",
+    "hu.taliann.icesmp.dev.weaver.WeaverExecutionRegressionSuite")
+val weaverGUIRegressionTest = registerRegression(
+    "weaverGUIRegressionTest",
+    "Runs generic Weaver view paging, typed parameter and immutable draft regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverGUIRegressionSuite")
+val weaverRewardIntegrityRegressionTest = registerRegression(
+    "weaverRewardIntegrityRegressionTest",
+    "Runs neutral reward-policy source/channel denials and quarantine-tail regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverRewardIntegrityRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -1092,6 +1138,9 @@ tasks.check {
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
+        weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
+        worldWeaverArchitectureAudit,
+        weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCoverageRegressionTest, weaverFoliaOwnershipRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
         configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,

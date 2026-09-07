@@ -82,6 +82,13 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
         entries.put(registration.definition().id(), new Entry(registration));
     }
     public DevItemFactory itemFactory() { return itemFactory; }
+    public synchronized void bindInteractions(final String artifactId,
+            final java.util.function.Function<DevArtifactInteraction, ArtifactInteractionResult> handler, final Runnable unavailable) {
+        if (ledger != null || shuttingDown) throw new IllegalStateException("Artifact frontend binding is closed");
+        final Entry entry = entries.get(artifactId);
+        if (entry == null) throw new IllegalArgumentException("Unknown registered artifact");
+        entry.behavior().bindInteractions(handler, unavailable);
+    }
     public UUID ownerUuid() { return state(DevItemFactory.BINGULUS_ID).owner(); }
     public boolean isOwner(final Player player) { return player != null && ownerUuid().equals(player.getUniqueId()); }
     public DevArtifactState state(final String id) {

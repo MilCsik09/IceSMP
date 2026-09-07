@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stage": "WW-00_SOURCE_AUDIT_ONLY",
+  "stage": "WW-02_FOUNDATION_IN_PROGRESS",
   "repository": "MilCsik09/IceSMP",
   "base_branch": "feature/faction-crime-whisperer-rework",
   "base_commit": "2a78eb6071db063740ce1f8e6889b03d9741dbb0",
@@ -21,9 +21,12 @@
       "inspect": "PLAYER/ENTITY/BLOCK/LOCATION/WORLD owner-thread snapshot; protected entity classification",
       "planned_actions": "heal, nonlethal damage, kill, effects, freeze/fire, velocity, teleport, AI, invulnerability, gamemode/flight, target, remove, block data, effects, time/weather, sandbox stack",
       "canonical_route": "Bukkit owner scheduler; teleportAsync; manager-owned entities excluded from generic remove",
-      "rationale": "No WorldWeaver SubjectRef/snapshot/access router or vanilla adapter exists. World influence and block/spatial reward provenance must precede mutation.",
+      "rationale": "WW-02 implements owner-routed immutable vanilla snapshots, canonical material/gamemode catalogs, location Thread export and recipient-only cosmetic feedback through the generic kernel/GUI. Full vanilla manipulation, influence consumers, journal and live interaction evidence remain open; initial provider registration is not domain acceptance.",
       "source_evidence": [],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java"
+      ]
     },
     {
       "id": "developer_self",
@@ -34,7 +37,7 @@
       "inspect": "authoritative instance, behavior state, sessions, receipts, diagnostics",
       "planned_actions": "recover, clear session, arming, vanish, Thread/Imprint/Binding/Fork controls",
       "canonical_route": "Generalize existing DevItemManager; preserve Bingulus pending/pity; HiddenDevAuthority; ModerationManager + VanishManager",
-      "rationale": "WW-01 now generalizes the existing manager/factory with schema-2 durable identity, isolated Bingulus behavior and fixed PRIMARY_DEVELOPER artifact registration. The developer Self provider, arming, influence gates and physical client acceptance remain unimplemented/unverified; coverage stays DEFERRED_BLOCKER.",
+      "rationale": "The existing artifact lifecycle now binds the generic kernel/GUI, session/arming/Thread/history state and fail-closed non-durable execution. Neutral reward-policy and influence/quarantine data foundations exist; actual Self provider, persistent influence, complete reward integration, bindings/forks and connected-client acceptance remain open.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
         "src/main/java/hu/taliann/icesmp/security/HiddenDevAuthority.java",
@@ -1298,6 +1301,173 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WeaverSelectionStore.java",
+      "domain": "developer_self",
+      "source_sha256": "8feb129dc94d4f8c1d28ccdc33680c106b4de3b267bb98f98b5b86681d7264e8",
+      "public_methods": [
+        "clear",
+        "current",
+        "previous",
+        "recent",
+        "select"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverCoverageRegistry.java",
+      "domain": "developer_self",
+      "source_sha256": "305a748ff1713ad6fcbcdac424a07626dd3ac48ee168e2aaa062a82785d68484",
+      "public_methods": [
+        "WorldWeaverCoverageRegistry",
+        "requireComplete"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
+      "domain": "developer_self",
+      "source_sha256": "971ae0e3870462bd5e8f7c49ac7f3aca65a147bcbc0da519385315b9177eff0f",
+      "public_methods": [
+        "WorldWeaverKernel",
+        "clearPlayerState",
+        "click",
+        "closeView",
+        "interact",
+        "shutdown"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
+      "domain": "developer_self",
+      "source_sha256": "93619dfaf14942346e7460b75d795736e794bfbbb2397ec2c8c7a27c694d50ef",
+      "public_methods": [
+        "Discovery",
+        "WorldWeaverProviderRegistry",
+        "actions",
+        "assessRecovery",
+        "captureContributions",
+        "catalogs",
+        "coverage",
+        "discover",
+        "exports",
+        "facets",
+        "freezeAndValidate",
+        "imports",
+        "invoke",
+        "observeExecution",
+        "owner",
+        "quarantined",
+        "register"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
+      "domain": "developer_self",
+      "source_sha256": "3b0d939fb8f1d0d4d1c531c46e8b842d9ecbab03b652239ba6e2151f322a29f8",
+      "public_methods": [
+        "WorldWeaverRuntime",
+        "listener",
+        "shutdown",
+        "start"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverSessionManager.java",
+      "domain": "developer_self",
+      "source_sha256": "5784fcab0a78f8fd5a98b08fb0d80c62e8ae65d049991d878065eb27aa0d5144",
+      "public_methods": [
+        "WorldWeaverSessionManager",
+        "active",
+        "actor",
+        "arming",
+        "artifactGeneration",
+        "artifactInstance",
+        "close",
+        "current",
+        "id",
+        "matches",
+        "mode",
+        "nextView",
+        "open",
+        "receipt",
+        "receipts",
+        "selection",
+        "shutdown",
+        "threads",
+        "viewRevision"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/api/RegistryValueCatalog.java",
+      "domain": "developer_self",
+      "source_sha256": "d6385c9994a3116b597f0e4a96060bfa1d3afdc178cdfc37d565e87ffe151262",
+      "public_methods": [
+        "RegistryValueCatalog",
+        "page",
+        "resolve",
+        "type"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverTypeRegistry.java",
+      "domain": "developer_self",
+      "source_sha256": "db224896082fec73ea498816e279d605d7f7386039487b07d8936c823c370f98",
+      "public_methods": [
+        "compatible",
+        "contains",
+        "freeze",
+        "register",
+        "require",
+        "snapshot",
+        "validate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverValueCatalog.java",
+      "domain": "developer_self",
+      "source_sha256": "3fa400d3d733d68b075842f5c6f6ff9730bc117c4db0d13b4db0ea93ee4547ea",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverExecutionCoordinator.java",
+      "domain": "developer_self",
+      "source_sha256": "f88e1668a8527520980c23cbff41ef6f9eb2c78d4eaf3bfb9e7b224bdbd93a55",
+      "public_methods": [
+        "WeaverExecutionCoordinator",
+        "available",
+        "close",
+        "execute"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+      "domain": "minecraft",
+      "source_sha256": "7c049782fa69de52f01c11f04d4b1142aca1dc1f76104a38e09b015df44e5ce6",
+      "public_methods": [
+        "MinecraftWeaverProvider",
+        "assessRecovery",
+        "catalog",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareUndo",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
+      "domain": "minecraft",
+      "source_sha256": "7aeede3880069a052532ddb2dcdae1a2b49e704a26e5e45e817f8a523c770e35",
+      "public_methods": [
+        "SubjectSnapshotFactory",
+        "capture"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java",
       "domain": "class",
       "source_sha256": "42172b00fba25ea3059ad3d7828dc351c76ab38aea97d10aa2d6543f7f8a0bbc",
@@ -1502,6 +1672,30 @@
         "rank",
         "templateId"
       ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/CompositeRewardEligibilityPolicy.java",
+      "domain": "developer_self",
+      "source_sha256": "dbea1a0d9286644f08ebf96cc436d359005a9a0c0a05d9930eb6c2f7c981533f",
+      "public_methods": [
+        "CompositeRewardEligibilityPolicy",
+        "evaluate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/InfluenceRewardEligibilityPolicy.java",
+      "domain": "developer_self",
+      "source_sha256": "6a5b1e2dfe881153543b2c5a5d1bd39f1ed02bc9612617deb4c61aaceb38452f",
+      "public_methods": [
+        "InfluenceRewardEligibilityPolicy",
+        "evaluate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/RewardEligibilityPolicy.java",
+      "domain": "developer_self",
+      "source_sha256": "0437bc735cc1022497099cbc561d4257a3cb0a7e24cc0c19d589e2cab2789f01",
+      "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/BuildAwareLootService.java",
@@ -2348,9 +2542,11 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
       "domain": "developer_self",
-      "source_sha256": "d23ff2e72e9758e20e2ef284103ad3544f11538e3b720bc35693c0b502ddefea",
+      "source_sha256": "a7bbd37e28331e0d54bf2c732b6bc9a8d5ef63723265eb017c5c630787e41c32",
       "public_methods": [
+        "DevItemManager",
         "Diagnostics",
+        "bindInteractions",
         "clearPlayerState",
         "commitBehavior",
         "compensateUnstartedBehavior",
@@ -5775,6 +5971,9 @@
   "supplemental_authorities": [
     "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
     "src/main/java/hu/taliann/icesmp/factions/WhisperSightline.java",
@@ -5869,6 +6068,7 @@
       "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java",
       "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java",
       "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassivePolicy.java",
@@ -6919,6 +7119,14 @@
         "war_raid_duel"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
+      "role": "AUTHORITY",
+      "domains": [
+        "developer_self"
+      ],
+      "rationale": "Internal WorldWeaver composition/root lifecycle. Artifact authority remains DevItemManager; gameplay domain coverage is not closed by the frontend."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",

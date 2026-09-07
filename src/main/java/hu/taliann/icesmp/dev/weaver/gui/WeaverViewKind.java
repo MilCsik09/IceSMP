@@ -1,0 +1,3 @@
+package hu.taliann.icesmp.dev.weaver.gui;
+
+public enum WeaverViewKind { SUBJECT, FACET, ACTION, PARAMETER, CONFIRMATION, THREAD_CASE, RECENT, HISTORY, PROJECTIONS, DIAGNOSTICS, CATALOG }
