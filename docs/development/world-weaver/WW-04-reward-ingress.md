@@ -417,3 +417,29 @@ transition findings. Fresh Paper/Folia evidence is required for this cleanup com
 Coverage remains 323 authorities / 55 domains / 51 blockers. The same unfinished
 native damage propagation, cross-region continuation and later-phase requirements
 remain open; no production or complete-phase verdict is made.
+
+## Acknowledged instant-effect admission
+
+Thematic parent `08bf674800bf9dc0964bcd4418cfc76627ba944e`. The journal can now
+issue an immediate, single-use permit for a zero-duration effect when every original
+origin/target pair already has matching acknowledged derived evidence. This reads the
+same immutable journal publication; it adds no cache or alternative authority. The
+permit deadline is the minimum of the ordinary five-second owner window and every
+finite target's remaining admission window after reserving its full five-minute tail.
+It cannot spend that tail on a late effect. Monotonic targets need no tail renewal.
+
+Missing targets, newly introduced origins and exhausted admission windows still use
+the existing durable propagation path. Lingering/observed-lifetime effects retain their
+observer contract. Final source re-capture, publication/lifecycle checks and neutral
+owner observation fences still run for reused permits. Neither operations/receipts nor
+influence history are rewritten on successful reuse. This removes redundant IO from
+existing native effect consumers; it is not the complete vanilla damage listener.
+
+Java 21 compiles all main/regression sources. Derived propagation passes 214 assertions,
+including immediate completion without a write, exact tail deadline, necessary renewal,
+partial target coverage, newly introduced origin, observation fence, lingering refusal,
+monotonic retention and shutdown. Observed influence 157, causal source 51, influence
+persistence 162 and gameplay reward gateway also pass. The additional SEASON_CREDIT
+channel participates automatically in the all-channel quarantine checks. Exact new-head
+CI remains required. Coverage remains 324 authorities / 55 domains / 51 blockers;
+native damage/projectile/player propagation remains active implementation work.

@@ -1682,7 +1682,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "5305246095a3407632990fef9eb090bb6c34f96e4c331988d501c5a3d2c9a7cb",
+      "source_sha256": "d17f1963f5d8d5e770ab6b0be41d651549deb165a844131b93b8517acce460e2",
       "public_methods": [
         "WeaverJournal",
         "applied",

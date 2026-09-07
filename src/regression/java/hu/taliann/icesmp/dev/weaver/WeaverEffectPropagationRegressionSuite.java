@@ -60,8 +60,47 @@ public final class WeaverEffectPropagationRegressionSuite {
         await(restart.close());
         final var shutdown = await(journal.prepareDerivedEffect(context)); await(journal.close());
         check(!shutdown.claim(), "shutdown permit remained usable");
-        failures(); publicationFence(); slowAcknowledgement(); bindings(); freshSources();
+        failures(); publicationFence(); slowAcknowledgement(); bindings(); freshSources(); acknowledgedInstantReuse();
         System.out.println("Derived influence propagation passed: " + assertions + " assertions; durable all-scope targets, transitive origin, no receipt mutation, one-use admission, publication race, crash uncertainty and real YAML restart.");
+    }
+    private static void acknowledgedInstantReuse() throws Exception {
+        final var storage = new Storage(); final var clock = new java.util.concurrent.atomic.AtomicLong(100L);
+        final var journal = new WeaverJournal(storage, ignored -> { }, clock::get); await(journal.load());
+        final var root = new EntityRef(UUID.randomUUID()); apply(journal, operation(root, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX), WeaverEffectCommit.none());
+        final var source = new RewardSource.Entity(root.entityId()); final var target = new RewardSource.Player(UUID.randomUUID());
+        final var context = new GameplayEffectContext(List.of(source), Set.of(target), 0);
+        check(await(journal.prepareDerivedEffect(context)).claim(), "first durable instant effect refused");
+        final var acknowledged = journal.snapshot(); final int writes = storage.writes;
+        clock.set(5000);
+        final var immediate = journal.prepareDerivedEffect(context);
+        check(immediate.toCompletableFuture().isDone() && await(immediate).claim(), "acknowledged instant effect queued another write");
+        check(storage.writes == writes && journal.snapshot().equals(acknowledged), "instant reuse rewrote durable history or tail");
+        final var deadline = await(journal.prepareDerivedEffect(context)); clock.set(5101);
+        check(!deadline.claim(), "reused permit spent the mandatory post-effect tail");
+        check(await(journal.prepareDerivedEffect(context)).claim() && storage.writes == writes + 1, "expired admission did not renew durable tail");
+        final var newTarget = new RewardSource.Player(UUID.randomUUID());
+        check(await(journal.prepareDerivedEffect(new GameplayEffectContext(List.of(source), Set.of(target, newTarget), 0))).claim()
+                && journal.influenceIndex().quarantined(newTarget, clock.get()), "partial target coverage admitted missing lineage");
+        final var old = await(journal.prepareDerivedEffect(context));
+        apply(journal, operation(root, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX), WeaverEffectCommit.none());
+        check(!old.claim(), "new source origin crossed reused permit admission");
+        check(await(journal.prepareDerivedEffect(context)).claim(), "new source origin could not be durably propagated");
+        try (var binding = GameplayEffectGate.install(journal::prepareDerivedEffect)) {
+            final var reuse = await(GameplayEffectGate.prepare(context));
+            try (var fence = GameplayEffectGate.fence(target).orElseThrow()) {
+                check(!reuse.claim(), "instant reuse bypassed owner observation fence");
+            }
+        }
+        check(!await(journal.prepareDerivedEffect(new GameplayEffectContext(List.of(source), Set.of(target), 1000))).claim(),
+                "instant reuse admitted lingering effect without observer");
+        final var child = new RewardSource.Entity(UUID.randomUUID());
+        check(await(journal.prepareDerivedEffect(new GameplayEffectContext(List.of(source), Set.of(child), 0))).claim(), "monotonic child preparation refused");
+        final int beforeMonotonic = storage.writes; clock.addAndGet(1_000_000);
+        final var monotonic = journal.prepareDerivedEffect(new GameplayEffectContext(List.of(source), Set.of(child), 0));
+        check(monotonic.toCompletableFuture().isDone() && await(monotonic).claim() && storage.writes == beforeMonotonic,
+                "monotonic child evidence acquired an expiry or redundant write");
+        final var closing = await(journal.prepareDerivedEffect(new GameplayEffectContext(List.of(source), Set.of(child), 0)));
+        await(journal.close()); check(!closing.claim(), "shutdown admitted acknowledged instant permit");
     }
     private static void failures() throws Exception {
         for (boolean afterWrite : List.of(false, true)) {

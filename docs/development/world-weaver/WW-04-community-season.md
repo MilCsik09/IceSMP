@@ -56,8 +56,12 @@ supplement those executable profile tests.
 Four architecture checks, the authored PvE audit, consistency (0 FAIL/WARN), and
 profile authority guard/self-test (683 findings, zero unknown/stale/invalid/transition)
 pass. Coverage remains 324 authorities, 55 domains and 51 blockers. Existing community and
-season authorities were re-audited; no domain status was waived. Exact new-head CI and
-connected-player community completion, membership-change and buff tests remain required.
+season authorities were re-audited; no domain status was waived. Exact head `08bf674800bf9dc0964bcd4418cfc76627ba944e`, tree
+`abcdfcb727dd429afcd26746ca900427febd14ca`, run `34143563091`: native
+Paper `101810614464` / Folia `101810614331` and artifact Paper `101810614891` /
+Folia `101810614468` passed. Verification `101810614222` passed the 67-assertion
+season suite and failed only inherited `trashSpriteAssetAudit`. Connected-player
+community completion, membership-change and buff tests remain required.
 The preceding challenge head's Paper/Folia native and artifact jobs passed; its full
 verification failed only the inherited damaged Trash source PNG audit.
 

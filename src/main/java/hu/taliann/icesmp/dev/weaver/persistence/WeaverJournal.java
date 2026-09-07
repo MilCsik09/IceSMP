@@ -67,6 +67,8 @@ public final class WeaverJournal {
         if (captured.uncertain() || captured.origins().size() > 128) return CompletableFuture.completedFuture(GameplayEffectPermit.denied());
         // Clean gameplay needs no journal queue/write. The one-use permit still rechecks source and lifecycle admission.
         if (captured.clean()) return CompletableFuture.completedFuture(effectPermit(context, Set.of(), Math.addExact(observedAt, 5000), Optional.empty()));
+        final long durableUntil = existingInstantAdmission(context, captured.origins(), observedAt);
+        if (durableUntil > observedAt) return CompletableFuture.completedFuture(effectPermit(context, captured.origins(), durableUntil, Optional.empty()));
         // A tick-based lingering effect can outlive a wall-clock estimate during lag/logout.
         // Monotonic targets are safe; temporary targets need an observed-lifetime consumer first.
         final boolean needsObserver = (context.durationMillis() > 0 || context.lifetime().isPresent())
@@ -84,6 +86,20 @@ public final class WeaverJournal {
             if (next != state) publish(next);
             return effectPermit(context, Set.copyOf(origins), admissionUntil, lifetime);
         }).exceptionally(unavailable -> GameplayEffectPermit.denied());
+    }
+    /** Reuse only acknowledged lineage whose remaining tail covers the instant effect's actual admission time. */
+    private long existingInstantAdmission(final GameplayEffectContext context, final Set<DeveloperInfluence> origins, final long now) {
+        if (context.durationMillis() != 0 || context.lifetime().isPresent()) return -1;
+        final Publication current = publication;
+        long until = Math.addExact(now, 5000);
+        for (final DeveloperInfluence origin : origins) for (final RewardSource source : context.targets()) {
+            final var target = WeaverEffectReducer.propagationTarget(source);
+            final var evidence = current.state().influences().get(WeaverEffectReducer.propagatedId(origin, target));
+            if (evidence == null || !evidence.influence().equals(origin) || !evidence.target().equals(target)
+                    || evidence.observedLifetime().isPresent() || !evidence.quarantines(now)) return -1;
+            if (!target.monotonic()) until = Math.min(until, evidence.quarantinedUntil() - PlayerQuarantine.MINIMUM_TAIL_MILLIS);
+        }
+        return until;
     }
     private GameplayEffectPermit effectPermit(final GameplayEffectContext context, final Set<DeveloperInfluence> admitted, final long admissionUntil,
             final Optional<WeaverValue> observedLifetime) {
