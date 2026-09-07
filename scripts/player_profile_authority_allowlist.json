@@ -590,6 +590,16 @@
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java|public CompletionStage<WeaverOperationRecord> resolve(final UUID id, final long revision, final OperationStatus outcome, final long now) {",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "Reviewed operation UUID CAS transition in the singleton internal developer operation journal; stable actor/subject references and reward-denial evidence do not own canonical player profile, economy or progression. resolve does not resolve a player file path."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java|return java.util.Objects.requireNonNull(projectionSource.resolve(mob.getUniqueId(), canonicalProfile(mob)));",
+      "category": "RUNTIME",
+      "reason": "Exact reviewed owner-checked Mob UUID call into an immutable combat projection port. CanonicalMobProfile contains detached mob kit/behavior inputs, not player profile or YAML state; this expression performs no persistence write."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java|EffectiveMobProjection resolve(UUID entityId, CanonicalMobProfile canonical);",
+      "category": "RUNTIME",
+      "reason": "Exact reviewed functional read port: the UUID identifies a mob and both profile records contain immutable combat inputs. The interface has no player profile, YAML or persistence authority."
     }
   ]
 }

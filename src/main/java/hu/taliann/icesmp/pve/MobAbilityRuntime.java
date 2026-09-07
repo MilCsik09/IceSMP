@@ -50,8 +50,9 @@ public final class MobAbilityRuntime implements Listener {
 
     private static final class RuntimeState {
         private final Mob mob;
-        private final List<MobAbilityDefinition> definitions;
-        private final MobBehaviorProfile behavior;
+        private List<MobAbilityDefinition> definitions;
+        private MobBehaviorProfile behavior;
+        private EffectiveMobProjection effective;
         private final long attachedAtNanos = System.nanoTime();
         private final Map<String, Long> readyAtTick = new LinkedHashMap<>();
         private final ArrayDeque<MobAbilityDefinition> pendingThresholds = new ArrayDeque<>();
@@ -71,10 +72,10 @@ public final class MobAbilityRuntime implements Listener {
         private ScheduledTask task;
 
         private RuntimeState(final Mob mob, final List<MobAbilityDefinition> definitions,
-                             final MobBehaviorProfile behavior) {
+                             final EffectiveMobProjection effective) {
             this.mob = mob;
             this.definitions = List.copyOf(definitions);
-            this.behavior = behavior;
+            this.behavior = effective.behavior(); this.effective = effective;
         }
     }
 
@@ -89,6 +90,8 @@ public final class MobAbilityRuntime implements Listener {
     private final NamespacedKey volatileArmedKey;
     private final NamespacedKey frenziedKey;
     private final NamespacedKey summonOwnerKey;
+    private volatile MobRuntimeProjectionSource projectionSource = MobRuntimeProjectionSource.canonical();
+    private volatile boolean projectionSourceBound;
 
     public MobAbilityRuntime(final JavaPlugin plugin, final ConfigManager config,
                              final MobScalingManager scaling,
@@ -114,50 +117,18 @@ public final class MobAbilityRuntime implements Listener {
     }
 
     public void attach(final LivingEntity entity) {
-        if (!(entity instanceof Mob mob) || !mob.isValid()) return;
-        final String templateId = scaling.getTemplateId(mob);
-        final MobTemplate template = templates.find(templateId).orElse(null);
-        final ArrayList<MobAbilityDefinition> definitions = new ArrayList<>();
-        final MobRank rank = scaling.getRank(mob);
-        if (template != null) {
-            for (final String abilityId : template.abilityIdsFor(rank)) {
-                definitions.add(abilities.require(abilityId));
-            }
-        }
-        final CreatureSpeciesPolicy creaturePolicy = species.profile(mob.getType());
-        if (template == null) {
-            for (final String abilityId : creaturePolicy.techniquesFor(rank)) {
-                addIfAbsent(definitions, abilityId);
-            }
-            if (creaturePolicy.disposition() == CreatureSpeciesPolicy.Disposition.HOSTILE) {
-                for (final String abilityId : config.getStringList("mob-scaling.rank-abilities."
-                        + rank.name().toLowerCase(java.util.Locale.ROOT))) {
-                    addIfAbsent(definitions, abilityId);
-                }
-            }
-        }
-        final List<EliteAffix> affixes = scaling.getAffixes(mob);
-        if (affixes.contains(EliteAffix.ARCANE)) addIfAbsent(definitions, "rime_burst");
-        if (affixes.contains(EliteAffix.SUMMONER)) addIfAbsent(definitions, "call_frozen");
-        if (affixes.contains(EliteAffix.SHIELDED)) {
+        if (!(entity instanceof Mob mob)) return;
+        if (!Bukkit.isOwnedByCurrentRegion(mob)) throw new IllegalStateException("Combat profile owner required");
+        if (!mob.isValid() || mob.isDead()) return;
+        final CanonicalMobProfile canonical = canonicalProfile(mob);
+        final EffectiveMobProjection effective = java.util.Objects.requireNonNull(projectionSource.resolve(mob.getUniqueId(), canonical));
+        final List<MobAbilityDefinition> definitions = effectiveDefinitions(effective);
+        if (canonical.affixes().contains(EliteAffix.SHIELDED)) {
             mob.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,
                     Integer.MAX_VALUE, 0, false, true, true));
         }
-        final MobArchetype archetype = archetype(mob);
-        definitions.removeIf(definition -> !definition.eligible(rank, archetype));
-        final int maximum = maximumTechniques(rank);
-        while (definitions.stream().filter(MobAbilityRuntime::countsTowardTechniqueCap).count() > maximum) {
-            for (int index = definitions.size() - 1; index >= 0; index--) {
-                if (countsTowardTechniqueCap(definitions.get(index))) {
-                    definitions.remove(index);
-                    break;
-                }
-            }
-        }
         if (definitions.isEmpty()) return;
-        final RuntimeState state = new RuntimeState(mob, definitions,
-                template == null ? MobBehaviorProfile.defaults(archetype == null
-                        ? MobArchetype.BRUISER : archetype) : template.behavior());
+        final RuntimeState state = new RuntimeState(mob, definitions, effective);
         if (!registerState(mob.getUniqueId(), state)) return;
         try {
             state.task = mob.getScheduler().runAtFixedRate(plugin,
@@ -167,6 +138,73 @@ public final class MobAbilityRuntime implements Listener {
         } catch (final RuntimeException rejected) {
             states.remove(mob.getUniqueId(), state);
         }
+    }
+
+    public synchronized void bindProjectionSource(final MobRuntimeProjectionSource source) {
+        if (projectionSourceBound) throw new IllegalStateException("Combat projection source already bound");
+        projectionSource = java.util.Objects.requireNonNull(source); projectionSourceBound = true;
+    }
+
+    public CanonicalMobProfile canonicalProfile(final Mob mob) {
+        requireOwner(mob);
+        final String templateId = scaling.getTemplateId(mob); final MobTemplate template = templates.find(templateId).orElse(null);
+        final MobRank rank = scaling.getRank(mob); final MobArchetype archetype = archetype(mob);
+        final CreatureSpeciesPolicy policy = species.profile(mob.getType()); final List<EliteAffix> affixes = scaling.getAffixes(mob);
+        final Map<MobRank, List<String>> kits = new java.util.EnumMap<>(MobRank.class);
+        for (final MobRank candidate : MobRank.values()) {
+            final List<MobAbilityDefinition> definitions = new ArrayList<>();
+            if (template != null) template.abilityIdsFor(candidate).forEach(id -> definitions.add(abilities.require(id)));
+            else {
+                policy.techniquesFor(candidate).forEach(id -> addIfAbsent(definitions, id));
+                if (policy.disposition() == CreatureSpeciesPolicy.Disposition.HOSTILE) config.getStringList("mob-scaling.rank-abilities."
+                        + candidate.name().toLowerCase(java.util.Locale.ROOT)).forEach(id -> addIfAbsent(definitions, id));
+            }
+            if (affixes.contains(EliteAffix.ARCANE)) addIfAbsent(definitions, "rime_burst");
+            if (affixes.contains(EliteAffix.SUMMONER)) addIfAbsent(definitions, "call_frozen");
+            kits.put(candidate, definitions.stream().map(MobAbilityDefinition::abilityId).toList());
+        }
+        return new CanonicalMobProfile(templateId, rank, java.util.Optional.ofNullable(archetype), scaling.getLevel(mob), kits, affixes,
+                template == null ? MobBehaviorProfile.defaults(archetype == null ? MobArchetype.BRUISER : archetype) : template.behavior());
+    }
+
+    public EffectiveMobProjection effectiveProfile(final Mob mob) {
+        requireOwner(mob);
+        return java.util.Objects.requireNonNull(projectionSource.resolve(mob.getUniqueId(), canonicalProfile(mob)));
+    }
+
+    /** Reconcile only effective combat inputs; existing cooldown and threshold evidence survives changes. */
+    public void reconcileProjection(final Mob mob) {
+        requireOwner(mob);
+        final RuntimeState state = states.get(mob.getUniqueId());
+        if (state == null) { attach(mob); return; }
+        final EffectiveMobProjection next = effectiveProfile(mob);
+        if (next.equals(state.effective)) return;
+        final List<MobAbilityDefinition> definitions = effectiveDefinitions(next);
+        state.castEpoch++; state.currentAbility = null; state.casting = false;
+        state.recoveryUntilTick = Math.max(state.recoveryUntilTick, state.tick + RUNTIME_STEP_TICKS);
+        state.pendingThresholds.clear(); state.rotationCursor = 0;
+        state.definitions = definitions; state.behavior = next.behavior(); state.effective = next;
+    }
+
+    private List<MobAbilityDefinition> effectiveDefinitions(final EffectiveMobProjection effective) {
+        return effectiveDefinitions(effective, abilities::require);
+    }
+
+    static List<MobAbilityDefinition> effectiveDefinitions(final EffectiveMobProjection effective,
+            final java.util.function.Function<String, MobAbilityDefinition> registry) {
+        final List<MobAbilityDefinition> definitions = new ArrayList<>();
+        effective.abilityIds().forEach(id -> definitions.add(java.util.Objects.requireNonNull(registry.apply(id))));
+        definitions.removeIf(definition -> !definition.eligible(effective.rank(), effective.archetype().orElse(null)));
+        final int maximum = maximumTechniques(effective.rank());
+        while (definitions.stream().filter(MobAbilityRuntime::countsTowardTechniqueCap).count() > maximum) {
+            for (int index = definitions.size() - 1; index >= 0; index--) if (countsTowardTechniqueCap(definitions.get(index))) { definitions.remove(index); break; }
+        }
+        return List.copyOf(definitions);
+    }
+
+    private static void requireOwner(final Mob mob) {
+        if (mob == null || !Bukkit.isOwnedByCurrentRegion(mob)) throw new IllegalStateException("Combat profile owner required");
+        if (!mob.isValid() || mob.isDead()) throw new IllegalArgumentException("Combat profile entity unavailable");
     }
 
     /**
@@ -196,6 +234,7 @@ public final class MobAbilityRuntime implements Listener {
         attach(mob);
         final RuntimeState state = states.get(mob.getUniqueId());
         if (state == null) return;
+        if (projectionSourceBound) reconcileProjection(mob);
         if (!authoredTechniqueAllowed(mob, species.profile(mob.getType()))) return;
         state.targetId = target.getUniqueId();
         final Location cached = Bukkit.isOwnedByCurrentRegion(target)
@@ -216,6 +255,7 @@ public final class MobAbilityRuntime implements Listener {
         attach(mob);
         final RuntimeState state = states.get(mob.getUniqueId());
         if (state == null) return;
+        if (projectionSourceBound) reconcileProjection(mob);
         if (!authoredTechniqueAllowed(mob, species.profile(mob.getType()))) return;
         if (provoker != null) {
             state.targetId = provoker.getUniqueId();
@@ -251,6 +291,7 @@ public final class MobAbilityRuntime implements Listener {
         if (state == null || !authoredTechniqueAllowed(mob, species.profile(mob.getType()))) {
             return false;
         }
+        if (projectionSourceBound) reconcileProjection(mob);
         final MobAbilityDefinition chosen = state.definitions.stream()
                 .filter(definition -> definition.abilityId().equals(abilityId))
                 .filter(definition -> definition.triggers().contains(trigger))
@@ -292,6 +333,7 @@ public final class MobAbilityRuntime implements Listener {
             return;
         }
         state.tick += RUNTIME_STEP_TICKS;
+        if (projectionSourceBound) reconcileProjection(mob);
         if (state.authoredCombat && state.targetId != null) {
             final Player liveTarget = Bukkit.getPlayer(state.targetId);
             final Location latest = hu.taliann.icesmp.utils.PositionCache.get(state.targetId);
@@ -383,11 +425,12 @@ public final class MobAbilityRuntime implements Listener {
         telegraph(mob, chosen, target);
         try {
             mob.getScheduler().runDelayed(plugin, task -> {
+                if (projectionSourceBound && mob.isValid() && !mob.isDead()) reconcileProjection(mob);
                 if (state.castEpoch != castEpoch) return;
                 if (mob.isValid() && !mob.isDead()) {
                     execute(mob, chosen, target, state);
                     CombatTelemetry.record("technique_execute", chosen.abilityId());
-                    if (scaling.getRank(mob).bossLike()) {
+                    if (state.effective.rank().bossLike()) {
                         CombatTelemetry.record("boss_technique", chosen.abilityId());
                     }
                 }

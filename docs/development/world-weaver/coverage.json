@@ -54,7 +54,7 @@
       "inspect": "canonical/effective template/rank/archetype/ability/level/affix/behavior/cast/source",
       "planned_actions": "force_ability, add/remove ability, rank/archetype/template projection, refresh, export/import, fork",
       "canonical_route": "MobAbilityRuntime.triggerTechnique/startCast; canonical registry enumeration; separate MobRuntimeProjectionSource consumer",
-      "rationale": "WW-04 registers canonical registry-backed ability/template/rank/archetype catalogs, owner-only native snapshots and typed exports. The published catalog/inspection surface is an intermediate checkpoint, not full PvE coverage. Effective projection consumers, gameplay imports/mutations, reward propagation and native/client evidence remain required; canonical scaling/loot/Bestiary identity is untouched.",
+      "rationale": "WW-04 registers canonical registry-backed catalogs, owner-only snapshots and typed exports. The existing MobAbilityRuntime now consumes a combat-only projection port while retaining canonical rank/level/reward identities; only its canonical fallback is bound at this checkpoint. Actual journal adapter binding, lifecycle notifications, gameplay projection actions/imports, reward propagation and native/client evidence remain required. This is not full PvE coverage.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRegistry.java",
@@ -67,7 +67,10 @@
         "src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerService.java"
       ],
       "implementation_evidence": [
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java"
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/pve/CanonicalMobProfile.java",
+        "src/main/java/hu/taliann/icesmp/pve/EffectiveMobProjection.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java"
       ]
     },
     {
@@ -1343,7 +1346,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "579532212cc20f9dd1e5d62fe186f032b034689b691afa1fb931af496fa15080",
+      "source_sha256": "3163f0f1bf3a0f5e57db9a51e16b2efcb89d449d3d2df4b592052c7351c1c031",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -5464,21 +5467,25 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "8c3161a3edeb38cb1944c3009c7a8aa08f9b88cc9731599b4605041c113663f8",
+      "source_sha256": "8878d15d88ffa7d507068fd070ee715c076fb1c416586411124d1b4957d412d5",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
         "activeStateCount",
         "activeStateSummary",
         "attach",
+        "bindProjectionSource",
+        "canonicalProfile",
         "detach",
         "disengageTarget",
+        "effectiveProfile",
         "enterCombat",
         "onAffixDamage",
         "onAffixHurt",
         "onDeath",
         "onSpawn",
         "pause",
+        "reconcileProjection",
         "refreshProfile",
         "resume",
         "shutdown",
@@ -5509,6 +5516,15 @@
       "public_methods": [
         "RewardBand",
         "primarySourceTag",
+        "resolve"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
+      "domain": "pve",
+      "source_sha256": "f8458e1d6008ff9537e57c4ed9e2edd7add8a4fd0586a386236433497a6aa605",
+      "public_methods": [
+        "canonical",
         "resolve"
       ]
     },
@@ -6139,6 +6155,7 @@
     "src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java",
     "src/main/java/hu/taliann/icesmp/managers/MajorEventGate.java",
     "src/main/java/hu/taliann/icesmp/managers/SeasonStoryTeller.java",
+    "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",

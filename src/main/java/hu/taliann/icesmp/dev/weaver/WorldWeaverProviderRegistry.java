@@ -265,7 +265,8 @@ public final class WorldWeaverProviderRegistry {
             assessment.effects().ifPresent(effects -> {
                 final WeaverReceipt receipt = assessment.receipt().orElseThrow();
                 for (final var projection : effects.projections()) {
-                    if (!projection.influence().operationId().equals(operation.operationId()) || !projection.subject().equals(operation.subject())
+                    if (!projection.influence().operationId().equals(operation.operationId())
+                            || !hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationScope.matches(operation, projection.subject(), projection.canonicalFingerprintAtApply())
                             || !projection.providerId().equals(providerId) || projection.createdAt() != receipt.createdAt()) throw new IllegalArgumentException("Recovery projection differs from operation");
                     try { projectionConsumers.validate(projection); } catch (final WeaverDomainRejection invalid) { throw new IllegalArgumentException("Recovery projection lacks consumer"); }
                 }

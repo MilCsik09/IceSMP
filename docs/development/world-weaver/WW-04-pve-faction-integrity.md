@@ -75,6 +75,47 @@ scope regressions; only the inherited `trashSpriteAssetAudit` failed. Resource-p
 `34075806464` and Trash hardening `34075806436` succeeded. These are preceding-head
 clean-store probes, not populated PvE/Faction manipulation evidence.
 
+## Combat projection port checkpoint
+
+Based on catalog checkpoint `5d8db789c6c43a8dc820a0c73ddb74b533af41df`.
+`MobAbilityRuntime` now consumes the immutable `CanonicalMobProfile` through
+`MobRuntimeProjectionSource` and receives `EffectiveMobProjection`. The effective
+record contains combat kit, rank, archetype, template and behavior; it has no level,
+loot band, Bestiary identity, provenance or reward receipt mutation route. Canonical
+fallback is currently the only bound source. Journal-backed provider publication is
+still required before any gameplay projection can be claimed as implemented.
+
+The existing runtime selects eligible canonical ability definitions from that
+effective kit, preserves rank technique caps and reaction counterplay, and uses its
+effective rank for combat boss classification. Reconciliation keeps cooldowns,
+consumed health thresholds, paused state and combat context. A changed profile
+invalidates an in-flight cast epoch and gives recovery time; delayed execution checks
+again before firing. No parallel scheduler or mob lifecycle is introduced. This
+port does not yet project health/attributes/resistances.
+
+`MobRuntimeProjectionRegressionSuite` exercises the actual runtime selection policy
+for all seven rank caps, eligibility, reaction behavior, immutable canonical inputs,
+dynamic definition lookup and malformed/cap-exceeding input. It runs under Gradle
+`check`. Full Java 21 compilation and 28 local Weaver/DEV/PvE suites pass. Four
+architecture checks, the PlayerProfile guard and its self-test (653 findings, zero
+unknown/stale/invalid/transition), and consistency pass. Inventory: 292 authorities,
+55 domains, 51 blockers, zero audit errors. Two exact PlayerProfile allowlist entries
+identify the immutable mob UUID projection port as runtime state, without weakening
+the scanner or adding a player persistence exception.
+
+Finding fixed: observed AREA recovery still had a provider-level parent-only
+projection target check after WW-03 added acknowledged child reservations. Recovery
+now verifies `WeaverOperationScope.matches`, including the acknowledged child
+fingerprint. The scope suite recovers the original two child projections through
+the actual recovery coordinator; foreign/unacknowledged targets remain rejected.
+
+The preceding catalog head has remote evidence: build `34076501511`, Paper
+`101603551368` and Folia `101603551547` succeeded. Verification `101603551497`
+compiled both source sets and passed the catalog suite; its only failed task was
+the inherited `trashSpriteAssetAudit`. Resource pack `34076501612` and Trash
+hardening `34076501482` succeeded. These are clean-store boot/shutdown probes,
+not populated projection evidence. This checkpoint requires its own remote CI.
+
 ## Remaining phase requirements
 
 - Actual effective mob projection port and combat consumers, with canonical loot and
