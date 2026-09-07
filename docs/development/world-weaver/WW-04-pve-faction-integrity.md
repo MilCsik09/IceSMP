@@ -606,3 +606,36 @@ a Gradle build. Populated role-store failure, connected-client interaction and
 Paper/Folia concurrency remain evidence gates. PvE force/refresh, scripted target
 controls and complete reward/propagation coverage remain active WW-04 work. Artifact
 issuance and gameplay execution remain disabled; no phase/release completion claim.
+
+## Direct PvE projection controls checkpoint
+
+Base: `aed058cc726c50566c63e062e9c7b5e0fb4eb9eb`, WW-04 #158. The provider
+publishes its active projections as typed `weaver:projection_ref@1` catalog entries.
+The generic catalog input now reaches selected sever directly; it no longer requires
+an already-held projection Thread. Catalog pages are bounded to the subject's 32
+projections, searchable and ordered by application sequence. Every query resolves
+the current immutable journal publication, so removed references become unavailable.
+The catalog validates provider ownership, unique identities and capacity.
+
+`pve.clear_projection` removes only the selected subject's active PvE projections.
+Both selected/all removal remain ONE_SHOT with the existing revision/owner check and
+atomic APPLIED publication fence. Receipts and monotonic influence remain; no
+automatic Undo or canonical registry mutation is advertised. Another subject's
+projection survives. Empty removal is hidden and stale or foreign references refuse.
+No artifact, kernel or GUI source changes were needed.
+
+Verification: full Java 21 compile, PvE provider projection and catalog suites,
+stored-content isolation and GUI data suites pass. The projection suite now covers
+pagination/typed resolution, direct generic discovery, selected/foreign/stale
+references, another subject's state, retained audit/influence and eight additional
+before/after journal-write failures during clear (sixteen create/clear boundaries
+overall). Four architecture checks, coverage (314 authorities, 55 domains, 51
+blockers, zero audit errors) and consistency (zero FAIL/WARN) pass. The earlier
+canonical checkpoint is confirmed in exact-head CI: `aed058cc726c50566c63e062e9c7b5e0fb4eb9eb`,
+run 34113891646; Folia 101716115218 and Paper 101716115344 succeeded. Verification
+101716115401 compiled and passed both 128-assertion canonical and 428-assertion native
+membership suites; the failed task is inherited `trashSpriteAssetAudit`. Resource
+pack 34113891709 and Trash 34113891642 succeeded. New-head CI is still required.
+Force/refresh and remaining consumers/reward propagation continue as active WW-04
+scope. Physical issuance/gameplay admission remain off; connected-client evidence
+and the inherited original-sheet artifact gate remain open.

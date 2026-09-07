@@ -16,6 +16,7 @@ import static hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProvider.*;
 /** Projection-only transactions: the owner stage validates; APPLIED is the sole mutation boundary. */
 final class PvEProjectionActions {
     static final String SEVER = "pve.sever_projection";
+    static final String CLEAR = "pve.clear_projection", CATALOG = "pve.projections";
     static final String CANONICAL_REVISION = "pve.canonical_revision", PROJECTION_REVISION = "pve.projection_revision";
     static final WeaverRevisionScope SCOPE = new WeaverRevisionScope(1, Set.of(CANONICAL_REVISION, PROJECTION_REVISION));
     private static final WeaverTypeId PROJECTION_REF = WeaverTypeId.parse("weaver:projection_ref@1");
@@ -36,8 +37,11 @@ final class PvEProjectionActions {
         add(descriptors, "pve.override_archetype", "Archetípus rávetítése", ARCHETYPE, "pve.archetypes", "pve.archetype");
         add(descriptors, "pve.apply_template_projection", "Combat sablon rávetítése", TEMPLATE, "pve.templates", "pve.template");
         descriptors.put(SEVER, new ActionDescriptor(SEVER, FACET, Component.text("Projection elvágása"), RiskLevel.MUTATING, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX, IntegrityMode.LIVE_GM),
-                Set.of(IntegrityImpact.TAINT_SUBJECT), Set.of(WeaverSubjectKind.ENTITY), List.of(parameter(PROJECTION_REF, Optional.empty(), Set.of("pve.projection"))),
-                AreaSupport.NONE, Optional.empty(), false, Optional.of("The original projection receipt remains immutable; create a new projection to reapply."), 1, SCOPE));
+                Set.of(IntegrityImpact.TAINT_SUBJECT), Set.of(WeaverSubjectKind.ENTITY), List.of(parameter(PROJECTION_REF, Optional.of(CATALOG), Set.of("pve.projection"))),
+                AreaSupport.NONE, Optional.empty(), false, Optional.of("A korábbi receipt és influence megmarad; visszaállításhoz új projection szükséges."), 1, SCOPE));
+        descriptors.put(CLEAR, new ActionDescriptor(CLEAR, FACET, Component.text("PvE projectionök elvágása"), RiskLevel.MUTATING, Set.of(Lifetime.ONE_SHOT),
+                Set.of(IntegrityMode.SANDBOX, IntegrityMode.LIVE_GM), Set.of(IntegrityImpact.TAINT_SUBJECT), Set.of(WeaverSubjectKind.ENTITY), List.of(),
+                AreaSupport.NONE, Optional.empty(), false, Optional.of("A korábbi receiptek és influence megmaradnak; visszaállításhoz új projection szükséges."), 1, SCOPE));
         actions = Map.copyOf(descriptors);
     }
     private static void add(final Map<String, ActionDescriptor> actions, final String id, final String label, final WeaverTypeId type, final String catalog, final String capability) {
@@ -50,7 +54,15 @@ final class PvEProjectionActions {
                 true, Optional.empty(), OptionalDouble.empty(), OptionalDouble.empty(), OptionalInt.empty(), catalog, capabilities);
     }
     List<ActionDescriptor> descriptors() { return actions.values().stream().sorted(Comparator.comparing(ActionDescriptor::id)).toList(); }
-    Set<String> visible() { return FIELDS.keySet(); }
+    Set<String> visible(SubjectSnapshot snapshot) {
+        final var visible = new HashSet<>(FIELDS.keySet());
+        if (!text(snapshot, "pve.projections").isEmpty()) { visible.add(SEVER); visible.add(CLEAR); }
+        return Set.copyOf(visible);
+    }
+    CatalogDescriptor catalogDescriptor() { return new CatalogDescriptor(CATALOG, FACET, Component.text("Aktív PvE projectionök"), PROJECTION_REF); }
+    Optional<WeaverValueCatalog> catalog(SubjectSnapshot snapshot) {
+        return snapshot.ref() instanceof EntityRef entity ? Optional.of(new ProjectionValueCatalog("pve", FACET, "pve.projection", () -> source.active(entity.entityId()))) : Optional.empty();
+    }
     List<ImportDescriptor> imports() {
         return List.of(new ImportDescriptor("pve.import_ability", "pve.add_ability", ABILITY, Set.of("pve.ability"), "value"),
                 new ImportDescriptor("pve.import_rank", "pve.override_rank", RANK, Set.of("pve.rank"), "value"),
@@ -83,8 +95,9 @@ final class PvEProjectionActions {
         if (descriptor == null || !(snapshot.ref() instanceof EntityRef entity) || !snapshot.facts().containsKey(CANONICAL_REVISION)
                 || !descriptor.lifetimes().contains(request.lifetime()) || !descriptor.integrityModes().contains(request.integrityMode())) throw new WeaverDomainRejection("ACTION_UNAVAILABLE");
         final WeaverValue value = request.parameters().get("value");
-        if (value == null || !request.parameters().keySet().equals(Set.of("value"))) throw new WeaverDomainRejection("INVALID_PARAMETERS");
-        descriptor.parameters().getFirst().validate(value, context.types()).requireValid();
+        final boolean clear = request.actionId().equals(CLEAR);
+        if (clear ? !request.parameters().isEmpty() : value == null || !request.parameters().keySet().equals(Set.of("value"))) throw new WeaverDomainRejection("INVALID_PARAMETERS");
+        if (!clear) descriptor.parameters().getFirst().validate(value, context.types()).requireValid();
         if (request.actionId().equals("pve.add_ability") && !abilityCompatible(snapshot, value)) throw new WeaverDomainRejection("ABILITY_INCOMPATIBLE");
         final List<WeaverProjection> before = source.active(entity.entityId());
         final String expected = WeaverProjectionFingerprint.of(before);
@@ -92,7 +105,10 @@ final class PvEProjectionActions {
         final UUID operationId = UUID.randomUUID(); final long now = System.currentTimeMillis();
         final List<WeaverProjection> after = new ArrayList<>(before);
         final UUID projectionId;
-        if (request.actionId().equals(SEVER)) {
+        if (clear) {
+            if (before.isEmpty()) throw new WeaverDomainRejection("NO_CHANGE");
+            projectionId = operationId; after.clear();
+        } else if (request.actionId().equals(SEVER)) {
             if (!"pve".equals(value.payload().get("provider"))) throw new WeaverDomainRejection("FOREIGN_PROJECTION");
             projectionId = UUID.fromString(PvEMobProjectionSource.id(value));
             if (!after.removeIf(projection -> projection.projectionId().equals(projectionId))) throw new WeaverDomainRejection("CONFLICT");
@@ -112,7 +128,8 @@ final class PvEProjectionActions {
             return CompletableFuture.completedFuture(new StageResult(afterFingerprint, afterFacts, Map.of()));
         }, Optional.empty(), 5000);
         return new PreparedAction(operationId, descriptor, snapshot.ref(), snapshot.revisionFingerprint(), List.of(stage),
-                new OperationRecoveryPayload(1, Map.of("pve.kind", "journal_projection", "pve.projection", projectionId.toString(), "pve.before", expected)),
+                new OperationRecoveryPayload(1, Map.of("pve.kind", "journal_projection", "pve.projection", projectionId.toString(), "pve.before", expected,
+                        "pve.removed", clear ? before.stream().map(p -> p.projectionId().toString()).sorted().toList() : List.of())),
                 (prepared, results, time) -> new WeaverReceipt(UUID.randomUUID(), prepared.operationId(), "pve", descriptor.id(), snapshot.ref(), descriptor.risk(), request.lifetime(), request.integrityMode(),
                         snapshot.revisionFingerprint(), afterFingerprint, beforeFacts, afterFacts, descriptor.undoable() ? Optional.of(new UndoSpec(SEVER, afterFingerprint, Map.of("value", projectionRef))) : Optional.empty(), time, ReceiptStatus.COMMITTED));
     }
@@ -121,9 +138,11 @@ final class PvEProjectionActions {
         final UUID projectionId = UUID.fromString((String) prepared.recoveryPayload().fields().get("pve.projection"));
         final String expected = (String) prepared.recoveryPayload().fields().get("pve.before"); final UUID actor = context.authority().actor();
         return new PreparedEffects(WeaverEffectIntent.none(), (action, results, receipt, sequence) -> {
-            final boolean sever = request.actionId().equals(SEVER);
-            return new WeaverEffectCommit(sever ? List.of() : List.of(projection(prepared.operationId(), projectionId, sequence, actor, request, snapshot, request.parameters().get("value"), receipt.createdAt())),
-                    sever ? Set.of(projectionId) : Set.of(), List.of(), Optional.empty(), Map.of(snapshot.ref(), expected));
+            final boolean sever = request.actionId().equals(SEVER), clear = request.actionId().equals(CLEAR);
+            final Set<UUID> removed = clear ? ((List<?>) prepared.recoveryPayload().fields().get("pve.removed")).stream()
+                    .map(id -> UUID.fromString((String) id)).collect(java.util.stream.Collectors.toUnmodifiableSet()) : sever ? Set.of(projectionId) : Set.of();
+            return new WeaverEffectCommit(sever || clear ? List.of() : List.of(projection(prepared.operationId(), projectionId, sequence, actor, request, snapshot, request.parameters().get("value"), receipt.createdAt())),
+                    removed, List.of(), Optional.empty(), Map.of(snapshot.ref(), expected));
         });
     }
     PreparedAction undo(final ProviderContext context, final SubjectSnapshot snapshot, final WeaverReceipt receipt) {

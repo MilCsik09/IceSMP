@@ -53,8 +53,11 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
         register(types, values, "pve.ranks", RANK, "pve.rank", () -> enumValues(MobRank.values()), rank -> Component.text(rank.name()));
         register(types, values, "pve.archetypes", ARCHETYPE, "pve.archetype", () -> enumValues(MobArchetype.values()), archetype -> Component.text(archetype.name()));
         catalogs = Map.copyOf(values);
+        final List<CatalogDescriptor> catalogDescriptors = new ArrayList<>(catalogs.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .map(entry -> new CatalogDescriptor(entry.getKey(), FACET, Component.text(entry.getKey()), entry.getValue().type())).toList());
+        mutations.ifPresent(actions -> catalogDescriptors.add(actions.catalogDescriptor()));
         contribution = new ProviderContribution(List.of(new FacetDescriptor(FACET, Component.text("PvE"), Component.text("Canonical profil és aktív combat runtime"), 10)), mutations.map(PvEProjectionActions::descriptors).orElse(List.of()),
-                catalogs.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(entry -> new CatalogDescriptor(entry.getKey(), FACET, Component.text(entry.getKey()), entry.getValue().type())).toList(),
+                catalogDescriptors,
                 List.of(new ExportDescriptor("pve.export_rank", FACET, RANK, Set.of("pve.rank")), new ExportDescriptor("pve.export_archetype", FACET, ARCHETYPE, Set.of("pve.archetype")),
                         new ExportDescriptor("pve.export_template", FACET, TEMPLATE, Set.of("pve.template")), new ExportDescriptor("pve.export_ability", FACET, ABILITY, Set.of("pve.ability"))), mutations.map(PvEProjectionActions::imports).orElse(List.of()),
                 mutations.map(actions -> actions.descriptors().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(ActionDescriptor::id, action -> "pve.journal_projection"))).orElse(Map.of()));
@@ -154,6 +157,7 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
     @Override public ProviderCoverage coverage() {
         final Set<String> covered = new HashSet<>(Set.of(FACET, "pve.abilities", "pve.templates", "pve.ranks", "pve.archetypes", "pve.export_rank", "pve.export_archetype", "pve.export_template", "pve.export_ability"));
         contribution.actions().forEach(action -> covered.add(action.id())); contribution.imports().forEach(importer -> covered.add(importer.id()));
+        contribution.catalogs().forEach(catalog -> covered.add(catalog.id()));
         return new ProviderCoverage("pve.registered_surface", CoverageLevel.FULL_PROVIDER,
                 "Registered catalog, owner snapshot, typed import/export and journal-backed combat projection surface. The independent WW-00 pve domain remains blocked until force ability, AREA/context, native evidence and reward integration are complete.", covered);
     }
@@ -163,7 +167,9 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
         final Set<String> exports = new HashSet<>();
         for (final String field : List.of("rank", "archetype", "template", "ability")) if (snapshot.facts().containsKey("pve." + field)) exports.add("pve.export_" + field);
         final boolean actionable = snapshot.ref() instanceof EntityRef && snapshot.facts().containsKey(PvEProjectionActions.CANONICAL_REVISION);
-        return new ProviderDiscovery(Set.of(FACET), actionable ? mutations.map(PvEProjectionActions::visible).orElse(Set.of()) : Set.of(), catalogs.keySet(), exports,
+        final Set<String> visibleCatalogs = new HashSet<>(catalogs.keySet());
+        if (actionable && mutations.isPresent()) visibleCatalogs.add(PvEProjectionActions.CATALOG);
+        return new ProviderDiscovery(Set.of(FACET), actionable ? mutations.map(actions -> actions.visible(snapshot)).orElse(Set.of()) : Set.of(), visibleCatalogs, exports,
                 actionable ? mutations.map(actions -> actions.imports().stream().map(ImportDescriptor::id).collect(java.util.stream.Collectors.toUnmodifiableSet())).orElse(Set.of()) : Set.of(), Map.of());
     }
     @Override public InspectionResult inspect(final ProviderContext context, final SubjectSnapshot snapshot, final String facetId) {
@@ -172,7 +178,9 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
         return new InspectionResult(FACET, facts, List.of());
     }
     @Override public Optional<WeaverValueCatalog> catalog(final ProviderContext context, final SubjectSnapshot snapshot, final String id) {
-        context.authority().requireValid(); return Optional.ofNullable(catalogs.get(id));
+        context.authority().requireValid();
+        if (PvEProjectionActions.CATALOG.equals(id)) return mutations.flatMap(actions -> actions.catalog(snapshot));
+        return Optional.ofNullable(catalogs.get(id));
     }
     @Override public ValueExportResult exportValue(final ProviderContext context, final SubjectSnapshot snapshot, final String id) {
         context.authority().requireValid();

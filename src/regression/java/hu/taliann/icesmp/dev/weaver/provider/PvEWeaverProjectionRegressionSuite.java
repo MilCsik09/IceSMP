@@ -78,6 +78,12 @@ public final class PvEWeaverProjectionRegressionSuite {
             final SubjectSnapshot snapshot = snapshot(); final ActionRequest request = request(id, value); final PreparedAction plan = provider.prepare(context, snapshot, request);
             return await(execution.execute("pve", context, snapshot, request, plan, provider.prepareEffects(context, snapshot, request, plan), context::authority));
         }
+        WeaverReceipt remove(final String action, final Map<String, WeaverValue> parameters) throws Exception {
+            final var removal = new ProviderContext(context.authority(), types, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
+            final var snapshot = snapshot(); final var request = new ActionRequest(action, parameters, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
+            final var plan = provider.prepare(removal, snapshot, request);
+            return await(execution.execute("pve", removal, snapshot, request, plan, provider.prepareEffects(removal, snapshot, request, plan), context::authority));
+        }
         WeaverReceipt undo(final WeaverReceipt original) throws Exception {
             final SubjectSnapshot current = snapshot(); final var coordinator = new WeaverUndoCoordinator(journal, registry); final var claim = coordinator.target(context.authority(), original.receiptId(), current).claim();
             final ProviderContext undoContext = new ProviderContext(context.authority(), types, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
@@ -90,6 +96,7 @@ public final class PvEWeaverProjectionRegressionSuite {
         @Override public void close() throws Exception { execution.close(); if (journal.ready()) await(journal.close()); else fails(journal.close()); }
     }
     public static void main(final String[] args) throws Exception {
+        directProjectionControls();
         try (final Fixture f = new Fixture()) {
             final CanonicalMobProfile original = f.canonical.get(f.target.entityId());
             final EntityRef boss = new EntityRef(UUID.randomUUID());
@@ -182,6 +189,52 @@ public final class PvEWeaverProjectionRegressionSuite {
                 check(storage.audit.size() <= 1, "crash recovery duplicated audit"); recovery.close();
             }
         }
-        System.out.println("PvE Weaver projection passed: post-freeze boss export/compatible mob import into native kit selection, immutable canonical state, quarantine/Undo, drift, stale owner snapshot, atomic publication fence and eight unloaded restart boundaries.");
+        System.out.println("PvE Weaver projection passed: post-freeze boss export/compatible mob import into native kit selection, immutable canonical state, quarantine/Undo, drift, typed projection picker/selected sever/subject-scoped clear, atomic publication fence and sixteen create/clear crash boundaries.");
+    }
+    private static void directProjectionControls() throws Exception {
+        try (final Fixture f = new Fixture()) {
+            check(!f.registry.discover(f.snapshot()).providers().get("pve").actions().contains(PvEProjectionActions.CLEAR), "empty projection removal exposed");
+            final var rank = f.apply("pve.override_rank", reference(RANK, "boss", "pve.rank", 1));
+            f.apply("pve.override_archetype", reference(ARCHETYPE, "ranged", "pve.archetype", 1));
+            final var discovery = f.registry.discover(f.snapshot()).providers().get("pve");
+            check(discovery.actions().containsAll(Set.of(PvEProjectionActions.CLEAR, PvEProjectionActions.SEVER))
+                    && discovery.catalogs().contains(PvEProjectionActions.CATALOG), "generic frontend cannot reach projection selector/removal");
+            final var first = f.registry.catalogPage(f.context, f.snapshot(), PvEProjectionActions.CATALOG, new CatalogQuery("", 0, 1));
+            final var second = f.registry.catalogPage(f.context, f.snapshot(), PvEProjectionActions.CATALOG, new CatalogQuery("", 1, 1));
+            check(first.hasNext() && !second.hasNext() && first.entries().size() == 1 && second.entries().size() == 1, "projection selector pagination failed");
+            final var selected = f.registry.resolveCatalog(f.context, f.snapshot(), PvEProjectionActions.CATALOG, rank.operationId().toString());
+            check(selected.payload().get("provider").equals("pve") && selected.sourceCapabilities().contains("pve.projection"), "projection selector produced untyped reference");
+            final var foreign = new WeaverValue(selected.type(), Map.of("id", rank.operationId().toString(), "provider", "foreign"), "pve", FACET, Set.of("pve.projection"), 1);
+            final var oneShot = new ProviderContext(f.context.authority(), f.types, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
+            rejects(() -> f.provider.prepare(oneShot, f.snapshot(), new ActionRequest(PvEProjectionActions.SEVER, Map.of("value", foreign), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX)));
+            f.remove(PvEProjectionActions.SEVER, Map.of("value", selected));
+            check(f.source.active(f.target.entityId()).size() == 1 && f.source.resolve(f.target.entityId(), f.canonical.get(f.target.entityId())).rank() == MobRank.NORMAL, "selected removal altered other projection");
+            rejects(() -> f.registry.resolveCatalog(f.context, f.snapshot(), PvEProjectionActions.CATALOG, rank.operationId().toString()));
+            rejects(() -> f.provider.prepare(oneShot, f.snapshot(), new ActionRequest(PvEProjectionActions.SEVER, Map.of("value", selected), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX)));
+            final var other = new EntityRef(UUID.randomUUID()); f.canonical.put(other.entityId(), profile(MobRank.NORMAL, 12, "old_charge"));
+            final var otherSnapshot = f.snapshot(other); final var request = f.request("pve.override_rank", reference(RANK, "elite", "pve.rank", 1));
+            final var plan = f.provider.prepare(f.context, otherSnapshot, request);
+            await(f.execution.execute("pve", f.context, otherSnapshot, request, plan, f.provider.prepareEffects(f.context, otherSnapshot, request, plan), f.context::authority));
+            final var cleared = f.remove(PvEProjectionActions.CLEAR, Map.of());
+            check(cleared.undo().isEmpty() && f.source.active(f.target.entityId()).isEmpty() && f.source.active(other.entityId()).size() == 1, "clear crossed subject boundary or advertised force Undo");
+            check(f.journal.snapshot().receipts().containsKey(rank.receiptId()) && new WeaverInfluenceLookup(f.journal, System::currentTimeMillis)
+                    .source(new RewardSource.Entity(f.target.entityId())) == InfluenceRewardEligibilityPolicy.Evidence.QUARANTINED, "clear erased receipt or influence");
+        }
+        for (int boundary = 1; boundary <= 4; boundary++) for (boolean after : List.of(false, true)) {
+            final var storage = new Storage(); final var target = new EntityRef(UUID.randomUUID());
+            try (final Fixture f = new Fixture(storage, target)) {
+                f.apply("pve.override_rank", reference(RANK, "boss", "pve.rank", 1));
+                storage.failAt = storage.writes + boundary; storage.afterWrite = after;
+                try { f.remove(PvEProjectionActions.CLEAR, Map.of()); throw new AssertionError("clear crash not injected"); } catch (ExecutionException expected) { }
+            }
+            storage.failAt = 0;
+            try (final Fixture f = new Fixture(storage, target)) {
+                final var recovery = f.recovery(); await(recovery.start());
+                final boolean removed = boundary > 2 || boundary == 2 && after;
+                check(f.source.active(target.entityId()).isEmpty() == removed, "clear recovery lost or repeated mutation at " + boundary + "/" + after);
+                check(f.journal.snapshot().operations().values().stream().allMatch(op -> op.status() == OperationStatus.COMMITTED || op.status() == OperationStatus.ABORTED), "clear recovery did not reconcile");
+                recovery.close();
+            }
+        }
     }
 }

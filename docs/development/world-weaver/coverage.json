@@ -54,7 +54,7 @@
       "inspect": "canonical/effective template/rank/archetype/ability/level/affix/behavior/cast/source",
       "planned_actions": "force_ability, add/remove ability, rank/archetype/template projection, refresh, export/import, fork",
       "canonical_route": "MobAbilityRuntime.triggerTechnique/startCast; canonical registry enumeration; separate MobRuntimeProjectionSource consumer",
-      "rationale": "WW-04 binds the journal-backed provider-owned combat projection port and owner-routed lifecycle wakeups. Ability add/remove, rank/archetype/template projection, compatible Thread import, conditional sever/Undo and observed crash recovery are implemented behind the closed gameplay integrity gate. Canonical rank/level/loot/Bestiary identities remain unchanged. Force ability, AREA/context/stat consumers, reward producer/propagation integration and populated native/client evidence remain required; full PvE coverage is not claimed.",
+      "rationale": "WW-04 binds the journal-backed provider-owned combat projection port and owner-routed lifecycle wakeups. Ability add/remove, rank/archetype/template projection, compatible Thread import, conditional sever/Undo and observed crash recovery are implemented behind the closed gameplay integrity gate. Canonical rank/level/loot/Bestiary identities remain unchanged. Direct active projection selection, selected sever and subject-scoped clear now use typed generic catalog input and atomic journal effects. Force/refresh ability, AREA/context/stat consumers, reward producer/propagation integration and populated native/client evidence remain required; full PvE coverage is not claimed.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRegistry.java",
@@ -1682,6 +1682,17 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/ProjectionValueCatalog.java",
+      "domain": "developer_self",
+      "source_sha256": "d4ceaae70409f0bc309f3a27e38915fa60982e474f8aaf68e930ed9a28df9c63",
+      "public_methods": [
+        "ProjectionValueCatalog",
+        "type",
+        "page",
+        "resolve"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/WeaverProjectionDispatcher.java",
       "domain": "developer_self",
       "source_sha256": "905a2c8f5edb9bb8b1d3373eda883b79ff1c6f783fcb4fc40370addd55b41a69",
@@ -1762,13 +1773,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
       "domain": "pve",
-      "source_sha256": "682b30b4ea54d69e9ecb43fcfe4762823137e232e4cb6d0ccdf0a3b2e2b88b83",
+      "source_sha256": "4ac5d952c6c60dd68d4097b33812377790fec9243a372cc35f9632b5f9690622",
       "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "domain": "pve",
-      "source_sha256": "476e6a1438cb457fd43409488b9825af9d80f03f71508fea968d757e4588cd20",
+      "source_sha256": "8360f37eac190b1fcf66286d1f0b938f95b305202c4fccbe0caf59ccfaff4090",
       "public_methods": [
         "PvEWeaverProvider",
         "assessRecovery",
