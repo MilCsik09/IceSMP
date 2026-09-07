@@ -5867,7 +5867,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "4b62e28477aa9d9ab61d6032f9046d3f0af1392436c055c10b0665724bfd4a0f",
+      "source_sha256": "3c9a2baa79f718ff19e6d1dfaabdfec93ab99873f1ac9fc436acebf09809bc90",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",

@@ -931,18 +931,27 @@ public final class MobAbilityRuntime implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAffixDamage(final EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof LivingEntity attacker
-                && event.getEntity() instanceof Player player) {
-            final List<EliteAffix> affixes = scaling.getAffixes(attacker);
+        if (!(event.getDamager() instanceof LivingEntity attacker) || !(event.getEntity() instanceof Player player)) return;
+        final UUID attackerId = attacker.getUniqueId(), playerId = player.getUniqueId();
+        final List<RewardSource> victimSources = BukkitRewardSources.causal(player);
+        final double healing = Math.min(12.0D, event.getFinalDamage() * 0.25D);
+        // Damage events belong to the victim; affix/profile reads belong to the attacker.
+        attacker.getScheduler().run(plugin, task -> {
+            final Entity resolved = Bukkit.getEntity(attackerId);
+            if (resolved == null || !Bukkit.isOwnedByCurrentRegion(resolved)
+                    || !(resolved instanceof LivingEntity owned) || !owned.isValid() || owned.isDead()) return;
+            final List<EliteAffix> affixes = scaling.getAffixes(owned);
+            final var causal = new java.util.LinkedHashSet<>(victimSources); causal.addAll(BukkitRewardSources.causal(owned));
+            final List<RewardSource> sources = List.copyOf(causal);
             if (affixes.contains(EliteAffix.FROSTBOUND)) {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
-                        50, 0, false, true, true));
+                affectPlayer(playerId, sources, 2500, potionLifetime(PotionEffectType.SLOWNESS), target -> {
+                    if (survivor(target)) target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 50, 0, false, true, true));
+                });
             }
             if (affixes.contains(EliteAffix.VAMPIRIC)) {
-                final double healing = Math.min(12.0D, event.getFinalDamage() * 0.25D);
-                attacker.getScheduler().run(plugin, task -> heal(attacker, healing), null);
+                affectLiving(attackerId, owned instanceof Player, sources, 0, target -> heal(target, healing));
             }
-        }
+        }, null);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -988,7 +997,7 @@ public final class MobAbilityRuntime implements Listener {
         if (affixes.contains(EliteAffix.VOLATILE) && projected <= 0.0D
                 && !mob.getPersistentDataContainer().has(volatileArmedKey, PersistentDataType.BYTE)) {
             mob.getPersistentDataContainer().set(volatileArmedKey, PersistentDataType.BYTE, (byte) 1);
-            armVolatile(mob.getLocation().clone());
+            armVolatile(point(mob.getLocation()), BukkitRewardSources.causal(mob));
         }
     }
 
@@ -1020,20 +1029,27 @@ public final class MobAbilityRuntime implements Listener {
         };
     }
 
-    private void armVolatile(final Location center) {
-        ParticleUtil.spawn(center.getWorld(), Particle.FLAME, center, 36, 2.5D, 0.2D, 2.5D, 0.02D);
-        center.getWorld().playSound(center, Sound.ENTITY_CREEPER_PRIMED, 1.2F, 1.0F);
+    private void armVolatile(final RewardSource.Location center, final List<RewardSource> sources) {
+        final var world = Bukkit.getWorld(center.world());
+        if (world == null) return;
+        final int chunkX = Math.floorDiv((int) Math.floor(center.x()), 16), chunkZ = Math.floorDiv((int) Math.floor(center.z()), 16);
+        if (!Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ) || !world.isChunkLoaded(chunkX, chunkZ)) return;
+        final var presentation = new Location(world, center.x(), center.y(), center.z());
+        ParticleUtil.spawn(world, Particle.FLAME, presentation, 36, 2.5D, 0.2D, 2.5D, 0.02D);
+        world.playSound(presentation, Sound.ENTITY_CREEPER_PRIMED, 1.2F, 1.0F);
+        final double damage = Math.max(1.0D, config.getDouble("mob-scaling.affixes.volatile-damage", 5.0D));
         try {
-            plugin.getServer().getRegionScheduler().runDelayed(plugin, center, task -> {
-                ParticleUtil.spawn(center.getWorld(), Particle.EXPLOSION, center, 2);
-                for (final Player player : center.getWorld().getNearbyPlayers(center, 3.0D)) {
-                    player.getScheduler().run(plugin, hit -> {
-                        if (survivor(player) && player.getWorld() == center.getWorld()
-                                && player.getLocation().distanceSquared(center) <= 9.0D) {
-                            player.damage(Math.max(1.0D, config.getDouble(
-                                    "mob-scaling.affixes.volatile-damage", 5.0D)));
-                        }
-                    }, null);
+            plugin.getServer().getRegionScheduler().runDelayed(plugin, world, chunkX, chunkZ, task -> {
+                final var owned = Bukkit.getWorld(center.world());
+                if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned, chunkX, chunkZ) || !owned.isChunkLoaded(chunkX, chunkZ)) return;
+                final var at = new Location(owned, center.x(), center.y(), center.z());
+                ParticleUtil.spawn(owned, Particle.EXPLOSION, at, 2);
+                int affected = 0;
+                for (final Player player : owned.getNearbyPlayers(at, 3.0D)) {
+                    affectPlayer(player.getUniqueId(), sources, 0, target -> {
+                        if (survivor(target) && within(target, center, 3.0D)) target.damage(damage);
+                    });
+                    if (++affected >= 32) break;
                 }
             }, 30L);
         } catch (final RuntimeException rejected) {

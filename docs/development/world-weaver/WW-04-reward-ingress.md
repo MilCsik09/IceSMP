@@ -261,3 +261,32 @@ on Paper and Folia, complete causal creation/DOT propagation, every non-kill
 producer/outbox route, and cross-region combat continuation. Clean native shield
 and ally tests do not establish those gates. Gameplay admission and artifact
 issuance remain disabled; this is not complete WW-04 or zero-leak acceptance.
+
+## Native affix owner and propagation closure
+
+Base `5d062170ebd875ce260df3bf3116fa2b3a024378`, WorldWeaver run 34125350157:
+Paper native 101752628820, Folia native 101752628712 and artifact lifecycle
+101752628848 / 101752628527 passed. Verification 101752628676 ran the new
+155-assertion observed-lifetime suite successfully and failed only the inherited
+Trash source-image audit. This is exact-base evidence, not connected-player proof.
+
+The affix damage listener previously read the attacker's scaling/PDC profile on
+the victim's event thread. It now captures victim provenance there, routes by
+attacker UUID, checks ownership before reading native affixes, then carries only
+immutable causal evidence into target continuations. Frostbound uses the registered
+observed potion lifetime. Vampiric healing passes through the derived-effect gate
+with both victim and attacker origins, preserving taint from either side.
+
+Volatile retains immutable origin identities and coordinates after the mob dies.
+Its delayed region callback re-resolves the world and checks owner plus loaded
+chunk, then routes at most 32 nearby player identities through durable effect
+admission. Each final target owner rechecks survival and distance. No live Location
+or Player is retained by the delayed/target stages, and no chunk is force-loaded.
+
+Full Java 21 compile, eight affected native/provider/integrity/ownership suites,
+four architecture checks, authored PvE audit, coverage and consistency pass locally.
+The native source-contract suite now has 26 assertions and follows the actual
+owner-resolving effect helper; these static guards are not native player execution
+evidence. Frostbound/Vampiric/Volatile cross-region tainted-player playtests remain
+required. Projectile/summon creation, the broader damage/progression ingress audit
+and all subsequent provider phases remain open. Gameplay admission stays closed.

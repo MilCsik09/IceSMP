@@ -61,9 +61,24 @@ public final class MobRuntimeSourceRegressionSuite {
                         && runtime.contains("states.remove"),
                 "ability/summon lifecycle is not bounded or cleaned");
         check(runtime.contains("projectile.setPickupStatus")
-                        && runtime.contains("player.getScheduler().run")
+                        && runtime.contains("final LivingEntity entity = ownedLiving(id, player)")
+                        && runtime.contains("entity != null && permit.claim()")
                         && !runtime.contains("createExplosion"),
                 "ability/affix runtime can leak projectiles, cross-region mutation or terrain damage");
+
+        final String affixDamage = runtime.substring(runtime.indexOf("public void onAffixDamage"), runtime.indexOf("public void onAffixHurt"));
+        check(affixDamage.indexOf("attacker.getScheduler().run") < affixDamage.indexOf("scaling.getAffixes(owned)")
+                        && affixDamage.indexOf("Bukkit.isOwnedByCurrentRegion(resolved)") < affixDamage.indexOf("scaling.getAffixes(owned)")
+                        && !affixDamage.contains("scaling.getAffixes(attacker)"),
+                "affix reads crossed from victim owner to foreign attacker state");
+        check(affixDamage.contains("BukkitRewardSources.causal(player)") && affixDamage.contains("BukkitRewardSources.causal(owned)")
+                        && affixDamage.contains("potionLifetime(PotionEffectType.SLOWNESS)") && affixDamage.contains("affectLiving(attackerId"),
+                "affix potion/heal bypassed source propagation or observed lifetime");
+        final String volatileEffect = runtime.substring(runtime.indexOf("private void armVolatile"), runtime.indexOf("public void onDeath"));
+        check(volatileEffect.contains("RewardSource.Location center") && volatileEffect.contains("List<RewardSource> sources")
+                        && volatileEffect.contains("!owned.isChunkLoaded(chunkX, chunkZ)") && volatileEffect.contains("affectPlayer(player.getUniqueId(), sources")
+                        && volatileEffect.contains("affected >= 32") && !volatileEffect.contains("player.damage("),
+                "delayed volatile lost lineage, owner/chunk checks or bounded effect admission");
 
         check(boss.contains("EncounterScalingPolicy.snapshot")
                         && boss.contains("ContributionLedger")
