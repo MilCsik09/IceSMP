@@ -538,8 +538,8 @@ public final class QuestFrameworkV2RegressionSuite {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(
                 new java.io.File("src/main/resources/content/progression/quests.yml"));
         final ConfigurationSection quests = yaml.getConfigurationSection("quests");
-        check(quests != null && quests.getKeys(false).size() == 195,
-                "packaged catalog carries the 160 world quests plus 35 capstone trials");
+        check(quests != null && quests.getKeys(false).size() == 196,
+                "packaged catalog carries the 160 world quests plus 35 capstone trials and civil penance");
 
         final List<String> errors = QuestGraphValidator.validate(quests);
         check(errors.isEmpty(), "the full packaged quest graph validates: " + errors);

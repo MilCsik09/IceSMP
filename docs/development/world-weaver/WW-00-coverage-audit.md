@@ -9,11 +9,11 @@ This is an implementation input, not a production acceptance report. `DEFERRED_B
 ## Exact source authority
 
 - Repository: `MilCsik09/IceSMP`.
-- Current base PR: #155, open/draft/unmerged, refreshed on 2026-09-06 after its publication.
+- Current base PR: #155, open/draft/unmerged, refreshed on 2026-09-07 to its latest cumulative head.
 - Original audit base: #152 at `a335b3b5acaea66772534e51527a1c9233a85d1a`.
 - Base branch: `feature/faction-crime-whisperer-rework`.
-- Base commit: `004c12abf6e896b1931a695f980d4841bbf785e9`.
-- Base tree: `caebe9f201b161fa6bc17869931a78e4d632444c`.
+- Base commit: `2a78eb6071db063740ce1f8e6889b03d9741dbb0`.
+- Base tree: `6389054ac358fdddb066c665dcee9d6acab4679e`.
 - Work branch: `feature/world-weaver-ww00-coverage`.
 - Normative v2: [design-v2.md](design-v2.md), read in full before this audit.
 - Original attachment SHA-256: `fd636ab41e0defe6ae48ac41320b275fccc151fcee2d751df2f9eaa9eb98061b`.
@@ -24,8 +24,8 @@ Open stack checked: #140 → #141 → #142 → #143 → #144 → #146 → #147 �
 
 ## Inventory boundary and result
 
-- 1,010 main Java files at the refreshed base.
-- 262 source-pinned authority/helper entries: the 246 Manager/Service/Registry/Runtime/Coordinator/Authority/Catalog/Policy/Store candidates plus 16 explicitly reviewed non-suffix seams.
+- 1,011 main Java files at the refreshed base.
+- 263 source-pinned authority/helper entries: the 246 Manager/Service/Registry/Runtime/Coordinator/Authority/Catalog/Policy/Store candidates plus 17 explicitly reviewed non-suffix seams.
 - 414 distinct project components constructed/referenced across IceSMP, IceSMPBootstrap, IceSMPCore and PrologueRuntime have bootstrap role/domain assignments.
 - 55 domain decisions; 51 current `DEFERRED_BLOCKER`; 4 `NO_RUNTIME_SURFACE`; 0 implemented providers.
 - The retained procedural-daily history has an inspect-only target rationale, but remains a blocker until its WorldWeaver inspection adapter exists.
@@ -685,3 +685,17 @@ blocker in `crime_whisper`, to be closed by implementation before release.
 
 The changed source hashes and public-method navigation lists are recorded in
 `coverage.json`; they are inventory evidence, not a reward/Folia safety verdict.
+
+## Cumulative base refresh — 2026-09-07 / 2a78
+
+The latest open cumulative gameplay head is PR #155, `2a78eb6071db063740ce1f8e6889b03d9741dbb0`. It is integrated by a non-rewriting merge; no change is made to #155 itself. The previous base remains recorded above and in the machine history.
+
+Nine existing authority sources were re-audited. New supplemental `WhisperSightline` belongs to `crime_whisper`: bounded voxel traversal delegates collision reads to each chunk owner and rejects unavailable chunks. Native typed evidence now retains incident UUID/type/time on consumption; withdrawal preserves legal history and imposes the canonical return cooldown. Rite interruptions, witness grace, visibility and real incidents must remain native policy. A developer adapter may not fabricate a witnessed incident or call blocking legal wrappers. Captured Bukkit references in native rite/scene continuations require hardening before exposing those paths.
+
+King quorum now consumes canonical active season population; the WorldWeaver season reward gate must remain ahead of qualification. Retired membership-tax rate/arrears APIs are removed upstream and must not be revived by a provider. Quest atonement/forbidden-faction eligibility and the buyer-specific black-market price now use the native legal/Whisper status. Cultist observations use the typed native incident path. These changes expand the existing provider obligations; all 51 capability blockers remain open.
+
+The upstream commit supplies replacement v2 Trash source sheets and regenerated textures. Earlier CI failures describe the previous source bytes, not these replacements. Current replacement validation is recorded separately after running the unchanged asset gate.
+
+Refresh verification: full main/regression Java 21 compilation passes (three inherited deprecation warnings). The unchanged `process_trash_sprite_sheets.py --check --require-complete` passes (330/330 identities, 27/27 phases). Coverage passes at 263 authorities / 55 domains / 51 blockers; consistency has 0 FAIL / 0 WARN; profile authority guard has 647 classified findings and no unknown/stale/invalid/transition entries. These are local checks; refreshed-head CI and runtime evidence are still required.
+
+Changed-domain JVM regressions pass: Faction rework (29 assertions), faction tax debt, Whisper integrity (49), Quest framework v2 (463), Quest/item content integrity (345).

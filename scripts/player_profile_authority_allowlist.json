@@ -635,6 +635,11 @@
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|try { return Objects.requireNonNull(membershipProjection.resolve(playerId, canonical)); }",
       "category": "RUNTIME",
       "reason": "Read-only invocation of the membership projection callback for passive runtime consumers; no filesystem or PlayerProfile mutation."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|private final Map<UUID, Long> leaveConfirmation = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Thirty-second, player-owned confirmation prompt only. Consumed on repeat command and removed on quit; restart merely requires confirming again. Role, evidence and return cooldown remain exclusively in PlayerProfileWhisperStore WAL."
     }
   ]
 }

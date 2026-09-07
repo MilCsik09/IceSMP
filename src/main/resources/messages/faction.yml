@@ -51,7 +51,7 @@ messages:
   faction-king-set-rejected: '&cA célpont jelenlegi frakciótagsága nem teszi lehetővé a koronázást.'
   faction-king-set-usage: '&cHasználat: /faction king set <frakció> <játékos>'
   faction-king-tally-line: '&7 - %s: &f%s szavazat'
-  faction-king-vote-failed: '&cNem szavazhatsz: a jelöltnek a te frakciód tagjának kell lennie (és a frakciódnak lehet uralkodója).'
+  faction-king-vote-failed: '&cSzavazni csak üres trónra, saját frakciótagra lehet. Részletek: /faction king'
   faction-king-vote-success: '&aSzavazat leadva: &f%s'
   faction-left: '&6Kiléptél a frakcióból.'
   faction-guest-cannot-leave: '&eMég csak a Menedék vendége vagy — nincs frakció, amelyből kiléphetnél.'
@@ -117,15 +117,15 @@ messages:
   whisper-not-heard: '&8…csak a szél zúg.'
   whisper-queen-favor: '<dark_gray>🕯 A Kapu érzi a hűséged — eggyel halványabb lett körülötted a nyom.</dark_gray>'
   whisper-queen-share: '<dark_gray>🕯 A hálózat osztozik a zsákmányon — csendben tedd el, ami a tiéd.</dark_gray>'
-  whisper-rite-day: '&7A Suttogás csak az éj leple alatt hallható.'
+  whisper-rite-day: '&7A Suttogás a normál világ éjszakáját kívánja. A Nether és a Vég nem helyettesíti az éjt.'
   whisper-rite-ground: '&7A meghívó hideg marad — a Suttogás a mélység burjánzó sötétjét kívánja a lábad alá. &8(sculk vagy sculk-katalizátor blokkon állj)'
   whisper-rite-invalid: '&7A Suttogás nem szól hozzád — vagy már hallod, vagy a Királynő már a magáénak tud téged.'
-  whisper-rite-success: '&5✧ A vércsepp a burjánzó sötétbe szivárog… és a mélység MEGSZÓLAL. Mostantól hallod a Suttogást (&f/suttogas <üzenet>&5). Őrizd a titkot — a lelepleződés a Kitaszítottak közé taszít.'
+  whisper-rite-success: '&5✧ A vércsepp a sötétbe szivárog… a mélység megszólal. Titkos csatorna: &f/suttogas <üzenet>&5. Útmutató: &f/suttogas állapot &5és &f/suttogas megbízás&5. A harmadik hiteles vád száműz; a DARK eskü külön döntés. Visszalépés: &f/suttogas megtagadás'
   whisper-rite-weak: '&cTúl gyenge vagy a vér-áldozathoz — a Suttogás nem fogad el haldoklót.'
-  whisper-rite-witnessed: '&cSzemek a sötétben — a rítus folytatódik, de valaki LÁTOTT.'
+  whisper-rite-witnessed: '&cSzemek a sötétben — a rítus megszakadt. A meghívód és az életerőd megmaradt. Keress magányt; új próbálkozás 60 mp múlva.'
   whisper-stage-advanced: '<red>A leleplezés közelebb ért: <white>{stage}</white>.</red>'
-  whisper-usage: '&7/suttogas <üzenet> &8— titkos csatorna &7| /suttogas vád <játékos> &8— tanú-vád &7| /suttogas állapot | /suttogas megbízás'
-  whisper-witness-betrayal: '<dark_purple>👁 Testvérgyilkosságot láttál… Ha Suttogót sejtesz: <white>/suttogas vád {player}</white>.</dark_purple>'
+  whisper-usage: '&7/suttogas <üzenet> | /suttogas vád <játékos> | /suttogas állapot | /suttogas megbízás | /suttogas megtagadás'
+  whisper-witness-betrayal: '<dark_purple>👁 A testvérgyilkosból sötét lelkek csaptak fel. Friss bizonyíték: <white>/suttogas vád {player}</white>.</dark_purple>'
   whisper-witness-rite: '<dark_purple>👁 Sötét rítust láttál… A vádhoz: <white>/suttogas vád {player}</white> (amíg az emlék friss).</dark_purple>'
   sinner.target-offline: <red>A célpont nem elérhető (offline).</red>
   sinner.theft-recorded: '<dark_purple>Bűnt követtél el: lopás a(z) {faction} frakció területén ({territory}). <gray>Bűneid: <white>{count}</white>/<white>{threshold}</white></gray></dark_purple>'
@@ -153,3 +153,24 @@ messages:
   territory-setcapital-usage: '&cHasználat: /territory setcapital <frakció> <sugár> [név...]'
   territory-unknown: '&cIsmeretlen terület: &f%s'
   territory-unknown-subcommand: '&cIsmeretlen alparancs: &f%s'
+
+  whisper-rite-hint: '<dark_purple>A meghívó lüktet. Hajolj a mélység fölé, és nyújtsd felé a jobb kezed…</dark_purple>'
+
+  whisper-leave-confirm: '&5A kapcsolat megszakítása elveszi a titkos előnyöket; 24 óráig nincs új rítus. A bűneid megmaradnak. Csak tiszta állapotban, friss nyom nélkül lehetséges. Megerősítés 30 mp-en belül: &f/suttogas megtagadás'
+
+  whisper-left: '&7A Suttogás elcsendesült. A civil tagságod és a jogi előzményeid megmaradtak; új rítus 24 óra múlva lehetséges.'
+
+  whisper-leave-blocked: '&cA kapcsolat még nem szakítható meg. Fejezd be a rítust, szerezz tiszta állapotot fedezékkel, és várd meg a friss nyomok lejártát. &f/suttogas állapot &7| &f/suttogas megbízás'
+
+  whisper-status-help: '&7Három hiteles vád száműz. A nyomok lejárnak, a fokozat csak sikeres kultista támogatással csökken. &f/suttogas megbízás &7| Privát kilépés: &f/suttogas megtagadás'
+
+  faction-legal-next: '&7Körözésig: &f%s &7| Száműzetésig: &f%s &7| Vérdíj: &f%s'
+
+  faction-legal-return: '&7A vérdíjas halál az Infamy/Wanted állapotot rendezheti; a száműzetést és az Esküt a vezeklés oldja. Felvétel: &f/quest log &7→ Megbízások. Civil: Civil vezeklés — Jóvátétel. DARK: Vezeklés I–III. A Suttogó visszatérési várakozása megmarad.'
+
+  faction-king-quorum: '&7Választási küszöb: &f%s &7szavazat. Új választás a mandátum lejárta után.'
+
+  sinner.penance-complete: '<gold>A vezeklésed teljes: bűneid és száműzetésed feloldozást nyertek.</gold>'
+
+  whisper-rite-form: '&7A rítus élő, látható alakot kíván. Belépés vagy újjáéledés után várj 10 másodpercet; vedd le a láthatatlanságot.'
+  whisper-rite-wait: '&7Új rítus előtt még &f%s mp &7várakozás szükséges.'

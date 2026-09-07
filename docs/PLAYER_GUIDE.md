@@ -24,6 +24,19 @@ jegyzel meg, ez legyen:
 A rendszerek állapotát a [funkciókatalógus](FEATURES.md), az új és megváltozott
 részeket a [legújabb változások](LATEST_CHANGES.md) foglalják össze.
 
+### Saját állapot és visszaút
+
+A `/faction status` kiírja a körözésig/száműzetésig hiányzó Infamyt, a vérdíjat és
+a megtisztulás útját. A `/quest log` Megbízások fülén a civil **Jóvátétel** 30 erős
+szörny legyőzését kéri; emiatt nem kell DARK-ká válnod. A DARK útja Vezeklés I–III.
+A vérdíj rendezése önmagában nem törli a száműzetést vagy az Esküt.
+
+Ha már hallod a Suttogást: `/suttogas állapot`, `/suttogas megbízás`.
+A `/suttogas megtagadás` kétszeri kiadásával privát visszalépést választhatsz.
+Előbb tiszta állapot és lejárt nyomok kellenek; utána 24 óráig nincs új rítus.
+A bűneid megmaradnak. A meghívó helyes környezetben ritka, csak neked szóló jelet ad.
+Más játékos tekintete megszakítja a jelölt rítusát, áldozat nélkül.
+
 ## Tartalom
 
 1. [Kezdő lépések](#1-kezdő-lépések)
@@ -199,9 +212,11 @@ gyógyítási hátrány nem él; a kijelölt feketepiac továbbra is kiszolgál.
 
 ### Suttogók: titkos út, világos következmények
 
-A Suttogás-meghívót éjjel, sculk vagy sculk-katalizátor fölött, főkézben tartva,
-SHIFT + jobb kattintással használhatod. Egy meghívót és életerőt áldozol; túl kevés
-HP-val nem indul a rítus. A tényleges szemtanú bizonyítékot szerezhet.
+A Suttogás-meghívót a normál világban, éjjel, sculk vagy sculk-katalizátor fölött,
+főkézben tartva, SHIFT + jobb kattintással használhatod. Látható, élő alakban, belépés
+vagy újjáéledés után 10 másodperccel indulhat. Egy meghívót és életerőt áldozol;
+túl kevés HP-val nem indul. Valódi szemtanú esetén megszakad: nincs áldozat,
+60 másodperc múlva próbálkozhatsz újra. A Nether és a Vég nem rítushely.
 
 A `/suttogas állapot` mutatja a Tiszta → Megfigyelt → Gyanúsított → Leleplezett
 állapotot. Három beváltott vád leleplez; a tanú csak a megfigyelt játékost vádolhatja

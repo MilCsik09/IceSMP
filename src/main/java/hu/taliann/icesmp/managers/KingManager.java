@@ -58,6 +58,20 @@ public final class KingManager implements PersistentStore {
         plugin.getDataFolder().mkdirs();
     }
 
+    private volatile java.util.function.ToIntFunction<FactionType> population = faction -> 0;
+
+    public void setActivePopulation(final java.util.function.ToIntFunction<FactionType> population) {
+        this.population = java.util.Objects.requireNonNull(population);
+    }
+
+    public static int electionQuorum(final int configuredMinimum, final int activeMembers) {
+        return Math.max(Math.max(2, configuredMinimum), (int) ((Math.max(0, activeMembers) + 2L) / 3));
+    }
+
+    public int requiredVotes(final FactionType faction) {
+        return electionQuorum(configManager.getInt("factions.kings.min-votes", 2), population.applyAsInt(faction));
+    }
+
     public void load() {
         kings.clear();
         votes.clear();
@@ -229,6 +243,7 @@ public final class KingManager implements PersistentStore {
             if (!factionManager.isMember(voter.getUniqueId(), faction)
                     || !factionManager.isMember(candidate, faction)) return false;
             resetExpiredTerm(faction);
+            if (kings.containsKey(faction)) return false;
             votes.computeIfAbsent(faction, key -> new ConcurrentHashMap<>()).put(voter.getUniqueId(), candidate);
             recount(faction);
             save();
@@ -352,7 +367,7 @@ public final class KingManager implements PersistentStore {
     }
 
     private void recount(final FactionType faction) {
-        final int minVotes = Math.max(1, configManager.getInt("factions.kings.min-votes", 2));
+        final int minVotes = requiredVotes(faction);
         UUID leader = null;
         int leaderVotes = 0;
         for (final Map.Entry<UUID, Integer> entry : getTally(faction).entrySet()) {

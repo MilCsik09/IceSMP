@@ -73,6 +73,17 @@ public final class FactionStatusSubcommand implements FactionSubcommand {
                 sinManager.getInfamy(player), yesNo(sinManager.isWanted(player)),
                 yesNo(sinManager.isExiled(player)), yesNo(sinManager.hasOath(player)),
                 whisperManager.getStage(player).displayName()));
+        final int infamy = sinManager.getInfamy(player);
+        final String nextWanted = sinManager.wantedThreshold() <= 0 ? "kikapcsolva"
+                : sinManager.isWanted(player) ? "már körözött"
+                : Math.max(0, sinManager.wantedThreshold() - infamy) + " további Infamy";
+        final String nextExile = sinManager.exileThreshold() <= 0 ? "kikapcsolva"
+                : sinManager.isExiled(player) ? "már száműzött"
+                : Math.max(0, sinManager.exileThreshold() - infamy) + " további Infamy";
+        player.sendMessage(messageManager.get("messages.faction-legal-next",
+                "&7Körözésig: &f%s &7| Száműzetésig: &f%s &7| Vérdíj: &f%s", nextWanted, nextExile, sinManager.bountyDescription(player)));
+        player.sendMessage(messageManager.get("messages.faction-legal-return",
+                "&7A vérdíjas halál az Infamy/Wanted állapotot rendezheti; a száműzetést és az Esküt a vezeklés oldja. Felvétel: &f/quest log &7→ Megbízások. Civil: Civil vezeklés — Jóvátétel. DARK: Vezeklés I–III. A Suttogó visszatérési várakozása megmarad."));
         if (faction == FactionType.DARK) player.sendMessage(messageManager.get("messages.faction-dark-costs",
                 "&5DARK ára: 70% gyógyulás (Vérhold/dungeon alatt 100%); civil bolt-, karaván- és fővároszár; kétszeres kompár; a civil világ büntetlenül támadhat. A visszatéréshez paktumtörés kell."));
 

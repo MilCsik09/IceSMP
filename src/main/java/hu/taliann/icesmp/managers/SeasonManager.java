@@ -100,7 +100,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         });
     }
 
-    private int activePopulation(final FactionType faction) {
+    public int activePopulation(final FactionType faction) {
         final long now = System.currentTimeMillis();
         int count = 0;
         for (final var member : factionManager.getFactionAssignments().entrySet()) {

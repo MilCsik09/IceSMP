@@ -92,6 +92,8 @@ public final class FactionKingSubcommand implements FactionSubcommand {
                         : String.valueOf(Bukkit.getOfflinePlayer(king).getName())
         ));
 
+        sender.sendMessage(messageManager.get("messages.faction-king-quorum",
+                "&7Választási küszöb: &f%s &7szavazat. Új választás a mandátum lejárta után.", kingManager.requiredVotes(faction)));
         final Map<UUID, Integer> tally = kingManager.getTally(faction);
         for (final Map.Entry<UUID, Integer> entry : tally.entrySet()) {
             sender.sendMessage(messageManager.get(
@@ -119,7 +121,7 @@ public final class FactionKingSubcommand implements FactionSubcommand {
         if (!kingManager.vote(player, candidate.getUniqueId())) {
             sender.sendMessage(messageManager.get(
                     "messages.faction-king-vote-failed",
-                    "&cNem szavazhatsz: a jelöltnek a te frakciód tagjának kell lennie (és a frakciódnak lehet uralkodója)."
+                    "&cSzavazni csak üres trónra, saját frakciótagra lehet. A frakciónak királyságot kell használnia. Részletek: /faction king"
             ));
             return true;
         }

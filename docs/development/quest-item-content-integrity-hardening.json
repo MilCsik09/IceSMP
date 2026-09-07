@@ -1194,7 +1194,7 @@
     }
   ],
   "reward_preview_matrix": {
-    "coverage": "195/195",
+    "coverage": "196/196",
     "riddle_objectives_revealed": false,
     "cases": [
       "no reward category",
@@ -4435,8 +4435,8 @@
     "opening_physical_tokens": true
   },
   "final_quest_review": {
-    "coverage": "195/195",
-    "count": 195,
+    "coverage": "196/196",
+    "count": 196,
     "category_distribution": {
       "RIDDLE": 30,
       "MAIN_STORY / CHAPTER": 15,
@@ -4444,7 +4444,7 @@
       "CLASS": 39,
       "SPECIALIZATION": 35,
       "DAILY": 17,
-      "FACTION": 11,
+      "FACTION": 12,
       "REPEATABLE": 14,
       "EXPLORATION": 3,
       "ONBOARDING": 4
@@ -4452,7 +4452,7 @@
     "objective_distribution": {
       "TALK_TO_NPC": 27,
       "COLLECT_ITEMS": 31,
-      "KILL_MOBS": 65,
+      "KILL_MOBS": 66,
       "SMELT_ITEMS": 7,
       "EXPLORE_BIOME": 6,
       "CATCH_FISH": 9,
@@ -4471,10 +4471,10 @@
       "DELIVER_ITEMS": 11
     },
     "verdict_distribution": {
-      "PASS": 195
+      "PASS": 196
     },
     "reward_integrity": {
-      "reward_bearing": 160,
+      "reward_bearing": 161,
       "rewardless_category_omitted": 35,
       "guest_own": 96,
       "silent_drop": 0,
@@ -6859,6 +6859,18 @@
         "source": "src/main/resources/content/progression/quests.yml#quests.heti_nagyhalaszat",
         "objective_types": [
           "CATCH_FISH"
+        ],
+        "review_status": "REVIEWED",
+        "primary_verdict": "PASS"
+      },
+      {
+        "id": "civil_penance",
+        "display_name": "Civil vezeklés — Jóvátétel",
+        "category": "FACTION",
+        "chain": "bunhodese",
+        "source": "src/main/resources/content/progression/quests.yml#quests.penance_3",
+        "objective_types": [
+          "KILL_MOBS"
         ],
         "review_status": "REVIEWED",
         "primary_verdict": "PASS"
@@ -24940,6 +24952,57 @@
         "primary_verdict": "PASS",
         "findings": [],
         "source": "src/main/resources/content/progression/quests.yml#quests.heti_nagyhalaszat",
+        "review_status": "REVIEWED"
+      },
+      {
+        "id": "civil_penance",
+        "display_name": "Civil vezeklés — Jóvátétel",
+        "player_facing_premise": {
+          "text": "Védd meg a civil világot: győzz le 30 erős szörnyet (min. Lvl 3). Feloldozás DARK eskü nélkül.",
+          "motivation": "Civil legal recovery without mandatory DARK membership",
+          "worldbuilding_context": "Civil restitution"
+        },
+        "objectives": [
+          {
+            "type": "KILL_MOBS",
+            "count": 30,
+            "min-mob-level": 3
+          }
+        ],
+        "prerequisite": {
+          "requires-atonement": true,
+          "forbids-faction": "DARK"
+        },
+        "reward": {
+          "cleanse-sins": true
+        },
+        "discoverability": {
+          "source": "/quest log, QUEST_BOARD",
+          "reward_preview": "Existing cleanse-sins preview"
+        },
+        "text_objective_consistency": {
+          "player_facing_text": "Védd meg a civil világot: győzz le 30 erős szörnyet (min. Lvl 3). Feloldozás DARK eskü nélkül.",
+          "actual_objective_semantics": [
+            {
+              "type": "KILL_MOBS",
+              "count": 30,
+              "min-mob-level": 3
+            }
+          ],
+          "verdict": "CONSISTENT",
+          "notes": "30 newly credited mobs, minimum level 3"
+        },
+        "quality_verdict": {
+          "mechanics": "Existing KILL_MOBS producer and cleanse-sins reward",
+          "text": "matches actual objective",
+          "pacing": "30 kills; multiplayer pacing still requires staging",
+          "reward": "no currency or XP farm; legal recovery only",
+          "narrative": "civil atonement",
+          "progression": "DARK excluded at accept and completion; clean players excluded",
+          "overall": "PASS"
+        },
+        "primary_verdict": "PASS",
+        "findings": [],
         "review_status": "REVIEWED"
       }
     ]
@@ -108333,7 +108396,7 @@
     "C1_FINDING_CLOSURE": "12/12",
     "C2_FINDING_CLOSURE": "6/7",
     "C3_FINDING_CLOSURE": "0/1",
-    "QUEST_REVIEW_COVERAGE": "195/195",
+    "QUEST_REVIEW_COVERAGE": "196/196",
     "PLAYER_FACING_ITEM_REVIEW_COVERAGE": "724/724",
     "QUEST_CONTENT_INTEGRITY": "PASS",
     "ITEM_LORE_MECHANIC_INTEGRITY": "PASS",
@@ -108343,5 +108406,10 @@
     "FOLIA_RUNTIME": "PASS",
     "CUMULATIVE_HUMAN_STAGING_CONTENT_READY": "YES",
     "HUMAN_GAMEPLAY_STAGING_REQUIRED": "YES"
+  },
+  "faction_rework_addendum": {
+    "date": "2026-09-07",
+    "quest": "civil_penance",
+    "scope": "Static source/content review. Original 195 reviews and their provenance retained; live playtest remains open."
   }
 }

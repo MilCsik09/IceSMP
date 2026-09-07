@@ -137,14 +137,65 @@ public final class PlayerProfileWhisperStore {
                 });
     }
 
+    public enum EvidenceType { RITE, BETRAYAL, OFFERING, UNDEAD }
+
+    public record Incident(UUID id, EvidenceType type, long observedAt) {
+        public Incident {
+            Objects.requireNonNull(id); Objects.requireNonNull(type);
+            if (observedAt < 0) throw new IllegalArgumentException("invalid observation time");
+        }
+    }
+
+    public enum Withdrawal { LEFT, NOT_ACTIVE, UNRESOLVED, RITE_PENDING }
+
+    /** Withdrawal cannot erase a fresh accusation, legal history, or the entry cooldown. */
+    public CompletionStage<Withdrawal> withdraw(final UUID playerId) {
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.FACTION, FactionSection.class, current -> {
+                    if (pending(current).isPresent()) return PlayerProfileService.ConditionalMutation.unchanged(Withdrawal.RITE_PENDING);
+                    final State before = decode(current);
+                    if (!before.whisperer()) return PlayerProfileService.ConditionalMutation.unchanged(Withdrawal.NOT_ACTIVE);
+                    final long now = clock.getAsLong();
+                    if (before.stage() != Stage.CLEAN || evidence(current).values().stream().anyMatch(v -> expiry(v) > now)) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(Withdrawal.UNRESOLVED);
+                    }
+                    final FactionSection cleared = withState(withExtension(current, EVIDENCE, null), new State(false, Stage.CLEAN));
+                    return PlayerProfileService.ConditionalMutation.changed(withReturnAfter(cleared,
+                            Math.addExact(now, RETURN_COOLDOWN_MILLIS)), Withdrawal.LEFT);
+                });
+    }
+
+    /** A witnessed candidate pays no resources and can retry after one clearly announced minute. */
+    public CompletionStage<Boolean> interruptCandidate(final UUID playerId) {
+        return PlayerProfileAuthority.current().mutateSectionConditional(
+                playerId, ProfileSectionId.FACTION, FactionSection.class, current -> {
+                    if (!eligible(current, clock.getAsLong()) || pending(current).isPresent()) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
+                    return PlayerProfileService.ConditionalMutation.changed(
+                            withReturnAfter(current, Math.addExact(clock.getAsLong(), 60_000L)), true);
+                });
+    }
+
+    private static FactionSection withReturnAfter(final FactionSection current, final long deadline) {
+        final Map<String, Long> cooldowns = new LinkedHashMap<>(current.cooldowns());
+        cooldowns.put(RETURN_AFTER, Math.max(deadline, cooldowns.getOrDefault(RETURN_AFTER, 0L)));
+        return new FactionSection(current.membershipId(), current.lastChosenFaction(), current.everChosen(),
+                current.joinedAt(), current.leftAt(), current.history(), current.reputation(), cooldowns, current.extensions());
+    }
+
     public record Accusation(boolean accepted, State state, boolean exposed) { }
 
     /** Exact evidence is stored on the suspect, so consumption and the legal transition share one WAL. */
-    public CompletionStage<Boolean> grantEvidence(final UUID witness, final UUID suspect, final long ttlMillis) {
+    public CompletionStage<Boolean> grantEvidence(final UUID witness, final UUID suspect, final Incident incident, final long ttlMillis) {
         if (witness.equals(suspect) || ttlMillis <= 0L) throw new IllegalArgumentException("invalid evidence");
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 suspect, ProfileSectionId.FACTION, FactionSection.class, current -> {
                     final long now = clock.getAsLong();
+                    if (!decode(current).whisperer() || incident.observedAt() > now
+                            || now - incident.observedAt() >= Math.min(ttlMillis, 86_400_000L)) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                    }
                     final Map<String, Object> entries = evidence(current);
                     entries.entrySet().removeIf(e -> expiry(e.getValue()) <= now);
                     final String key = witness.toString();
@@ -152,8 +203,9 @@ public final class PlayerProfileWhisperStore {
                     if (entries.containsKey(key) || entries.size() >= MAX_WITNESSES) {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
-                    entries.put(key, Map.of("expires", Math.addExact(now, Math.min(ttlMillis, 86_400_000L)),
-                            "consumed", false));
+                    entries.put(key, Map.of("expires", Math.addExact(incident.observedAt(), Math.min(ttlMillis, 86_400_000L)),
+                            "consumed", false, "event-id", incident.id().toString(),
+                            "event-type", incident.type().name(), "observed-at", incident.observedAt()));
                     return PlayerProfileService.ConditionalMutation.changed(
                             withExtension(current, EVIDENCE, entries), true);
                 });
@@ -175,7 +227,10 @@ public final class PlayerProfileWhisperStore {
                             || Boolean.TRUE.equals(entry.get("consumed"))) {
                         return PlayerProfileService.ConditionalMutation.unchanged(new Accusation(false, before, false));
                     }
-                    entries.put(witness.toString(), Map.of("expires", expiry(value), "consumed", true));
+                    final Map<String, Object> consumed = new LinkedHashMap<>();
+                    entry.forEach((key, item) -> consumed.put((String) key, item));
+                    consumed.put("consumed", true);
+                    entries.put(witness.toString(), consumed);
                     final Stage next = before.whisperer() ? before.stage().advance() : before.stage();
                     final boolean exposed = before.whisperer() && next == Stage.EXPOSED;
                     final State after = new State(before.whisperer() && !exposed, next);
@@ -290,6 +345,10 @@ public final class PlayerProfileWhisperStore {
                 || !(entry.get("consumed") instanceof Boolean) || expiry.longValue() < 0L) {
             throw new IllegalStateException("invalid whisper evidence entry");
         }
+        UUID.fromString((String) entry.get("event-id"));
+        EvidenceType.valueOf((String) entry.get("event-type"));
+        if (!(entry.get("observed-at") instanceof Number observedAt) || observedAt.longValue() < 0
+                || observedAt.longValue() >= expiry.longValue()) throw new IllegalStateException("invalid evidence time");
         return expiry.longValue();
     }
 
