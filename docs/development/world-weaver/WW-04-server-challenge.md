@@ -48,7 +48,12 @@ sandbox effect, expected-instance stop and observed recovery. No coverage is wai
 
 ## Remaining evidence and scope
 
-Exact new-head CI and connected Paper/Folia player tests remain required. The previous
+Exact head `c16481c82bdb3fdb11ce86780eb254836ab366d0`, tree
+`192bcdef2742052125b433d07a08489f2ea089d3`, CI run `34142390159`: native
+Paper `101807006727`, Folia `101807006574`, artifact Paper `101807006417`
+and Folia `101807006536` all passed. Verification `101807006582` ran the new
+125-assertion suite successfully and failed only inherited `trashSpriteAssetAudit`.
+Connected Paper/Folia player tests remain required. The previous
 head's successful native/artifact jobs are recorded in `WW-04-statistics-rewards.md`;
 the inherited damaged Trash source PNG gate still blocks the full build.
 

@@ -167,6 +167,10 @@ public final class QuestProgressListener implements Listener {
         }
     }
 
+    private static RewardContext communityContext(final RewardContext reward) {
+        return new RewardContext(RewardChannel.COMMUNITY_GOAL, reward.recipient(), reward.sources());
+    }
+
     private boolean pendingReward(final ItemStack item) {
         return QuestPhysicalRewardDeliveryService.isPendingRewardItem(plugin, item);
     }
@@ -182,10 +186,10 @@ public final class QuestProgressListener implements Listener {
         final boolean worldBoss = worldBossManager.isWorldBoss(event.getEntity());
         kill.runOnKiller(plugin, hu.taliann.icesmp.integrity.RewardChannel.QUEST_PROGRESS, killer -> {
             questManager.handleKill(killer, entityType, level, kill.rewardContext(RewardChannel.QUEST_PROGRESS));
-            if (kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.COMMUNITY_GOAL)) communityGoalManager.contribute(killer, "KILL_MOBS", entityType.name(), 1);
+            if (kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.COMMUNITY_GOAL)) communityGoalManager.contribute(killer, "KILL_MOBS", entityType.name(), 1, kill.rewardContext(RewardChannel.COMMUNITY_GOAL));
             if (worldBoss) {
                 questManager.handleBossKill(killer, kill.rewardContext(RewardChannel.QUEST_PROGRESS));
-                if (kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.COMMUNITY_GOAL)) communityGoalManager.contribute(killer, "KILL_WORLDBOSS", null, 1);
+                if (kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.COMMUNITY_GOAL)) communityGoalManager.contribute(killer, "KILL_WORLDBOSS", null, 1, kill.rewardContext(RewardChannel.COMMUNITY_GOAL));
             }
         });
     }
@@ -199,7 +203,7 @@ public final class QuestProgressListener implements Listener {
         if (reward == null) return;
         questManager.handleBlockBreak(event.getPlayer(), event.getBlock().getType(), reward);
         communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS",
-                event.getBlock().getType().name(), 1);
+                event.getBlock().getType().name(), 1, communityContext(reward));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -238,7 +242,7 @@ public final class QuestProgressListener implements Listener {
         final RewardContext reward = capture(player, () -> BukkitRewardSources.causal(item));
         if (reward == null) return;
         questManager.handleCollect(player, stack.getType(), acquired, reward);
-        communityGoalManager.contribute(player, "COLLECT_ITEMS", stack.getType().name(), acquired);
+        communityGoalManager.contribute(player, "COLLECT_ITEMS", stack.getType().name(), acquired, communityContext(reward));
     }
 
     /** Buckets enter the player's inventory directly and therefore have no pickup event. */
@@ -259,7 +263,7 @@ public final class QuestProgressListener implements Listener {
         if (reward == null) return;
         questManager.handleCollect(player, result.getType(), result.getAmount(), reward);
         communityGoalManager.contribute(player, "COLLECT_ITEMS",
-                result.getType().name(), result.getAmount());
+                result.getType().name(), result.getAmount(), communityContext(reward));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -280,7 +284,7 @@ public final class QuestProgressListener implements Listener {
         onPlayerOwner(playerId, sources, (owned, reward) -> {
             questManager.handlePlayerKill(owned, reward);
             if (GameplayRewardGate.evaluate(new RewardContext(RewardChannel.COMMUNITY_GOAL, playerId, reward.sources())).allowed())
-                communityGoalManager.contribute(owned, "KILL_PLAYERS", null, 1);
+                communityGoalManager.contribute(owned, "KILL_PLAYERS", null, 1, communityContext(reward));
         });
     }
 
@@ -328,7 +332,7 @@ public final class QuestProgressListener implements Listener {
         if (!acquisitionReceipts.claim(contributionId)) return;
         questManager.handleCollect(event.getPlayer(), event.getItemType(), event.getItemAmount(), reward);
         communityGoalManager.contribute(event.getPlayer(), "COLLECT_ITEMS",
-                event.getItemType().name(), event.getItemAmount());
+                event.getItemType().name(), event.getItemAmount(), communityContext(reward));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

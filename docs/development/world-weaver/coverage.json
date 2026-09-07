@@ -2772,7 +2772,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java",
       "domain": "goals",
-      "source_sha256": "e02c3bc55d2af70451bd59508706bc1ee46bcd3cbe49ecdb9c7ebc2ab13966e4",
+      "source_sha256": "a25ed394383a14e0d366173e0b327de312993d2dd13c88ecfb391525967563d0",
       "public_methods": [
         "CommunityGoalManager",
         "commitSeasonTransition",
@@ -4289,7 +4289,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonManager.java",
       "domain": "season",
-      "source_sha256": "8f66fd36aaae0219a258ee5ac8f350cc4dcecb07fd2e4f9032dde2c39ef4ddc6",
+      "source_sha256": "efb3cea5cd5369398dd68a0b5c8128d5849284218442e3704b2bc6134961a6d0",
       "public_methods": [
         "SeasonManager",
         "addExactPointsOnce",
@@ -5298,12 +5298,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSeasonParticipationStore.java",
       "domain": "season",
-      "source_sha256": "c702b30e3e47e300e0d83dd79664cee5c7c534ae3bfdef1ed02faae414914c72",
+      "source_sha256": "7052d38420a98ef6cb394efc421d63b25232833c5e4f69b7201f827b3e0f0d15",
       "public_methods": [
         "State",
         "active",
         "contributions",
         "load",
+        "matchesCurrentMembership",
+        "newest",
         "record"
       ]
     },
