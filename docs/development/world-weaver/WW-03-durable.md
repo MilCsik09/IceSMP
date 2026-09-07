@@ -335,6 +335,52 @@ the new AREA execution suite; only inherited `trashSpriteAssetAudit` failed.
 Resource-pack `34073063036` and Trash `34073063016` workflows succeeded. These probes
 still establish clean-store startup, not populated gameplay manipulation.
 
+## Protected retention checkpoint
+
+`WeaverJournalRetention` rotates only settled, unreferenced WorldWeaver operation/
+receipt records. Pending audit, PREPARED/APPLIED/NEEDS_REVIEW, influence intents,
+active projections, active influence and reward quarantine pin their origin. Undo
+claims and projection/influence before-images retain their dependency chain. The
+oldest eligible leaf rotates first; a parent can rotate only after its referencing
+children are gone. An incoming Undo protects its original receipt before admission.
+Entity/item/event SANDBOX taint is monotonic and is never discarded to make space.
+
+Retention and the next PREPARED record publish in one atomic state generation.
+Neither a refused admission nor a failed write exposes a pruned-only generation.
+The independent bounded audit survives receipt rotation and rejects duplicate
+operation IDs while that audit evidence is retained. This is WorldWeaver history
+retention, not deletion of a subsystem's immutable canonical history.
+
+The YAML store preflights its existing 2,000,000-byte cap on the IO authority before
+writing. Expected byte-capacity refusal does not poison the writer; real or
+ambiguous IO failure still closes it. Eligible history rotates in bounded batches
+when bytes fill before entry caps. If all records are protected, admission fails
+closed. The 2,048 receipt / 2,056 operation limits remain upper bounds rather than
+a promise that every maximum-sized payload fits. The audit rotates oldest-first
+at 10,000 entries or earlier at its byte cap, preserving the newly acknowledged
+entry even if the clock moved backwards. Batched byte rotation avoids serializing
+a near-capacity YAML document once per individual removed row.
+
+`WeaverRetentionRegressionSuite` covers full 2,048-receipt admission, atomic
+before/after-write failure and restart, retained-audit replay denial, unresolved
+and pending-audit protection, expired player versus monotonic entity influence,
+active projection and Undo/before-image dependencies, incoming Undo protection,
+recoverable capacity rejection, actual YAML byte-cap preflight without IO, and
+both audit limits with backwards timestamps. It is a normal Gradle check dependency.
+Full Java 21 main/regression compilation passed with zero errors and three inherited
+warnings; all 19 Weaver and three DEV suites passed (22 total). Four architecture
+checks, the 650-row PlayerProfile authority gate, the inventory (289 authorities,
+55 domains, 51 implementation blockers, zero audit errors), and consistency
+(zero FAIL/WARN) passed locally.
+
+The preceding revision-scope head `cc07e7c7186ebf176be506f992a398aa93cb389a` has exact
+remote evidence: verification run `34073935305`; Paper job `101596331418` and Folia
+job `101596331331` succeeded with readiness and clean shutdown. Verification job
+`101596331164` compiled main/regression sources and passed the revision suite; its
+only failed task was inherited `trashSpriteAssetAudit`. Docs `34073935329`, resource
+pack `34073935301`, and Trash hardening `34073935326` workflows succeeded. These are
+clean-store probes, not populated mutation/crash acceptance for the current change.
+
 ## Remaining WW-03 implementation
 - Native provider mutation/compensation and exact late-effect reconciliation evidence;
   the generic durable execution path is implemented behind the closed integrity gate.
@@ -342,7 +388,6 @@ still establish clean-store startup, not populated gameplay manipulation.
 - Provider-specific canonical compensating history and native Undo evidence; the generic durable Undo path is implemented.
 - Provider-specific revision dependencies and native mutation/Undo evidence; the generic descriptor scope route is implemented.
 - Native AREA provider effects/recovery and client evidence; bounded generic collection, guarded children, Undo and recovery routes are implemented.
-- Receipt retention protected by unresolved operation/projection/Undo references.
 - Real crash/restart/disable evidence for those integrated paths.
 
 No universal coverage, reward-leak closure, merge readiness or production-ready

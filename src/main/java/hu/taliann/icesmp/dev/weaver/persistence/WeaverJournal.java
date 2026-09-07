@@ -50,13 +50,16 @@ public final class WeaverJournal {
     public CompletionStage<WeaverOperationRecord> prepare(final WeaverOperationRecord prepared, final hu.taliann.icesmp.dev.weaver.integrity.WeaverEffectIntent intent) {
         if (prepared.status() != OperationStatus.PREPARED || prepared.revision() != 0) return CompletableFuture.failedFuture(new WeaverDomainRejection("INVALID_PREPARED_RECORD"));
         return submit(true, () -> {
-            if (state.operations().containsKey(prepared.operationId())) throw new WeaverDomainRejection("DUPLICATE_OPERATION");
+            if (state.operations().containsKey(prepared.operationId()) || audit.values().stream().anyMatch(entry -> entry.operationId().equals(prepared.operationId()))) throw new WeaverDomainRejection("DUPLICATE_OPERATION");
+            final Set<UUID> protectedHistory = new HashSet<>();
+            prepared.undoClaim().ifPresent(claim -> { final WeaverReceipt original = state.receipts().get(claim.receiptId()); if (original != null) protectedHistory.add(original.operationId()); });
+            WeaverJournalState admitted = WeaverJournalRetention.trim(state, System.currentTimeMillis(), WeaverJournalState.MAX_RECEIPTS - 1, WeaverJournalState.MAX_OPERATIONS - 1, protectedHistory);
             final long active = state.operations().values().stream().filter(operation -> operation.status() == OperationStatus.PREPARED || operation.status() == OperationStatus.APPLIED).count();
-            if (active >= 8 || state.operations().size() >= WeaverJournalState.MAX_OPERATIONS || state.receipts().size() >= WeaverJournalState.MAX_RECEIPTS) {
+            if (active >= 8 || admitted.operations().size() >= WeaverJournalState.MAX_OPERATIONS || admitted.receipts().size() >= WeaverJournalState.MAX_RECEIPTS) {
                 throw new WeaverDomainRejection("JOURNAL_CAPACITY");
             }
-            final long reservedInfluences = state.intents().values().stream().mapToLong(value -> value.targets().size()).sum();
-            if (state.influences().size() + reservedInfluences + intent.targets().size() + 1 > WeaverJournalState.MAX_INFLUENCES) throw new WeaverDomainRejection("INFLUENCE_CAPACITY");
+            final long reservedInfluences = admitted.intents().values().stream().mapToLong(value -> value.targets().size()).sum();
+            if (admitted.influences().size() + reservedInfluences + intent.targets().size() + 1 > WeaverJournalState.MAX_INFLUENCES) throw new WeaverDomainRejection("INFLUENCE_CAPACITY");
             if (prepared.request().lifetime() != Lifetime.ONE_SHOT) {
                 final var pending = state.operations().values().stream().filter(operation -> operation.status() == OperationStatus.PREPARED && operation.request().lifetime() != Lifetime.ONE_SHOT).toList();
                 final long subjectCount = state.projections().values().stream().filter(projection -> projection.subject().equals(prepared.subject())).count()
@@ -65,7 +68,17 @@ public final class WeaverJournal {
                         + pending.stream().filter(operation -> operation.request().lifetime() == prepared.request().lifetime()).count();
                 if (subjectCount >= 32 || lifetimeCount >= (prepared.request().lifetime() == Lifetime.SESSION ? 256 : 1024)) throw new WeaverDomainRejection("PROJECTION_CAPACITY");
             }
-            publish(WeaverEffectReducer.prepared(state, prepared, intent)); return prepared;
+            while (true) {
+                final WeaverJournalState next = WeaverEffectReducer.prepared(admitted, prepared, intent);
+                try { storage.validateStateCapacity(next); publish(next); return prepared; }
+                catch (final WeaverDomainRejection rejected) {
+                    if (!rejected.code().equals("JOURNAL_BYTE_CAPACITY")) throw rejected;
+                    final int batch = Math.max(16, admitted.operations().size() / 8);
+                    final WeaverJournalState trimmed = WeaverJournalRetention.trim(admitted, System.currentTimeMillis(), Math.max(0, admitted.receipts().size() - batch), Math.max(0, admitted.operations().size() - batch), protectedHistory);
+                    if (trimmed == admitted) throw rejected;
+                    admitted = trimmed;
+                }
+            }
         });
     }
     public CompletionStage<WeaverOperationRecord> applied(final UUID id, final long revision, final WeaverReceipt receipt, final long now) {
@@ -117,8 +130,19 @@ public final class WeaverJournal {
             if (existing == null) {
                 final Map<String, WeaverAuditEntry> next = new HashMap<>(audit); next.put(entry.key(), entry);
                 if (next.size() > 10_000) {
-                    final String oldest = next.values().stream().min(Comparator.comparingLong(WeaverAuditEntry::createdAt).thenComparing(WeaverAuditEntry::key)).orElseThrow().key();
+                    final String oldest = next.values().stream().filter(value -> !value.key().equals(entry.key()))
+                            .min(Comparator.comparingLong(WeaverAuditEntry::createdAt).thenComparing(WeaverAuditEntry::key)).orElseThrow().key();
                     next.remove(oldest);
+                }
+                while (true) {
+                    try { storage.validateAuditCapacity(Map.copyOf(next)); break; }
+                    catch (final WeaverDomainRejection rejected) {
+                        if (!rejected.code().equals("JOURNAL_BYTE_CAPACITY") || next.size() == 1) throw rejected;
+                        final List<String> oldest = next.values().stream().filter(value -> !value.key().equals(entry.key()))
+                                .sorted(Comparator.comparingLong(WeaverAuditEntry::createdAt).thenComparing(WeaverAuditEntry::key))
+                                .limit(Math.max(1, next.size() / 8)).map(WeaverAuditEntry::key).toList();
+                        oldest.forEach(next::remove);
+                    }
                 }
                 checkedIo(() -> { storage.writeAudit(Map.copyOf(next)); return null; }); audit = Map.copyOf(next);
             }
@@ -138,6 +162,7 @@ public final class WeaverJournal {
                 fingerprint, before.recoveryPayload(), status, Math.addExact(before.revision(), 1), before.preparedAt(), Math.max(before.updatedAt(), now), receipt, audit, before.undoClaim());
     }
     private void publish(final WeaverJournalState next) {
+        storage.validateStateCapacity(next);
         next.projections().values().forEach(projectionValidator);
         final Publication nextPublication = new Publication(next, new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex(next));
         checkedIo(() -> { storage.writeState(next); return null; }); state = next; publication = nextPublication;

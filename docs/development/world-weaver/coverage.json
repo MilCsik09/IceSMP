@@ -1526,7 +1526,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "208566d9e40a13242959cb3f0f4153de334e040089ce9cf3ab4057afbf4fdd7b",
+      "source_sha256": "0960acca1a28bdf5f9b1cd79dc8bb5e0f34b0aa25b6261cf8c976f54a606cc17",
       "public_methods": [
         "WeaverJournal",
         "applied",
@@ -1539,6 +1539,14 @@
         "ready",
         "resolve",
         "snapshot"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
+      "domain": "developer_self",
+      "source_sha256": "237e61d771530d888f390a2c015be167b312384397ba0133a0a6c2ea190cc75d",
+      "public_methods": [
+        "trim"
       ]
     },
     {
@@ -6081,6 +6089,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",

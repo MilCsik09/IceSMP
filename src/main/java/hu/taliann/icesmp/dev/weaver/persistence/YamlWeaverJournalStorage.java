@@ -35,6 +35,8 @@ public final class YamlWeaverJournalStorage implements WeaverJournalStorage {
         catch (final IllegalArgumentException invalid) { YamlStore.failCorrupt(auditFile, logger, "Invalid internal schema"); throw invalid; }
     }
     @Override public void writeState(final WeaverJournalState state) throws Exception { write(stateFile, codec.encodeState(state)); }
+    @Override public void validateStateCapacity(final WeaverJournalState state) { boundedYaml(codec.encodeState(state)); }
+    @Override public void validateAuditCapacity(final Map<String, WeaverAuditEntry> audit) { boundedYaml(codec.encodeAudit(audit)); }
     @Override public void writeAudit(final Map<String, WeaverAuditEntry> audit) throws Exception { write(auditFile, codec.encodeAudit(audit)); }
     private Map<String, Object> read(final File file) throws Exception {
         if (Files.size(file.toPath()) > MAX_BYTES) throw new IllegalArgumentException("Internal state byte cap");
@@ -80,9 +82,12 @@ public final class YamlWeaverJournalStorage implements WeaverJournalStorage {
         return value;
     }
     private static void write(final File file, final Map<String, Object> data) throws Exception {
+        YamlStore.saveAtomic(file, boundedYaml(data));
+    }
+    private static YamlConfiguration boundedYaml(final Map<String, Object> data) {
         final YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("storage-schema", 1); yaml.set("document", mapKeys(data, true));
-        if (yaml.saveToString().getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) throw new IllegalArgumentException("Internal state byte cap");
-        YamlStore.saveAtomic(file, yaml);
+        if (yaml.saveToString().getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) throw new hu.taliann.icesmp.dev.weaver.api.WeaverDomainRejection("JOURNAL_BYTE_CAPACITY");
+        return yaml;
     }
 }
