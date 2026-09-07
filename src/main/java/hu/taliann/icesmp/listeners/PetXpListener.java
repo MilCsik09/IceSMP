@@ -71,7 +71,7 @@ public final class PetXpListener implements Listener {
         final java.util.UUID victimId = kill.victimId();
         final hu.taliann.icesmp.utils.MobKillUtil.KillContext reward = kill;
         final java.util.UUID creditedCompanionId = killingCompanionId;
-        reward.runOnKiller(plugin, killer -> {
+        reward.runOnKiller(plugin, hu.taliann.icesmp.integrity.RewardChannel.PET_XP, killer -> {
             if (!petManager.canOwnPet(killer)) {
                 return;
             }

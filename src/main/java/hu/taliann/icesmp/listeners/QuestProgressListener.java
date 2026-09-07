@@ -179,12 +179,12 @@ public final class QuestProgressListener implements Listener {
         final var entityType = event.getEntityType();
         final int level = mobScalingManager.getLevel(event.getEntity());
         final boolean worldBoss = worldBossManager.isWorldBoss(event.getEntity());
-        kill.runOnKiller(plugin, killer -> {
+        kill.runOnKiller(plugin, hu.taliann.icesmp.integrity.RewardChannel.QUEST_PROGRESS, killer -> {
             questManager.handleKill(killer, entityType, level);
-            communityGoalManager.contribute(killer, "KILL_MOBS", entityType.name(), 1);
+            if (kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.COMMUNITY_GOAL)) communityGoalManager.contribute(killer, "KILL_MOBS", entityType.name(), 1);
             if (worldBoss) {
                 questManager.handleBossKill(killer);
-                communityGoalManager.contribute(killer, "KILL_WORLDBOSS", null, 1);
+                if (kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.COMMUNITY_GOAL)) communityGoalManager.contribute(killer, "KILL_WORLDBOSS", null, 1);
             }
         });
     }

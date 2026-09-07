@@ -184,6 +184,16 @@ was the inherited `trashSpriteAssetAudit`. Resource pack `34078372931`, Trash
 `34078372925`, and docs inventory `34078372935` succeeded. This new projection
 checkpoint still needs its own CI and populated Paper/Folia execution evidence.
 
+## Reward ingress checkpoint
+
+The neutral policy is now installed in Core with an exclusive lifecycle binding.
+Shared kill eligibility carries immutable victim/causal/player/world/spatial context
+and rechecks at owner continuations. Vanilla/custom/dungeon output, Warden XP, party
+XP beneficiaries and specific class/pet/Bestiary/quest/community/currency kill ingress
+paths are wired. See [the call-site matrix](WW-04-reward-ingress.md) for exact routes
+and remaining canonical settlement/propagation work. This does not close the WW-00
+reward finding or enable physical issuance/durable gameplay admission.
+
 ## Remaining phase requirements
 
 - PvE force-ability/context/stat consumers, direct projection picker/clear controls,

@@ -684,6 +684,10 @@ val weaverProjectionDispatchRegressionTest = registerRegression(
     "weaverProjectionDispatchRegressionTest",
     "Runs bounded durable projection publication dispatch, cleanup races and provider failure isolation regressions.",
     "hu.taliann.icesmp.dev.weaver.WeaverProjectionDispatchRegressionSuite")
+val weaverGameplayRewardGateRegressionTest = registerRegression(
+    "weaverGameplayRewardGateRegressionTest",
+    "Runs installed gameplay reward gateway, unclaimed world source and continuation quarantine regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverGameplayRewardGateRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -1195,7 +1199,7 @@ tasks.check {
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
         weaverPersistenceRegressionTest, weaverCrashRecoveryRegressionTest,
-        weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest, pveWeaverProjectionRegressionTest, weaverProjectionDispatchRegressionTest,
+        weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest, pveWeaverProjectionRegressionTest, weaverProjectionDispatchRegressionTest, weaverGameplayRewardGateRegressionTest,
         weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
         worldWeaverArchitectureAudit,
         weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCoverageRegressionTest, weaverFoliaOwnershipRegressionTest,

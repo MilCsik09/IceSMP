@@ -1377,11 +1377,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "e4d540b4d196a3d661a29e3a3b2851bb18e99c712c2f73fe88bfe9ebdfaf8a8d",
+      "source_sha256": "30ee6775167f31a54401ffddfd9f16526c24cfc523b673124b6c1a85ec512f1a",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
         "recoveryListener",
+        "rewardEligibility",
         "shutdown",
         "start"
       ]
@@ -1876,28 +1877,65 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
+      "domain": "developer_self",
+      "source_sha256": "2d8a9cdec17343223cf50bf03f04f95af8f47d6132a3c0f3c496bb3371c687bf",
+      "public_methods": [
+        "entity",
+        "allowed",
+        "death",
+        "deathAllowed"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/integrity/CompositeRewardEligibilityPolicy.java",
       "domain": "developer_self",
-      "source_sha256": "dbea1a0d9286644f08ebf96cc436d359005a9a0c0a05d9930eb6c2f7c981533f",
+      "source_sha256": "2eaeb1cd6e3f5a4be8ad36853d5fb32892ed164efc9b50651bbd94a4f8a1fa5d",
       "public_methods": [
         "CompositeRewardEligibilityPolicy",
-        "evaluate"
+        "evaluate",
+        "evaluateSources"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/GameplayRewardGate.java",
+      "domain": "developer_self",
+      "source_sha256": "14c16b04a284a030bff6dca5957e0ec72d3e10a0773c838b11e230293e4855c5",
+      "public_methods": [
+        "close",
+        "evaluate",
+        "evaluateSources",
+        "install"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/InfluenceRewardEligibilityPolicy.java",
       "domain": "developer_self",
-      "source_sha256": "6a5b1e2dfe881153543b2c5a5d1bd39f1ed02bc9612617deb4c61aaceb38452f",
+      "source_sha256": "9fda29945baab4d9d2052028d63aa6fbd0ea90c6eaf991df22c2cc1dc212a63b",
       "public_methods": [
         "InfluenceRewardEligibilityPolicy",
-        "evaluate"
+        "evaluate",
+        "evaluateSources"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/RewardEligibilityPolicy.java",
       "domain": "developer_self",
-      "source_sha256": "0437bc735cc1022497099cbc561d4257a3cb0a7e24cc0c19d589e2cab2789f01",
-      "public_methods": []
+      "source_sha256": "24c537f16d4f3513887b09cb430b481807ef75324d9dcb214ed70f2d5b4ccb92",
+      "public_methods": [
+        "evaluateSources"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
+      "domain": "developer_self",
+      "source_sha256": "39b07b1904cb1b56cfd14efe7c76bea3fe13ade01361753210be931f7aa719d3",
+      "public_methods": [
+        "beforeRewards",
+        "afterRewards",
+        "beforePlayerRewards",
+        "afterPlayerRewards"
+      ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/BuildAwareLootService.java",
@@ -6104,6 +6142,33 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java",
+      "domain": "pve",
+      "source_sha256": "c719e64f07fb021004f6714e7fdfd9517c5d124f34c7c38dc4fdc17701c840eb",
+      "public_methods": [
+        "killerId",
+        "victimId",
+        "victimType",
+        "victimWorldId",
+        "victimWorld",
+        "victimX",
+        "victimY",
+        "victimZ",
+        "victimLocation",
+        "dropSeed",
+        "dropRandom",
+        "claimOnce",
+        "runOnKiller",
+        "eligibleKill",
+        "eligibleAttributedKill",
+        "eligibleTrackingKill",
+        "isSpawnerSpawned",
+        "isAfkRewardBlocked",
+        "rewardContext",
+        "eligibleFor"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/warlock/WarlockGameplayService.java",
       "domain": "class",
       "source_sha256": "e41c8bc59bf1059c0157de46ac00bc3a1c6eead29dea316196c784cb53cd5479",
@@ -6199,6 +6264,9 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
+    "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
+    "src/main/java/hu/taliann/icesmp/integrity/GameplayRewardGate.java",
+    "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
     "src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java",
     "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java",
     "src/main/java/hu/taliann/icesmp/items/MoneyPouchItemFactory.java",
@@ -6211,7 +6279,8 @@
     "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java",
-    "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java"
+    "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
+    "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java"
   ],
   "bootstrap_components": {
     "src/main/java/hu/taliann/icesmp/IceSMP.java": [
@@ -6301,6 +6370,7 @@
       "src/main/java/hu/taliann/icesmp/gui/CharacterMenuContext.java",
       "src/main/java/hu/taliann/icesmp/gui/CommandMenuContext.java",
       "src/main/java/hu/taliann/icesmp/gui/ItemForgeGUI.java",
+      "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
       "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java",
       "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
       "src/main/java/hu/taliann/icesmp/itemization/ItemMutationCoordinator.java",
@@ -7447,6 +7517,13 @@
         "itemization"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
+      "domains": [
+        "developer_self"
+      ],
+      "rationale": "Neutral vanilla reward output boundary; observes canonical influence evidence, no separate reward or gameplay authority."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java",

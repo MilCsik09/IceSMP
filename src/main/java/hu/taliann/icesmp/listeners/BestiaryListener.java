@@ -54,14 +54,14 @@ public final class BestiaryListener implements Listener {
         if (worldBossManager != null && worldBossManager.isWorldBoss(event.getEntity())) {
             // Az ARCHETÍPUS a lajstrom-kulcs: két azonos vanilla-fajú boss külön bejegyzés.
             final String archetype = worldBossManager.archetypeId(event.getEntity());
-            kill.runOnKiller(bestiaryManager.plugin(), killer ->
+            kill.runOnKiller(bestiaryManager.plugin(), hu.taliann.icesmp.integrity.RewardChannel.BESTIARY, killer ->
                     bestiaryManager.record(killer, BestiaryManager.Category.BOSSES, archetype));
             return;
         }
         if (event.getEntity() instanceof Monster) {
             // A ritka variáns ÖNÁLLÓ lajstrom-bejegyzés (pl. albino_zombie).
             final String entry = BestiaryManager.entryId(event.getEntity());
-            kill.runOnKiller(bestiaryManager.plugin(), killer ->
+            kill.runOnKiller(bestiaryManager.plugin(), hu.taliann.icesmp.integrity.RewardChannel.BESTIARY, killer ->
                     bestiaryManager.record(killer, BestiaryManager.Category.MOBS, entry));
         }
     }

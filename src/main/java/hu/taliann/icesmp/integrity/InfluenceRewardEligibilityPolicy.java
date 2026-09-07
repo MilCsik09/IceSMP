@@ -17,6 +17,12 @@ public final class InfluenceRewardEligibilityPolicy implements RewardEligibility
         try {
             final Evidence player = Objects.requireNonNull(lookup.recipient(context.recipient()));
             if (player != Evidence.CLEAN) return RewardDecision.deny(player == Evidence.QUARANTINED ? "PLAYER_QUARANTINED" : "INFLUENCE_UNAVAILABLE");
+            return evaluateSources(new RewardSourceContext(context.channel(), context.sources()));
+        } catch (final RuntimeException | LinkageError unavailable) { return RewardDecision.deny("INFLUENCE_UNAVAILABLE"); }
+    }
+    @Override public RewardDecision evaluateSources(final RewardSourceContext context) {
+        Objects.requireNonNull(context);
+        try {
             for (final RewardSource source : context.sources()) {
                 final Evidence evidence = Objects.requireNonNull(lookup.source(source));
                 if (evidence != Evidence.CLEAN) return RewardDecision.deny(evidence == Evidence.QUARANTINED ? "SOURCE_QUARANTINED" : "INFLUENCE_UNAVAILABLE");

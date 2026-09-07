@@ -77,6 +77,10 @@ public final class WorldWeaverRuntime {
         }
     }
     public WorldWeaverGUIListener listener() { return listener; }
+    public hu.taliann.icesmp.integrity.RewardEligibilityPolicy rewardEligibility() {
+        return new hu.taliann.icesmp.integrity.InfluenceRewardEligibilityPolicy(
+                new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceLookup(journal, System::currentTimeMillis));
+    }
     public hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryListener recoveryListener() { return recoveryListener; }
     public void shutdown() {
         closed = true; started = false;

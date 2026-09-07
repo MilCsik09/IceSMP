@@ -57,7 +57,7 @@ public final class ClassXpListener implements Listener {
         // Folia: a death event fires on the dying mob's region thread, but the killer is a DIFFERENT
         // entity — even the hasPrimaryJob eligibility check reads its PDC. Hop first, so EVERY
         // killer touch (check + award) happens on the killer's own region thread.
-        kill.runOnKiller(plugin, killer -> {
+        kill.runOnKiller(plugin, hu.taliann.icesmp.integrity.RewardChannel.CLASS_XP, killer -> {
             if (!jobManager.hasPrimaryJob(killer)) {
                 return;
             }

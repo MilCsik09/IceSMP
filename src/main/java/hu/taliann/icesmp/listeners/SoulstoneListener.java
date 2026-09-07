@@ -55,7 +55,7 @@ public final class SoulstoneListener implements Listener {
         final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill =
                 hu.taliann.icesmp.utils.MobKillUtil.eligibleKill(entity,
                         hu.taliann.icesmp.utils.MobKillUtil.RewardKind.FAUCET, configManager, afkManager);
-        if (kill == null) {
+        if (kill == null || !kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.CURRENCY_FAUCET)) {
             return;
         }
 
