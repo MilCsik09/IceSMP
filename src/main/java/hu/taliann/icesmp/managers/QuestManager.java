@@ -1421,7 +1421,6 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                     if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned) || !owned.isOnline()) { result.complete(null); return; }
                     try {
                         if (!recovery) {
-                            if (statsManager != null) statsManager.recordQuestComplete(playerId);
                             if (guildManager != null) guildManager.addActivityXp(owned,
                                     Math.max(0, configManager.getInt("guilds.xp-per-quest", 10)));
                             owned.playSound(owned.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);

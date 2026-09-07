@@ -488,10 +488,14 @@ public final class PlayerProfileQuestStore {
     /** Parent receipt may settle only after every prepared physical component is durable DELIVERED. */
     public CompletionStage<Boolean> settleReward(final UUID playerId, final String receipt) {
         final String rewardReceipt = rewardReceipt(receipt);
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+        return settleReward(playerId, rewardReceipt, 4);
+    }
+
+    private CompletionStage<Boolean> settleReward(final UUID playerId, final String rewardReceipt, final int attempts) {
+        return PlayerProfileAuthority.current().transact(playerId, snapshot -> {
+                    final QuestSection current = snapshot.quests().value();
                     if (current.rewardReceipts().contains(rewardReceipt)) {
-                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                        throw new AlreadySettled();
                     }
                     if (!current.claimableRewards().contains(rewardReceipt)) {
                         throw new IllegalStateException("unknown claimable quest reward");
@@ -514,10 +518,43 @@ public final class PlayerProfileQuestStore {
                     }
                     settled.add(rewardReceipt);
                     ledger.remove(rewardReceipt);
-                    return PlayerProfileService.ConditionalMutation.changed(
-                            copyWithDeliveryLedger(current, current.active(), current.completed(),
-                                    settled, current.cooldowns(), claimable, ledger), true);
+                    final QuestSection next = copyWithDeliveryLedger(current, current.active(), current.completed(),
+                            settled, current.cooldowns(), claimable, ledger);
+                    final var statistics = snapshot.statistics().value();
+                    final Map<String, Long> counters = new LinkedHashMap<>(statistics.lifetime());
+                    counters.merge(PlayerProfileStatisticsStore.QUESTS_COMPLETED, 1L, Math::addExact);
+                    final var nextStatistics = new hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection(
+                            counters, statistics.season(), statistics.claimedMilestones(), statistics.extensions());
+                    final String operation = settlementOperation(rewardReceipt);
+                    if (snapshot.operations().value().operations().containsKey(operation))
+                        throw new IllegalStateException("Quest settlement requires reconciliation");
+                    return new hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager.TransactionPlan<>(
+                            operation, "quest-reward-settlement", operation,
+                            List.of(new hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager.SectionUpdate(
+                                            ProfileSectionId.QUESTS, snapshot.quests().revision(), next),
+                                    new hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager.SectionUpdate(
+                                            ProfileSectionId.STATISTICS, snapshot.statistics().revision(), nextStatistics)),
+                            true, () -> { }, Map.of("quest-receipt", rewardReceipt));
+                }).exceptionallyCompose(failure -> {
+                    Throwable root = failure;
+                    while (root instanceof java.util.concurrent.CompletionException && root.getCause() != null) root = root.getCause();
+                    if (root instanceof AlreadySettled) return CompletableFuture.completedFuture(false);
+                    if (root instanceof hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepositoryException.RevisionConflict && attempts > 1)
+                        return settleReward(playerId, rewardReceipt, attempts - 1);
+                    return CompletableFuture.failedFuture(root);
                 });
+    }
+
+    private static String settlementOperation(final String receipt) {
+        try {
+            return "quest-settle:" + java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(receipt.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException impossible) { throw new AssertionError(impossible); }
+    }
+
+    private static final class AlreadySettled extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+        AlreadySettled() { super(null, null, false, false); }
     }
 
     private static State state(final QuestSection section) {

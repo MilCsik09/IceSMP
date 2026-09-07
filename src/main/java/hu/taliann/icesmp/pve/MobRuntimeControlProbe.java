@@ -274,13 +274,42 @@ public final class MobRuntimeControlProbe {
                                         && economy.readCached(fixtureOwner).milli(hu.taliann.icesmp.data.CurrencyType.NEUTRAL) == 1000,
                                         "NATIVE_REWARD_REPLAY");
                                 plugin.getLogger().info("ICESMP_KNOWLEDGE_REWARD_RUNTIME_PROBE_PASS scope=offline_profile_currency_settlement");
-                                finish(true, "NATIVE_LIFECYCLE_AND_REWARD");
+                                verifyQuestStatisticsSettlement();
                             } catch (Throwable invalid) { failed(invalid); }
                         });
                     } catch (Throwable invalid) { failed(invalid); }
                 });
             });
         } catch (Throwable failure) { failed(failure); }
+    }
+    private void verifyQuestStatisticsSettlement() {
+        if (finished.get()) return;
+        Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
+            if (finished.get()) return;
+            try {
+                final var quests = new hu.taliann.icesmp.playerprofile.application.PlayerProfileQuestStore();
+                final var statistics = new hu.taliann.icesmp.playerprofile.application.PlayerProfileStatisticsStore();
+                quests.accept(fixtureOwner, "native_fixture").thenCompose(accepted -> {
+                    check(Boolean.TRUE.equals(accepted) && !finished.get(), "NATIVE_QUEST_ACCEPTANCE");
+                    return quests.complete(fixtureOwner, "native_fixture", System.currentTimeMillis(), 0);
+                }).thenCompose(receipt -> {
+                    check(receipt.committed() && !finished.get(), "NATIVE_QUEST_ENTITLEMENT");
+                    return quests.settleReward(fixtureOwner, receipt.receiptId()).thenCompose(settled -> {
+                        check(Boolean.TRUE.equals(settled) && !finished.get(), "NATIVE_QUEST_SETTLEMENT");
+                        return quests.settleReward(fixtureOwner, receipt.receiptId());
+                    });
+                }).whenComplete((replayed, failure) -> {
+                    if (failure != null) { failed(failure); return; }
+                    if (finished.get()) return;
+                    try {
+                        check(Boolean.FALSE.equals(replayed) && quests.pendingRewards(fixtureOwner).isEmpty()
+                                && statistics.read(fixtureOwner, "quests-completed") == 1, "NATIVE_QUEST_STATISTICS_REPLAY");
+                        plugin.getLogger().info("ICESMP_QUEST_STATISTICS_RUNTIME_PROBE_PASS scope=offline_profile_atomic_settlement");
+                        finish(true, "NATIVE_LIFECYCLE_AND_REWARD");
+                    } catch (Throwable invalid) { failed(invalid); }
+                });
+            } catch (Throwable invalid) { failed(invalid); }
+        });
     }
     private void later(UUID id, long ticks, Runnable action) {
         final var entity = Bukkit.getEntity(id);

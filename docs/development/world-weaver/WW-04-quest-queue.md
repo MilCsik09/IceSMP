@@ -65,3 +65,14 @@ not demonstrate populated player queues, disconnect/reconnect or inventory deliv
 Those connected-player gates remain required, alongside the already tracked canonical
 item hand-in/outbox, source-lineage and other domain integrations. No full phase,
 zero-leak, merge-ready or production-ready verdict is asserted.
+
+## Exact queue checkpoint CI
+
+Head `23abf8680e912f9616b14f683294ba29595a8c8a`, tree
+`9e9ebfc3b65fe1906ca532ef6fd568115c1e0636`, run
+[34138819267](https://github.com/MilCsik09/IceSMP/actions/runs/34138819267):
+native Paper 101795915481 / Folia 101795915467 and artifact Paper 101795915625 /
+Folia 101795915246 passed. Verification 101795915527 passed queue 1083 and quest
+169 assertions; only inherited `trashSpriteAssetAudit` failed. Resource pack
+34138819282 and Trash hardening 34138819308 passed. Native probe scope remains
+PvE/artifact/offline-profile settlement, not populated player quest sessions.

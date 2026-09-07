@@ -4009,7 +4009,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/QuestManager.java",
       "domain": "knowledge",
-      "source_sha256": "1400793b3092246b8af1ebcd45cc51c27936f27eb748ea8810f46d6361d16d97",
+      "source_sha256": "d72d4855e3fb32e10e63bb95d90c552292a5b7b0c36f08eaf84f4b79bc8803cf",
       "public_methods": [
         "QuestMeta",
         "abandon",
@@ -4595,7 +4595,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/StatsManager.java",
       "domain": "knowledge",
-      "source_sha256": "71da20f4113d1b734d4e63c7859290e96116a365b8876ac813a20aa538dd2594",
+      "source_sha256": "8539edb58ba1d23f037dca1b5b81df8cc2e9fc0521572b40ee7fddcb698023db",
       "public_methods": [
         "Entry",
         "findPlayerIdByName",
@@ -5250,7 +5250,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileQuestStore.java",
       "domain": "knowledge",
-      "source_sha256": "0c6a3a0a9b206b112df5e64d60d668ad920ec38a731d1e651b0252e887dc8073",
+      "source_sha256": "a6ca09e1d7ebe257b2fc520d0c0cb0121653e356e10c48f8c30ed8f6f6767f54",
       "public_methods": [
         "CompletionReceipt",
         "State",
@@ -5384,7 +5384,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileStatisticsStore.java",
       "domain": "knowledge",
-      "source_sha256": "c6e405f5ba4f5d0f13cacc5a9418950d2dbc9a861b091dd6f3833570ecc0c54a",
+      "source_sha256": "3119186f253cda82a2a93eebacebd5830dbbbe136983d0544fadb6e0534101db",
       "public_methods": [
         "CounterSnapshot",
         "LeaderboardSnapshot",

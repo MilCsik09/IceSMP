@@ -69,6 +69,7 @@ jobs:
         run: |
           grep -F 'ICESMP_PVE_CONTROL_RUNTIME_PROBE_PASS' build/pve-control-runtime.log
           grep -F 'ICESMP_KNOWLEDGE_REWARD_RUNTIME_PROBE_PASS scope=offline_profile_currency_settlement' build/pve-control-runtime.log
+          grep -F 'ICESMP_QUEST_STATISTICS_RUNTIME_PROBE_PASS scope=offline_profile_atomic_settlement' build/pve-control-runtime.log
           grep -F 'Disabling IceSMP' build/pve-control-runtime.log
           ! grep -F 'ICESMP_PVE_CONTROL_RUNTIME_PROBE_FAIL' build/pve-control-runtime.log
           ! grep -E '(^|\]) (SEVERE|ERROR)' build/pve-control-runtime.log
