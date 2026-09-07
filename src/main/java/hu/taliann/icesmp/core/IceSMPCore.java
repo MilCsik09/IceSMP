@@ -1420,6 +1420,8 @@ public final class IceSMPCore {
                     + "and persistent-store writes to protect the last durable state.");
             return;
         }
+        // Stop new quest work; already entered profile writes drain through the canonical repository.
+        shutdownStep("questManager", () -> questManager.shutdown());
         if (moderationExpiryTask != null) {
             moderationExpiryTask.cancel();
             moderationExpiryTask = null;

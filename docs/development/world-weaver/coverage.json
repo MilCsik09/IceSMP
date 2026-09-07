@@ -4009,7 +4009,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/QuestManager.java",
       "domain": "knowledge",
-      "source_sha256": "a7271be4d926d94a07f9441b9b9f64218fe51a7d7f8d84be263d7bb26586fb9f",
+      "source_sha256": "1400793b3092246b8af1ebcd45cc51c27936f27eb748ea8810f46d6361d16d97",
       "public_methods": [
         "QuestMeta",
         "abandon",
@@ -4093,6 +4093,7 @@
         "setSpecializationManager",
         "setStatsManager",
         "setTracked",
+        "shutdown",
         "turnIn"
       ]
     },

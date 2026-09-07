@@ -89,3 +89,14 @@ chain/stats/guild follow-ups need their domain receipt/transaction closure. Thes
 active scope obligations, not exceptions to the final zero-leak or Folia requirements.
 
 No FULL_PROVIDER, zero-leak, merge-ready or production verdict is claimed.
+
+## Exact quest checkpoint CI
+
+Head `f8356e5a88224c3697b7636902c1e9f9f62a65bd`, tree
+`bd88866f897425b2f0a4f83403bd1624d19298e8`, run
+[34137754240](https://github.com/MilCsik09/IceSMP/actions/runs/34137754240):
+native Paper 101792575672 / Folia 101792575554 and artifact Paper 101792575681 /
+Folia 101792575582 passed. Verification 101792575356 passed the new 154-assertion
+quest admission suite and failed only inherited `trashSpriteAssetAudit`. The native
+jobs retain their PvE/artifact/offline-knowledge scope; they do not prove connected-player
+quest events. Queue pressure/retirement closure is tracked in `WW-04-quest-queue.md`.

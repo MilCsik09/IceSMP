@@ -27,6 +27,7 @@ public final class WeaverQuestRewardRegressionSuite {
                 ? RewardDecision.deny("QUARANTINED") : RewardDecision.allow())) {
             queuedAdmissions();
             durableReadinessAndAcceptedRecovery();
+            queuedProfileRetirement();
             completionCrashBoundaries();
         }
         unboundRefusal();
@@ -108,6 +109,36 @@ public final class WeaverQuestRewardRegressionSuite {
             check(!h.finish(h.store.settleReward(PLAYER, receipt)) && bytes(root).equals(settled), "settlement replay changed a completed receipt");
             expect(IllegalStateException.class, () -> h.finish(h.store.prepareRewardComponents(PLAYER, "missing|100", components)));
         } finally { TAINTED.clear(); QUARANTINED.set(false); delete(root); }
+    }
+
+    private static void queuedProfileRetirement() throws Exception {
+        final Path root = Files.createTempDirectory("weaver-quest-retirement-");
+        try (var h = new Harness(root, YamlPlayerProfileRepository.FaultInjector.none())) {
+            h.load(); h.finish(h.store.accept(PLAYER, "active"));
+            final var queue = new hu.taliann.icesmp.quest.QuestMutationQueue();
+            final var admitted = queue.submit(PLAYER, () -> h.store.setProgress(PLAYER, "active", 0, 1).thenApply(ignored -> null));
+            final var unentered = queue.submit(PLAYER, () -> { throw new AssertionError("retired quest completion entered"); });
+            final var retired = queue.retire(PLAYER);
+            expect(RejectedExecutionException.class, () -> unentered.toCompletableFuture().join());
+            check(!retired.toCompletableFuture().isDone(), "profile queue retired before the real WAL acknowledgement");
+            h.finish(admitted); retired.toCompletableFuture().join();
+            check(h.store.progress(PLAYER, "active", 0) == 1 && h.store.pendingRewards(PLAYER).isEmpty(),
+                    "retirement lost an entered progress write or synthesized queued entitlement");
+            h.repository.invalidate(PLAYER); h.load();
+            check(h.store.active(PLAYER).contains("active") && h.store.progress(PLAYER, "active", 0) == 1,
+                    "retired progress did not survive canonical reload");
+            h.finish(h.store.setProgress(PLAYER, "active", 1, 2));
+            final var accepted = queue.submit(PLAYER, () -> h.complete().thenApply(ignored -> null));
+            final var closing = queue.close();
+            check(!closing.toCompletableFuture().isDone(), "shutdown acknowledged before the real completion WAL");
+            h.finish(accepted); closing.toCompletableFuture().join();
+            check(h.store.completed(PLAYER).contains("active") && h.store.pendingRewards(PLAYER).size() == 1,
+                    "shutdown discarded or replayed an entered canonical completion");
+            final var disk = bytes(root);
+            expect(RejectedExecutionException.class, () -> queue.submit(PLAYER,
+                    () -> h.store.accept(PLAYER, "late").thenApply(ignored -> null)).toCompletableFuture().join());
+            check(bytes(root).equals(disk), "post-shutdown work reached profile persistence");
+        } finally { delete(root); }
     }
 
     private static void completionCrashBoundaries() throws Exception {

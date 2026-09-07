@@ -102,9 +102,8 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
     /** Rebuildable online projection; durable truth remains QuestSection. */
     private final ConcurrentMap<UUID, QuestMirror> mirrors = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, CompletableFuture<Void>> mutationTails =
-            new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, Object> playerLocks = new ConcurrentHashMap<>();
+    private final hu.taliann.icesmp.quest.QuestMutationQueue mutations = new hu.taliann.icesmp.quest.QuestMutationQueue();
+    private final Object[] playerLocks = java.util.stream.IntStream.range(0, 64).mapToObj(i -> new Object()).toArray();
     private final QuestChoiceRegistry choiceRegistry = new QuestChoiceRegistry();
     /**
      * Validált definíció-pillanatkép: minden definíció-olvasás ezen megy át, és a csere
@@ -1387,6 +1386,12 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             final CompletableFuture<Void> result = new CompletableFuture<>();
             finishCompletion(player, quest, receipt, true, result);
         }
+        // Logout can discard an unentered auto-completion after its progress already committed.
+        // Re-assess canonical readiness; do not synthesize a completion or an earned receipt.
+        for (final String questId : getReadyQuests(player)) {
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy != null && policy.autoTurnIn()) onObjectivesComplete(player, questId);
+        }
     }
 
     private void finishCompletion(final Player player, final ConfigurationSection quest,
@@ -1839,34 +1844,21 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     private Object lock(final UUID playerId) {
-        return playerLocks.computeIfAbsent(playerId, ignored -> new Object());
+        return playerLocks[Math.floorMod(playerId.hashCode(), playerLocks.length)];
     }
 
     private void enqueue(final UUID playerId, final Supplier<CompletionStage<Void>> work) {
-        synchronized (lock(playerId)) {
-            final CompletableFuture<Void> previous = mutationTails.get(playerId);
-            final CompletableFuture<Void> next = new CompletableFuture<>();
-            mutationTails.put(playerId, next);
-            next.whenComplete((value, failure) -> {
-                synchronized (lock(playerId)) {
-                    if (failure != null) mirrors.remove(playerId);
-                    mutationTails.remove(playerId, next);
-                }
-                if (failure != null && !(unwrap(failure) instanceof RewardEligibilityDeniedException)) {
-                    plugin.getLogger().severe("PlayerProfile quest mutation failed for "
-                            + playerId + ": " + rootMessage(failure));
-                }
-            });
-            final CompletionStage<Void> start = previous == null
-                    ? CompletableFuture.completedFuture(null) : previous;
-            start.thenCompose(ignored -> {
-                try { return Objects.requireNonNull(work.get()); }
-                catch (final Throwable failure) { return CompletableFuture.<Void>failedFuture(failure); }
-            }).whenComplete((value, failure) -> {
-                if (failure == null) next.complete(null);
-                else next.completeExceptionally(unwrap(failure));
-            });
-        }
+        final QuestMirror speculative = mirrors.get(playerId);
+        mutations.submit(playerId, work).whenComplete((value, failure) -> {
+            if (failure == null) return;
+            if (speculative != null) mirrors.remove(playerId, speculative);
+            final Throwable root = unwrap(failure);
+            if (!(root instanceof RewardEligibilityDeniedException)
+                    && !(root instanceof java.util.concurrent.RejectedExecutionException)) {
+                plugin.getLogger().severe("PlayerProfile quest mutation failed for "
+                        + playerId + ": " + rootMessage(failure));
+            }
+        });
     }
 
     private static RewardContext captureReward(final Player player, final RewardChannel channel) {
@@ -1985,15 +1977,16 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     @Override
     public void clearPlayerState(final UUID playerId) {
         choiceRegistry.invalidate(playerId);
-        final CompletableFuture<Void> tail = mutationTails.get(playerId);
-        if (tail == null) {
-            mirrors.remove(playerId);
-            playerLocks.remove(playerId);
-        } else {
-            tail.whenComplete((ignored, failure) -> {
-                mirrors.remove(playerId);
-                playerLocks.remove(playerId);
-            });
-        }
+        final QuestMirror retired = mirrors.get(playerId);
+        mutations.retire(playerId).whenComplete((ignored, failure) -> {
+            if (retired != null) mirrors.remove(playerId, retired);
+        });
+    }
+
+    /** Close admission without blocking an owner thread or cancelling an entered profile write. */
+    public CompletionStage<Void> shutdown() {
+        final CompletionStage<Void> drained = mutations.close();
+        drained.whenComplete((ignored, failure) -> mirrors.clear());
+        return drained;
     }
 }
