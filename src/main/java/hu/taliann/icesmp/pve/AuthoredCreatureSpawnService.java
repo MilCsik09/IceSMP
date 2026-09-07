@@ -90,7 +90,6 @@ public final class AuthoredCreatureSpawnService {
     private final NamespacedKey summonOwnerKey;
     private final ConcurrentHashMap<UUID, java.util.Set<UUID>> activeSummonIds =
             new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Mob> activeSummonMobs = new ConcurrentHashMap<>();
 
     public AuthoredCreatureSpawnService(final JavaPlugin plugin, final MobTemplateRegistry templates,
                                         final MobScalingManager scaling,
@@ -126,7 +125,9 @@ public final class AuthoredCreatureSpawnService {
         if (entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
             throw new IllegalArgumentException("authored creature is not a spawnable Mob: " + type);
         }
-        final Mob mob = (Mob) location.getWorld().spawn(location, entityClass.asSubclass(Mob.class));
+        if (!Bukkit.isOwnedByCurrentRegion(location) || !location.getWorld().isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4))
+            throw new IllegalStateException("Authored spawn owner and loaded chunk required");
+        final Mob mob = location.getWorld().spawn(location, entityClass.asSubclass(Mob.class), created -> stampOrigin(created, request));
         EventSpawnGuard.prepare(mob);
         final boolean genericReward = request.rewardOwner() == RewardOwner.GENERIC;
         if (template != null) {
@@ -140,46 +141,48 @@ public final class AuthoredCreatureSpawnService {
             scaling.applyEncounterModifier(mob, request.participantHealthMultiplier(),
                     request.participantDamageMultiplier(), request.sourceId() + ":participants");
         }
-        final var pdc = mob.getPersistentDataContainer();
-        pdc.set(sourceKey, PersistentDataType.STRING, request.sourceId());
-        pdc.set(encounterKey, PersistentDataType.STRING, request.encounterId());
-        pdc.set(roleKey, PersistentDataType.STRING, request.role());
-        pdc.set(rewardOwnerKey, PersistentDataType.STRING, request.rewardOwner().name());
         if (request.summonOwner() != null) {
-            pdc.set(summonOwnerKey, PersistentDataType.STRING, request.summonOwner().toString());
-            activeSummonIds.computeIfAbsent(request.summonOwner(),
-                            ignored -> ConcurrentHashMap.newKeySet())
-                    .add(mob.getUniqueId());
-            activeSummonMobs.put(mob.getUniqueId(), mob);
+            final UUID child = mob.getUniqueId();
+            activeSummonIds.compute(request.summonOwner(), (owner, ids) -> {
+                if (ids == null) ids = ConcurrentHashMap.newKeySet();
+                ids.add(child); return ids;
+            });
         }
         if (request.transientEntity()) {
             mob.setPersistent(false);
             mob.setRemoveWhenFarAway(false);
             TransientEntities.register(plugin, mob);
         }
+        final UUID entityId = mob.getUniqueId(), parentId = request.summonOwner();
         if (request.lifespanTicks() > 0L) {
-            mob.getScheduler().runDelayed(plugin, task -> remove(mob), () -> forget(mob),
-                    request.lifespanTicks());
+            if (mob.getScheduler().runDelayed(plugin, task -> remove(entityId, parentId), () -> forget(entityId, parentId), request.lifespanTicks()) == null)
+                forget(entityId, parentId);
         }
         abilities.attach(mob);
-        final Location spawnOwner = location.clone();
-        plugin.getServer().getRegionScheduler().runDelayed(plugin, spawnOwner, task -> {
-            if (!mob.isValid() || mob.isDead()) return;
-            if (Bukkit.isOwnedByCurrentRegion(mob)) {
-                abilities.refreshProfile(mob);
-            } else {
-                mob.getScheduler().run(plugin, owned -> abilities.refreshProfile(mob), null);
-            }
-        }, 1L);
+        // A creature may move before refresh; each continuation resolves its UUID on that entity's owner.
+        if (mob.getScheduler().runDelayed(plugin, task -> {
+            final Mob owned = ownedMob(entityId);
+            if (owned != null) abilities.refreshProfile(owned);
+        }, () -> forget(entityId, parentId), 1L) == null) forget(entityId, parentId);
         CombatTelemetry.record("authored_template_spawn", template == null ? type.name() : template.mobId());
         return mob;
+    }
+
+    /** Spawn consumer runs before world activation, so causal/reward identity exists before spawn listeners. */
+    private void stampOrigin(final Mob mob, final Request request) {
+        if (request.transientEntity()) mob.setPersistent(false);
+        final var pdc = mob.getPersistentDataContainer();
+        pdc.set(sourceKey, PersistentDataType.STRING, request.sourceId());
+        pdc.set(encounterKey, PersistentDataType.STRING, request.encounterId());
+        pdc.set(roleKey, PersistentDataType.STRING, request.role());
+        pdc.set(rewardOwnerKey, PersistentDataType.STRING, request.rewardOwner().name());
+        if (request.summonOwner() != null) pdc.set(summonOwnerKey, PersistentDataType.STRING, request.summonOwner().toString());
     }
 
     public void cleanupSummons(final UUID owner) {
         final java.util.Set<UUID> ids = activeSummonIds.remove(owner);
         if (ids == null) return;
         for (final UUID id : java.util.Set.copyOf(ids)) {
-            activeSummonMobs.remove(id);
             TransientEntities.removeById(plugin, id);
         }
     }
@@ -199,19 +202,32 @@ public final class AuthoredCreatureSpawnService {
 
     private void setSummonsPaused(final Mob owner, final boolean paused) {
         if (owner == null) return;
-        final java.util.Set<UUID> ids = activeSummonIds.get(owner.getUniqueId());
+        final UUID ownerId = owner.getUniqueId();
+        final java.util.Set<UUID> ids = activeSummonIds.get(ownerId);
         if (ids == null) return;
         for (final UUID id : java.util.Set.copyOf(ids)) {
-            final Mob add = activeSummonMobs.get(id);
-            if (add == null) continue;
-            add.getScheduler().run(plugin, task -> {
-                if (!add.isValid()) return;
-                add.setAI(!paused);
-                add.setInvulnerable(paused);
+            final Entity handle = Bukkit.getEntity(id);
+            if (handle == null) { forget(id, ownerId); continue; }
+            if (handle.getScheduler().run(plugin, task -> {
+                final Mob add = ownedMob(id);
+                if (add == null) { forget(id, ownerId); return; }
+                // Parent cleanup may have retired this group while the child hop was queued.
+                final var current = activeSummonIds.get(ownerId);
+                if (current == null || !current.contains(id)) return;
+                add.setAI(!paused); add.setInvulnerable(paused);
                 if (paused) add.setTarget(null);
                 if (paused) abilities.pause(add); else abilities.resume(add);
-            }, () -> activeSummonMobs.remove(id, add));
+            }, () -> forget(id, ownerId)) == null) forget(id, ownerId);
         }
+    }
+
+    public static java.util.Optional<UUID> summonOrigin(final Entity entity) {
+        if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) throw new IllegalStateException("Authored origin owner required");
+        final String raw = entity.getPersistentDataContainer().get(NamespacedKey.fromString("icesmp:authored_summon_owner"), PersistentDataType.STRING);
+        if (raw == null) return java.util.Optional.empty();
+        final UUID id = UUID.fromString(raw);
+        if (!id.toString().equals(raw)) throw new IllegalArgumentException("Invalid authored summon origin");
+        return java.util.Optional.of(id);
     }
 
     public static RewardOwner rewardOwner(final Entity entity) {
@@ -223,23 +239,20 @@ public final class AuthoredCreatureSpawnService {
         catch (final IllegalArgumentException invalid) { return RewardOwner.NONE; }
     }
 
-    private void remove(final Mob mob) {
-        forget(mob);
-        if (mob.isValid()) mob.remove();
+    private static Mob ownedMob(final UUID id) {
+        final Entity entity = Bukkit.getEntity(id);
+        if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity) || !(entity instanceof Mob mob) || !mob.isValid() || mob.isDead()) return null;
+        return mob;
     }
-
-    private void forget(final Mob mob) {
-        activeSummonMobs.remove(mob.getUniqueId(), mob);
-        final String raw = mob.getPersistentDataContainer().get(summonOwnerKey, PersistentDataType.STRING);
-        if (raw == null) return;
-        try {
-            final UUID owner = UUID.fromString(raw);
-            final java.util.Set<UUID> ids = activeSummonIds.get(owner);
-            if (ids != null) {
-                ids.remove(mob.getUniqueId());
-                if (ids.isEmpty()) activeSummonIds.remove(owner, ids);
-            }
-        } catch (final IllegalArgumentException ignored) { }
+    private void remove(final UUID id, final UUID owner) {
+        forget(id, owner);
+        final Mob mob = ownedMob(id);
+        if (mob != null) mob.remove();
+    }
+    /** Retired callbacks have no live owner: cleanup is only an immutable identity/index operation. */
+    private void forget(final UUID id, final UUID owner) {
+        if (owner == null) return;
+        activeSummonIds.computeIfPresent(owner, (key, ids) -> { ids.remove(id); return ids.isEmpty() ? null : ids; });
     }
 
     private static String id(final String raw, final String field) {

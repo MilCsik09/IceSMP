@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.managers.StatsManager;
+import hu.taliann.icesmp.integrity.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -16,9 +17,9 @@ import org.bukkit.event.entity.PlayerDeathEvent;
  * <p>Folia note: both events run on the DYING entity's own region thread. We
  * only ever read the killer's {@link java.util.UUID} off {@code getKiller()} —
  * the killer entity itself is never touched (no PDC/inventory read, no
- * {@code sendMessage}). {@link StatsManager}'s record* methods are pure
- * concurrent (atomic) map operations, so calling them here needs no scheduler
- * hop and is safe from any region thread.
+ * {@code sendMessage}). Immutable source context then reaches the canonical
+ * asynchronous profile CAS; source capture refuses unavailable foreign entities.
+ * No live entity or event is retained through profile persistence.
  *
  * <p>Registered at {@link EventPriority#MONITOR}: purely observational, never
  * affects death/combat resolution.
@@ -33,11 +34,13 @@ public final class StatsCombatListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerDeath(final PlayerDeathEvent event) {
-        statsManager.recordDeath(event.getEntity().getUniqueId());
+        final RewardSourceContext source;
+        try { source = BukkitRewardSources.death(RewardChannel.TRACKING_PROGRESS, event.getEntity()); }
+        catch (RuntimeException | LinkageError unavailable) { return; }
+        final java.util.UUID victimId = event.getEntity().getUniqueId();
+        statsManager.recordDeath(victimId, source.forRecipient(victimId));
         final Player killer = event.getEntity().getKiller();
-        if (killer != null) {
-            statsManager.recordKill(killer.getUniqueId());
-        }
+        if (killer != null) statsManager.recordKill(killer.getUniqueId(), source.forRecipient(killer.getUniqueId()));
     }
 
     /**
@@ -58,7 +61,7 @@ public final class StatsCombatListener implements Listener {
             statsManager.recordMobKill(kill.killerId(),
                     event.getEntity() instanceof org.bukkit.entity.Monster
                             ? hu.taliann.icesmp.managers.BestiaryManager.entryId(event.getEntity())
-                            : null);
+                            : null, kill.rewardContext(RewardChannel.TRACKING_PROGRESS));
         }
     }
 }

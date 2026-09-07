@@ -17,7 +17,7 @@ public final class PlayerProfileWhisperIntegrityRegressionSuite {
         final var transactions = new YamlPlayerProfileTransactionManager(repository);
         final var service = new PlayerProfileService(repository, transactions);
         final var authority = PlayerProfileAuthority.install(service, repository, transactions);
-        try {
+        try (var rewardBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(context -> hu.taliann.icesmp.integrity.RewardDecision.allow())) {
             final var clock = new AtomicLong(10_000L);
             final var whispers = new PlayerProfileWhisperStore(clock::get);
             final var factions = new PlayerProfileFactionStore();

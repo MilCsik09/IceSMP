@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.playerprofile.application;
 
+import hu.taliann.icesmp.integrity.RewardChannel;
+import hu.taliann.icesmp.integrity.RewardContext;
 import hu.taliann.icesmp.playerprofile.domain.PlayerProfileSnapshot;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection;
@@ -47,9 +49,16 @@ public final class PlayerProfileStatisticsStore {
      */
     public CompletionStage<Long> recordMobKill(final UUID playerId, final String speciesEntry,
                                                final long nowEpochMillis) {
+        return recordMobKill(playerId, speciesEntry, nowEpochMillis, RewardContext.recipientOnly(RewardChannel.TRACKING_PROGRESS, playerId));
+    }
+
+    public CompletionStage<Long> recordMobKill(final UUID playerId, final String speciesEntry,
+                                               final long nowEpochMillis, final RewardContext reward) {
+        reward.require(RewardChannel.TRACKING_PROGRESS, playerId);
+        if (nowEpochMillis <= 0) throw new IllegalArgumentException("invalid kill time");
         final String species = speciesEntry == null ? null : validateSpecies(speciesEntry);
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.STATISTICS, StatisticsSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.STATISTICS, StatisticsSection.class, reward, current -> {
                     final LinkedHashMap<String, Long> lifetime = new LinkedHashMap<>(current.lifetime());
                     lifetime.merge(MOB_KILLS, 1L, Math::addExact);
                     long speciesAfter = 0L;
@@ -72,9 +81,14 @@ public final class PlayerProfileStatisticsStore {
     }
 
     public CompletionStage<Long> increment(final UUID playerId, final String key) {
+        return increment(playerId, key, RewardContext.recipientOnly(RewardChannel.TRACKING_PROGRESS, playerId));
+    }
+
+    public CompletionStage<Long> increment(final UUID playerId, final String key, final RewardContext reward) {
+        reward.require(RewardChannel.TRACKING_PROGRESS, playerId);
         final String normalized = validateKey(key);
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.STATISTICS, StatisticsSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.STATISTICS, StatisticsSection.class, reward, current -> {
                     final long before = current.lifetime().getOrDefault(normalized, 0L);
                     final long after = Math.addExact(before, 1L);
                     final LinkedHashMap<String, Long> lifetime = new LinkedHashMap<>(current.lifetime());
@@ -88,12 +102,19 @@ public final class PlayerProfileStatisticsStore {
     public CompletionStage<LeaderboardSnapshot> snapshot(final UUID playerId,
                                                           final int level,
                                                           final double wealth) {
+        return snapshot(playerId, level, wealth, RewardContext.recipientOnly(RewardChannel.TRACKING_PROGRESS, playerId));
+    }
+
+    public CompletionStage<LeaderboardSnapshot> snapshot(final UUID playerId,
+                                                          final int level,
+                                                          final double wealth, final RewardContext reward) {
+        reward.require(RewardChannel.TRACKING_PROGRESS, playerId);
         if (level < 0 || !Double.isFinite(wealth) || wealth < 0.0D) {
             throw new IllegalArgumentException("invalid leaderboard snapshot");
         }
         final long wealthMilli = Math.round(wealth * SCALE);
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.STATISTICS, StatisticsSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.STATISTICS, StatisticsSection.class, reward, current -> {
                     final long oldLevel = current.lifetime().getOrDefault(LEVEL_SNAPSHOT, 0L);
                     final long oldWealth = current.lifetime().getOrDefault(WEALTH_MILLI_SNAPSHOT, 0L);
                     final LeaderboardSnapshot result = new LeaderboardSnapshot(level, wealthMilli);

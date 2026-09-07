@@ -146,6 +146,13 @@ public final class PlayerProfileAuthority {
         return service.mutateSectionConditional(playerId, sectionId, type, mutation);
     }
 
+    public <T extends PlayerProfileSection, R> CompletionStage<R> mutateRewardSectionConditional(
+            final UUID playerId, final ProfileSectionId sectionId, final Class<T> type,
+            final hu.taliann.icesmp.integrity.RewardContext reward,
+            final Function<T, PlayerProfileService.ConditionalMutation<T, R>> mutation) {
+        return service.mutateRewardSectionConditional(playerId, sectionId, type, reward, mutation);
+    }
+
     public <T extends PlayerProfileSection> CompletionStage<PlayerProfileSnapshot> mutateExtensions(
             final UUID playerId,
             final ProfileSectionId sectionId,

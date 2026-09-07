@@ -560,6 +560,7 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
                         * (1.0D + classBonusPercent / 100.0D)
                         * gearPowerMultiplier);
 
+        final java.util.List<hu.taliann.icesmp.integrity.RewardSource> activitySources = captureActivitySources(player);
         final CostReservation reservation = reserveCost(player, selected, useResource);
         final CastOutcome outcome;
         try {
@@ -631,10 +632,17 @@ public final class AbilityCatalystListener implements Listener, PlayerStateClean
         lastCastSpell.put(playerId, selected.getId());
         lastCastTime.put(playerId, now);
         final hu.taliann.icesmp.managers.StatsManager stats = statsManager;
-        if (stats != null) stats.recordSpellCast(playerId);
+        if (stats != null && !activitySources.isEmpty()) stats.recordSpellCast(playerId,
+                new hu.taliann.icesmp.integrity.RewardContext(hu.taliann.icesmp.integrity.RewardChannel.TRACKING_PROGRESS, playerId, activitySources));
         final hu.taliann.icesmp.managers.QuestManager quests = questManager;
-        if (quests != null) quests.handleSpellCast(player, selected.getId());
+        if (quests != null && !activitySources.isEmpty()) quests.handleSpellCast(player, selected.getId(),
+                new hu.taliann.icesmp.integrity.RewardContext(hu.taliann.icesmp.integrity.RewardChannel.QUEST_PROGRESS, playerId, activitySources));
         return SlotCastStatus.SUCCESS;
+    }
+
+    private static java.util.List<hu.taliann.icesmp.integrity.RewardSource> captureActivitySources(final Player player) {
+        try { return hu.taliann.icesmp.integrity.BukkitRewardSources.causal(player); }
+        catch (RuntimeException | LinkageError unavailable) { return java.util.List.of(); }
     }
 
     private final class CostReservation {

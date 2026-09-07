@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.dev.weaver.integrity;
 
 import hu.taliann.icesmp.dev.weaver.api.IntegrityMode;
+import hu.taliann.icesmp.dev.weaver.api.DeveloperInfluence;
 import hu.taliann.icesmp.dev.weaver.persistence.WeaverJournalState;
 import hu.taliann.icesmp.dev.weaver.subject.AreaRef;
 import hu.taliann.icesmp.integrity.RewardSource;
@@ -8,6 +9,10 @@ import java.util.*;
 
 /** Built on the storage coordinator, then published with its journal generation; reward paths only read it. */
 public final class WeaverInfluenceIndex {
+    public record SourceEvidence(Set<DeveloperInfluence> origins, boolean uncertain) {
+        public SourceEvidence { origins = Set.copyOf(origins); }
+        public boolean clean() { return !uncertain && origins.isEmpty(); }
+    }
     private record Evidence(Optional<WeaverInfluenceRecord> record, Optional<AreaRef> area) {
         boolean active(final long now) { return record.isEmpty() || record.get().quarantines(now); }
     }
@@ -43,6 +48,25 @@ public final class WeaverInfluenceIndex {
         final int x = (int) Math.floor(location.x()), y = (int) Math.floor(location.y()), z = (int) Math.floor(location.z());
         return spatial.getOrDefault(new Chunk(location.world(), x >> 4, z >> 4), List.of()).stream()
                 .anyMatch(evidence -> evidence.active(now) && evidence.area().orElseThrow().shape().contains(x, y, z));
+    }
+    /** Detached source lineage for durable derived effects; a PREPARED intent is uncertainty, not an applied origin. */
+    public SourceEvidence trace(final Collection<RewardSource> sources, final long now) {
+        if (now < 0 || sources.isEmpty() || sources.size() > 64) throw new IllegalArgumentException("Influence trace bounds");
+        final Set<DeveloperInfluence> origins = new HashSet<>(); boolean uncertain = false;
+        for (final RewardSource source : sources) {
+            final List<Evidence> evidence = new ArrayList<>(exact.getOrDefault(normalize(source), List.of()));
+            if (source instanceof RewardSource.Location location) {
+                evidence.addAll(exact.getOrDefault(new RewardSource.World(location.world()), List.of()));
+                final int x = (int) Math.floor(location.x()), y = (int) Math.floor(location.y()), z = (int) Math.floor(location.z());
+                spatial.getOrDefault(new Chunk(location.world(), x >> 4, z >> 4), List.of()).stream()
+                        .filter(value -> value.area().orElseThrow().shape().contains(x, y, z)).forEach(evidence::add);
+            }
+            for (final Evidence value : evidence) if (value.active(now)) {
+                if (value.record().isEmpty()) uncertain = true;
+                else origins.add(value.record().get().influence());
+            }
+        }
+        return new SourceEvidence(origins, uncertain);
     }
     private static RewardSource normalize(final RewardSource source) {
         if (source instanceof RewardSource.Player player) return new RewardSource.Entity(player.id());

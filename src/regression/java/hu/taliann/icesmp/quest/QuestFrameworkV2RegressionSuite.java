@@ -468,7 +468,8 @@ public final class QuestFrameworkV2RegressionSuite {
         final PlayerProfileAuthority authority = PlayerProfileAuthority.install(
                 service, repository, transactions);
         boolean firstUninstalled = false;
-        try {
+        try (var rewards = hu.taliann.icesmp.integrity.GameplayRewardGate.install(
+                context -> hu.taliann.icesmp.integrity.RewardDecision.allow())) {
             repository.loadSnapshot(PLAYER).toCompletableFuture().join();
             final PlayerProfileQuestStore store = new PlayerProfileQuestStore();
 
@@ -639,7 +640,7 @@ public final class QuestFrameworkV2RegressionSuite {
                         && manager.contains("Failed to load versioned custom-quests.yml"),
                 "extensible custom quest content is versioned and fails closed");
         check(manager.contains("handleSpellCast(final Player player, final String spellId)")
-                        && manager.contains("forEachActive(player, \"CAST_SPELLS\"")
+                        && manager.contains("forEachActive(player, reward, \"CAST_SPELLS\"")
                         && manager.contains("quest-requires-specialization"),
                 "capstone trial progress and specialization gate share the central QuestManager");
 

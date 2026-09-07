@@ -47,7 +47,7 @@ public final class PartyListener implements Listener {
                 kill.victimWorldId(), kill.victimX(), kill.victimY(), kill.victimZ(),
                 partyManager.getShareRadius(), nearby -> {
                     if (nearby.size() < 2) {
-                        kill.runOnKiller(plugin, killer -> killer.giveExp(xp));
+                        kill.runOnKiller(plugin, hu.taliann.icesmp.integrity.RewardChannel.VANILLA_XP, killer -> killer.giveExp(xp));
                         return;
                     }
                     final int share = xp / nearby.size();
@@ -60,8 +60,14 @@ public final class PartyListener implements Listener {
                         final int amount = share
                                 + (memberId.equals(kill.killerId()) ? remainder : 0);
                         if (amount > 0) {
-                            member.getScheduler().run(plugin,
-                                    task -> member.giveExp(amount), null);
+                            final var reward = new hu.taliann.icesmp.integrity.RewardContext(
+                                    hu.taliann.icesmp.integrity.RewardChannel.VANILLA_XP, memberId,
+                                    kill.rewardContext(hu.taliann.icesmp.integrity.RewardChannel.VANILLA_XP).sources());
+                            member.getScheduler().run(plugin, task -> {
+                                final Player current = Bukkit.getPlayer(memberId);
+                                if (current != null && Bukkit.isOwnedByCurrentRegion(current) && current.isOnline()
+                                        && hu.taliann.icesmp.integrity.GameplayRewardGate.evaluate(reward).allowed()) current.giveExp(amount);
+                            }, null);
                         }
                     }
                 });

@@ -560,7 +560,7 @@ public final class FactionPassiveRegressionSuite {
                         && compactListener.contains("clearTargetIfStillProtected(")
                         && compactListener.contains("if(scheduled==null)"),
                 "delayed cleanup does not revalidate live policy or scheduler rejection");
-        check(compactListener.contains("contentContexts(mob,liveSettings,playerId)")
+        check(compactListener.contains("effectiveContentContexts(mob,liveSettings,playerId)")
                         && compactListener.contains("canAlertDarkUndead("),
                 "queued alert ignores live membership/config/content exclusions");
         check(compactListener.contains(
@@ -591,12 +591,16 @@ public final class FactionPassiveRegressionSuite {
 
         final String membershipManager = read(
                 "src/main/java/hu/taliann/icesmp/managers/FactionManager.java");
-        check(membershipManager.contains("factionStore.assign(playerId, target)")
-                        && membershipManager.contains("projection.put(playerId, committed);")
-                        && membershipManager.indexOf("factionStore.assign(playerId, target)")
-                        < membershipManager.indexOf("projection.put(playerId, committed);")
-                        && membershipManager.indexOf("projection.put(playerId, committed);")
-                        < membershipManager.indexOf("publishMembershipChange(playerId"),
+        final int setterStart = membershipManager.indexOf("public void setFaction(");
+        final int setterEnd = membershipManager.indexOf("public void publishExternalMembershipCommit(", setterStart);
+        check(setterStart >= 0 && setterEnd > setterStart, "membership setter source boundary missing");
+        final String membershipSetter = membershipManager.substring(setterStart, setterEnd);
+        check(membershipSetter.contains("factionStore.assign(playerId, target)")
+                        && membershipSetter.contains("projection.put(playerId, committed);")
+                        && membershipSetter.indexOf("factionStore.assign(playerId, target)")
+                        < membershipSetter.indexOf("projection.put(playerId, committed);")
+                        && membershipSetter.indexOf("projection.put(playerId, committed);")
+                        < membershipSetter.indexOf("publishMembershipChange(playerId"),
                 "membership state or hook can publish before its durable save");
         final String factionStore = read(
                 "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java");

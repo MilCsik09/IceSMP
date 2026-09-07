@@ -84,9 +84,10 @@ public final class DungeonLootListener implements Listener {
         // A közös kapu a miniboss saját lootjára és a kazamata bónuszdropjára is érvényes.
         // A miniboss lifecycle akkor is lezárul és újraindul, ha jutalom nem adható.
         final Player killer = event.getEntity().getKiller();
-        final boolean bossRewardsAllowed = killer == null
+        final boolean bossRewardsAllowed = hu.taliann.icesmp.integrity.BukkitRewardSources.deathAllowed(
+                hu.taliann.icesmp.integrity.RewardChannel.CUSTOM_LOOT, event.getEntity()) && (killer == null
                 || !hu.taliann.icesmp.utils.MobKillUtil.isAfkRewardBlocked(
-                        killer.getUniqueId(), configManager, afkManager);
+                        killer.getUniqueId(), configManager, afkManager));
         if (lootService.handleBossDeath(event.getEntity(), event.getDrops(), bossRewardsAllowed)) {
             return;
         }

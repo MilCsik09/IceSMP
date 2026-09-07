@@ -71,16 +71,18 @@ public final class PetXpListener implements Listener {
         final java.util.UUID victimId = kill.victimId();
         final hu.taliann.icesmp.utils.MobKillUtil.KillContext reward = kill;
         final java.util.UUID creditedCompanionId = killingCompanionId;
-        reward.runOnKiller(plugin, killer -> {
+        reward.runOnKiller(plugin, hu.taliann.icesmp.integrity.RewardChannel.PET_XP, killer -> {
             if (!petManager.canOwnPet(killer)) {
                 return;
             }
             final int xp = Math.max(0, configManager.getInt("pets.companion.xp-per-kill", 2));
             if (creditedCompanionId == null) {
-                petManager.addXpV2(killer, xp, "pet-kill-xp:" + victimId)
+                petManager.addXpV2(killer, xp, "pet-kill-xp:" + victimId,
+                        reward.rewardContext(hu.taliann.icesmp.integrity.RewardChannel.PET_XP))
                         .exceptionally(failure -> false);
             } else {
-                petManager.addXpV2(killer, creditedCompanionId, xp, "pet-kill-xp:" + victimId)
+                petManager.addXpV2(killer, creditedCompanionId, xp, "pet-kill-xp:" + victimId,
+                        reward.rewardContext(hu.taliann.icesmp.integrity.RewardChannel.PET_XP))
                         .exceptionally(failure -> false);
             }
             // Rituálé-kellék dropok: a beszerzés-kihívás forrása (a drop a mob helyén esik).
@@ -108,11 +110,21 @@ public final class PetXpListener implements Listener {
      */
     private void dropAtVictim(final hu.taliann.icesmp.utils.MobKillUtil.KillContext kill,
                               final org.bukkit.inventory.ItemStack item) {
-        final org.bukkit.World world = kill.victimWorld();
-        if (item == null || world == null) {
-            return;
-        }
-        final org.bukkit.Location at = kill.victimLocation();
-        org.bukkit.Bukkit.getRegionScheduler().run(plugin, at, t -> world.dropItemNaturally(at, item));
+        if (item == null || item.getType().isAir()) return;
+        final var at = kill.victimLocation();
+        if (at == null || at.getWorld() == null) return;
+        final java.util.UUID worldId = at.getWorld().getUID();
+        final double x = at.getX(), y = at.getY(), z = at.getZ();
+        final int chunkX = at.getBlockX() >> 4, chunkZ = at.getBlockZ() >> 4;
+        final byte[] bytes = item.serializeAsBytes();
+        final var context = kill.rewardContext(hu.taliann.icesmp.integrity.RewardChannel.CUSTOM_LOOT);
+        org.bukkit.Bukkit.getRegionScheduler().run(plugin, at.getWorld(), chunkX, chunkZ, task -> {
+            final var world = org.bukkit.Bukkit.getWorld(worldId);
+            if (world == null || !org.bukkit.Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)
+                    || !world.isChunkLoaded(chunkX, chunkZ)
+                    || !hu.taliann.icesmp.integrity.GameplayRewardGate.evaluate(context).allowed()) return;
+            world.dropItemNaturally(new org.bukkit.Location(world, x, y, z),
+                    org.bukkit.inventory.ItemStack.deserializeBytes(bytes));
+        });
     }
 }

@@ -36,6 +36,7 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
     public YamlPlayerProfileRepository(Path root,Clock clock,ExecutorService io,FaultInjector faultInjector){this.root=Objects.requireNonNull(root).toAbsolutePath().normalize();this.clock=Objects.requireNonNull(clock);this.io=Objects.requireNonNull(io);this.faultInjector=Objects.requireNonNull(faultInjector);}
 
     @Override public CompletionStage<PlayerProfileSnapshot> load(UUID id){Objects.requireNonNull(id);PlayerProfileSnapshot hit=cache.get(id);if(hit!=null)return CompletableFuture.completedFuture(hit);return submit(id,()->withLock(id,()->loadLocked(id,true)));}
+    @Override public CompletionStage<PlayerProfileSnapshot> refreshSnapshot(UUID id){Objects.requireNonNull(id);return submit(id,()->withLock(id,()->loadLocked(id,true)));}
     @Override public CompletionStage<Optional<PlayerProfileSnapshot>> find(UUID id){
         Objects.requireNonNull(id);PlayerProfileSnapshot hit=cache.get(id);if(hit!=null)return CompletableFuture.completedFuture(Optional.of(hit));
         if(!Files.exists(profileDir(id).resolve("manifest.yml")))return CompletableFuture.completedFuture(Optional.empty());
@@ -75,13 +76,31 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
         return submit(id,()->withLock(id,()->saveLocked(id,section,expectedRevision,expectedGeneration,next)));
     }
 
+    @Override public CompletionStage<SectionSaveResult> saveRewardSection(UUID id, ProfileSectionId section,
+            long expectedRevision, ProfileSectionSnapshot<?> next, hu.taliann.icesmp.integrity.RewardContext reward) {
+        return saveRewardSection(id, section, expectedRevision, -1, next, reward);
+    }
+    @Override public CompletionStage<SectionSaveResult> saveRewardSection(UUID id, ProfileSectionId section,
+            long expectedRevision, long expectedGeneration, ProfileSectionSnapshot<?> next, hu.taliann.icesmp.integrity.RewardContext reward) {
+        Objects.requireNonNull(id); Objects.requireNonNull(section); Objects.requireNonNull(next); Objects.requireNonNull(reward);
+        if (!id.equals(reward.recipient()) || next.sectionId() != section) throw new IllegalArgumentException("Reward save target mismatch");
+        return submit(id, () -> withLock(id, () -> saveLocked(id, section, expectedRevision, expectedGeneration, next, reward)));
+    }
+
     private SectionSaveResult saveLocked(UUID id,ProfileSectionId section,long expectedRevision,long expectedGeneration,ProfileSectionSnapshot<?> next)throws Exception{
+        return saveLocked(id, section, expectedRevision, expectedGeneration, next, null);
+    }
+    private SectionSaveResult saveLocked(UUID id,ProfileSectionId section,long expectedRevision,long expectedGeneration,ProfileSectionSnapshot<?> next,
+            hu.taliann.icesmp.integrity.RewardContext reward)throws Exception{
         PlayerProfileSnapshot durable=loadLocked(id,true);ProfileSectionSnapshot<?> current=durable.section(section).orElseThrow();
         if(!current.health().usable())return new SectionSaveResult(SectionSaveResult.Status.SECTION_QUARANTINED,durable,current.health().diagnostic(),current.health().evidenceId());
         if(expectedGeneration>=0&&durable.profileRevision()!=expectedGeneration)return new SectionSaveResult(SectionSaveResult.Status.STALE_GENERATION,durable,"stale profile generation","");
         if(current.revision()!=expectedRevision)return new SectionSaveResult(SectionSaveResult.Status.STALE_REVISION,durable,"stale section revision","");
         long wanted=Math.addExact(expectedRevision,1L);if(next.revision()!=wanted)return new SectionSaveResult(SectionSaveResult.Status.REJECTED,durable,"section revision must advance exactly once","");
         long nextGeneration=Math.addExact(durable.profileRevision(),1L);Instant now=clock.instant();ProfileSectionSnapshot<?> normalized=new ProfileSectionSnapshot<>(section,next.schema(),next.revision(),now,next.value(),SectionHealth.healthy(),next.extensions());PlayerProfileSnapshot candidate=durable.withSection(normalized,nextGeneration,now);
+        // Admission linearizes here. A later quarantine must not revoke this accepted WAL/replay.
+        if (reward != null && !hu.taliann.icesmp.integrity.GameplayRewardGate.evaluate(reward).allowed())
+            throw new hu.taliann.icesmp.integrity.RewardEligibilityDeniedException();
         commitSingle(id,durable,candidate,section);cache.put(id,candidate);return new SectionSaveResult(SectionSaveResult.Status.COMMITTED,candidate,"","");
     }
 
@@ -137,13 +156,19 @@ public final class YamlPlayerProfileRepository implements PlayerProfileRepositor
 
 
     public CompletionStage<PlayerProfileSnapshot> commitSections(UUID id,long expectedGeneration,Map<ProfileSectionId,ProfileSectionSnapshot<?>> replacements,String operationId,String fingerprint){
-        Objects.requireNonNull(id);Objects.requireNonNull(replacements);return submit(id,()->withLock(id,()->commitSectionsLocked(id,expectedGeneration,replacements,operationId,fingerprint)));
+        return commitSections(id,expectedGeneration,replacements,operationId,fingerprint,()->{});
     }
-    private PlayerProfileSnapshot commitSectionsLocked(UUID id,long expectedGeneration,Map<ProfileSectionId,ProfileSectionSnapshot<?>> replacements,String operationId,String fingerprint)throws Exception{
+    public CompletionStage<PlayerProfileSnapshot> commitSections(UUID id,long expectedGeneration,Map<ProfileSectionId,ProfileSectionSnapshot<?>> replacements,String operationId,String fingerprint,Runnable commitAdmission){
+        Objects.requireNonNull(id);Objects.requireNonNull(replacements);Objects.requireNonNull(commitAdmission);return submit(id,()->withLock(id,()->commitSectionsLocked(id,expectedGeneration,replacements,operationId,fingerprint,commitAdmission)));
+    }
+    private PlayerProfileSnapshot commitSectionsLocked(UUID id,long expectedGeneration,Map<ProfileSectionId,ProfileSectionSnapshot<?>> replacements,String operationId,String fingerprint,Runnable commitAdmission)throws Exception{
         PlayerProfileSnapshot durable=loadLocked(id,true);if(durable.profileRevision()!=expectedGeneration)throw new PlayerProfileRepositoryException.RevisionConflict(expectedGeneration,durable.profileRevision(),"stale profile generation");
         EnumMap<ProfileSectionId,ProfileSectionSnapshot<?>> nextMap=new EnumMap<>(durable.sectionMap());Instant now=clock.instant();
         for(var e:replacements.entrySet()){ProfileSectionSnapshot<?> current=durable.section(e.getKey()).orElseThrow();ProfileSectionSnapshot<?> next=e.getValue();if(!current.health().usable())throw new PlayerProfileRepositoryException.Quarantined(e.getKey().id()+" section quarantined");if(next.sectionId()!=e.getKey()||next.revision()!=Math.addExact(current.revision(),1L))throw new IllegalArgumentException("invalid section CAS transition for "+e.getKey().id());nextMap.put(e.getKey(),new ProfileSectionSnapshot<>(e.getKey(),next.schema(),next.revision(),now,next.value(),SectionHealth.healthy(),next.extensions()));}
-        long nextGeneration=Math.addExact(durable.profileRevision(),1L);PlayerProfileSnapshot candidate=PlayerProfileSnapshot.fromMap(id,nextGeneration,durable.createdAt(),now,nextMap);commitMultiple(id,durable,candidate,replacements.keySet(),operationId,fingerprint);cache.put(id,candidate);return candidate;
+        long nextGeneration=Math.addExact(durable.profileRevision(),1L);PlayerProfileSnapshot candidate=PlayerProfileSnapshot.fromMap(id,nextGeneration,durable.createdAt(),now,nextMap);
+        // Runs after queue/CAS and before the first WAL write; accepted recovery never reruns admission.
+        commitAdmission.run();
+        commitMultiple(id,durable,candidate,replacements.keySet(),operationId,fingerprint);cache.put(id,candidate);return candidate;
     }
     private void commitMultiple(UUID id,PlayerProfileSnapshot before,PlayerProfileSnapshot after,Set<ProfileSectionId> changed,String operationId,String fingerprint)throws Exception{
         Path wal=profileDir(id).resolve("wal").resolve(operationWalName(required(operationId,"operationId")));if(Files.exists(wal)){recoverWal(id);if(Files.exists(wal))throw new PlayerProfileRepositoryException("transaction WAL still active");}Files.createDirectories(wal.resolve("old"));Files.createDirectories(wal.resolve("new"));

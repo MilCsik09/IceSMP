@@ -211,12 +211,23 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
     public <T extends ProfileSectionData, R> CompletionStage<R> mutateSectionConditional(
             final UUID id, final ProfileSectionId sectionId, final Class<T> type,
             final Function<T, ConditionalMutation<T, R>> mutation) {
-        return mutateSectionConditional(id, sectionId, type, mutation, 4);
+        return mutateSectionConditional(id, sectionId, type, mutation, null, 4);
+    }
+
+    /** Carries immutable provenance through every CAS retry to the canonical WAL admission. */
+    public <T extends ProfileSectionData, R> CompletionStage<R> mutateRewardSectionConditional(
+            final UUID id, final ProfileSectionId sectionId, final Class<T> type,
+            final hu.taliann.icesmp.integrity.RewardContext reward,
+            final Function<T, ConditionalMutation<T, R>> mutation) {
+        Objects.requireNonNull(reward, "reward");
+        if (!Objects.requireNonNull(id).equals(reward.recipient())) throw new IllegalArgumentException("Reward recipient mismatch");
+        return mutateSectionConditional(id, sectionId, type, mutation, reward, 4);
     }
 
     private <T extends ProfileSectionData, R> CompletionStage<R> mutateSectionConditional(
             final UUID id, final ProfileSectionId sectionId, final Class<T> type,
-            final Function<T, ConditionalMutation<T, R>> mutation, final int attempts) {
+            final Function<T, ConditionalMutation<T, R>> mutation,
+            final hu.taliann.icesmp.integrity.RewardContext reward, final int attempts) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(sectionId, "sectionId");
         Objects.requireNonNull(type, "type");
@@ -235,7 +246,10 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
             final ProfileSectionSnapshot<T> candidate = new ProfileSectionSnapshot<>(sectionId,
                     raw.schema(), Math.addExact(raw.revision(), 1L), clock.instant(), next,
                     SectionHealth.healthy(), raw.extensions());
-            return repository.saveSection(id, sectionId, raw.revision(), snapshot.profileRevision(), candidate)
+            final CompletionStage<PlayerProfileRepository.SectionSaveResult> save = reward == null
+                    ? repository.saveSection(id, sectionId, raw.revision(), snapshot.profileRevision(), candidate)
+                    : repository.saveRewardSection(id, sectionId, raw.revision(), snapshot.profileRevision(), candidate, reward);
+            return save
                     .thenCompose(result -> {
                         if (result.status() == PlayerProfileRepository.SectionSaveResult.Status.COMMITTED) {
                             notifyChanged(id, result.snapshot().profileRevision(), Set.of(sectionId));
@@ -246,7 +260,7 @@ public final class PlayerProfileService implements IceSMPPlayerProfileApi {
                                 && attempts > 1) {
                             // Same CAS contract as mutateSection: retain the repository-installed latest
                             // cache generation so sync consumers remain readable while this bounded retry runs.
-                            return mutateSectionConditional(id, sectionId, type, mutation, attempts - 1);
+                            return mutateSectionConditional(id, sectionId, type, mutation, reward, attempts - 1);
                         }
                         return CompletableFuture.failedFuture(
                                 new PlayerProfileRepositoryException(result.detail()));

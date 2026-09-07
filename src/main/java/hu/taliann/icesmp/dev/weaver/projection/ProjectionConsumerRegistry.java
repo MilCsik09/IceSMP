@@ -53,7 +53,8 @@ public final class ProjectionConsumerRegistry {
                     && consumer.actions().contains(projection.actionId()) && consumer.subjects().contains(projection.subject().kind())).toList();
         }
         for (final var entry : projection.values().entrySet()) {
-            types.validate(entry.getValue());
+            try { types.validate(entry.getValue()); }
+            catch (final IllegalArgumentException unavailable) { throw new WeaverDomainRejection("PROJECTION_CONTENT_UNAVAILABLE"); }
             if (matching.stream().noneMatch(consumer -> entry.getValue().type().equals(consumer.fields().get(entry.getKey())))) throw new WeaverDomainRejection("PROJECTION_WITHOUT_CONSUMER");
         }
     }

@@ -39,6 +39,7 @@ public final class WorldTweaksListener implements Listener {
                 || !configManager.getBoolean("world-tweaks.warden-death-xp.enabled", true)) {
             return;
         }
+        if (!hu.taliann.icesmp.integrity.BukkitRewardSources.deathAllowed(hu.taliann.icesmp.integrity.RewardChannel.VANILLA_XP, event.getEntity())) return;
         final int min = Math.max(0, configManager.getInt("world-tweaks.warden-death-xp.min", 80));
         final int max = Math.max(min + 1, configManager.getInt("world-tweaks.warden-death-xp.max", 125) + 1);
         event.setDroppedExp(ThreadLocalRandom.current().nextInt(min, max));

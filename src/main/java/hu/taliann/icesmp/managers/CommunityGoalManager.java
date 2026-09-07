@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.FactionType;
+import hu.taliann.icesmp.integrity.*;
+import java.util.Objects;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -424,8 +426,16 @@ public final class CommunityGoalManager implements PersistentStore {
     }
 
     /** Ordinary non-economic event contribution; completion is durable before rewards run. */
+    public void contribute(final Player player, final String objectiveType,
+            final String materialOrEntity, final int amount) {
+        final RewardContext reward = captureContribution(player);
+        if (reward != null) contribute(player, objectiveType, materialOrEntity, amount, reward);
+    }
+
     public synchronized void contribute(final Player player, final String objectiveType,
-                                        final String materialOrEntity, final int amount) {
+            final String materialOrEntity, final int amount, final RewardContext sources) {
+        final RewardContext reward = admitContribution(player, amount, sources);
+        if (reward == null) return;
         ensureContributionsEnabled();
         final Map<String, Long> before = new HashMap<>(progress);
         final AppliedContribution applied = applyContribution(
@@ -434,7 +444,7 @@ public final class CommunityGoalManager implements PersistentStore {
             return;
         }
         if (applied.completions().isEmpty()) {
-            recordPersonalContribution(player);
+            recordPersonalContribution(player.getUniqueId(), reward);
             requestSave();
             return;
         }
@@ -448,7 +458,7 @@ public final class CommunityGoalManager implements PersistentStore {
             pendingCompletions.subList(outboxMark, pendingCompletions.size()).clear();
             return;
         }
-        if (applied.changed()) recordPersonalContribution(player);
+        if (applied.changed()) recordPersonalContribution(player.getUniqueId(), reward);
         flushPendingCompletions();
     }
 
@@ -457,13 +467,19 @@ public final class CommunityGoalManager implements PersistentStore {
      * image. Returning false means the event was already claimed or persistence failed; callers must
      * not advance personal progress either.
      */
+    public boolean contributeOnce(final Player player, final String objectiveType,
+            final String materialOrEntity, final int amount, final UUID contributionId) {
+        final RewardContext reward = captureContribution(player);
+        return reward != null && contributeOnce(player, objectiveType, materialOrEntity, amount, contributionId, reward);
+    }
+
     public synchronized boolean contributeOnce(final Player player, final String objectiveType,
-                                                final String materialOrEntity, final int amount,
-                                                final UUID contributionId) {
-        ensureContributionsEnabled();
-        if (player == null || contributionId == null || amount <= 0) {
+            final String materialOrEntity, final int amount, final UUID contributionId, final RewardContext sources) {
+        final RewardContext reward = admitContribution(player, amount, sources);
+        if (contributionId == null || reward == null) {
             return false;
         }
+        ensureContributionsEnabled();
         final long now = System.currentTimeMillis();
         pruneReceipts(now);
         final String receipt = contributionId.toString();
@@ -484,14 +500,30 @@ public final class CommunityGoalManager implements PersistentStore {
             pendingCompletions.subList(outboxMark, pendingCompletions.size()).clear();
             return false;
         }
-        if (applied.changed()) recordPersonalContribution(player);
+        if (applied.changed()) recordPersonalContribution(player.getUniqueId(), reward);
         flushPendingCompletions();
         return true;
     }
 
-    private void recordPersonalContribution(final Player player) {
-        factionManager.getChosenFaction(player.getUniqueId()).ifPresent(
-                side -> seasonManager.recordContribution(player.getUniqueId(), side, "community"));
+    private static RewardContext captureContribution(final Player player) {
+        try { return BukkitRewardSources.entity(RewardChannel.COMMUNITY_GOAL, player).forRecipient(player.getUniqueId()); }
+        catch (final RuntimeException | LinkageError unavailable) { return null; }
+    }
+
+    private static RewardContext admitContribution(final Player player, final int amount, final RewardContext reward) {
+        if (player == null || amount <= 0 || !Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return null;
+        Objects.requireNonNull(reward).require(RewardChannel.COMMUNITY_GOAL, player.getUniqueId());
+        final RewardContext fresh = captureContribution(player);
+        if (fresh == null) return null;
+        final Set<RewardSource> sources = new java.util.LinkedHashSet<>(reward.sources()); sources.addAll(fresh.sources());
+        if (sources.size() > 64) return null;
+        final var complete = new RewardContext(RewardChannel.COMMUNITY_GOAL, player.getUniqueId(), List.copyOf(sources));
+        return GameplayRewardGate.evaluate(complete).allowed() ? complete : null;
+    }
+
+    private void recordPersonalContribution(final UUID playerId, final RewardContext reward) {
+        factionManager.getChosenFaction(playerId).ifPresent(side -> seasonManager.recordContribution(playerId, side, "community",
+                new RewardContext(RewardChannel.SEASON_CREDIT, playerId, reward.sources())));
     }
 
     private AppliedContribution applyContribution(final Player player, final String objectiveType,
@@ -672,7 +704,7 @@ public final class CommunityGoalManager implements PersistentStore {
 
     /** Hirdetés a pillanatképből (ismételve is ártalmatlan, nem gazdasági hatás). */
     private void announceCompletion(final PendingCompletion pending) {
-        Bukkit.getServer().broadcast(messageManager.getMessage(
+        final var announcement = messageManager.getMessage(
                 "community-goal-completed",
                 "<gold>🏛 Közösségi cél teljesítve: <white>{goal}</white>! {who}</gold>",
                 Map.of(
@@ -680,7 +712,8 @@ public final class CommunityGoalManager implements PersistentStore {
                         "who", pending.serverWide() ? "Az egész szerver összefogott!"
                                 : "A(z) " + pending.faction().getDisplayName() + " frakció diadala!"
                 )
-        ));
+        );
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> Bukkit.getServer().broadcast(announcement));
     }
 
     /** Buff a pillanatképből: átmeneti, best-effort hatás, ezért nem kap grant-nyugtát. */
@@ -688,18 +721,22 @@ public final class CommunityGoalManager implements PersistentStore {
         if (pending.buffMinutes() <= 0) {
             return;
         }
-        final int durationTicks = pending.buffMinutes() * 60 * 20;
-        for (final Player online : Bukkit.getOnlinePlayers()) {
-            if (!pending.serverWide() && !factionManager.isMember(
-                    online.getUniqueId(), pending.faction())) {
-                continue;
-            }
-            online.getScheduler().run(plugin, task -> {
-                online.addPotionEffect(new PotionEffect(
-                        PotionEffectType.STRENGTH, durationTicks, 0, false, true, true));
-                online.addPotionEffect(new PotionEffect(
-                        PotionEffectType.HERO_OF_THE_VILLAGE,
-                        durationTicks, 0, false, true, true));
+        final int durationTicks = (int) Math.min(Integer.MAX_VALUE, (long) pending.buffMinutes() * 1200L);
+        for (final Player candidate : Bukkit.getOnlinePlayers()) {
+            final UUID playerId = candidate.getUniqueId();
+            candidate.getScheduler().run(plugin, task -> {
+                final Player online = Bukkit.getPlayer(playerId);
+                if (online == null || !Bukkit.isOwnedByCurrentRegion(online) || !online.isOnline()) return;
+                if (!pending.serverWide() && !factionManager.isMember(playerId, pending.faction())) return;
+                for (final var effect : List.of(PotionEffectType.STRENGTH, PotionEffectType.HERO_OF_THE_VILLAGE)) {
+                    try {
+                        final Set<RewardSource> sources = new java.util.LinkedHashSet<>(BukkitRewardSources.causal(online));
+                        sources.add(new RewardSource.Event("community-goal", pending.completionId()));
+                        if (sources.size() > 64 || !GameplayRewardGate.evaluate(new RewardContext(RewardChannel.EVENT_REWARD,
+                                playerId, List.copyOf(sources))).allowed()) return;
+                    } catch (final RuntimeException | LinkageError unavailable) { return; }
+                    online.addPotionEffect(new PotionEffect(effect, durationTicks, 0, false, true, true));
+                }
             }, null);
         }
     }

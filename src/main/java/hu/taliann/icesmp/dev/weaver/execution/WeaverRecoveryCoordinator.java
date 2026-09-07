@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 
 /** Startup observes current state and settles a journal; it never calls prepare or replays a stage. */
 public final class WeaverRecoveryCoordinator {
-    public enum PendingReason { PENDING_ENTITY_LOAD, PENDING_CHUNK_LOAD, UNRESOLVED_WORLD, STALE_UNRESOLVED }
+    public enum PendingReason { PENDING_ENTITY_LOAD, PENDING_CHUNK_LOAD, PENDING_PROFILE, UNRESOLVED_WORLD, STALE_UNRESOLVED }
     private final WeaverJournal journal;
     private final SubjectSnapshotSource snapshots;
     private final WorldWeaverProviderRegistry providers;
@@ -18,6 +18,8 @@ public final class WeaverRecoveryCoordinator {
     private final Set<UUID> active = ConcurrentHashMap.newKeySet();
     private final Map<UUID, PendingReason> pending = new ConcurrentHashMap<>();
     private volatile boolean closed;
+    private UUID profileCursor = new UUID(0, 0);
+    private final java.util.concurrent.atomic.AtomicBoolean profiling = new java.util.concurrent.atomic.AtomicBoolean();
     private final java.util.concurrent.atomic.AtomicLong availabilityRevision = new java.util.concurrent.atomic.AtomicLong();
     public WeaverRecoveryCoordinator(final WeaverJournal journal, final SubjectSnapshotSource snapshots,
                                      final WorldWeaverProviderRegistry providers, final WeaverTypeRegistry types) {
@@ -48,11 +50,12 @@ public final class WeaverRecoveryCoordinator {
             return settled.<Void>thenApply(ignored -> null).whenComplete((ignored, failure) -> active.remove(id));
         }
         final WeaverRecoveryAuthority authority = new WeaverRecoveryAuthority(operation, () -> journal.ready() ? journal.snapshot().operations().get(id) : null);
+        final RecoveryContext context = new RecoveryContext(authority, types, operation);
         final CompletionStage<Void> result;
         try {
-            result = snapshots.capture(operation.actorId(), operation.subject()).thenCompose(snapshot -> {
+            result = snapshots.captureRecovery(context).thenCompose(snapshot -> {
                 if (closed) throw new WeaverDomainRejection("RECOVERY_UNAVAILABLE");
-                final RecoveryContext context = new RecoveryContext(authority, types, operation);
+                WorldWeaverProviderRegistry.requireSnapshotAvailable(snapshot, operation.providerId());
                 final ActionDescriptor descriptor = providers.actions().get(operation.request().actionId());
                 if (operation.subject() instanceof AreaRef && descriptor != null && (descriptor.areaSupport() == AreaSupport.ENTITY_FANOUT || descriptor.areaSupport() == AreaSupport.BLOCK_FANOUT)) {
                     if (areas == null) throw new WeaverDomainRejection("AREA_RECOVERY_ENGINE_UNAVAILABLE");
@@ -99,6 +102,7 @@ public final class WeaverRecoveryCoordinator {
             case "ENTITY_UNAVAILABLE", "PLAYER_UNAVAILABLE", "OWNER_RETIRED", "OWNER_UNAVAILABLE" -> PendingReason.PENDING_ENTITY_LOAD;
             case "CHUNK_UNAVAILABLE" -> PendingReason.PENDING_CHUNK_LOAD;
             case "WORLD_UNAVAILABLE" -> PendingReason.UNRESOLVED_WORLD;
+            case "PROFILE_UNAVAILABLE", "PROFILE_EFFECTS_PENDING" -> PendingReason.PENDING_PROFILE;
             default -> null;
         };
         if (reason != null) {
@@ -126,6 +130,20 @@ public final class WeaverRecoveryCoordinator {
             if (matches) chain = chain.thenCompose(ignored -> reconcile(operationId).handle((value, failure) -> null));
         }
         return chain;
+    }
+    /** Providers signal profile readiness through neutral codes; no domain-specific dispatch. */
+    public CompletionStage<Void> profilesAvailable() {
+        if (closed || !profiling.compareAndSet(false, true)) return CompletableFuture.completedFuture(null);
+        final UUID cursor = profileCursor;
+        final var ids = pending.entrySet().stream().filter(e -> e.getValue() == PendingReason.PENDING_PROFILE)
+                .map(Map.Entry::getKey).sorted(Comparator.<UUID, Boolean>comparing(id -> id.compareTo(cursor) <= 0)
+                        .thenComparing(Comparator.naturalOrder())).limit(8).toList();
+        CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
+        for (final UUID id : ids) {
+            profileCursor = id;
+            chain = chain.thenCompose(ignored -> reconcile(id).handle((result, failure) -> null));
+        }
+        return chain.whenComplete((result, failure) -> profiling.set(false));
     }
     public CompletionStage<Void> worldAvailable(final UUID world, final OptionalLong chunk) {
         availabilityRevision.incrementAndGet();

@@ -592,6 +592,51 @@
       "reason": "Reviewed operation UUID CAS transition in the singleton internal developer operation journal; stable actor/subject references and reward-denial evidence do not own canonical player profile, economy or progression. resolve does not resolve a player file path."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java|return java.util.Objects.requireNonNull(projectionSource.resolve(mob.getUniqueId(), canonicalProfile(mob)));",
+      "category": "RUNTIME",
+      "reason": "Exact reviewed owner-checked Mob UUID call into an immutable combat projection port. CanonicalMobProfile contains detached mob kit/behavior inputs, not player profile or YAML state; this expression performs no persistence write."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java|EffectiveMobProjection resolve(UUID entityId, CanonicalMobProfile canonical);",
+      "category": "RUNTIME",
+      "reason": "Exact reviewed functional read port: the UUID identifies a mob and both profile records contain immutable combat inputs. The interface has no player profile, YAML or persistence authority."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java|@Override public EffectiveMobProjection resolve(final UUID entityId, final CanonicalMobProfile canonical) { return resolve(canonical, active(entityId)); }",
+      "category": "RUNTIME",
+      "reason": "Exact reviewed read-only mob UUID projection lookup. It reads detached journal projections and immutable canonical combat inputs; it neither reads nor writes a PlayerProfile or YAML authority."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java|public EffectiveMobProjection resolve(final CanonicalMobProfile canonical, final List<WeaverProjection> active) {",
+      "category": "RUNTIME",
+      "reason": "Exact reviewed pure combat projection reduction over immutable inputs. It selects canonical registry content and has no player profile, live Bukkit object or persistence mutation port."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java|@Override public FactionMembership resolve(UUID playerId, FactionMembership canonical) {",
+      "category": "RUNTIME",
+      "reason": "Read-only fold of immutable journal membership projections over canonical PlayerProfile membership; resolve is not a filesystem operation and writes no profile state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java|@Override public Set<ContentContext> resolve(UUID entityId, Set<ContentContext> canonical) {",
+      "category": "RUNTIME",
+      "reason": "Read-only fold of immutable entity context projections; resolve is not a filesystem operation and stores no player state."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java|Set<ContentContext> resolve(UUID entityId, Set<ContentContext> canonical);",
+      "category": "RUNTIME",
+      "reason": "Pure UUID and immutable enum-set projection port; no YAML access or player state ownership."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java|FactionMembership resolve(UUID playerId, FactionMembership canonical);",
+      "category": "RUNTIME",
+      "reason": "Pure membership projection callback; canonical membership remains PlayerProfile-owned and the port exposes no persistence mutation."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/FactionManager.java|try { return Objects.requireNonNull(membershipProjection.resolve(playerId, canonical)); }",
+      "category": "RUNTIME",
+      "reason": "Read-only invocation of the membership projection callback for passive runtime consumers; no filesystem or PlayerProfile mutation."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|private final Map<UUID, Long> leaveConfirmation = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Thirty-second, player-owned confirmation prompt only. Consumed on repeat command and removed on quit; restart merely requires confirming again. Role, evidence and return cooldown remain exclusively in PlayerProfileWhisperStore WAL."

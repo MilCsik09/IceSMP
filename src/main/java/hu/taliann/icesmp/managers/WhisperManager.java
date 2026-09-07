@@ -174,8 +174,8 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
     public void reconcileMembership(final Player player) {
         if (player == null) return;
         final UUID playerId = player.getUniqueId();
-        if (!factionManager.isEligibleForFactionBenefits(playerId)
-                || factionManager.isMember(playerId, FactionType.DARK)) {
+        final FactionType canonicalMembership = factionManager.getChosenFaction(playerId).orElse(null);
+        if (canonicalMembership == null || canonicalMembership == FactionType.DARK) {
             whispererCache.remove(playerId);
             whisperStore.clear(playerId).exceptionally(failure -> {
                 plugin.getLogger().severe("PlayerProfile whisper membership cleanup failed for "

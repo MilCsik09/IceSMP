@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.classspec.application.ProfileMutationResult;
+import hu.taliann.icesmp.integrity.*;
+import java.util.UUID;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.ProfessionType;
@@ -41,6 +43,9 @@ public final class AchievementManager {
     private final PlayerProfileAchievementStore store = new PlayerProfileAchievementStore();
     /** Reloadra build-then-swap cserélődik; a tick több régió-szálról olvassa. */
     private volatile List<Achievement> achievements = List.of();
+    private record DeliveryKey(UUID player, String receipt) { }
+    /** Bounded work admission only; canonical pending state and receipts remain in PlayerProfile. */
+    private final java.util.Set<DeliveryKey> delivering = new java.util.HashSet<>();
 
     public AchievementManager(final JavaPlugin plugin, final ConfigManager configManager,
                               final JobManager jobManager, final CurrencyManager currencyManager,
@@ -111,7 +116,7 @@ public final class AchievementManager {
     public void tick() {
         if (!isEnabled()) return;
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            player.getScheduler().run(plugin, task -> evaluate(player), null);
+            runOnOwner(player.getUniqueId(), this::evaluate, () -> { });
         }
     }
 
@@ -120,7 +125,8 @@ public final class AchievementManager {
      * metric (important for WEALTH after spending money) and independently of later config changes.
      */
     public void evaluate(final Player player) {
-        if (!isEnabled() || player == null) return;
+        if (!isEnabled() || player == null || !Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return;
+        final UUID playerId = player.getUniqueId();
         try {
             for (final PendingReward pending : store.pendingRewards(player.getUniqueId())) {
                 deliverPending(player, pending, achievementForReceipt(pending.receiptId()));
@@ -129,6 +135,9 @@ public final class AchievementManager {
             return; // PlayerProfile/class session has not reached a readable state yet.
         }
 
+        final RewardContext reward;
+        try { reward = BukkitRewardSources.entity(RewardChannel.ACHIEVEMENT, player).forRecipient(playerId); }
+        catch (RuntimeException | LinkageError unavailable) { return; }
         for (final Achievement achievement : achievements) {
             final boolean alreadyUnlocked;
             try {
@@ -139,17 +148,19 @@ public final class AchievementManager {
             if (!alreadyUnlocked && metricValue(player, achievement.metric()) < achievement.threshold()) {
                 continue;
             }
+            final PendingReward payload = rewardPayload(player, achievement);
             final CompletionStage<Boolean> unlock = alreadyUnlocked
                     ? CompletableFuture.completedFuture(true)
-                    : store.unlock(player.getUniqueId(), achievement.id());
-            unlock.thenCompose(ignored -> ensureReservation(player, achievement))
+                    : store.unlock(playerId, achievement.id(), reward);
+            unlock.thenCompose(ignored -> ensureReservation(playerId, payload, reward))
                     .thenAccept(reservation -> {
                         if (reservation != null && reservation.pending()) {
-                            deliverPending(player, reservation.reward(), Optional.of(achievement));
+                            runOnOwner(playerId, owned -> deliverPending(owned, reservation.reward(), Optional.of(achievement)), () -> { });
                         }
                     }).exceptionally(failure -> {
+                        if (rewardDenied(failure)) return null;
                         plugin.getLogger().severe("PlayerProfile achievement reservation failed for "
-                                + player.getUniqueId() + '/' + achievement.id() + ": "
+                                + playerId + '/' + achievement.id() + ": "
                                 + rootMessage(failure));
                         return null;
                     });
@@ -157,18 +168,18 @@ public final class AchievementManager {
     }
 
     private CompletionStage<RewardReservation> ensureReservation(
-            final Player player, final Achievement achievement) {
-        final String receiptId = receiptId(achievement.id());
-        final Optional<PendingReward> existing = store.pendingReward(player.getUniqueId(), receiptId);
+            final UUID playerId, final PendingReward payload, final RewardContext reward) {
+        final String receiptId = payload.receiptId();
+        final Optional<PendingReward> existing = store.pendingReward(playerId, receiptId);
         if (existing.isPresent()) {
             return CompletableFuture.completedFuture(new RewardReservation(
                     PlayerProfileAchievementStore.RewardState.PENDING,
                     existing.orElseThrow(), false));
         }
-        if (store.rewardSettled(player.getUniqueId(), receiptId)) {
+        if (store.rewardSettled(playerId, receiptId)) {
             return CompletableFuture.completedFuture(null);
         }
-        return store.reserveReward(player.getUniqueId(), rewardPayload(player, achievement));
+        return store.reserveReward(playerId, payload, reward);
     }
 
     private PendingReward rewardPayload(final Player player, final Achievement achievement) {
@@ -193,28 +204,61 @@ public final class AchievementManager {
      */
     private void deliverPending(final Player player, final PendingReward pending,
                                 final Optional<Achievement> achievement) {
-        deliver(pending, player).thenCompose(delivered -> delivered
-                        ? store.settleReward(player.getUniqueId(), pending)
-                        : CompletableFuture.completedFuture(false))
-                .whenComplete((settled, failure) -> {
-                    if (failure != null) {
-                        plugin.getLogger().warning("Achievement reward remains pending for "
-                                + player.getUniqueId() + '/' + pending.receiptId() + ": "
-                                + rootMessage(failure));
-                        return;
-                    }
-                    if (!Boolean.TRUE.equals(settled) || !player.isOnline()) return;
-                    player.getScheduler().run(plugin,
-                            task -> announce(player, pending, achievement), null);
-                });
+        final UUID playerId = player.getUniqueId();
+        settlePendingReward(playerId, pending).whenComplete((settled, failure) -> {
+            if (failure != null) {
+                plugin.getLogger().warning("Achievement reward remains pending for "
+                        + playerId + '/' + pending.receiptId() + ": " + rootMessage(failure));
+                return;
+            }
+            if (Boolean.TRUE.equals(settled)) runOnOwner(playerId, owned -> announce(owned, pending, achievement), () -> { });
+        });
     }
 
-    private CompletionStage<Boolean> deliver(final PendingReward pending, final Player player) {
-        return switch (pending.kind()) {
-            case NONE -> CompletableFuture.completedFuture(true);
-            case CLASS_XP -> deliverClassXp(player, pending);
-            case CURRENCY -> deliverCurrency(player, pending);
-        };
+    /** Shared Bestiary/reconnect route. No caller can substitute a different durable reward payload. */
+    public CompletionStage<Boolean> settlePendingReward(final UUID playerId, final PendingReward expected) {
+        java.util.Objects.requireNonNull(playerId); java.util.Objects.requireNonNull(expected);
+        final DeliveryKey key = new DeliveryKey(playerId, expected.receiptId());
+        synchronized (delivering) {
+            if (delivering.size() >= 128 || !delivering.add(key)) return CompletableFuture.completedFuture(false);
+        }
+        final CompletionStage<Boolean> delivery;
+        try {
+            delivery = store.deliverReward(playerId, expected, admitted -> switch (admitted.kind()) {
+                case NONE -> CompletableFuture.completedFuture(true);
+                case CURRENCY -> deliverCurrency(playerId, admitted);
+                case CLASS_XP -> {
+                    final var result = new CompletableFuture<Boolean>();
+                    runOnOwner(playerId, owned -> {
+                        try {
+                            deliverClassXp(owned, admitted).whenComplete((done, failure) -> {
+                                if (failure != null) result.completeExceptionally(failure); else result.complete(done);
+                            });
+                        } catch (RuntimeException | LinkageError unavailable) { result.completeExceptionally(unavailable); }
+                    }, () -> result.complete(false));
+                    yield result;
+                }
+            });
+        } catch (RuntimeException | LinkageError unavailable) {
+            synchronized (delivering) { delivering.remove(key); }
+            return CompletableFuture.failedFuture(unavailable);
+        }
+        return delivery.whenComplete((ignored, failure) -> { synchronized (delivering) { delivering.remove(key); } });
+    }
+
+    private void runOnOwner(final UUID playerId, final java.util.function.Consumer<Player> action, final Runnable unavailable) {
+        final Player handle = Bukkit.getPlayer(playerId);
+        if (handle == null) { unavailable.run(); return; }
+        if (handle.getScheduler().run(plugin, task -> {
+            final Player owned = Bukkit.getPlayer(playerId);
+            if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned) || !owned.isOnline()) { unavailable.run(); return; }
+            action.accept(owned);
+        }, unavailable) == null) unavailable.run();
+    }
+
+    private static boolean rewardDenied(Throwable failure) {
+        while (failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null) failure = failure.getCause();
+        return failure instanceof RewardEligibilityDeniedException;
     }
 
     private CompletionStage<Boolean> deliverClassXp(final Player player,
@@ -228,7 +272,7 @@ public final class AchievementManager {
                         || result.status() == ProfileMutationResult.Status.NO_CHANGE);
     }
 
-    private CompletionStage<Boolean> deliverCurrency(final Player player,
+    private CompletionStage<Boolean> deliverCurrency(final UUID playerId,
                                                       final PendingReward pending) {
         final CurrencyType currency = CurrencyType.fromInput(pending.currencyId());
         if (currency == null || pending.amount() <= 0L) {
@@ -238,7 +282,7 @@ public final class AchievementManager {
         // PlayerProfileEconomyStore credits balance + operation receipt in one ECONOMY CAS.
         // Run the synchronous durability boundary off the region thread; replay is a no-op.
         return CompletableFuture.supplyAsync(() -> {
-            currencyManager.creditOnceDurably(player.getUniqueId(), currency,
+            currencyManager.creditOnceDurably(playerId, currency,
                     pending.amount(), "achievement-currency:" + pending.receiptId());
             return true;
         });

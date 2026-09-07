@@ -130,6 +130,9 @@ public final class WeaverUndoRegressionSuite {
             final var codec = new WeaverJournalCodec(f.types); final Map<String, Object> legacy = new HashMap<>(codec.encodeState(f.journal.snapshot()));
             legacy.put("schema-version", 2); legacy.remove("effect-deltas"); final Map<String, Object> operations = new HashMap<>();
             WeaverJournalCodec.map(legacy.get("operations")).forEach((id, value) -> { final Map<String, Object> row = new HashMap<>(WeaverJournalCodec.map(value)); row.remove("undo-claim"); operations.put(id, row); });
+            final Map<String, Object> influences = new HashMap<>();
+            WeaverJournalCodec.map(legacy.get("influences")).forEach((id, value) -> { final Map<String, Object> row = new HashMap<>(WeaverJournalCodec.map(value)); row.remove("lifetime"); influences.put(id, row); });
+            legacy.put("influences", influences);
             legacy.put("operations", operations); final WeaverJournalState migrated = codec.decodeState(legacy);
             check(migrated.projections().equals(f.journal.snapshot().projections()) && migrated.influences().equals(f.journal.snapshot().influences()), "schema 2 migration lost active effects");
             check(migrated.effectDeltas().values().stream().noneMatch(WeaverEffectDelta::complete), "migration fabricated unavailable before-images");

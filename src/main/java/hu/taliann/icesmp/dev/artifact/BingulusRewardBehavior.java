@@ -129,7 +129,7 @@ public final class BingulusRewardBehavior implements DevArtifactBehavior {
     @Override public void tick(final DevArtifactContext context, final long nowMillis) {
         if (!configManager.getBoolean(BASE + ".enabled", true)) { onUnavailable(); return; }
         final Player owner = context.player();
-        if (owner == null || delivering.get()) { onUnavailable(); return; }
+        if (owner == null || delivering.get() || !rewardEligible(owner)) { onUnavailable(); return; }
         final DevArtifactState before = context.state();
         if (BingulusDeliveryFence.held(before.behaviorState())) { onUnavailable(); return; }
         final long now = System.nanoTime();
@@ -171,7 +171,7 @@ public final class BingulusRewardBehavior implements DevArtifactBehavior {
 
     private void deliver(final DevArtifactContext context) {
         final Player owner = context.player();
-        if (owner == null) { delivering.set(false); return; }
+        if (owner == null || !rewardEligible(owner)) { delivering.set(false); return; }
         final DevArtifactState before = context.state();
         final var rewardState = decode(before);
         final var pending = rewardState.pending();
@@ -196,7 +196,12 @@ public final class BingulusRewardBehavior implements DevArtifactBehavior {
             final var pending = rewardState.pending();
             final ItemStack item = ItemStack.deserializeBytes(Base64.getDecoder().decode(pending.itemCopy(value -> value)));
             final Map<String, Object> next;
-            if (!canFit(owner.getInventory(), item)) {
+            if (!rewardEligible(owner)) {
+                // No inventory mutation began: release only the delivery fence, preserving the exact
+                // already admitted pending reward, accumulated progress and pity counters.
+                next = encode(rewardState);
+                onUnavailable();
+            } else if (!canFit(owner.getInventory(), item)) {
                 notifyRewardInventoryFull(owner);
                 next = encode(rewardState);
             } else {
@@ -213,6 +218,14 @@ public final class BingulusRewardBehavior implements DevArtifactBehavior {
             }
             context.commit(context.state().revision(), next).whenComplete((done, failure) -> delivering.set(false));
         } catch (final RuntimeException failure) { delivering.set(false); throw failure; }
+    }
+
+    private static boolean rewardEligible(final Player owner) {
+        try {
+            final var context = hu.taliann.icesmp.integrity.BukkitRewardSources.entity(
+                    hu.taliann.icesmp.integrity.RewardChannel.DEV_ITEM_REWARD, owner).forRecipient(owner.getUniqueId());
+            return hu.taliann.icesmp.integrity.GameplayRewardGate.evaluate(context).allowed();
+        } catch (final RuntimeException | LinkageError unavailable) { return false; }
     }
 
     private void notifyRewardInventoryFull(final Player owner) {

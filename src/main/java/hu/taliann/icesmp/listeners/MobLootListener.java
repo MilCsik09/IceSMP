@@ -114,6 +114,7 @@ public final class MobLootListener implements Listener {
     public void onEntityDeath(final EntityDeathEvent event) {
         final LivingEntity entity = event.getEntity();
         if (entity instanceof Player || hu.taliann.icesmp.managers.MinionManager.isMinionTagged(entity)) return;
+        if (!hu.taliann.icesmp.integrity.BukkitRewardSources.deathAllowed(hu.taliann.icesmp.integrity.RewardChannel.CUSTOM_LOOT, entity)) return;
         final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner rewardOwner =
                 hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.rewardOwner(entity);
         if (rewardOwner == hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.NONE) {

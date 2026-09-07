@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.integrity.*;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileStatisticsStore;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
@@ -64,11 +65,12 @@ public final class StatsManager implements PersistentStore {
     @Override public void save() { }
 
     public void recordSnapshot(final Player player) {
-        if (player == null) return;
-        store.snapshot(player.getUniqueId(), jobManager.getPrimaryLevel(player),
-                        currencyManager.getTotalBalance(player))
+        final RewardContext reward = capture(player);
+        if (reward == null) return;
+        final UUID playerId = reward.recipient();
+        store.snapshot(playerId, jobManager.getPrimaryLevel(player), currencyManager.getTotalBalance(player), reward)
                 .whenComplete((snapshot, failure) -> {
-                    if (failure != null) logFailure("leaderboard snapshot", player.getUniqueId(), failure);
+                    if (failure != null) logFailure("leaderboard snapshot", playerId, failure);
                 });
     }
 
@@ -78,17 +80,29 @@ public final class StatsManager implements PersistentStore {
     }
 
     public void recordRaidKill(final Player player) {
-        if (player != null) increment(player.getUniqueId(), PlayerProfileStatisticsStore.RAID_KILLS);
+        final RewardContext reward = capture(player);
+        if (reward != null) recordRaidKill(player, reward);
+    }
+
+    public void recordRaidKill(final Player player, final RewardContext reward) {
+        if (player != null && Bukkit.isOwnedByCurrentRegion(player))
+            increment(player.getUniqueId(), PlayerProfileStatisticsStore.RAID_KILLS, reward);
     }
 
     public void recordKill(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.KILLS); }
+    public void recordKill(final UUID playerId, final RewardContext reward) { increment(playerId, PlayerProfileStatisticsStore.KILLS, reward); }
     public void recordDeath(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.DEATHS); }
+    public void recordDeath(final UUID playerId, final RewardContext reward) { increment(playerId, PlayerProfileStatisticsStore.DEATHS, reward); }
     public void recordMobKill(final UUID playerId) { recordMobKill(playerId, null); }
 
     /** A faj-szintű bestiárium-számláló a mob-kill összesítővel EGY commitban frissül. */
     public void recordMobKill(final UUID playerId, final String speciesEntry) {
+        if (playerId != null) recordMobKill(playerId, speciesEntry, RewardContext.recipientOnly(RewardChannel.TRACKING_PROGRESS, playerId));
+    }
+
+    public void recordMobKill(final UUID playerId, final String speciesEntry, final RewardContext reward) {
         if (playerId == null) return;
-        store.recordMobKill(playerId, speciesEntry, System.currentTimeMillis())
+        store.recordMobKill(playerId, speciesEntry, System.currentTimeMillis(), reward)
                 .whenComplete((value, failure) -> {
                     if (failure != null) logFailure(PlayerProfileStatisticsStore.MOB_KILLS, playerId, failure);
                 });
@@ -104,6 +118,7 @@ public final class StatsManager implements PersistentStore {
         return store.speciesFirstKillAt(playerId, speciesEntry);
     }
     public void recordSpellCast(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.SPELL_CASTS); }
+    public void recordSpellCast(final UUID playerId, final RewardContext reward) { increment(playerId, PlayerProfileStatisticsStore.SPELL_CASTS, reward); }
     public void recordQuestComplete(final UUID playerId) { increment(playerId, PlayerProfileStatisticsStore.QUESTS_COMPLETED); }
 
     public int getKills(final UUID playerId) { return projected(playerId, Derived::kills); }
@@ -126,7 +141,11 @@ public final class StatsManager implements PersistentStore {
 
     public void tick() {
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            player.getScheduler().run(plugin, task -> recordSnapshot(player), null);
+            final UUID playerId = player.getUniqueId();
+            player.getScheduler().run(plugin, task -> {
+                final Player owned = Bukkit.getPlayer(playerId);
+                if (owned != null && Bukkit.isOwnedByCurrentRegion(owned) && owned.isOnline()) recordSnapshot(owned);
+            }, null);
         }
     }
 
@@ -148,7 +167,12 @@ public final class StatsManager implements PersistentStore {
 
     private void increment(final UUID playerId, final String key) {
         if (playerId == null) return;
-        store.increment(playerId, key).whenComplete((value, failure) -> {
+        increment(playerId, key, RewardContext.recipientOnly(RewardChannel.TRACKING_PROGRESS, playerId));
+    }
+
+    private void increment(final UUID playerId, final String key, final RewardContext reward) {
+        if (playerId == null) return;
+        store.increment(playerId, key, reward).whenComplete((value, failure) -> {
             if (failure != null) logFailure(key, playerId, failure);
         });
     }
@@ -175,8 +199,18 @@ public final class StatsManager implements PersistentStore {
                 });
     }
 
+    private static RewardContext capture(final Player player) {
+        try {
+            if (player == null || !Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return null;
+            return new RewardContext(RewardChannel.TRACKING_PROGRESS, player.getUniqueId(), BukkitRewardSources.causal(player));
+        } catch (RuntimeException | LinkageError unavailable) { return null; }
+    }
+
     private void logFailure(final String operation, final UUID playerId,
                             final Throwable failure) {
+        Throwable root = failure;
+        while (root instanceof java.util.concurrent.CompletionException && root.getCause() != null) root = root.getCause();
+        if (root instanceof RewardEligibilityDeniedException) return;
         plugin.getLogger().severe("PlayerProfile statistics " + operation + " failed for "
                 + playerId + ": " + failure.getMessage());
     }

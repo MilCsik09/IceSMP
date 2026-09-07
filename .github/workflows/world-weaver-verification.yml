@@ -22,6 +22,70 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  pve-control-runtime:
+    name: ${{ matrix.platform }} 1.21.11 native PvE controls
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Paper
+            init: scripts/source_integrity_runtime.init.gradle
+            task: runServer
+          - platform: Folia
+            init: gradle/run-folia.init.gradle
+            task: runFolia
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install runtime asset dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+      - name: Verify native cast, cooldown, target refusal and cleanup
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.pve-control-runtime=true
+          RUNTIME_INIT: ${{ matrix.init }}
+          RUNTIME_TASK: ${{ matrix.task }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p run build
+          printf 'eula=true\n' > run/eula.txt
+          git rev-parse HEAD > build/pve-control-tested-head.txt
+          timeout 600s ./gradlew --no-daemon --console=plain \
+            --init-script "$RUNTIME_INIT" "$RUNTIME_TASK" \
+            | tee build/pve-control-runtime.log
+      - name: Require native proof and clean shutdown
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_PVE_CONTROL_RUNTIME_PROBE_PASS' build/pve-control-runtime.log
+          grep -F 'ICESMP_KNOWLEDGE_REWARD_RUNTIME_PROBE_PASS scope=offline_profile_currency_settlement' build/pve-control-runtime.log
+          grep -F 'ICESMP_QUEST_STATISTICS_RUNTIME_PROBE_PASS scope=offline_profile_atomic_settlement' build/pve-control-runtime.log
+          grep -F 'Disabling IceSMP' build/pve-control-runtime.log
+          ! grep -F 'ICESMP_PVE_CONTROL_RUNTIME_PROBE_FAIL' build/pve-control-runtime.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' build/pve-control-runtime.log
+      - name: Retain exact native control evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pve-control-${{ matrix.platform }}-${{ github.run_id }}
+          path: |
+            build/pve-control-runtime.log
+            build/pve-control-tested-head.txt
+          retention-days: 14
+
   verification:
     runs-on: ubuntu-latest
     timeout-minutes: 40

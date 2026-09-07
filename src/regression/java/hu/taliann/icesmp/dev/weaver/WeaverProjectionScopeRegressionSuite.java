@@ -17,7 +17,7 @@ public final class WeaverProjectionScopeRegressionSuite {
     static final ActionDescriptor ACTION = new ActionDescriptor("fixture.area", "fixture.state", net.kyori.adventure.text.Component.text("Area projection"), RiskLevel.MUTATING,
             Set.of(Lifetime.SESSION, Lifetime.PERSISTENT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.TAINT_SUBJECT), Set.of(WeaverSubjectKind.AREA), List.of(), AreaSupport.ENTITY_FANOUT,
             Optional.of(new AreaLimits(0, 128, 9, 9, 16)), true, Optional.empty(), 1);
-    static final class Provider extends WeaverContractRegressionSuite.FixtureProvider implements WeaverProjectionProvider {
+    static class Provider extends WeaverContractRegressionSuite.FixtureProvider implements WeaverProjectionProvider {
         Provider() { super("fixture", ACTION, CoverageLevel.FULL_PROVIDER, Map.of("fixture.area", "fixture.assess")); }
         @Override public Set<WeaverSubjectKind> supportedKinds() { return Set.of(WeaverSubjectKind.AREA); }
         @Override public List<ProjectionConsumerDescriptor> projectionConsumers() {
@@ -48,7 +48,7 @@ public final class WeaverProjectionScopeRegressionSuite {
         return new WeaverEffectCommit(projections, Set.of(), List.of(), Optional.empty());
     }
     public static void main(final String[] args) throws Exception {
-        materialization(); capacity(); legacyAndScope(); crash(); durablePath();
+        materialization(); capacity(); legacyAndScope(); crash(); durablePath(); observedAreaRecovery();
         System.out.println("Weaver projection scope passed: persisted AREA child revisions, per-target reservations, pending uncertainty caps, consumer kinds, atomic child effects, crash/reload and durable AREA execution.");
     }
     private static void materialization() throws Exception {
@@ -140,5 +140,24 @@ public final class WeaverProjectionScopeRegressionSuite {
         final var receipt = await(executor.execute("fixture", context, selection.decorate(new SubjectSnapshot(selection.area(), 1, "area", Map.of())), new ActionRequest("fixture.area", Map.of(), Lifetime.PERSISTENT, IntegrityMode.SANDBOX), plan, effects, () -> authority));
         check(WeaverOperationScope.reservations(journal.snapshot().operations().get(receipt.operationId())).size() == 2 && journal.snapshot().projections().size() == 2, "durable AREA path lost automatic child reservations");
         executor.close(); engine.close(); await(journal.close());
+    }
+    private static void observedAreaRecovery() throws Exception {
+        final var selection = collection(2); final var operation = areaOperation(selection, Lifetime.PERSISTENT);
+        final var provider = new Provider() {
+            @Override public RecoveryAssessment assessAreaRecovery(final RecoveryContext context, final SubjectSnapshot snapshot, final WeaverAreaCollection targets, final WeaverOperationRecord record) {
+                context.authority().require(record);
+                check(targets.targets().stream().map(SubjectSnapshot::ref).toList().equals(selection.targets().stream().map(SubjectSnapshot::ref).toList()), "recovery changed acknowledged child identity");
+                return new RecoveryAssessment(ObservedOperationState.APPLIED, false, Optional.of(areaReceipt(record)), "fixture_observed", Optional.of(childEffects(record, selection)));
+            }
+        };
+        final var providers = WeaverContractRegressionSuite.registry(provider); providers.freezeAndValidate();
+        final Storage storage = new Storage(); final WeaverJournal journal = new WeaverJournal(storage, providers.projectionConsumers()::validate); await(journal.load()); await(journal.prepare(operation));
+        final var router = new WeaverAreaExecutionRegressionSuite.Router(); final var access = new WeaverAreaExecutionRegressionSuite.Access(router);
+        selection.targets().forEach(target -> access.snapshots.put(target.ref(), target)); final var areas = new WeaverAreaEngine(router, access);
+        final var recovery = new WeaverRecoveryCoordinator(journal, (actor, ref) -> CompletableFuture.completedFuture(new SubjectSnapshot(ref, 3, "area", Map.of())), providers, types(), areas);
+        await(recovery.start());
+        check(journal.snapshot().operations().get(operation.operationId()).status() == OperationStatus.COMMITTED && journal.snapshot().projections().size() == 2,
+                "provider recovery validation rejected acknowledged child projection scope");
+        recovery.close(); areas.close(); await(journal.close());
     }
 }

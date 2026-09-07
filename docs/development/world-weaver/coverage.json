@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stage": "WW03_DURABLE_IN_PROGRESS",
+  "stage": "WW04_PVE_FACTION_INTEGRITY_IN_PROGRESS",
   "repository": "MilCsik09/IceSMP",
   "base_branch": "feature/faction-crime-whisperer-rework",
   "base_commit": "2a78eb6071db063740ce1f8e6889b03d9741dbb0",
@@ -43,7 +43,13 @@
         "src/main/java/hu/taliann/icesmp/security/HiddenDevAuthority.java",
         "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceDispatcher.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
+        "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
+        "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java"
+      ]
     },
     {
       "id": "pve",
@@ -54,7 +60,7 @@
       "inspect": "canonical/effective template/rank/archetype/ability/level/affix/behavior/cast/source",
       "planned_actions": "force_ability, add/remove ability, rank/archetype/template projection, refresh, export/import, fork",
       "canonical_route": "MobAbilityRuntime.triggerTechnique/startCast; canonical registry enumeration; separate MobRuntimeProjectionSource consumer",
-      "rationale": "No effective projection port. forceTemplate/forceRankedLevel write canonical combat identity and are unsuitable for projections; reward and Bestiary must retain canonical identity. triggerTechnique is constrained to the current kit/typed trigger.",
+      "rationale": "WW-04 binds journal-backed provider-owned combat projection and native one-shot control routes. Ability/rank/archetype/template projection, compatible Thread import, conditional sever/Undo, typed projection selection/clear and observed crash recovery are implemented behind the closed gameplay integrity gate. Force ability uses native eligibility/cast/telegraph/cooldown/target checks; refresh reconciles current registry definitions without resetting cooldowns. A bounded native operation ledger supports observation without replay; missing generation after detach/restart requires review. Canonical rank/level/loot/Bestiary identities remain unchanged. Cross-region cast/effect completion, AREA/context/stat consumers, reward producer/propagation integration and populated native/client evidence remain required; full PvE coverage is not claimed.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRegistry.java",
@@ -66,7 +72,19 @@
         "src/main/java/hu/taliann/icesmp/pve/EncounterRewardDeliveryService.java",
         "src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerService.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/pve/CanonicalMobProfile.java",
+        "src/main/java/hu/taliann/icesmp/pve/EffectiveMobProjection.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlProbe.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java"
+      ]
     },
     {
       "id": "faction",
@@ -76,8 +94,8 @@
       "phase": "WW-04",
       "inspect": "canonical/effective membership; passive/food/target decision; civilian access and DARK prerequisite traces",
       "planned_actions": "project faction, contexts, scripted target/peace through existing policy, canonical membership",
-      "canonical_route": "FactionManager / PlayerProfileFactionStore joinDark durable commit; FactionPassivePolicy and SinManager.hasCivilAccess; projections must not rewrite legal or reward identity",
-      "rationale": "PR #155 changes passive balance, civil exclusion and DARK joining prerequisites. Canonical transaction adapters must preserve independent membership, Exile and Oath and publish hooks only after durable commit.",
+      "canonical_route": "FactionManager.adjustMembershipDurably / PlayerProfileFactionStore exact revision WAL; native role-cleanup outbox; FactionPassivePolicy and SinManager preserve independent legal and reward identity",
+      "rationale": "Effective membership/context projections feed the existing passive/target policy with typed imports and journal-backed conditional sever. LIVE_GM-only canonical set/remove now use the native revision-checked profile transaction and acknowledged role-cleanup outbox, with owner-routed generic actions and observed restart recovery. Exile, Oath and immutable history remain independent. Scripted target/peace controls and populated native evidence remain required; full domain acceptance is not claimed.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
         "src/main/java/hu/taliann/icesmp/managers/FactionRelationManager.java",
@@ -85,7 +103,21 @@
         "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
         "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java",
+        "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProjectionRegressionSuite.java",
+        "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java",
+        "src/regression/java/hu/taliann/icesmp/dev/weaver/WeaverFactionAdjustmentRegressionSuite.java",
+        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipAdjustmentRuntime.java",
+        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipTransitionGate.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionCanonicalActions.java",
+        "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverCanonicalRegressionSuite.java"
+      ]
     },
     {
       "id": "trash",
@@ -767,11 +799,15 @@
       "inspect": "isActive/getProgress/getTarget",
       "planned_actions": "forceStart; add stopExpectedInstance",
       "canonical_route": "ServerChallengeManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Native per-run UUID, source-gated progress, terminal lifecycle and final owner reward admission are implemented. Provider start still needs durable origin/instance before first effect and expected-instance stop; complete event adapter and real recipient runtime evidence remain required.",
       "source_evidence": [
-        "src/main/java/hu/taliann/icesmp/managers/ServerChallengeManager.java"
+        "src/main/java/hu/taliann/icesmp/managers/ServerChallengeManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/ServerChallengeRun.java",
+        "src/main/java/hu/taliann/icesmp/listeners/ServerChallengeListener.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/regression/java/hu/taliann/icesmp/managers/ServerChallengeIntegrityRegressionSuite.java"
+      ]
     },
     {
       "id": "event.escort",
@@ -1064,7 +1100,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
       "domain": "class",
-      "source_sha256": "b395866692d779ad0061d684bbd441f385cc2d2100099ae2c6e4c229af6229d3",
+      "source_sha256": "fcb4b155f883dd1209dccbbf463d30af9b4e85fd53155a2a07796b2b2cead1e9",
       "public_methods": [
         "ClassAssignmentRequest",
         "ClassExperienceRequest",
@@ -1091,11 +1127,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecSectionMutationStore.java",
       "domain": "class",
-      "source_sha256": "803af3076fa267479e1d984727ec6120aebc47e5bd17c756f274d50eb6fb6d14",
+      "source_sha256": "900d70c7bd3c0cc72c7704b9135ca6cfaf24b9b7dbb088a10f85fbd97272345a",
       "public_methods": [
         "committed",
         "conflict",
         "failed",
+        "rewardDenied",
         "stopped"
       ]
     },
@@ -1110,7 +1147,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
       "domain": "class",
-      "source_sha256": "aa04e5623f1601319dd09013b1722b5f7dc1f686b2a25b908a20db282af4ec79",
+      "source_sha256": "8fa7050ce9fd27b73ade19c44eeafd6845e03a9b31755f40b4ee64ec7e929565",
       "public_methods": [
         "activeCompanion",
         "activeMechanic",
@@ -1229,6 +1266,52 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionMutationStoreAdapter.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "8d5ee1cd54ecb677d45bc4894d7d93074f9d423699a47e5ba9608005e416b5d7",
+      "public_methods": [
+        "blockSession",
+        "cached",
+        "quarantineEvidenceId",
+        "quarantineReason",
+        "recover",
+        "save",
+        "saveReward",
+        "sessionBlockReason"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionRepository.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "7bce6dc39654d8cb292ed85e6a3218ef978761d1e970ee3598c6c3c869135de6",
+      "public_methods": [
+        "found",
+        "missing",
+        "quarantined"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/classspec/persistence/PlayerProfileClassSpecSectionRepository.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "eea85b0dc17f4c76ab59e73e215b23f79b030baf3fe42b82b9af8e64fe5bb4f4",
+      "public_methods": [
+        "blockSession",
+        "cached",
+        "flush",
+        "flushAll",
+        "invalidate",
+        "load",
+        "quarantine",
+        "quarantineEvidenceId",
+        "quarantineReason",
+        "recover",
+        "save",
+        "saveReward",
+        "sessionBlockReason",
+        "shutdown"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/client/ClientSessionRegistry.java",
       "domain": "transport_infrastructure",
       "source_sha256": "8d994f0d2197861d16409c815c533abf24698f060ff9c68d07e13025c06d3741",
@@ -1292,6 +1375,26 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/artifact/BingulusRewardBehavior.java",
+      "domain": "developer_self",
+      "source_sha256": "e5c53638d5704455507948d9b73c3da4e1d36a8fa686825902a2130c4c2f4a39",
+      "public_methods": [
+        "artifactId",
+        "definition",
+        "initialState",
+        "loadBehaviorState",
+        "onConfigurationReload",
+        "onInteract",
+        "onIssued",
+        "onRecovered",
+        "onUnavailable",
+        "saveBehaviorState",
+        "shutdown",
+        "tick",
+        "validateState"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/artifact/DevArtifactOwnerPolicy.java",
       "domain": "developer_self",
       "source_sha256": "2106247edac13fb5eea2bb0694f60cf01fd052b5fd16370d1f709c545231ecaf",
@@ -1342,13 +1445,15 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "579532212cc20f9dd1e5d62fe186f032b034689b691afa1fb931af496fa15080",
+      "source_sha256": "1c169083354d98ba774b1e1c774695b1a695d0bdd8f30cab9b10944df6bdabd6",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
         "actions",
         "assessRecovery",
+        "captureCausalSources",
         "captureContributions",
+        "captureRecoveryContributions",
         "catalogPage",
         "catalogs",
         "coverage",
@@ -1359,21 +1464,29 @@
         "imports",
         "invoke",
         "observeExecution",
+        "observeInfluence",
         "owner",
         "projectionConsumers",
         "quarantined",
+        "readConsumer",
+        "reconcileProjections",
         "register",
-        "resolveCatalog"
+        "requireSnapshotAvailable",
+        "resolveCatalog",
+        "resolveInfluenceLifetime"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "9ba6e5303853cdbc2de8607c6e8073b2d43ef5cff6ad29fc84265cf9801a8373",
+      "source_sha256": "b36ef716bf42669a80bb74d7daad200f024098a2a0a59199e2499c9c0783c973",
       "public_methods": [
         "WorldWeaverRuntime",
+        "captureCausalSources",
         "listener",
+        "prepareEffect",
         "recoveryListener",
+        "rewardEligibility",
         "shutdown",
         "start"
       ]
@@ -1413,6 +1526,18 @@
         "page",
         "resolve",
         "type"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
+      "domain": "developer_self",
+      "source_sha256": "5463bead1fa9b81df64bc2f843791e932a78f3b9ca4255c8fc73823d7f41f389",
+      "public_methods": [
+        "WeaverProviderServices",
+        "types",
+        "projections",
+        "owners",
+        "readConsumer"
       ]
     },
     {
@@ -1469,7 +1594,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverDurableExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "d15de0090db1d8918e07ea59192a7ec516385102c56782e22331e6f3218032c5",
+      "source_sha256": "29ea97a6714ae9f1e35e10553a9387c337ff146f351b0ee1ea0e8646791751fa",
       "public_methods": [
         "WeaverDurableExecutionCoordinator",
         "close",
@@ -1479,7 +1604,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "15b67f47380bbba85cf046acfc6ffe7d6799bb181d3cacb9d48778a30ae08a10",
+      "source_sha256": "169359207ea97db27205f8699507269c4b027eefd7de203d0a3fb2e5eb159899",
       "public_methods": [
         "WeaverExecutionCoordinator",
         "available",
@@ -1498,12 +1623,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "c412631ad9d376b2ecd4fce178df5a608ff81fc66332025201f7fdaf44062575",
+      "source_sha256": "41be529538159ae38849525ba218b9437ee880ed13d5dac38917de43db8f33d5",
       "public_methods": [
         "WeaverRecoveryCoordinator",
         "close",
         "entityAvailable",
         "pending",
+        "profilesAvailable",
         "reconcile",
         "start",
         "worldAvailable"
@@ -1525,18 +1651,50 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceDispatcher.java",
+      "domain": "developer_self",
+      "source_sha256": "b5ef181d99294bf8a35f5935b7e1434f237b00b67bf3021f76b0846df7d1f8f0",
+      "public_methods": [
+        "WeaverInfluenceDispatcher",
+        "close",
+        "pulse"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
+      "domain": "developer_self",
+      "source_sha256": "7488f566aeaaff0164c4ad5eb28ccc5b275c03b1f352bea7fb1e526da810e0f5",
+      "public_methods": [
+        "WeaverInfluenceIndex",
+        "SourceEvidence",
+        "clean",
+        "quarantined",
+        "trace"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
+      "domain": "developer_self",
+      "source_sha256": "53c7779c26acf143ba0b2e99fdb3c8602fe483025b700355170eb53a64f8df48",
+      "public_methods": [
+        "submit"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "e4f8dfe980e3050d79736f150d8687126dcf54310efe3341a950c8337dc1610d",
+      "source_sha256": "d17f1963f5d8d5e770ab6b0be41d651549deb165a844131b93b8517acce460e2",
       "public_methods": [
         "WeaverJournal",
         "applied",
         "close",
+        "endObservedInfluence",
         "expireProjections",
         "finishAudit",
         "influenceIndex",
         "load",
         "prepare",
+        "prepareDerivedEffect",
         "ready",
         "resolve",
         "snapshot"
@@ -1566,7 +1724,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/ProjectionConsumerRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "e159c91f57530465496bafc5bc81126c215118d6fa4a36da2d43de8c37029241",
+      "source_sha256": "c23c2b6c1f66ff5652e29da4509a51f586a25a13d3dbd006faf1f538b1613782",
       "public_methods": [
         "ProjectionConsumerRegistry",
         "freeze",
@@ -1574,6 +1732,63 @@
         "require",
         "snapshot",
         "validate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/ProjectionValueCatalog.java",
+      "domain": "developer_self",
+      "source_sha256": "d4ceaae70409f0bc309f3a27e38915fa60982e474f8aaf68e930ed9a28df9c63",
+      "public_methods": [
+        "ProjectionValueCatalog",
+        "type",
+        "page",
+        "resolve"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/WeaverProjectionDispatcher.java",
+      "domain": "developer_self",
+      "source_sha256": "905a2c8f5edb9bb8b1d3373eda883b79ff1c6f783fcb4fc40370addd55b41a69",
+      "public_methods": [
+        "WeaverProjectionDispatcher",
+        "pulse"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
+      "domain": "faction",
+      "source_sha256": "53af75e9a8945aa2805cb9a9c644f2a112f8acb12727b4ac5b878ee76d6833cf",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
+      "domain": "faction",
+      "source_sha256": "700798e5c8d5b29c760d22d13d8b9fef3da541fa911b712df643e82a371bd12d",
+      "public_methods": [
+        "resolve"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+      "domain": "faction",
+      "source_sha256": "ca8dc61428a03e5dcc4bf68822255c6b746871165bfec22c6f5bf7b865077c2e",
+      "public_methods": [
+        "assessRecovery",
+        "captureOnOwner",
+        "catalog",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareEffects",
+        "prepareUndo",
+        "projectionConsumers",
+        "supportedKinds",
+        "validateImport"
       ]
     },
     {
@@ -1598,13 +1813,78 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
+      "domain": "pve",
+      "source_sha256": "cfc9ceeedba51f6784bc85d5534f335cd92d27e66c2acb602230b801ec32669e",
+      "public_methods": [
+        "canonicalBytes",
+        "influenceLifetimes",
+        "observeInfluence",
+        "type",
+        "validate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
+      "domain": "pve",
+      "source_sha256": "700f4cdd6cea9d29243ba0670c97c17e92bc6faf2497464e30c202ad943005b2",
+      "public_methods": [
+        "PvEMobProjectionSource",
+        "active",
+        "resolve",
+        "canonicalRevision"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
+      "domain": "pve",
+      "source_sha256": "4ac5d952c6c60dd68d4097b33812377790fec9243a372cc35f9632b5f9690622",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
+      "domain": "pve",
+      "source_sha256": "78590b3b0173663ad5e990ff0a82e41d8a3f034f8c1185a07867f522e3502621",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+      "domain": "pve",
+      "source_sha256": "5541f23f7210f1be80896197ac855ef0f604f824a37de2e4c1f39ab602e88974",
+      "public_methods": [
+        "PvEWeaverProvider",
+        "assessRecovery",
+        "captureCausalSources",
+        "captureOnOwner",
+        "catalog",
+        "causalSourceKinds",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "influenceLifetimes",
+        "inspect",
+        "observeInfluence",
+        "prepare",
+        "prepareEffects",
+        "prepareUndo",
+        "projectionConsumers",
+        "reconcileProjections",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
       "domain": "minecraft",
-      "source_sha256": "7c75bd624e0698cae6a27b4e59c0be254777f96cc6bac2858c5629da793e2afc",
+      "source_sha256": "0b0c4e93a6aef98efbf2e92a9d51fcfd653dce956d438764d1f94372668639ba",
       "public_methods": [
         "SubjectSnapshotFactory",
         "capture",
-        "captureOnOwner"
+        "captureOnOwner",
+        "captureRecovery"
       ]
     },
     {
@@ -1668,6 +1948,12 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
+      "domain": "faction",
+      "source_sha256": "86a2ad7e1460e7be17e47ff012d24293fd3510ed10010efcc6b1f2addf53158b",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionDisplayColorPolicy.java",
       "domain": "faction",
       "source_sha256": "924e385866f878155a92cd947965947f1de9b8f890abea648eb58f9fef41ecf4",
@@ -1688,13 +1974,49 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/factions/FactionMembershipAdjustmentRuntime.java",
+      "domain": "faction",
+      "source_sha256": "15dc9d6879c8d2a4850faf010690f2afbe9acc536a7c59aa7711f8e07652e4d2",
+      "public_methods": [
+        "adjust",
+        "close",
+        "code",
+        "pending",
+        "pulse",
+        "reconcile"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
+      "domain": "faction",
+      "source_sha256": "4031c8e0358abe3cc22c40cb08f0d30614e940eaff2e9d1ca963825ffe3642be",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/factions/FactionMembershipTransitionGate.java",
+      "domain": "faction",
+      "source_sha256": "ebd6c24b8e06fb403369342749fa88caab2955432a59424ccb4a8f3befb65dbb",
+      "public_methods": [
+        "claim",
+        "pause",
+        "paused",
+        "pending",
+        "release",
+        "resume"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "domain": "faction",
-      "source_sha256": "e3108926d565f75c22c3d4d62fa2acba18c816a442df3d08b01a0708ed5623d2",
+      "source_sha256": "20ae6a68693766ae5ea5691823d7b7a6be29de73af417280f0324ef8b4c57c1f",
       "public_methods": [
+        "bindContextProjection",
         "contentContexts",
+        "effectiveContentContexts",
+        "effectiveExplicitCombatContexts",
         "explicitCombatContexts",
         "isAmbientUndead",
+        "isEffectivelyNeutralMob",
         "isNeutralMob",
         "isUndead",
         "resolve",
@@ -1814,28 +2136,89 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
+      "domain": "developer_self",
+      "source_sha256": "f413c22be25291bb210574cee62a55a308a5a8988584a389b2a42e23dbae19a7",
+      "public_methods": [
+        "allowed",
+        "block",
+        "causal",
+        "death",
+        "deathAllowed",
+        "entity"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/integrity/CompositeRewardEligibilityPolicy.java",
       "domain": "developer_self",
-      "source_sha256": "dbea1a0d9286644f08ebf96cc436d359005a9a0c0a05d9930eb6c2f7c981533f",
+      "source_sha256": "2eaeb1cd6e3f5a4be8ad36853d5fb32892ed164efc9b50651bbd94a4f8a1fa5d",
       "public_methods": [
         "CompositeRewardEligibilityPolicy",
-        "evaluate"
+        "evaluate",
+        "evaluateSources"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
+      "domain": "developer_self",
+      "source_sha256": "6b619dd1cc3b7aaf060f35995d1246d66a66d7e3e8923dd2e318f3e7ddd329c6",
+      "public_methods": [
+        "activeFor",
+        "close",
+        "fence",
+        "install",
+        "prepare"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/GameplayRewardGate.java",
+      "domain": "developer_self",
+      "source_sha256": "14c16b04a284a030bff6dca5957e0ec72d3e10a0773c838b11e230293e4855c5",
+      "public_methods": [
+        "close",
+        "evaluate",
+        "evaluateSources",
+        "install"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java",
+      "domain": "developer_self",
+      "source_sha256": "799ab1bfe0a1c9927c204246e1cc1ab94a4c27e205117f6bd89f689647a9b94a",
+      "public_methods": [
+        "capture",
+        "close",
+        "install"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/InfluenceRewardEligibilityPolicy.java",
       "domain": "developer_self",
-      "source_sha256": "6a5b1e2dfe881153543b2c5a5d1bd39f1ed02bc9612617deb4c61aaceb38452f",
+      "source_sha256": "9fda29945baab4d9d2052028d63aa6fbd0ea90c6eaf991df22c2cc1dc212a63b",
       "public_methods": [
         "InfluenceRewardEligibilityPolicy",
-        "evaluate"
+        "evaluate",
+        "evaluateSources"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/RewardEligibilityPolicy.java",
       "domain": "developer_self",
-      "source_sha256": "0437bc735cc1022497099cbc561d4257a3cb0a7e24cc0c19d589e2cab2789f01",
-      "public_methods": []
+      "source_sha256": "24c537f16d4f3513887b09cb430b481807ef75324d9dcb214ed70f2d5b4ccb92",
+      "public_methods": [
+        "evaluateSources"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
+      "domain": "developer_self",
+      "source_sha256": "39b07b1904cb1b56cfd14efe7c76bea3fe13ade01361753210be931f7aa719d3",
+      "public_methods": [
+        "beforeRewards",
+        "afterRewards",
+        "beforePlayerRewards",
+        "afterPlayerRewards"
+      ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/BuildAwareLootService.java",
@@ -2120,7 +2503,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/AchievementManager.java",
       "domain": "knowledge",
-      "source_sha256": "a4c4ac3775f0763f96caef563ce38410058070b432247a3844ab62d8a0cfeb8f",
+      "source_sha256": "075f816b6ebe97c5f2de35af29296608e27183de3dac858d044b562756df4707",
       "public_methods": [
         "Achievement",
         "evaluate",
@@ -2129,13 +2512,14 @@
         "isEnabled",
         "metricValue",
         "reload",
+        "settlePendingReward",
         "tick"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java",
       "domain": "knowledge",
-      "source_sha256": "6c800fd117eab9bf2bd0def336a20052e60849c0f3839f014d00812d56a7c91b",
+      "source_sha256": "1ba307ee00d20f0416686034c65b1b5c0dcb08bd6ea1ad9df9b4204e07a61fa0",
       "public_methods": [
         "award",
         "clearIfCurrent",
@@ -2188,7 +2572,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/BestiaryManager.java",
       "domain": "knowledge",
-      "source_sha256": "ef065a129a8b4eee670cfed4fda8c98713c7935eb1e8ddd96def825e8845b212",
+      "source_sha256": "8a5bcb02ab50b890ef60bf22d0bd3eff2c453c7cc6d5ece76aa2328337a8589c",
       "public_methods": [
         "categoryName",
         "codexNote",
@@ -2204,7 +2588,8 @@
         "mobTemplates",
         "plugin",
         "record",
-        "setMobTemplateRegistry"
+        "setMobTemplateRegistry",
+        "setRewardDelivery"
       ]
     },
     {
@@ -2397,7 +2782,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java",
       "domain": "goals",
-      "source_sha256": "e02c3bc55d2af70451bd59508706bc1ee46bcd3cbe49ecdb9c7ebc2ab13966e4",
+      "source_sha256": "a25ed394383a14e0d366173e0b327de312993d2dd13c88ecfb391525967563d0",
       "public_methods": [
         "CommunityGoalManager",
         "commitSeasonTransition",
@@ -2477,7 +2862,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CouncilManager.java",
       "domain": "politics",
-      "source_sha256": "1b0e61eb77e067261a18ebfa1f4e597cdffb693dc73a389bbf178ffeb4d513e5",
+      "source_sha256": "c845cc681c7d3d443a8e172c07537401adc2e20799523c35326b4f00483ab6ba",
       "public_methods": [
         "CouncilManager",
         "councillorNames",
@@ -2490,7 +2875,8 @@
         "setCivilLaw",
         "tick",
         "vote",
-        "votesFor"
+        "votesFor",
+        "withMembershipAdmissionBarrier"
       ]
     },
     {
@@ -2886,14 +3272,17 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
       "domain": "faction",
-      "source_sha256": "1976175fbb9d70a1d909ccd994317efa73f693ab413c0fb829877670e155a75b",
+      "source_sha256": "a21d73adec29fba7c3df762b2f9b503df814050dc3a5d47a0011b3690f178feb",
       "public_methods": [
-        "FactionManager",
+        "adjustMembershipDurably",
+        "bindMembershipProjection",
+        "bindMembershipRuntime",
         "cleanup",
         "clearPlayerState",
         "describeAvailableFactions",
         "getChosenFaction",
         "getEconomyFaction",
+        "getEffectiveMembership",
         "getFactionAssignments",
         "getLastChosenFaction",
         "getMaxSwitchesPerSeason",
@@ -2906,12 +3295,18 @@
         "getSwitchesThisSeason",
         "hasChosenFaction",
         "hasEverChosenFaction",
+        "hasPendingMembershipTransition",
         "isEligibleForFactionBenefits",
         "isInSeasonEndLockout",
         "isMember",
+        "isMembershipReady",
         "joinDarkDurably",
         "load",
+        "membershipAdjustmentEffectsCompleted",
+        "membershipView",
+        "observeMembershipAdjustment",
         "publishExternalMembershipCommit",
+        "reconcileMembershipAdjustment",
         "reconcileMembershipHistory",
         "recordSeasonSwitch",
         "recordSwitch",
@@ -2922,6 +3317,8 @@
         "setGuildManager",
         "setMembershipChangeHook",
         "setSeasonManager",
+        "startMembershipRecovery",
+        "stopMembershipRecovery",
         "switchFactionDurably"
       ]
     },
@@ -2977,7 +3374,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/GuildManager.java",
       "domain": "guild_party",
-      "source_sha256": "835544c5b9598509b2a0403b7d230d630e6951d29812bb8be33ec94d602130dc",
+      "source_sha256": "b584b47f98ffb66412d501a8ae0abd96a0093b9fb3ab72edc358ffc5ad178156",
       "public_methods": [
         "accept",
         "addActivityXp",
@@ -2995,13 +3392,14 @@
         "load",
         "maxMembers",
         "reconcileFaction",
-        "save"
+        "save",
+        "withMembershipAdmissionBarrier"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HiddenSpotManager.java",
       "domain": "knowledge",
-      "source_sha256": "34ab97604d3b0ae0c449e9f798bb09a9ed8038f05c7fb7f3a331dc954e9d128c",
+      "source_sha256": "3492439bade8440157c7a7b65cc8f76f8d3cfdc984d1eb9995b764ad6a93e032",
       "public_methods": [
         "load",
         "save",
@@ -3153,7 +3551,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/JobManager.java",
       "domain": "class",
-      "source_sha256": "77cb52de933da6a72aea1bc0b72305d0038687765d125d0905e7ae443661224f",
+      "source_sha256": "394ca7c58d3705557d56d955f6a2b25ccede46cafa397a786970f1055747fe80",
       "public_methods": [
         "addXpToJobResultV2",
         "addXpToJobV2",
@@ -3188,7 +3586,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/KingManager.java",
       "domain": "politics",
-      "source_sha256": "232339cb6dc7cfcb29b224935f8497e280471f842a488e4748dfc9948ff7d117",
+      "source_sha256": "759e74dff55e5a3fe7bc39e662c81a396fe22ee7124da3bfb8b769a32ccb5b61",
       "public_methods": [
         "electionQuorum",
         "getKing",
@@ -3202,7 +3600,8 @@
         "save",
         "setActivePopulation",
         "setKing",
-        "vote"
+        "vote",
+        "withMembershipAdmissionBarrier"
       ]
     },
     {
@@ -3452,7 +3851,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/PetManager.java",
       "domain": "pets",
-      "source_sha256": "9f10351db93a26a419c0b60d14bb38383483be74373832dcc4f9869c73bb5ca5",
+      "source_sha256": "c2d7e1a292880b11736acf4a9bb839dcb34b4b783c609d02af8201849f97710f",
       "public_methods": [
         "PetKillAttribution",
         "PetMutationResult",
@@ -3543,7 +3942,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java",
       "domain": "profession",
-      "source_sha256": "c03bffb98ca5aba0a690ada12ee2abeb4a4fd4c0700397863eac5db19ba91c49",
+      "source_sha256": "1d782836ee5856c60b5d47cb74394b0e05b29fe95be2b9d98160f10f46876269",
       "public_methods": [
         "XpBreakdown",
         "XpChange",
@@ -3607,7 +4006,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ProfessionWeeklyGoalManager.java",
       "domain": "goals",
-      "source_sha256": "f2ebab513f68d8b4addce4e4502b1d4730a7000ee47478e1d933adcb2d36bbb1",
+      "source_sha256": "175ca52207c6143779a45c40588d87b8bd3d7f4665546c6ba7b21b2f5086305d",
       "public_methods": [
         "add",
         "counterOf",
@@ -3621,7 +4020,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/QuestManager.java",
       "domain": "knowledge",
-      "source_sha256": "c00eb3977be08c4509c65556d8a86ed5fbc0fc86359e89d45c60f6392185ea25",
+      "source_sha256": "de516b1078a3d17871ac4162f3ab9b56bd7670f03d2765e83371cc6043b9dc43",
       "public_methods": [
         "QuestMeta",
         "abandon",
@@ -3705,6 +4104,7 @@
         "setSpecializationManager",
         "setStatsManager",
         "setTracked",
+        "shutdown",
         "turnIn"
       ]
     },
@@ -3720,7 +4120,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/RaidManager.java",
       "domain": "war_raid_duel",
-      "source_sha256": "202565eb67efeac37081bcbf8b69497e5def7622ac102636e45ad841b27a08ed",
+      "source_sha256": "8fb7b5a49261aa640dd5ae325d0be8d1c848f2ee7e57c9b35d2405556c7b8f38",
       "public_methods": [
         "ActiveRaid",
         "RaidManager",
@@ -3743,7 +4143,8 @@
         "save",
         "setWinHook",
         "shutdown",
-        "startRaid"
+        "startRaid",
+        "withMembershipAdmissionBarrier"
       ]
     },
     {
@@ -3895,7 +4296,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonManager.java",
       "domain": "season",
-      "source_sha256": "8c630bb1f3af9b301c727983950abee724c9233af453a12f60706e972ed98e5d",
+      "source_sha256": "eeb630f7956477f5a24861ce6f1c29d77dab39e2d54242dfa70fb7d82294a232",
       "public_methods": [
         "activePopulation",
         "addExactPointsOnce",
@@ -3957,7 +4358,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ServerChallengeManager.java",
       "domain": "event.server_challenge",
-      "source_sha256": "25a381adfd88e592c3d0cc47dcaf161b716fe8b847ab16e009c9d705cbdbdf13",
+      "source_sha256": "8dc42e89f7f0f0c114c364f4e279bdfff465fa1f60bea3451bb23ceae2b99b1e",
       "public_methods": [
         "describeGoal",
         "forceStart",
@@ -3969,6 +4370,18 @@
         "showTo",
         "shutdown",
         "tick"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/managers/ServerChallengeRun.java",
+      "domain": "event.server_challenge",
+      "source_sha256": "1abbe9ef4346482c62cb71806bc02cf48e3875da461926fdb1b0ce630b9b48c6",
+      "public_methods": [
+        "expire",
+        "record",
+        "rewardAllowed",
+        "snapshot",
+        "stop"
       ]
     },
     {
@@ -4194,7 +4607,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SpyManager.java",
       "domain": "crime_whisper",
-      "source_sha256": "ec397a11dd71912239d95dd45a2878606822bef2e555fcb30a91f28ba88aa1f7",
+      "source_sha256": "ef9be29fd0d5297b518fbd830c4286608963ce7a54da2c99bc8b1395237f9b9e",
       "public_methods": [
         "SpyManager",
         "clearPlayerState",
@@ -4207,7 +4620,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/StatsManager.java",
       "domain": "knowledge",
-      "source_sha256": "71da20f4113d1b734d4e63c7859290e96116a365b8876ac813a20aa538dd2594",
+      "source_sha256": "8539edb58ba1d23f037dca1b5b81df8cc2e9fc0521572b40ee7fddcb698023db",
       "public_methods": [
         "Entry",
         "findPlayerIdByName",
@@ -4412,7 +4825,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WhisperManager.java",
       "domain": "crime_whisper",
-      "source_sha256": "fe8c9ec8b6702c8a7eea8beedf79f0aff89737638b962fba94732d344af6d7c5",
+      "source_sha256": "b2396cd475568b0c0eb3d625e08087015502c65579d1ad48003f57d82ed24181",
       "public_methods": [
         "Scene",
         "beginRite",
@@ -4597,12 +5010,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileAchievementStore.java",
       "domain": "knowledge",
-      "source_sha256": "41bad440cc3fa88ff45ba3b4174ce054b2030a7bdbd11be0f1f6ad7c019158fe",
+      "source_sha256": "57ed6ec31c6236f210a4e4bc6b28bf5be7da006158b3688ab573ed98e67c5916",
       "public_methods": [
+        "BestiaryAdmission",
         "BestiaryRecord",
         "PendingReward",
         "RewardReservation",
         "bestiaryEntries",
+        "deliverReward",
         "hasVisitedHiddenSpot",
         "isUnlocked",
         "markHiddenSpotVisited",
@@ -4610,6 +5025,7 @@
         "pendingReward",
         "pendingRewards",
         "recordBestiary",
+        "recordBestiaryWithRewards",
         "reserveReward",
         "rewardReserved",
         "rewardSettled",
@@ -4621,7 +5037,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileAuthority.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "a61106cc6935bc0b51a668de8a0d2684c9aa498a174d3901696ca024a6f681f2",
+      "source_sha256": "26e103454e6a5836a77ceff7fdebbc3dea119d18aae8131bc8629f6fef3cc0de",
       "public_methods": [
         "booleanExtension",
         "current",
@@ -4630,6 +5046,7 @@
         "installed",
         "longExtension",
         "mutateExtensions",
+        "mutateRewardSectionConditional",
         "mutateSection",
         "mutateSectionConditional",
         "playerId",
@@ -4772,14 +5189,26 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java",
       "domain": "faction",
-      "source_sha256": "edee3a7069b8d51d11cfb2d6a6e61616fd5c12ea70ebb26f2d4839ea2d9b3949",
+      "source_sha256": "6f17d03ef4bfc97c1cfe4e881ade78edb539af6a7267297d3ffede0a9796a17c",
       "public_methods": [
+        "AdjustmentResult",
+        "MembershipAdjustment",
+        "MembershipView",
         "State",
+        "adjustMembership",
+        "adjustmentEffectsCompleted",
         "assign",
+        "code",
+        "completeAdjustmentEffects",
+        "fingerprint",
         "joinDark",
         "lastPaidSwitchAt",
         "load",
+        "membershipView",
+        "observeAdjustment",
+        "pendingAdjustmentEffects",
         "readCached",
+        "receiptId",
         "recordSeasonSwitch",
         "remove",
         "switchDurably",
@@ -4836,7 +5265,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileOperationStore.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "271c988ce31745f3dc954f203be7c7fba0de9b2a1757ebb9254fdac633a6b792",
+      "source_sha256": "a2c41a8c93384de2efa0fad0d798d4f45ce527dbd5a857ac684e5f5dbf8f1413",
       "public_methods": [
         "byTypeAndStatus",
         "commit",
@@ -4850,7 +5279,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileQuestStore.java",
       "domain": "knowledge",
-      "source_sha256": "650efdb50b14abee71feccc3d52de818937342026d983582f622863dc43d3058",
+      "source_sha256": "a6ca09e1d7ebe257b2fc520d0c0cb0121653e356e10c48f8c30ed8f6f6767f54",
       "public_methods": [
         "CompletionReceipt",
         "State",
@@ -4858,6 +5287,7 @@
         "accept",
         "active",
         "complete",
+        "completeIfReady",
         "completed",
         "completedSeason",
         "discover",
@@ -4881,19 +5311,21 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSeasonParticipationStore.java",
       "domain": "season",
-      "source_sha256": "c702b30e3e47e300e0d83dd79664cee5c7c534ae3bfdef1ed02faae414914c72",
+      "source_sha256": "7052d38420a98ef6cb394efc421d63b25232833c5e4f69b7201f827b3e0f0d15",
       "public_methods": [
         "State",
         "active",
         "contributions",
         "load",
+        "matchesCurrentMembership",
+        "newest",
         "record"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileService.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "6634876b565cf722c0246bef91954575e4ec1477e5002a6f9d89657aec8bdaa1",
+      "source_sha256": "3fe8dc6958852ea662c5566b57bd2985e7e80668e6d1a3ec2790d18204756d30",
       "public_methods": [
         "PlayerProfileSession",
         "adminProfile",
@@ -4906,6 +5338,7 @@
         "isCurrentSession",
         "join",
         "load",
+        "mutateRewardSectionConditional",
         "mutateSection",
         "mutateSectionConditional",
         "publicProfile",
@@ -4982,7 +5415,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileStatisticsStore.java",
       "domain": "knowledge",
-      "source_sha256": "c6e405f5ba4f5d0f13cacc5a9418950d2dbc9a861b091dd6f3833570ecc0c54a",
+      "source_sha256": "3119186f253cda82a2a93eebacebd5830dbbbe136983d0544fadb6e0534101db",
       "public_methods": [
         "CounterSnapshot",
         "LeaderboardSnapshot",
@@ -5048,7 +5481,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileWeeklyGoalStore.java",
       "domain": "goals",
-      "source_sha256": "0f61cf43d973b4353306fc590bf72601be4380c87cbaf9e954d9932a61270d1a",
+      "source_sha256": "de929ee525e096d1426322a74514b1d4c53b67c51defb2a6b43c46662af2f4f5",
       "public_methods": [
         "ClaimedReward",
         "award",
@@ -5060,7 +5493,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileWhisperStore.java",
       "domain": "crime_whisper",
-      "source_sha256": "1150a6395532e1481122067b185bc1b2cfb37315c7dbfdad41fd946f01e10dd4",
+      "source_sha256": "59f48ce22b9ebfb1d21fb243438dd87de510043cadb02eecf6d313f36fee18cf",
       "public_methods": [
         "Accusation",
         "Adjustment",
@@ -5085,22 +5518,59 @@
         "pendingRite",
         "prepareRite",
         "read",
+        "reconcileMembership",
         "returnRemainingMillis",
         "withdraw"
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "c1d78cd96816385fcf5d68795522c2928c6a1acc02191466ceb8d6db176a3f22",
+      "public_methods": [
+        "refreshSnapshot"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java",
+      "domain": "profile_infrastructure",
+      "source_sha256": "5d8202bd280200d7db809a4c2a81fbe66176df73f7fe799791a463e0e9688610",
+      "public_methods": [
+        "afterManifestMovedBeforeCleanup",
+        "afterSectionsMovedBeforeManifest",
+        "cached",
+        "commitSections",
+        "find",
+        "findByName",
+        "flush",
+        "flushAll",
+        "invalidate",
+        "listPlayerIds",
+        "load",
+        "loadSection",
+        "postVisitDirectory",
+        "quarantineSection",
+        "recoverSection",
+        "refreshSnapshot",
+        "saveRewardSection",
+        "saveSection",
+        "shutdown",
+        "visitFile"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionManager.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "c18ecd34cd414857909192dbf2c4ef31c5d7d5ba9a4eaf63bf3b16319d935705",
+      "source_sha256": "a6c60838efa59eaa32ece1fddb26abefca1a21a6fa42731aeac9432bcee02cd8",
       "public_methods": [
-        "LedgerSaturated"
+        "LedgerSaturated",
+        "TransactionPlan"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/transaction/YamlPlayerProfileTransactionManager.java",
       "domain": "profile_infrastructure",
-      "source_sha256": "337a96afee85f8f89c861808c11979ed40bf473a0c36379398ecc597a4c9037d",
+      "source_sha256": "5278bb5f49a9628c9a574acf7555e94aa3f7e846455990373528971aab9f7d43",
       "public_methods": [
         "execute"
       ]
@@ -5311,8 +5781,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
       "domain": "pve",
-      "source_sha256": "fe64be87ff5fe59e31d12181e922d99e471031c7e988b5784a92a8b05772f3a5",
+      "source_sha256": "421a3de1b9d8e11a0f6ac2fde5ef9cb319900f69ee9a10ac0dcbdf09b0193851",
       "public_methods": [
+        "AuthoredCreatureSpawnService",
         "Request",
         "applyParticipantModifier",
         "cleanupSummons",
@@ -5324,6 +5795,7 @@
         "rewardOwner",
         "spawn",
         "statProvenance",
+        "summonOrigin",
         "summonedBy",
         "template"
       ]
@@ -5455,24 +5927,32 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "8c3161a3edeb38cb1944c3009c7a8aa08f9b88cc9731599b4605041c113663f8",
+      "source_sha256": "72f0e12762f9490eee7ba1fd0d2623cddfa16232f7b850b025a185ac5c94014a",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
         "activeStateCount",
         "activeStateSummary",
         "attach",
+        "bindProjectionSource",
+        "canonicalProfile",
+        "control",
+        "controlView",
         "detach",
         "disengageTarget",
+        "effectiveProfile",
         "enterCombat",
         "onAffixDamage",
         "onAffixHurt",
         "onDeath",
+        "onEntitiesLoad",
         "onSpawn",
         "pause",
+        "reconcileProjection",
         "refreshProfile",
         "resume",
         "shutdown",
+        "summonOrigin",
         "trigger",
         "triggerTechnique"
       ]
@@ -5500,6 +5980,45 @@
       "public_methods": [
         "RewardBand",
         "primarySourceTag",
+        "resolve"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
+      "domain": "pve",
+      "source_sha256": "33cc2d00b43273097fdc0d483c7ae69eb31a45f0a1f1184ba0199792bde25e0e",
+      "public_methods": [
+        "Request",
+        "Accepted",
+        "View",
+        "view",
+        "execute",
+        "stamp",
+        "Rejected",
+        "code"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
+      "domain": "pve",
+      "source_sha256": "ae15069b1297340d1a54f8be351756de5888b2bcababaa289247cc4ecdcfdb61",
+      "public_methods": [
+        "View",
+        "advance",
+        "begin",
+        "consume",
+        "consumed",
+        "omittedCooldowns",
+        "readyAt",
+        "view"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
+      "domain": "pve",
+      "source_sha256": "f8458e1d6008ff9537e57c4ed9e2edd7add8a4fd0586a386236433497a6aa605",
+      "public_methods": [
+        "canonical",
         "resolve"
       ]
     },
@@ -6033,6 +6552,33 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java",
+      "domain": "pve",
+      "source_sha256": "c719e64f07fb021004f6714e7fdfd9517c5d124f34c7c38dc4fdc17701c840eb",
+      "public_methods": [
+        "killerId",
+        "victimId",
+        "victimType",
+        "victimWorldId",
+        "victimWorld",
+        "victimX",
+        "victimY",
+        "victimZ",
+        "victimLocation",
+        "dropSeed",
+        "dropRandom",
+        "claimOnce",
+        "runOnKiller",
+        "eligibleKill",
+        "eligibleAttributedKill",
+        "eligibleTrackingKill",
+        "isSpawnerSpawned",
+        "isAfkRewardBlocked",
+        "rewardContext",
+        "eligibleFor"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/warlock/WarlockGameplayService.java",
       "domain": "class",
       "source_sha256": "e41c8bc59bf1059c0157de46ac00bc3a1c6eead29dea316196c784cb53cd5479",
@@ -6113,29 +6659,61 @@
   "supplemental_authorities": [
     "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
+    "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionMutationStoreAdapter.java",
+    "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionRepository.java",
+    "src/main/java/hu/taliann/icesmp/classspec/persistence/PlayerProfileClassSpecSectionRepository.java",
+    "src/main/java/hu/taliann/icesmp/dev/artifact/BingulusRewardBehavior.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceDispatcher.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/projection/WeaverProjectionDispatcher.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
+    "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/factions/FactionMembershipTransitionGate.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
     "src/main/java/hu/taliann/icesmp/factions/WhisperSightline.java",
+    "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
+    "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
+    "src/main/java/hu/taliann/icesmp/integrity/GameplayRewardGate.java",
+    "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java",
+    "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
     "src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java",
     "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java",
     "src/main/java/hu/taliann/icesmp/items/MoneyPouchItemFactory.java",
     "src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java",
     "src/main/java/hu/taliann/icesmp/managers/MajorEventGate.java",
     "src/main/java/hu/taliann/icesmp/managers/SeasonStoryTeller.java",
+    "src/main/java/hu/taliann/icesmp/managers/ServerChallengeRun.java",
+    "src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java",
+    "src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java",
+    "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
+    "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
+    "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java",
-    "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java"
+    "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
+    "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java"
   ],
   "bootstrap_components": {
     "src/main/java/hu/taliann/icesmp/IceSMP.java": [
@@ -6216,6 +6794,9 @@
       "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java",
       "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassivePolicy.java",
@@ -6223,6 +6804,7 @@
       "src/main/java/hu/taliann/icesmp/gui/CharacterMenuContext.java",
       "src/main/java/hu/taliann/icesmp/gui/CommandMenuContext.java",
       "src/main/java/hu/taliann/icesmp/gui/ItemForgeGUI.java",
+      "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
       "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java",
       "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
       "src/main/java/hu/taliann/icesmp/itemization/ItemMutationCoordinator.java",
@@ -7276,6 +7858,25 @@
       "rationale": "Internal WorldWeaver composition/root lifecycle. Artifact authority remains DevItemManager; gameplay domain coverage is not closed by the frontend."
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+      "domains": [
+        "faction"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+      "domains": [
+        "minecraft"
+      ],
+      "rationale": "Existing canonical Minecraft adapter constructor now receives generic composition services through a lambda; the registry inventory detects its explicit constructor call."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+      "domains": [
+        "pve"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "role": "AUTHORITY",
       "domains": [
@@ -7356,6 +7957,13 @@
         "itemization"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
+      "domains": [
+        "developer_self"
+      ],
+      "rationale": "Neutral vanilla reward output boundary; observes canonical influence evidence, no separate reward or gameplay authority."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java",

@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.dev.weaver.persistence;
 
 import hu.taliann.icesmp.dev.weaver.api.*;
+import hu.taliann.icesmp.dev.weaver.integrity.*;
+import hu.taliann.icesmp.integrity.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,6 +12,8 @@ public final class WeaverJournal {
     @FunctionalInterface private interface IoTask<T> { T run() throws Exception; }
     private final WeaverJournalStorage storage;
     private final java.util.function.Consumer<hu.taliann.icesmp.dev.weaver.projection.WeaverProjection> projectionValidator;
+    private final java.util.function.LongSupplier effectClock;
+    private final java.util.function.Function<GameplayEffectContext, WeaverValue> lifetimeResolver;
     private final ThreadPoolExecutor io;
     private final CompletableFuture<Void> closed = new CompletableFuture<>();
     private final AtomicBoolean loading = new AtomicBoolean();
@@ -24,7 +28,17 @@ public final class WeaverJournal {
         this(storage, projection -> { throw new WeaverDomainRejection("PROJECTION_WITHOUT_CONSUMER"); });
     }
     public WeaverJournal(final WeaverJournalStorage storage, final java.util.function.Consumer<hu.taliann.icesmp.dev.weaver.projection.WeaverProjection> projectionValidator) {
+        this(storage, projectionValidator, System::currentTimeMillis);
+    }
+    public WeaverJournal(final WeaverJournalStorage storage, final java.util.function.Consumer<hu.taliann.icesmp.dev.weaver.projection.WeaverProjection> projectionValidator,
+            final java.util.function.LongSupplier effectClock) {
+        this(storage, projectionValidator, effectClock, context -> { throw new WeaverDomainRejection("LIFETIME_CONSUMER_UNAVAILABLE"); });
+    }
+    public WeaverJournal(final WeaverJournalStorage storage, final java.util.function.Consumer<hu.taliann.icesmp.dev.weaver.projection.WeaverProjection> projectionValidator,
+            final java.util.function.LongSupplier effectClock, final java.util.function.Function<GameplayEffectContext, WeaverValue> lifetimeResolver) {
         this.storage = Objects.requireNonNull(storage); this.projectionValidator = Objects.requireNonNull(projectionValidator);
+        this.effectClock = Objects.requireNonNull(effectClock);
+        this.lifetimeResolver = Objects.requireNonNull(lifetimeResolver);
         io = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(128), task -> {
             final Thread thread = new Thread(task, "IceSMP-internal-journal-io"); thread.setDaemon(true); return thread;
         }) {
@@ -36,14 +50,92 @@ public final class WeaverJournal {
         return submit(false, () -> {
             final WeaverJournalState loaded = checkedIo(storage::readState); final Map<String, WeaverAuditEntry> loadedAudit = Map.copyOf(checkedIo(storage::readAudit));
             if (loadedAudit.size() > 10_000) throw new IllegalArgumentException("Audit capacity exceeded");
-            loaded.projections().values().forEach(projectionValidator);
-            loaded.effectDeltas().values().forEach(delta -> { delta.added().values().forEach(projectionValidator); delta.removed().values().forEach(projectionValidator); });
+            // Historical projections remain durable even if their provider/content is unavailable.
+            // WeaverJournalState verifies origin, scope and influence; runtime consumers fail closed.
             state = loaded; publication = new Publication(loaded, new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex(loaded)); audit = loadedAudit; ready = true; return null;
         });
     }
     public boolean ready() { return ready && !failed && !closing; }
     public WeaverJournalState snapshot() { return publication.state(); }
     public hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex influenceIndex() { return publication.influence(); }
+    /** Native effects await durable target lineage. This route can only strengthen quarantine, never grant a reward. */
+    public CompletionStage<GameplayEffectPermit> prepareDerivedEffect(final GameplayEffectContext context) {
+        Objects.requireNonNull(context);
+        if (!ready()) return CompletableFuture.completedFuture(GameplayEffectPermit.denied());
+        final long observedAt = effectClock.getAsLong();
+        final var captured = publication.influence().trace(context.sources(), observedAt);
+        if (captured.uncertain() || captured.origins().size() > 128) return CompletableFuture.completedFuture(GameplayEffectPermit.denied());
+        // Clean gameplay needs no journal queue/write. The one-use permit still rechecks source and lifecycle admission.
+        if (captured.clean()) return CompletableFuture.completedFuture(effectPermit(context, Set.of(), Math.addExact(observedAt, 5000), Optional.empty()));
+        final long durableUntil = existingInstantAdmission(context, captured.origins(), observedAt);
+        if (durableUntil > observedAt) return CompletableFuture.completedFuture(effectPermit(context, captured.origins(), durableUntil, Optional.empty()));
+        // A tick-based lingering effect can outlive a wall-clock estimate during lag/logout.
+        // Monotonic targets are safe; temporary targets need an observed-lifetime consumer first.
+        final boolean needsObserver = (context.durationMillis() > 0 || context.lifetime().isPresent())
+                && context.targets().stream().anyMatch(target -> !WeaverEffectReducer.propagationTarget(target).monotonic());
+        return submit(true, () -> {
+            final long now = effectClock.getAsLong();
+            final var current = publication.influence().trace(context.sources(), now);
+            if (current.uncertain()) return GameplayEffectPermit.denied();
+            final Set<DeveloperInfluence> origins = new HashSet<>(captured.origins()); origins.addAll(current.origins());
+            final Optional<WeaverValue> lifetime = needsObserver ? Optional.of(Objects.requireNonNull(lifetimeResolver.apply(context))) : Optional.empty();
+            // Five seconds for the owner continuation, effect duration, then at least five minutes after its end.
+            final long admissionUntil = Math.addExact(Math.max(now, observedAt), 5000);
+            final long until = Math.addExact(Math.addExact(admissionUntil, context.durationMillis()), PlayerQuarantine.MINIMUM_TAIL_MILLIS);
+            final var next = WeaverEffectReducer.propagated(state, origins, context.targets(), until, lifetime);
+            if (next != state) publish(next);
+            return effectPermit(context, Set.copyOf(origins), admissionUntil, lifetime);
+        }).exceptionally(unavailable -> GameplayEffectPermit.denied());
+    }
+    /** Reuse only acknowledged lineage whose remaining tail covers the instant effect's actual admission time. */
+    private long existingInstantAdmission(final GameplayEffectContext context, final Set<DeveloperInfluence> origins, final long now) {
+        if (context.durationMillis() != 0 || context.lifetime().isPresent()) return -1;
+        final Publication current = publication;
+        long until = Math.addExact(now, 5000);
+        for (final DeveloperInfluence origin : origins) for (final RewardSource source : context.targets()) {
+            final var target = WeaverEffectReducer.propagationTarget(source);
+            final var evidence = current.state().influences().get(WeaverEffectReducer.propagatedId(origin, target));
+            if (evidence == null || !evidence.influence().equals(origin) || !evidence.target().equals(target)
+                    || evidence.observedLifetime().isPresent() || !evidence.quarantines(now)) return -1;
+            if (!target.monotonic()) until = Math.min(until, evidence.quarantinedUntil() - PlayerQuarantine.MINIMUM_TAIL_MILLIS);
+        }
+        return until;
+    }
+    private GameplayEffectPermit effectPermit(final GameplayEffectContext context, final Set<DeveloperInfluence> admitted, final long admissionUntil,
+            final Optional<WeaverValue> observedLifetime) {
+        final long issued = System.nanoTime();
+        return GameplayEffectPermit.guardedSources(currentSources -> {
+            if (!ready() || System.nanoTime() - issued >= TimeUnit.SECONDS.toNanos(5)) return false;
+            final long now = effectClock.getAsLong(); if (now < 0 || now > admissionUntil) return false;
+            final Publication current = publication;
+            final var source = current.influence().trace(context.sources(), now);
+            if (source.uncertain() || !admitted.containsAll(source.origins())) return false;
+            if (!currentSources.isEmpty()) {
+                final var fresh = current.influence().trace(currentSources, now);
+                if (fresh.uncertain() || !admitted.containsAll(fresh.origins())) return false;
+            }
+            for (final DeveloperInfluence origin : admitted) for (final RewardSource target : context.targets()) {
+                final var exact = WeaverEffectReducer.propagationTarget(target);
+                final var lifetime = exact.monotonic() ? Optional.<WeaverValue>empty() : observedLifetime;
+                final var evidence = current.state().influences().get(WeaverEffectReducer.propagatedId(origin, exact, lifetime));
+                if (evidence == null || !evidence.influence().equals(origin) || !evidence.target().equals(exact) || !evidence.quarantines(now)
+                        || !evidence.observedLifetime().equals(lifetime) || lifetime.isPresent() && !evidence.active()) return false;
+            }
+            return ready();
+        });
+    }
+    public CompletionStage<Boolean> endObservedInfluence(final WeaverInfluenceRecord expected, final GameplayEffectGate.ObservationFence fence) {
+        Objects.requireNonNull(expected); Objects.requireNonNull(fence);
+        return submit(true, () -> {
+            if (!expected.active() || expected.observedLifetime().isEmpty() || !fence.activeFor(expected.target().source())
+                    || !expected.equals(state.influences().get(expected.id()))) return false;
+            final Map<UUID, WeaverInfluenceRecord> influences = new HashMap<>(state.influences());
+            influences.put(expected.id(), expected.ended(Math.max(effectClock.getAsLong(), expected.influence().appliedAt())));
+            publish(new WeaverJournalState(Math.addExact(state.revision(), 1), state.operations(), state.receipts(), state.projectionSequence(),
+                    state.intents(), state.projections(), influences, state.effectDeltas()));
+            return true;
+        });
+    }
     public CompletionStage<WeaverOperationRecord> prepare(final WeaverOperationRecord prepared) {
         return prepare(prepared, hu.taliann.icesmp.dev.weaver.integrity.WeaverEffectIntent.none());
     }
@@ -169,7 +261,8 @@ public final class WeaverJournal {
     }
     private void publish(final WeaverJournalState next) {
         storage.validateStateCapacity(next);
-        next.projections().values().forEach(projectionValidator);
+        // New projections were validated at APPLIED. Revalidating historical entries here would
+        // let removed content disable unrelated writes, cleanup, audit and influence publication.
         final Publication nextPublication = new Publication(next, new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex(next));
         checkedIo(() -> { storage.writeState(next); return null; }); state = next; publication = nextPublication;
     }

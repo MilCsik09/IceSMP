@@ -11,7 +11,9 @@ import static hu.taliann.icesmp.dev.weaver.persistence.WeaverJournalCodec.*;
 /** Only tagged immutable identities and registered typed values enter the durable effect schema. */
 final class WeaverEffectCodec {
     private final WeaverJournalCodec journal;
-    WeaverEffectCodec(final WeaverJournalCodec journal) { this.journal = journal; }
+    private final boolean observedLifetimes;
+    WeaverEffectCodec(final WeaverJournalCodec journal) { this(journal, true); }
+    WeaverEffectCodec(final WeaverJournalCodec journal, final boolean observedLifetimes) { this.journal = journal; this.observedLifetimes = observedLifetimes; }
     Map<String, Object> delta(final WeaverEffectDelta delta) {
         final Map<String, Object> added = new TreeMap<>(), removed = new TreeMap<>(), ended = new TreeMap<>();
         delta.added().forEach((id, value) -> added.put(id.toString(), projection(value)));
@@ -45,11 +47,16 @@ final class WeaverEffectCodec {
     }
     Map<String, Object> influence(final WeaverInfluenceRecord influence) {
         return Map.of("id", influence.id().toString(), "origin", origin(influence.influence()), "target", target(influence.target()),
-                "active", influence.active(), "until", influence.quarantinedUntil());
+                "active", influence.active(), "until", influence.quarantinedUntil(),
+                "lifetime", influence.observedLifetime().map(value -> journal.values(Map.of("value", value))).orElse(Map.of()));
     }
     WeaverInfluenceRecord influence(final Map<String, Object> row) {
-        keys(row, "id", "origin", "target", "active", "until");
-        return new WeaverInfluenceRecord(uuid(row, "id"), origin(map(row.get("origin"))), target(map(row.get("target"))), bool(row, "active"), number(row, "until"));
+        if (observedLifetimes) keys(row, "id", "origin", "target", "active", "until", "lifetime");
+        else keys(row, "id", "origin", "target", "active", "until");
+        final Map<String, Object> lifetime = observedLifetimes ? map(row.get("lifetime")) : Map.of();
+        if (!lifetime.isEmpty()) keys(lifetime, "value");
+        return new WeaverInfluenceRecord(uuid(row, "id"), origin(map(row.get("origin"))), target(map(row.get("target"))), bool(row, "active"), number(row, "until"),
+                lifetime.isEmpty() ? Optional.empty() : Optional.of(journal.readValues(lifetime).get("value")));
     }
     List<Object> intent(final WeaverEffectIntent intent) {
         return intent.targets().stream().sorted(Comparator.comparing(target -> target(target).toString())).map(target -> (Object) target(target)).toList();
@@ -67,7 +74,7 @@ final class WeaverEffectCodec {
         keys(row, "operation", "actor", "action", "mode", "applied");
         return new DeveloperInfluence(uuid(row, "operation"), IntegrityMode.valueOf(text(row, "mode")), text(row, "action"), uuid(row, "actor"), number(row, "applied"));
     }
-    private Map<String, Object> target(final WeaverInfluenceTarget target) {
+    static Map<String, Object> target(final WeaverInfluenceTarget target) {
         final Map<String, Object> source = switch (target.source()) {
             case RewardSource.Player player -> Map.of("kind", "PLAYER", "id", player.id().toString());
             case RewardSource.Entity entity -> Map.of("kind", "ENTITY", "id", entity.id().toString());

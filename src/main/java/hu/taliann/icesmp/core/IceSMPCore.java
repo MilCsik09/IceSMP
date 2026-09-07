@@ -269,6 +269,9 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchItemFactory;
     private final hu.taliann.icesmp.managers.DevItemManager devItemManager;
     private final hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime worldWeaverRuntime;
+    private final hu.taliann.icesmp.integrity.GameplayRewardGate.Binding rewardEligibilityBinding;
+    private final hu.taliann.icesmp.integrity.GameplayEffectGate.Binding effectEligibilityBinding;
+    private final hu.taliann.icesmp.integrity.GameplaySourceCaptureGate.Binding sourceCaptureBinding;
     private final hu.taliann.icesmp.managers.GuildManager guildManager;
     private final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager;
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
@@ -640,6 +643,12 @@ public final class IceSMPCore {
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);
         professionManager.setMessageManager(messageManager); // szintlépés/fokozat üzenetek
         factionManager.setGuildManager(guildManager);
+        factionManager.bindMembershipRuntime(claim ->
+                guildManager.withMembershipAdmissionBarrier(() ->
+                        councilManager.withMembershipAdmissionBarrier(() ->
+                                kingManager.withMembershipAdmissionBarrier(() ->
+                                        raidManager.withMembershipAdmissionBarrier(claim)))),
+                () -> { councilManager.save(); kingManager.save(); });
         questManager.setGuildManager(guildManager); // quest-teljesítés céh-XP
         professionRecipeBookListener.setBestiaryManager(bestiaryManager); // recept-lajstrom
         professionRecipeBookListener.setJobManager(jobManager); // kaszt-zárt receptek
@@ -784,6 +793,7 @@ public final class IceSMPCore {
         abilityCatalystListener.setStatsManager(statsManager);
         this.achievementManager = new AchievementManager(plugin, configManager, jobManager, currencyManager,
                 professionManager, factionManager, statsManager, dailyQuestManager, messageManager);
+        bestiaryManager.setRewardDelivery(achievementManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, worldBossManager, caravanManager, escortManager,
@@ -906,7 +916,12 @@ public final class IceSMPCore {
 
         registerSpells();
         this.worldWeaverRuntime = new hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime(plugin, devItemManager, itemIdentityService,
-                java.util.List.of(hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider::new));
+                java.util.List.of(services -> new hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider(services.types()),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProvider(services, mobAbilityRegistry, mobTemplateRegistry, mobScalingManager, mobAbilityRuntime),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.FactionWeaverProvider(services, factionManager, factionMobContextResolver, factionPassiveConfig)));
+        rewardEligibilityBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(worldWeaverRuntime.rewardEligibility());
+        effectEligibilityBinding = hu.taliann.icesmp.integrity.GameplayEffectGate.install(worldWeaverRuntime::prepareEffect);
+        sourceCaptureBinding = hu.taliann.icesmp.integrity.GameplaySourceCaptureGate.install(worldWeaverRuntime::captureCausalSources);
     }
 
     /**
@@ -1139,6 +1154,7 @@ public final class IceSMPCore {
         // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
         // letting later gameplay run against an empty/default manager and overwrite the evidence.
         storeCoordinator.loadAll();
+        factionManager.startMembershipRecovery();
         // A class-relic katalógus kereszt-validációja a generikus relic-registryt kérdezi,
         // ezért csak a RelicManager (persistent store) betöltése UTÁN futhat.
         classRelicService.reload();
@@ -1149,6 +1165,7 @@ public final class IceSMPCore {
         professionRecipeManager.registerRecipes();
         worldWeaverRuntime.start();
         registerListeners();
+        hu.taliann.icesmp.pve.MobRuntimeControlProbe.maybeRun(plugin, mobAbilityRuntime, authoredCreatureSpawns, mobTemplateRegistry, mobAbilityRegistry, achievementManager);
         trashAmbientManager.start();
         // Hot plugin reloads may enable while players are already online and therefore do not emit
         // a new join event. Give those sessions a fresh generation before PM delivery can link them.
@@ -1368,6 +1385,7 @@ public final class IceSMPCore {
      * Disables the plugin core by saving all manager data.
      */
     public void disable() {
+        factionManager.stopMembershipRecovery();
         // A passzívok per-player megtorlási/célzási állapota nem perzisztens. Sikertelen
         // enable után is takarítani kell, különben hot-reloadnál régi célok maradhatnak.
         factionPassiveListener.clearAllState();
@@ -1404,6 +1422,8 @@ public final class IceSMPCore {
                     + "and persistent-store writes to protect the last durable state.");
             return;
         }
+        // Stop new quest work; already entered profile writes drain through the canonical repository.
+        shutdownStep("questManager", () -> questManager.shutdown());
         if (moderationExpiryTask != null) {
             moderationExpiryTask.cancel();
             moderationExpiryTask = null;
@@ -1487,6 +1507,9 @@ public final class IceSMPCore {
         shutdownStep("spyManager", spyManager::shutdown);
         shutdownStep("cultistEventManager", cultistEventManager::shutdown);
         shutdownStep("totemManager", totemManager::shutdown);
+        shutdownStep("rewardEligibility", rewardEligibilityBinding::close);
+        shutdownStep("effectEligibility", effectEligibilityBinding::close);
+        shutdownStep("sourceCapture", sourceCaptureBinding::close);
         shutdownStep("worldWeaverRuntime", worldWeaverRuntime::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
         shutdownStep("sitManager", sitManager::shutdown);
@@ -2087,6 +2110,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DevItemProtectionListener(plugin, devItemManager), plugin);
         pluginManager.registerEvents(worldWeaverRuntime.listener(), plugin);
         pluginManager.registerEvents(worldWeaverRuntime.recoveryListener(), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.integrity.VanillaRewardIntegrityListener(), plugin);
         pluginManager.registerEvents(factionPassiveListener, plugin);
         pluginManager.registerEvents(factionFoodListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WhisperListener(plugin, configManager, whisperManager, factionManager, raidManager, uniqueMaterialFactory, messageManager), plugin);
