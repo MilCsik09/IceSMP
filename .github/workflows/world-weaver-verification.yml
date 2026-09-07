@@ -1,0 +1,91 @@
+name: WorldWeaver verification
+
+on:
+  pull_request:
+    paths:
+      - "src/main/java/**"
+      - "src/regression/java/**"
+      - "docs/development/world-weaver/**"
+      - "scripts/audit_world_weaver_coverage.py"
+      - "scripts/audit_config_content_command_surface.py"
+      - "scripts/process_trash_sprite_sheets.py"
+      - "scripts/tests/test_trash_sprite_validation.py"
+      - "gradle/world-weaver-evidence.init.gradle"
+      - ".github/workflows/world-weaver-verification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: world-weaver-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Existing migration audits compare against historical stack commits.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install build dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
+      - name: Verify audited source inventory
+        run: python3 scripts/audit_world_weaver_coverage.py
+      - name: Verify sprite validation constraints on pinned Pillow
+        run: python3 -m unittest scripts.tests.test_trash_sprite_validation
+      - name: Repository consistency
+        run: python3 scripts/check_consistency.py
+      - name: Full build and existing regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/reports/world-weaver
+          git rev-parse HEAD > build/reports/world-weaver/tested-head.txt
+          ./gradlew build --continue --no-daemon --console=plain --stacktrace 2>&1 | tee build/reports/world-weaver/build.log
+      - name: Export resolved compile evidence for local preflight
+        if: ${{ !cancelled() }}
+        run: ./gradlew --init-script gradle/world-weaver-evidence.init.gradle worldWeaverCompileEvidence --no-daemon --console=plain
+      - name: Export resolved public build artifacts for offline verification
+        if: ${{ !cancelled() }}
+        shell: python
+        run: |
+          import hashlib
+          import os
+          import shutil
+          from pathlib import Path
+
+          cache = Path(os.environ.get("GRADLE_USER_HOME", str(Path.home() / ".gradle"))) / "caches/modules-2/files-2.1"
+          destination = Path("build/world-weaver-gradle-evidence")
+          for source in sorted(cache.glob("*/*/*/*/*")):
+              if not source.is_file() or source.suffix not in {".jar", ".pom", ".module"}:
+                  continue
+              group, artifact, version, digest, filename = source.relative_to(cache).parts
+              target = destination / group.replace(".", "/") / artifact / version / filename
+              if target.exists() and hashlib.sha256(target.read_bytes()).digest() != hashlib.sha256(source.read_bytes()).digest():
+                  raise RuntimeError("Conflicting resolved build artifact: " + str(target))
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(source, target)
+      - name: Retain exact-head verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-weaver-verification-${{ github.run_id }}
+          path: |
+            build/reports/world-weaver
+            build/world-weaver-compile-evidence
+            build/world-weaver-gradle-evidence
+          if-no-files-found: warn
+          retention-days: 14
