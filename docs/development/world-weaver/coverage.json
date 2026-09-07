@@ -174,14 +174,17 @@
       "phase": "WW-05",
       "inspect": "territory, shape, protection decision trace, regeneration pending blocks",
       "planned_actions": "DENY sandbox overlay; ALLOW LIVE_GM; canonical rename/type/owner/Y bounds; overlay fork",
-      "canonical_route": "TerritoryProtectionService common pure evaluator; TerritoryManager conditional copy-on-write transaction",
-      "rationale": "Current rename/type/owner/Y setters publish map/index before save. Need durable candidate commit before publication and multi-territory fingerprint for capital demotion; no generic remove/reshape. WW-05 native policy seam now shares immutable decision/trace evaluation across build/interact/PvP/environment paths. DOOM victim grace is wired at damage/potion ingress, hard lifecycle precedence is retained, and explicit/uncertain denial blocks regeneration escape paths. A single read-only projection port is present; the WorldWeaver provider adapter, journal-backed consumer, catalog/Thread and safe canonical transactions remain required before FULL_PROVIDER.",
+      "canonical_route": "TerritoryManager conditional copy-on-write transaction; TerritoryProtectionService effective rule projection consumer. Canonical provider adapter and owner trace frontend remain required.",
+      "rationale": "Native conditional transactions now persist real receipts before immutable map/index publication. Registered world-owned provider supplies dynamic canonical zone/rule catalogs, generic Thread parameters, journal projections, exact conditional sever/Undo and a bound protection consumer. SANDBOX ALLOW and sever revealing ALLOW are rejected; LIVE_GM is required. The canonical provider adapter, location decision-trace frontend, overlay fork and native connected evidence remain required before FULL_PROVIDER.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java",
         "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java",
         "src/main/java/hu/taliann/icesmp/managers/BlockRegenService.java",
         "src/main/java/hu/taliann/icesmp/territory/TerritoryProtectionPolicy.java",
-        "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java"
+        "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java"
       ],
       "implementation_evidence": [
         "docs/development/world-weaver/WW-05-territory-policy.md"
@@ -1891,6 +1894,46 @@
         "prepareUndo",
         "projectionConsumers",
         "reconcileProjections",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
+      "domain": "territory",
+      "source_sha256": "e5c46473c8d946b6f4114d79d03f84de4dd5426899a767fc631940665d5800d9",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
+      "domain": "territory",
+      "source_sha256": "79556ec2e1a5c8c6f847447075a3dd56a8f35c00a339d20302c715a50208be1a",
+      "public_methods": [
+        "canonicalBytes",
+        "resolve",
+        "type",
+        "validate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+      "domain": "territory",
+      "source_sha256": "ed1590f8deebaf4a5a958dcee8612da53a17b7205d89e42dc951b5a4ec90650a",
+      "public_methods": [
+        "TerritoryWeaverProvider",
+        "assessRecovery",
+        "catalog",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareEffects",
+        "prepareUndo",
+        "projectionConsumers",
         "supportedKinds",
         "validateImport"
       ]
@@ -6764,6 +6807,9 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
@@ -6883,6 +6929,7 @@
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassivePolicy.java",
@@ -7960,6 +8007,12 @@
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "domains": [
         "pve"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+      "domains": [
+        "territory"
       ]
     },
     {

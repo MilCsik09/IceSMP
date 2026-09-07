@@ -645,6 +645,11 @@
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java|TerritoryProtectionPolicy.Overlay resolve(UUID worldId, String territoryId, TerritoryProtectionPolicy.Rule rule);",
       "category": "RUNTIME",
       "reason": "Read-only native territory rule projection port keyed by world UUID and territory ID; no player UUID, filesystem path, YAML access or profile mutation is present. The canonical protection evaluator consumes a detached enum, while territory storage and ownership do not consume this port."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java|@Override public Overlay resolve(UUID worldId, String territoryId, Rule rule) {",
+      "category": "RUNTIME",
+      "reason": "Read-only journal projection lookup keyed by world UUID and territory ID. Validates detached typed protection values and the canonical territory fingerprint; no player profile, filesystem write or YAML path mutation."
     }
   ]
 }
