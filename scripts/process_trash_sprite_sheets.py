@@ -154,15 +154,17 @@ def validate(require_complete: bool, check_only: bool) -> None:
         raise ValueError("production Trash asset gate requires 330/330 base identities and "
                          f"27/27 phases, found {base_count}/330 and {phase_count}/27")
     for path in TEXTURE_ROOT.glob("*.png"):
-        image = Image.open(path)
-        if image.size != (64, 64) or image.mode != "RGBA":
-            raise ValueError(f"invalid final Trash sprite: {path}")
-        alpha_values = set(image.getchannel("A").get_flattened_data())
-        if not alpha_values.issubset({0, 255}) or 0 not in alpha_values or 255 not in alpha_values:
-            raise ValueError(f"Trash sprite must use non-empty binary alpha: {path}")
-        colours = {pixel[:3] for pixel in image.get_flattened_data() if pixel[3] == 255}
-        if not 1 <= len(colours) <= 8:
-            raise ValueError(f"Trash sprite tone budget must be 1..8: {path} has {len(colours)}")
+        with Image.open(path) as image:
+            if image.size != (64, 64) or image.mode != "RGBA":
+                raise ValueError(f"invalid final Trash sprite: {path}")
+            alpha_values = {value for value, count in enumerate(image.getchannel("A").histogram()) if count}
+            if not alpha_values.issubset({0, 255}) or 0 not in alpha_values or 255 not in alpha_values:
+                raise ValueError(f"Trash sprite must use non-empty binary alpha: {path}")
+            # A 64x64 image has at most 4096 colours. These APIs are available in
+            # the CI-pinned Pillow 11.3 as well as newer authoring environments.
+            colours = {pixel[:3] for count, pixel in image.getcolors(maxcolors=4096) if pixel[3] == 255}
+            if not 1 <= len(colours) <= 8:
+                raise ValueError(f"Trash sprite tone budget must be 1..8: {path} has {len(colours)}")
 
 
 def main() -> None:
