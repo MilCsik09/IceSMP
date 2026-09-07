@@ -64,7 +64,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             "display-name", "description", "giver-npc", "next", "repeatable",
             "cooldown-hours", "seasonal", "auto-start-territory", "objectives-mode",
             "rotation-group", "rotation-daily-count", "requires-job", "requires-faction",
-            "requires-profession", "requires-profession-level",
+            "requires-profession", "requires-profession-level", "requires-atonement", "forbids-faction",
             "requires-specialization", "requires-level", "requires-quest", "chapter", "riddle", "min-season-day",
             "max-season-day", "objective.type", "objective.count", "objective.entity-type",
             "objective.min-mob-level", "objective.materials", "objective.spells", "objective.territory",
@@ -350,7 +350,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                         Math.max(0, Integer.parseInt(rawValue.trim()));
                 case "rewards.currency.amount", "cooldown-hours" ->
                         Math.max(0.0D, Double.parseDouble(rawValue.trim()));
-                case "rewards.cleanse-sins", "repeatable", "seasonal", "start.auto-accept" ->
+                case "requires-atonement", "rewards.cleanse-sins", "repeatable", "seasonal", "start.auto-accept" ->
                         Boolean.parseBoolean(rawValue.trim());
                 // A típus/kategória/láthatóság mély validációja a commitCustomQuests
                 // gráf-validátorában fut (fail-fast) — itt csak kanonikus alakra hozzuk.
@@ -530,6 +530,12 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                 return "quest-requires-specialization";
             }
         }
+        if (quest.getBoolean("requires-atonement", false)
+                && !(sinManager.getInfamy(player) > 0 || sinManager.isExiled(player) || sinManager.hasOath(player))) {
+            return "quest-requires-atonement";
+        }
+        final FactionType forbidden = FactionType.fromInput(quest.getString("forbids-faction", ""));
+        if (forbidden != null && factionManager.isMember(player.getUniqueId(), forbidden)) return "quest-forbids-faction";
         final String requiredFaction = quest.getString("requires-faction");
         if (requiredFaction != null && !requiredFaction.isBlank()
                 && !factionManager.isMember(player.getUniqueId(),
@@ -560,7 +566,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     private static final Set<String> PREREQUISITE_BLOCKERS = Set.of(
             "quest-requires-job", "quest-requires-specialization", "quest-requires-faction", "quest-requires-level",
             "quest-requires-profession", "quest-requires-profession-level",
-            "quest-requires-quest", "quest-chapter-future", "quest-chapter-closed",
+            "quest-requires-quest", "quest-requires-atonement", "quest-forbids-faction", "quest-chapter-future", "quest-chapter-closed",
             "quest-season-window-future", "quest-season-window-closed");
 
     /**
@@ -1616,6 +1622,10 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     private boolean isStillEligible(final Player player, final ConfigurationSection quest) {
+        if (quest.getBoolean("requires-atonement", false)
+                && !(sinManager.getInfamy(player) > 0 || sinManager.isExiled(player) || sinManager.hasOath(player))) return false;
+        final FactionType forbidden = FactionType.fromInput(quest.getString("forbids-faction", ""));
+        if (forbidden != null && factionManager.isMember(player.getUniqueId(), forbidden)) return false;
         final String requiredFaction = quest.getString("requires-faction");
         if (requiredFaction != null && !requiredFaction.isBlank()
                 && !factionManager.isMember(player.getUniqueId(), FactionType.fromInput(requiredFaction))) {

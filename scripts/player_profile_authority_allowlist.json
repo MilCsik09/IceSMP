@@ -580,6 +580,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TooltipPacketBridge_1_21_11.java|private final ConcurrentMap<UUID, Overlay> overlays = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Player-only offhand display-overlay expiry handles are transient presentation state; replacement, slot/inventory changes, session teardown and plugin shutdown cancel them, while canonical knowledge remains in Profile v2."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|private final Map<UUID, Long> leaveConfirmation = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Thirty-second, player-owned confirmation prompt only. Consumed on repeat command and removed on quit; restart merely requires confirming again. Role, evidence and return cooldown remain exclusively in PlayerProfileWhisperStore WAL."
     }
   ]
 }

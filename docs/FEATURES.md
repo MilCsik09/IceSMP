@@ -1,5 +1,17 @@
 # IceSMP — a világ rendszerei
 
+## Frakció–Suttogó kiegészítések, 2026-09-07
+
+Tiszta indulás: a korábbi tagságiadó- és profilmigráció nem követelmény. Elkészült
+a magányos, normál világbeli éjszakai rítus, a ritka privát discovery-hint, az
+eseményazonos bizonyíték, a vanish/invisibility/respawn kizárás és a régiónkénti
+rálátás. `/suttogas megtagadás`: kétszer megerősített kilépés, 24 órás várakozás,
+bűntisztítás nélkül. `/faction status`: következő jogi küszöb, vérdíj és a vezeklés
+helye. A civil jóvátétel DARK-belépés nélkül is elérhető a `/quest log` Megbízások
+fülén. A választás aktív létszámhoz igazodik, és megtartja az élő mandátumot.
+Részletes szabályok és korlátok: [FACTION_REWORK](FACTION_REWORK.md).
+
+
 ## Frakció–Suttogó javítás, 2026-09-06
 
 A részletes szabályok: [FACTION_REWORK.md](FACTION_REWORK.md). Nincs új HUD vagy
@@ -10,7 +22,7 @@ NEUTRAL frakcióváltásnak azonos ára van. A személyes kasszakivét csak admi
 
 A Suttogó-bizonyíték tartós és pontos; beváltása, a harmadik fokozat, száműzetés és
 24 órás visszatérési várakozás egy mentés. A rítus mentési sorrendje javítva, a tárgy
-lore-ja leírja a SHIFT + jobb kattintást. A chat álneves. `/suttogas állapot` és
+lore-ja misztikus utalásokat ad; helyes körülményeknél percenként legfeljebb egy privát hint segít. A chat álneves. `/suttogas állapot` és
 `/suttogas megbízás` ad részletes tájékoztatást. Kultista jutalom csak az átadással
 minősített résztvevőnek jár. A ligapont csökkenő létszámhozamot kap, a személyes
 bajnoki jutalom alapból három igazolt kategória/nap hozzájárulást igényel.
@@ -992,7 +1004,7 @@ Belépés/kilépés/váltás, frakciókapcsolatok, étel/passzív/spawn hatások
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.faction`; `icesmp.admin.war`; `icesmp.faction.admin`; `király`; `király vagy icesmp.admin.faction`; `király vagy tanácstag`
 - Config: `factions.*`, különösen `factions.passives.*`, továbbá relation-, signature-food- és spawn-definíciók.
-- Tartós állapot: Az explicit tagság és utolsó választás egy durable generáció; fizetős váltás exact wallet/membership WAL-lal recoveryzhető. Az Infamy, Wanted, Exile és DARK-eskü külön állapot, a vendégállapot pedig assignment hiánya. A provokációs/truce-state és a célhoz kötött Suttogó-bizonyíték mulandó, lifecycle cleanupot kap.
+- Tartós állapot: Az explicit tagság és utolsó választás egy durable generáció; fizetős váltás exact wallet/membership WAL-lal recoveryzhető. Az Infamy, Wanted, Exile és DARK-eskü külön állapot, a vendégállapot pedig assignment hiánya. A provokációs/truce-state és a provokációs cache mulandó; a célhoz és eseményhez kötött Suttogó-bizonyíték tartós és lejáró.
 - Reload: Minden frakciópasszív gameplay-érték ugyanabból az atomikusan publikált config-generationből frissül; restart nem kell. Ez nem helyettesíti az aktív combat alatti staging reloadtesztet.
 
 </details>
@@ -1016,7 +1028,7 @@ Céhkezelés, vezetői/királyi műveletek, tanács, treasury és közösségi p
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.faction`
 - Config: `factions.*`, guild-, king-, council- és treasury-definíciók.
-- Tartós állapot: Céh, vezetés, tanács és treasury tartós. A periodikus adóbeszedés és a királyi adókulcs-parancs megszűnt; a korábbi adósság/outbox mezők csak olvasási és tárolási kompatibilitásként maradnak, aktív scheduler nélkül.
+- Tartós állapot: Céh, vezetés, tanács és treasury tartós. A periodikus adóbeszedés és a királyi adókulcs-parancs megszűnt; tiszta telepítés készül, régi tagságiadó-migráció és pénzügyi utófeldolgozás nélkül.
 - Reload: Policy reloadolható; vezetői állapotváltozás staging- és permissiontesztet igényel.
 
 </details>
@@ -1568,3 +1580,98 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 
 ### Professions 2.0 family crafting
 A négy Equipment 2.0 family mind rendelkezik profession craft végponttal: CLOTH, LEATHER, MAIL és PLATE. A salvage-family maradékoknak valós, veszteséges visszanyerési sinkjük van; boss-komponens nem állítható vissza salvage-ből.
+
+<!-- icesmp-doc-id: feature.archer-gameplay -->
+<!-- icesmp-doc-id: feature.assassin-gameplay -->
+<!-- icesmp-doc-id: feature.authored-creature-spawn -->
+<!-- icesmp-doc-id: feature.build-aware-loot -->
+<!-- icesmp-doc-id: feature.class-gameplay-config-menu -->
+<!-- icesmp-doc-id: feature.creature-profile -->
+<!-- icesmp-doc-id: feature.death-knight-gameplay -->
+<!-- icesmp-doc-id: feature.demon-hunter-gameplay -->
+<!-- icesmp-doc-id: feature.druid-gameplay -->
+<!-- icesmp-doc-id: feature.durable-companion-call -->
+<!-- icesmp-doc-id: feature.encounter-reward-delivery -->
+<!-- icesmp-doc-id: feature.equipment-proficiency -->
+<!-- icesmp-doc-id: feature.equipped-combat-power -->
+<!-- icesmp-doc-id: feature.evoker-gameplay -->
+<!-- icesmp-doc-id: feature.item-forge -->
+<!-- icesmp-doc-id: feature.item-identity -->
+<!-- icesmp-doc-id: feature.item-mutation -->
+<!-- icesmp-doc-id: feature.item-salvage -->
+<!-- icesmp-doc-id: feature.monk-gameplay -->
+<!-- icesmp-doc-id: feature.paladin-gameplay -->
+<!-- icesmp-doc-id: feature.priest-gameplay -->
+<!-- icesmp-doc-id: feature.prologue -->
+<!-- icesmp-doc-id: feature.prologue-ceasefire -->
+<!-- icesmp-doc-id: feature.prologue-finale -->
+<!-- icesmp-doc-id: feature.prologue-reward -->
+<!-- icesmp-doc-id: feature.quest-physical-reward-delivery -->
+<!-- icesmp-doc-id: feature.rare-gathering -->
+<!-- icesmp-doc-id: feature.rarity-presentation -->
+<!-- icesmp-doc-id: feature.shaman-gameplay -->
+<!-- icesmp-doc-id: feature.trash-ambient -->
+<!-- icesmp-doc-id: feature.trash-archaeology -->
+<!-- icesmp-doc-id: feature.trash-dev -->
+<!-- icesmp-doc-id: feature.trash-fishing -->
+<!-- icesmp-doc-id: feature.trash-history -->
+<!-- icesmp-doc-id: feature.trash-item -->
+<!-- icesmp-doc-id: feature.trash-loot -->
+<!-- icesmp-doc-id: feature.trash-mob-drop -->
+<!-- icesmp-doc-id: feature.trash-vendor -->
+<!-- icesmp-doc-id: feature.vanilla-crafting-boundary -->
+<!-- icesmp-doc-id: feature.warlock-gameplay -->
+<!-- icesmp-doc-id: feature.warrior-gameplay -->
+<!-- icesmp-doc-id: feature.wearable-presentation -->
+<!-- icesmp-doc-id: feature.wizard-gameplay -->
+
+## Komponenscsoportok nyilvántartási kiegészítése
+
+Ezek meglévő kódcsoportok, amelyek az előző leltárból kimaradtak. A táblázat az
+implementáció gazdáját nevezi meg; a játékosút a fenti tematikus fejezetekben található.
+
+| Leltári azonosító | Feladat | Implementáció |
+| --- | --- | --- |
+| `feature.archer-gameplay` | A archer kaszt eseményei és saját játékszabályai. | `ArcherGameplayService` |
+| `feature.assassin-gameplay` | A assassin kaszt eseményei és saját játékszabályai. | `AssassinGameplayService` |
+| `feature.authored-creature-spawn` | Technikai felelősség: authored creature spawn. | `AuthoredCreatureSpawnService` |
+| `feature.build-aware-loot` | Technikai felelősség: build aware loot. | `BuildAwareLootService` |
+| `feature.class-gameplay-config-menu` | Technikai felelősség: class gameplay config menu. | `ClassGameplayConfigMenuGUI` |
+| `feature.creature-profile` | Technikai felelősség: creature profile. | `CreatureProfileService` |
+| `feature.death-knight-gameplay` | A death-knight kaszt eseményei és saját játékszabályai. | `DeathKnightGameplayService` |
+| `feature.demon-hunter-gameplay` | A demon-hunter kaszt eseményei és saját játékszabályai. | `DemonHunterGameplayService` |
+| `feature.druid-gameplay` | A druid kaszt eseményei és saját játékszabályai. | `DruidGameplayService` |
+| `feature.durable-companion-call` | Technikai felelősség: durable companion call. | `DurableCompanionCallSpell` |
+| `feature.encounter-reward-delivery` | Technikai felelősség: encounter reward delivery. | `EncounterRewardDeliveryService` |
+| `feature.equipment-proficiency` | Technikai felelősség: equipment proficiency. | `EquipmentProficiencyService`, `EquipmentProficiencyListener` |
+| `feature.equipped-combat-power` | Technikai felelősség: equipped combat power. | `EquippedCombatPowerService` |
+| `feature.evoker-gameplay` | A evoker kaszt eseményei és saját játékszabályai. | `EvokerGameplayService` |
+| `feature.item-forge` | Technikai felelősség: item forge. | `ItemForgeGUI`, `ItemForgeHolder` |
+| `feature.item-identity` | Technikai felelősség: item identity. | `ItemIdentityService` |
+| `feature.item-mutation` | Technikai felelősség: item mutation. | `ItemMutationService` |
+| `feature.item-salvage` | Technikai felelősség: item salvage. | `ItemSalvageService` |
+| `feature.monk-gameplay` | A monk kaszt eseményei és saját játékszabályai. | `MonkGameplayService` |
+| `feature.paladin-gameplay` | A paladin kaszt eseményei és saját játékszabályai. | `PaladinGameplayService` |
+| `feature.priest-gameplay` | A priest kaszt eseményei és saját játékszabályai. | `PriestGameplayService` |
+| `feature.prologue` | Technikai felelősség: prologue. | `PrologueCommand`, `PrologueManager` |
+| `feature.prologue-ceasefire` | Technikai felelősség: prologue ceasefire. | `PrologueCeasefireListener` |
+| `feature.prologue-finale` | Technikai felelősség: prologue finale. | `PrologueFinaleManager` |
+| `feature.prologue-reward` | Technikai felelősség: prologue reward. | `PrologueRewardService` |
+| `feature.quest-physical-reward-delivery` | Technikai felelősség: quest physical reward delivery. | `QuestPhysicalRewardDeliveryService` |
+| `feature.rare-gathering` | Technikai felelősség: rare gathering. | `RareGatheringListener` |
+| `feature.rarity-presentation` | Technikai felelősség: rarity presentation. | `RarityPresentationService` |
+| `feature.shaman-gameplay` | A shaman kaszt eseményei és saját játékszabályai. | `ShamanGameplayService` |
+| `feature.trash-ambient` | Trash tartalom: ambient. | `TrashAmbientManager` |
+| `feature.trash-archaeology` | Trash tartalom: archaeology. | `TrashArchaeologyListener`, `TrashArchaeologyService` |
+| `feature.trash-dev` | Trash tartalom: dev. | `TrashDevCommand` |
+| `feature.trash-fishing` | Trash tartalom: fishing. | `TrashFishingListener` |
+| `feature.trash-history` | Trash tartalom: history. | `TrashHistoryListener`, `TrashHistoryService`, `TrashHistoryStore` |
+| `feature.trash-item` | Trash tartalom: item. | `TrashItemFactory` |
+| `feature.trash-loot` | Trash tartalom: loot. | `TrashLootService` |
+| `feature.trash-mob-drop` | Trash tartalom: mob drop. | `TrashMobDropListener` |
+| `feature.trash-vendor` | Trash tartalom: vendor. | `TrashVendorService` |
+| `feature.vanilla-crafting-boundary` | Technikai felelősség: vanilla crafting boundary. | `VanillaCraftingBoundaryListener` |
+| `feature.warlock-gameplay` | A warlock kaszt eseményei és saját játékszabályai. | `WarlockGameplayService` |
+| `feature.warrior-gameplay` | A warrior kaszt eseményei és saját játékszabályai. | `WarriorGameplayService` |
+| `feature.wearable-presentation` | Technikai felelősség: wearable presentation. | `WearablePresentation` |
+| `feature.wizard-gameplay` | A wizard kaszt eseményei és saját játékszabályai. | `WizardGameplayService` |

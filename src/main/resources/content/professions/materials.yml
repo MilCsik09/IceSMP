@@ -5,11 +5,11 @@ profession-materials:
     item-model: icesmp:suttogas_meghivo
     lore:
     - '&7Egy hang, amit csak te hallasz. Hívás,'
-    - '&7amit nem lehet visszautasítani — csak követni.'
-    - '&8Éjjel, a mélység sötétjén (sculk), egyedül…'
-    - '&7Tartsd főkézben: SHIFT + jobb kattintás.'
-    - '&7A rítus egy meghívót és saját életerőt áldoz fel.'
-    - '&8Aki valóban lát, bizonyítékot szerezhet ellened.'
+    - '&7amelynek hátat is fordíthatsz.'
+    - '&8Éjjel, a mélység sötétjén, egyedül…'
+    - '&7Hajolj meg; jobb kezed nyújtsa a meghívót.'
+    - '&7A mélység papírt és saját vért kíván.'
+    - '&8Mások tekintete megtöri a csendet.'
   emlekszilank:
     material: AMETHYST_SHARD
     display-name: '&dOpálos Emlékszilánk'

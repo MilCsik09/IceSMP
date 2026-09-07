@@ -108,10 +108,11 @@ public final class CultistEventManager {
         hand.setAmount(hand.getAmount() - 1);
         supporters.add(player.getUniqueId());
         player.sendMessage(messageManager.get("whisper-offering-delivered", "&5Átadtad a rituális szilánkot. Ha a kultisták célba érnek, egy gyanúfokozatot eltüntetnek és részesedsz a zsákmányból. Ha elbuknak, nincs jutalom."));
-        final Location scene = player.getEyeLocation().clone();
+        final var scene = whisperManager.capture(player,
+                hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperStore.EvidenceType.OFFERING);
         for (final Entity nearby : player.getNearbyEntities(16, 16, 16)) {
             if (nearby instanceof Player witness) whisperManager.observe(witness.getUniqueId(),
-                    player.getUniqueId(), scene, player.getName(), 16, "whisper-witness-offering");
+                    scene, 16, "whisper-witness-offering");
         }
         return true;
     }

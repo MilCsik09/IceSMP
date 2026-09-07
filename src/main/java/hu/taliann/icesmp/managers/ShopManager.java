@@ -198,16 +198,21 @@ public final class ShopManager {
         return Math.max(0.0D, item.getDouble("price", 0.0D));
     }
 
-    /**
-     * Buys the shop entry at the given index for the player, deducting the
-     * price from their bank (the currency is burned — money sink).
-     *
-     * @param buyer the buyer
-     * @param npcName the shop NPC name
-     * @param index the zero-based item index in the shop's GUI
-     * @return null on success, otherwise an error message key
-     */
-    /** Suttogó-erősítés (setterrel kötve): feketepiaci kedvezmény a felesküdötteknek. */
+    /** The private shop GUI and receipt quote exactly the same buyer-specific price. */
+    public double getPriceFor(final Player buyer, final String npcName, final ConfigurationSection item) {
+        double price = getPrice(item);
+        final WhisperManager whisperRef = whisperManager;
+        if (price > 0.0D && whisperRef != null
+                && npcName != null && npcName.equalsIgnoreCase(
+                        configManager.getString("factions.dark.blackmarket-npc", "feketepiac"))
+                && whisperRef.isWhisperer(buyer)) {
+            final double discount = Math.max(0.0D, Math.min(90.0D,
+                    configManager.getDouble("factions.whisper.blackmarket-discount-percent", 25.0D)));
+            price = price * (1.0D - discount / 100.0D);
+        }
+        return price;
+    }
+
     private volatile WhisperManager whisperManager;
 
     public void setWhisperManager(final WhisperManager whisperManager) {
@@ -243,19 +248,7 @@ public final class ShopManager {
         }
 
         final CurrencyType currency = resolveCurrency(item, buyer);
-        double price = getPrice(item);
-        // Suttogó-erősítés: a feketepiacon a felesküdöttek a hálózat
-        // árát fizetik — csendes kedvezmény (a kijelzett ár marad, a levonás kevesebb;
-        // a titkos státuszt nem leplezi le semmi látható).
-        final WhisperManager whisperRef = whisperManager;
-        if (price > 0.0D && whisperRef != null
-                && npcName != null && npcName.equalsIgnoreCase(
-                        configManager.getString("factions.dark.blackmarket-npc", "feketepiac"))
-                && whisperRef.isWhispererCached(buyer.getUniqueId())) {
-            final double discount = Math.max(0.0D, Math.min(90.0D,
-                    configManager.getDouble("factions.whisper.blackmarket-discount-percent", 25.0D)));
-            price = price * (1.0D - discount / 100.0D);
-        }
+        final double price = getPriceFor(buyer, npcName, item);
         if (price > 0.0D && !currencyManager.deductFromBalance(buyer.getUniqueId(), currency, price)) {
             return "shop-insufficient";
         }

@@ -5,12 +5,14 @@ on:
   push:
     branches:
       - feature/professions-2
+      - feature/faction-crime-whisperer-rework
 
 permissions:
   contents: read
 
 jobs:
   build:
+    if: github.ref_name != 'feature/faction-crime-whisperer-rework'
     name: Exact-head plugin build
     runs-on: ubuntu-latest
     timeout-minutes: 50
@@ -115,3 +117,42 @@ jobs:
           path: build/libs/*.jar
           if-no-files-found: error
           retention-days: 30
+
+  faction_rework:
+    if: github.ref_name == 'feature/faction-crime-whisperer-rework'
+    name: Complete faction integration build
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'PyYAML>=6,<7' 'Pillow==11.3.0'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Full build, all checks and regression suites
+        run: ./gradlew clean build --no-daemon --console=plain --stacktrace
+      - name: Strict documentation inventory
+        run: python scripts/generate_repository_inventory.py --mode strict
+      - name: Source and documentation consistency
+        run: |
+          python scripts/check_consistency.py
+          python scripts/check_markdown_links.py
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: faction-rework-verification-${{ github.sha }}
+          path: |
+            build/reports/
+            build/repository-inventory/
+            build/libs/*.jar
+          retention-days: 14
