@@ -17,6 +17,7 @@ public final class WorldWeaverProviderRegistry {
         public Discovery { providers = Map.copyOf(providers); errors = Map.copyOf(errors); }
     }
     private final WeaverTypeRegistry types;
+    private hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry projectionConsumers;
     private final LongSupplier clock;
     private final Map<String, Entry> providers = new LinkedHashMap<>();
     private Map<String, FacetDescriptor> facets = Map.of();
@@ -102,6 +103,14 @@ public final class WorldWeaverProviderRegistry {
                 }
             }
         }
+        final var consumers = new hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry(types);
+        for (final Entry entry : providers.values()) if (entry.provider() instanceof hu.taliann.icesmp.dev.weaver.projection.WeaverProjectionProvider projectionProvider) {
+            for (final var consumer : List.copyOf(projectionProvider.projectionConsumers())) {
+                if (!consumer.providerId().equals(entry.id())) throw new IllegalArgumentException("Foreign projection consumer");
+                consumers.register(consumer);
+            }
+        }
+        consumers.freeze(actionMap); projectionConsumers = consumers;
         types.freeze(); facets = Map.copyOf(facetMap); actions = Map.copyOf(actionMap); catalogs = Map.copyOf(catalogMap);
         exports = Map.copyOf(exportMap); imports = Map.copyOf(importMap); owners = Map.copyOf(ownerMap); frozen = true;
     }
@@ -134,6 +143,7 @@ public final class WorldWeaverProviderRegistry {
         if (result == null || !entry.id().equals(owners.get(id))) throw new IllegalArgumentException("Missing or foreign descriptor reference");
         return result;
     }
+    public hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry projectionConsumers() { requireFrozen(); return projectionConsumers; }
     private void requireFrozen() { if (!frozen) throw new IllegalStateException("Provider registry is not validated"); }
     public Discovery discover(final SubjectSnapshot snapshot) {
         requireFrozen();
@@ -229,12 +239,40 @@ public final class WorldWeaverProviderRegistry {
         }
         return Map.copyOf(facts);
     }
-    public hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment assessRecovery(final String providerId, final ProviderContext context,
+    public hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment assessRecovery(final String providerId, final RecoveryContext context,
             final SubjectSnapshot snapshot, final hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationRecord operation) {
+        return assessRecovery(providerId, context, snapshot, operation, Optional.empty());
+    }
+    public hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment assessRecovery(final String providerId, final RecoveryContext context,
+            final SubjectSnapshot snapshot, final hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationRecord operation,
+            final Optional<hu.taliann.icesmp.dev.weaver.area.WeaverAreaCollection> collection) {
         requireFrozen();
         final Entry entry = providers.get(providerId);
         if (entry == null || !operation.providerId().equals(providerId)) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");
-        return entry.breaker().call(() -> entry.provider().assessRecovery(context, snapshot, operation), true);
+        context.authority().require(operation);
+        if (!snapshot.ref().equals(operation.subject())) throw new SecurityException("Recovery subject differs from operation");
+        return entry.breaker().call(() -> {
+            final var assessment = Objects.requireNonNull(collection.isPresent() ? entry.provider().assessAreaRecovery(context, snapshot, collection.get(), operation) : entry.provider().assessRecovery(context, snapshot, operation));
+            assessment.receipt().ifPresent(receipt -> {
+                receipt.before().values().forEach(types::validate); receipt.after().values().forEach(types::validate);
+                if (!receipt.operationId().equals(operation.operationId()) || !receipt.providerId().equals(providerId)
+                        || !receipt.actionId().equals(operation.request().actionId()) || !receipt.subject().equals(operation.subject())
+                        || !receipt.beforeFingerprint().equals(operation.beforeFingerprint()) || receipt.lifetime() != operation.request().lifetime()
+                        || receipt.integrityMode() != operation.request().integrityMode() || receipt.status() != ReceiptStatus.COMMITTED) {
+                    throw new IllegalArgumentException("Recovery receipt differs from operation");
+                }
+            });
+            assessment.effects().ifPresent(effects -> {
+                final WeaverReceipt receipt = assessment.receipt().orElseThrow();
+                for (final var projection : effects.projections()) {
+                    if (!projection.influence().operationId().equals(operation.operationId()) || !projection.subject().equals(operation.subject())
+                            || !projection.providerId().equals(providerId) || projection.createdAt() != receipt.createdAt()) throw new IllegalArgumentException("Recovery projection differs from operation");
+                    try { projectionConsumers.validate(projection); } catch (final WeaverDomainRejection invalid) { throw new IllegalArgumentException("Recovery projection lacks consumer"); }
+                }
+                for (final var influence : effects.influences()) if (!influence.influence().operationId().equals(operation.operationId())) throw new IllegalArgumentException("Recovery influence differs from operation");
+            });
+            return assessment;
+        }, true);
     }
     public Map<String, FacetDescriptor> facets() { requireFrozen(); return facets; }
     public <T> java.util.concurrent.CompletionStage<T> observeExecution(final String providerId, final java.util.concurrent.CompletionStage<T> execution) {

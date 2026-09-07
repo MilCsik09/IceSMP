@@ -587,6 +587,11 @@
       "reason": "One immutable input stamp per authorized artifact owner deduplicates the two entity-interaction callbacks. It contains tick/kind/entity UUID only, never profile or progression data. DevItemManager.clearPlayerState removes it on the centralized quit/kick/death path, and shutdown clears the map; only a validated owner interaction can insert it."
     },
     {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java|public CompletionStage<WeaverOperationRecord> resolve(final UUID id, final long revision, final OperationStatus outcome, final long now) {",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Reviewed operation UUID CAS transition in the singleton internal developer operation journal; stable actor/subject references and reward-denial evidence do not own canonical player profile, economy or progression. resolve does not resolve a player file path."
+    },
+    {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|private final Map<UUID, Long> leaveConfirmation = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Thirty-second, player-owned confirmation prompt only. Consumed on repeat command and removed on quit; restart merely requires confirming again. Role, evidence and return cooldown remain exclusively in PlayerProfileWhisperStore WAL."

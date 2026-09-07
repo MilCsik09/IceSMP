@@ -628,6 +628,46 @@ val weaverRewardIntegrityRegressionTest = registerRegression(
     "weaverRewardIntegrityRegressionTest",
     "Runs neutral reward-policy source/channel denials and quarantine-tail regressions.",
     "hu.taliann.icesmp.dev.weaver.WeaverRewardIntegrityRegressionSuite")
+val weaverPersistenceRegressionTest = registerRegression(
+    "weaverPersistenceRegressionTest",
+    "Runs durable Weaver journal and observed-state recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverPersistenceRegressionSuite")
+val weaverCrashRecoveryRegressionTest = registerRegression(
+    "weaverCrashRecoveryRegressionTest",
+    "Runs durable Weaver journal and observed-state recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverCrashRecoveryRegressionSuite")
+val weaverProjectionRegressionTest = registerRegression(
+    "weaverProjectionRegressionTest",
+    "Runs durable projection consumer, precedence, lifecycle and capacity regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverProjectionRegressionSuite")
+val weaverInfluencePersistenceRegressionTest = registerRegression(
+    "weaverInfluencePersistenceRegressionTest",
+    "Runs durable influence, pre-mutation quarantine and atomic effect failure regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverInfluencePersistenceRegressionSuite")
+val weaverDurableExecutionRegressionTest = registerRegression(
+    "weaverDurableExecutionRegressionTest",
+    "Runs durable stage barriers, compensation, drift and started-timeout regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverDurableExecutionRegressionSuite")
+val weaverUndoRegressionTest = registerRegression(
+    "weaverUndoRegressionTest",
+    "Runs conditional Undo receipt/revision, crash atomicity and effect compensation regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverUndoRegressionSuite")
+val weaverAreaExecutionRegressionTest = registerRegression(
+    "weaverAreaExecutionRegressionTest",
+    "Runs owner-safe AREA collection, bounded fanout, child compensation and pending recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverAreaExecutionRegressionSuite")
+val weaverRevisionRegressionTest = registerRegression(
+    "weaverRevisionRegressionTest",
+    "Runs descriptor revision scope, identity fence, external drift and conditional Undo regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverRevisionRegressionSuite")
+val weaverRetentionRegressionTest = registerRegression(
+    "weaverRetentionRegressionTest",
+    "Runs protected journal retention, atomic admission, audit rotation and storage capacity regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverRetentionRegressionSuite")
+val weaverProjectionScopeRegressionTest = registerRegression(
+    "weaverProjectionScopeRegressionTest",
+    "Runs AREA projection target/revision, durable capacity reservation and crash atomicity regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverProjectionScopeRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -1138,6 +1178,8 @@ tasks.check {
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
+        weaverPersistenceRegressionTest, weaverCrashRecoveryRegressionTest,
+        weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest,
         weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
         worldWeaverArchitectureAudit,
         weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCoverageRegressionTest, weaverFoliaOwnershipRegressionTest,

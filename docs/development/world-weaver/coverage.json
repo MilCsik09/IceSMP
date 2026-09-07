@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stage": "WW-02_FOUNDATION_IN_PROGRESS",
+  "stage": "WW03_DURABLE_IN_PROGRESS",
   "repository": "MilCsik09/IceSMP",
   "base_branch": "feature/faction-crime-whisperer-rework",
   "base_commit": "2a78eb6071db063740ce1f8e6889b03d9741dbb0",
@@ -1065,7 +1065,12 @@
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
       "domain": "class",
       "source_sha256": "b395866692d779ad0061d684bbd441f385cc2d2100099ae2c6e4c229af6229d3",
-      "public_methods": []
+      "public_methods": [
+        "ClassAssignmentRequest",
+        "ClassExperienceRequest",
+        "CompanionMutationRequest",
+        "ResetRequest"
+      ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecSectionLifecycleService.java",
@@ -1324,7 +1329,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
       "domain": "developer_self",
-      "source_sha256": "971ae0e3870462bd5e8f7c49ac7f3aca65a147bcbc0da519385315b9177eff0f",
+      "source_sha256": "21a412bfec72e481934dac25bbeb8d0c6e195c9696b6859fafa6931a54d6c868",
       "public_methods": [
         "WorldWeaverKernel",
         "clearPlayerState",
@@ -1337,13 +1342,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "93619dfaf14942346e7460b75d795736e794bfbbb2397ec2c8c7a27c694d50ef",
+      "source_sha256": "579532212cc20f9dd1e5d62fe186f032b034689b691afa1fb931af496fa15080",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
         "actions",
         "assessRecovery",
         "captureContributions",
+        "catalogPage",
         "catalogs",
         "coverage",
         "discover",
@@ -1354,17 +1360,20 @@
         "invoke",
         "observeExecution",
         "owner",
+        "projectionConsumers",
         "quarantined",
-        "register"
+        "register",
+        "resolveCatalog"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "3b0d939fb8f1d0d4d1c531c46e8b842d9ecbab03b652239ba6e2151f322a29f8",
+      "source_sha256": "9ba6e5303853cdbc2de8607c6e8073b2d43ef5cff6ad29fc84265cf9801a8373",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
+        "recoveryListener",
         "shutdown",
         "start"
       ]
@@ -1427,9 +1436,50 @@
       "public_methods": []
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
+      "domain": "developer_self",
+      "source_sha256": "7553eb96f87cb1705fe7165f275ead424c6ccc63a970fcb25f1bfd677990fcbe",
+      "public_methods": [
+        "FoliaWeaverAreaAccess",
+        "collectOnOwner",
+        "snapshotOnOwner"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
+      "domain": "developer_self",
+      "source_sha256": "c5fa36b56aa4f5c6f145729e76810bcbc5651ecbe49b545956da0fc682976fe3",
+      "public_methods": [
+        "WeaverAreaEngine",
+        "chunks",
+        "close",
+        "collect",
+        "guard",
+        "recover"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverCompensationAuthority.java",
+      "domain": "developer_self",
+      "source_sha256": "2844c30bd5067bc9b1901920bf0eda52c02692ce53a5ed2fb5a85e39bc4e9ecd",
+      "public_methods": [
+        "require"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverDurableExecutionCoordinator.java",
+      "domain": "developer_self",
+      "source_sha256": "d15de0090db1d8918e07ea59192a7ec516385102c56782e22331e6f3218032c5",
+      "public_methods": [
+        "WeaverDurableExecutionCoordinator",
+        "close",
+        "execute"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "f88e1668a8527520980c23cbff41ef6f9eb2c78d4eaf3bfb9e7b224bdbd93a55",
+      "source_sha256": "15b67f47380bbba85cf046acfc6ffe7d6799bb181d3cacb9d48778a30ae08a10",
       "public_methods": [
         "WeaverExecutionCoordinator",
         "available",
@@ -1438,9 +1488,98 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryAuthority.java",
+      "domain": "developer_self",
+      "source_sha256": "d8f419134f09d786dff8eb5bb3154cdba97d9c38d116972fde131b9abfdc1a55",
+      "public_methods": [
+        "require"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryCoordinator.java",
+      "domain": "developer_self",
+      "source_sha256": "c412631ad9d376b2ecd4fce178df5a608ff81fc66332025201f7fdaf44062575",
+      "public_methods": [
+        "WeaverRecoveryCoordinator",
+        "close",
+        "entityAvailable",
+        "pending",
+        "reconcile",
+        "start",
+        "worldAvailable"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverUndoCoordinator.java",
+      "domain": "developer_self",
+      "source_sha256": "9cbea88df7bc538cf1d987ee46702e9cdd54e0286cc10d76660a3d944607b77c",
+      "public_methods": [
+        "Target",
+        "WeaverUndoCoordinator",
+        "available",
+        "history",
+        "prepare",
+        "receipt",
+        "status",
+        "target"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
+      "domain": "developer_self",
+      "source_sha256": "e4f8dfe980e3050d79736f150d8687126dcf54310efe3341a950c8337dc1610d",
+      "public_methods": [
+        "WeaverJournal",
+        "applied",
+        "close",
+        "expireProjections",
+        "finishAudit",
+        "influenceIndex",
+        "load",
+        "prepare",
+        "ready",
+        "resolve",
+        "snapshot"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
+      "domain": "developer_self",
+      "source_sha256": "237e61d771530d888f390a2c015be167b312384397ba0133a0a6c2ea190cc75d",
+      "public_methods": [
+        "trim"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
+      "domain": "developer_self",
+      "source_sha256": "5e9fbc0f8a12254bd59bc746022699af2511f07c374ec8d46ce490e102ec4678",
+      "public_methods": [
+        "attach",
+        "contains",
+        "fingerprints",
+        "intent",
+        "matches",
+        "reservations"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/ProjectionConsumerRegistry.java",
+      "domain": "developer_self",
+      "source_sha256": "e159c91f57530465496bafc5bc81126c215118d6fa4a36da2d43de8c37029241",
+      "public_methods": [
+        "ProjectionConsumerRegistry",
+        "freeze",
+        "register",
+        "require",
+        "snapshot",
+        "validate"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "domain": "minecraft",
-      "source_sha256": "7c049782fa69de52f01c11f04d4b1142aca1dc1f76104a38e09b015df44e5ce6",
+      "source_sha256": "72f36001e0f1df3338789bd4453838c91e5b00845cede241102e73e71b8fa2dd",
       "public_methods": [
         "MinecraftWeaverProvider",
         "assessRecovery",
@@ -1461,10 +1600,11 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
       "domain": "minecraft",
-      "source_sha256": "7aeede3880069a052532ddb2dcdae1a2b49e704a26e5e45e817f8a523c770e35",
+      "source_sha256": "7c75bd624e0698cae6a27b4e59c0be254777f96cc6bac2858c5629da793e2afc",
       "public_methods": [
         "SubjectSnapshotFactory",
-        "capture"
+        "capture",
+        "captureOnOwner"
       ]
     },
     {
@@ -4953,7 +5093,9 @@
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/transaction/PlayerProfileTransactionManager.java",
       "domain": "profile_infrastructure",
       "source_sha256": "c18ecd34cd414857909192dbf2c4ef31c5d7d5ba9a4eaf63bf3b16319d935705",
-      "public_methods": []
+      "public_methods": [
+        "LedgerSaturated"
+      ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/transaction/YamlPlayerProfileTransactionManager.java",
@@ -5972,6 +6114,11 @@
     "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",

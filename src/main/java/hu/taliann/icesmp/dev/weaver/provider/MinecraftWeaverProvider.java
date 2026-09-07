@@ -111,7 +111,7 @@ public final class MinecraftWeaverProvider implements WorldWeaverProvider {
     @Override public ImportValidation validateImport(final ProviderContext context, final SubjectSnapshot snapshot, final String id, final WeaverValue value) {
         context.authority().requireValid(); return ImportValidation.rejected("NO_REGISTERED_IMPORTER");
     }
-    @Override public RecoveryAssessment assessRecovery(final ProviderContext context, final SubjectSnapshot snapshot, final WeaverOperationRecord operation) {
+    @Override public RecoveryAssessment assessRecovery(final RecoveryContext context, final SubjectSnapshot snapshot, final WeaverOperationRecord operation) {
         return new RecoveryAssessment(ObservedOperationState.PARTIAL_OR_CONFLICT, false, Optional.empty(), "No journal action is registered by the initial adapter");
     }
 }

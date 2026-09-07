@@ -2086,6 +2086,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DevItemProtectionListener(plugin, devItemManager), plugin);
         pluginManager.registerEvents(worldWeaverRuntime.listener(), plugin);
+        pluginManager.registerEvents(worldWeaverRuntime.recoveryListener(), plugin);
         pluginManager.registerEvents(factionPassiveListener, plugin);
         pluginManager.registerEvents(factionFoodListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WhisperListener(plugin, configManager, whisperManager, factionManager, raidManager, uniqueMaterialFactory, messageManager), plugin);
