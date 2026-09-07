@@ -72,7 +72,13 @@ public final class WeaverProjectionRegressionSuite {
         fails(journal.applied(invalid.operationId(), 0, receipt(invalid), effect(projection(invalid, 2, 99, OptionalLong.empty())), 2));
         check(journal.snapshot().revision() == revision && journal.ready(), "stale projection sequence changed durable state");
         await(journal.resolve(invalid.operationId(), 0, OperationStatus.ABORTED, 3));
-        final WeaverJournal rejected = new WeaverJournal(yaml); fails(rejected.load()); check(!rejected.ready(), "projection loaded without registered runtime consumer"); await(rejected.close());
+        final WeaverJournal unavailable = new WeaverJournal(yaml); await(unavailable.load());
+        check(unavailable.ready() && unavailable.snapshot().projections().containsKey(one.projectionId()), "missing consumer erased durable projection/influence");
+        final var absentConsumers = new ProjectionConsumerRegistry(types()); absentConsumers.freeze(Map.of());
+        rejects(() -> new JournalProjectionSource(unavailable, absentConsumers).active("fixture.combat", subject, 100));
+        check(new WeaverInfluenceLookup(unavailable, () -> 100).recipient(subject.playerId()) == InfluenceRewardEligibilityPolicy.Evidence.QUARANTINED,
+                "missing consumer washed reward quarantine");
+        await(unavailable.close());
         await(journal.close());
         final WeaverJournal restarted = new WeaverJournal(storage, consumers::validate); await(restarted.load());
         check(restarted.snapshot().projections().isEmpty() && restarted.snapshot().projectionSequence() == 2, "restart resurrected severed projection or reused sequence"); await(restarted.close());

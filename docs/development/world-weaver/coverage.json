@@ -1415,7 +1415,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "398aec9f20fd71402eae3ec19133f732c526a620012a1ebc492473a5608caf28",
+      "source_sha256": "766d9c8c690559805824acf02ee87f5b19f4fa1e776fee81d902e3451af1970f",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -1557,7 +1557,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverDurableExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "d15de0090db1d8918e07ea59192a7ec516385102c56782e22331e6f3218032c5",
+      "source_sha256": "29ea97a6714ae9f1e35e10553a9387c337ff146f351b0ee1ea0e8646791751fa",
       "public_methods": [
         "WeaverDurableExecutionCoordinator",
         "close",
@@ -1567,7 +1567,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "15b67f47380bbba85cf046acfc6ffe7d6799bb181d3cacb9d48778a30ae08a10",
+      "source_sha256": "169359207ea97db27205f8699507269c4b027eefd7de203d0a3fb2e5eb159899",
       "public_methods": [
         "WeaverExecutionCoordinator",
         "available",
@@ -1615,7 +1615,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "e4f8dfe980e3050d79736f150d8687126dcf54310efe3341a950c8337dc1610d",
+      "source_sha256": "8ad307fef92f591d35faaeac06aa07dc309f8668a0e3a7a94aa4e50a3a5f29c0",
       "public_methods": [
         "WeaverJournal",
         "applied",
@@ -1654,7 +1654,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/ProjectionConsumerRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "e159c91f57530465496bafc5bc81126c215118d6fa4a36da2d43de8c37029241",
+      "source_sha256": "c23c2b6c1f66ff5652e29da4509a51f586a25a13d3dbd006faf1f538b1613782",
       "public_methods": [
         "ProjectionConsumerRegistry",
         "freeze",

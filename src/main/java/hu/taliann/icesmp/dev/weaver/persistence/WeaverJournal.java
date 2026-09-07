@@ -36,8 +36,8 @@ public final class WeaverJournal {
         return submit(false, () -> {
             final WeaverJournalState loaded = checkedIo(storage::readState); final Map<String, WeaverAuditEntry> loadedAudit = Map.copyOf(checkedIo(storage::readAudit));
             if (loadedAudit.size() > 10_000) throw new IllegalArgumentException("Audit capacity exceeded");
-            loaded.projections().values().forEach(projectionValidator);
-            loaded.effectDeltas().values().forEach(delta -> { delta.added().values().forEach(projectionValidator); delta.removed().values().forEach(projectionValidator); });
+            // Historical projections remain durable even if their provider/content is unavailable.
+            // WeaverJournalState verifies origin, scope and influence; runtime consumers fail closed.
             state = loaded; publication = new Publication(loaded, new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex(loaded)); audit = loadedAudit; ready = true; return null;
         });
     }
@@ -169,7 +169,8 @@ public final class WeaverJournal {
     }
     private void publish(final WeaverJournalState next) {
         storage.validateStateCapacity(next);
-        next.projections().values().forEach(projectionValidator);
+        // New projections were validated at APPLIED. Revalidating historical entries here would
+        // let removed content disable unrelated writes, cleanup, audit and influence publication.
         final Publication nextPublication = new Publication(next, new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex(next));
         checkedIo(() -> { storage.writeState(next); return null; }); state = next; publication = nextPublication;
     }

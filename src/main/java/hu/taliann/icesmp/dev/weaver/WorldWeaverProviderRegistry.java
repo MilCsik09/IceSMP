@@ -255,6 +255,7 @@ public final class WorldWeaverProviderRegistry {
             final var assessment = Objects.requireNonNull(collection.isPresent() ? entry.provider().assessAreaRecovery(context, snapshot, collection.get(), operation) : entry.provider().assessRecovery(context, snapshot, operation));
             assessment.receipt().ifPresent(receipt -> {
                 receipt.before().values().forEach(types::validate); receipt.after().values().forEach(types::validate);
+                receipt.undo().ifPresent(undo -> undo.parameters().values().forEach(types::validate));
                 if (!receipt.operationId().equals(operation.operationId()) || !receipt.providerId().equals(providerId)
                         || !receipt.actionId().equals(operation.request().actionId()) || !receipt.subject().equals(operation.subject())
                         || !receipt.beforeFingerprint().equals(operation.beforeFingerprint()) || receipt.lifetime() != operation.request().lifetime()

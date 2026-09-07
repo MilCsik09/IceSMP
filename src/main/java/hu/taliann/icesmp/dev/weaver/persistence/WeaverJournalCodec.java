@@ -7,10 +7,15 @@ import java.util.*;
 import hu.taliann.icesmp.dev.weaver.integrity.*;
 import hu.taliann.icesmp.dev.weaver.projection.WeaverProjection;
 
-/** Explicit schema decoding rejects unknown fields, lossy numbers and arbitrary object deserialization. */
+/**
+ * Decodes the bounded durable envelope without executing provider or live catalog code.
+ * Unknown value schemas remain opaque history. Admission and consumers validate current semantics.
+ * Unknown journal fields, lossy numbers and arbitrary object deserialization are still rejected.
+ */
 public final class WeaverJournalCodec {
-    private final WeaverTypeRegistry types;
-    public WeaverJournalCodec(final WeaverTypeRegistry types) { this.types = Objects.requireNonNull(types); }
+    public WeaverJournalCodec() { }
+    /** Source compatibility for the original codec wiring; registry availability is not storage validity. */
+    public WeaverJournalCodec(final WeaverTypeRegistry types) { Objects.requireNonNull(types); }
     public Map<String, Object> encodeState(final WeaverJournalState state) {
         final Map<String, Object> operations = new TreeMap<>();
         state.operations().forEach((id, record) -> operations.put(id.toString(), operation(record)));
@@ -139,7 +144,7 @@ public final class WeaverJournalCodec {
     }
     Map<String, Object> values(final Map<String, WeaverValue> values) {
         final Map<String, Object> result = new TreeMap<>();
-        values.forEach((id, value) -> { types.validate(value); result.put(id, Map.of("type", value.type().canonical(), "payload", value.payload(), "provider", value.sourceProvider(),
+        values.forEach((id, value) -> { result.put(id, Map.of("type", value.type().canonical(), "payload", value.payload(), "provider", value.sourceProvider(),
                 "facet", value.sourceFacet(), "capabilities", value.sourceCapabilities().stream().sorted().toList(), "captured", value.capturedAt())); });
         return Map.copyOf(result);
     }
@@ -152,7 +157,7 @@ public final class WeaverJournalCodec {
             if (!(value.get("capabilities") instanceof List<?> list) || list.size() > 32) throw new IllegalArgumentException("Capability encoding");
             for (final Object capability : list) if (!(capability instanceof String text) || !capabilities.add(text)) throw new IllegalArgumentException("Capability encoding");
             final WeaverValue decoded = new WeaverValue(WeaverTypeId.parse(text(value, "type")), map(value.get("payload")), text(value, "provider"), text(value, "facet"), capabilities, number(value, "captured"));
-            types.validate(decoded); result.put(id, decoded);
+            result.put(id, decoded);
         });
         return Map.copyOf(result);
     }

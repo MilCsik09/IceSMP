@@ -221,3 +221,59 @@ pet ritual drops across owner continuations. Evidence and remaining producer rou
 are in `WW-04-reward-ingress.md`. The 67-suite local run is green; native populated
 reward evidence and full integrity closure remain required. Coverage: 306 authorities,
 55 domains, 51 blockers. Artifact issuance and durable gameplay admission remain off.
+
+
+## Stored content/provider isolation checkpoint
+
+Based on `2ec371dd590867b69a5785503800b7955f74b210`.
+
+Finding: journal decode, startup validation and every subsequent publication invoked
+current provider/type/catalog validation on all retained projections and effect
+before-images. Removing one old ability or provider could therefore block journal
+load, unrelated operations and the neutral reward policy's entire influence view.
+
+The durable codec now validates only the bounded storage envelope: namespaced schema
+identity, frozen YAML-safe payload (32 KiB per value), typed metadata, exact journal
+keys/schema, operation/receipt links, projection origin/scope/revisions and influence
+relationships remain enforced. Provider code never executes during durable decode or
+historical re-encoding. Unavailable value schemas stay opaque history; their existence
+in a journal grants no capability or permission to import/activate them.
+
+New action parameters, stage facts, receipt before/after and Undo parameters retain
+current type validation in the generic admission/execution/recovery paths. New
+projections must still pass the registered consumer manifest before APPLIED. Runtime
+`JournalProjectionSource` validates the complete current provider projection manifest
+before selecting a consumer's fields. A removed action/field/schema/content cannot
+silently disappear into canonical fallback. Expected unavailable content refuses that
+read; unexpected provider/codec failures enter the existing bounded circuit breaker.
+
+No projection, effect delta, receipt, influence or accepted history is discarded on
+missing content. Unrelated providers can continue reading and writing through the same
+journal. Reintroduced registry content is usable without rebuilding the provider;
+three unexpected faults still require the existing explicit restart recovery path.
+Unloaded subjects remain pending under the existing recovery coordinator, without
+force loading. There is no raw domain data repair or registry rewrite.
+
+This corrects the earlier WW-03 assumption that every persisted projection must have
+a currently installed consumer at startup. The invariant is retained at activation:
+no effect is consumed without a valid current manifest. Storage availability and
+current content availability are separate so that unavailable historical content
+cannot erase or disable reward quarantine. The normative design file is unchanged.
+
+`WeaverStoredContentIsolationRegressionSuite` uses actual YAML storage and journal:
+removed content, an absent provider/type, an exploding codec, a removed consumer
+field, healthy provider publication, receipt/Undo preservation, influence retention,
+content reintroduction and circuit-breaker restart are covered. Unknown journal
+fields/schema remain rejected. The original projection test now explicitly checks
+opaque load plus blocked consumption and retained quarantine. All 33 relevant
+Weaver/provider, artifact and PvE suites pass. Full Java 21 compile passes against
+49 real dependencies with three inherited warnings; four architecture checks,
+PlayerProfile guard (658 findings, zero unknown/stale/invalid/transition), consistency
+(zero FAIL/WARN) and coverage (306 authorities, 55 domains, 51 blockers) pass.
+
+Preceding exact head `2ec371dd590867b69a5785503800b7955f74b210` CI: verification run
+`34082608924`; Paper `101620629737` and Folia `101620629721` PASS. Verification
+`101620629507` compiled and passed real profile admission regression; its only failed
+task is inherited `trashSpriteAssetAudit`. Resource pack `34082608949` and Trash
+hardening `34082608953` PASS. New-head CI and populated Paper/Folia/client evidence
+remain required. No full WW-04, integrity closure or production readiness is claimed.
