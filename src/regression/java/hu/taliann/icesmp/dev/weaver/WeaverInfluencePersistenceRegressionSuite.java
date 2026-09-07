@@ -80,7 +80,10 @@ public final class WeaverInfluencePersistenceRegressionSuite {
         final Storage storage = new Storage(); final WeaverJournal journal = new WeaverJournal(storage); await(journal.load());
         final var operation = operation(new EntityRef(UUID.randomUUID()), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX); await(journal.prepare(operation));
         final var codec = new WeaverJournalCodec(types()); final Map<String, Object> legacy = new HashMap<>(codec.encodeState(journal.snapshot()));
-        for (final String field : List.of("projection-sequence", "projections", "influences", "intents")) legacy.remove(field); legacy.put("schema-version", 1);
+        for (final String field : List.of("projection-sequence", "projections", "influences", "intents", "effect-deltas")) legacy.remove(field); legacy.put("schema-version", 1);
+        final Map<String, Object> legacyOperations = new HashMap<>();
+        WeaverJournalCodec.map(legacy.get("operations")).forEach((id, value) -> { final Map<String, Object> row = new HashMap<>(WeaverJournalCodec.map(value)); row.remove("undo-claim"); legacyOperations.put(id, row); });
+        legacy.put("operations", legacyOperations);
         final var migrated = codec.decodeState(legacy);
         check(migrated.intents().containsKey(operation.operationId()) && new WeaverInfluenceIndex(migrated).quarantined(WeaverInfluenceTarget.subject(operation.subject()).source(), Long.MAX_VALUE),
                 "schema 1 PREPARED migration lost uncertainty quarantine");

@@ -12,6 +12,23 @@ import static hu.taliann.icesmp.dev.weaver.persistence.WeaverJournalCodec.*;
 final class WeaverEffectCodec {
     private final WeaverJournalCodec journal;
     WeaverEffectCodec(final WeaverJournalCodec journal) { this.journal = journal; }
+    Map<String, Object> delta(final WeaverEffectDelta delta) {
+        final Map<String, Object> added = new TreeMap<>(), removed = new TreeMap<>(), ended = new TreeMap<>();
+        delta.added().forEach((id, value) -> added.put(id.toString(), projection(value)));
+        delta.removed().forEach((id, value) -> removed.put(id.toString(), projection(value)));
+        delta.endedBefore().forEach((id, value) -> ended.put(id.toString(), influence(value)));
+        return Map.of("added", added, "removed", removed, "ended-before", ended, "complete", delta.complete());
+    }
+    WeaverEffectDelta delta(final Map<String, Object> row) {
+        keys(row, "added", "removed", "ended-before", "complete");
+        final Map<String, Object> addedRows = map(row.get("added")), removedRows = map(row.get("removed")), endedRows = map(row.get("ended-before"));
+        if (addedRows.size() > 128 || removedRows.size() > 128 || endedRows.size() > WeaverJournalState.MAX_INFLUENCES) throw new IllegalArgumentException("Effect delta capacity");
+        final Map<UUID, WeaverProjection> added = new HashMap<>(), removed = new HashMap<>(); final Map<UUID, WeaverInfluenceRecord> ended = new HashMap<>();
+        addedRows.forEach((id, value) -> { final WeaverProjection decoded = projection(map(value)); if (!id.equals(decoded.projectionId().toString())) throw new IllegalArgumentException("Delta projection identity"); added.put(decoded.projectionId(), decoded); });
+        removedRows.forEach((id, value) -> { final WeaverProjection decoded = projection(map(value)); if (!id.equals(decoded.projectionId().toString())) throw new IllegalArgumentException("Delta projection identity"); removed.put(decoded.projectionId(), decoded); });
+        endedRows.forEach((id, value) -> { final WeaverInfluenceRecord decoded = influence(map(value)); if (!id.equals(decoded.id().toString())) throw new IllegalArgumentException("Delta influence identity"); ended.put(decoded.id(), decoded); });
+        return new WeaverEffectDelta(added, removed, ended, bool(row, "complete"));
+    }
     Map<String, Object> projection(final WeaverProjection projection) {
         final Map<String, Object> row = new TreeMap<>();
         row.put("id", projection.projectionId().toString()); row.put("sequence", projection.sequence()); row.put("provider", projection.providerId());

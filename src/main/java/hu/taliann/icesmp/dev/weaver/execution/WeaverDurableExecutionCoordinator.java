@@ -22,6 +22,10 @@ public final class WeaverDurableExecutionCoordinator {
     }
     public CompletionStage<WeaverReceipt> execute(final String providerId, final ProviderContext context, final SubjectSnapshot snapshot,
             final ActionRequest request, final PreparedAction prepared, final PreparedEffects effects, final Supplier<WeaverAuthorityToken> actorGuard) {
+        return execute(providerId, context, snapshot, request, prepared, effects, Optional.empty(), actorGuard);
+    }
+    public CompletionStage<WeaverReceipt> execute(final String providerId, final ProviderContext context, final SubjectSnapshot snapshot,
+            final ActionRequest request, final PreparedAction prepared, final PreparedEffects effects, final Optional<WeaverUndoClaim> undoClaim, final Supplier<WeaverAuthorityToken> actorGuard) {
         context.authority().requireValid();
         if (closed || !journal.ready()) return CompletableFuture.failedFuture(new WeaverDomainRejection("DURABLE_EXECUTION_UNAVAILABLE"));
         if (!prepared.descriptor().requiresJournal() || !request.actionId().equals(prepared.descriptor().id()) || request.integrityMode() != context.integrityMode()
@@ -42,7 +46,7 @@ public final class WeaverDurableExecutionCoordinator {
         final WeaverOperationRecord operation;
         try {
             operation = new WeaverOperationRecord(prepared.operationId(), context.authority().actor(), providerId, request, snapshot.ref(), snapshot.revisionFingerprint(),
-                    Optional.empty(), prepared.recoveryPayload(), OperationStatus.PREPARED, 0, now, now, Optional.empty(), false);
+                    Optional.empty(), prepared.recoveryPayload(), OperationStatus.PREPARED, 0, now, now, Optional.empty(), false, undoClaim);
         } catch (final RuntimeException failure) { inFlight.set(false); return CompletableFuture.failedFuture(failure); }
         final List<StageResult> results = new ArrayList<>(); final AtomicBoolean entered = new AtomicBoolean(), preparedAcknowledged = new AtomicBoolean();
         final CompletionStage<WeaverReceipt> execution = journal.prepare(operation, effects.intent()).thenCompose(ignored -> {

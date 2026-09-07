@@ -15,23 +15,25 @@ public final class WeaverJournalCodec {
         final Map<String, Object> operations = new TreeMap<>();
         state.operations().forEach((id, record) -> operations.put(id.toString(), operation(record)));
         final WeaverEffectCodec effects = new WeaverEffectCodec(this);
-        final Map<String, Object> intents = new TreeMap<>(), projections = new TreeMap<>(), influences = new TreeMap<>();
+        final Map<String, Object> intents = new TreeMap<>(), projections = new TreeMap<>(), influences = new TreeMap<>(), deltas = new TreeMap<>();
         state.intents().forEach((id, value) -> intents.put(id.toString(), effects.intent(value)));
         state.projections().forEach((id, value) -> projections.put(id.toString(), effects.projection(value)));
         state.influences().forEach((id, value) -> influences.put(id.toString(), effects.influence(value)));
-        return Map.of("schema-version", 2, "revision", state.revision(), "operations", operations, "projection-sequence", state.projectionSequence(),
-                "intents", intents, "projections", projections, "influences", influences);
+        state.effectDeltas().forEach((id, value) -> deltas.put(id.toString(), effects.delta(value)));
+        return Map.of("schema-version", 3, "revision", state.revision(), "operations", operations, "projection-sequence", state.projectionSequence(),
+                "intents", intents, "projections", projections, "influences", influences, "effect-deltas", deltas);
     }
     public WeaverJournalState decodeState(final Map<String, Object> data) {
         final long version = number(data, "schema-version");
         if (version == 1) keys(data, "schema-version", "revision", "operations");
         else if (version == 2) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences");
+        else if (version == 3) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences", "effect-deltas");
         else throw new IllegalArgumentException("Unknown journal schema");
         final Map<UUID, WeaverOperationRecord> operations = new HashMap<>(); final Map<UUID, WeaverReceipt> receipts = new HashMap<>();
         final Map<String, Object> values = map(data.get("operations"));
         if (values.size() > WeaverJournalState.MAX_OPERATIONS) throw new IllegalArgumentException("Journal capacity exceeded");
         values.forEach((id, value) -> {
-            final WeaverOperationRecord record = operation(map(value));
+            final WeaverOperationRecord record = operation(map(value), version);
             if (!id.equals(record.operationId().toString()) || operations.put(record.operationId(), record) != null) throw new IllegalArgumentException("Duplicate operation identity");
             record.receipt().ifPresent(receipt -> { if (receipts.put(receipt.receiptId(), receipt) != null) throw new IllegalArgumentException("Duplicate receipt identity"); });
         });
@@ -61,7 +63,13 @@ public final class WeaverJournalCodec {
             projectionRows.forEach((id, value) -> { final WeaverProjection decoded = effects.projection(map(value)); if (!id.equals(decoded.projectionId().toString())) throw new IllegalArgumentException("Projection key mismatch"); projections.put(decoded.projectionId(), decoded); });
             influenceRows.forEach((id, value) -> { final WeaverInfluenceRecord decoded = effects.influence(map(value)); if (!id.equals(decoded.id().toString())) throw new IllegalArgumentException("Influence key mismatch"); influences.put(decoded.id(), decoded); });
         }
-        return new WeaverJournalState(number(data, "revision"), operations, receipts, version == 1 ? 0 : number(data, "projection-sequence"), intents, projections, influences);
+        final Map<UUID, WeaverEffectDelta> deltas = new HashMap<>();
+        if (version >= 3) {
+            final Map<String, Object> encoded = map(data.get("effect-deltas")); if (encoded.size() > WeaverJournalState.MAX_RECEIPTS) throw new IllegalArgumentException("Effect delta cap");
+            final WeaverEffectCodec effects = new WeaverEffectCodec(this);
+            encoded.forEach((id, value) -> deltas.put(uuid(Map.of("id", id), "id"), effects.delta(map(value))));
+        } else operations.forEach((id, operation) -> { if (operation.receipt().isPresent()) deltas.put(id, WeaverEffectDelta.unavailable()); });
+        return new WeaverJournalState(number(data, "revision"), operations, receipts, version == 1 ? 0 : number(data, "projection-sequence"), intents, projections, influences, deltas);
     }
     public Map<String, Object> encodeAudit(final Map<String, WeaverAuditEntry> audit) {
         final Map<String, Object> entries = new TreeMap<>();
@@ -89,16 +97,21 @@ public final class WeaverJournalCodec {
         result.put("recovery", Map.of("schema", record.recoveryPayload().schemaVersion(), "fields", record.recoveryPayload().fields()));
         result.put("status", record.status().name()); result.put("revision", record.revision()); result.put("prepared", record.preparedAt());
         result.put("updated", record.updatedAt()); result.put("receipt", record.receipt().map(this::receipt).orElseGet(Map::of)); result.put("pending-audit", record.pendingAudit());
+        result.put("undo-claim", record.undoClaim().map(claim -> Map.<String, Object>of("receipt", claim.receiptId().toString(), "revision", claim.operationRevision(), "expected", claim.expectedFingerprint())).orElseGet(Map::of));
         return Map.copyOf(result);
     }
-    private WeaverOperationRecord operation(final Map<String, Object> row) {
-        keys(row, "id", "actor", "provider", "request", "subject", "before", "after", "recovery", "status", "revision", "prepared", "updated", "receipt", "pending-audit");
+    private WeaverOperationRecord operation(final Map<String, Object> row, final long version) {
+        final Map<String, Object> fields = new HashMap<>(row); if (version >= 3) fields.remove("undo-claim");
+        keys(fields, "id", "actor", "provider", "request", "subject", "before", "after", "recovery", "status", "revision", "prepared", "updated", "receipt", "pending-audit");
+        final Map<String, Object> undo = version >= 3 ? map(row.get("undo-claim")) : Map.of();
+        if (!undo.isEmpty()) keys(undo, "receipt", "revision", "expected");
         final Map<String, Object> recovery = map(row.get("recovery")); keys(recovery, "schema", "fields");
         final Map<String, Object> receipt = map(row.get("receipt")); final String after = text(row, "after");
         return new WeaverOperationRecord(uuid(row, "id"), uuid(row, "actor"), text(row, "provider"), request(map(row.get("request"))),
                 SubjectKeyCodec.decode(text(row, "subject")), text(row, "before"), after.isEmpty() ? Optional.empty() : Optional.of(after),
                 new OperationRecoveryPayload(Math.toIntExact(number(recovery, "schema")), map(recovery.get("fields"))), OperationStatus.valueOf(text(row, "status")),
-                number(row, "revision"), number(row, "prepared"), number(row, "updated"), receipt.isEmpty() ? Optional.empty() : Optional.of(receipt(receipt)), bool(row, "pending-audit"));
+                number(row, "revision"), number(row, "prepared"), number(row, "updated"), receipt.isEmpty() ? Optional.empty() : Optional.of(receipt(receipt)), bool(row, "pending-audit"),
+                undo.isEmpty() ? Optional.empty() : Optional.of(new WeaverUndoClaim(uuid(undo, "receipt"), number(undo, "revision"), text(undo, "expected"))));
     }
     private Map<String, Object> request(final ActionRequest request) {
         return Map.of("action", request.actionId(), "parameters", values(request.parameters()), "lifetime", request.lifetime().name(), "mode", request.integrityMode().name());

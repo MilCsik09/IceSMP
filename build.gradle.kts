@@ -648,6 +648,10 @@ val weaverDurableExecutionRegressionTest = registerRegression(
     "weaverDurableExecutionRegressionTest",
     "Runs durable stage barriers, compensation, drift and started-timeout regressions.",
     "hu.taliann.icesmp.dev.weaver.WeaverDurableExecutionRegressionSuite")
+val weaverUndoRegressionTest = registerRegression(
+    "weaverUndoRegressionTest",
+    "Runs conditional Undo receipt/revision, crash atomicity and effect compensation regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverUndoRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -1159,7 +1163,7 @@ tasks.check {
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
         weaverPersistenceRegressionTest, weaverCrashRecoveryRegressionTest,
-        weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest,
+        weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest,
         weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
         worldWeaverArchitectureAudit,
         weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCoverageRegressionTest, weaverFoliaOwnershipRegressionTest,

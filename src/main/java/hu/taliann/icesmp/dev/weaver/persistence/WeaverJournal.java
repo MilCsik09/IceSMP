@@ -37,6 +37,7 @@ public final class WeaverJournal {
             final WeaverJournalState loaded = checkedIo(storage::readState); final Map<String, WeaverAuditEntry> loadedAudit = Map.copyOf(checkedIo(storage::readAudit));
             if (loadedAudit.size() > 10_000) throw new IllegalArgumentException("Audit capacity exceeded");
             loaded.projections().values().forEach(projectionValidator);
+            loaded.effectDeltas().values().forEach(delta -> { delta.added().values().forEach(projectionValidator); delta.removed().values().forEach(projectionValidator); });
             state = loaded; publication = new Publication(loaded, new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex(loaded)); audit = loadedAudit; ready = true; return null;
         });
     }
@@ -103,7 +104,7 @@ public final class WeaverJournal {
             final WeaverOperationRecord before = expected(id, revision);
             if (!before.pendingAudit()) return before;
             final AuditOutcome outcome = switch (before.status()) {
-                case APPLIED -> AuditOutcome.COMMITTED;
+                case APPLIED -> before.undoClaim().isPresent() ? AuditOutcome.UNDONE : AuditOutcome.COMMITTED;
                 case ABORTED -> AuditOutcome.ABORTED;
                 case COMPENSATED -> AuditOutcome.COMPENSATED;
                 case NEEDS_REVIEW -> AuditOutcome.NEEDS_REVIEW;
@@ -134,9 +135,10 @@ public final class WeaverJournal {
     private static WeaverOperationRecord changed(final WeaverOperationRecord before, final OperationStatus status,
             final Optional<String> fingerprint, final Optional<WeaverReceipt> receipt, final boolean audit, final long now) {
         return new WeaverOperationRecord(before.operationId(), before.actorId(), before.providerId(), before.request(), before.subject(), before.beforeFingerprint(),
-                fingerprint, before.recoveryPayload(), status, Math.addExact(before.revision(), 1), before.preparedAt(), Math.max(before.updatedAt(), now), receipt, audit);
+                fingerprint, before.recoveryPayload(), status, Math.addExact(before.revision(), 1), before.preparedAt(), Math.max(before.updatedAt(), now), receipt, audit, before.undoClaim());
     }
     private void publish(final WeaverJournalState next) {
+        next.projections().values().forEach(projectionValidator);
         final Publication nextPublication = new Publication(next, new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex(next));
         checkedIo(() -> { storage.writeState(next); return null; }); state = next; publication = nextPublication;
     }

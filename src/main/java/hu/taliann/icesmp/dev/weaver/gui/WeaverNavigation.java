@@ -22,7 +22,10 @@ public sealed interface WeaverNavigation {
     record ParameterCatalog(UUID draftId, String parameterId, int offset) implements WeaverNavigation {}
     record CatalogParameterValue(UUID draftId, String parameterId, String stableId) implements WeaverNavigation {}
     record Preview(UUID draftId) implements WeaverNavigation {}
+    record ConfirmFinal(UUID draftId) implements WeaverNavigation {}
     record Execute(UUID draftId) implements WeaverNavigation {}
+    record Receipt(UUID id) implements WeaverNavigation {}
+    record Undo(UUID receiptId) implements WeaverNavigation {}
     record History() implements WeaverNavigation {}
     record ImportThread(String importerId, UUID threadId) implements WeaverNavigation {}
 }

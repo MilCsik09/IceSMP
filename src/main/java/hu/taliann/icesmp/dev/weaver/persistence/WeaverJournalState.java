@@ -10,14 +10,22 @@ import java.util.*;
 public record WeaverJournalState(long revision, Map<UUID, WeaverOperationRecord> operations,
                                  Map<UUID, WeaverReceipt> receipts, long projectionSequence,
                                  Map<UUID, WeaverEffectIntent> intents, Map<UUID, WeaverProjection> projections,
-                                 Map<UUID, WeaverInfluenceRecord> influences) {
+                                 Map<UUID, WeaverInfluenceRecord> influences, Map<UUID, WeaverEffectDelta> effectDeltas) {
+    public WeaverJournalState(final long revision, final Map<UUID, WeaverOperationRecord> operations, final Map<UUID, WeaverReceipt> receipts,
+            final long projectionSequence, final Map<UUID, WeaverEffectIntent> intents, final Map<UUID, WeaverProjection> projections,
+            final Map<UUID, WeaverInfluenceRecord> influences) {
+        this(revision, operations, receipts, projectionSequence, intents, projections, influences, legacyDeltas(operations));
+    }
+    private static Map<UUID, WeaverEffectDelta> legacyDeltas(final Map<UUID, WeaverOperationRecord> operations) {
+        final Map<UUID, WeaverEffectDelta> result = new HashMap<>(); operations.forEach((id, operation) -> { if (operation.receipt().isPresent()) result.put(id, WeaverEffectDelta.unavailable()); }); return result;
+    }
     private record EvidenceKey(DeveloperInfluence origin, WeaverInfluenceTarget target) { }
     public static final int MAX_OPERATIONS = 2056;
     public static final int MAX_RECEIPTS = 2048;
     public static final int MAX_INFLUENCES = 16_384;
     public WeaverJournalState {
         operations = Map.copyOf(operations); receipts = Map.copyOf(receipts); intents = Map.copyOf(intents);
-        projections = Map.copyOf(projections); influences = Map.copyOf(influences);
+        projections = Map.copyOf(projections); influences = Map.copyOf(influences); effectDeltas = Map.copyOf(effectDeltas);
         if (revision < 0 || projectionSequence < 0 || operations.size() > MAX_OPERATIONS || receipts.size() > MAX_RECEIPTS
                 || influences.size() > MAX_INFLUENCES || intents.size() > MAX_OPERATIONS) throw new IllegalArgumentException("Journal capacity exceeded");
         if (operations.values().stream().filter(operation -> operation.status() == OperationStatus.PREPARED || operation.status() == OperationStatus.APPLIED).count() > 8) {
@@ -40,6 +48,40 @@ public record WeaverJournalState(long revision, Map<UUID, WeaverOperationRecord>
                         && !intents.getOrDefault(operation.operationId(), WeaverEffectIntent.none()).targets().contains(target)) throw new IllegalArgumentException("Sandbox uncertainty lacks durable subject quarantine");
                 if (operation.receipt().isPresent() && !evidenceByOperation.getOrDefault(operation.operationId(), Set.of()).contains(target)) throw new IllegalArgumentException("Sandbox receipt lacks durable subject influence");
             }
+        }
+        for (final WeaverOperationRecord operation : operations.values()) {
+            if (operation.receipt().isPresent() != effectDeltas.containsKey(operation.operationId())) throw new IllegalArgumentException("Operation effect delta missing or orphaned");
+            if (operation.undoClaim().isPresent()) {
+                final WeaverUndoClaim claim = operation.undoClaim().get(); final WeaverReceipt original = receipts.get(claim.receiptId());
+                if (original == null || original.operationId().equals(operation.operationId()) || !original.providerId().equals(operation.providerId())
+                        || !WeaverUndoSubject.resolve(original).equals(operation.subject()) || original.undo().isEmpty() || !original.undo().get().expectedCurrentFingerprint().equals(claim.expectedFingerprint())
+                        || !original.undo().get().actionId().equals(operation.request().actionId()) || !original.undo().get().parameters().equals(operation.request().parameters())) throw new IllegalArgumentException("Invalid Undo receipt relationship");
+            }
+        }
+        for (final var entry : effectDeltas.entrySet()) {
+            final WeaverOperationRecord operation = operations.get(entry.getKey());
+            if (operation == null || operation.receipt().isEmpty()) throw new IllegalArgumentException("Orphaned effect delta");
+            for (final WeaverProjection added : entry.getValue().added().values()) {
+                origin(operations, added.influence());
+                if (!added.influence().operationId().equals(operation.operationId()) || !added.providerId().equals(operation.providerId())
+                        || !added.subject().equals(operation.subject()) || added.lifetime() != operation.request().lifetime()
+                        || !added.canonicalFingerprintAtApply().equals(operation.beforeFingerprint())) throw new IllegalArgumentException("Foreign added effect origin");
+            }
+            for (final WeaverProjection removed : entry.getValue().removed().values()) {
+                origin(operations, removed.influence());
+                if (!removed.providerId().equals(operation.providerId()) || !removed.subject().equals(operation.subject())) throw new IllegalArgumentException("Foreign removed projection");
+            }
+            for (final WeaverInfluenceRecord ended : entry.getValue().endedBefore().values()) origin(operations, ended.influence());
+        }
+        final Set<UUID> checkedUndo = new HashSet<>();
+        for (final UUID start : operations.keySet()) {
+            UUID cursor = start; final Set<UUID> chain = new HashSet<>();
+            while (!checkedUndo.contains(cursor)) {
+                if (!chain.add(cursor)) throw new IllegalArgumentException("Cyclic Undo receipt lineage");
+                final WeaverOperationRecord operation = operations.get(cursor); if (operation.undoClaim().isEmpty()) break;
+                cursor = receipts.get(operation.undoClaim().get().receiptId()).operationId();
+            }
+            checkedUndo.addAll(chain);
         }
         for (final var entry : intents.entrySet()) {
             final WeaverOperationRecord operation = operations.get(entry.getKey());
@@ -81,6 +123,6 @@ public record WeaverJournalState(long revision, Map<UUID, WeaverOperationRecord>
         final Map<UUID, WeaverOperationRecord> next = new HashMap<>(operations); next.put(operation.operationId(), operation);
         final Map<UUID, WeaverReceipt> nextReceipts = new HashMap<>(receipts);
         operation.receipt().ifPresent(receipt -> nextReceipts.put(receipt.receiptId(), receipt));
-        return new WeaverJournalState(Math.addExact(revision, 1), next, nextReceipts, sequence, nextIntents, nextProjections, nextInfluences);
+        return new WeaverJournalState(Math.addExact(revision, 1), next, nextReceipts, sequence, nextIntents, nextProjections, nextInfluences, effectDeltas);
     }
 }

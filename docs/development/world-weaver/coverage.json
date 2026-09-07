@@ -1328,7 +1328,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
       "domain": "developer_self",
-      "source_sha256": "c1815754b4c486d78c60757fe578102826ac341b62b0d11cb767e4b584fe8ec6",
+      "source_sha256": "404f9b1613073f303a120fcf775ec72c4d78955b2041dc8c651d90579873ef32",
       "public_methods": [
         "WorldWeaverKernel",
         "clearPlayerState",
@@ -1368,7 +1368,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "4c723091908982884e962e28cf369d75ef8460230ffeba8aac919501947bf54f",
+      "source_sha256": "aac2374a67377e3783ac7b62aa2565e385c2332593320c83f68f91f423e0ce13",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
@@ -1445,7 +1445,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverDurableExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "41ff8c6a867834fcbfdff2c1ee93fb0f98055cf23b5c40bca571c1bbd0640556",
+      "source_sha256": "4f95fcf069b0b416a003ae078057e4fd76ab974e362bee1d35993f2c3d865fd3",
       "public_methods": [
         "WeaverDurableExecutionCoordinator",
         "close",
@@ -1455,7 +1455,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "9f24f38d62074915d3795d3f52a5031b047b9bcc1dc09f1e9ecc7e326d1d3ddb",
+      "source_sha256": "15b67f47380bbba85cf046acfc6ffe7d6799bb181d3cacb9d48778a30ae08a10",
       "public_methods": [
         "WeaverExecutionCoordinator",
         "available",
@@ -1486,9 +1486,23 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverUndoCoordinator.java",
+      "domain": "developer_self",
+      "source_sha256": "801d7cec42da5d5f83a56d004c66cb6df43aa8107ebc0e844b10f057550fd12c",
+      "public_methods": [
+        "WeaverUndoCoordinator",
+        "available",
+        "history",
+        "prepare",
+        "receipt",
+        "status",
+        "target"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "e0739251169955bb6a31028133346d838b3d99a3443799739114a20cedb8d925",
+      "source_sha256": "208566d9e40a13242959cb3f0f4153de334e040089ce9cf3ab4057afbf4fdd7b",
       "public_methods": [
         "WeaverJournal",
         "applied",

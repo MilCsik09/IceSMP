@@ -169,12 +169,71 @@ inherited `trashSpriteAssetAudit`. Docs `34067431800`, resource-pack `3406743181
 and Trash `34067431842` workflows all passed. This is the preceding head's evidence,
 not populated interactive mutation proof for the new executor.
 
+## Conditional Undo checkpoint
+
+`WeaverUndoCoordinator` resolves a durable COMMITTED receipt, verifies its operation
+revision and a fresh owner snapshot, and invokes the owning provider's `prepareUndo`
+inside the provider circuit breaker. The resulting ordinary action uses the same
+parameter, arming, execution, effect, audit and recovery routes. A receipt-only inverse
+descriptor need not be listed as a standalone action by discovery; explicit discovery
+blocks still apply, and prepareUndo validates the fresh target and domain state. No force path exists.
+The generic history screen merges bounded durable/session receipts, exposes typed
+before/after facts and shows both receipt and operation status. Undo parameters are
+locked to the receipt. DESTRUCTIVE/CANONICAL confirmations require a second fresh
+view, and every execution attempt consumes arming before asynchronous capture.
+
+`WeaverUndoClaim` reserves the original receipt/revision at durable PREPARED. A second
+pending attempt cannot execute or abort that reservation. At APPLIED, effect changes,
+the original receipt's UNDONE status and its incremented operation revision publish
+in one durable state. The original audit is retained; the compensating operation
+adds its own UNDONE audit. Failed or ambiguous execution cannot silently reopen the
+receipt. Recovery never turns a previously consumed receipt back into an available
+one; reversing a later effect requires its own observed-state decision/action.
+
+State schema 3 also records exact added/removed projection before-images and ended
+influence evidence. Compensation restores a removed projection only while its ID
+remains absent, and removes an added projection only while its exact value remains
+unchanged. A replacement is CONFLICT. Restoring active influence preserves any
+longer quarantine tail. Schema 1/2 migration preserves existing effects but marks
+unavailable historical deltas explicitly; it cannot fabricate compensation evidence.
+
+### Minimal Subject adaptation
+
+The normative ITEM_SLOT ref includes its expected revision and byte fingerprint.
+After a canonical item mutation, capturing that old ref correctly rejects STALE_SLOT.
+Likewise a LOCATION creation can have an ENTITY as its inverse target. Reusing the
+original subject unconditionally would make these current domain inverses unreachable.
+An optional provider-owned `weaver:subject_ref@1` in receipt.after, with capability
+`weaver.undo_target`, therefore names the exact inverse target. The generic codec
+requires one unambiguous declaration, matching provider/key/facet ownership and valid
+stable Subject data. Absence retains the original subject. Capture, operation claims
+and restart validation all use that same declared target; item identity/revision/
+fingerprint fences remain intact. This is descriptor data, with no named-provider
+branch and no live state in the receipt.
+
+`WeaverUndoRegressionSuite` covers fresh-snapshot conflict, the provider Undo route,
+one-use revisions, preserved audit, eight before/after crash boundaries, competing
+reservations, real YAML claim/delta persistence, exact sever compensation, external
+replacement conflict, schema 2 migration, changed ITEM_SLOT revision, created ENTITY
+identity, and rejected ambiguous/foreign target evidence. It is a normal Gradle check
+dependency. These isolated fixtures do not prove current gameplay provider inverses. Full Java 21
+main/regression compilation, all 16 Weaver and three DEV suites, four architecture
+checks, source inventory (286 authorities, 51 implementation blockers), the 650-row
+PlayerProfile authority gate and consistency (zero FAIL/WARN) passed locally.
+
+The prior durable-stage head `8e42181c860959df4a2ad38cb822b44dac21673b` has exact remote
+evidence: run `34068303124`; Paper `101580886238` and Folia `101580886321` succeeded.
+Verification `101580886301` compiled all sources and passed the durable execution
+suite; the sole failed task was inherited `trashSpriteAssetAudit`. Docs `34068302939`,
+resource pack `34068302941` and Trash `34068302943` succeeded. These clean-store probes
+are not populated Undo/crash/client evidence for the new checkpoint.
+
 ## Remaining WW-03 implementation
 - Native provider mutation/compensation and exact late-effect reconciliation evidence;
   the generic durable execution path is implemented behind the closed integrity gate.
 - Actual projection consumers and provider effect materialization; the generic registry/store foundation is implemented.
-- Conditional Undo through normal durable execution with original receipt update
-  and canonical compensating history.
+- Provider-specific canonical compensating history and native Undo evidence; the generic durable Undo path is implemented.
+- Action-specific revision scopes: full snapshots currently conflict on unrelated movement/time changes; adapters must retain exact relevant drift checks.
 - Bounded AREA collection/fanout.
 - Receipt retention protected by unresolved operation/projection/Undo references.
 - Real crash/restart/disable evidence for those integrated paths.

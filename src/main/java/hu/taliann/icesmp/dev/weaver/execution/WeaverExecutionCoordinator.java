@@ -31,9 +31,15 @@ public final class WeaverExecutionCoordinator {
     }
     public CompletionStage<WeaverReceipt> execute(final String providerId, final ProviderContext context, final SubjectSnapshot snapshot,
             final ActionRequest request, final PreparedAction prepared, final Optional<PreparedEffects> effects, final Supplier<WeaverAuthorityToken> actorGuard) {
+        return execute(providerId, context, snapshot, request, prepared, effects, Optional.empty(), actorGuard);
+    }
+    public CompletionStage<WeaverReceipt> execute(final String providerId, final ProviderContext context, final SubjectSnapshot snapshot,
+            final ActionRequest request, final PreparedAction prepared, final Optional<PreparedEffects> effects,
+            final Optional<hu.taliann.icesmp.dev.weaver.persistence.WeaverUndoClaim> undoClaim, final Supplier<WeaverAuthorityToken> actorGuard) {
+        if (undoClaim.isPresent() && !prepared.descriptor().requiresJournal()) return CompletableFuture.failedFuture(new WeaverDomainRejection("UNDO_ACTION_UNAVAILABLE"));
         if (!prepared.descriptor().requiresJournal()) return execute(providerId, context, snapshot, prepared, actorGuard);
         if (!available(prepared.descriptor(), context.lifetime()) || effects.isEmpty()) return CompletableFuture.failedFuture(new WeaverDomainRejection("DURABLE_EXECUTION_UNAVAILABLE"));
-        return durable.execute(providerId, context, snapshot, request, prepared, effects.get(), actorGuard);
+        return durable.execute(providerId, context, snapshot, request, prepared, effects.get(), undoClaim, actorGuard);
     }
     public CompletionStage<WeaverReceipt> execute(final String providerId, final ProviderContext context, final SubjectSnapshot snapshot,
                                                   final PreparedAction prepared, final Supplier<WeaverAuthorityToken> actorGuard) {
