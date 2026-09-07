@@ -175,13 +175,17 @@
       "inspect": "territory, shape, protection decision trace, regeneration pending blocks",
       "planned_actions": "DENY sandbox overlay; ALLOW LIVE_GM; canonical rename/type/owner/Y bounds; overlay fork",
       "canonical_route": "TerritoryProtectionService common pure evaluator; TerritoryManager conditional copy-on-write transaction",
-      "rationale": "Current rename/type/owner/Y setters publish map/index before save. Need durable candidate commit before publication and multi-territory fingerprint for capital demotion; no generic remove/reshape.",
+      "rationale": "Current rename/type/owner/Y setters publish map/index before save. Need durable candidate commit before publication and multi-territory fingerprint for capital demotion; no generic remove/reshape. WW-05 native policy seam now shares immutable decision/trace evaluation across build/interact/PvP/environment paths. DOOM victim grace is wired at damage/potion ingress, hard lifecycle precedence is retained, and explicit/uncertain denial blocks regeneration escape paths. A single read-only projection port is present; the WorldWeaver provider adapter, journal-backed consumer, catalog/Thread and safe canonical transactions remain required before FULL_PROVIDER.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java",
         "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java",
-        "src/main/java/hu/taliann/icesmp/managers/BlockRegenService.java"
+        "src/main/java/hu/taliann/icesmp/managers/BlockRegenService.java",
+        "src/main/java/hu/taliann/icesmp/territory/TerritoryProtectionPolicy.java",
+        "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "docs/development/world-weaver/WW-05-territory-policy.md"
+      ]
     },
     {
       "id": "claims",
@@ -4735,12 +4739,15 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java",
       "domain": "territory",
-      "source_sha256": "813a8aceccefb65d2535abda9252c537f0992a8c00a080b8f3c8115ed7058589",
+      "source_sha256": "927d154d4b4635db7d2f68639de5d0a6bfad0694a168fd78eefd7bb471266fd1",
       "public_methods": [
+        "bindRuleProjection",
+        "buildDecision",
         "clearDoomGrace",
         "denyBuild",
         "denyCombat",
         "denyInteract",
+        "denyPlayerDamage",
         "denyPvp",
         "isExplosionBlockedAt",
         "isFireBlockedAt",
@@ -4750,6 +4757,9 @@
         "markDoomEntry",
         "setCombatTagManager",
         "setRaidManager",
+        "terrainDecision",
+        "traceAt",
+        "tracePlayerDamage",
         "zoneTypeKeyAt"
       ]
     },
@@ -6203,6 +6213,24 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryProtectionPolicy.java",
+      "domain": "territory",
+      "source_sha256": "a1626a9b49615aaa4a36b00ab90aafc3efe1f1fb640ca83cb064434dadc9aa7c",
+      "public_methods": [
+        "Decision",
+        "Facts",
+        "Step",
+        "deniesRegeneration",
+        "evaluate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
+      "domain": "territory",
+      "source_sha256": "2f3db52595bef4f6299300400f980afea2a1d44d1f75418d2a78fbdad20ffeb7",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/trash/TossableObjectRuntime.java",
       "domain": "trash",
       "source_sha256": "bf5fa9371cee62109a72d35974cf9308b0e564a420d0064fced2ec01a0b7534e",
@@ -6707,6 +6735,7 @@
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",

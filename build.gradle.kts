@@ -748,6 +748,10 @@ val serverChallengeIntegrityRegressionTest = registerRegression(
     "serverChallengeIntegrityRegressionTest",
     "Runs native challenge source admission, terminal lifecycle contention and owner delivery contracts.",
     "hu.taliann.icesmp.managers.ServerChallengeIntegrityRegressionSuite")
+val territoryProtectionPolicyRegressionTest = registerRegression(
+    "territoryProtectionPolicyRegressionTest",
+    "Runs canonical territory/overlay trace, hard lifecycle precedence and unavailable-owner fail-closed matrix.",
+    "hu.taliann.icesmp.territory.TerritoryProtectionPolicyRegressionSuite")
 val factionWeaverProjectionRegressionTest = registerRegression(
     "factionWeaverProjectionRegressionTest",
     "Runs canonical faction policy projection, semantic context/Thread, journal Undo and offline recovery regressions.",
@@ -1271,7 +1275,7 @@ tasks.check {
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
         weaverPersistenceRegressionTest, weaverCrashRecoveryRegressionTest,
-        mobRuntimeControlRegressionTest, mobRuntimeHistoryRegressionTest, pveWeaverRuntimeRegressionTest, weaverEffectPropagationRegressionTest, weaverObservedInfluenceRegressionTest, weaverCausalSourceRegressionTest,
+        territoryProtectionPolicyRegressionTest, mobRuntimeControlRegressionTest, mobRuntimeHistoryRegressionTest, pveWeaverRuntimeRegressionTest, weaverEffectPropagationRegressionTest, weaverObservedInfluenceRegressionTest, weaverCausalSourceRegressionTest,
         weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest, pveWeaverProjectionRegressionTest, weaverProjectionDispatchRegressionTest, weaverGameplayRewardGateRegressionTest, weaverProfileRewardAdmissionRegressionTest, weaverProfessionRewardRegressionTest, weaverKnowledgeRewardRegressionTest, weaverQuestRewardRegressionTest, questMutationQueueRegressionTest, weaverStatisticsRewardRegressionTest, serverChallengeIntegrityRegressionTest, weaverSeasonRewardRegressionTest, weaverStoredContentIsolationRegressionTest, factionWeaverProjectionRegressionTest, weaverFactionAdjustmentRegressionTest, factionWeaverCanonicalRegressionTest,
         weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
         worldWeaverArchitectureAudit,

@@ -640,6 +640,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|private final Map<UUID, Long> leaveConfirmation = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Thirty-second, player-owned confirmation prompt only. Consumed on repeat command and removed on quit; restart merely requires confirming again. Role, evidence and return cooldown remain exclusively in PlayerProfileWhisperStore WAL."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java|TerritoryProtectionPolicy.Overlay resolve(UUID worldId, String territoryId, TerritoryProtectionPolicy.Rule rule);",
+      "category": "RUNTIME",
+      "reason": "Read-only native territory rule projection port keyed by world UUID and territory ID; no player UUID, filesystem path, YAML access or profile mutation is present. The canonical protection evaluator consumes a detached enum, while territory storage and ownership do not consume this port."
     }
   ]
 }
