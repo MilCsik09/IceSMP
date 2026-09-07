@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class MobRuntimeControlProbe {
     private static final String PROPERTY = "icesmp.pve-control-runtime";
     private record Choice(String template, String shield, String target, long telegraph) { }
+    private record FixtureChunk(UUID world, int x, int z) { }
     private final JavaPlugin plugin;
     private final MobAbilityRuntime runtime;
     private final AuthoredCreatureSpawnService spawns;
@@ -21,6 +22,7 @@ public final class MobRuntimeControlProbe {
     private final UUID fixtureOwner = UUID.randomUUID();
     private final AtomicBoolean finished = new AtomicBoolean();
     private volatile UUID entityId;
+    private volatile FixtureChunk fixtureChunk;
     private MobRuntimeControlProbe(JavaPlugin plugin, MobAbilityRuntime runtime, AuthoredCreatureSpawnService spawns,
             MobTemplateRegistry templates, MobAbilityRegistry abilities) {
         this.plugin = plugin; this.runtime = runtime; this.spawns = spawns; this.templates = templates; this.abilities = abilities;
@@ -57,9 +59,16 @@ public final class MobRuntimeControlProbe {
         } catch (Throwable failure) { failed(failure); }
     }
     private void spawn(UUID worldId, int x, int y, int z, Choice choice) {
+        if (finished.get()) return;
         try {
             final var world = Bukkit.getWorld(worldId);
-            check(world != null && Bukkit.isOwnedByCurrentRegion(world, x >> 4, z >> 4) && world.isChunkLoaded(x >> 4, z >> 4), "FIXTURE_REGION_REQUIRED");
+            check(world != null, "FIXTURE_WORLD_REQUIRED");
+            check(Bukkit.isOwnedByCurrentRegion(world, x >> 4, z >> 4), "FIXTURE_REGION_REQUIRED");
+            // A completed async load is not a lease: the empty server may unload before this continuation.
+            // Only this explicitly enabled CI fixture loads/pins a chunk, and releases its own ticket below.
+            check(world.addPluginChunkTicket(x >> 4, z >> 4, plugin), "FIXTURE_TICKET_ALREADY_OWNED");
+            fixtureChunk = new FixtureChunk(worldId, x >> 4, z >> 4);
+            check(world.isChunkLoaded(x >> 4, z >> 4), "FIXTURE_CHUNK_UNAVAILABLE");
             final double height = Math.max(world.getMinHeight() + 3, Math.min(world.getMaxHeight() - 3, y));
             final var request = AuthoredCreatureSpawnService.Request.template("runtime_control_probe", fixtureOwner.toString(), "probe",
                     choice.template(), 10, AuthoredCreatureSpawnService.RewardOwner.NONE, true, 1, 1, 400).summonedBy(fixtureOwner);
@@ -130,6 +139,22 @@ public final class MobRuntimeControlProbe {
     private void finish(boolean success, String code) {
         if (!finished.compareAndSet(false, true)) return;
         spawns.cleanupSummons(fixtureOwner);
+        final FixtureChunk fixture = fixtureChunk;
+        if (fixture != null) {
+            final var world = Bukkit.getWorld(fixture.world());
+            if (world != null) {
+                Bukkit.getRegionScheduler().execute(plugin, world, fixture.x(), fixture.z(), () -> {
+                    final var current = Bukkit.getWorld(fixture.world());
+                    final boolean released = current != null && Bukkit.isOwnedByCurrentRegion(current, fixture.x(), fixture.z())
+                            && current.removePluginChunkTicket(fixture.x(), fixture.z(), plugin);
+                    report(success && released, released ? code : "FIXTURE_TICKET_RELEASE_FAILED");
+                });
+                return;
+            }
+        }
+        report(success, code);
+    }
+    private void report(boolean success, String code) {
         Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
             if (success) plugin.getLogger().info("ICESMP_PVE_CONTROL_RUNTIME_PROBE_PASS platform=" + Bukkit.getServer().getName());
             else plugin.getLogger().severe("ICESMP_PVE_CONTROL_RUNTIME_PROBE_FAIL code=" + code);

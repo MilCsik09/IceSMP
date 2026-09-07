@@ -696,3 +696,17 @@ The coverage inventory has 316 authorities, 55 domains and 51 blockers. Artifact
 issuance and gameplay admission remain disabled; neither WW-04 nor production
 readiness is claimed. Original Trash source sheets and connected-client tests remain
 separate evidence gates.
+
+
+### Native probe fixture lease correction
+
+Exact checkpoint `cb3e0d4b1307a6053842a650b3135ad44cf1af7e`, CI run
+34118447729: Paper and Folia artifact lifecycle jobs 101730638219 and
+101730638065 passed. Native control jobs 101730638258 and 101730638226 failed
+before native spawn at the combined fixture region/chunk precondition. They do not
+prove a native cast. The empty-server fixture now acquires an explicit owner-thread
+plugin chunk ticket and releases only that ticket before reporting/shutdown;
+individual world, region and loaded-chunk failures have separate codes. Async load
+completion alone is not a lifetime guarantee across scheduled continuations. This
+load/pin is isolated CI setup, not WorldWeaver runtime chunk-loading behavior.
+The follow-up requires its own Paper/Folia evidence; no failure is hidden or waived.
