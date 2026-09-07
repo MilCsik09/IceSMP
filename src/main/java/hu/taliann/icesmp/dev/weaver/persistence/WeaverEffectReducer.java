@@ -24,6 +24,11 @@ final class WeaverEffectReducer {
         final DeveloperInfluence origin = new DeveloperInfluence(operation.operationId(), operation.request().integrityMode(), operation.request().actionId(), operation.actorId(), receipt.createdAt());
         final Map<UUID, WeaverProjection> projections = new HashMap<>(state.projections());
         final var scope = WeaverOperationScope.fingerprints(operation.subject(), operation.beforeFingerprint(), operation.recoveryPayload());
+        for (final var guard : effects.expectedProjectionFingerprints().entrySet()) {
+            if (!scope.containsKey(guard.getKey()) || !guard.getValue().equals(hu.taliann.icesmp.dev.weaver.projection.WeaverProjectionFingerprint.of(
+                    state.projections().values().stream().filter(projection -> projection.providerId().equals(operation.providerId())
+                            && projection.subject().equals(guard.getKey()) && projection.activeAt(operation.updatedAt())).toList()))) throw new WeaverDomainRejection("PROJECTION_CONFLICT");
+        }
         final var reservations = WeaverOperationScope.reservations(operation);
         final Map<hu.taliann.icesmp.dev.weaver.subject.SubjectRef, Integer> addedCounts = new HashMap<>();
         final Set<UUID> endedOrigins = new HashSet<>(); final Map<UUID, WeaverProjection> removedBefore = new HashMap<>();

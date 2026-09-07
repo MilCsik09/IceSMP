@@ -676,6 +676,14 @@ val mobRuntimeProjectionRegressionTest = registerRegression(
     "mobRuntimeProjectionRegressionTest",
     "Runs canonical/effective mob profile, rank-kit budget and ability eligibility regressions.",
     "hu.taliann.icesmp.pve.MobRuntimeProjectionRegressionSuite")
+val pveWeaverProjectionRegressionTest = registerRegression(
+    "pveWeaverProjectionRegressionTest",
+    "Runs journal-backed PvE projection, dynamic gameplay import, conditional Undo and crash recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProjectionRegressionSuite")
+val weaverProjectionDispatchRegressionTest = registerRegression(
+    "weaverProjectionDispatchRegressionTest",
+    "Runs bounded durable projection publication dispatch, cleanup races and provider failure isolation regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverProjectionDispatchRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -1187,7 +1195,7 @@ tasks.check {
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
         weaverPersistenceRegressionTest, weaverCrashRecoveryRegressionTest,
-        weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest,
+        weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest, pveWeaverProjectionRegressionTest, weaverProjectionDispatchRegressionTest,
         weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
         worldWeaverArchitectureAudit,
         weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCoverageRegressionTest, weaverFoliaOwnershipRegressionTest,

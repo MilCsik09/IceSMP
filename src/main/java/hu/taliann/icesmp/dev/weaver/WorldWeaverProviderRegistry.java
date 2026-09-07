@@ -276,6 +276,19 @@ public final class WorldWeaverProviderRegistry {
         }, true);
     }
     public Map<String, FacetDescriptor> facets() { requireFrozen(); return facets; }
+    /** Explicit runtime consumers can only read immutable projection state through their adapter. */
+    public <T> T readConsumer(final String providerId, final Supplier<T> read) {
+        if (!frozen) throw new WeaverDomainRejection("PROVIDER_NOT_READY"); final Entry entry = providers.get(providerId);
+        if (entry == null) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");
+        return entry.breaker().call(read, false);
+    }
+    public java.util.concurrent.CompletionStage<Void> reconcileProjections(final String providerId, final Set<hu.taliann.icesmp.dev.weaver.subject.SubjectRef> subjects) {
+        requireFrozen(); final Entry entry = providers.get(providerId); final var selected = Set.copyOf(subjects);
+        if (entry == null || !(entry.provider() instanceof hu.taliann.icesmp.dev.weaver.projection.WeaverProjectionProvider provider)
+                || selected.size() > 16) return java.util.concurrent.CompletableFuture.failedFuture(new WeaverDomainRejection("PROJECTION_CONSUMER_UNAVAILABLE"));
+        try { return entry.breaker().observe(entry.breaker().call(() -> java.util.Objects.requireNonNull(provider.reconcileProjections(selected)), true)); }
+        catch (final WeaverDomainRejection rejected) { return java.util.concurrent.CompletableFuture.failedFuture(rejected); }
+    }
     public <T> java.util.concurrent.CompletionStage<T> observeExecution(final String providerId, final java.util.concurrent.CompletionStage<T> execution) {
         requireFrozen(); final Entry entry = providers.get(providerId);
         if (entry == null) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");

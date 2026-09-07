@@ -116,6 +116,11 @@ public final class MobAbilityRuntime implements Listener {
         entity.getScheduler().runDelayed(plugin, task -> attach(entity), null, 1L);
     }
 
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEntitiesLoad(final org.bukkit.event.world.EntitiesLoadEvent event) {
+        for (final var entity : event.getEntities()) if (entity instanceof Mob mob && Bukkit.isOwnedByCurrentRegion(mob)) attach(mob);
+    }
+
     public void attach(final LivingEntity entity) {
         if (!(entity instanceof Mob mob)) return;
         if (!Bukkit.isOwnedByCurrentRegion(mob)) throw new IllegalStateException("Combat profile owner required");

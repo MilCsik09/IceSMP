@@ -54,7 +54,7 @@
       "inspect": "canonical/effective template/rank/archetype/ability/level/affix/behavior/cast/source",
       "planned_actions": "force_ability, add/remove ability, rank/archetype/template projection, refresh, export/import, fork",
       "canonical_route": "MobAbilityRuntime.triggerTechnique/startCast; canonical registry enumeration; separate MobRuntimeProjectionSource consumer",
-      "rationale": "WW-04 registers canonical registry-backed catalogs, owner-only snapshots and typed exports. The existing MobAbilityRuntime now consumes a combat-only projection port while retaining canonical rank/level/reward identities; only its canonical fallback is bound at this checkpoint. Actual journal adapter binding, lifecycle notifications, gameplay projection actions/imports, reward propagation and native/client evidence remain required. This is not full PvE coverage.",
+      "rationale": "WW-04 binds the journal-backed provider-owned combat projection port and owner-routed lifecycle wakeups. Ability add/remove, rank/archetype/template projection, compatible Thread import, conditional sever/Undo and observed crash recovery are implemented behind the closed gameplay integrity gate. Canonical rank/level/loot/Bestiary identities remain unchanged. Force ability, AREA/context/stat consumers, reward producer/propagation integration and populated native/client evidence remain required; full PvE coverage is not claimed.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRegistry.java",
@@ -70,7 +70,9 @@
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
         "src/main/java/hu/taliann/icesmp/pve/CanonicalMobProfile.java",
         "src/main/java/hu/taliann/icesmp/pve/EffectiveMobProjection.java",
-        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java"
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java"
       ]
     },
     {
@@ -1346,7 +1348,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "3163f0f1bf3a0f5e57db9a51e16b2efcb89d449d3d2df4b592052c7351c1c031",
+      "source_sha256": "398aec9f20fd71402eae3ec19133f732c526a620012a1ebc492473a5608caf28",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -1366,6 +1368,8 @@
         "owner",
         "projectionConsumers",
         "quarantined",
+        "readConsumer",
+        "reconcileProjections",
         "register",
         "resolveCatalog"
       ]
@@ -1373,7 +1377,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "9ba6e5303853cdbc2de8607c6e8073b2d43ef5cff6ad29fc84265cf9801a8373",
+      "source_sha256": "e4d540b4d196a3d661a29e3a3b2851bb18e99c712c2f73fe88bfe9ebdfaf8a8d",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
@@ -1417,6 +1421,18 @@
         "page",
         "resolve",
         "type"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
+      "domain": "developer_self",
+      "source_sha256": "5463bead1fa9b81df64bc2f843791e932a78f3b9ca4255c8fc73823d7f41f389",
+      "public_methods": [
+        "WeaverProviderServices",
+        "types",
+        "projections",
+        "owners",
+        "readConsumer"
       ]
     },
     {
@@ -1581,6 +1597,15 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/WeaverProjectionDispatcher.java",
+      "domain": "developer_self",
+      "source_sha256": "905a2c8f5edb9bb8b1d3373eda883b79ff1c6f783fcb4fc40370addd55b41a69",
+      "public_methods": [
+        "WeaverProjectionDispatcher",
+        "pulse"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "domain": "minecraft",
       "source_sha256": "72f36001e0f1df3338789bd4453838c91e5b00845cede241102e73e71b8fa2dd",
@@ -1602,25 +1627,45 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
+      "domain": "pve",
+      "source_sha256": "700f4cdd6cea9d29243ba0670c97c17e92bc6faf2497464e30c202ad943005b2",
+      "public_methods": [
+        "PvEMobProjectionSource",
+        "active",
+        "resolve",
+        "canonicalRevision"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
+      "domain": "pve",
+      "source_sha256": "682b30b4ea54d69e9ecb43fcfe4762823137e232e4cb6d0ccdf0a3b2e2b88b83",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "domain": "pve",
-      "source_sha256": "e1874578ceba31066a82270648a471c0f0b9db3ffc4194bb741ee53ec07ee9ed",
+      "source_sha256": "476e6a1438cb457fd43409488b9825af9d80f03f71508fea968d757e4588cd20",
       "public_methods": [
         "PvEWeaverProvider",
+        "assessRecovery",
         "captureOnOwner",
         "catalog",
-        "contribution",
         "contractVersion",
+        "contribution",
         "coverage",
         "discover",
         "exportValue",
         "id",
         "inspect",
         "prepare",
+        "prepareEffects",
         "prepareUndo",
+        "projectionConsumers",
+        "reconcileProjections",
         "supportedKinds",
-        "validateImport",
-        "assessRecovery"
+        "validateImport"
       ]
     },
     {
@@ -5467,7 +5512,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "8878d15d88ffa7d507068fd070ee715c076fb1c416586411124d1b4957d412d5",
+      "source_sha256": "6f671ad44af53917c5ff5c826d51c49b44563af5283994b79b4d86c2fd3bdd47",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
@@ -5483,6 +5528,7 @@
         "onAffixDamage",
         "onAffixHurt",
         "onDeath",
+        "onEntitiesLoad",
         "onSpawn",
         "pause",
         "reconcileProjection",
@@ -6139,12 +6185,16 @@
     "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/projection/WeaverProjectionDispatcher.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
@@ -6242,6 +6292,7 @@
       "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java",
       "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
@@ -7301,6 +7352,13 @@
         "developer_self"
       ],
       "rationale": "Internal WorldWeaver composition/root lifecycle. Artifact authority remains DevItemManager; gameplay domain coverage is not closed by the frontend."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
+      "domains": [
+        "minecraft"
+      ],
+      "rationale": "Existing canonical Minecraft adapter constructor now receives generic composition services through a lambda; the registry inventory detects its explicit constructor call."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",

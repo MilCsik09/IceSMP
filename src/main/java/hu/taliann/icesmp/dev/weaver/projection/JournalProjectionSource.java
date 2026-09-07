@@ -7,11 +7,12 @@ import java.util.*;
 
 public final class JournalProjectionSource implements WeaverProjectionSource {
     private final WeaverJournal journal;
-    private final ProjectionConsumerRegistry consumers;
-    public JournalProjectionSource(final WeaverJournal journal, final ProjectionConsumerRegistry consumers) { this.journal = Objects.requireNonNull(journal); this.consumers = Objects.requireNonNull(consumers); }
+    private final java.util.function.Supplier<ProjectionConsumerRegistry> consumers;
+    public JournalProjectionSource(final WeaverJournal journal, final ProjectionConsumerRegistry consumers) { this(journal, () -> consumers); }
+    public JournalProjectionSource(final WeaverJournal journal, final java.util.function.Supplier<ProjectionConsumerRegistry> consumers) { this.journal = Objects.requireNonNull(journal); this.consumers = Objects.requireNonNull(consumers); }
     @Override public List<WeaverProjection> active(final String consumerId, final SubjectRef subject, final long now) {
         if (!journal.ready()) throw new WeaverDomainRejection("PROJECTION_STATE_UNAVAILABLE");
-        final ProjectionConsumerDescriptor consumer = consumers.require(consumerId); final WeaverJournalState state = journal.snapshot();
+        final ProjectionConsumerDescriptor consumer = consumers.get().require(consumerId); final WeaverJournalState state = journal.snapshot();
         if (!consumer.subjects().contains(subject.kind())) throw new WeaverDomainRejection("PROJECTION_SUBJECT_UNSUPPORTED");
         return state.projections().values().stream().filter(projection -> projection.subject().equals(subject) && projection.activeAt(now)
                 && projection.providerId().equals(consumer.providerId()) && consumer.actions().contains(projection.actionId())

@@ -600,6 +600,16 @@
       "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java|EffectiveMobProjection resolve(UUID entityId, CanonicalMobProfile canonical);",
       "category": "RUNTIME",
       "reason": "Exact reviewed functional read port: the UUID identifies a mob and both profile records contain immutable combat inputs. The interface has no player profile, YAML or persistence authority."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java|@Override public EffectiveMobProjection resolve(final UUID entityId, final CanonicalMobProfile canonical) { return resolve(canonical, active(entityId)); }",
+      "category": "RUNTIME",
+      "reason": "Exact reviewed read-only mob UUID projection lookup. It reads detached journal projections and immutable canonical combat inputs; it neither reads nor writes a PlayerProfile or YAML authority."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java|public EffectiveMobProjection resolve(final CanonicalMobProfile canonical, final List<WeaverProjection> active) {",
+      "category": "RUNTIME",
+      "reason": "Exact reviewed pure combat projection reduction over immutable inputs. It selects canonical registry content and has no player profile, live Bukkit object or persistence mutation port."
     }
   ]
 }

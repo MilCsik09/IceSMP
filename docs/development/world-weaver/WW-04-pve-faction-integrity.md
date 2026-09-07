@@ -116,11 +116,79 @@ the inherited `trashSpriteAssetAudit`. Resource pack `34076501612` and Trash
 hardening `34076501482` succeeded. These are clean-store boot/shutdown probes,
 not populated projection evidence. This checkpoint requires its own remote CI.
 
+## Journal-backed combat projection checkpoint
+
+Based on `4e5889294755e3acee6c792964c6a92639a60901`. This supersedes the
+canonical-fallback-only limitation above. Composition supplies each provider with
+generic type, read-only projection and owner scheduler ports. `PvEWeaverProvider`
+binds `PvEMobProjectionSource` into the existing `MobAbilityRuntime`. The artifact,
+kernel and GUI still contain no PvE branches.
+
+| Action / field | Effective consumer | Canonical consumers unchanged |
+| --- | --- | --- |
+| `pve.add_ability` / `pve.ability_add` | Native eligible kit selection, then the existing cast/cooldown lifecycle | Loot, Bestiary, quest identity, reward level, provenance |
+| `pve.remove_ability` / `pve.ability_remove` | Latest add/remove operation per ability; suppression recomputes the kit | Same canonical identities |
+| `pve.override_rank` / `pve.rank_override` | Rank kit, technique budget, eligibility and combat boss classification | Canonical scaling rank/level and rewards |
+| `pve.override_archetype` / `pve.archetype_override` | Ability eligibility; explicit override wins over template archetype default | Canonical archetype and reward identity |
+| `pve.apply_template_projection` / `pve.template_override` | Template ability kit and behavior; rank remains independently selected | Canonical template PDC, loot, Bestiary and provenance |
+| Conditional `pve.sever_projection` | Removes the exact projection; recomputes effective state | Original receipt/audit retained; entity taint remains monotonic |
+
+All five projection actions support SESSION and PERSISTENT lifetime, typed catalog
+input, and SANDBOX/LIVE_GM modes through the existing generic authority/arming gates.
+Ability import checks effective rank/archetype eligibility. The most recent explicit
+ability additions have selection priority, so an added ability is not silently lost
+behind the existing normal-rank technique cap. Rank/archetype/template/ability import
+descriptors are discovered generically. Sever is the receipt's conditional Undo route;
+the later direct projection picker/clear UX is not claimed here.
+
+The owner stage checks a fresh canonical combat revision and projection fingerprint.
+It does not mutate a native entity. The only projection mutation is the durable
+APPLIED publication, with influence and receipt in the same generation. A second
+projection fingerprint check runs inside the serialized journal writer: intervening
+projection drift/expiry cannot slip through the owner-to-storage continuation window.
+The fingerprint includes ordered projection identities, typed values and lifetime.
+Canonical definition revisions encode map/set members deterministically.
+
+Conditional Undo checks the observed fingerprint and original receipt revision,
+then severs only its own projection. External canonical/projection drift conflicts.
+Recovery observes PREPARED as unpublished and aborts it; APPLIED must match the
+observed effective fingerprint before audit completion. No stage is replayed.
+Unloaded entities remain pending until load. Existing `EntitiesLoadEvent` handling
+reattaches through the canonical combat runtime; no chunk is force-loaded.
+
+The generic publication dispatcher wakes at most 16 targets per maintenance pass,
+retains immutable references only, detects startup/add/remove/session cleanup changes,
+coalesces concurrent publications, and retries failed consumers without starving other
+providers. Its acknowledgement cache is capped at 2560 targets. Read failures use the
+provider circuit breaker; unavailable/quarantined combat input supplies no custom
+abilities, preserving canonical identity. Recovery/cleanup can still run while a
+provider is quarantined. The journal retains reward quarantine evidence.
+
+Verification: full Java 21 main/regression compilation; 30 local Weaver/DEV/PvE
+suites PASS; four architecture checks, PlayerProfile guard/self-test (656 findings,
+zero unknown/stale/invalid/transition), coverage audit (296 authorities, 55 domains,
+51 blockers, zero errors), consistency (zero FAIL/WARN), and whitespace checks pass.
+Both new suites are Gradle `check` dependencies. The actual provider regression adds
+new registry content after freeze, exports it from a boss snapshot, imports its typed
+Thread into a compatible mob, commits through the real journal and selects it through
+the actual native rank-cap policy. It also covers template/member precedence, rejected
+ineligible import, canonical identity, conditional Undo, immutable audit, session
+cleanup, stale snapshots, the storage publication race and eight before/after-write
+crash boundaries with unloaded entity recovery. Dispatcher tests cover 320 targets,
+publication races and a failing provider beside a healthy one.
+
+The preceding port head has exact remote evidence: build `34078372942`; Paper
+`101608819282` and Folia `101608819266` succeeded. Verification `101608819164`
+compiled both source sets and passed the combat port suite; its only failed task
+was the inherited `trashSpriteAssetAudit`. Resource pack `34078372931`, Trash
+`34078372925`, and docs inventory `34078372935` succeeded. This new projection
+checkpoint still needs its own CI and populated Paper/Folia execution evidence.
+
 ## Remaining phase requirements
 
-- Actual effective mob projection port and combat consumers, with canonical loot and
-  Bestiary identity preserved; full PvE actions, imports, conditional Undo/recovery,
-  AREA compatibility and native execution evidence.
+- PvE force-ability/context/stat consumers, direct projection picker/clear controls,
+  AREA compatibility and populated native execution evidence. Multi-ability catalog
+  selection into Thread still needs the generic WW-07 UX.
 - Faction membership/context projections through passive/targeting consumers, canonical
   expected-revision membership/crime/Whisperer APIs and their post-commit hooks.
 - Influence propagation and neutral eligibility gates at every audited gameplay
