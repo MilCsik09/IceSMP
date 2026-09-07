@@ -253,7 +253,8 @@ public final class ProfessionRecipeBookListener implements Listener {
         final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
         if (bestiaryRef != null) {
             bestiaryRef.record(player,
-                    hu.taliann.icesmp.managers.BestiaryManager.Category.RECIPES, recipe.id());
+                    hu.taliann.icesmp.managers.BestiaryManager.Category.RECIPES, recipe.id(),
+                    new RewardContext(RewardChannel.BESTIARY, playerId, reward.sources()));
         }
         hu.taliann.icesmp.professions.ProfessionEconomyTelemetry.global().recordCraft(
                 recipe, batches, masterworkCount, recipe.level() >= 40 || recipe.blueprint());

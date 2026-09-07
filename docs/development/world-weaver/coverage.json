@@ -2489,7 +2489,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/AchievementManager.java",
       "domain": "knowledge",
-      "source_sha256": "a4c4ac3775f0763f96caef563ce38410058070b432247a3844ab62d8a0cfeb8f",
+      "source_sha256": "075f816b6ebe97c5f2de35af29296608e27183de3dac858d044b562756df4707",
       "public_methods": [
         "Achievement",
         "evaluate",
@@ -2498,13 +2498,14 @@
         "isEnabled",
         "metricValue",
         "reload",
+        "settlePendingReward",
         "tick"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java",
       "domain": "knowledge",
-      "source_sha256": "6c800fd117eab9bf2bd0def336a20052e60849c0f3839f014d00812d56a7c91b",
+      "source_sha256": "1ba307ee00d20f0416686034c65b1b5c0dcb08bd6ea1ad9df9b4204e07a61fa0",
       "public_methods": [
         "award",
         "clearIfCurrent",
@@ -2557,7 +2558,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/BestiaryManager.java",
       "domain": "knowledge",
-      "source_sha256": "ef065a129a8b4eee670cfed4fda8c98713c7935eb1e8ddd96def825e8845b212",
+      "source_sha256": "8a5bcb02ab50b890ef60bf22d0bd3eff2c453c7cc6d5ece76aa2328337a8589c",
       "public_methods": [
         "categoryName",
         "codexNote",
@@ -2573,7 +2574,8 @@
         "mobTemplates",
         "plugin",
         "record",
-        "setMobTemplateRegistry"
+        "setMobTemplateRegistry",
+        "setRewardDelivery"
       ]
     },
     {
@@ -3389,7 +3391,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HiddenSpotManager.java",
       "domain": "knowledge",
-      "source_sha256": "34ab97604d3b0ae0c449e9f798bb09a9ed8038f05c7fb7f3a331dc954e9d128c",
+      "source_sha256": "3492439bade8440157c7a7b65cc8f76f8d3cfdc984d1eb9995b764ad6a93e032",
       "public_methods": [
         "load",
         "save",
@@ -4978,12 +4980,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileAchievementStore.java",
       "domain": "knowledge",
-      "source_sha256": "41bad440cc3fa88ff45ba3b4174ce054b2030a7bdbd11be0f1f6ad7c019158fe",
+      "source_sha256": "57ed6ec31c6236f210a4e4bc6b28bf5be7da006158b3688ab573ed98e67c5916",
       "public_methods": [
+        "BestiaryAdmission",
         "BestiaryRecord",
         "PendingReward",
         "RewardReservation",
         "bestiaryEntries",
+        "deliverReward",
         "hasVisitedHiddenSpot",
         "isUnlocked",
         "markHiddenSpotVisited",
@@ -4991,6 +4995,7 @@
         "pendingReward",
         "pendingRewards",
         "recordBestiary",
+        "recordBestiaryWithRewards",
         "reserveReward",
         "rewardReserved",
         "rewardSettled",

@@ -2,6 +2,8 @@ package hu.taliann.icesmp.playerprofile.application;
 
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.AchievementSection;
+import hu.taliann.icesmp.integrity.RewardChannel;
+import hu.taliann.icesmp.integrity.RewardContext;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -64,9 +66,18 @@ public final class PlayerProfileAchievementStore {
     }
 
     public CompletionStage<Boolean> unlock(final UUID playerId, final String rawId) {
+        return unlock(playerId, rawId, RewardContext.recipientOnly(RewardChannel.ACHIEVEMENT, playerId));
+    }
+
+    public CompletionStage<Boolean> unlock(final UUID playerId, final String rawId, final RewardContext reward) {
+        Objects.requireNonNull(reward).require(RewardChannel.ACHIEVEMENT, playerId);
+        return unlockAdmitted(playerId, rawId, reward);
+    }
+
+    private CompletionStage<Boolean> unlockAdmitted(final UUID playerId, final String rawId, final RewardContext reward) {
         final String achievementId = id(rawId);
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.ACHIEVEMENTS, AchievementSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.ACHIEVEMENTS, AchievementSection.class, reward, current -> {
                     if (current.unlocked().contains(achievementId)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
@@ -85,9 +96,15 @@ public final class PlayerProfileAchievementStore {
      */
     public CompletionStage<RewardReservation> reserveReward(final UUID playerId,
                                                              final PendingReward requested) {
+        return reserveReward(playerId, requested, RewardContext.recipientOnly(reservationChannel(requested), playerId));
+    }
+
+    public CompletionStage<RewardReservation> reserveReward(final UUID playerId,
+                                                             final PendingReward requested, final RewardContext reward) {
         Objects.requireNonNull(requested, "requested");
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.ACHIEVEMENTS, AchievementSection.class, current -> {
+        Objects.requireNonNull(reward).require(reservationChannel(requested), playerId);
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.ACHIEVEMENTS, AchievementSection.class, reward, current -> {
                     if (current.claimedRewards().contains(requested.receiptId())) {
                         return PlayerProfileService.ConditionalMutation.unchanged(
                                 new RewardReservation(RewardState.SETTLED, requested, false));
@@ -140,6 +157,17 @@ public final class PlayerProfileAchievementStore {
         return Optional.ofNullable(pending(section(playerId)).get(id(rawReceipt)));
     }
 
+    /** Delivers an existing exact outbox payload; settlement waits for the canonical delivery acknowledgement. */
+    public CompletionStage<Boolean> deliverReward(final UUID playerId, final PendingReward expected,
+            final java.util.function.Function<PendingReward, CompletionStage<Boolean>> delivery) {
+        Objects.requireNonNull(playerId); Objects.requireNonNull(expected); Objects.requireNonNull(delivery);
+        final var stored = pendingReward(playerId, expected.receiptId());
+        if (stored.isEmpty()) return java.util.concurrent.CompletableFuture.completedFuture(false);
+        requireSameReward(stored.orElseThrow(), expected);
+        return Objects.requireNonNull(delivery.apply(stored.orElseThrow())).thenCompose(delivered ->
+                Boolean.TRUE.equals(delivered) ? settleReward(playerId, expected) : java.util.concurrent.CompletableFuture.completedFuture(false));
+    }
+
     public List<PendingReward> pendingRewards(final UUID playerId) {
         final ArrayList<PendingReward> rewards = new ArrayList<>(pending(section(playerId)).values());
         rewards.sort(Comparator.comparing(PendingReward::receiptId));
@@ -171,24 +199,51 @@ public final class PlayerProfileAchievementStore {
     public CompletionStage<BestiaryRecord> recordBestiary(final UUID playerId,
                                                            final String rawCategory,
                                                            final String rawEntry) {
+        return recordBestiary(playerId, rawCategory, rawEntry, RewardContext.recipientOnly(RewardChannel.BESTIARY, playerId));
+    }
+
+    public CompletionStage<BestiaryRecord> recordBestiary(final UUID playerId, final String rawCategory,
+                                                           final String rawEntry, final RewardContext reward) {
+        return recordBestiaryWithRewards(playerId, rawCategory, rawEntry, Map.of(), reward).thenApply(BestiaryAdmission::record);
+    }
+
+    /** Entry and its current-count milestone reservation share one admission and one canonical section WAL. */
+    public CompletionStage<BestiaryAdmission> recordBestiaryWithRewards(final UUID playerId, final String rawCategory,
+            final String rawEntry, final Map<Integer, PendingReward> milestones, final RewardContext reward) {
+        Objects.requireNonNull(reward).require(RewardChannel.BESTIARY, playerId);
         final String category = id(rawCategory);
         final String entry = id(rawEntry);
+        final Map<Integer, PendingReward> rules = Map.copyOf(milestones);
+        if (rules.size() > 128) throw new IllegalArgumentException("Too many bestiary milestones");
+        for (var rule : rules.entrySet()) {
+            if (rule.getKey() < 1 || !rule.getValue().receiptId().equals("bestiary:" + category + ':' + rule.getKey()))
+                throw new IllegalArgumentException("Bestiary milestone identity mismatch");
+        }
         final String key = "bestiary:" + category + BESTIARY_SEPARATOR + entry;
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.ACHIEVEMENTS, AchievementSection.class, current -> {
-                    final long present = current.bestiary().getOrDefault(key, 0L);
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.ACHIEVEMENTS, AchievementSection.class, reward, current -> {
+                    final boolean created = current.bestiary().getOrDefault(key, 0L) <= 0;
                     final int existingCount = count(current, category);
-                    if (present > 0L) {
-                        return PlayerProfileService.ConditionalMutation.unchanged(
-                                new BestiaryRecord(false, existingCount));
-                    }
+                    final int total = created ? Math.addExact(existingCount, 1) : existingCount;
                     final LinkedHashMap<String, Long> bestiary = new LinkedHashMap<>(current.bestiary());
-                    bestiary.put(key, 1L);
-                    final AchievementSection next = new AchievementSection(current.unlocked(),
+                    if (created) bestiary.put(key, 1L);
+                    AchievementSection next = new AchievementSection(current.unlocked(),
                             current.publicAchievements(), current.claimedRewards(),
                             bestiary, current.extensions());
-                    return PlayerProfileService.ConditionalMutation.changed(next,
-                            new BestiaryRecord(true, Math.addExact(existingCount, 1)));
+                    final var pending = pending(current);
+                    final PendingReward milestone = rules.get(total);
+                    PendingReward admitted = null; boolean reserved = false;
+                    if (milestone != null && !current.claimedRewards().contains(milestone.receiptId())) {
+                        admitted = pending.get(milestone.receiptId());
+                        if (admitted == null) {
+                            if (pending.size() >= MAX_PENDING_REWARDS) throw new IllegalStateException("achievement pending reward ledger is full");
+                            admitted = milestone; pending.put(milestone.receiptId(), milestone); reserved = true;
+                        }
+                    }
+                    final var result = new BestiaryAdmission(new BestiaryRecord(created, total), admitted == null ? List.of() : List.of(admitted));
+                    if (!created && !reserved) return PlayerProfileService.ConditionalMutation.unchanged(result);
+                    if (reserved) next = withPending(next, pending, current.claimedRewards());
+                    return PlayerProfileService.ConditionalMutation.changed(next, result);
                 });
     }
 
@@ -198,7 +253,16 @@ public final class PlayerProfileAchievementStore {
 
     public CompletionStage<Boolean> markHiddenSpotVisited(final UUID playerId,
                                                            final String rawSpotId) {
-        return unlock(playerId, HIDDEN_SPOT_PREFIX + id(rawSpotId));
+        return markHiddenSpotVisited(playerId, rawSpotId, RewardContext.recipientOnly(RewardChannel.DISCOVERY, playerId));
+    }
+
+    public CompletionStage<Boolean> markHiddenSpotVisited(final UUID playerId, final String rawSpotId, final RewardContext reward) {
+        Objects.requireNonNull(reward).require(RewardChannel.DISCOVERY, playerId);
+        return unlockAdmitted(playerId, HIDDEN_SPOT_PREFIX + id(rawSpotId), reward);
+    }
+
+    private static RewardChannel reservationChannel(final PendingReward reward) {
+        return Objects.requireNonNull(reward).receiptId().startsWith("bestiary:") ? RewardChannel.BESTIARY : RewardChannel.ACHIEVEMENT;
     }
 
     private AchievementSection section(final UUID playerId) {
@@ -290,5 +354,8 @@ public final class PlayerProfileAchievementStore {
         public BestiaryRecord {
             if (categoryCount < 0) throw new IllegalArgumentException("negative category count");
         }
+    }
+    public record BestiaryAdmission(BestiaryRecord record, List<PendingReward> pending) {
+        public BestiaryAdmission { Objects.requireNonNull(record); pending = List.copyOf(pending); }
     }
 }

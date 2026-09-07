@@ -20,6 +20,7 @@ public final class MobRuntimeControlProbe {
     private final AuthoredCreatureSpawnService spawns;
     private final MobTemplateRegistry templates;
     private final MobAbilityRegistry abilities;
+    private final hu.taliann.icesmp.managers.AchievementManager achievements;
     private final UUID fixtureOwner = UUID.randomUUID();
     private final AtomicBoolean finished = new AtomicBoolean();
     private volatile UUID entityId;
@@ -28,13 +29,13 @@ public final class MobRuntimeControlProbe {
     private volatile Set<UUID> createdChildren = Set.of();
     private volatile FixtureChunk fixtureChunk;
     private MobRuntimeControlProbe(JavaPlugin plugin, MobAbilityRuntime runtime, AuthoredCreatureSpawnService spawns,
-            MobTemplateRegistry templates, MobAbilityRegistry abilities) {
-        this.plugin = plugin; this.runtime = runtime; this.spawns = spawns; this.templates = templates; this.abilities = abilities;
+            MobTemplateRegistry templates, MobAbilityRegistry abilities, hu.taliann.icesmp.managers.AchievementManager achievements) {
+        this.plugin = plugin; this.runtime = runtime; this.spawns = spawns; this.templates = templates; this.abilities = abilities; this.achievements = achievements;
     }
     public static void maybeRun(JavaPlugin plugin, MobAbilityRuntime runtime, AuthoredCreatureSpawnService spawns,
-            MobTemplateRegistry templates, MobAbilityRegistry abilities) {
+            MobTemplateRegistry templates, MobAbilityRegistry abilities, hu.taliann.icesmp.managers.AchievementManager achievements) {
         if (!Boolean.getBoolean(PROPERTY)) return;
-        final var probe = new MobRuntimeControlProbe(plugin, runtime, spawns, templates, abilities);
+        final var probe = new MobRuntimeControlProbe(plugin, runtime, spawns, templates, abilities, achievements);
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> probe.begin(), 40);
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> probe.finish(false, "TIMEOUT"), 600);
     }
@@ -231,9 +232,54 @@ public final class MobRuntimeControlProbe {
             }
             check(!children.isEmpty() && children.size() <= 8, "NATIVE_CREATION_GATE_DID_NOT_EXECUTE");
             spawns.cleanupSummons(summonerId); spawns.cleanupSummons(fixtureOwner);
-            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> finish(Bukkit.getEntity(entityId) == null
-                    && Bukkit.getEntity(allyCasterId) == null && Bukkit.getEntity(summonerId) == null
-                    && createdChildren.stream().allMatch(id -> Bukkit.getEntity(id) == null), "NATIVE_LIFECYCLE"), 5);
+            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
+                if (Bukkit.getEntity(entityId) != null || Bukkit.getEntity(allyCasterId) != null || Bukkit.getEntity(summonerId) != null
+                        || createdChildren.stream().anyMatch(id -> Bukkit.getEntity(id) != null)) finish(false, "NATIVE_LIFECYCLE");
+                else verifyRewardSettlement();
+            }, 5);
+        } catch (Throwable failure) { failed(failure); }
+    }
+
+    /** Actual manager delivery from a server owner into native profile/economy IO; no connected player is synthesized. */
+    private void verifyRewardSettlement() {
+        if (finished.get()) return;
+        try {
+            check(Bukkit.getOnlinePlayers().isEmpty(), "PLAYERS_PRESENT");
+            final var authority = hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.current();
+            final var store = new hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore();
+            final var pending = new hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.PendingReward(
+                    "bestiary:mobs:1", hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore.RewardKind.CURRENCY, 1, "neutral");
+            authority.repository().load(fixtureOwner).thenCompose(snapshot -> {
+                check(!finished.get(), "PROBE_RETIRED");
+                return store.recordBestiaryWithRewards(fixtureOwner, "mobs", "native_fixture", Map.of(1, pending),
+                        hu.taliann.icesmp.integrity.RewardContext.recipientOnly(hu.taliann.icesmp.integrity.RewardChannel.BESTIARY, fixtureOwner));
+            }).whenComplete((admitted, failure) -> {
+                if (failure != null) { failed(failure); return; }
+                if (finished.get()) return;
+                Bukkit.getGlobalRegionScheduler().execute(plugin, () -> {
+                    if (finished.get()) return;
+                    try {
+                        check(admitted.record().created() && admitted.pending().equals(List.of(pending)), "NATIVE_MILESTONE_ADMISSION");
+                        achievements.settlePendingReward(fixtureOwner, pending).thenCompose(settled -> {
+                            check(Boolean.TRUE.equals(settled), "NATIVE_REWARD_SETTLEMENT");
+                            check(!finished.get(), "PROBE_RETIRED");
+                            return achievements.settlePendingReward(fixtureOwner, pending);
+                        }).whenComplete((replayed, deliveryFailure) -> {
+                            if (deliveryFailure != null) { failed(deliveryFailure); return; }
+                            if (finished.get()) return;
+                            try {
+                                final var economy = new hu.taliann.icesmp.playerprofile.application.PlayerProfileEconomyStore();
+                                check(Boolean.FALSE.equals(replayed) && store.rewardSettled(fixtureOwner, pending.receiptId())
+                                        && store.pendingRewards(fixtureOwner).isEmpty()
+                                        && economy.readCached(fixtureOwner).milli(hu.taliann.icesmp.data.CurrencyType.NEUTRAL) == 1000,
+                                        "NATIVE_REWARD_REPLAY");
+                                plugin.getLogger().info("ICESMP_KNOWLEDGE_REWARD_RUNTIME_PROBE_PASS scope=offline_profile_currency_settlement");
+                                finish(true, "NATIVE_LIFECYCLE_AND_REWARD");
+                            } catch (Throwable invalid) { failed(invalid); }
+                        });
+                    } catch (Throwable invalid) { failed(invalid); }
+                });
+            });
         } catch (Throwable failure) { failed(failure); }
     }
     private void later(UUID id, long ticks, Runnable action) {

@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.managers;
 
+import hu.taliann.icesmp.integrity.*;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.advancement.Advancement;
@@ -177,17 +178,26 @@ public final class AdvancementService {
         if (!service.configManager.getBoolean("advancements.enabled", true)) {
             return;
         }
-        service.grant(player, id);
+        final RewardContext reward;
+        try { reward = BukkitRewardSources.entity(RewardChannel.ACHIEVEMENT, player).forRecipient(player.getUniqueId()); }
+        catch (RuntimeException | LinkageError unavailable) { return; }
+        service.grant(player, id, reward);
     }
 
-    private void grant(final Player player, final String id) {
+    private void grant(final Player player, final String id, final RewardContext reward) {
         final NamespacedKey key = new NamespacedKey(NS, id);
+        final java.util.UUID playerId = player.getUniqueId();
         player.getScheduler().run(plugin, task -> {
+            final Player owned = Bukkit.getPlayer(playerId);
+            if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned) || !owned.isOnline()) return;
+            if (!GameplayRewardGate.evaluate(reward).allowed()) return;
+            // The player can cross a spatial/world influence boundary while this owner hop waits.
+            if (!BukkitRewardSources.allowed(RewardChannel.ACHIEVEMENT, owned)) return;
             final Advancement advancement = Bukkit.getAdvancement(key);
             if (advancement == null) {
                 return;
             }
-            final AdvancementProgress progress = player.getAdvancementProgress(advancement);
+            final AdvancementProgress progress = owned.getAdvancementProgress(advancement);
             if (progress.isDone()) {
                 return;
             }

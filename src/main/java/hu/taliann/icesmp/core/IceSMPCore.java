@@ -792,6 +792,7 @@ public final class IceSMPCore {
         abilityCatalystListener.setStatsManager(statsManager);
         this.achievementManager = new AchievementManager(plugin, configManager, jobManager, currencyManager,
                 professionManager, factionManager, statsManager, dailyQuestManager, messageManager);
+        bestiaryManager.setRewardDelivery(achievementManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, worldBossManager, caravanManager, escortManager,
@@ -1162,7 +1163,7 @@ public final class IceSMPCore {
         professionRecipeManager.registerRecipes();
         worldWeaverRuntime.start();
         registerListeners();
-        hu.taliann.icesmp.pve.MobRuntimeControlProbe.maybeRun(plugin, mobAbilityRuntime, authoredCreatureSpawns, mobTemplateRegistry, mobAbilityRegistry);
+        hu.taliann.icesmp.pve.MobRuntimeControlProbe.maybeRun(plugin, mobAbilityRuntime, authoredCreatureSpawns, mobTemplateRegistry, mobAbilityRegistry, achievementManager);
         trashAmbientManager.start();
         // Hot plugin reloads may enable while players are already online and therefore do not emit
         // a new join event. Give those sessions a fresh generation before PM delivery can link them.
