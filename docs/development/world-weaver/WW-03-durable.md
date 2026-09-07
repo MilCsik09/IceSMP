@@ -228,13 +228,83 @@ suite; the sole failed task was inherited `trashSpriteAssetAudit`. Docs `3406830
 resource pack `34068302941` and Trash `34068302943` succeeded. These clean-store probes
 are not populated Undo/crash/client evidence for the new checkpoint.
 
+## Bounded AREA checkpoint
+
+`WeaverAreaEngine` calculates at most nine chunks without accessing Bukkit, then
+collects on each chunk's region. `FoliaWeaverAreaAccess` verifies loaded blocks and,
+separately, `Chunk.isEntitiesLoaded()` before calling `getEntities()`; that method
+would otherwise force-load entity data ([Paper 1.21.11 API](https://jd.papermc.io/paper/1.21.11/org/bukkit/Chunk.html#getEntities())).
+Entity arrays above 4,096 entries reject the scan before iteration. Entity ownership
+is checked before any state/identity read. Only stable refs leave the collection
+stage; snapshots are reacquired on each child's owner, with at most 16 concurrent
+subtasks. Unavailable chunks, retired entities and targets that left the shape have
+explicit bounded skip evidence. Duplicate migration sightings are deduplicated.
+
+The existing five shapes share this engine. Descriptor limits can tighten the
+4,096-block / 128-entity / 9-chunk / 9-region caps. Chunk count conservatively bounds
+region count; a region merge cannot enlarge admission. A block collection may cover
+4,096 positions, but the normative token budget still applies: cost is at least
+`1 + ceil(targets / 16)`. It is never clamped to make an oversized action affordable.
+The existing 20-token bucket therefore rejects a block batch whose computed cost
+exceeds its available budget. This preserves both separate design limits.
+
+The generic confirmation and execution routes recollect targets and compare a
+stable fingerprint of shape, membership, child revisions and skip evidence. A
+changed target set cannot inherit old confirmation. The provider contributes one
+owner-bound stage per child through `prepareArea`; the engine requires compensation
+for every journaled child, reacquires its snapshot before mutation and rejects drift.
+A final pure aggregation stage supplies the receipt's complete after fingerprint.
+Child stages currently execute sequentially through the ordinary durable coordinator
+(concurrency 1, within the maximum 16); collection/snapshot fanout uses the bounded
+continuation runner. Partial failure compensates acknowledged children in reverse
+order; external drift stops compensation and retains NEEDS_REVIEW/quarantine.
+
+One PREPARED operation includes the AREA and all selected entity/player sources.
+The internal intent envelope allows 129 entries solely to accommodate the 128-child
+cap plus the parent scope; target/action caps do not increase. Normal APPLIED state
+publishes all corresponding influence together. Destructive/canonical AREA remains
+forbidden. Child projection materialization still needs the later adapter work.
+
+`prepareAreaUndo` receives the same fresh immutable selection and uses the normal
+Undo claim/execution route. Recovery stores reserved `weaver.area` evidence inside
+the bounded operation payload before mutation. Providers cannot supply/replace this
+reserved evidence. Recovery captures only those original targets under the separate
+operation authority and invokes `assessAreaRecovery`; it does not rescan for newly
+arrived entities, prepare a new action or replay stages. Missing original entities
+remain pending until their load event. Missing block chunks similarly remain pending;
+newly loaded originally skipped chunks are not enrolled. The payload's existing
+64-KiB/value caps can reject an excessively large recovery plan before mutation.
+
+`WeaverAreaExecutionRegressionSuite` covers nine owner tasks, 16 concurrent admissions,
+128/129 entity rejection, 4,096/4,095 block limits, synchronous continuation stack
+safety, failure draining, deterministic fingerprints, duplicate/moved/retired targets,
+aggregate receipts, child compensation/conflict, authority revocation, close-before-
+read, AREA intent bounds, durable recovery evidence, pending child load, no rescan,
+and AREA Undo through the provider and journal. It is a normal Gradle check dependency.
+Actual loaded-region migration, populated server crash and client confirmation remain
+native/human evidence gates; these fixtures do not establish production Folia safety.
+
+Local verification: full Java 21 main/regression compilation (49 real dependencies,
+zero errors, three inherited warnings), 17 Weaver plus three DEV suites (20 passed),
+four architecture checks, the 650-row PlayerProfile authority gate, source inventory
+(288 authorities, 51 implementation blockers, zero inventory errors), and consistency
+(zero FAIL/WARN). The native AREA implementation still requires populated runtime
+and human/client evidence before a Folia production verdict.
+
+The preceding Undo head `14ed612f811b03c5aef7a8c615dd35eb618b867a` has exact remote
+evidence: run `34071177556`; Paper `101588692136` and Folia `101588692240` succeeded
+with readiness and clean shutdown. Verification `101588692299` compiled all sources
+and passed the Undo suite; the sole failed task was inherited `trashSpriteAssetAudit`.
+Resource-pack workflow `34071177569` succeeded. These are preceding-head clean-store
+probes, not a populated AREA acceptance result.
+
 ## Remaining WW-03 implementation
 - Native provider mutation/compensation and exact late-effect reconciliation evidence;
   the generic durable execution path is implemented behind the closed integrity gate.
 - Actual projection consumers and provider effect materialization; the generic registry/store foundation is implemented.
 - Provider-specific canonical compensating history and native Undo evidence; the generic durable Undo path is implemented.
 - Action-specific revision scopes: full snapshots currently conflict on unrelated movement/time changes; adapters must retain exact relevant drift checks.
-- Bounded AREA collection/fanout.
+- Native AREA provider effects/recovery and client evidence; bounded generic collection, guarded children, Undo and recovery routes are implemented.
 - Receipt retention protected by unresolved operation/projection/Undo references.
 - Real crash/restart/disable evidence for those integrated paths.
 

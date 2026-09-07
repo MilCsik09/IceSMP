@@ -24,7 +24,7 @@ public final class SubjectSnapshotFactory implements SubjectSnapshotSource {
     @Override public CompletionStage<SubjectSnapshot> capture(final UUID actor, final SubjectRef ref) {
         return router.submit(SubjectRoute.owner(ref), actor, Duration.ofSeconds(5), () -> CompletableFuture.completedFuture(captureOnOwner(ref)));
     }
-    private SubjectSnapshot captureOnOwner(final SubjectRef ref) {
+    public SubjectSnapshot captureOnOwner(final SubjectRef ref) {
         final long now = System.currentTimeMillis();
         final Map<String, WeaverValue> facts = new TreeMap<>();
         switch (ref) {

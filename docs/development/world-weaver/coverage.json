@@ -1328,7 +1328,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
       "domain": "developer_self",
-      "source_sha256": "404f9b1613073f303a120fcf775ec72c4d78955b2041dc8c651d90579873ef32",
+      "source_sha256": "4c312e18be8c56489036d583f1e2189f559682b0869e8c6a21f7ff61c3dc95bd",
       "public_methods": [
         "WorldWeaverKernel",
         "clearPlayerState",
@@ -1341,7 +1341,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "45e89ec8811126c28d70c2c53ec5f3fb5c125f8cb80918d4d99437e232474cf8",
+      "source_sha256": "579532212cc20f9dd1e5d62fe186f032b034689b691afa1fb931af496fa15080",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -1368,7 +1368,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "aac2374a67377e3783ac7b62aa2565e385c2332593320c83f68f91f423e0ce13",
+      "source_sha256": "9ba6e5303853cdbc2de8607c6e8073b2d43ef5cff6ad29fc84265cf9801a8373",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
@@ -1435,6 +1435,29 @@
       "public_methods": []
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
+      "domain": "developer_self",
+      "source_sha256": "7553eb96f87cb1705fe7165f275ead424c6ccc63a970fcb25f1bfd677990fcbe",
+      "public_methods": [
+        "FoliaWeaverAreaAccess",
+        "collectOnOwner",
+        "snapshotOnOwner"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
+      "domain": "developer_self",
+      "source_sha256": "e9e51c0ca10cb53feda1245b3352d4795541be961b7777ca4e13055021de03b7",
+      "public_methods": [
+        "WeaverAreaEngine",
+        "chunks",
+        "close",
+        "collect",
+        "guard",
+        "recover"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverCompensationAuthority.java",
       "domain": "developer_self",
       "source_sha256": "2844c30bd5067bc9b1901920bf0eda52c02692ce53a5ed2fb5a85e39bc4e9ecd",
@@ -1474,7 +1497,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "0522ceaa5f8633525335f00dbce62ac66540d33cc024a51d8ed5596e086920f0",
+      "source_sha256": "205594703ef4a257f7024254b62c08730f28ed7ddd64dfd882a4ddc3d0eb1cab",
       "public_methods": [
         "WeaverRecoveryCoordinator",
         "close",
@@ -1488,8 +1511,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverUndoCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "801d7cec42da5d5f83a56d004c66cb6df43aa8107ebc0e844b10f057550fd12c",
+      "source_sha256": "9cbea88df7bc538cf1d987ee46702e9cdd54e0286cc10d76660a3d944607b77c",
       "public_methods": [
+        "Target",
         "WeaverUndoCoordinator",
         "available",
         "history",
@@ -1554,10 +1578,11 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
       "domain": "minecraft",
-      "source_sha256": "7aeede3880069a052532ddb2dcdae1a2b49e704a26e5e45e817f8a523c770e35",
+      "source_sha256": "7c75bd624e0698cae6a27b4e59c0be254777f96cc6bac2858c5629da793e2afc",
       "public_methods": [
         "SubjectSnapshotFactory",
-        "capture"
+        "capture",
+        "captureOnOwner"
       ]
     },
     {
@@ -6053,6 +6078,8 @@
     "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",

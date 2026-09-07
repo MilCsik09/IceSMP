@@ -55,7 +55,7 @@ final class WeaverEffectCodec {
         return intent.targets().stream().sorted(Comparator.comparing(target -> target(target).toString())).map(target -> (Object) target(target)).toList();
     }
     WeaverEffectIntent intent(final Object encoded) {
-        if (!(encoded instanceof List<?> list) || list.size() > 128) throw new IllegalArgumentException("Intent encoding");
+        if (!(encoded instanceof List<?> list) || list.size() > WeaverEffectIntent.MAX_TARGETS) throw new IllegalArgumentException("Intent encoding");
         final Set<WeaverInfluenceTarget> targets = new HashSet<>();
         for (final Object value : list) if (!targets.add(target(map(value)))) throw new IllegalArgumentException("Duplicate intent target");
         return new WeaverEffectIntent(targets);

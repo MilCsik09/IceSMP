@@ -8,7 +8,7 @@ public record ExecutionContext(WeaverAuthorityToken authority, SubjectSnapshot s
     public ExecutionContext {
         java.util.Objects.requireNonNull(authority); java.util.Objects.requireNonNull(snapshot);
         previousResults = List.copyOf(previousResults);
-        if (previousResults.size() > 8) throw new IllegalArgumentException("Stage lineage exceeds plan cap");
+        if (previousResults.size() > (snapshot.ref() instanceof hu.taliann.icesmp.dev.weaver.subject.AreaRef ? 4096 : 8)) throw new IllegalArgumentException("Stage lineage exceeds plan cap");
         authority.requireValid();
     }
 }

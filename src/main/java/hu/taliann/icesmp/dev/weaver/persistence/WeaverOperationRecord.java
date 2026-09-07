@@ -20,6 +20,10 @@ public record WeaverOperationRecord(UUID operationId, UUID actorId, String provi
         java.util.Objects.requireNonNull(operationId); java.util.Objects.requireNonNull(actorId); WeaverIds.descriptor(providerId);
         java.util.Objects.requireNonNull(request); java.util.Objects.requireNonNull(subject); java.util.Objects.requireNonNull(afterFingerprint);
         java.util.Objects.requireNonNull(recoveryPayload); java.util.Objects.requireNonNull(status); java.util.Objects.requireNonNull(receipt); java.util.Objects.requireNonNull(undoClaim);
+        if (recoveryPayload.fields().containsKey(hu.taliann.icesmp.dev.weaver.area.WeaverAreaRecoveryEvidence.KEY)) {
+            if (!(subject instanceof hu.taliann.icesmp.dev.weaver.subject.AreaRef area)) throw new IllegalArgumentException("AREA recovery on another subject");
+            hu.taliann.icesmp.dev.weaver.area.WeaverAreaRecoveryEvidence.decode(area, recoveryPayload.fields().get(hu.taliann.icesmp.dev.weaver.area.WeaverAreaRecoveryEvidence.KEY));
+        }
         if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actorId) || !request.actionId().startsWith(providerId + ".")) {
             throw new IllegalArgumentException("Invalid operation authority or action owner");
         }

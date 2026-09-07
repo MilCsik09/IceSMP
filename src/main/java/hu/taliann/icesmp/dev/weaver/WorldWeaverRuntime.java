@@ -40,10 +40,11 @@ public final class WorldWeaverRuntime {
         final SubjectSnapshotFactory snapshots = new SubjectSnapshotFactory(router, slots, providers);
         journal = new hu.taliann.icesmp.dev.weaver.persistence.WeaverJournal(new hu.taliann.icesmp.dev.weaver.persistence.YamlWeaverJournalStorage(
                 plugin.getDataFolder(), new hu.taliann.icesmp.dev.weaver.persistence.WeaverJournalCodec(types), plugin.getLogger()), projection -> providers.projectionConsumers().validate(projection));
-        recovery = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryCoordinator(journal, snapshots, providers, types);
+        final var areas = new hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine(router, new hu.taliann.icesmp.dev.weaver.area.FoliaWeaverAreaAccess(snapshots));
+        recovery = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryCoordinator(journal, snapshots, providers, types, areas);
         recoveryListener = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryListener(recovery);
         kernel = new WorldWeaverKernel(artifacts, providers, types, snapshots, slots,
-                new WorldWeaverGUI(), new WeaverExecutionCoordinator(router, types, journal, () -> false), new hu.taliann.icesmp.dev.weaver.execution.WeaverUndoCoordinator(journal, providers), () -> started && !closed && journal.ready());
+                new WorldWeaverGUI(), new WeaverExecutionCoordinator(router, types, journal, () -> false), new hu.taliann.icesmp.dev.weaver.execution.WeaverUndoCoordinator(journal, providers, areas), areas, () -> started && !closed && journal.ready());
         listener = new WorldWeaverGUIListener(kernel);
         hu.taliann.icesmp.dev.artifact.DevArtifactRuntimeProbe.registerReadinessCheck("world_weaver_journal", () -> started && !closed && journal.ready());
         artifacts.bindInteractions(WorldWeaverArtifactBehavior.ID, kernel::interact, this::clearSession);

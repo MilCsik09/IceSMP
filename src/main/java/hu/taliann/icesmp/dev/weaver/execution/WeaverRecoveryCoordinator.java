@@ -14,14 +14,20 @@ public final class WeaverRecoveryCoordinator {
     private final SubjectSnapshotSource snapshots;
     private final WorldWeaverProviderRegistry providers;
     private final WeaverTypeRegistry types;
+    private final hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine areas;
     private final Set<UUID> active = ConcurrentHashMap.newKeySet();
     private final Map<UUID, PendingReason> pending = new ConcurrentHashMap<>();
     private volatile boolean closed;
     private final java.util.concurrent.atomic.AtomicLong availabilityRevision = new java.util.concurrent.atomic.AtomicLong();
     public WeaverRecoveryCoordinator(final WeaverJournal journal, final SubjectSnapshotSource snapshots,
                                      final WorldWeaverProviderRegistry providers, final WeaverTypeRegistry types) {
+        this(journal, snapshots, providers, types, null);
+    }
+    public WeaverRecoveryCoordinator(final WeaverJournal journal, final SubjectSnapshotSource snapshots,
+                                     final WorldWeaverProviderRegistry providers, final WeaverTypeRegistry types, final hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine areas) {
         this.journal = Objects.requireNonNull(journal); this.snapshots = Objects.requireNonNull(snapshots);
         this.providers = Objects.requireNonNull(providers); this.types = Objects.requireNonNull(types);
+        this.areas = areas;
     }
     public CompletionStage<Void> start() {
         CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
@@ -46,7 +52,14 @@ public final class WeaverRecoveryCoordinator {
         try {
             result = snapshots.capture(operation.actorId(), operation.subject()).thenCompose(snapshot -> {
                 if (closed) throw new WeaverDomainRejection("RECOVERY_UNAVAILABLE");
-                final RecoveryAssessment assessment = providers.assessRecovery(operation.providerId(), new RecoveryContext(authority, types, operation), snapshot, operation);
+                final RecoveryContext context = new RecoveryContext(authority, types, operation);
+                final ActionDescriptor descriptor = providers.actions().get(operation.request().actionId());
+                if (operation.subject() instanceof AreaRef && descriptor != null && (descriptor.areaSupport() == AreaSupport.ENTITY_FANOUT || descriptor.areaSupport() == AreaSupport.BLOCK_FANOUT)) {
+                    if (areas == null) throw new WeaverDomainRejection("AREA_RECOVERY_ENGINE_UNAVAILABLE");
+                    return areas.recover(context, descriptor).thenCompose(collection -> settle(operation,
+                            providers.assessRecovery(operation.providerId(), context, collection.decorate(snapshot), operation, Optional.of(collection))));
+                }
+                final RecoveryAssessment assessment = providers.assessRecovery(operation.providerId(), context, snapshot, operation);
                 return settle(operation, assessment);
             });
         } catch (final RuntimeException failure) {
@@ -105,6 +118,9 @@ public final class WeaverRecoveryCoordinator {
                 case PlayerRef player -> player.playerId().equals(id);
                 case EntityRef entity -> entity.entityId().equals(id);
                 case ItemSlotRef item -> item.holderId().equals(id);
+                case AreaRef area -> operation.recoveryPayload().fields().containsKey(hu.taliann.icesmp.dev.weaver.area.WeaverAreaRecoveryEvidence.KEY)
+                        && hu.taliann.icesmp.dev.weaver.area.WeaverAreaRecoveryEvidence.decode(area, operation.recoveryPayload().fields().get(hu.taliann.icesmp.dev.weaver.area.WeaverAreaRecoveryEvidence.KEY))
+                            .targets().stream().anyMatch(ref -> ref instanceof PlayerRef player && player.playerId().equals(id) || ref instanceof EntityRef entity && entity.entityId().equals(id));
                 default -> false;
             };
             if (matches) chain = chain.thenCompose(ignored -> reconcile(operationId).handle((value, failure) -> null));
@@ -121,7 +137,7 @@ public final class WeaverRecoveryCoordinator {
                 case BlockRef block -> block.worldId().equals(world) && matchesChunk(chunk, block.x() >> 4, block.z() >> 4);
                 case LocationRef location -> location.worldId().equals(world) && matchesChunk(chunk, (int) Math.floor(location.x()) >> 4, (int) Math.floor(location.z()) >> 4);
                 case WorldRef reference -> reference.worldId().equals(world);
-                case AreaRef area -> area.worldId().equals(world);
+                case AreaRef area -> area.worldId().equals(world) && hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine.chunks(area).stream().anyMatch(owner -> matchesChunk(chunk, owner.chunkX(), owner.chunkZ()));
                 default -> false;
             };
             if (matches) chain = chain.thenCompose(ignored -> reconcile(operationId).handle((value, failure) -> null));
