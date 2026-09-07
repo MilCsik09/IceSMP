@@ -34,8 +34,6 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.ArrayDeque;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -55,9 +53,8 @@ public final class MobAbilityRuntime implements Listener {
         private EffectiveMobProjection effective;
         private final long attachedAtNanos = System.nanoTime();
         private final MobRuntimeControlLedger controls = new MobRuntimeControlLedger();
-        private final Map<String, Long> readyAtTick = new LinkedHashMap<>();
+        private final MobRuntimeHistory history = new MobRuntimeHistory();
         private final ArrayDeque<MobAbilityDefinition> pendingThresholds = new ArrayDeque<>();
-        private final java.util.Set<String> consumedThresholds = new HashSet<>();
         private long tick;
         private long recoveryUntilTick;
         private long castEpoch;
@@ -302,8 +299,7 @@ public final class MobAbilityRuntime implements Listener {
         }
         final MobAbilityDefinition chosen = state.definitions.stream()
                 .filter(definition -> definition.triggers().contains(trigger))
-                .filter(definition -> state.tick >= state.readyAtTick
-                        .getOrDefault(definition.abilityId(), 0L))
+                .filter(definition -> state.tick >= state.history.readyAt(definition.abilityId()))
                 .filter(definition -> conditionsPass(mob, definition, state))
                 .findFirst().orElse(null);
         if (chosen == null) return;
@@ -369,6 +365,7 @@ public final class MobAbilityRuntime implements Listener {
             return;
         }
         state.tick += RUNTIME_STEP_TICKS;
+        state.history.advance(state.tick);
         if (projectionSourceBound) reconcileProjection(mob);
         if (state.authoredCombat && state.targetId != null) {
             final Player liveTarget = Bukkit.getPlayer(state.targetId);
@@ -408,7 +405,7 @@ public final class MobAbilityRuntime implements Listener {
             final int index = (state.rotationCursor + offset) % state.definitions.size();
             final MobAbilityDefinition candidate = state.definitions.get(index);
             if (candidate.triggers().contains(MobAbilityDefinition.Trigger.ON_TIMER)
-                    && state.tick >= state.readyAtTick.getOrDefault(candidate.abilityId(), 0L)
+                    && state.tick >= state.history.readyAt(candidate.abilityId())
                     && conditionsPass(mob, candidate, state)) {
                 final double score = techniqueScore(mob, candidate, state, offset);
                 if (score > chosenScore) {
@@ -451,14 +448,14 @@ public final class MobAbilityRuntime implements Listener {
     private boolean startCast(final Mob mob, final MobAbilityDefinition chosen,
                               final RuntimeState state, final Location target) {
         if (state.paused || state.casting || state.tick < state.recoveryUntilTick
-                || state.tick < state.readyAtTick.getOrDefault(chosen.abilityId(), 0L)) return false;
+                || state.tick < state.history.readyAt(chosen.abilityId())) return false;
         // Every native caller shares this admission. Cached provoker locations can outlive ownership.
         if (target != null && !Bukkit.isOwnedByCurrentRegion(target)) return false;
+        final long cooldown = Math.max(10L, Math.round(chosen.cooldownTicks() / state.behavior.aggressionCadence()));
+        if (state.tick > Long.MAX_VALUE - cooldown || !state.history.begin(chosen.abilityId(), state.tick, state.tick + cooldown)) return false;
         state.casting = true;
         state.currentAbility = chosen;
         final long castEpoch = ++state.castEpoch;
-        state.readyAtTick.put(chosen.abilityId(), state.tick + Math.max(10L,
-                Math.round(chosen.cooldownTicks() / state.behavior.aggressionCadence())));
         CombatTelemetry.record("technique_cast", chosen.abilityId());
         try {
             telegraph(mob, chosen, target);
@@ -974,9 +971,9 @@ public final class MobAbilityRuntime implements Listener {
             final double fraction = projected / maximum;
             for (final MobAbilityDefinition definition : state.definitions) {
                 if (!definition.triggers().contains(MobAbilityDefinition.Trigger.HEALTH_THRESHOLD)
-                        || state.consumedThresholds.contains(definition.abilityId())
+                        || state.history.consumed(definition.abilityId())
                         || !thresholdConditionsPass(state.mob, definition, state, fraction)) continue;
-                state.consumedThresholds.add(definition.abilityId());
+                if (!state.history.consume(definition.abilityId())) continue;
                 state.pendingThresholds.addLast(definition);
                 CombatTelemetry.record("boss_phase_transition", definition.abilityId());
             }
@@ -1092,9 +1089,11 @@ public final class MobAbilityRuntime implements Listener {
     public String activeStateSummary(final Mob mob) {
         final RuntimeState state = mob == null ? null : states.get(mob.getUniqueId());
         if (state == null) return "detached";
+        final var history = state.history.view();
         return "paused=" + state.paused + ",casting=" + state.casting
                 + ",tick=" + state.tick + ",recovery=" + state.recoveryUntilTick
-                + ",ready=" + state.readyAtTick;
+                + ",ready=" + history.cooldowns() + ",omitted=" + history.omittedCooldowns()
+                + ",consumed=" + history.consumedThresholdCount();
     }
 
     private static void heal(final LivingEntity entity, final double amount) {

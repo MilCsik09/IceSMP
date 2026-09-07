@@ -733,3 +733,33 @@ Cross-region continuation remains a capability gate; safe cancellation is not cl
 as full support. Full Java 21 compilation and six affected native/provider/ownership suites pass,
 along with four architecture checks and the 316-authority inventory audit.
 This checkpoint still requires its own Paper/Folia native evidence.
+
+
+### Bounded native history under registry churn
+
+Base `6e012dd4db17452f96cd722e2b65d12a31675009`. Exact-head run 34119349165
+now passes actual native controls on Paper (101733541010) and Folia (101733541165),
+and both artifact lifecycle jobs (101733541109 / 101733541266). Resource-pack run
+34119349132 also passed. This proves the isolated native shield/cooldown/target/pause
+and cleanup path; it does not prove all ability kinds, cross-region effects or client
+interaction. No global acceptance or production enable is inferred.
+
+A long-lived mob could accumulate unbounded old cooldown IDs and consumed threshold
+IDs as content was replaced. The former ready-map diagnostic could also overflow
+the generic text codec. Native RuntimeState now owns `MobRuntimeHistory`: expired
+cooldowns are reclaimed, active cooldowns are never evicted, and admission fails
+closed at 512 active records. The independent 512-entry consumed-threshold history
+never rearms an old phase; saturation refuses new threshold consumption. This is the
+existing native lifecycle's history, not a WorldWeaver authority or new reset API.
+Refresh keeps the same history. Inspection is immutable, sorted, capped to 24 rows
+and reports omitted counts, leaving room under the text codec's 4096-character bound.
+
+Java 21 main/regression compilation and six affected suites pass. The new normal
+Gradle check dependency exercises 1170 assertions covering maximum history capacity,
+repeated content IDs, expiry, no active eviction, threshold retention, immutable
+views, maximum-sized IDs, backward time and invalid observation bounds. The existing
+native control (22), native source contract (23), provider/journal (104), native kit
+and sixteen projection crash-boundary suites also pass. Inventory: 317 authorities,
+55 domains, 51 blockers. Fresh CI/native evidence for this history change remains
+required. Complete causal reward propagation and cross-region continuation are still
+active WW-04 scope; gameplay admission remains closed.

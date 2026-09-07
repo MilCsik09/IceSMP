@@ -75,7 +75,8 @@
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
         "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
-        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlProbe.java"
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlProbe.java",
+        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java"
       ]
     },
     {
@@ -5798,7 +5799,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "2130f4bff8ffc54a2abcc66922098a2408d5729915d200317ca7cee7b7ccc4d7",
+      "source_sha256": "9f3e669bec7eff0e5fab71b01592b744ace69e6b2e0d62ce874c41b08ab30752",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
@@ -5866,6 +5867,21 @@
         "stamp",
         "Rejected",
         "code"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
+      "domain": "pve",
+      "source_sha256": "ae15069b1297340d1a54f8be351756de5888b2bcababaa289247cc4ecdcfdb61",
+      "public_methods": [
+        "View",
+        "advance",
+        "begin",
+        "consume",
+        "consumed",
+        "omittedCooldowns",
+        "readyAt",
+        "view"
       ]
     },
     {
@@ -6552,6 +6568,7 @@
     "src/main/java/hu/taliann/icesmp/playerprofile/persistence/PlayerProfileRepository.java",
     "src/main/java/hu/taliann/icesmp/playerprofile/persistence/YamlPlayerProfileRepository.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
+    "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",

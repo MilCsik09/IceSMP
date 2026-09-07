@@ -680,6 +680,10 @@ val pveWeaverProjectionRegressionTest = registerRegression(
     "pveWeaverProjectionRegressionTest",
     "Runs journal-backed PvE projection, dynamic gameplay import, conditional Undo and crash recovery regressions.",
     "hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProjectionRegressionSuite")
+val mobRuntimeHistoryRegressionTest = registerRegression(
+    "mobRuntimeHistoryRegressionTest",
+    "Checks bounded cooldown and consumed-threshold history across registry churn.",
+    "hu.taliann.icesmp.pve.MobRuntimeHistoryRegressionSuite")
 val mobRuntimeControlRegressionTest = registerRegression(
     "mobRuntimeControlRegressionTest",
     "Runs native control operation correlation, uncertainty, bounded evidence and replay rejection regressions.",
@@ -1227,7 +1231,7 @@ tasks.check {
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
         weaverPersistenceRegressionTest, weaverCrashRecoveryRegressionTest,
-        mobRuntimeControlRegressionTest, pveWeaverRuntimeRegressionTest,
+        mobRuntimeControlRegressionTest, mobRuntimeHistoryRegressionTest, pveWeaverRuntimeRegressionTest,
         weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest, pveWeaverProjectionRegressionTest, weaverProjectionDispatchRegressionTest, weaverGameplayRewardGateRegressionTest, weaverProfileRewardAdmissionRegressionTest, weaverStoredContentIsolationRegressionTest, factionWeaverProjectionRegressionTest, weaverFactionAdjustmentRegressionTest, factionWeaverCanonicalRegressionTest,
         weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
         worldWeaverArchitectureAudit,

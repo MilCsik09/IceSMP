@@ -1,7 +1,7 @@
 # AGENTS Guide for IceSMP
 
 ## Project snapshot
-- Folia-based plugin for Minecraft `1.21.11`, Java `21`, Gradle wrapper build (`build.gradle.kts`, `gradle/libs.versions.toml`); 1221 Java source files.
+- Folia-based plugin for Minecraft `1.21.11`, Java `21`, Gradle wrapper build (`build.gradle.kts`, `gradle/libs.versions.toml`); 1222 Java source files.
 - **Folia-compatible:** `folia-supported: true` in `paper-plugin.yml`; every task runs on region/entity schedulers (never `Bukkit.getScheduler()`, never async entity access).
 - Entry points: `IceSMP` + `IceSMPBootstrap` + `IceSMPLoader` (declared in `paper-plugin.yml`); runtime orchestration in `core/IceSMPCore.java` (manager construction → `load()` → listeners → commands → schedulers; `save()`/cleanup in `disable()`).
 - **FancyNpcs is a required production gameplay dependency**: its reflective `FancyNpcsQuestBridge` is the canonical TALK_TO_NPC/onboarding consumer and startup fails closed when the locked plugin is missing or incompatible. PlaceholderAPI, LibsDisguises, WorldGuard/WorldEdit and LuckPerms remain current optional integrations. MythicMobs is not planned; PacketEvents and FancyDialogs are future candidates only and are not runtime-declared. Only PlaceholderAPI and LibsDisguises are build-time (`compileOnly`) dependencies; the other current bridges are reflective. The dependency lock and `paper-plugin.yml` must describe only this executable contract.
