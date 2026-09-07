@@ -174,8 +174,8 @@
       "phase": "WW-05",
       "inspect": "territory, shape, protection decision trace, regeneration pending blocks",
       "planned_actions": "DENY sandbox overlay; ALLOW LIVE_GM; canonical rename/type/owner/Y bounds; overlay fork",
-      "canonical_route": "TerritoryManager conditional copy-on-write transaction; TerritoryProtectionService effective rule projection consumer. Canonical provider adapter and owner trace frontend remain required.",
-      "rationale": "Native conditional transactions now persist real receipts before immutable map/index publication. Registered world-owned provider supplies dynamic canonical zone/rule catalogs, generic Thread parameters, journal projections, exact conditional sever/Undo and a bound protection consumer. SANDBOX ALLOW and sever revealing ALLOW are rejected; LIVE_GM is required. The canonical provider adapter, location decision-trace frontend, overlay fork and native connected evidence remain required before FULL_PROVIDER.",
+      "canonical_route": "TerritoryManager.adjustConditionally via TerritoryCanonicalActions on AsyncIoOwner after durable PREPARED; observed native receipts, fingerprint/revision admission and compensating transactions. TerritoryProtectionService consumes journal overlays only.",
+      "rationale": "Registered world-owned provider supplies dynamic zone/rule/type/owner catalogs, generic Thread, bound protection projection, exact conditional sever/Undo and four native LIVE_GM canonical transactions. Native state and receipts publish after atomic persistence; crash recovery assesses real native receipts without replay, and compensation preserves both histories. SANDBOX ALLOW and sever revealing ALLOW are rejected. Location decision-trace frontend, overlay fork and connected native evidence remain required before FULL_PROVIDER.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java",
         "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java",
@@ -184,7 +184,8 @@
         "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java"
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryCanonicalActions.java"
       ],
       "implementation_evidence": [
         "docs/development/world-weaver/WW-05-territory-policy.md"
@@ -1899,6 +1900,12 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryCanonicalActions.java",
+      "domain": "territory",
+      "public_methods": [],
+      "source_sha256": "2524f59bd4297d5070af1067f738a00aabba5e365b47fe7c00a5f430df682294"
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
       "domain": "territory",
       "source_sha256": "e5c46473c8d946b6f4114d79d03f84de4dd5426899a767fc631940665d5800d9",
@@ -1918,7 +1925,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
       "domain": "territory",
-      "source_sha256": "ed1590f8deebaf4a5a958dcee8612da53a17b7205d89e42dc951b5a4ec90650a",
+      "source_sha256": "9cbe845710150b0c89d115135bcb286174f982c998ccc2f1ba9a0d75beb803ef",
       "public_methods": [
         "TerritoryWeaverProvider",
         "assessRecovery",
@@ -6807,6 +6814,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryCanonicalActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",

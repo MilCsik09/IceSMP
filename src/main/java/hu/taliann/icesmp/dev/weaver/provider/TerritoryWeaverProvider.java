@@ -25,6 +25,7 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
     private final Function<WorldRef, String> worldNames;
     private final TerritoryRuntimeProjectionSource source;
     private final TerritoryProjectionActions actions;
+    private final TerritoryCanonicalActions canonical;
     private final Map<String, WeaverValueCatalog> catalogs;
     private final ProviderContribution contribution;
 
@@ -42,15 +43,26 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
         types.register(ScalarTypeCodec.reference(TERRITORY, key -> territories().containsKey(key)));
         types.register(ScalarTypeCodec.reference(RULE, key -> rules().containsKey(key)));
         types.register(TerritoryRuntimeProjectionSource.codec());
+        types.register(ScalarTypeCodec.reference(TerritoryCanonicalActions.ZONE_TYPE, key -> enums(hu.taliann.icesmp.data.TerritoryType.values()).containsKey(key)));
+        types.register(ScalarTypeCodec.reference(TerritoryCanonicalActions.ZONE_OWNER, key -> enums(hu.taliann.icesmp.data.FactionType.values()).containsKey(key)));
         catalogs = Map.of("territory.zones", new RegistryValueCatalog<>(TERRITORY, "territory", FACET, Set.of("territory.zone"), this::territories,
                         zone -> Component.text(zone.name() + " [" + zone.id() + "] — " + zone.world()), System::currentTimeMillis),
-                "territory.rules", new RegistryValueCatalog<>(RULE, "territory", FACET, Set.of("territory.rule"), TerritoryWeaverProvider::rules, Component::text, System::currentTimeMillis));
+                "territory.rules", new RegistryValueCatalog<>(RULE, "territory", FACET, Set.of("territory.rule"), TerritoryWeaverProvider::rules, Component::text, System::currentTimeMillis),
+                "territory.types", new RegistryValueCatalog<>(TerritoryCanonicalActions.ZONE_TYPE, "territory", FACET, Set.of("territory.type"),
+                        () -> enums(hu.taliann.icesmp.data.TerritoryType.values()), v -> Component.text(v.name()), System::currentTimeMillis),
+                "territory.owners", new RegistryValueCatalog<>(TerritoryCanonicalActions.ZONE_OWNER, "territory", FACET, Set.of("territory.owner"),
+                        () -> enums(hu.taliann.icesmp.data.FactionType.values()), v -> Component.text(v.getDisplayName()), System::currentTimeMillis));
         actions = new TerritoryProjectionActions(source, this::captureOnOwner, this::territories);
+        canonical = new TerritoryCanonicalActions(manager, this::territories, this::captureOnOwner);
+        final List<ActionDescriptor> descriptors = new ArrayList<>(actions.descriptors()); descriptors.addAll(canonical.descriptors());
         contribution = new ProviderContribution(List.of(new FacetDescriptor(FACET, Component.text("Terület"), Component.text("Kanonikus zónák és védelmi rávetítések"), 30)),
-                actions.descriptors(), catalogs.entrySet().stream().map(e -> new CatalogDescriptor(e.getKey(), FACET, Component.text(e.getKey()), e.getValue().type())).toList(),
+                descriptors, catalogs.entrySet().stream().map(e -> new CatalogDescriptor(e.getKey(), FACET, Component.text(e.getKey()), e.getValue().type())).toList(),
                 List.of(new ExportDescriptor("territory.export_rule", FACET, RULE, Set.of("territory.rule"))),
                 List.of(new ImportDescriptor("territory.import_rule", TerritoryProjectionActions.APPLY, RULE, Set.of("territory.rule"), "value")),
-                actions.descriptors().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(ActionDescriptor::id, a -> "territory.journal_projection")));
+                descriptors.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(ActionDescriptor::id, a -> canonical.owns(a.id()) ? "territory.native_transaction" : "territory.journal_projection")));
+    }
+    private static <E extends Enum<E>> Map<String, E> enums(E[] values) {
+        final Map<String, E> result = new TreeMap<>(); for (final var value : values) result.put(value.name().toLowerCase(Locale.ROOT), value); return Map.copyOf(result);
     }
     Map<String, Territory> territories() {
         if (!manager.adjustmentStateAvailable()) throw new WeaverDomainRejection("TERRITORY_UNAVAILABLE");
@@ -101,14 +113,15 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
     @Override public Set<WeaverSubjectKind> supportedKinds() { return Set.of(WeaverSubjectKind.WORLD); }
     @Override public ProviderContribution contribution() { return contribution; }
     @Override public ProviderCoverage coverage() {
-        final Set<String> surfaces = new HashSet<>(Set.of(FACET, "territory.zones", "territory.rules", "territory.export_rule", "territory.import_rule"));
-        actions.descriptors().forEach(a -> surfaces.add(a.id()));
+        final Set<String> surfaces = new HashSet<>(Set.of(FACET, "territory.export_rule", "territory.import_rule"));
+        surfaces.addAll(catalogs.keySet()); contribution.actions().forEach(a -> surfaces.add(a.id()));
         return new ProviderCoverage("territory.registered_surface", CoverageLevel.FULL_PROVIDER,
-                "World-owned protection projection and typed rule import/export. WW-00 remains blocked pending canonical adapter, location trace and native runtime evidence.", surfaces);
+                "World-owned protection projection, typed rule import/export and native LIVE_GM conditional transactions. WW-00 remains blocked pending location trace and native runtime evidence.", surfaces);
     }
     @Override public ProviderDiscovery discover(SubjectSnapshot snapshot) {
         if (!(snapshot.ref() instanceof WorldRef) || !snapshot.facts().containsKey(CANONICAL)) return new ProviderDiscovery(Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), Map.of());
-        return new ProviderDiscovery(Set.of(FACET), Set.of(TerritoryProjectionActions.APPLY, TerritoryProjectionActions.CLEAR), catalogs.keySet(),
+        final Set<String> visible = new HashSet<>(Set.of(TerritoryProjectionActions.APPLY, TerritoryProjectionActions.CLEAR)); canonical.descriptors().forEach(a -> visible.add(a.id()));
+        return new ProviderDiscovery(Set.of(FACET), visible, catalogs.keySet(),
                 snapshot.facts().containsKey(RULE_VALUE) ? Set.of("territory.export_rule") : Set.of(), Set.of("territory.import_rule"), Map.of());
     }
     @Override public InspectionResult inspect(ProviderContext context, SubjectSnapshot snapshot, String facetId) {
@@ -137,9 +150,9 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
         return "territory.import_rule".equals(id) && snapshot.ref() instanceof WorldRef && snapshot.facts().containsKey(CANONICAL)
                 && context.types().compatible(value, RULE, Set.of("territory.rule")) ? ImportValidation.accepted() : ImportValidation.rejected("THREAD_INCOMPATIBLE");
     }
-    @Override public PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request) { return actions.prepare(context, snapshot, request); }
-    @Override public PreparedEffects prepareEffects(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request, PreparedAction prepared) { return actions.effects(context, snapshot, request, prepared); }
-    @Override public PreparedAction prepareUndo(ProviderContext context, SubjectSnapshot snapshot, WeaverReceipt receipt) { return actions.undo(context, snapshot, receipt); }
-    @Override public RecoveryAssessment assessRecovery(RecoveryContext context, SubjectSnapshot snapshot, WeaverOperationRecord operation) { return actions.assess(context, snapshot, operation); }
+    @Override public PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request) { return canonical.owns(request.actionId()) ? canonical.prepare(context, snapshot, request) : actions.prepare(context, snapshot, request); }
+    @Override public PreparedEffects prepareEffects(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request, PreparedAction prepared) { return canonical.owns(request.actionId()) ? canonical.effects(context) : actions.effects(context, snapshot, request, prepared); }
+    @Override public PreparedAction prepareUndo(ProviderContext context, SubjectSnapshot snapshot, WeaverReceipt receipt) { return canonical.owns(receipt.actionId()) ? canonical.undo(context, snapshot, receipt) : actions.undo(context, snapshot, receipt); }
+    @Override public RecoveryAssessment assessRecovery(RecoveryContext context, SubjectSnapshot snapshot, WeaverOperationRecord operation) { return canonical.owns(operation.request().actionId()) ? canonical.assess(context, snapshot, operation) : actions.assess(context, snapshot, operation); }
     @Override public List<ProjectionConsumerDescriptor> projectionConsumers() { return actions.consumers(); }
 }

@@ -28,7 +28,7 @@ public final class TerritoryWeaverProjectionRegressionSuite {
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); assertions++; }
     private static <T> T await(CompletionStage<T> stage) throws Exception { return stage.toCompletableFuture().get(10, TimeUnit.SECONDS); }
     private static void rejects(Runnable action) { try { action.run(); throw new AssertionError("refusal expected"); } catch (IllegalArgumentException | WeaverDomainRejection expected) { assertions++; } }
-    private static final class Storage implements WeaverJournalStorage {
+    static final class Storage implements WeaverJournalStorage {
         final WeaverJournalCodec codec = new WeaverJournalCodec(); Map<String, Object> state;
         int writes, failAt; boolean afterWrite;
         Map<String, WeaverAuditEntry> audit = Map.of();
@@ -39,18 +39,24 @@ public final class TerritoryWeaverProjectionRegressionSuite {
         public void writeState(WeaverJournalState value) throws Exception { before(); state = codec.encodeState(value); after(); }
         public void writeAudit(Map<String, WeaverAuditEntry> value) throws Exception { before(); audit = codec.decodeAudit(codec.encodeAudit(value)); after(); }
     }
-    private static final class Fixture implements AutoCloseable {
+    static final class Fixture implements AutoCloseable {
         final TerritoryManager manager;
         final WorldRef world;
         final WeaverTypeRegistry types = new WeaverTypeRegistry();
         final WorldWeaverProviderRegistry registry = new WorldWeaverProviderRegistry(types, System::currentTimeMillis);
         final ThreadLocal<Boolean> owned = ThreadLocal.withInitial(() -> false);
         final AtomicBoolean loaded = new AtomicBoolean(true); final AtomicInteger captures = new AtomicInteger();
+        final AtomicInteger ioStages = new AtomicInteger();
         final WeaverJournal journal; final TerritoryRuntimeProjectionSource source; final TerritoryWeaverProvider provider;
         final ProviderContext context; final WeaverDurableExecutionCoordinator execution;
         final WeaverOwnerRouter router = new WeaverOwnerRouter() {
             public <T> CompletionStage<T> submit(ExecutionOwner target, UUID actor, Duration timeout, Supplier<CompletionStage<T>> work) {
-                if (!(target instanceof GlobalOwner) && !(target instanceof ActorOwner)) return CompletableFuture.failedFuture(new AssertionError("wrong owner route"));
+                if (!(target instanceof GlobalOwner) && !(target instanceof ActorOwner) && !(target instanceof AsyncIoOwner)) return CompletableFuture.failedFuture(new AssertionError("wrong owner route"));
+                if (target instanceof AsyncIoOwner) {
+                    ioStages.incrementAndGet();
+                    if (journal.snapshot().operations().values().stream().noneMatch(o -> o.status() == OperationStatus.PREPARED && o.request().integrityMode() == IntegrityMode.LIVE_GM))
+                        return CompletableFuture.failedFuture(new AssertionError("canonical I/O before durable PREPARED"));
+                }
                 if (target instanceof GlobalOwner && !loaded.get()) return CompletableFuture.failedFuture(new WeaverDomainRejection("WORLD_UNAVAILABLE"));
                 owned.set(target instanceof GlobalOwner);
                 try { return work.get(); } catch (RuntimeException failure) { return CompletableFuture.failedFuture(failure); } finally { owned.remove(); }
@@ -87,7 +93,7 @@ public final class TerritoryWeaverProjectionRegressionSuite {
         WeaverReceipt undo(WeaverReceipt original) throws Exception {
             final var snapshot = snapshot(); final var coordinator = new WeaverUndoCoordinator(journal, registry);
             final var claim = coordinator.target(context.authority(), original.receiptId(), snapshot).claim();
-            final var ctx = new ProviderContext(context.authority(), types, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
+            final var ctx = new ProviderContext(context.authority(), types, Lifetime.ONE_SHOT, original.integrityMode());
             final var plan = coordinator.prepare(ctx, claim, snapshot);
             final var request = new ActionRequest(plan.descriptor().id(), original.undo().orElseThrow().parameters(), ctx.lifetime(), ctx.integrityMode());
             return await(execution.execute("territory", ctx, snapshot, request, plan, provider.prepareEffects(ctx, snapshot, request, plan), Optional.of(claim), ctx::authority));
@@ -109,7 +115,7 @@ public final class TerritoryWeaverProjectionRegressionSuite {
     private static void discoveryAndNativeIsolation() throws Exception {
         try (final var f = new Fixture()) {
             final var snapshot = f.snapshot(); final int captures = f.captures.get();
-            check(WeaverFacetView.discover(f.registry, f.registry.discover(snapshot)).getFirst().actions().size() == 2, "generic facet/actions discover provider");
+            check(WeaverFacetView.discover(f.registry, f.registry.discover(snapshot)).getFirst().actions().size() == 6, "generic facet/actions discover provider");
             f.provider.inspect(f.context, snapshot, FACET);
             final var catalog = f.provider.catalog(f.context, snapshot, "territory.zones").orElseThrow();
             check(catalog.resolve(zoneKey("later")).isEmpty(), "dynamic fixture initially absent"); f.zone("later", "world");
