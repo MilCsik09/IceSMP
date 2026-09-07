@@ -648,55 +648,25 @@ magyarázata és a Néma Királynő végjátéka; ezek nem #121 hiányosságok.
 
 ## Frakció–bűn–Suttogó rework átvételi kapui
 
-- 🚧 A `#152` alapból örökölt `dev-assets/trash/source/phase-batch-001.png` és
-  `phase-batch-002.png` sérült. Az eredeti, teljes képbájtok helyreállítása kell a
-  `trashSpriteAssetAudit` és a teljes `build` lezárásához. A frakciójavítás nem írja át
-  a képeket és nem kapcsolja ki a kaput.
-- ◇ Folia staging: két régiót érintő tanúzás; restart és lemezhiba a rítus előtt/közben;
-  három hiteles vád, civil száműzetés, külön Eskü és megerősített DARK-tagság;
-  önvédelem, NPC-bolt, Tanács, karaván, komp, civil fővárosi belépés/respawn.
-- ◇ Builder: civil CAPITAL-zónák, biztonságos `/territory setspawn dark`, elérhető
-  feketepiac és működő kultista rítus/hírvivő.
-- ◇ Balance: azonos szintű/felszerelésű RED, BLUE, NEUTRAL, DARK játékosokkal PvP,
-  hétköznapi PvE és Blood Moon/dungeon gyógyítás. Mérni kell a túlélést, jutalmat és
-  frakcióváltási arányt; „nincs legjobb frakció” még nem igazolt szerveres eredmény.
-- ◇ Szezon: legalább két eltérő létszámú frakció, offline jutalomjogosultság,
-  tagságváltás, három személyes hozzájárulás és az egészpontos normalizálás próbája.
-- ✅ Az eredeti megosztott beszélgetés Faction/Crime-promptja és a teljes W1–W33
-  visszanyerhető volt. Az állítólagos külön 692 soros MD-fájl nincs meg, de ez már
-  nem akadálya a W-követelmények tételes ellenőrzésének. A későbbi felhasználói
-  egyszerűsítés szerinti aktuális szabályokat a [FACTION_REWORK](docs/FACTION_REWORK.md) rögzíti.
-- ⬜ **W3–W4:** a meghívó jelenleg szó szerint SHIFT + jobb kattintást ír; az eredeti
-  terv hangulatos utalást és a helyes körülményeknél ritka, privát jelzést kér.
-  A helyzetfüggő jelzés nincs bekötve. A javítás nem hozhat állandó HUD-elemet.
-- ⬜ **W5/W7:** összehangolandó a magány és a megfigyelt rítus szabálya. Most a
-  tanú nem blokkolja a belépést, csak bizonyítékot kap a sikeres rítusról; az eredeti
-  W5 magányt kér. Nether/End alatt a nappali rítus is engedett: tudatos lore-döntés
-  és megfelelő visszajelzés szükséges.
-- ⬜ **W8–W9:** a tartós bizonyítékhoz a tanú/cél/lejárat/felhasználás mellé az
-  esemény típusa vagy azonosítója kell. A fal-, távolság-, világ-, halott- és
-  spectator-kapu létezik, de az invisibility és a moderation vanish nincs
-  összekötve a tanúzással. A régióhatáron elutasított rálátás kihasználhatóságát is
-  tesztelni kell; idegen régió olvasása nem lehet megoldás.
-- ⬜ **W28:** az aktív, még le nem leplezett Suttogó önkéntes kapcsolatmegszakítása
-  nincs definiálva és nincs játékosútja. Rögzíteni kell az elvesző előnyöket, az
-  újrabelépés korlátját és a bűnelőzmények megőrzését; a normál bűntisztítás és
-  az eskütörés jelenleg nem törli ezt a rejtett szerepet.
-- ⬜ **Régi profilok / adó:** az eredeti terv kötelező adatvédő átvezetést kér;
-  ez nem lett elvetve a HUD/mérők egyszerűsítésével. Tételes leltár és idempotens,
-  újraindítható kezelés kell a tax debt/outbox/settlement, sin/sinner/Wanted/Exile,
-  DARK+pact/spec és Whisper-állapotokra. A `processOutbox` nincs meghívva; a már
-  levont pénz automatikus lezárása nincs bekötve. A meglevő mezők puszta olvasási
-  kompatibilitása nem igazolja minden régi profil helyes szemantikáját.
-- ⬜ **További eredeti review-pontok:** W2 meghívógyakoriság, W12 az árulás tényleges
-  titkos kapcsolata, W15 DARK/kedvezmény indoklása, W29 minden publikus felület,
-  politikai választási küszöbök, valamint a saját jogi státuszban a következő
-  következmény és a megtisztulás módja tételesen ellenőrizendő.
-- ◇ **CI-határ:** a #155 `566ff83e` állapotának három workflow-ja sikeres, de a
-  Docs Inventory report módban 93 FAIL besorolású eltérést közöl; a strict lépés
-  nem fut. A Paper/Folia smoke a plugin indítását és Trash-runtime-ját vizsgálja,
-  nem a Suttogó-játékfolyamatot. A teljes `build-plugin.yml` ezen az ágon nem indul
-  automatikusan; kiadáskor külön igazolt teljes build kell.
-- A teljes covert küldetéshálózat és a forgó titkos boltkészlet nem kötelező
-  hiány: W18 minimumát a meglévő kultista ametisztátadás adja. Ennek többjátékos
-  élvezhetőségi és jutalmazási próbája továbbra is a staging része.
+- ✅ 2026-09-07: a tulajdonos szerint nem futott korábbi szerver. Régi profil-/adó-
+  migráció nincs a scope-ban; új rendszer saját WAL/restart adatbiztonsága megmarad.
+- ✅ W3–W5/W7: misztikus meghívó, percenként legfeljebb egy privát hint, normál
+  világ éjszakája, valódi szemtanú esetén áldozat nélküli megszakítás és 60 mp várakozás.
+- ✅ W8–W9: esemény-UUID/típus/idő, tartós egyszeri nyom; láthatatlanság, moderation
+  vanish, halott/spectator és 10 mp belépési/respawn nyugalom kizárva. A sugár blokkjai
+  a saját Folia-régiójukon ellenőrződnek; régióhatár önmagában nem búvóhely.
+- ✅ W28: kétszer megerősített `/suttogas megtagadás`, tiszta állapot és lejárt nyomok
+  mellett; szerepvesztés és 24 óra, jogi reset nélkül.
+- ✅ Jogi útmutató és `civil_penance`: civil feloldozás DARK-belépés nélkül;
+  választási küszöb aktív létszám szerint, élő mandátum védelme.
+- ◇ Folia staging: két régiót érintő tanúzás, láthatatlan/vanish szereplők, rítus
+  disconnect/restart/lemezhiba, három vád, kilépés, civil jóvátétel, Eskü és DARK-tagság.
+  Ismeretlen, kevert rítusmentést admin ellenőriz; automatikus kompenzáció nem állítható.
+- ◇ Builder: civil CAPITAL-zónák, biztonságos DARK-spawn, feketepiac, kultista rítus/hírvivő.
+- ◇ Balance: azonos szint/felszerelés mellett RED/BLUE/NEUTRAL/DARK PvP és PvE,
+  Vérhold/dungeon gyógyítás; túlélés, jutalom, frakcióválasztás és eltérő létszámú szezon.
+  A „nincs legjobb frakció” mérendő cél; kódteszt önmagában nem bizonyítja.
+- ◇ Az aktuális build, CI és inventory eredményét a publikált commit átvételi jelentése
+  rögzíti; korábbi commit zöld jelzése nem igazolja az új HEAD-et.
+- A teljes titkos küldetéshálózat és forgó boltkészlet nem kötelező: W18 minimumát
+  a kultista ametisztátadás teljesíti.
