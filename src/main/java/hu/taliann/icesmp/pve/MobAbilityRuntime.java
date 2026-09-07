@@ -54,6 +54,7 @@ public final class MobAbilityRuntime implements Listener {
         private MobBehaviorProfile behavior;
         private EffectiveMobProjection effective;
         private final long attachedAtNanos = System.nanoTime();
+        private final MobRuntimeControlLedger controls = new MobRuntimeControlLedger();
         private final Map<String, Long> readyAtTick = new LinkedHashMap<>();
         private final ArrayDeque<MobAbilityDefinition> pendingThresholds = new ArrayDeque<>();
         private final java.util.Set<String> consumedThresholds = new HashSet<>();
@@ -183,12 +184,42 @@ public final class MobAbilityRuntime implements Listener {
         final RuntimeState state = states.get(mob.getUniqueId());
         if (state == null) { attach(mob); return; }
         final EffectiveMobProjection next = effectiveProfile(mob);
-        if (next.equals(state.effective)) return;
         final List<MobAbilityDefinition> definitions = effectiveDefinitions(next);
+        if (next.equals(state.effective) && definitions.equals(state.definitions)) return;
         state.castEpoch++; state.currentAbility = null; state.casting = false;
         state.recoveryUntilTick = Math.max(state.recoveryUntilTick, state.tick + RUNTIME_STEP_TICKS);
         state.pendingThresholds.clear(); state.rotationCursor = 0;
         state.definitions = definitions; state.behavior = next.behavior(); state.effective = next;
+    }
+
+    /** Immutable observation only; callers cannot retain a live entity through the control result. */
+    public java.util.Optional<MobRuntimeControlLedger.View> controlView(final Mob mob) {
+        requireOwner(mob);
+        final RuntimeState state = states.get(mob.getUniqueId());
+        return state == null ? java.util.Optional.empty() : java.util.Optional.of(state.controls.view(state.castEpoch));
+    }
+
+    /** Native owner route for explicit one-shot controls; it never resets cooldowns or fabricates an event. */
+    public MobRuntimeControlLedger.Accepted control(final Mob mob, final MobRuntimeControlLedger.Request request, final Runnable finalAdmission) {
+        requireOwner(mob); java.util.Objects.requireNonNull(finalAdmission);
+        final RuntimeState state = states.get(mob.getUniqueId());
+        if (state == null) throw new MobRuntimeControlLedger.Rejected("RUNTIME_UNAVAILABLE");
+        return state.controls.execute(request, () -> state.castEpoch, () -> {
+            finalAdmission.run();
+            if (request.kind() == MobRuntimeControlLedger.Kind.REFRESH) { reconcileProjection(mob); return true; }
+            final EffectiveMobProjection effective = effectiveProfile(mob);
+            if (!effective.equals(state.effective) || !effectiveDefinitions(effective).equals(state.definitions))
+                throw new MobRuntimeControlLedger.Rejected("RUNTIME_REFRESH_REQUIRED");
+            if (!authoredTechniqueAllowed(mob, species.profile(mob.getType()))) return false;
+            final MobAbilityDefinition chosen = state.definitions.stream().filter(d -> d.abilityId().equals(request.abilityId()))
+                    .filter(d -> conditionsPass(mob, d, state)).findFirst().orElse(null);
+            if (chosen == null) return false;
+            final Location target = targetSnapshot(mob, chosen, state);
+            if (chosen.targetRule() != MobAbilityDefinition.TargetRule.SELF && target == null) return false;
+            // The normal cast lifecycle owns the telegraph. Do not read/write a cached foreign target region.
+            if (target != null && !Bukkit.isOwnedByCurrentRegion(target)) throw new MobRuntimeControlLedger.Rejected("TARGET_OWNER_UNAVAILABLE");
+            return startCast(mob, chosen, state, target);
+        }, System::currentTimeMillis);
     }
 
     private List<MobAbilityDefinition> effectiveDefinitions(final EffectiveMobProjection effective) {
@@ -427,9 +458,9 @@ public final class MobAbilityRuntime implements Listener {
         state.readyAtTick.put(chosen.abilityId(), state.tick + Math.max(10L,
                 Math.round(chosen.cooldownTicks() / state.behavior.aggressionCadence())));
         CombatTelemetry.record("technique_cast", chosen.abilityId());
-        telegraph(mob, chosen, target);
         try {
-            mob.getScheduler().runDelayed(plugin, task -> {
+            telegraph(mob, chosen, target);
+            final ScheduledTask scheduled = mob.getScheduler().runDelayed(plugin, task -> {
                 if (projectionSourceBound && mob.isValid() && !mob.isDead()) reconcileProjection(mob);
                 if (state.castEpoch != castEpoch) return;
                 if (mob.isValid() && !mob.isDead()) {
@@ -449,11 +480,14 @@ public final class MobAbilityRuntime implements Listener {
                 }
                 states.remove(mob.getUniqueId(), state);
             }, Math.max(1L, chosen.telegraphTicks()));
+            if (scheduled == null) {
+                state.currentAbility = null; state.casting = false; detach(state); return false;
+            }
             return true;
         } catch (final RuntimeException rejected) {
             state.currentAbility = null;
             state.casting = false;
-            states.remove(mob.getUniqueId(), state);
+            detach(state);
             CombatTelemetry.record("technique_schedule_rejected", chosen.abilityId());
             if (reportedScheduleRejections.add(chosen.abilityId())) {
                 plugin.getLogger().warning("Mob technique schedule rejected ["

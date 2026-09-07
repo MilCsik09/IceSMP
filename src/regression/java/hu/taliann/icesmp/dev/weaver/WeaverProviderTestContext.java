@@ -7,6 +7,9 @@ import java.util.UUID;
 public final class WeaverProviderTestContext {
     private WeaverProviderTestContext() { }
     public static ProviderContext sandbox(final WeaverTypeRegistry types) {
-        return new ProviderContext(new WeaverAuthorityToken(HiddenDevAuthority.PRIMARY_DEVELOPER, UUID.randomUUID(), Long.MAX_VALUE, () -> true, () -> 0L), types, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
+        return sandbox(types, () -> true);
+    }
+    public static ProviderContext sandbox(final WeaverTypeRegistry types, final java.util.function.BooleanSupplier valid) {
+        return new ProviderContext(new WeaverAuthorityToken(HiddenDevAuthority.PRIMARY_DEVELOPER, UUID.randomUUID(), Long.MAX_VALUE, valid, () -> 0L), types, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
     }
 }

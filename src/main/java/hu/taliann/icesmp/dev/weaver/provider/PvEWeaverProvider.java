@@ -26,9 +26,10 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
     private final Function<SubjectRef, Map<String, WeaverValue>> snapshots;
     private final ProviderContribution contribution;
     private final Optional<PvEProjectionActions> mutations;
+    private final Optional<PvERuntimeActions> controls;
     private final Function<Set<SubjectRef>, CompletionStage<Void>> reconcile;
     private record Ports(PvEMobProjectionSource source, Function<SubjectRef, Map<String, WeaverValue>> snapshots,
-                         Function<Set<SubjectRef>, CompletionStage<Void>> reconcile) { }
+                         Function<Set<SubjectRef>, CompletionStage<Void>> reconcile, PvERuntimeActions.Port controls) { }
 
     public PvEWeaverProvider(final WeaverProviderServices services, final MobAbilityRegistry abilities, final MobTemplateRegistry templates,
             final MobScalingManager scaling, final MobAbilityRuntime runtime) {
@@ -36,7 +37,7 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
     }
     private PvEWeaverProvider(final WeaverTypeRegistry types, final Supplier<Map<String, MobAbilityDefinition>> abilities,
             final Supplier<Map<String, MobTemplate>> templates, final Ports ports) {
-        this(types, abilities, templates, ports.snapshots(), Optional.of(ports.source()), ports.reconcile());
+        this(types, abilities, templates, ports.snapshots(), Optional.of(ports.source()), ports.reconcile(), Optional.of(ports.controls()));
     }
     PvEWeaverProvider(final WeaverTypeRegistry types, final Supplier<Map<String, MobAbilityDefinition>> abilities,
             final Supplier<Map<String, MobTemplate>> templates, final Function<SubjectRef, Map<String, WeaverValue>> snapshots) {
@@ -45,8 +46,15 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
     PvEWeaverProvider(final WeaverTypeRegistry types, final Supplier<Map<String, MobAbilityDefinition>> abilities,
             final Supplier<Map<String, MobTemplate>> templates, final Function<SubjectRef, Map<String, WeaverValue>> snapshots,
             final Optional<PvEMobProjectionSource> source, final Function<Set<SubjectRef>, CompletionStage<Void>> reconcile) {
+        this(types, abilities, templates, snapshots, source, reconcile, Optional.empty());
+    }
+    PvEWeaverProvider(final WeaverTypeRegistry types, final Supplier<Map<String, MobAbilityDefinition>> abilities,
+            final Supplier<Map<String, MobTemplate>> templates, final Function<SubjectRef, Map<String, WeaverValue>> snapshots,
+            final Optional<PvEMobProjectionSource> source, final Function<Set<SubjectRef>, CompletionStage<Void>> reconcile,
+            final Optional<PvERuntimeActions.Port> controlPort) {
         this.snapshots = Objects.requireNonNull(snapshots); this.reconcile = Objects.requireNonNull(reconcile);
         mutations = source.map(port -> new PvEProjectionActions(port, snapshots, abilities));
+        controls = controlPort.map(port -> new PvERuntimeActions(types, port, snapshots));
         final Map<String, WeaverValueCatalog> values = new LinkedHashMap<>();
         register(types, values, "pve.abilities", ABILITY, "pve.ability", abilities, definition -> Component.text(definition.abilityId()));
         register(types, values, "pve.templates", TEMPLATE, "pve.template", templates, definition -> Component.text(definition.displayName()));
@@ -56,11 +64,14 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
         final List<CatalogDescriptor> catalogDescriptors = new ArrayList<>(catalogs.entrySet().stream().sorted(Map.Entry.comparingByKey())
                 .map(entry -> new CatalogDescriptor(entry.getKey(), FACET, Component.text(entry.getKey()), entry.getValue().type())).toList());
         mutations.ifPresent(actions -> catalogDescriptors.add(actions.catalogDescriptor()));
-        contribution = new ProviderContribution(List.of(new FacetDescriptor(FACET, Component.text("PvE"), Component.text("Canonical profil és aktív combat runtime"), 10)), mutations.map(PvEProjectionActions::descriptors).orElse(List.of()),
+        final List<ActionDescriptor> actionDescriptors = new ArrayList<>(mutations.map(PvEProjectionActions::descriptors).orElse(List.of()));
+        controls.ifPresent(actions -> actionDescriptors.addAll(actions.descriptors()));
+        contribution = new ProviderContribution(List.of(new FacetDescriptor(FACET, Component.text("PvE"), Component.text("Canonical profil és aktív combat runtime"), 10)), actionDescriptors,
                 catalogDescriptors,
                 List.of(new ExportDescriptor("pve.export_rank", FACET, RANK, Set.of("pve.rank")), new ExportDescriptor("pve.export_archetype", FACET, ARCHETYPE, Set.of("pve.archetype")),
                         new ExportDescriptor("pve.export_template", FACET, TEMPLATE, Set.of("pve.template")), new ExportDescriptor("pve.export_ability", FACET, ABILITY, Set.of("pve.ability"))), mutations.map(PvEProjectionActions::imports).orElse(List.of()),
-                mutations.map(actions -> actions.descriptors().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(ActionDescriptor::id, action -> "pve.journal_projection"))).orElse(Map.of()));
+                actionDescriptors.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(ActionDescriptor::id,
+                        action -> controls.filter(c -> c.owns(action.id())).isPresent() ? "pve.native_control" : "pve.journal_projection")));
     }
     private static Ports nativePorts(final WeaverProviderServices services, final MobAbilityRegistry abilities, final MobTemplateRegistry templates,
             final MobScalingManager scaling, final MobAbilityRuntime runtime) {
@@ -90,6 +101,11 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
                         }));
             }
             return chain;
+        }, (subject, request, admission) -> {
+            final var entity = Bukkit.getEntity(subject.entityId());
+            if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) throw new WeaverDomainRejection("ENTITY_UNAVAILABLE");
+            if (!(entity instanceof Mob mob) || !mob.isValid() || mob.isDead()) throw new WeaverDomainRejection("ENTITY_UNAVAILABLE");
+            return runtime.control(mob, request, admission);
         });
     }
     private static <T> void register(final WeaverTypeRegistry types, final Map<String, WeaverValueCatalog> catalogs, final String id, final WeaverTypeId type, final String capability,
@@ -128,6 +144,7 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
         if (active.size() == 1) facts.put("pve.ability", reference(ABILITY, active.getFirst(), "pve.ability", now));
         facts.putAll(projectionFacts(entity.entityId(), runtime.canonicalProfile(mob), source, now));
         facts.put("pve.cast_state", scalar("text", runtime.activeStateSummary(mob), now));
+        runtime.controlView(mob).ifPresent(view -> facts.putAll(PvERuntimeActions.facts(view, now)));
         return Map.copyOf(facts);
     }
     static Map<String, WeaverValue> projectionFacts(final UUID entityId, final CanonicalMobProfile canonical, final PvEMobProjectionSource source, final long now) {
@@ -169,7 +186,9 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
         final boolean actionable = snapshot.ref() instanceof EntityRef && snapshot.facts().containsKey(PvEProjectionActions.CANONICAL_REVISION);
         final Set<String> visibleCatalogs = new HashSet<>(catalogs.keySet());
         if (actionable && mutations.isPresent()) visibleCatalogs.add(PvEProjectionActions.CATALOG);
-        return new ProviderDiscovery(Set.of(FACET), actionable ? mutations.map(actions -> actions.visible(snapshot)).orElse(Set.of()) : Set.of(), visibleCatalogs, exports,
+        final Set<String> visibleActions = new HashSet<>(actionable ? mutations.map(actions -> actions.visible(snapshot)).orElse(Set.of()) : Set.of());
+        if (actionable) controls.ifPresent(control -> visibleActions.addAll(control.visible(snapshot)));
+        return new ProviderDiscovery(Set.of(FACET), visibleActions, visibleCatalogs, exports,
                 actionable ? mutations.map(actions -> actions.imports().stream().map(ImportDescriptor::id).collect(java.util.stream.Collectors.toUnmodifiableSet())).orElse(Set.of()) : Set.of(), Map.of());
     }
     @Override public InspectionResult inspect(final ProviderContext context, final SubjectSnapshot snapshot, final String facetId) {
@@ -190,10 +209,13 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
         return value != null && context.types().compatible(value, descriptor.outputType(), descriptor.capabilities()) ? ValueExportResult.exported(value) : ValueExportResult.rejected("EXPORT_UNAVAILABLE");
     }
     @Override public PreparedAction prepare(final ProviderContext context, final SubjectSnapshot snapshot, final ActionRequest request) {
-        context.authority().requireValid(); return mutations.orElseThrow(() -> new WeaverDomainRejection("UNKNOWN_ACTION")).prepare(context, snapshot, request);
+        context.authority().requireValid();
+        return controls.filter(c -> c.owns(request.actionId())).map(c -> c.prepare(context, snapshot, request))
+                .orElseGet(() -> mutations.orElseThrow(() -> new WeaverDomainRejection("UNKNOWN_ACTION")).prepare(context, snapshot, request));
     }
     @Override public PreparedEffects prepareEffects(final ProviderContext context, final SubjectSnapshot snapshot, final ActionRequest request, final PreparedAction prepared) {
-        return mutations.orElseThrow(() -> new WeaverDomainRejection("UNKNOWN_ACTION")).effects(context, snapshot, request, prepared);
+        return controls.filter(c -> c.owns(request.actionId())).map(c -> c.effects(context))
+                .orElseGet(() -> mutations.orElseThrow(() -> new WeaverDomainRejection("UNKNOWN_ACTION")).effects(context, snapshot, request, prepared));
     }
     @Override public List<ProjectionConsumerDescriptor> projectionConsumers() { return mutations.map(PvEProjectionActions::consumers).orElse(List.of()); }
     @Override public CompletionStage<Void> reconcileProjections(final Set<SubjectRef> subjects) { return reconcile.apply(Set.copyOf(subjects)); }
@@ -204,6 +226,8 @@ public final class PvEWeaverProvider implements WorldWeaverProvider, WeaverSnaps
         context.authority().requireValid(); return mutations.map(actions -> actions.validateImport(context, snapshot, id, value)).orElseGet(() -> ImportValidation.rejected("UNKNOWN_IMPORT"));
     }
     @Override public RecoveryAssessment assessRecovery(final RecoveryContext context, final SubjectSnapshot snapshot, final WeaverOperationRecord operation) {
-        context.authority().require(operation); return mutations.map(actions -> actions.assess(context, snapshot, operation)).orElseGet(() -> new RecoveryAssessment(ObservedOperationState.PARTIAL_OR_CONFLICT, false, Optional.empty(), "UNREGISTERED_MUTATION"));
+        context.authority().require(operation);
+        return controls.filter(control -> control.owns(operation.request().actionId())).map(control -> control.assess(context, snapshot, operation))
+                .orElseGet(() -> mutations.map(actions -> actions.assess(context, snapshot, operation)).orElseGet(() -> new RecoveryAssessment(ObservedOperationState.PARTIAL_OR_CONFLICT, false, Optional.empty(), "UNREGISTERED_MUTATION")));
     }
 }

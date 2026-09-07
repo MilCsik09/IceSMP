@@ -1158,6 +1158,7 @@ public final class IceSMPCore {
         professionRecipeManager.registerRecipes();
         worldWeaverRuntime.start();
         registerListeners();
+        hu.taliann.icesmp.pve.MobRuntimeControlProbe.maybeRun(plugin, mobAbilityRuntime, authoredCreatureSpawns, mobTemplateRegistry, mobAbilityRegistry);
         trashAmbientManager.start();
         // Hot plugin reloads may enable while players are already online and therefore do not emit
         // a new join event. Give those sessions a fresh generation before PM delivery can link them.

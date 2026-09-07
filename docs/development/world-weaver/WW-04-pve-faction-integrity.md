@@ -639,3 +639,60 @@ pack 34113891709 and Trash 34113891642 succeeded. New-head CI is still required.
 Force/refresh and remaining consumers/reward propagation continue as active WW-04
 scope. Physical issuance/gameplay admission remain off; connected-client evidence
 and the inherited original-sheet artifact gate remain open.
+
+
+## Native PvE one-shot controls checkpoint
+
+Base: `fc12b103d10cb5051ba5ae91617336680e9bd5e7`, branch
+`feature/world-weaver-ww04-pve-faction-integrity`, stacked PR #158 on WW-03.
+The provider publishes `pve.force_ability` and `pve.refresh_runtime` through the
+unchanged generic frontend. Both are ENTITY / MUTATING / ONE_SHOT; SANDBOX adds
+entity influence before native mutation, while LIVE_GM still requires explicit
+arming. Neither action offers Undo: accepting a cast cannot promise reversal of
+its later damage, movement, summons or effects.
+
+The native `MobAbilityRuntime.control` route checks the installed effective kit,
+species/condition eligibility, target availability, pause/casting/recovery and
+cooldown. It enters the actual `startCast` lifecycle; no event fabrication, command,
+PDC mutation or cooldown reset is used. Final developer authority is checked again
+inside the owner mutation. Refresh re-resolves definitions even when registry IDs
+are unchanged and preserves cooldown and consumed-threshold history. A rejected
+entity scheduler detaches the runtime's repeating task instead of leaving a ghost.
+
+The immutable native control observation carries a random runtime generation,
+monotonic attempt revision, cast epoch and at most 32 accepted operation records.
+Exact duplicate requests return their earlier acceptance without invoking the
+mutation again. Reentrancy, changed operation payload and stale revisions refuse.
+Entered failed attempts advance the revision, preserving uncertainty. PREPARED is
+durable before entry; owner-observed matching acceptance can reconcile to APPLIED,
+untouched matching state can abort, and missing evidence after generation change,
+eviction or failure becomes NEEDS_REVIEW. Restart does not replay a cast. This is
+cast-acceptance evidence, not a durable guarantee that every delayed effect completed.
+
+Local evidence: Java 21 full main/regression compilation succeeds. The native ledger
+suite passes 22 assertions and the provider/journal suite passes 104 assertions,
+including final authority loss, owner dispatch, stale state, automatic quarantine,
+eight journal crash boundaries, unavailable entity recovery and changed-generation
+review without replay. PvE projection (sixteen create/clear crash boundaries) and
+native effective-kit suites also pass. All 36 selected Weaver, DEV artifact and native PvE suites pass. Four architecture
+checks, profile authority guard/self-test (673 findings, zero unknown/stale/invalid/transition),
+coverage (zero audit errors) and consistency (zero FAIL/WARN) also pass. Both new
+suites are normal Gradle `check` dependencies. An explicit isolated-server CI probe uses canonical registry-selected
+content and the native spawn service to verify an actual shield cast, missing-target
+refusal, duplicate acceptance, refresh/cooldown preservation, pause and cleanup on
+Paper and Folia 1.21.11. New-head CI/native proof is pending publication.
+
+Prior-head CI is verified for `fc12b103d10cb5051ba5ae91617336680e9bd5e7`:
+WorldWeaver run 34114715140; Folia job 101718742654 and Paper job 101718742850
+succeeded. Verification 101718742895 completed the regression suite; its only failed
+task remains inherited `trashSpriteAssetAudit`. Resource pack 34114715114, Trash
+34114715118 and docs 34114715119 succeeded.
+
+This is an intermediate checkpoint. Cross-region target/effect continuation,
+projection stat/context consumers and complete causal reward propagation remain
+active work. The current explicit control refuses a foreign target owner; ownership
+must also remain safe across delayed native effect execution before full acceptance.
+The coverage inventory has 316 authorities, 55 domains and 51 blockers. Artifact
+issuance and gameplay admission remain disabled; neither WW-04 nor production
+readiness is claimed. Original Trash source sheets and connected-client tests remain
+separate evidence gates.
