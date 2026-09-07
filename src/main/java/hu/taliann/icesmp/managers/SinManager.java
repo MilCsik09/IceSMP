@@ -45,6 +45,19 @@ public final class SinManager {
         return getSinCount(player);
     }
 
+    public int wantedThreshold() { return Math.max(0, configManager.getInt("factions.sins.bounty.min-sins", 3)); }
+    public int exileThreshold() { return Math.max(0, configManager.getInt("factions.sins.exile-threshold", 4)); }
+
+    public String bountyDescription(final Player player) {
+        if (!configManager.getBoolean("factions.sins.bounty.enabled", true) || !isWanted(player)) return "nincs";
+        final double configured = configManager.getDouble("factions.sins.bounty.reward-per-sin", 25.0D);
+        final double perSin = Double.isFinite(configured) ? Math.max(0, configured) : 25.0D;
+        final var configuredCurrency = hu.taliann.icesmp.data.CurrencyType.fromInput(
+                configManager.getString("factions.sins.bounty.currency", "NEUTRAL"));
+        final var currency = configuredCurrency == null ? hu.taliann.icesmp.data.CurrencyType.fromFactionType(FactionType.NEUTRAL) : configuredCurrency;
+        return String.format(java.util.Locale.ROOT, "%.2f %s", getInfamy(player) * perSin, currency.getDisplayName());
+    }
+
     public int addSin(final Player player, final int amount) {
         if (player == null || amount <= 0) return getSinCount(player);
         final int exileThreshold = Math.max(0,
@@ -217,6 +230,7 @@ public final class SinManager {
 
     public void breakDarkPact(final Player player) {
         if (player == null) return;
+        final boolean hadOath = hasOath(player);
         try {
             sinStore.breakDarkPact(player.getUniqueId()).toCompletableFuture().join();
             reconcileProfileGates(player);
@@ -229,8 +243,8 @@ public final class SinManager {
                 60, 0.5D, 0.8D, 0.5D, 0.05D);
         AdvancementService.award(player, "redeemed");
         player.sendMessage(messageManager.getMessage(
-                "sinner.pact-broken",
-                "<gold>A vezeklésed teljes: a sötét paktum megtört, bűneid feloldozást nyertek.</gold>"));
+                hadOath ? "sinner.pact-broken" : "sinner.penance-complete",
+                "<gold>A vezeklésed teljes: bűneid és száműzetésed feloldozást nyertek.</gold>"));
     }
 
     public boolean clearSinner(final Player player) {

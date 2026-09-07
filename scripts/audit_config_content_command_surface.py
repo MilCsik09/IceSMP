@@ -64,6 +64,21 @@ REMOVED_GAMEPLAY_GENERATORS = (
 # to close the verified quest, spell and signature-identity findings.  Keeping
 # the paths explicit makes any neighbouring gameplay drift fail closed.
 INTEGRITY_HARDENING_ALLOWED_DRIFT = {
+    # Fresh-start faction closure: explicit civil atonement and the existing escort false fallback.
+    "escort.force-use-player-anchor",
+    "quests.civil_penance.category",
+    "quests.civil_penance.description",
+    "quests.civil_penance.display-name",
+    "quests.civil_penance.forbids-faction",
+    "quests.civil_penance.objective.count",
+    "quests.civil_penance.objective.min-mob-level",
+    "quests.civil_penance.objective.type",
+    "quests.civil_penance.repeatable",
+    "quests.civil_penance.requires-atonement",
+    "quests.civil_penance.rewards.cleanse-sins",
+    "quests.civil_penance.start.type",
+    "quests.civil_penance.turn-in.type",
+    "quests.civil_penance.visibility.mode",
     # Already present in cumulative a335b3b5: major-event orchestration covers the authored prologue/finales.
     "world-events.orchestration.major-events",
     # Meter-free faction/Whisper contract: retired loops, unchanged food buffs, explicit season gates.

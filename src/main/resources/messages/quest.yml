@@ -114,3 +114,6 @@ messages:
   quest-turn-in-hint-npc: 'add le nála: %s'
   quest-turn-in-hint-territory: 'add le itt: %s'
   quest-turn-in-hint-event: 'a leadás eseményhez kötött'
+
+  quest-requires-atonement: '&7Nincs feloldozásra váró bűnöd, száműzetésed vagy sötét esküd.'
+  quest-forbids-faction: '&7A DARK visszaútja a Vezeklés I–III. lánc; a civil jóvátétel civil tagoknak szól.'

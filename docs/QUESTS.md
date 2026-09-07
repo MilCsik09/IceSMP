@@ -1,5 +1,13 @@
 # IceSMP quest- és NPC-builder kézikönyv
 
+A frakció-rework új feladata: **Civil vezeklés — Jóvátétel** (`civil_penance`).
+Felvétel a `/quest log` Megbízások fülén, kizárólag rendezetlen jogi állapotú,
+nem DARK játékosnak. Harminc legalább 3-as szintű mob új legyőzése automatikus
+feloldozást ad; nincs pénz vagy XP. Ismételhető; az új felvétel új teljesítést kér.
+A DARK Vezeklés I–III. útja külön marad. A Suttogó szerep és várakozás nem törlődik.
+A csomagolt katalógus így 196 küldetést tartalmaz.
+
+
 <!-- icesmp-doc-id: guide.quest-and-npc-builder -->
 
 > Ez a dokumentum a világépítőnek és a tartalomadminnak szól. Megmutatja, melyik

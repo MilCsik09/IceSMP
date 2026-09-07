@@ -1,5 +1,13 @@
 # IceSMP builder kézikönyv
 
+A frakció–Suttogó rendszer tiszta világra készül. A rítushoz a normál világban sculk
+vagy sculk catalyst, éjszaka és szemtanú nélküli hely kell; Nether/End nem belépési
+hely. A civil `CAPITAL` zónák, DARK-spawn és feketepiac felépítését a világban kell
+befejezni. A `civil_penance` forrása `QUEST_BOARD`, leadása `AUTO`; a `/quest log`
+Megbízások fülén elérhető, ezért civil fővárosba bejutás nélkül is lehet vezekelni.
+Küldetésszerkesztő mezők: `requires-atonement` (logikai), `forbids-faction` (frakció).
+
+
 <!-- icesmp-doc-id: guide.builder-and-world-designer -->
 
 <details>
