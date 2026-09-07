@@ -82,6 +82,10 @@ public final class WorldWeaverRuntime {
         return new hu.taliann.icesmp.integrity.InfluenceRewardEligibilityPolicy(
                 new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceLookup(journal, System::currentTimeMillis));
     }
+    public java.util.concurrent.CompletionStage<hu.taliann.icesmp.integrity.GameplayEffectPermit> prepareEffect(
+            final hu.taliann.icesmp.integrity.GameplayEffectContext context) {
+        return journal.prepareDerivedEffect(context);
+    }
     public hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryListener recoveryListener() { return recoveryListener; }
     public void shutdown() {
         closed = true; started = false;

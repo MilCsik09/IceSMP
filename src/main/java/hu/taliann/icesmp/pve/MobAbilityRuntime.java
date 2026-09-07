@@ -4,6 +4,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.EventSpawnGuard;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.utils.ParticleUtil;
+import hu.taliann.icesmp.integrity.*;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -829,19 +830,19 @@ public final class MobAbilityRuntime implements Listener {
             mob.addPotionEffect(new PotionEffect(effect, duration, amplifier, false, true, true));
             return;
         }
-        final Location center = mob.getLocation().clone();
+        final RewardSource.Location center = point(mob.getLocation());
+        final List<RewardSource> sources = BukkitRewardSources.causal(mob);
         final double radius = Math.max(0.5D, Math.min(definition.radius(),
                 action.parameter("radius", definition.radius())));
         int affected = 0;
         for (final Entity entity : mob.getNearbyEntities(radius, radius, radius)) {
             if (!(entity instanceof Player player) || ++affected > 32) continue;
-            player.getScheduler().run(plugin, task -> {
-                if (survivor(player) && player.getWorld() == center.getWorld()
-                        && player.getLocation().distanceSquared(center) <= radius * radius) {
-                    player.addPotionEffect(new PotionEffect(effect, duration, amplifier,
+            affectPlayer(player.getUniqueId(), sources, duration * 50L, owned -> {
+                if (survivor(owned) && within(owned, center, radius)) {
+                    owned.addPotionEffect(new PotionEffect(effect, duration, amplifier,
                             false, true, true));
                 }
-            }, null);
+            });
         }
     }
 
@@ -890,26 +891,23 @@ public final class MobAbilityRuntime implements Listener {
                               final Location targetSnapshot, final double damage,
                               final double knockback) {
         if (state.targetId == null || targetSnapshot == null) return;
-        final Location source = caster.getLocation().clone();
-        final Player player = Bukkit.getPlayer(state.targetId);
-        if (player == null) return;
-        player.getScheduler().run(plugin, task -> {
-            if (!survivor(player) || player.getWorld() != targetSnapshot.getWorld()) return;
+        final RewardSource.Location source = point(caster.getLocation()), target = point(targetSnapshot);
+        affectPlayer(state.targetId, BukkitRewardSources.causal(caster), 0, player -> {
+            if (!survivor(player)) return;
             final double maximumRange = 6.0D;
-            if (player.getLocation().distanceSquared(targetSnapshot) > maximumRange * maximumRange
-                    || player.getLocation().distanceSquared(source) > maximumRange * maximumRange) return;
+            if (!within(player, target, maximumRange) || !within(player, source, maximumRange)) return;
             if (damage > 0.0D) {
                 player.damage(damage);
                 CombatTelemetry.record("technique_hit", "composite");
             }
             if (knockback > 0.0D) {
                 final Vector vector = player.getLocation().toVector()
-                        .subtract(source.toVector());
+                        .subtract(new Vector(source.x(), source.y(), source.z()));
                 if (vector.lengthSquared() > 0.01D) {
                     player.setVelocity(vector.normalize().multiply(knockback).setY(0.32D));
                 }
             }
-        }, null);
+        });
     }
 
     private void summonAdds(final Mob mob, final MobAbilityDefinition definition) {
@@ -1111,56 +1109,102 @@ public final class MobAbilityRuntime implements Listener {
     private void impactPlayers(final Mob caster, final Location center,
                                final double radius, final double damage,
                                final double knockback) {
+        final RewardSource.Location point = point(center);
+        final List<RewardSource> sources = BukkitRewardSources.causal(caster);
+        int affected = 0;
         for (final Entity nearby : caster.getNearbyEntities(radius, radius, radius)) {
             if (!(nearby instanceof Player player)) continue;
-            player.getScheduler().run(plugin, task -> {
-                if (!survivor(player) || player.getWorld() != center.getWorld()
-                        || player.getLocation().distanceSquared(center) > radius * radius) return;
+            affectPlayer(player.getUniqueId(), sources, 0, owned -> {
+                if (!survivor(owned) || !within(owned, point, radius)) return;
                 if (damage > 0.0D) {
-                    player.damage(damage);
+                    owned.damage(damage);
                     CombatTelemetry.record("technique_hit", "direct");
                 }
                 if (knockback > 0.0D) {
-                    final Vector vector = player.getLocation().toVector().subtract(center.toVector());
-                    if (vector.lengthSquared() > 0.01D) player.setVelocity(
+                    final Vector vector = owned.getLocation().toVector().subtract(new Vector(point.x(), point.y(), point.z()));
+                    if (vector.lengthSquared() > 0.01D) owned.setVelocity(
                             vector.normalize().multiply(knockback).setY(0.45D));
                 }
-            }, null);
+            });
+            if (++affected >= 32) break;
         }
     }
 
     private void poisonPlayers(final Mob caster, final MobAbilityDefinition definition) {
-        final Location center = caster.getLocation().clone();
+        final RewardSource.Location center = point(caster.getLocation());
+        final List<RewardSource> sources = BukkitRewardSources.causal(caster);
         final int duration = Math.max(20, Math.min(200, (int) Math.round(
                 definition.tuning().getOrDefault("duration-ticks", 80.0D))));
         final int amplifier = Math.max(0, Math.min(2, (int) Math.round(
                 definition.tuning().getOrDefault("amplifier", 0.0D))));
+        int affected = 0;
         for (final Entity nearby : caster.getNearbyEntities(
                 definition.radius(), definition.radius(), definition.radius())) {
             if (!(nearby instanceof Player player)) continue;
-            player.getScheduler().run(plugin, task -> {
-                if (!survivor(player) || player.getWorld() != center.getWorld()
-                        || player.getLocation().distanceSquared(center)
-                        > definition.radius() * definition.radius()) return;
-                player.damage(definition.power());
-                player.addPotionEffect(new PotionEffect(PotionEffectType.POISON,
+            affectPlayer(player.getUniqueId(), sources, duration * 50L, owned -> {
+                if (!survivor(owned) || !within(owned, center, definition.radius())) return;
+                owned.damage(definition.power());
+                owned.addPotionEffect(new PotionEffect(PotionEffectType.POISON,
                         duration, amplifier, false, true, true));
                 CombatTelemetry.record("technique_hit", definition.abilityId());
-            }, null);
+            });
+            if (++affected >= 32) break;
         }
     }
 
     private void buffAllies(final Mob caster, final MobAbilityDefinition definition) {
         final int duration = Math.max(40, Math.min(400, (int) Math.round(
                 definition.tuning().getOrDefault("duration-ticks", 120.0D))));
+        final RewardSource.Location center = point(caster.getLocation());
+        final List<RewardSource> sources = BukkitRewardSources.causal(caster);
         int affected = 0;
         for (final Entity nearby : caster.getNearbyEntities(
                 definition.radius(), definition.radius(), definition.radius())) {
-            if (!(nearby instanceof Mob ally) || !Bukkit.isOwnedByCurrentRegion(ally)) continue;
-            ally.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
-                    duration, 0, false, true, true));
+            if (!(nearby instanceof Mob ally)) continue;
+            affectLiving(ally.getUniqueId(), false, sources, duration * 50L, owned -> {
+                if (owned instanceof Mob && within(owned, center, definition.radius())) owned.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,
+                        duration, 0, false, true, true));
+            });
             if (++affected >= 6) break;
         }
+    }
+
+    private static RewardSource.Location point(final Location location) {
+        return new RewardSource.Location(location.getWorld().getUID(), location.getX(), location.getY(), location.getZ());
+    }
+    private static boolean within(final LivingEntity entity, final RewardSource.Location center, final double radius) {
+        final Location at = entity.getLocation();
+        if (!at.getWorld().getUID().equals(center.world())) return false;
+        final double x = at.getX() - center.x(), y = at.getY() - center.y(), z = at.getZ() - center.z();
+        return x * x + y * y + z * z <= radius * radius;
+    }
+    private void affectPlayer(final UUID id, final List<RewardSource> sources, final long duration, final java.util.function.Consumer<Player> effect) {
+        affectLiving(id, true, sources, duration, entity -> { if (entity instanceof Player player) effect.accept(player); });
+    }
+    private void affectLiving(final UUID id, final boolean player, final List<RewardSource> sources, final long duration,
+            final java.util.function.Consumer<LivingEntity> effect) {
+        final Entity handle = Bukkit.getEntity(id);
+        if (handle == null) return;
+        handle.getScheduler().run(plugin, task -> {
+            final LivingEntity target = ownedLiving(id, player); if (target == null) return;
+            final var causal = new java.util.LinkedHashSet<>(sources); causal.addAll(BukkitRewardSources.causal(target));
+            final RewardSource identity = player ? new RewardSource.Player(id) : new RewardSource.Entity(id);
+            GameplayEffectGate.prepare(new GameplayEffectContext(List.copyOf(causal), java.util.Set.of(identity), duration))
+                    .whenComplete((permit, failure) -> {
+                        if (failure != null || permit == null) return;
+                        final Entity current = Bukkit.getEntity(id); if (current == null) return;
+                        current.getScheduler().run(plugin, owned -> {
+                            final LivingEntity entity = ownedLiving(id, player);
+                            if (entity != null && permit.claim()) effect.accept(entity);
+                        }, null);
+                    });
+        }, null);
+    }
+    private static LivingEntity ownedLiving(final UUID id, final boolean player) {
+        final Entity entity = Bukkit.getEntity(id);
+        if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) return null;
+        if (!(entity instanceof LivingEntity living) || player != (living instanceof Player) || !living.isValid() || living.isDead()) return null;
+        return living;
     }
 
     private static boolean survivor(final Player player) {

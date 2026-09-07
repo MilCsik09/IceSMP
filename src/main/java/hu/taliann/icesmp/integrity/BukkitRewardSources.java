@@ -8,10 +8,13 @@ import java.util.*;
 public final class BukkitRewardSources {
     private BukkitRewardSources() { }
     public static RewardSourceContext entity(final RewardChannel channel, final Entity source) {
+        return new RewardSourceContext(channel, causal(source));
+    }
+    public static List<RewardSource> causal(final Entity source) {
         if (source == null || !Bukkit.isOwnedByCurrentRegion(source)) throw new IllegalStateException("Reward source owner required");
         final var location = source.getLocation(); final UUID world = Objects.requireNonNull(location.getWorld()).getUID();
-        return new RewardSourceContext(channel, List.of(new RewardSource.Entity(source.getUniqueId()), new RewardSource.World(world),
-                new RewardSource.Location(world, location.getX(), location.getY(), location.getZ())));
+        return List.of(new RewardSource.Entity(source.getUniqueId()), new RewardSource.World(world),
+                new RewardSource.Location(world, location.getX(), location.getY(), location.getZ()));
     }
     public static boolean allowed(final RewardChannel channel, final Entity source) {
         try { return GameplayRewardGate.evaluateSources(entity(channel, source)).allowed(); }

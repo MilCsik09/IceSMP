@@ -680,6 +680,10 @@ val pveWeaverProjectionRegressionTest = registerRegression(
     "pveWeaverProjectionRegressionTest",
     "Runs journal-backed PvE projection, dynamic gameplay import, conditional Undo and crash recovery regressions.",
     "hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProjectionRegressionSuite")
+val weaverEffectPropagationRegressionTest = registerRegression(
+    "weaverEffectPropagationRegressionTest",
+    "Checks durable native effect lineage, publication fencing, crash recovery and one-use admission.",
+    "hu.taliann.icesmp.dev.weaver.WeaverEffectPropagationRegressionSuite")
 val mobRuntimeHistoryRegressionTest = registerRegression(
     "mobRuntimeHistoryRegressionTest",
     "Checks bounded cooldown and consumed-threshold history across registry churn.",
@@ -1231,7 +1235,7 @@ tasks.check {
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
         devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
         weaverPersistenceRegressionTest, weaverCrashRecoveryRegressionTest,
-        mobRuntimeControlRegressionTest, mobRuntimeHistoryRegressionTest, pveWeaverRuntimeRegressionTest,
+        mobRuntimeControlRegressionTest, mobRuntimeHistoryRegressionTest, pveWeaverRuntimeRegressionTest, weaverEffectPropagationRegressionTest,
         weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest, pveWeaverProjectionRegressionTest, weaverProjectionDispatchRegressionTest, weaverGameplayRewardGateRegressionTest, weaverProfileRewardAdmissionRegressionTest, weaverStoredContentIsolationRegressionTest, factionWeaverProjectionRegressionTest, weaverFactionAdjustmentRegressionTest, factionWeaverCanonicalRegressionTest,
         weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
         worldWeaverArchitectureAudit,

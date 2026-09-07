@@ -43,7 +43,10 @@
         "src/main/java/hu/taliann/icesmp/security/HiddenDevAuthority.java",
         "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java"
+      ]
     },
     {
       "id": "pve",
@@ -1464,10 +1467,11 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "cc1bf59bd8f9e7489efb19b37fd06e2b493fbc8c45fa6b98fce841c2ab44ffed",
+      "source_sha256": "864273fea695c90ef360b7787b1f5309e943d42ca2e5a74b03152db59f816bcd",
       "public_methods": [
         "WorldWeaverRuntime",
         "listener",
+        "prepareEffect",
         "recoveryListener",
         "rewardEligibility",
         "shutdown",
@@ -1634,9 +1638,21 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
+      "domain": "developer_self",
+      "source_sha256": "7488f566aeaaff0164c4ad5eb28ccc5b275c03b1f352bea7fb1e526da810e0f5",
+      "public_methods": [
+        "WeaverInfluenceIndex",
+        "SourceEvidence",
+        "clean",
+        "quarantined",
+        "trace"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "8ad307fef92f591d35faaeac06aa07dc309f8668a0e3a7a94aa4e50a3a5f29c0",
+      "source_sha256": "1897029f657f5a5a769b25a77f5c5e114616a70cb549a3e609c9675c06511cac",
       "public_methods": [
         "WeaverJournal",
         "applied",
@@ -1646,6 +1662,7 @@
         "influenceIndex",
         "load",
         "prepare",
+        "prepareDerivedEffect",
         "ready",
         "resolve",
         "snapshot"
@@ -2064,12 +2081,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
       "domain": "developer_self",
-      "source_sha256": "2d8a9cdec17343223cf50bf03f04f95af8f47d6132a3c0f3c496bb3371c687bf",
+      "source_sha256": "77fe99cbfe17ceb0037e0978e07a5db9f3180b46fdafd8e5bdf6e5eeead218e3",
       "public_methods": [
-        "entity",
         "allowed",
+        "causal",
         "death",
-        "deathAllowed"
+        "deathAllowed",
+        "entity"
       ]
     },
     {
@@ -2080,6 +2098,16 @@
         "CompositeRewardEligibilityPolicy",
         "evaluate",
         "evaluateSources"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
+      "domain": "developer_self",
+      "source_sha256": "95acbfbb7f5260e5d97882059791c5c048beeded2d62b47cf1bfc031b087759a",
+      "public_methods": [
+        "close",
+        "install",
+        "prepare"
       ]
     },
     {
@@ -5799,7 +5827,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "9f3e669bec7eff0e5fab71b01592b744ace69e6b2e0d62ce874c41b08ab30752",
+      "source_sha256": "d3f4df1cf29564528a6c2312a65efd5867db77be23121e250e0662951165d2b0",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
@@ -6538,6 +6566,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/area/WeaverAreaEngine.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournalRetention.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
@@ -6557,6 +6586,7 @@
     "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
     "src/main/java/hu/taliann/icesmp/integrity/BukkitRewardSources.java",
+    "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
     "src/main/java/hu/taliann/icesmp/integrity/GameplayRewardGate.java",
     "src/main/java/hu/taliann/icesmp/integrity/VanillaRewardIntegrityListener.java",
     "src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java",

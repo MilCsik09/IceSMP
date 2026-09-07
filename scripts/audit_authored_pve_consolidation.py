@@ -171,7 +171,11 @@ def main() -> None:
     require("applyEncounterModifier" in scaling and "encounter_stat_modifier" in scaling
             and "already applied" in scaling,
             "participant scaling lacks single-application provenance")
-    require("consumedThresholds" in runtime and "pendingThresholds" in runtime
+    history = (ROOT / "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java").read_text()
+    require("state.history.consumed(definition.abilityId())" in runtime
+            and "state.history.consume(definition.abilityId())" in runtime
+            and "consumed.size() < LIMIT && consumed.add(ability)" in history
+            and "pendingThresholds" in runtime
             and "castEpoch" in runtime and "state.paused" in runtime,
             "threshold/pause/cast-epoch lifecycle proof missing")
     require("player.getScheduler().run" in runtime and "Bukkit.getScheduler" not in runtime,

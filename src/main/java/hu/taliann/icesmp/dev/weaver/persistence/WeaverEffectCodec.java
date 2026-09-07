@@ -67,7 +67,7 @@ final class WeaverEffectCodec {
         keys(row, "operation", "actor", "action", "mode", "applied");
         return new DeveloperInfluence(uuid(row, "operation"), IntegrityMode.valueOf(text(row, "mode")), text(row, "action"), uuid(row, "actor"), number(row, "applied"));
     }
-    private Map<String, Object> target(final WeaverInfluenceTarget target) {
+    static Map<String, Object> target(final WeaverInfluenceTarget target) {
         final Map<String, Object> source = switch (target.source()) {
             case RewardSource.Player player -> Map.of("kind", "PLAYER", "id", player.id().toString());
             case RewardSource.Entity entity -> Map.of("kind", "ENTITY", "id", entity.id().toString());

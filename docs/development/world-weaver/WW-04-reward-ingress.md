@@ -145,3 +145,65 @@ Exact preceding head CI `920fb92151a4ae347ec5bfc64e46f41dcdc4d49c`: verification
 `trashSpriteAssetAudit` failing. Resource pack `34081527251` and Trash hardening
 `34081527275` PASS. CI for this new checkpoint remains required; native populated
 reward, causal propagation and client gates remain open.
+
+
+## Durable derived-effect admission checkpoint
+
+Base `ae57ca912b23c782e467d67ae6b321d7114cb6c8`, WW-04 #158. The neutral
+`GameplayEffectGate` owns no influence, reward or receipt state. It returns a
+single-use permit for the native target owner. Closed, retired, failed or replaced
+bindings cannot admit an effect. The original Weaver journal owns the durable
+propagation transition; the native MobAbilityRuntime remains the gameplay authority.
+
+The immutable index exposes bounded source-origin tracing across entity/player,
+item, event, world and spatial evidence. PREPARED source intent means uncertainty
+and refuses derived mutation rather than inventing applied history. For applied
+SANDBOX origins the journal adds target lineage before acknowledging a permit.
+Root/target identity is deterministic, fractional locations normalize to blocks,
+transitive propagation keeps the original developer origin, and repeats extend
+quarantine without duplicating evidence. Canonical operations, receipts and effect
+deltas are unchanged. Existing journal capacity reservations and fsync publication
+remain mandatory; ambiguous writes close admission and retain conservative evidence.
+
+Normal clean effects use a synchronous immutable policy read without a journal
+write/queue. Final owner admission rechecks source uncertainty, newly introduced
+origins, target evidence, journal lifecycle and policy binding. A permit can be used
+once within five seconds. Its deadline starts before storage acknowledgement, so
+slow fsync cannot consume the required five-minute player tail before mutation.
+The regression advances an injected clock across that boundary without sleeping.
+
+Native direct/area/composite damage and knockback, poison/composite potion delivery
+and ally buff paths now pass through this route. Sources and target location are
+captured on their owners; continuations retain UUIDs, immutable positions and typed
+native parameters, then resolve the target again. Player fanout is capped at 32;
+ally fanout remains six. Monotonic entity/item/event targets preserve taint across
+arbitrarily long effects. The CI native probe additionally selects an actual
+registry-backed ALLY_BUFF template and verifies the clean effect traverses the gate
+and reaches another mob before canonical cleanup.
+
+**Active lifetime gate:** SANDBOX lingering effects on non-monotonic targets
+(player/world/location) currently refuse. An effect's nominal tick duration is not
+proof of actual end under lag, logout or unload. A durable observed-lifetime
+consumer is required before those effects can be admitted; a wall-clock-only expiry
+was explicitly rejected during the audit. Clean effects remain available, with a
+final refusal if their source becomes tainted. This is not full potion/DOT closure.
+Projectile/summon creation, volatile/affix effects, item/event propagation and all
+remaining non-kill producer/outbox gates remain active work. Gameplay manipulation
+and physical issuance stay disabled.
+
+Local evidence: full Java 21 main/regression compile and 38 selected Weaver/DEV/native
+suites passed. After the slow-fsync deadline correction, five affected suites were
+rerun; the new normal Gradle propagation task passes 188 assertions. Evidence includes
+all 26 reward channels on six derived target kinds, transitive origin, immutable
+canonical receipt history, single-use/lifecycle admission, a held fsync publication
+fence, before/after write failure and real YAML restart. The native ally probe needs
+its own new-head CI. Inventory: 319 authorities / 55 domains / 51 blockers.
+
+Prior `ae57ca912b23c782e467d67ae6b321d7114cb6c8` CI run 34119895633:
+Paper native 101735307357, Folia native 101735307132 and both artifact lifecycle
+jobs 101735306862 / 101735307048 passed. Verification 101735307108 found a stale
+`consumedThresholds` source-token assertion after history extraction, in addition to
+the inherited Trash source-sheet audit failure. The authored PvE audit now follows
+both native `history.consumed`/`history.consume` calls and the bounded once-only set
+implementation; its substantive threshold/pause/cast-epoch gate is preserved and the
+audit passes locally. Resource pack 34119895538 and Trash 34119895617 passed.

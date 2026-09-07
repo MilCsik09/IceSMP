@@ -8,6 +8,39 @@ import java.util.*;
 /** Pure transitions make the storage acknowledgement the only publication boundary. */
 final class WeaverEffectReducer {
     private WeaverEffectReducer() { }
+    /** Adds only derived quarantine; canonical receipts and original operation revisions remain untouched. */
+    static WeaverJournalState propagated(final WeaverJournalState state, final Set<DeveloperInfluence> origins,
+            final Set<hu.taliann.icesmp.integrity.RewardSource> targets, final long until) {
+        if (origins.isEmpty() || origins.size() > 128 || targets.isEmpty() || targets.size() > 32) throw new WeaverDomainRejection("PROPAGATION_CAPACITY");
+        final Set<DeveloperInfluence> recorded = new HashSet<>(); state.influences().values().forEach(value -> recorded.add(value.influence()));
+        final Map<UUID, WeaverInfluenceRecord> influences = new HashMap<>(state.influences());
+        for (final DeveloperInfluence origin : origins) {
+            if (!origin.quarantinesRewards() || !recorded.contains(origin)) throw new WeaverDomainRejection("PROPAGATION_ORIGIN_UNAVAILABLE");
+            WeaverJournalState.origin(state.operations(), origin);
+            for (final var source : targets) {
+                final var target = propagationTarget(source);
+                final UUID id = propagatedId(origin, target);
+                final var previous = influences.get(id);
+                if (previous != null && (!previous.influence().equals(origin) || !previous.target().equals(target))) throw new WeaverDomainRejection("PROPAGATION_CONFLICT");
+                final long deadline = target.monotonic() ? 0 : Math.max(until, Math.addExact(origin.appliedAt(), PlayerQuarantine.MINIMUM_TAIL_MILLIS));
+                influences.put(id, new WeaverInfluenceRecord(id, origin, target, previous != null && previous.active(),
+                        previous == null ? deadline : Math.max(previous.quarantinedUntil(), deadline)));
+            }
+        }
+        final long reserved = state.intents().values().stream().mapToLong(intent -> intent.targets().size()).sum();
+        if (influences.size() + reserved > WeaverJournalState.MAX_INFLUENCES) throw new WeaverDomainRejection("PROPAGATION_CAPACITY");
+        if (influences.equals(state.influences())) return state;
+        return new WeaverJournalState(Math.addExact(state.revision(), 1), state.operations(), state.receipts(), state.projectionSequence(),
+                state.intents(), state.projections(), influences, state.effectDeltas());
+    }
+    static UUID propagatedId(final DeveloperInfluence origin, final WeaverInfluenceTarget target) {
+        return UUID.nameUUIDFromBytes(CanonicalValueBytes.encode(Map.of("schema", "weaver-derived-influence@1",
+                "operation", origin.operationId().toString(), "target", WeaverEffectCodec.target(target))));
+    }
+    static WeaverInfluenceTarget propagationTarget(final hu.taliann.icesmp.integrity.RewardSource source) {
+        return WeaverInfluenceTarget.exact(source instanceof hu.taliann.icesmp.integrity.RewardSource.Location point
+                ? new hu.taliann.icesmp.integrity.RewardSource.Location(point.world(), Math.floor(point.x()), Math.floor(point.y()), Math.floor(point.z())) : source);
+    }
     static WeaverJournalState prepared(final WeaverJournalState state, final WeaverOperationRecord operation, final WeaverEffectIntent intent) {
         validateUndo(state, operation);
         final Set<WeaverInfluenceTarget> targets = new HashSet<>(intent.targets());

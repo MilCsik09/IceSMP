@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class MobRuntimeControlProbe {
     private static final String PROPERTY = "icesmp.pve-control-runtime";
     private record Choice(String template, String shield, String target, long telegraph) { }
+    private record AllyChoice(String template, String ability, long telegraph) { }
     private record FixtureChunk(UUID world, int x, int z) { }
     private final JavaPlugin plugin;
     private final MobAbilityRuntime runtime;
@@ -22,6 +23,7 @@ public final class MobRuntimeControlProbe {
     private final UUID fixtureOwner = UUID.randomUUID();
     private final AtomicBoolean finished = new AtomicBoolean();
     private volatile UUID entityId;
+    private volatile UUID allyCasterId;
     private volatile FixtureChunk fixtureChunk;
     private MobRuntimeControlProbe(JavaPlugin plugin, MobAbilityRuntime runtime, AuthoredCreatureSpawnService spawns,
             MobTemplateRegistry templates, MobAbilityRegistry abilities) {
@@ -44,6 +46,16 @@ public final class MobRuntimeControlProbe {
             if (shield.isPresent() && target.isPresent()) return new Choice(template.mobId(), shield.get().abilityId(), target.get().abilityId(), shield.get().telegraphTicks());
         }
         throw new IllegalStateException("NATIVE_FIXTURE_CONTENT_UNAVAILABLE");
+    }
+    private AllyChoice allyChoice() {
+        for (final var template : templates.all().values().stream().sorted(Comparator.comparing(MobTemplate::mobId)).toList()) {
+            final var selected = MobAbilityRuntime.effectiveDefinitions(new EffectiveMobProjection(template.mobId(), template.rank(), Optional.of(template.archetype()),
+                    template.abilityIdsFor(template.rank()), template.behavior(), Set.of()), abilities::require);
+            final var ability = selected.stream().filter(a -> a.kind() == MobAbilityDefinition.Kind.ALLY_BUFF
+                    && a.targetRule() == MobAbilityDefinition.TargetRule.SELF && a.conditions().isEmpty()).findFirst();
+            if (ability.isPresent()) return new AllyChoice(template.mobId(), ability.get().abilityId(), ability.get().telegraphTicks());
+        }
+        throw new IllegalStateException("NATIVE_ALLY_FIXTURE_UNAVAILABLE");
     }
     private void begin() {
         try {
@@ -87,7 +99,10 @@ public final class MobRuntimeControlProbe {
         } catch (Throwable failure) { failed(failure); }
     }
     private Mob mob() {
-        final var entity = Bukkit.getEntity(entityId);
+        return mob(entityId);
+    }
+    private Mob mob(UUID id) {
+        final var entity = Bukkit.getEntity(id);
         check(entity instanceof Mob && Bukkit.isOwnedByCurrentRegion(entity), "ENTITY_OWNER_REQUIRED");
         final Mob mob = (Mob) entity; check(mob.isValid() && !mob.isDead(), "FIXTURE_ENTITY_RETIRED"); return mob;
     }
@@ -135,8 +150,37 @@ public final class MobRuntimeControlProbe {
         try {
             final Mob mob = mob(); runtime.resume(mob); denied(mob, Kind.FORCE_ABILITY, choice.shield());
             check(runtime.canonicalProfile(mob).equals(canonical), "CONTROL_CHANGED_CANONICAL_IDENTITY");
-            spawns.detach(mob); spawns.cleanupSummons(fixtureOwner);
-            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> finish(Bukkit.getEntity(entityId) == null, "NATIVE_LIFECYCLE"), 5);
+            runtime.pause(mob); mob.removePotionEffect(PotionEffectType.STRENGTH);
+            final AllyChoice ally = allyChoice();
+            final var request = AuthoredCreatureSpawnService.Request.template("runtime_control_probe", fixtureOwner.toString(), "ally_probe",
+                    ally.template(), 10, AuthoredCreatureSpawnService.RewardOwner.NONE, true, 1, 1, 400).summonedBy(fixtureOwner);
+            final Mob caster = spawns.spawn(mob.getLocation(), request);
+            check(caster != null, "ALLY_FIXTURE_SPAWN_FAILED"); allyCasterId = caster.getUniqueId();
+            caster.setAI(false); caster.setGravity(false); caster.setInvulnerable(true);
+            later(allyCasterId, 3, () -> allyCast(ally));
+        } catch (Throwable failure) { failed(failure); }
+    }
+    private void allyCast(AllyChoice choice) {
+        try {
+            final Mob caster = mob(allyCasterId);
+            runtime.control(caster, request(caster, Kind.FORCE_ABILITY, choice.ability()), () -> { });
+            later(allyCasterId, choice.telegraph() + 5, this::allyExecuted);
+        } catch (Throwable failure) { failed(failure); }
+    }
+    private void allyExecuted() {
+        try {
+            final Mob caster = mob(allyCasterId); runtime.pause(caster);
+            final UUID target = entityId;
+            final var handle = Bukkit.getEntity(target); check(handle != null, "ALLY_TARGET_RETIRED");
+            handle.getScheduler().run(plugin, task -> {
+                try {
+                    final Mob ally = mob(target);
+                    check(ally.hasPotionEffect(PotionEffectType.STRENGTH), "NATIVE_EFFECT_GATE_DID_NOT_EXECUTE");
+                    spawns.detach(ally); spawns.cleanupSummons(fixtureOwner);
+                    Bukkit.getGlobalRegionScheduler().runDelayed(plugin, later -> finish(Bukkit.getEntity(entityId) == null
+                            && Bukkit.getEntity(allyCasterId) == null, "NATIVE_LIFECYCLE"), 5);
+                } catch (Throwable failure) { failed(failure); }
+            }, () -> finish(false, "ALLY_TARGET_RETIRED"));
         } catch (Throwable failure) { failed(failure); }
     }
     private void later(UUID id, long ticks, Runnable action) {
