@@ -510,6 +510,66 @@
       "docs": [
         "docs/ADMIN_GUIDE.md"
       ]
+    },
+    "config.client": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.creature-species": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.item-sets": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.item-templates": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.itemization": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.items": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.lifecycle-phases": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.loot-ecology": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.mob-abilities": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.mob-loot-profiles": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.mob-templates": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "config.player-presentation": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
     }
   },
   "permissions": {
@@ -670,7 +730,7 @@
       "registration": "STATIC",
       "legacy_alias": false,
       "children": [],
-      "default": "OP"
+      "default": "FALSE"
     },
     "permission.icesmp.admin.config": {
       "kind": "permission",
@@ -821,16 +881,17 @@
       "default": "OP"
     },
     "_contract": {
-      "entries_sha256": "6692f030ef317cfbe8019de663eb085920eb9a17db9111f7e92f1b09d114bd7f",
+      "entries_sha256": "b410cc6433c7c1e67ea05158c6704c90a80b00af28bbb5237d8b138aea83fe1f",
       "source_sha256": {
         "src/main/java/hu/taliann/icesmp/commands/ActivePunishmentsCommand.java": "12db7aea3b857fb27d4ff2fb684c90c0fdcf5e0b91e82311e3fad0f88af90709",
-        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "315cf2fd2e9c4ffcb0e41efdd4db6b1708616e69e0bd64a5372eb5f924ed96bc",
+        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "bc59d9bd71a59c85516303c2d5242d4657b4a16f754c0a298da18a1059712874",
         "src/main/java/hu/taliann/icesmp/commands/CrateCommand.java": "d67493fc8bb5776e3fcab22833fe2071eb46357cdf28d399027f1bd576224de4",
         "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java": "d23fe58811e23449bc425907c973dd418764c164eed219a04945872892dadd2c",
         "src/main/java/hu/taliann/icesmp/commands/ExchangeBoardCommand.java": "430b05791d32139ac4ebc91fff7767d227be29b42cc2f6500edf0a077a87f796",
-        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "70f13452f4e8990cffdb6316d5609ccb2188a7bed5b257cb626e0c6ada38ca8f",
-        "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "649921949b945c1b7a43e7fb6577f59283cb4a0b0b5767c386496d3f4a99f4e4",
-        "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "d9d81ab5dc061f64fd1ac832cc16f0947c2bc94ff7d956a626cc2c7bf74b72fd",
+        "src/main/java/hu/taliann/icesmp/commands/HudCommand.java": "44557ce26190ed93f5602b0af7050b492de7a2b6151d01b284c961f127e4d906",
+        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "96981496a1eaea5388ad95248578bf048fdec7ede23433c17b30437c301af9b7",
+        "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "10e4722e70b2f3635100ff1ed2d5cae941da556495233aedeaa2f3cf506986c7",
+        "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "45c1c95d9dfb27b12ea151f5ee669e2d1917a747bc6edb8ba42d507308c2bd05",
         "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java": "45006243160cdf6607ff17d16b32259fbc695db495027fdc5ce650107d78590b",
         "src/main/java/hu/taliann/icesmp/commands/ModerationGuiCommand.java": "17da3d6d99b943ae87c9eca63471d9dca5c2699e0ece3f03ee63d85d375434b4",
         "src/main/java/hu/taliann/icesmp/commands/ModerationRevokeCommand.java": "c2802edcde024ad699f1d45c99744899db8d3e9224c21b5f22f04b3b75fc2274",
@@ -839,69 +900,64 @@
         "src/main/java/hu/taliann/icesmp/commands/OfflineTeleportCommand.java": "ad43efd6a674da8dc6917193303de63d1e2fd1d1590e96c4da9f0e5c69a4b436",
         "src/main/java/hu/taliann/icesmp/commands/ParkourCommand.java": "85cfb87243aefbf106acf5626b214ffddedd6209cddae7a6e3c92fea38bc8116",
         "src/main/java/hu/taliann/icesmp/commands/PrivateMessageCommand.java": "6d0564ad08ad34a20b90b79553669010891ab769b401b41698b3f8d89e91e318",
-        "src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java": "4ae9f4aba9af5735ff5dcd0c31ad92314823e63f503fb56a420ab197c1ced185",
+        "src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java": "af58d0ff7a010d87e670c7aa2f225f23ebf526e94493d91758f6aed5775078b2",
+        "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java": "209f9bca2414ab63d45d22b75ecca95a683bf6a4964a41595ad6eecd5fdb4ef5",
         "src/main/java/hu/taliann/icesmp/commands/PunishmentHistoryCommand.java": "07f392c08ab2f06060de020443bf00b351b25432fd1925677f94d110cc72c8ef",
-        "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java": "f9db933e39f9bfd775da55a4c423c252e88ee6d17fc5c98d190d9b852e3a272d",
+        "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java": "0f7afb960991568d996e0f9cba872bf023132f1af7a5e993acb5cea4d0a9e5a0",
         "src/main/java/hu/taliann/icesmp/commands/RelicCommand.java": "c5269dc3603518e1c779c3a22f9f7ce3ae15682a0a847b3fbdf1dd6fcb6c7a75",
         "src/main/java/hu/taliann/icesmp/commands/ReportsCommand.java": "7e1fb6c3ee6b49c1d7c201e8d65acfa6a1fd4cd22b4492fcc1de231d87eb8654",
         "src/main/java/hu/taliann/icesmp/commands/SinnerCommand.java": "f4f5a29d34417571d9c3dd598e23472a15564bab0604264752c9045e08d73d12",
         "src/main/java/hu/taliann/icesmp/commands/SitCommand.java": "92407ad76ff4a136c42d2f77b197128b0e1a4b3bf226dff56ab445c2d2999ea0",
         "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
-        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "23d67d0a55f591c0ab0ec26cb8db22b0c336ba351570550f9b84f8439b09c5b7",
+        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "0ff0e34cada8ddfabb99511274867d477d876d1514c945348031f453f1e5c3fb",
+        "src/main/java/hu/taliann/icesmp/commands/Subcommand.java": "c1fc22f511ee4deccc3c34931913c43fdabd3bc892fd295575e3c5ff08eab477",
         "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
         "src/main/java/hu/taliann/icesmp/commands/UnmuteCommand.java": "1171d989307c932d8ebbd9b70288830ad08e47b107e6311e2c84b41bfa9db03f",
         "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
-        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "0c663404400cffb96acee546b4d77a628d73cb199f579d50167963468f5f4652",
+        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "88badb08c755f306fc6cc119328a63a077d217cdb2e075a3fab73bfe0404a1c3",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "cf69ff566324cf6ac36d603a1a854ac4f101f634b9ef4ac563fd5a0187dc82b5",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "62b657a236e24ebc16dc382dc0b444b8122c1f91563bdce4bc38697c45297267",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "10ce3ec80cf325e5db706c34e14770d700af57b4484feb6179d42e3a48d5836e",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "aa0f51456b68a5f5b8eb9099a021cc7804b05cff4af4ec51cc6da8973a8486ec",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "83ede70fd8fe8063c4303d2b59f7ac6d678c6a635f43ab4c1dfb83ddbb439bef",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "edd9d9b595997b8358151c23a1149a135f54adc98b5ebcbfd71de27fa07b13e1",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "3ed7c8c2d2b72018864e8c639a4c4201e4fd06c6f7c75fa512f9f669e33a0284",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "4181a6c5206d83e640a6a70d60abc95e33675a1c051092f34c45263e26c53797",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "6b20276cedbdbce0b8fad1a27f3192305983f27becfbbdfc11ad9339aee4c07f",
-        "src/main/java/hu/taliann/icesmp/core/Permissions.java": "46cc7d1872ae654bc7be649c3ae72ffa4c13bfc6e9e29009472085696c12cc34",
-        "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "5bf97767790539bd32d21f0416db1e3e94dc19906f1c9db1bf9e3a524eeda7ca",
-        "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "66d2b668bddb3dc241c3c2038b069a7ce07e06c42574c23b08cd931a7c0d4d71",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "f3e802aab93a512bf5c3ba88515309c9cf47da690f35e71ee145d6177775a27b",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "9b99a33277259fe17993c34a6e6c4dd282a2e763408ee77729b911a90e6101bd",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "9732b688bab15c20f606cbcbfb6d8449cb4e7b27dc7e286a0e98edf605e37d84",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "8cfa400d73ec1704669f598166261d3df396cb7f2f27061ea1130b6980606d69",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "95e85d08d61d281a8d805af5bfc83c6b36f7149095596dc4887f619593206b56",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "957c8a7a4afa78310ffb05ed933bf883fc2bbc3bba085c572570d5a9b9ef7b5a",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "f4465642a6bf4d482b99f48cb9a9bbe1a91f7bb15a53acdad2a4f0124c11a1bb",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "e17589111bea9aed31bfd8ea490059a5537d023fa8d39cf67ec7375efbb87fdd",
+        "src/main/java/hu/taliann/icesmp/core/Permissions.java": "744df8e6380105f102d4b3d88375db3c272d7bde41ba7412b35cf040818ae5d8",
+        "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "20d8601d82e5de18029cc3e98d1f4a8ce8f350a702cc3563646d0acc89198a63",
+        "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "791c36f5c07a92045bcfa6e745dcadd5dacaa64f92258ae898504a157b358b73",
+        "src/main/java/hu/taliann/icesmp/itemization/PaperSourceIntegrityRuntimeProbe.java": "e1aace526cb8e09181248e579e39ff68cd89172c432fec33a3785c96183d16b7",
         "src/main/java/hu/taliann/icesmp/listeners/ClaimProtectionListener.java": "e802410856fdd9261c4c48b7cc71174911c930317dafe6c11d996be65b108914",
-        "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java": "16ce6ea20cf1072e6b3b933c3bac5c907616b91731c55166590a194b5fa731cc",
-        "src/main/java/hu/taliann/icesmp/listeners/DungeonGateListener.java": "1d97e3e0d5852fe84078e4c703d71da8d4428d2a60bd88db1af9d2140b80f807",
-        "src/main/java/hu/taliann/icesmp/listeners/InvseeGUIListener.java": "659ae2e96dba1d2061123b08519b4d64d56332ccacbb32a41ce37bd1be136793",
-        "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java": "f949151ccda9d4d2840e01ed5ea55328b5e0438d90c5a835bdb315ed5b84c0b1",
-        "src/main/java/hu/taliann/icesmp/listeners/PortalGuardListener.java": "beee5ac270e5717047c081f800053788115c47384e779ef5a2b9ba072e04b66c",
-        "src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java": "dd251a5ea4759678588efbe5b8fed27582318b8babbde9d08b4f06ee731d522a",
+        "src/main/java/hu/taliann/icesmp/listeners/ConfigMenuGUIListener.java": "1c9a0fe769f841ec0db6f7fda3a832cd533275c0b79e4c1a5c92e1faa0f24f2f",
+        "src/main/java/hu/taliann/icesmp/listeners/DungeonGateListener.java": "089a4cd1782267d8746bd423b90d9921c010ced3e979fe991d4ab67ca8115445",
+        "src/main/java/hu/taliann/icesmp/listeners/EventSpawnDebugListener.java": "900d3a1069f395465fa819c024a757b49a1e5e30f7095050b93721ce4c5215f4",
+        "src/main/java/hu/taliann/icesmp/listeners/InvseeGUIListener.java": "66c73b2a1c1acfb96737480d29243ed1ace9357041e7123c62e6acbf002f91a7",
+        "src/main/java/hu/taliann/icesmp/listeners/ModerationGUIListener.java": "056c0b1396d6d6c7e71da5f7fd3a95451c7c7f49ecd2e33a101985b9a843975a",
+        "src/main/java/hu/taliann/icesmp/listeners/PortalGuardListener.java": "19e6361034b9ba53f99c8505b21446c0f85fd8704f1790f4b6625ed6972aa90c",
+        "src/main/java/hu/taliann/icesmp/listeners/SelectionWandListener.java": "3b3c2cd2822ef10d7d84911211304078c807542792380a0e081fdcf846921d8f",
         "src/main/java/hu/taliann/icesmp/listeners/SitListener.java": "92f3b16a0ed43908af35eba95e0ffb6874b2733ad7b600d88606fb548005e084",
         "src/main/java/hu/taliann/icesmp/listeners/TheftListener.java": "4aac7d522e98a07860d8a5a7a5cebc19cb6712e9230f0e4389c7320b780d9988",
-        "src/main/java/hu/taliann/icesmp/managers/CrateManager.java": "c3f19b7fc68907356356b056730763a7f36c5250e3cf812be2d010e47d7b38f1",
-        "src/main/java/hu/taliann/icesmp/managers/InvseeManager.java": "998010b19c9a275e9e70c3ccbea5c475a752e1b2eb0622645cf9430284a3ceaf",
-        "src/main/java/hu/taliann/icesmp/managers/ReportManager.java": "bebe884c2576dad0b571f9edc5e76dfc396a6c48f872ef26303c1d7add2bae66",
-        "src/main/java/hu/taliann/icesmp/managers/TablistManager.java": "aff3397530929721dd22896761f49352d9f44bd390f853fbca5f8d397e692a82",
+        "src/main/java/hu/taliann/icesmp/managers/CrateManager.java": "dca28d417e4dca1a9bcfdcc6ae5a9b3ff81d186c57f18e42b3a0512c439cd3f5",
+        "src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java": "844d061c247c56ed90db0d4517fcf2bbded9925715f5aa0071c3965058dfef35",
+        "src/main/java/hu/taliann/icesmp/managers/InvseeManager.java": "e1b0bb1f6d24889817d965bc37aad0f58eaad38af6a0d0c3ed30fbf59caaea79",
+        "src/main/java/hu/taliann/icesmp/managers/ReportManager.java": "5cff2c5ef92dd507abc6db0244c62d6cd53eee2b1ad6ab047f747f22d7017f18",
+        "src/main/java/hu/taliann/icesmp/managers/TablistManager.java": "680d071be9099bfe3ff7dda1a275ff2ce90bf8d10e47aff5f5c5537fc070800f",
         "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java": "813a8aceccefb65d2535abda9252c537f0992a8c00a080b8f3c8115ed7058589",
-        "src/main/java/hu/taliann/icesmp/managers/VanishManager.java": "ea2f806215f634e6620ddf22ea5e9c7648b5a80b217ea1539cd5c88e05e4a394",
-        "src/main/resources/config/crates.yml": "d2bf5708cabb3b9bf447f1988d77f0c9a753bfc4574d37f4f01ee7ad6edff0ea"
+        "src/main/java/hu/taliann/icesmp/managers/VanishManager.java": "01cf63a608d5ac2cb165b4707bd42d2a67883a1e1d8a22856b0dbe9d1db427d7",
+        "src/main/java/hu/taliann/icesmp/moderation/InvseeWriteCoordinator.java": "c4348c7d7f500d62a842f8b59d01fd0bc1940c078783ed684caa284ad415aca4"
       },
       "version": 1,
       "description": "Exact, fail-closed permission contract; registration, use-site, constructor-flow and crate-config source drift requires reconciliation.",
       "expected_counts": {
-        "total": 45,
-        "static_registered": 44,
-        "config_dynamic": 1
-      }
-    },
-    "permission.icesmp.crate.ritka": {
-      "kind": "permission",
-      "node": "icesmp.crate.ritka",
-      "docs": [
-        "docs/ADMIN_GUIDE.md"
-      ],
-      "registration": "CONFIG_DYNAMIC",
-      "legacy_alias": false,
-      "children": [],
-      "default": "FALSE"
+        "total": 47,
+        "static_registered": 47,
+        "config_dynamic": 0
+      },
+      "source_snapshot_sha256": "c47d64adb1fdbdf0c7851f3d53035d49ca7c4c215a70063c1ec3e62ff19ca38d"
     },
     "permission.icesmp.admin.relic": {
       "kind": "permission",
@@ -1091,6 +1147,39 @@
       "legacy_alias": false,
       "children": [],
       "default": "OP"
+    },
+    "permission.icesmp.admin.client": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "kind": "permission",
+      "node": "icesmp.admin.client",
+      "default": "OP",
+      "registration": "STATIC",
+      "legacy_alias": false,
+      "children": []
+    },
+    "permission.icesmp.admin.hud-editor": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "kind": "permission",
+      "node": "icesmp.admin.hud-editor",
+      "default": "OP",
+      "registration": "STATIC",
+      "legacy_alias": false,
+      "children": []
+    },
+    "permission.icesmp.admin.prologue": {
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "kind": "permission",
+      "node": "icesmp.admin.prologue",
+      "default": "OP",
+      "registration": "STATIC",
+      "legacy_alias": false,
+      "children": []
     }
   },
   "explicit-ignores": {
@@ -1160,12 +1249,6 @@
     },
     "component.hu.taliann.icesmp.listeners.SitListener": {
       "feature": "feature.world.sit_only",
-      "docs": [
-        "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.gui.CrateSpinHolder": {
-      "feature": "feature.economy.crates",
       "docs": [
         "docs/FEATURES.md"
       ]
@@ -2206,12 +2289,6 @@
         "docs/FEATURES.md"
       ]
     },
-    "component.hu.taliann.icesmp.listeners.CrateSpinGUIListener": {
-      "feature": "feature.economy.crates",
-      "docs": [
-        "docs/FEATURES.md"
-      ]
-    },
     "component.hu.taliann.icesmp.factions.FactionFoodPolicy": {
       "feature": "feature.factions.membership_relations",
       "docs": [
@@ -2488,12 +2565,6 @@
     },
     "component.hu.taliann.icesmp.spells.WhirlwindSpell": {
       "feature": "feature.progression.spells",
-      "docs": [
-        "docs/FEATURES.md"
-      ]
-    },
-    "component.hu.taliann.icesmp.gui.CrateSpinGUI": {
-      "feature": "feature.economy.crates",
       "docs": [
         "docs/FEATURES.md"
       ]
@@ -5407,12 +5478,6 @@
         "docs/ARCHITECTURE.md"
       ]
     },
-    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStore": {
-      "feature": "feature.platform.player_profile",
-      "docs": [
-        "docs/ARCHITECTURE.md"
-      ]
-    },
     "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionStore": {
       "feature": "feature.platform.player_profile",
       "docs": [
@@ -5603,6 +5668,1674 @@
       "feature": "feature.progression.relics_souls",
       "docs": [
         "docs/FEATURES.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.archer.ArcherCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.archer.ArcherGameplayService": {
+      "feature": "feature.archer-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.archer.ArcherShotLedger": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.assassin.AssassinCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.assassin.AssassinGameplayService": {
+      "feature": "feature.assassin-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassGameplaySignal": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.ClassRelicResonanceContext": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classrelic.PossessionSnapshot": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.GameplayV2ClassPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.application.TargetRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassHudMechanics": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassHudMetric": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassHudSlot": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassHudState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.classspec.integration.ClassHudStateAdapter": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.ClientCapability": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.ClientHandshake": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.ClientRateLimiter": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.ClientSession": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.ClientSessionRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.IceSmpClientBridge": {
+      "feature": "feature.ice-smp-client",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientFactionProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientHudProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientPartyProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientProfessionProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientProfileProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientQuestProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientRecipeProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientRelicProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.projection.ClientTalentProjector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.AbilityKitPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ActionResultPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.BossStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.BrowseRecipesPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.CastSlotPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ClientHello": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ClientMessageCodec": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ClientProtocol": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ClientProtocolException": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.FactionStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.FxEventPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.HudStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.MessageEnvelope": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.PartyStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ProfessionActionPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ProfessionStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ProfileStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ProtocolReject": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.QuestStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.QuestTrackPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.RecipePagePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.RelicAttachmentPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.RelicStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.ServerHello": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.SpellActionPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.SpellbookStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.TalentActionPayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.TalentStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.client.protocol.TerritoryStatePayload": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.commands.PrologueCommand": {
+      "feature": "feature.prologue",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.commands.faction.FactionStatusSubcommand": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.deathknight.DeathKnightCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.deathknight.DeathKnightGameplayService": {
+      "feature": "feature.death-knight-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.demonhunter.DemonHunterCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.demonhunter.DemonHunterGameplayService": {
+      "feature": "feature.demon-hunter-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.druid.DruidCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.druid.DruidGameplayService": {
+      "feature": "feature.druid-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.evoker.EvokerCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.evoker.EvokerGameplayService": {
+      "feature": "feature.evoker-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.factions.WhisperSightline": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ClassGameplayConfigMenuGUI": {
+      "feature": "feature.class-gameplay-config-menu",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ConfigStagedBatchValidator": {
+      "feature": "feature.config-staged-batch-validator",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ItemForgeGUI": {
+      "feature": "feature.item-forge",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.gui.ItemForgeHolder": {
+      "feature": "feature.item-forge",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.ClassXpProgress": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.HudComponent": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.HudComponentLayout": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.HudEditorAccessPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.HudEditorStateMachine": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.HudLayoutPreset": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.HudLayoutSnapshot": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.HudPreviewCatalog": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.HudPreviewSelection": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.IceSmpHudBackend": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.IceSmpHudModel": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.IceSmpHudRenderer": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.PartyHudRenderer": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.PartyHudState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.PlayerHudState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.SurvivalHudRenderer": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.SurvivalHudState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.TargetFrameMetadataPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.TargetFrameTracker": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.TargetHudRenderer": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.hud.TargetHudState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ArmorFamily": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ArmorFamilyProfile": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.AtomicCursorRehome": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.BuildAwareLootService": {
+      "feature": "feature.build-aware-loot",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.CanonicalPhysicalState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.EquipmentBudgetModel": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.EquipmentCatalogValidator": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.EquipmentProficiencyPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.EquipmentProficiencyService": {
+      "feature": "feature.equipment-proficiency",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.EquipmentRehomeTransaction": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemHistoryEvent": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemIdentityService": {
+      "feature": "feature.item-identity",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemInstance": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemInstanceCodec": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemMutationCoordinator": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemMutationFaultMatrix": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemMutationRecoveryPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemMutationService": {
+      "feature": "feature.item-mutation",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemRarity": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemSalvageService": {
+      "feature": "feature.item-salvage",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemSetDefinition": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemStatCatalog": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemStatScaling": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemTemplate": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemTemplateCatalogIndex": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemTemplateRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.ItemTransformationPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.LootDiversityState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.PaperSourceIntegrityRuntimeProbe": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.RuneMutationPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.itemization.SignatureEffectRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.items.RarityPresentationService": {
+      "feature": "feature.rarity-presentation",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.items.WearablePresentation": {
+      "feature": "feature.wearable-presentation",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.listeners.EquipmentProficiencyListener": {
+      "feature": "feature.equipment-proficiency",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.listeners.RareGatheringListener": {
+      "feature": "feature.rare-gathering",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.listeners.VanillaCraftingBoundaryListener": {
+      "feature": "feature.vanilla-crafting-boundary",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.managers.ClientFxRoute": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.managers.DonationTransferLifecycle": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.managers.QuestPhysicalRewardDeliveryService": {
+      "feature": "feature.quest-physical-reward-delivery",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.monk.MonkCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.monk.MonkGameplayService": {
+      "feature": "feature.monk-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.paladin.PaladinCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.paladin.PaladinGameplayService": {
+      "feature": "feature.paladin-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.DeathEscrowDeliveryPlan": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.EconomyReceiptLedger": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileLootDiversityStore": {
+      "feature": "feature.player-profile-loot-diversity",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.PlayerProfileSeasonParticipationStore": {
+      "feature": "feature.player-profile-season-participation",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.playerprofile.application.QuestRewardDeliveryProtocol": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.priest.PriestCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.priest.PriestGameplayService": {
+      "feature": "feature.priest-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.professions.BlueprintRecoveryPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.professions.ProfessionCraftQualityPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.professions.ProfessionCraftTransaction": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.professions.ProfessionEconomyTelemetry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.professions.ProfessionEffectiveCraftPlan": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.professions.ProfessionMaterialRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.professions.ProfessionSpecializationEconomyPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.professions.ProfessionsPaperRuntimeProbe": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.progression.BlockRewardOriginTracker": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.progression.ItemAcquisitionPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.BreachSeverity": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueCeasefireListener": {
+      "feature": "feature.prologue-ceasefire",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueContentPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueEncounterEngine": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueFinaleManager": {
+      "feature": "feature.prologue-finale",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueFinalePhase": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueFinaleRunState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueFinaleSafety": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueFinaleSettlement": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueHudController": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueManager": {
+      "feature": "feature.prologue",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueParticipantTracker": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.ProloguePauseClock": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueProgression": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueRewardService": {
+      "feature": "feature.prologue-reward",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueRuntime": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueRuntimeConfigOverlay": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueScaling": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueSeasonTransition": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueStage": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueTimelineController": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.prologue.PrologueWorldAccess": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.AuthoredCreatureSpawnService": {
+      "feature": "feature.authored-creature-spawn",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.AuthoredPveContentValidator": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.CombatPowerEstimator": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.CombatTelemetry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.ContextualWeightedSelector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.ContributionLedger": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.CreatureProfileService": {
+      "feature": "feature.creature-profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.CreatureSpeciesPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.CreatureSpeciesRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.DaylightProtectionPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.EliteAffix": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.EncounterRewardDeliveryService": {
+      "feature": "feature.encounter-reward-delivery",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.EncounterRewardRecoveryPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.EncounterScalingPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.EquippedCombatPowerModel": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.EquippedCombatPowerService": {
+      "feature": "feature.equipped-combat-power",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobAbilityDefinition": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobAbilityRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobAbilityRuntime": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobArchetype": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobBehaviorProfile": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobNaturalContext": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobProgressionPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobRank": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobRankLootPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobTechniqueAction": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobTechniqueCondition": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobTemplate": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.pve.MobTemplateRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.OnboardingWelcomeCopy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestCategory": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestChoiceRegistry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestCurrencyResolver": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestGraphValidator": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestItemContentIntegrityPaperRuntimeProbe": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestMarkerPalette": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestSourceContext": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestSourcePolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.quest.QuestVisibility": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.relics.RelicTransferExpectation": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.relics.RelicWorldStateSnapshot": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.relics.RelicWorldStateStore": {
+      "feature": "feature.relic-world-state",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.security.HiddenDevAuthority": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.shaman.ShamanCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.shaman.ShamanGameplayService": {
+      "feature": "feature.shaman-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.spells.CastModifiers": {
+      "feature": "feature.cast-modifiers",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.spells.CastOutcome": {
+      "feature": "feature.cast-outcome",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.spells.DurableCompanionCallSpell": {
+      "feature": "feature.durable-companion-call",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.spells.SpellExecutionContext": {
+      "feature": "feature.spell-execution-context",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.storage.ItemMutationJournal": {
+      "feature": "feature.item-mutation-journal",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.ArchaeologyTooltipBridge": {
+      "feature": "feature.archaeology-tooltip",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.HiddenDiscipline": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TooltipPacketBridge_1_21_11": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TossableObjectRuntime": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashAmbientManager": {
+      "feature": "feature.trash-ambient",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashAnomalyBehavior": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashAnomalyPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashAnomalyRuntime": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashAnomalyStateStore": {
+      "feature": "feature.trash-anomaly-state",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashArchaeologyFactEngine": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashArchaeologyListener": {
+      "feature": "feature.trash-archaeology",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashArchaeologyProfileStore": {
+      "feature": "feature.trash-archaeology-profile",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashArchaeologyService": {
+      "feature": "feature.trash-archaeology",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashCatalog": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashContext": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashContextResolver": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashDefinition": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashDevCommand": {
+      "feature": "feature.trash-dev",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashFishingListener": {
+      "feature": "feature.trash-fishing",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashHistoryEvent": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashHistoryJournal": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashHistoryListener": {
+      "feature": "feature.trash-history",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashHistoryService": {
+      "feature": "feature.trash-history",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashHistoryStore": {
+      "feature": "feature.trash-history",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashItemFactory": {
+      "feature": "feature.trash-item",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashKind": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashLifecyclePhase": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashLootSelector": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashLootService": {
+      "feature": "feature.trash-loot",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashLootSource": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashLootTuning": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashMobDropListener": {
+      "feature": "feature.trash-mob-drop",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashProductionRuntimeProbe": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashRecyclePool": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashRelicBehavior": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashRelicPolicy": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashRelicRuntime": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashRuntimeTelemetry": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashSourceBias": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashSpatialFractureStore": {
+      "feature": "feature.trash-spatial-fracture",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.trash.TrashVendorService": {
+      "feature": "feature.trash-vendor",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.utils.PlatformCapabilities": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.utils.SpellHealingUtil": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.warlock.WarlockCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.warlock.WarlockGameplayService": {
+      "feature": "feature.warlock-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.warrior.WarriorCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.warrior.WarriorGameplayService": {
+      "feature": "feature.warrior-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.wizard.WizardCombatState": {
+      "feature": "",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    "component.hu.taliann.icesmp.wizard.WizardGameplayService": {
+      "feature": "feature.wizard-gameplay",
+      "docs": [
+        "docs/ARCHITECTURE.md"
       ]
     }
   },
@@ -6188,6 +7921,525 @@
       "docs": [
         "docs/ARCHITECTURE.md"
       ]
+    },
+    "feature.archer-gameplay": {
+      "name": "archer-gameplay",
+      "description": "A archer kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A archer kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.assassin-gameplay": {
+      "name": "assassin-gameplay",
+      "description": "A assassin kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A assassin kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.authored-creature-spawn": {
+      "name": "authored-creature-spawn",
+      "description": "Technikai felelősség: authored creature spawn.",
+      "technical_description": "Technikai felelősség: authored creature spawn.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.build-aware-loot": {
+      "name": "build-aware-loot",
+      "description": "Technikai felelősség: build aware loot.",
+      "technical_description": "Technikai felelősség: build aware loot.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.class-gameplay-config-menu": {
+      "name": "class-gameplay-config-menu",
+      "description": "Technikai felelősség: class gameplay config menu.",
+      "technical_description": "Technikai felelősség: class gameplay config menu.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.creature-profile": {
+      "name": "creature-profile",
+      "description": "Technikai felelősség: creature profile.",
+      "technical_description": "Technikai felelősség: creature profile.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.death-knight-gameplay": {
+      "name": "death-knight-gameplay",
+      "description": "A death-knight kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A death-knight kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.demon-hunter-gameplay": {
+      "name": "demon-hunter-gameplay",
+      "description": "A demon-hunter kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A demon-hunter kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.druid-gameplay": {
+      "name": "druid-gameplay",
+      "description": "A druid kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A druid kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.durable-companion-call": {
+      "name": "durable-companion-call",
+      "description": "Technikai felelősség: durable companion call.",
+      "technical_description": "Technikai felelősség: durable companion call.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.encounter-reward-delivery": {
+      "name": "encounter-reward-delivery",
+      "description": "Technikai felelősség: encounter reward delivery.",
+      "technical_description": "Technikai felelősség: encounter reward delivery.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.equipment-proficiency": {
+      "name": "equipment-proficiency",
+      "description": "Technikai felelősség: equipment proficiency.",
+      "technical_description": "Technikai felelősség: equipment proficiency.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.equipped-combat-power": {
+      "name": "equipped-combat-power",
+      "description": "Technikai felelősség: equipped combat power.",
+      "technical_description": "Technikai felelősség: equipped combat power.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.evoker-gameplay": {
+      "name": "evoker-gameplay",
+      "description": "A evoker kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A evoker kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.item-forge": {
+      "name": "item-forge",
+      "description": "Technikai felelősség: item forge.",
+      "technical_description": "Technikai felelősség: item forge.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.item-identity": {
+      "name": "item-identity",
+      "description": "Technikai felelősség: item identity.",
+      "technical_description": "Technikai felelősség: item identity.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.item-mutation": {
+      "name": "item-mutation",
+      "description": "Technikai felelősség: item mutation.",
+      "technical_description": "Technikai felelősség: item mutation.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.item-salvage": {
+      "name": "item-salvage",
+      "description": "Technikai felelősség: item salvage.",
+      "technical_description": "Technikai felelősség: item salvage.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.monk-gameplay": {
+      "name": "monk-gameplay",
+      "description": "A monk kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A monk kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.paladin-gameplay": {
+      "name": "paladin-gameplay",
+      "description": "A paladin kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A paladin kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.priest-gameplay": {
+      "name": "priest-gameplay",
+      "description": "A priest kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A priest kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.prologue": {
+      "name": "prologue",
+      "description": "Technikai felelősség: prologue.",
+      "technical_description": "Technikai felelősség: prologue.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "ADMIN",
+        "PLAYER",
+        "TESTER"
+      ]
+    },
+    "feature.prologue-ceasefire": {
+      "name": "prologue-ceasefire",
+      "description": "Technikai felelősség: prologue ceasefire.",
+      "technical_description": "Technikai felelősség: prologue ceasefire.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.prologue-finale": {
+      "name": "prologue-finale",
+      "description": "Technikai felelősség: prologue finale.",
+      "technical_description": "Technikai felelősség: prologue finale.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.prologue-reward": {
+      "name": "prologue-reward",
+      "description": "Technikai felelősség: prologue reward.",
+      "technical_description": "Technikai felelősség: prologue reward.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.quest-physical-reward-delivery": {
+      "name": "quest-physical-reward-delivery",
+      "description": "Technikai felelősség: quest physical reward delivery.",
+      "technical_description": "Technikai felelősség: quest physical reward delivery.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.rare-gathering": {
+      "name": "rare-gathering",
+      "description": "Technikai felelősség: rare gathering.",
+      "technical_description": "Technikai felelősség: rare gathering.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.rarity-presentation": {
+      "name": "rarity-presentation",
+      "description": "Technikai felelősség: rarity presentation.",
+      "technical_description": "Technikai felelősség: rarity presentation.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.shaman-gameplay": {
+      "name": "shaman-gameplay",
+      "description": "A shaman kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A shaman kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.trash-ambient": {
+      "name": "trash-ambient",
+      "description": "Trash tartalom: ambient.",
+      "technical_description": "Trash tartalom: ambient.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.trash-archaeology": {
+      "name": "trash-archaeology",
+      "description": "Trash tartalom: archaeology.",
+      "technical_description": "Trash tartalom: archaeology.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.trash-dev": {
+      "name": "trash-dev",
+      "description": "Trash tartalom: dev.",
+      "technical_description": "Trash tartalom: dev.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.trash-fishing": {
+      "name": "trash-fishing",
+      "description": "Trash tartalom: fishing.",
+      "technical_description": "Trash tartalom: fishing.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.trash-history": {
+      "name": "trash-history",
+      "description": "Trash tartalom: history.",
+      "technical_description": "Trash tartalom: history.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "INTERNAL",
+        "PLAYER"
+      ]
+    },
+    "feature.trash-item": {
+      "name": "trash-item",
+      "description": "Trash tartalom: item.",
+      "technical_description": "Trash tartalom: item.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.trash-loot": {
+      "name": "trash-loot",
+      "description": "Trash tartalom: loot.",
+      "technical_description": "Trash tartalom: loot.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.trash-mob-drop": {
+      "name": "trash-mob-drop",
+      "description": "Trash tartalom: mob drop.",
+      "technical_description": "Trash tartalom: mob drop.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.trash-vendor": {
+      "name": "trash-vendor",
+      "description": "Trash tartalom: vendor.",
+      "technical_description": "Trash tartalom: vendor.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.vanilla-crafting-boundary": {
+      "name": "vanilla-crafting-boundary",
+      "description": "Technikai felelősség: vanilla crafting boundary.",
+      "technical_description": "Technikai felelősség: vanilla crafting boundary.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.warlock-gameplay": {
+      "name": "warlock-gameplay",
+      "description": "A warlock kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A warlock kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.warrior-gameplay": {
+      "name": "warrior-gameplay",
+      "description": "A warrior kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A warrior kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.wearable-presentation": {
+      "name": "wearable-presentation",
+      "description": "Technikai felelősség: wearable presentation.",
+      "technical_description": "Technikai felelősség: wearable presentation.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
+    },
+    "feature.wizard-gameplay": {
+      "name": "wizard-gameplay",
+      "description": "A wizard kaszt eseményei és saját játékszabályai.",
+      "technical_description": "A wizard kaszt eseményei és saját játékszabályai.",
+      "docs": [
+        "docs/FEATURES.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "audience": [
+        "PLAYER"
+      ]
     }
   },
   "documentation-policy": {
@@ -6421,7 +8673,7 @@
         "arfolyamtabla",
         "ratesboard"
       ],
-      "registration_line": 1996,
+      "registration_line": 1998,
       "implementation": "ExchangeBoardCommand"
     },
     "command.punishments": {
@@ -6433,7 +8685,7 @@
       "name": "punishments",
       "description": "Aktív büntetések (admin)",
       "aliases": [],
-      "registration_line": 1901,
+      "registration_line": 1903,
       "implementation": "ActivePunishmentsCommand"
     },
     "route.market.sell-r-valuta-57dd501253": {
@@ -6464,7 +8716,7 @@
       "name": "sinner",
       "description": "Bűnös állapot kezelése (admin)",
       "aliases": [],
-      "registration_line": 1937,
+      "registration_line": 1939,
       "implementation": "SinnerCommand"
     },
     "route.bank.withdraw-red-blue-neutral-dark-sszeg-837b26fa49": {
@@ -6568,7 +8820,7 @@
         "eco",
         "money"
       ],
-      "registration_line": 1927,
+      "registration_line": 1929,
       "implementation": "CurrencyCommand"
     },
     "route.parkour.setstart-id-n-v-873b963232": {
@@ -6855,7 +9107,7 @@
         "lelek",
         "soul"
       ],
-      "registration_line": 1993,
+      "registration_line": 1995,
       "implementation": "SoulCommand"
     },
     "command.offlinetp": {
@@ -6867,7 +9119,7 @@
       "name": "offlinetp",
       "description": "Teleport az utolsó kijelentkezési helyre",
       "aliases": [],
-      "registration_line": 1912,
+      "registration_line": 1914,
       "implementation": "OfflineTeleportCommand"
     },
     "route.bank.root-5546d57526": {
@@ -6951,7 +9203,7 @@
         "esemeny",
         "event"
       ],
-      "registration_line": 1976,
+      "registration_line": 1978,
       "implementation": "EventsCommand"
     },
     "route.events.spawnpoint-list-79877fb1e0": {
@@ -7264,7 +9516,7 @@
         "emlekek",
         "memory"
       ],
-      "registration_line": 1979,
+      "registration_line": 1981,
       "implementation": "MemoryCommand"
     },
     "route.crate.set-l-da-id-9e3e673970": {
@@ -7464,7 +9716,7 @@
       "aliases": [
         "duel"
       ],
-      "registration_line": 1963,
+      "registration_line": 1965,
       "implementation": "HonorDuelCommand"
     },
     "route-alias.lore.t-ma-e42a542b71.mortengrad-f0de9006": {
@@ -7759,7 +10011,7 @@
         "job",
         "kaszt"
       ],
-      "registration_line": 1932,
+      "registration_line": 1934,
       "implementation": "JobCommand"
     },
     "route.sit.root-be684d6e26": {
@@ -7878,7 +10130,7 @@
       "name": "tell",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 1918,
+      "registration_line": 1920,
       "implementation": "PrivateMessageCommand"
     },
     "route.crate.list-aa44f4dfea": {
@@ -7922,7 +10174,7 @@
         "kuldetes",
         "quests"
       ],
-      "registration_line": 1952,
+      "registration_line": 1954,
       "implementation": "QuestCommand"
     },
     "command.crate": {
@@ -7937,7 +10189,7 @@
         "crates",
         "ladak"
       ],
-      "registration_line": 1871,
+      "registration_line": 1873,
       "implementation": "CrateCommand"
     },
     "route.profession.clear-online-j-t-kos-gathering-crafting-94f838cfa8": {
@@ -8078,7 +10330,7 @@
       "aliases": [
         "ismp"
       ],
-      "registration_line": 1864,
+      "registration_line": 1866,
       "implementation": "IceSMPCommand"
     },
     "route.party.zenet-aa13d37028": {
@@ -8111,7 +10363,7 @@
       "aliases": [
         "weeklygoal"
       ],
-      "registration_line": 1967,
+      "registration_line": 1969,
       "implementation": "ProfessionWeeklyCommand"
     },
     "route.spec.info-2f86e46064": {
@@ -8465,7 +10717,7 @@
       "aliases": [
         "sutt"
       ],
-      "registration_line": 1981,
+      "registration_line": 1983,
       "implementation": "WhisperCommand"
     },
     "route.icesmp.root-3d9c831e41": {
@@ -8509,7 +10761,7 @@
         "relics",
         "relikvia"
       ],
-      "registration_line": 1939,
+      "registration_line": 1941,
       "implementation": "RelicCommand"
     },
     "route.bank.deposit-d3026e7f77": {
@@ -8881,7 +11133,7 @@
         "vault",
         "wallet"
       ],
-      "registration_line": 1928,
+      "registration_line": 1930,
       "implementation": "BankCommand"
     },
     "route.msg.j-t-kos-zenet-59f5bb82b9": {
@@ -8952,7 +11204,7 @@
       "name": "tempban",
       "description": "Ideiglenes kitiltás (admin)",
       "aliases": [],
-      "registration_line": 1892,
+      "registration_line": 1894,
       "implementation": "ModerationActionCommand"
     },
     "route.territory.rename-id-j-n-v-0e55b1e6f3": {
@@ -9037,7 +11289,7 @@
         "fejvadasz",
         "korozes"
       ],
-      "registration_line": 1938,
+      "registration_line": 1940,
       "implementation": "BountyCommand"
     },
     "command.vanish": {
@@ -9051,7 +11303,7 @@
       "aliases": [
         "v"
       ],
-      "registration_line": 1909,
+      "registration_line": 1911,
       "implementation": "VanishCommand"
     },
     "alias.exchangeboard.arfolyamtabla": {
@@ -9094,7 +11346,7 @@
       "aliases": [
         "spy"
       ],
-      "registration_line": 1965,
+      "registration_line": 1967,
       "implementation": "SpyCommand"
     },
     "alias.spellbook.konyv": {
@@ -9280,7 +11532,7 @@
         "companion",
         "tars"
       ],
-      "registration_line": 1942,
+      "registration_line": 1944,
       "implementation": "PetCommand"
     },
     "command.lore": {
@@ -9294,7 +11546,7 @@
       "aliases": [
         "kodex"
       ],
-      "registration_line": 1983,
+      "registration_line": 1985,
       "implementation": "LoreCommand"
     },
     "route.parbaj.kihiv-online-j-t-kos-77340a6a59": {
@@ -9388,7 +11640,7 @@
       "name": "hud",
       "description": "HUD beállítások",
       "aliases": [],
-      "registration_line": 1867,
+      "registration_line": 1869,
       "implementation": "HudCommand"
     },
     "route.events.archeology-59c0c86dd5": {
@@ -9502,7 +11754,7 @@
       "name": "sit",
       "description": "Ülés (leül/feláll)",
       "aliases": [],
-      "registration_line": 1869,
+      "registration_line": 1871,
       "implementation": "SitCommand"
     },
     "route.tanacs.vasarhet-2b790f1d02": {
@@ -9535,7 +11787,7 @@
       "aliases": [
         "terulet"
       ],
-      "registration_line": 1951,
+      "registration_line": 1953,
       "implementation": "TerritoryCommand"
     },
     "alias.parbaj.duel": {
@@ -9567,7 +11819,7 @@
       "name": "unban",
       "description": "Kitiltás feloldása (admin)",
       "aliases": [],
-      "registration_line": 1895,
+      "registration_line": 1897,
       "implementation": "ModerationRevokeCommand"
     },
     "command.adomany": {
@@ -9582,7 +11834,7 @@
         "adomanylada",
         "donate"
       ],
-      "registration_line": 1954,
+      "registration_line": 1956,
       "implementation": "DonationChestCommand"
     },
     "alias.territory.terulet": {
@@ -9627,7 +11879,7 @@
       "name": "invsee",
       "description": "Online inventory/ender live nézet (admin)",
       "aliases": [],
-      "registration_line": 1865,
+      "registration_line": 1867,
       "implementation": "InvseeCommand"
     },
     "route.warn.j-t-kos-ok-73731e594b": {
@@ -9691,7 +11943,7 @@
         "bestiary",
         "lajstrom"
       ],
-      "registration_line": 1958,
+      "registration_line": 1960,
       "implementation": "BestiaryCommand"
     },
     "route-alias.events.spawnpoint-add-world-boss-escort-caravan-cultists-any-id-8274b4ad60.spawnpont-f9cb59a1": {
@@ -9718,7 +11970,7 @@
         "rangsor",
         "top"
       ],
-      "registration_line": 1935,
+      "registration_line": 1937,
       "implementation": "LeaderboardCommand"
     },
     "route.claim.claim-20ce366db5": {
@@ -10044,7 +12296,7 @@
       "aliases": [
         "ferry"
       ],
-      "registration_line": 1977,
+      "registration_line": 1979,
       "implementation": "KompCommand"
     },
     "route-alias.profession.recipes-d99cf16c6c.receptek-326be994": {
@@ -10157,7 +12409,7 @@
         "palya",
         "trial"
       ],
-      "registration_line": 1940,
+      "registration_line": 1942,
       "implementation": "ParkourCommand"
     },
     "route-alias.events.worldboss-b1d9efaf9c.boss-a5e7c002": {
@@ -10353,7 +12605,7 @@
         "prof",
         "szakma"
       ],
-      "registration_line": 1943,
+      "registration_line": 1945,
       "implementation": "ProfessionCommand"
     },
     "route.events.cultists-835d9785cd": {
@@ -10482,7 +12734,7 @@
       "name": "w",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 1921,
+      "registration_line": 1923,
       "implementation": "PrivateMessageCommand"
     },
     "alias.currency.money": {
@@ -10526,7 +12778,7 @@
       "name": "afk",
       "description": "Önkéntes AFK-jelölés",
       "aliases": [],
-      "registration_line": 1870,
+      "registration_line": 1872,
       "implementation": "AfkCommand"
     },
     "command.spec": {
@@ -10541,7 +12793,7 @@
         "specializacio",
         "specialization"
       ],
-      "registration_line": 1947,
+      "registration_line": 1949,
       "implementation": "SpecCommand"
     },
     "route.territory.list-8b41a6ee36": {
@@ -10574,7 +12826,7 @@
       "aliases": [
         "council"
       ],
-      "registration_line": 1978,
+      "registration_line": 1980,
       "implementation": "TanacsCommand"
     },
     "alias.quest.quests": {
@@ -10634,7 +12886,7 @@
       "name": "history",
       "description": "Teljes büntetési előzmény (admin)",
       "aliases": [],
-      "registration_line": 1898,
+      "registration_line": 1900,
       "implementation": "PunishmentHistoryCommand"
     },
     "alias.spellbook.sb": {
@@ -11279,7 +13531,7 @@
       "name": "kick",
       "description": "Játékos kirúgása (admin)",
       "aliases": [],
-      "registration_line": 1880,
+      "registration_line": 1882,
       "implementation": "ModerationActionCommand"
     },
     "route-alias.events.archeology-59c0c86dd5.regeszet-e40487bd": {
@@ -11325,7 +13577,7 @@
         "karakter",
         "status"
       ],
-      "registration_line": 1936,
+      "registration_line": 1938,
       "implementation": "ProfileCommand"
     },
     "route.faction.caravan-send-sszeg-19f36c48e1": {
@@ -11380,7 +13632,7 @@
         "hub",
         "m"
       ],
-      "registration_line": 1933,
+      "registration_line": 1935,
       "implementation": "MenuCommand"
     },
     "command.claim": {
@@ -11394,7 +13646,7 @@
       "aliases": [
         "birtok"
       ],
-      "registration_line": 1969,
+      "registration_line": 1971,
       "implementation": "ClaimCommand"
     },
     "route-alias.profession.recipes-d99cf16c6c.book-92719fe0": {
@@ -11517,7 +13769,7 @@
         "ah",
         "piac"
       ],
-      "registration_line": 1953,
+      "registration_line": 1955,
       "implementation": "MarketCommand"
     },
     "alias.kem.spy": {
@@ -11835,7 +14087,7 @@
       "name": "stats",
       "description": "Statisztika-profil",
       "aliases": [],
-      "registration_line": 1868,
+      "registration_line": 1870,
       "implementation": "StatsCommand"
     },
     "route.szakmacel.root-5b9277c302": {
@@ -11890,7 +14142,7 @@
         "icegive",
         "iitem"
       ],
-      "registration_line": 1987,
+      "registration_line": 1989,
       "implementation": "ItemGiveCommand"
     },
     "route.w.j-t-kos-zenet-f5a5ab9bc2": {
@@ -12039,7 +14291,7 @@
       "name": "warn",
       "description": "Figyelmeztetés (admin)",
       "aliases": [],
-      "registration_line": 1877,
+      "registration_line": 1879,
       "implementation": "ModerationActionCommand"
     },
     "route.faction.join-frakci-3aa58cfbd1": {
@@ -12149,7 +14401,7 @@
       "name": "mute",
       "description": "Némítás (admin)",
       "aliases": [],
-      "registration_line": 1883,
+      "registration_line": 1885,
       "implementation": "ModerationActionCommand"
     },
     "alias.bestiarium.bestiary": {
@@ -12209,7 +14461,7 @@
       "name": "socialspy",
       "description": "Privát üzenetek megfigyelése (admin)",
       "aliases": [],
-      "registration_line": 1906,
+      "registration_line": 1908,
       "implementation": "SocialSpyCommand"
     },
     "route.territory.info-bc573dcb2e": {
@@ -12330,7 +14582,7 @@
         "gild",
         "guild"
       ],
-      "registration_line": 1956,
+      "registration_line": 1958,
       "implementation": "GuildCommand"
     },
     "route.icesmp.inspect-n-v-cf976d4f92": {
@@ -12380,7 +14632,7 @@
       "name": "ban",
       "description": "Kitiltás (admin)",
       "aliases": [],
-      "registration_line": 1889,
+      "registration_line": 1891,
       "implementation": "ModerationActionCommand"
     },
     "route.emlek.talent-c777d563f2": {
@@ -12471,7 +14723,7 @@
         "p",
         "parti"
       ],
-      "registration_line": 1955,
+      "registration_line": 1957,
       "implementation": "PartyCommand"
     },
     "route.faction.raid-c-lfrakci-ter-let-6fc1e21fb6": {
@@ -12542,7 +14794,7 @@
       "aliases": [
         "chronicle"
       ],
-      "registration_line": 1985,
+      "registration_line": 1987,
       "implementation": "KronikaCommand"
     },
     "alias.ceh.gild": {
@@ -12695,7 +14947,7 @@
       "aliases": [
         "r"
       ],
-      "registration_line": 1924,
+      "registration_line": 1926,
       "implementation": "PrivateMessageCommand"
     },
     "command.soulforge": {
@@ -12709,7 +14961,7 @@
       "aliases": [
         "lelekkovacs"
       ],
-      "registration_line": 1960,
+      "registration_line": 1962,
       "implementation": "SoulforgeCommand"
     },
     "alias.report.bejelent": {
@@ -12744,7 +14996,7 @@
       "aliases": [
         "npckotes"
       ],
-      "registration_line": 1997,
+      "registration_line": 1999,
       "implementation": "NpcBindCommand"
     },
     "command.spellbook": {
@@ -12760,7 +15012,7 @@
         "sb",
         "varazskonyv"
       ],
-      "registration_line": 1995,
+      "registration_line": 1997,
       "implementation": "SpellbookCommand"
     },
     "route.quest.admin-addobjective-id-objekt-va-darab-le-r-s-eb03e45589": {
@@ -13090,7 +15342,7 @@
       "name": "unmute",
       "description": "Némítás feloldása (admin)",
       "aliases": [],
-      "registration_line": 1886,
+      "registration_line": 1888,
       "implementation": "ModerationRevokeCommand"
     },
     "route.afk.root-5475cc764f": {
@@ -13193,36 +15445,36 @@
       "line": 1
     },
     "_contract": {
-      "entries_sha256": "8b513b81dcc9f6e0bf68c0d691bdc0304fb0ac3d07c07804f22b166b75db4789",
+      "entries_sha256": "59195093949125ce3824c4dbadbb30c22b988485b0fd235edf559e829baecb73",
       "version": 1,
       "source_sha256": {
         "src/main/java/hu/taliann/icesmp/commands/AchievementsCommand.java": "3e9d09bbe80c269eeb687794ffb7338833dc1b935b77af697abb3f488d772ac6",
         "src/main/java/hu/taliann/icesmp/commands/ActivePunishmentsCommand.java": "12db7aea3b857fb27d4ff2fb684c90c0fdcf5e0b91e82311e3fad0f88af90709",
         "src/main/java/hu/taliann/icesmp/commands/AfkCommand.java": "f92413d86a58f4679d275e7593065d9beb6a377896802ed3ee2111d922041d20",
         "src/main/java/hu/taliann/icesmp/commands/BankCommand.java": "a755dc56bbd4c42c7e5b06f6f2f9fe0c1f69cff77e4992e3bb4c30247c6fc0da",
-        "src/main/java/hu/taliann/icesmp/commands/BestiaryCommand.java": "1514d7c68938fbbd1cbc2d9013095481a6c6e0a80ae908af8b145a104b3d08e5",
+        "src/main/java/hu/taliann/icesmp/commands/BestiaryCommand.java": "1e186a1ed0b040bc948213f9e09dbe1dc8f81a844ab047edec13acb4f6446820",
         "src/main/java/hu/taliann/icesmp/commands/BountyCommand.java": "5f2fbd28b547748d7c226f5a5aade7b6a2d097c7beae947b7a0e337748df67cd",
-        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "315cf2fd2e9c4ffcb0e41efdd4db6b1708616e69e0bd64a5372eb5f924ed96bc",
+        "src/main/java/hu/taliann/icesmp/commands/ClaimCommand.java": "bc59d9bd71a59c85516303c2d5242d4657b4a16f754c0a298da18a1059712874",
         "src/main/java/hu/taliann/icesmp/commands/CrateCommand.java": "d67493fc8bb5776e3fcab22833fe2071eb46357cdf28d399027f1bd576224de4",
         "src/main/java/hu/taliann/icesmp/commands/CurrencyCommand.java": "dc04a7cbd7467f3a073ce553b34eb28e11c351c7914bacbd8bb28e7996e1d325",
-        "src/main/java/hu/taliann/icesmp/commands/DailyCommand.java": "8079b8512aefa1a9ecc7a445a09202ad65fd0eb5d8a2bc806c487a518a8b7754",
-        "src/main/java/hu/taliann/icesmp/commands/DonationChestCommand.java": "29db7627dd58e958fb345038cf420e042e23aee329339a4f340a7de464f64876",
+        "src/main/java/hu/taliann/icesmp/commands/DailyCommand.java": "b41edad5dcf64f3bdb6a48c0279e1fa1ca4f91788cac42dbda42af23a98a5d2c",
+        "src/main/java/hu/taliann/icesmp/commands/DonationChestCommand.java": "58b61587808d8dccbfb0cc3dd194b8b16ebac07ec439e247fe52c8c686c0a60a",
         "src/main/java/hu/taliann/icesmp/commands/EventsCommand.java": "d23fe58811e23449bc425907c973dd418764c164eed219a04945872892dadd2c",
         "src/main/java/hu/taliann/icesmp/commands/ExchangeBoardCommand.java": "430b05791d32139ac4ebc91fff7767d227be29b42cc2f6500edf0a077a87f796",
         "src/main/java/hu/taliann/icesmp/commands/FactionCommand.java": "e00edb8fc08c70c83f7dcc2c037b950ca77c1a48540447b33568367cacd5acf2",
         "src/main/java/hu/taliann/icesmp/commands/GuildCommand.java": "cec57902547b9c0b4c906e6918d418436bc570c5fe49249675b243dea7c79b01",
-        "src/main/java/hu/taliann/icesmp/commands/HonorDuelCommand.java": "f3bb69b2ba1a2a13003e25c17baeac5ee996a5c5b81328331ca016e0f2da2bc2",
-        "src/main/java/hu/taliann/icesmp/commands/HudCommand.java": "a09673a6404f0ee8abc06dcdd85fc6bd1811f54bea02c36fa5411743f677851b",
-        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "70f13452f4e8990cffdb6316d5609ccb2188a7bed5b257cb626e0c6ada38ca8f",
-        "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "649921949b945c1b7a43e7fb6577f59283cb4a0b0b5767c386496d3f4a99f4e4",
-        "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "d9d81ab5dc061f64fd1ac832cc16f0947c2bc94ff7d956a626cc2c7bf74b72fd",
+        "src/main/java/hu/taliann/icesmp/commands/HonorDuelCommand.java": "6119b5c04467d0f3e165cd00ad243a4685c45cfaaeccda8ddcc6c953c7e727ef",
+        "src/main/java/hu/taliann/icesmp/commands/HudCommand.java": "44557ce26190ed93f5602b0af7050b492de7a2b6151d01b284c961f127e4d906",
+        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java": "96981496a1eaea5388ad95248578bf048fdec7ede23433c17b30437c301af9b7",
+        "src/main/java/hu/taliann/icesmp/commands/InvseeCommand.java": "10e4722e70b2f3635100ff1ed2d5cae941da556495233aedeaa2f3cf506986c7",
+        "src/main/java/hu/taliann/icesmp/commands/ItemGiveCommand.java": "45c1c95d9dfb27b12ea151f5ee669e2d1917a747bc6edb8ba42d507308c2bd05",
         "src/main/java/hu/taliann/icesmp/commands/JobCommand.java": "1b1ce45978e722f135d3268dff829c0d32de4993e131713a08f1bdf8d3b9438b",
         "src/main/java/hu/taliann/icesmp/commands/KompCommand.java": "bbf3a354ec2cd1356ee8c3f4b2846e2bce462b2a3c7fc175ab7b273a81177d79",
         "src/main/java/hu/taliann/icesmp/commands/KronikaCommand.java": "7c9931971e56cf309cad88afeae15c84e00c5df9bbe31228f3a30ba106efedb7",
         "src/main/java/hu/taliann/icesmp/commands/LeaderboardCommand.java": "bfa39da306d524473bbc273d1bb7c9aa3aebae2b5597e50031dfa83989037f6f",
         "src/main/java/hu/taliann/icesmp/commands/LoreCommand.java": "4038330338dfe79caa87dbc5898d3778201b576c02997155fdbeb6725353dc0e",
-        "src/main/java/hu/taliann/icesmp/commands/MarketCommand.java": "a52a4e4fb465b92162e9f61fe941bb8ef2488dca45766ce008c7bfe846b7da4e",
-        "src/main/java/hu/taliann/icesmp/commands/MemoryCommand.java": "5d0998ea5dfb4b8c03691ab45cd7de718bfa2ad8bed6ed0a88635ea2cb758187",
+        "src/main/java/hu/taliann/icesmp/commands/MarketCommand.java": "e6df678b90a835cc37646cf859e7aa804a29cb7d77d3b6961ecc85e44982ba6a",
+        "src/main/java/hu/taliann/icesmp/commands/MemoryCommand.java": "d940132f07c5b027f3d56d91f7c77fe8f7c963b869636782725d3106a6a6df9d",
         "src/main/java/hu/taliann/icesmp/commands/MenuCommand.java": "231daef2af93d4d8442c29c51be5cedd8712ebad4ff9e6cd2505e06315fd3e39",
         "src/main/java/hu/taliann/icesmp/commands/ModerationActionCommand.java": "45006243160cdf6607ff17d16b32259fbc695db495027fdc5ce650107d78590b",
         "src/main/java/hu/taliann/icesmp/commands/ModerationGuiCommand.java": "17da3d6d99b943ae87c9eca63471d9dca5c2699e0ece3f03ee63d85d375434b4",
@@ -13231,13 +15483,14 @@
         "src/main/java/hu/taliann/icesmp/commands/OfflineTeleportCommand.java": "ad43efd6a674da8dc6917193303de63d1e2fd1d1590e96c4da9f0e5c69a4b436",
         "src/main/java/hu/taliann/icesmp/commands/ParkourCommand.java": "85cfb87243aefbf106acf5626b214ffddedd6209cddae7a6e3c92fea38bc8116",
         "src/main/java/hu/taliann/icesmp/commands/PartyCommand.java": "808f51d54051f5c37cd6f84ea4da2f2038b1186541e084a5c77980681f65ce95",
-        "src/main/java/hu/taliann/icesmp/commands/PetCommand.java": "97808037ff468002752d756f3658d0af8db0663dc5a6ec6baa5ba286d25bbac2",
+        "src/main/java/hu/taliann/icesmp/commands/PetCommand.java": "ed9de694ea1067aa3d57a15f8bebe528a5c927c37b808c69d4fe8a793a2fce66",
         "src/main/java/hu/taliann/icesmp/commands/PrivateMessageCommand.java": "6d0564ad08ad34a20b90b79553669010891ab769b401b41698b3f8d89e91e318",
-        "src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java": "4ae9f4aba9af5735ff5dcd0c31ad92314823e63f503fb56a420ab197c1ced185",
+        "src/main/java/hu/taliann/icesmp/commands/ProfessionCommand.java": "af58d0ff7a010d87e670c7aa2f225f23ebf526e94493d91758f6aed5775078b2",
         "src/main/java/hu/taliann/icesmp/commands/ProfessionWeeklyCommand.java": "a9d53296da8b5856f2addb7caddc85b2985a318222882ce671711093524185db",
         "src/main/java/hu/taliann/icesmp/commands/ProfileCommand.java": "e8be6f202c3d3b47d96485295ea3d7c1594374505f4a9425e447dfb132dcc584",
+        "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java": "209f9bca2414ab63d45d22b75ecca95a683bf6a4964a41595ad6eecd5fdb4ef5",
         "src/main/java/hu/taliann/icesmp/commands/PunishmentHistoryCommand.java": "07f392c08ab2f06060de020443bf00b351b25432fd1925677f94d110cc72c8ef",
-        "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java": "f9db933e39f9bfd775da55a4c423c252e88ee6d17fc5c98d190d9b852e3a272d",
+        "src/main/java/hu/taliann/icesmp/commands/QuestCommand.java": "0f7afb960991568d996e0f9cba872bf023132f1af7a5e993acb5cea4d0a9e5a0",
         "src/main/java/hu/taliann/icesmp/commands/RelicCommand.java": "c5269dc3603518e1c779c3a22f9f7ce3ae15682a0a847b3fbdf1dd6fcb6c7a75",
         "src/main/java/hu/taliann/icesmp/commands/ReportCommand.java": "e3523a612bf9812281baeb7a5e82689d952eef2f205892aba05bb041b658da6a",
         "src/main/java/hu/taliann/icesmp/commands/ReportsCommand.java": "7e1fb6c3ee6b49c1d7c201e8d65acfa6a1fd4cd22b4492fcc1de231d87eb8654",
@@ -13246,16 +15499,16 @@
         "src/main/java/hu/taliann/icesmp/commands/SocialSpyCommand.java": "82e48053993db31a162b75ce84277975621bc3911731383f17936ad38df4bf07",
         "src/main/java/hu/taliann/icesmp/commands/SoulCommand.java": "1f47e272c7cbfbd1205a6bcbdd9dfc1157bd13a7af9326f4543bbe7b5e7fc83b",
         "src/main/java/hu/taliann/icesmp/commands/SoulforgeCommand.java": "cfb5baa3c3807cb02c8deaf50359a242edd62202cb26a6855d4bb560cc8659ee",
-        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "23d67d0a55f591c0ab0ec26cb8db22b0c336ba351570550f9b84f8439b09c5b7",
-        "src/main/java/hu/taliann/icesmp/commands/SpellCommand.java": "d276d570d9681c90165403257f76fbd0889826d82cb54ca467bbdfd270629302",
+        "src/main/java/hu/taliann/icesmp/commands/SpecCommand.java": "0ff0e34cada8ddfabb99511274867d477d876d1514c945348031f453f1e5c3fb",
+        "src/main/java/hu/taliann/icesmp/commands/SpellCommand.java": "4df2826eb3f27000f22968f05a470431dcfa6f83ec0dedba7a8ff075d86910de",
         "src/main/java/hu/taliann/icesmp/commands/SpellbookCommand.java": "ff19ef2f0d2d7f5853039739232db525788045cf12833b9a0b8b477f46cecba3",
         "src/main/java/hu/taliann/icesmp/commands/SpyCommand.java": "9240cfbcd0388de9bb57430280c073456ec1f76a8b9cbd324fe9bf68f7f7f287",
         "src/main/java/hu/taliann/icesmp/commands/StatsCommand.java": "643a8914fb27ee5f92c4525a1613b49f5b53f5d5c9174f59bc81132aae3b6c9b",
-        "src/main/java/hu/taliann/icesmp/commands/TalentCommand.java": "de964bcbb9257772ad436175075891e6b1589314ac12793fd23b804f38268e62",
+        "src/main/java/hu/taliann/icesmp/commands/TalentCommand.java": "b07184f4b31652744b0f0afb6c0ccad8b6d752ab9dddbd6c9cc285e67303dcde",
         "src/main/java/hu/taliann/icesmp/commands/TanacsCommand.java": "0f991aff492b266cfbfa5b2f2feafebd48a49a4556e2f70e9ebd41ab035f414f",
         "src/main/java/hu/taliann/icesmp/commands/TerritoryCommand.java": "fc33401fab235657fad6029913bd8cc8ccf64a028a18585593ff9eb88ff9f557",
         "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java": "fc227411fcda382dea3ccd9bf29c86658b0791adddc80d30ee90765f3bade3c2",
-        "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java": "0a6c8246ae54c60c2f11900e07142ac2b9f3cf0371553df02bef4c915acc5123",
+        "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java": "71c6dd6fc916e0089b904a1e9298d26a65898679bbcfc36336adc32b5484e3f3",
         "src/main/java/hu/taliann/icesmp/commands/bank/BankBalanceSubcommand.java": "8cc31c261b8e12b9f37cf195a86121e236634b031bfff6b821c03529e7bfb30f",
         "src/main/java/hu/taliann/icesmp/commands/bank/BankDepositSubcommand.java": "f8ae1b4f46b903916dd52383ccffedb87bd181e4653e7a1407ac22c67c7139ae",
         "src/main/java/hu/taliann/icesmp/commands/bank/BankWithdrawSubcommand.java": "634f33ae0e74460e567d8b7d0b5e1101f17b695935f1682df8a839a39e44e218",
@@ -13263,33 +15516,34 @@
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyExchangeSubcommand.java": "bb86a646c28c3c56c7cc14390c525990c966dbfd9dde97f226d6280a30b47dd9",
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyPaySubcommand.java": "d5a3b268dc696153c6e44016b000ffe88d8f725571e2f7c8f0ac7df7e33f02ff",
         "src/main/java/hu/taliann/icesmp/commands/currency/CurrencyRatesSubcommand.java": "d73463de3af41b8b9e76897cf34b0c5077d74e31a501a706564a8914569d2588",
-        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "602b7b56cc9ff1871bfc574edc7199f5aa912b731fe89b546d6742526754b6ff",
+        "src/main/java/hu/taliann/icesmp/commands/currency/CurrencySetSubcommand.java": "88badb08c755f306fc6cc119328a63a077d217cdb2e075a3fab73bfe0404a1c3",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionCaravanSubcommand.java": "7e99ea250dad270fef3c917d0182dbf5a878265ef9dc0cb6f68134a8d374b167",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionDonateSubcommand.java": "5c3ff809af6c5fe55a29eda556fc317d2f53077ee1ac5ee2c82197c2b3732d16",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionJoinSubcommand.java": "dd65e853ccfc302bfa8be4563b1446e48a748759aa4fc914406f970ba6a1e852",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "0c663404400cffb96acee546b4d77a628d73cb199f579d50167963468f5f4652",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionKingSubcommand.java": "cf69ff566324cf6ac36d603a1a854ac4f101f634b9ef4ac563fd5a0187dc82b5",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionLeaveSubcommand.java": "b455626d4feb773ec35b7163fe7e8dc2f95bb18399edbeb5af5513a321fa74dc",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionRaidSubcommand.java": "0dc9d0c1dd046ea90f5ca2b84d17f4b35f8be0ba30813323dba1c1edbfe0f950",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionSetSubcommand.java": "62b657a236e24ebc16dc382dc0b444b8122c1f91563bdce4bc38697c45297267",
+        "src/main/java/hu/taliann/icesmp/commands/faction/FactionStatusSubcommand.java": "5e0b6ccc3eec53b2eadf9b0943772fe76fdc9a2e56c09a2017417c3b78e11f11",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionTreasurySubcommand.java": "10ce3ec80cf325e5db706c34e14770d700af57b4484feb6179d42e3a48d5836e",
         "src/main/java/hu/taliann/icesmp/commands/faction/FactionWarSubcommand.java": "94427817aefcf220dfc27b9427f79722fecb79c588bfe2341b8912a675117f24",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "aa0f51456b68a5f5b8eb9099a021cc7804b05cff4af4ec51cc6da8973a8486ec",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "83ede70fd8fe8063c4303d2b59f7ac6d678c6a635f43ab4c1dfb83ddbb439bef",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "edd9d9b595997b8358151c23a1149a135f54adc98b5ebcbfd71de27fa07b13e1",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "3ed7c8c2d2b72018864e8c639a4c4201e4fd06c6f7c75fa512f9f669e33a0284",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "4181a6c5206d83e640a6a70d60abc95e33675a1c051092f34c45263e26c53797",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "097f5a1496ebde419ce88c5e2ed0282bd712ca47d64098a34e6f94d87e3eccb5",
-        "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "5a74c2c4ae4dbed7585f1df2402386519b5fef57b76bcea30ecfaadd04699f64",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "6b20276cedbdbce0b8fad1a27f3192305983f27becfbbdfc11ad9339aee4c07f",
-        "src/main/java/hu/taliann/icesmp/commands/faction/FactionStatusSubcommand.java": "75dee419575da33553df00e2315d868ee2dd009fccc72d3f578d41127ecb9099"
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAddXpSubcommand.java": "f3e802aab93a512bf5c3ba88515309c9cf47da690f35e71ee145d6177775a27b",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobAdminSubcommand.java": "9b99a33277259fe17993c34a6e6c4dd282a2e763408ee77729b911a90e6101bd",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobGiveCatalystSubcommand.java": "9732b688bab15c20f606cbcbfb6d8449cb4e7b27dc7e286a0e98edf605e37d84",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobListSpellsSubcommand.java": "8cfa400d73ec1704669f598166261d3df396cb7f2f27061ea1130b6980606d69",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "95e85d08d61d281a8d805af5bfc83c6b36f7149095596dc4887f619593206b56",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "957c8a7a4afa78310ffb05ed933bf883fc2bbc3bba085c572570d5a9b9ef7b5a",
+        "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "f4465642a6bf4d482b99f48cb9a9bbe1a91f7bb15a53acdad2a4f0124c11a1bb",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "e17589111bea9aed31bfd8ea490059a5537d023fa8d39cf67ec7375efbb87fdd",
+        "src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java": "201b23c33a4bb5a918fbf93ba48593f00c8ccf62b9240ab147577f69910166c6"
       },
-      "source_snapshot_sha256": "d332e936af022ff5e6865bb9ba4099ba0925a706c30375c32b1ee73124be8140",
+      "source_snapshot_sha256": "48089a2357fe8a1c70a8ea826ee90f370f065089a752613e51041e50527ee598",
       "description": "Exact, fail-closed command interface contract; source hash drift requires route reconciliation.",
       "expected_counts": {
-        "root_commands": 68,
-        "functional_routes": 290,
+        "root_commands": 69,
+        "functional_routes": 303,
         "root_aliases": 79,
-        "routing_aliases": 97
+        "routing_aliases": 99
       }
     },
     "route.territory.pos-83500aed80": {
@@ -13434,7 +15688,7 @@
         "mesterseg",
         "spells"
       ],
-      "registration_line": 1994,
+      "registration_line": 1996,
       "implementation": "SpellCommand"
     },
     "route.iceitem.root-77ef588c2d": {
@@ -13638,7 +15892,7 @@
       "aliases": [
         "f"
       ],
-      "registration_line": 1931,
+      "registration_line": 1933,
       "implementation": "FactionCommand"
     },
     "route.claim.untrust-online-j-t-kos-b0b336ee22": {
@@ -13945,7 +16199,7 @@
         "talentfa",
         "talents"
       ],
-      "registration_line": 1948,
+      "registration_line": 1950,
       "implementation": "TalentCommand"
     },
     "route.market.auction-kiki-lt-si-r-ra-valuta-buyout-r-bo-r-9e5a92f7db": {
@@ -14047,7 +16301,7 @@
         "ach",
         "eleresek"
       ],
-      "registration_line": 1934,
+      "registration_line": 1936,
       "implementation": "AchievementsCommand"
     },
     "route.talent.list-1240393f51": {
@@ -14212,7 +16466,7 @@
       "name": "reports",
       "description": "Bejelentések kezelése (admin)",
       "aliases": [],
-      "registration_line": 1875,
+      "registration_line": 1877,
       "implementation": "ReportsCommand"
     },
     "route.emlek.spec-495f15ff26": {
@@ -14260,11 +16514,11 @@
         "docs/ADMIN_GUIDE.md"
       ],
       "name": "daily",
-      "description": "Napi küldetés",
+      "description": "Napi és heti megbízások",
       "aliases": [
         "napi"
       ],
-      "registration_line": 1941,
+      "registration_line": 1943,
       "implementation": "DailyCommand"
     },
     "route.iceitem.tervrajz-recept-id-darab-online-j-t-kos-4c749ad1a2": {
@@ -14297,7 +16551,7 @@
       "aliases": [
         "bejelent"
       ],
-      "registration_line": 1873,
+      "registration_line": 1875,
       "implementation": "ReportCommand"
     },
     "route.kem.c-lfrakci-91c0c8e276": {
@@ -14387,7 +16641,7 @@
       "name": "msg",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 1915,
+      "registration_line": 1917,
       "implementation": "PrivateMessageCommand"
     },
     "alias.profile.karakter": {
@@ -14449,7 +16703,7 @@
       "aliases": [
         "mod"
       ],
-      "registration_line": 1904,
+      "registration_line": 1906,
       "implementation": "ModerationGuiCommand"
     },
     "alias.crate.ladak": {
@@ -14759,6 +17013,290 @@
         "docs/PLAYER_GUIDE.md",
         "docs/ADMIN_GUIDE.md"
       ]
+    },
+    "command.prologue": {
+      "kind": "root",
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "name": "prologue",
+      "implementation": "PrologueCommand",
+      "aliases": [],
+      "registration_file": "src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java",
+      "registration_line": 79,
+      "description": "Season 0 / Kárhozat Kapuja live-ops"
+    },
+    "route.suttogas.megtagad-s-bab5d9f417": {
+      "kind": "route",
+      "root": "suttogas",
+      "syntax": "/suttogas megtagadás",
+      "purpose": "Megerősített privát kilépés, tiszta állapot és lejárt nyomok mellett, 24 órás várakozással.",
+      "permission": "—",
+      "executor": "Játékos",
+      "source": "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [
+        "megtagadas",
+        "leave"
+      ],
+      "tab_completion": "Igen",
+      "gui_alternative": "/menu",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route-alias.suttogas.megtagad-s-bab5d9f417.megtagadas-235a3133": {
+      "kind": "routing-alias",
+      "root": "suttogas",
+      "route": "route.suttogas.megtagad-s-bab5d9f417",
+      "alias": "megtagadas",
+      "source": "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "route-alias.suttogas.megtagad-s-bab5d9f417.leave-af193190": {
+      "kind": "routing-alias",
+      "root": "suttogas",
+      "route": "route.suttogas.megtagad-s-bab5d9f417",
+      "alias": "leave",
+      "source": "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ]
+    },
+    "route.prologue.root-c7a783da85": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue",
+      "purpose": "Prologue állapot és használat.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.start-c5b7490622": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue start",
+      "purpose": "Season 0 élesítése.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.reset-force-00d9435c6a": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue reset --force",
+      "purpose": "Külön megerősített teszt-visszaállítás; korábbi jutalmak nem törlődnek.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.advance-f-zis-102b6f1a9c": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue advance [fázis]",
+      "purpose": "Fázis előreléptetése.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.stage-silence-cracks-leak-collapse-124b08f799": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue stage <SILENCE|CRACKS|LEAK|COLLAPSE>",
+      "purpose": "Eszkalációs szakasz.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.stability-0-100-44e9bb0d10": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue stability <0-100>",
+      "purpose": "Kapu stabilitása.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.breach-start-minor-major-critical-61db4f0a14": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue breach start [MINOR|MAJOR|CRITICAL]",
+      "purpose": "Betörési esemény indítása.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.finale-start-rehearsal-c03c4662e3": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue finale start [--rehearsal]",
+      "purpose": "Finálé vagy próba indítása.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.finale-pause-302293d9e0": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue finale pause",
+      "purpose": "Finálé szüneteltetése.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.finale-resume-0972c1f7fa": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue finale resume",
+      "purpose": "Finálé folytatása.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.finale-abort-4bb1f95f38": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue finale abort",
+      "purpose": "Finálé megszakítása.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
+    },
+    "route.prologue.gate-open-close-force-c9c1b0b555": {
+      "kind": "route",
+      "root": "prologue",
+      "syntax": "/prologue gate <open|close> --force",
+      "purpose": "Kapu admin állapotmódosítása.",
+      "permission": "icesmp.admin.prologue",
+      "executor": "Admin / konzol",
+      "source": "src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java",
+      "line": 1,
+      "docs": [
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "route_aliases": [],
+      "tab_completion": "Igen",
+      "gui_alternative": "—",
+      "limitation": "A művelet saját feltételeit újra ellenőrzi.",
+      "deployed_status": "Új",
+      "present_in_deployed": false
     }
   },
   "config-resolutions": {
@@ -14807,11 +17345,6 @@
       "resolved_path": "territories.<territory-id>.capital",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
-    "config.dynamic.faction-switch-journal.section.target-faction": {
-      "resolved_path": "faction-switch-journal.yml:entry.target-faction",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
     "config.dynamic.talent-manager.section.grants-spell": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/TalentManager.java:277 adatfolyamából feloldható; a dokumentált teljes path-sablon: talents.<class|profession>.definitions.<talent-id>.grants-spell. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "talents.<class|profession>.definitions.<talent-id>.grants-spell",
@@ -14842,11 +17375,6 @@
       "resolved_path": "season.reward-batch.champion-points",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
-    "config.dynamic.faction-switch-journal.section.player": {
-      "resolved_path": "faction-switch-journal.yml:entry.player",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
     "config.dynamic.territory-manager.section.radius": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java:147 adatfolyamából feloldható; a dokumentált teljes path-sablon: territories.<territory-id>.radius. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "territories.<territory-id>.radius",
@@ -14857,11 +17385,6 @@
       "resolved_path": "territories.<territory-id>.z",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
-    "config.dynamic.faction-switch-journal.section.membership-before.assignment": {
-      "resolved_path": "faction-switch-journal.yml:entry.membership-before.assignment",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
     "config.dynamic.territory-manager.section.name": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java:142 adatfolyamából feloldható; a dokumentált teljes path-sablon: territories.<territory-id>.name. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "territories.<territory-id>.name",
@@ -14871,11 +17394,6 @@
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/CrateManager.java:287 adatfolyamából feloldható; a dokumentált teljes path-sablon: crates. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "crates",
       "classification": "EXACT_RUNTIME_TEMPLATE"
-    },
-    "config.dynamic.faction-switch-journal.section.id": {
-      "resolved_path": "faction-switch-journal.yml:entry.id",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
     },
     "config.dynamic.cc-diminish.config.spells.cc-dr.enabled": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/utils/CcDiminish.java:38 adatfolyamából feloldható; a dokumentált teljes path-sablon: spells.cc-dr.enabled. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
@@ -14927,19 +17445,9 @@
       "resolved_path": "spells.friendly-fire.protect-party",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
-    "config.dynamic.faction-tax-journal.section.wallet.present": {
-      "resolved_path": "faction-tax-journal.yml:entry.wallet.present",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
     "config.dynamic.crate-manager.section.broadcast.message": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/CrateManager.java:411 adatfolyamából feloldható; a dokumentált teljes path-sablon: crates.<crate-id>.broadcast.message. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "crates.<crate-id>.broadcast.message",
-      "classification": "EXACT_RUNTIME_TEMPLATE"
-    },
-    "config.dynamic.class-spec-dependency-preflight.section.required": {
-      "reason": "A class-spec-dependencies.lock.yml plugins.<plugin-id> dinamikus szekciójából olvasott deployment-mező; a teljes runtime sablon az ellenőrzött pluginbejegyzés alatt él.",
-      "resolved_path": "plugins.<plugin-id>.required",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
     "config.dynamic.profession-recipe-catalog.section.profession": {
@@ -15037,11 +17545,6 @@
       "resolved_path": "profession-recipes.<recipe-id>.result.consumable.seconds",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
-    "config.dynamic.faction-switch-journal.section.currency": {
-      "resolved_path": "faction-switch-journal.yml:entry.currency",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
     "config.dynamic.territory-manager.section.polygon": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java:137 adatfolyamából feloldható; a dokumentált teljes path-sablon: territories.<territory-id>.polygon. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "territories.<territory-id>.polygon",
@@ -15102,30 +17605,10 @@
       "resolved_path": "plugins.<plugin-id>.verification",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
-    "config.dynamic.faction-switch-journal.section.membership-before.history": {
-      "resolved_path": "faction-switch-journal.yml:entry.membership-before.history",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
-    "config.dynamic.faction-switch-journal.section.membership-before.history-present": {
-      "resolved_path": "faction-switch-journal.yml:entry.membership-before.history-present",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
     "config.dynamic.item-data-factory.section.saturation": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:359 adatfolyamából feloldható; a dokumentált teljes path-sablon: profession-recipes.<recipe-id>.result.consumable.saturation. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "profession-recipes.<recipe-id>.result.consumable.saturation",
       "classification": "EXACT_RUNTIME_TEMPLATE"
-    },
-    "config.dynamic.currency-manager.configuration.players": {
-      "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java:70 adatfolyamából feloldható; a dokumentált teljes path-sablon: players. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
-      "resolved_path": "players",
-      "classification": "EXACT_RUNTIME_TEMPLATE"
-    },
-    "config.dynamic.faction-tax-journal.section.origin": {
-      "resolved_path": "faction-tax-journal.yml:entry.origin",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
     },
     "config.dynamic.profession-recipe-catalog.section.result": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java:78 adatfolyamából feloldható; a dokumentált teljes path-sablon: profession-recipes.<recipe-id>.result. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
@@ -15167,11 +17650,6 @@
       "resolved_path": "profession-recipes.<recipe-id>.result.consumable.particles",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
-    "config.dynamic.faction-tax-journal.section.player": {
-      "resolved_path": "faction-tax-journal.yml:entry.player",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
     "config.dynamic.profession-recipe-catalog.section.loot-only": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java:125 adatfolyamából feloldható; a dokumentált teljes path-sablon: profession-recipes.<recipe-id>.loot-only. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "profession-recipes.<recipe-id>.loot-only",
@@ -15182,25 +17660,10 @@
       "resolved_path": "talents.<class|profession>.definitions.<talent-id>.display-name",
       "classification": "EXACT_RUNTIME_TEMPLATE"
     },
-    "config.dynamic.faction-tax-journal.section.wallet.previous-present": {
-      "resolved_path": "faction-tax-journal.yml:entry.wallet.previous-present",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
     "config.dynamic.item-data-factory.section.always-edible": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java:360 adatfolyamából feloldható; a dokumentált teljes path-sablon: profession-recipes.<recipe-id>.result.consumable.always-edible. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "profession-recipes.<recipe-id>.result.consumable.always-edible",
       "classification": "EXACT_RUNTIME_TEMPLATE"
-    },
-    "config.dynamic.faction-tax-journal.section.id": {
-      "resolved_path": "faction-tax-journal.yml:entry.id",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
-    "config.dynamic.faction-switch-journal.section.membership-before.assignment-present": {
-      "resolved_path": "faction-switch-journal.yml:entry.membership-before.assignment-present",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
     },
     "config.dynamic.season-manager.section.champion-treasury-reward": {
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/managers/SeasonManager.java:1163 adatfolyamából feloldható; a dokumentált teljes path-sablon: season.reward-batch.champion-treasury-reward. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
@@ -15226,23 +17689,6 @@
       "reason": "A futásidejű szülőszekció a src/main/java/hu/taliann/icesmp/listeners/MotdListener.java:210 adatfolyamából feloldható; a dokumentált teljes path-sablon: motd. Az angle-bracket ID az aktív registry- vagy persistence-rekord azonosítója.",
       "resolved_path": "motd",
       "classification": "EXACT_RUNTIME_TEMPLATE"
-    },
-    "config.dynamic.faction-switch-journal.section.wallet.previous-present": {
-      "resolved_path": "faction-switch-journal.yml:entry.wallet.previous-present",
-      "classification": "EXACT_RUNTIME_TEMPLATE",
-      "reason": "Belső, verziózott write-ahead journal séma; nem admin config. A teljes fájl és entry path statikus, a ConfigurationSection csak a rekord gyökerét rövidíti."
-    },
-    "config.dynamic.currency-manager.configuration.operations": {
-      "resolved_path": "currency-balances.yml:operations",
-      "reason": "The receiver is the durable currency-balances.yml root; operations is the exact persisted transaction-witness section."
-    },
-    "config.dynamic.currency-manager.section.previous": {
-      "resolved_path": "currency-balances.yml:operations.<operation-key>.previous",
-      "reason": "The receiver is one validated durable operation section; previous is its exact pre-mutation wallet snapshot."
-    },
-    "config.dynamic.currency-manager.section.expected": {
-      "resolved_path": "currency-balances.yml:operations.<operation-key>.expected",
-      "reason": "The receiver is one validated durable operation section; expected is its exact post-mutation wallet snapshot."
     },
     "config.dynamic.player-profile-platform.config.player-profile.http.admin-tokens": {
       "resolved_path": "config/player-profile.yml:player-profile.http.admin-tokens",

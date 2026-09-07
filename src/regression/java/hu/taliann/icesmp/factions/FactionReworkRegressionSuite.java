@@ -19,6 +19,7 @@ public final class FactionReworkRegressionSuite {
         whisperStagesAreFiniteAndReversibleBeforeExposure();
 
         runtimeSourcesContainNoRetiredMeterLoops();
+        sightlineBoundariesAndQuorum();
         System.out.println("Faction rework regression suite passed. assertions=" + assertions);
     }
 
@@ -84,6 +85,25 @@ public final class FactionReworkRegressionSuite {
         check(!whispers.contains("suspicion") && !whispers.contains("decay")
                         && whispers.contains("recordAccusation"),
                 "Whisper meter/decay remains or staged accusation is missing");
+    }
+
+    private static void sightlineBoundariesAndQuorum() {
+        final var boundary = WhisperSightline.cells(15.5, 64.5, 0.5, 17.5, 64.5, 0.5);
+        check(boundary.equals(java.util.List.of(new WhisperSightline.Cell(15, 64, 0),
+                new WhisperSightline.Cell(16, 64, 0), new WhisperSightline.Cell(17, 64, 0))),
+                "chunk-border ray skipped the foreign wall cell");
+        final var negative = WhisperSightline.cells(0.5, 64.5, 0.5, -1.5, 64.5, 0.5);
+        check(negative.contains(new WhisperSightline.Cell(-1, 64, 0))
+                && negative.contains(new WhisperSightline.Cell(-2, 64, 0)), "negative coordinates must floor, not truncate");
+        check(WhisperSightline.cells(0, 0, 0, -0.0, 0, 0).size() == 1, "stationary signed-zero ray terminates");
+        check(WhisperSightline.cells(0, 0, 0, 36, 36, 36).size() < 200, "diagonal traversal is bounded");
+        boolean rejected = false;
+        try { WhisperSightline.cells(0, 0, 0, 65, 0, 0); } catch (IllegalArgumentException expected) { rejected = true; }
+        check(rejected, "unbounded witness radius rejected");
+        check(hu.taliann.icesmp.managers.KingManager.electionQuorum(2, 2) == 2, "small faction quorum");
+        check(hu.taliann.icesmp.managers.KingManager.electionQuorum(2, 12) == 4, "medium faction quorum");
+        check(hu.taliann.icesmp.managers.KingManager.electionQuorum(2, 60) == 20, "large faction quorum prevents two-account election");
+        check(hu.taliann.icesmp.managers.KingManager.electionQuorum(5, 2) == 5, "operator minimum preserved");
     }
 
     private static String read(final String path) throws Exception {

@@ -430,6 +430,7 @@ public final class IceSMPCore {
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
         this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager, factionManager);
+        this.kingManager.setActivePopulation(seasonManager::activePopulation);
         factionManager.setSeasonManager(seasonManager);
 
         this.territoryManager = new TerritoryManager(plugin);
@@ -806,6 +807,7 @@ public final class IceSMPCore {
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
+        this.whisperManager.setVanishedPredicate(moderationManager::isVanished);
         this.vanishManager = new hu.taliann.icesmp.managers.VanishManager(plugin, moderationManager, configManager);
         this.eventSpawnGuard.setVanishedPredicate(moderationManager::isVanished);
         this.motdListener = new hu.taliann.icesmp.listeners.MotdListener(plugin, configManager,

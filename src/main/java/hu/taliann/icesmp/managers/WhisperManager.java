@@ -27,6 +27,52 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
     /** Online routing projection rebuilt from PlayerProfile. */
     private final java.util.Set<UUID> whispererCache = ConcurrentHashMap.newKeySet();
 
+    private volatile java.util.function.Predicate<UUID> vanished = id -> false;
+    private final Map<UUID, Long> witnessGrace = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> hintAfter = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> leaveConfirmation = new ConcurrentHashMap<>();
+
+    public void setVanishedPredicate(final java.util.function.Predicate<UUID> predicate) {
+        vanished = java.util.Objects.requireNonNull(predicate);
+    }
+
+    public void respawned(final Player player) {
+        witnessGrace.put(player.getUniqueId(), System.currentTimeMillis() + 10_000L);
+    }
+
+    public void hint(final Player player) {
+        final long now = System.currentTimeMillis();
+        if (hintAfter.getOrDefault(player.getUniqueId(), 0L) > now || !canBecomeWhisperer(player)) return;
+        hintAfter.put(player.getUniqueId(), now + 60_000L);
+        player.sendActionBar(messageManager.getMessage("whisper-rite-hint",
+                "<dark_purple>A meghívó lüktet. Hajolj a mélység fölé, és nyújtsd felé a jobb kezed…</dark_purple>"));
+        player.playSound(player.getLocation(), Sound.BLOCK_SCULK_SENSOR_CLICKING, 0.25F, 0.6F);
+    }
+
+    public void requestWithdrawal(final Player player) {
+        final UUID id = player.getUniqueId();
+        if (!isWhisperer(player)) {
+            player.sendMessage(messageManager.get("whisper-not-heard", "&8…csak a szél zúg."));
+            return;
+        }
+        final Long deadline = leaveConfirmation.remove(id);
+        if (deadline == null || deadline < System.currentTimeMillis()) {
+            leaveConfirmation.put(id, System.currentTimeMillis() + 30_000L);
+            player.sendMessage(messageManager.get("whisper-leave-confirm",
+                    "&5A kapcsolat megszakítása elveszi a titkos előnyöket; 24 óráig nincs új rítus. A bűneid megmaradnak. Csak tiszta állapotban, friss nyom nélkül lehetséges. Megerősítés 30 mp-en belül: &f/suttogas megtagadás"));
+            return;
+        }
+        whisperStore.withdraw(id).whenComplete((result, failure) -> player.getScheduler().run(plugin, task -> {
+            if (failure != null) {
+                player.sendMessage(messageManager.get("whisper-profile-unavailable", "&cA titkos profil most nem érhető el. Próbáld újra."));
+            } else if (result == PlayerProfileWhisperStore.Withdrawal.LEFT) {
+                reconcileMembership(player);
+                player.sendMessage(messageManager.get("whisper-left", "&7A Suttogás elcsendesült. A civil tagságod és a jogi előzményeid megmaradtak; új rítus 24 óra múlva lehetséges."));
+            } else player.sendMessage(messageManager.get("whisper-leave-blocked",
+                    "&cA kapcsolat még nem szakítható meg. Fejezd be a rítust, szerezz tiszta állapotot fedezékkel, és várd meg a friss nyomok lejártát. &f/suttogas állapot &7| &f/suttogas megbízás"));
+        }, null));
+    }
+
     public WhisperManager(final JavaPlugin plugin, final ConfigManager configManager,
                           final FactionManager factionManager, final SinManager sinManager,
                           final MessageManager messageManager) {
@@ -103,7 +149,8 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
     }
 
     public long returnRemainingMillis(final Player player) {
-        return whisperStore.returnRemainingMillis(player.getUniqueId());
+        return Math.max(whisperStore.returnRemainingMillis(player.getUniqueId()),
+                Math.max(0L, witnessGrace.getOrDefault(player.getUniqueId(), 0L) - System.currentTimeMillis()));
     }
 
     public void makeWhisperer(final Player player) {
@@ -118,6 +165,7 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
     }
 
     public void handleJoin(final Player player) {
+        respawned(player);
         recoverRite(player, 0);
         reconcileMembership(player);
     }
@@ -162,50 +210,61 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
         });
     }
 
-    public java.util.concurrent.CompletionStage<Boolean> grantEvidence(final UUID witnessId, final UUID suspectId) {
-        final long seconds = Math.max(10L, Math.min(86_400L,
-                configManager.getLong("factions.whisper.witness-seconds", 120L)));
-        return whisperStore.grantEvidence(witnessId, suspectId, seconds * 1_000L);
+    public record Scene(UUID suspectId, org.bukkit.Location eye, String name,
+                        PlayerProfileWhisperStore.Incident incident, boolean identifiable) { }
+
+    /** Capture only on the actor's entity scheduler; witnesses never read foreign actor state. */
+    public Scene capture(final Player actor, final PlayerProfileWhisperStore.EvidenceType type) {
+        return new Scene(actor.getUniqueId(), actor.getEyeLocation().clone(), actor.getName(),
+                new PlayerProfileWhisperStore.Incident(UUID.randomUUID(), type, System.currentTimeMillis()), observable(actor));
     }
 
-    /** Immutable scene snapshot; all witness reads and block access stay on an owning Folia region. */
-    public void observe(final UUID witnessId, final UUID suspectId, final org.bukkit.Location scene,
-                        final String suspectName, final double radius, final String messageKey) {
-        if (witnessId.equals(suspectId)) return;
+    private boolean observable(final Player actor) {
+        return !actor.isDead() && actor.getGameMode() != org.bukkit.GameMode.SPECTATOR
+                && !actor.isInvisible() && !actor.hasPotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY)
+                && !vanished.test(actor.getUniqueId())
+                && witnessGrace.getOrDefault(actor.getUniqueId(), 0L) <= System.currentTimeMillis();
+    }
+
+    private java.util.concurrent.CompletableFuture<Boolean> canWitness(final UUID witnessId, final Scene scene, final double radius) {
+        final var result = new java.util.concurrent.CompletableFuture<Boolean>();
         final Player witness = Bukkit.getPlayer(witnessId);
-        if (witness == null) return;
-        final org.bukkit.Location captured = scene.clone();
-        final long observedAt = System.currentTimeMillis();
+        if (witness == null || witnessId.equals(scene.suspectId()) || !scene.identifiable()) {
+            result.complete(false); return result;
+        }
         witness.getScheduler().run(plugin, task -> {
-            if (System.currentTimeMillis() - observedAt > 1_000L || witness.isDead()
-                    || witness.getGameMode() == org.bukkit.GameMode.SPECTATOR
-                    || witness.getWorld() != captured.getWorld()
-                    || witness.getEyeLocation().distanceSquared(captured) > radius * radius
-                    || !visible(witness.getEyeLocation(), captured)) return;
-            grantEvidence(witnessId, suspectId).whenComplete((granted, failure) -> {
-                if (failure != null) {
-                    plugin.getLogger().warning("Whisper evidence save failed: " + rootMessage(failure));
-                } else if (Boolean.TRUE.equals(granted)) {
-                    witness.getScheduler().run(plugin, ignored -> witness.sendMessage(messageManager.getMessage(
-                            messageKey, "<dark_purple>👁 Gyanús tettet láttál. Friss bizonyíték: <white>/suttogas vád {player}</white>.</dark_purple>",
-                            Map.of("player", suspectName))), null);
+            final Player subject = Bukkit.getPlayer(scene.suspectId());
+            if (System.currentTimeMillis() - scene.incident().observedAt() > 1_000L || !observable(witness)
+                    || vanished.test(scene.suspectId()) || subject == null || !witness.canSee(subject)
+                    || witness.getWorld() != scene.eye().getWorld()
+                    || witness.getEyeLocation().distanceSquared(scene.eye()) > radius * radius) {
+                result.complete(false); return;
+            }
+            hu.taliann.icesmp.factions.WhisperSightline.visible(plugin, witness.getEyeLocation(), scene.eye())
+                    .whenComplete((visible, failure) -> { if (failure != null) result.completeExceptionally(failure); else result.complete(Boolean.TRUE.equals(visible)); });
+        }, () -> result.complete(false));
+        return result.orTimeout(1_500L, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    public void observe(final UUID witnessId, final Scene scene, final double radius, final String messageKey) {
+        canWitness(witnessId, scene, radius).thenAccept(visible -> {
+            if (!visible || System.currentTimeMillis() - scene.incident().observedAt() > 1_500L) return;
+            final long seconds = Math.max(10L, Math.min(86_400L,
+                    configManager.getLong("factions.whisper.witness-seconds", 120L)));
+            whisperStore.grantEvidence(witnessId, scene.suspectId(), scene.incident(), seconds * 1_000L)
+                    .whenComplete((granted, failure) -> {
+                if (failure != null) plugin.getLogger().warning("Whisper evidence save failed: " + rootMessage(failure));
+                else if (Boolean.TRUE.equals(granted)) {
+                    final Player witness = Bukkit.getPlayer(witnessId);
+                    if (witness != null) witness.getScheduler().run(plugin, ignored -> {
+                        if (!observable(witness) || vanished.test(scene.suspectId())) return;
+                        witness.sendMessage(messageManager.getMessage(messageKey,
+                                "<dark_purple>👁 Gyanús tettet láttál. Friss bizonyíték: <white>/suttogas vád {player}</white>.</dark_purple>",
+                                Map.of("player", scene.name())));
+                    }, null);
                 }
             });
-        }, null);
-    }
-
-    private static boolean visible(final org.bukkit.Location eye, final org.bukkit.Location scene) {
-        final org.bukkit.util.Vector delta = scene.toVector().subtract(eye.toVector());
-        final double length = delta.length();
-        if (length < 0.01D) return true;
-        final org.bukkit.util.Vector direction = delta.clone().normalize();
-        // A ray crossing an unowned/unloaded region is not evidence; never load or read foreign chunks.
-        for (double distance = 0; distance <= length + 0.25D; distance += 0.25D) {
-            final org.bukkit.Location sample = eye.clone().add(direction.clone().multiply(Math.min(length, distance)));
-            if (!Bukkit.isOwnedByCurrentRegion(sample)) return false;
-        }
-        return eye.getWorld().rayTraceBlocks(eye, direction, length,
-                org.bukkit.FluidCollisionMode.NEVER, true) == null;
+        });
     }
 
     public boolean hasEvidence(final UUID witnessId, final UUID suspectId) {
@@ -295,13 +354,61 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
     }
 
     /** Prepare intent first, revalidate resources on owner, save resources, then publish the role. */
-    public void beginRite(final Player player, final double hpCost, final Runnable committed) {
+    public void beginRite(final Player player, final double hpCost, final double radius, final Runnable committed) {
         final UUID id = player.getUniqueId();
-        if (!canBecomeWhisperer(player) || !ritualsInFlight.add(id)) return;
+        if (!canBecomeWhisperer(player)) return;
+        if (!observable(player)) {
+            player.sendMessage(messageManager.get("whisper-rite-form",
+                    "&7A rítus élő, látható alakot kíván. Belépés vagy újjáéledés után várj 10 másodpercet; vedd le a láthatatlanságot."));
+            return;
+        }
+        if (!ritualsInFlight.add(id)) return;
+        final Scene scene = capture(player, PlayerProfileWhisperStore.EvidenceType.RITE);
+        final var requestedInventory = hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(player.getInventory().getContents());
+        final double requestedHealth = player.getHealth();
+        final var nearby = player.getNearbyEntities(radius, radius, radius).stream()
+                .filter(Player.class::isInstance).limit(65).toList();
+        final var checks = nearby.size() > 64
+                ? List.of(java.util.concurrent.CompletableFuture.completedFuture(true))
+                : nearby.stream().map(entity -> canWitness(entity.getUniqueId(), scene, radius)).toList();
+        java.util.concurrent.CompletableFuture.allOf(checks.toArray(java.util.concurrent.CompletableFuture[]::new))
+                .whenComplete((ignored, failure) -> player.getScheduler().run(plugin, task -> {
+                    if (failure != null || checks.stream().anyMatch(check -> check.getNow(false))) {
+                        whisperStore.interruptCandidate(id).whenComplete((saved, saveFailure) -> {
+                            ritualsInFlight.remove(id);
+                            if (saveFailure != null) { riteFailure(player, saveFailure); return; }
+                            player.getScheduler().run(plugin, next -> player.sendMessage(messageManager.get("whisper-rite-witnessed",
+                                    "&cSzemek a sötétben — a rítus megszakadt. A meghívód és az életerőd megmaradt. Keress magányt; új próbálkozás 60 mp múlva.")), null);
+                        });
+                    } else if (System.currentTimeMillis() - scene.incident().observedAt() > 1_500L
+                            || !riteConditions(player, scene.eye()) || player.getHealth() != requestedHealth
+                            || !requestedInventory.equals(hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(player.getInventory().getContents()))) {
+                        ritualsInFlight.remove(id);
+                        player.sendMessage(messageManager.get("whisper-rite-retry", "&7A rítus megszakadt, mielőtt az áldozat megtörtént. Próbáld újra."));
+                    } else prepareRite(player, hpCost, scene.eye(), committed);
+                }, () -> ritualsInFlight.remove(id)));
+    }
+
+    private boolean riteConditions(final Player player, final org.bukkit.Location origin) {
+        if (!observable(player) || player.getWorld() != origin.getWorld()
+                || player.getEyeLocation().distanceSquared(origin) > 0.25D
+                || player.getWorld().getEnvironment() != org.bukkit.World.Environment.NORMAL
+                || player.getWorld().isDayTime()) return false;
+        final var below = player.getLocation().add(0, -0.5, 0);
+        if (!Bukkit.isOwnedByCurrentRegion(below)) return false;
+        final var type = below.getBlock().getType();
+        return type == org.bukkit.Material.SCULK || type == org.bukkit.Material.SCULK_CATALYST;
+    }
+
+    private void prepareRite(final Player player, final double hpCost, final org.bukkit.Location origin, final Runnable committed) {
+        final UUID id = player.getUniqueId();
         final var inventory = player.getInventory();
         final var before = hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(inventory.getContents());
         final var afterItems = hu.taliann.icesmp.storage.ItemMutationJournal.decodeInventory(before);
         final int hand = inventory.getHeldItemSlot();
+        if (afterItems[hand] == null || afterItems[hand].getType().isAir() || player.getHealth() <= hpCost + 1) {
+            ritualsInFlight.remove(id); return;
+        }
         afterItems[hand] = afterItems[hand].clone();
         afterItems[hand].setAmount(afterItems[hand].getAmount() - 1);
         if (afterItems[hand].getAmount() == 0) afterItems[hand] = null;
@@ -316,7 +423,7 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
             }
             player.getScheduler().run(plugin, task -> {
                 final var actual = hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(inventory.getContents());
-                if (player.isDead() || !actual.equals(before) || player.getHealth() != rite.healthBefore()) {
+                if (!riteConditions(player, origin) || !actual.equals(before) || player.getHealth() != rite.healthBefore()) {
                     finishRite(player, rite, false, null);
                     return;
                 }
@@ -383,6 +490,9 @@ public final class WhisperManager implements hu.taliann.icesmp.session.PlayerSta
     public void clearPlayerState(final UUID playerId) {
         ritualsInFlight.remove(playerId);
         whispererCache.remove(playerId);
+        hintAfter.remove(playerId);
+        leaveConfirmation.remove(playerId);
+        witnessGrace.remove(playerId);
     }
 
     private static String rootMessage(final Throwable failure) {

@@ -1,5 +1,17 @@
 # IceSMP admin-, moderátori és tesztelői kézikönyv
 
+## Frakció–Suttogó kiegészítések, 2026-09-07
+
+Tiszta indulás: a korábbi tagságiadó- és profilmigráció nem követelmény. Elkészült
+a magányos, normál világbeli éjszakai rítus, a ritka privát discovery-hint, az
+eseményazonos bizonyíték, a vanish/invisibility/respawn kizárás és a régiónkénti
+rálátás. `/suttogas megtagadás`: kétszer megerősített kilépés, 24 órás várakozás,
+bűntisztítás nélkül. `/faction status`: következő jogi küszöb, vérdíj és a vezeklés
+helye. A civil jóvátétel DARK-belépés nélkül is elérhető a `/quest log` Megbízások
+fülén. A választás aktív létszámhoz igazodik, és megtartja az élő mandátumot.
+Részletes szabályok és korlátok: [FACTION_REWORK](FACTION_REWORK.md).
+
+
 ## Frakció–Suttogó javítás, 2026-09-06
 
 A részletes szabályok: [FACTION_REWORK.md](FACTION_REWORK.md). Nincs új HUD vagy
@@ -10,7 +22,7 @@ NEUTRAL frakcióváltásnak azonos ára van. A személyes kasszakivét csak admi
 
 A Suttogó-bizonyíték tartós és pontos; beváltása, a harmadik fokozat, száműzetés és
 24 órás visszatérési várakozás egy mentés. A rítus mentési sorrendje javítva, a tárgy
-lore-ja leírja a SHIFT + jobb kattintást. A chat álneves. `/suttogas állapot` és
+lore-ja misztikus utalásokat ad; helyes körülményeknél percenként legfeljebb egy privát hint segít. A chat álneves. `/suttogas állapot` és
 `/suttogas megbízás` ad részletes tájékoztatást. Kultista jutalom csak az átadással
 minősített résztvevőnek jár. A ligapont csökkenő létszámhozamot kap, a személyes
 bajnoki jutalom alapból három igazolt kategória/nap hozzájárulást igényel.
@@ -25,8 +37,8 @@ A `population-reference` és `minimum-contributions` a `world-events.season` ala
 Az integráció Java- és WAL-tesztjeitől külön Folia többjátékosos próba szükséges: fal,
 régióhatár, egyszerre beváltott vád, disconnect/crash a rítus lépései közt, önvédelem,
 fővárosi teleport/jármű és a teljes kasztgyógyítás-mátrix. A balance playtest eredménye
-nincs megelőlegezve. Az eredeti 692 soros terv és W1–W33 forrás nem került elő;
-a jelen dokumentáció a beszélgetésben elfogadott egyszerűsített szerződést követi.
+nincs megelőlegezve. A W1–W33 forrás ismert; a tiszta indulásról szóló 2026-09-07-i tulajdonosi döntés
+felülírja a régiadat-migráció követelményét.
 
 
 <!-- icesmp-doc-id: feature.moderation -->
@@ -96,7 +108,7 @@ pluginoktól. Az első teszt előtt:
 | `icesmp.moderation.history` | `/history`, `/punishments` | OP | Moderátor |
 | `icesmp.moderation.socialspy` | `/socialspy`; natív PM-ek tartalmának megfigyelése | OP | Szűk senior moderátori kör |
 | `icesmp.moderation.vanish` | Saját vagy online cél vanish állapotának kapcsolása | OP | Admin |
-| `icesmp.moderation.vanish.see` | Vanished játékosok megtekintése | OP | Admin vagy vezető moderátor |
+| `icesmp.moderation.vanish.see` | Vanished játékosok megtekintése | FALSE; külön grant kell | Admin vagy vezető moderátor |
 | `icesmp.moderation.offlinetp` | Online célhoz, illetve mentett kijelentkezési helyre teleport a moderációs GUI-ból; `/offlinetp` | OP | Admin vagy senior moderátor |
 | `icesmp.moderation.inventory.read` | Online inventory és ender chest csak olvasható nézete | OP | Senior moderátor |
 | `icesmp.moderation.inventory.edit` | Online inventory és ender chest szerkesztése | OP | Csak vezető admin |
@@ -959,7 +971,7 @@ játékos-only cél nélkül magyar elutasítást ad.
 | `icesmp.moderation.history` | History és aktív punishmentek. | Moderátor | /history, /punishments | Moderációs GUI 19/20 | — | icesmp.admin.moderation | OP | közepes | Moderátor | Új |
 | `icesmp.moderation.socialspy` | SocialSpy állapot. | Moderátor | /socialspy | Moderációs GUI 30 | PrivateMessageCommand | icesmp.admin.moderation | OP | magas | Senior moderátor | Új |
 | `icesmp.moderation.vanish` | Vanish kezelése. | Admin | /vanish | Moderációs GUI 31 | VanishManager/listenerek | icesmp.admin.moderation | OP | magas | Admin | Új |
-| `icesmp.moderation.vanish.see` | Vanish játékosok láthatósága. | Vezető admin | — | Játékoslista/moderációs célpontszűrés | VanishManager | icesmp.admin.moderation | OP | magas | Admin | Új |
+| `icesmp.moderation.vanish.see` | Vanish játékosok láthatósága. | Vezető admin | — | Játékoslista/moderációs célpontszűrés | VanishManager | icesmp.admin.moderation | FALSE; külön grant kell | magas | Admin | Új |
 | `icesmp.moderation.offlinetp` | Utolsó logouthelyre teleport. | Moderátor/Admin | /offlinetp | Moderációs GUI 28/29 | Logout location capture | icesmp.admin.moderation | OP | magas | Admin | Új |
 | `icesmp.moderation.inventory.read` | Online inventory/ender read. | Moderátor | /invsee ... read | Moderációs GUI 22/24 | InvseeGUIListener | icesmp.admin.moderation | OP | magas | Senior moderátor | Új |
 | `icesmp.moderation.inventory.edit` | Online inventory/ender szerkesztés escrow-val. | Vezető admin | /invsee ... edit | Moderációs GUI 23/25 | InvseeGUIListener | icesmp.admin.moderation | OP | kritikus | Csak vezető admin | Új |
@@ -1720,7 +1732,7 @@ ellenőrizd; normál beszedési útvonal nincs.
 | [ ] | FP-D14 Gyógyítási kivételek | Eventes | DARK Vérhold alatt és DUNGEON zónában, azonos healforrás | mindkét esetben ×`1.0`; zónából/eventből kilépve újra ×`0.70` | event stop, játékos kimentése | `faction-passives/FP-D14/` |
 | [ ] | FP-D15 Civil kizárás | Tesztelő | DARK polgári bolt, kijelölt feketepiac, játékos-karaván és komp | polgári bolt/karaván elutasít; feketepiac nyílik; komp pontosan `2×` alapdíjat von | gazdasági backup, rollout stop | `faction-passives/FP-D15/` |
 | [ ] | FP-W01 Suttogó undead-policy | Tesztelő | nem-DARK Suttogó; chance `1.0/0.0`; nappal, éjjel, provokáció után és Vérholdban | csak éjjel/chance szerint szűr; provokáció 60 s-re és Vérhold teljesen felülírja; markerelt content harcol | státusz/config visszaállítása | `faction-passives/FP-W01/` |
-| [ ] | FP-W02 Pontos bizonyíték | Két tesztelő | tanú lát rítust/árulást; másik cél és lejárt bizonyíték is próbálva | csak a látott cél ellen, lejárat előtt, egyszer használható; rossz cél és újrahasználat nem léptet | státusz-visszaállítás | `faction-passives/FP-W02/` |
+| [ ] | FP-W02 Pontos bizonyíték | Két tesztelő | tanú lát aktív Suttogó-árulást/átadást; másik cél és lejárt bizonyíték is próbálva | csak a látott cél ellen, lejárat előtt, egyszer használható; rossz cél és újrahasználat nem léptet | státusz-visszaállítás | `faction-passives/FP-W02/` |
 | [ ] | FP-W03 Fix fokozatok és fedezék | Tesztelő/eventes | három érvényes vád, majd külön SUSPECTED állapotú kultista siker | vádak: OBSERVED, SUSPECTED, EXPOSED; leleplezés csak Exile-t ad; kultista siker pontosan egy fokozatot vesz le és EXPOSED-ből nem állít vissza | státusz-visszaállítás | `faction-passives/FP-W03/` |
 | [ ] | FP-M01 DARK + nem-DARK ugyanazon mobnál | Két tesztelő | egy undead, DARK és más frakciójú célpont | döntés játékosonkénti; DARK-béke nem törli/módosítja a másik targetjét | mob reset | `faction-passives/FP-M01/` |
 | [ ] | FP-M02 NEUTRAL + nem-NEUTRAL ugyanazon mobnál | Két tesztelő | egy neutral mob, két külön frakció | csak az explicit NEUTRAL spontán targetje szűrhető | mob reset | `faction-passives/FP-M02/` |
@@ -2422,3 +2434,34 @@ carrier-variánst és a sisak nélküli nappali undeadet. Ettől függetlenül m
 `HUMAN_GAMEPLAY_STAGING_REQUIRED`: 30–60 perc wilderness több biomban, nappal/éjjel/barlangban;
 azonos carrier több változata; archetype, telegraph, hang és particle olvashatóság; ranklépcsők;
 több világboss; invasion; Prologue; multiplayer és Folia multi-region/performance próba.
+
+## Konfigurációs leltár kiegészítése
+
+Az alábbi gyökerek a már létező konfiguráció/tartalom fájljaihoz tartoznak. A
+`content/` alatti szerzői adat nem új operátor-kapcsoló; a szerkesztési elveket a
+[CONTENT_AUTHORING](CONTENT_AUTHORING.md) rögzíti.
+
+| Gyökér | Kanonikus forrás |
+| --- | --- |
+| `client` | `src/main/resources/config/client.yml` |
+| `creature-species` | `src/main/resources/content/pve/enemies.yml` |
+| `item-sets` | `src/main/resources/content/equipment/equipment.yml` |
+| `item-templates` | `src/main/resources/content/equipment/equipment.yml` |
+| `itemization` | `src/main/resources/config/crafting.yml`, `src/main/resources/content/equipment/equipment.yml` |
+| `items` | `src/main/resources/content/trash/catalog.yml` |
+| `lifecycle-phases` | `src/main/resources/content/trash/catalog.yml` |
+| `loot-ecology` | `src/main/resources/content/trash/catalog.yml` |
+| `mob-abilities` | `src/main/resources/content/pve/enemies.yml` |
+| `mob-loot-profiles` | `src/main/resources/content/pve/enemies.yml` |
+| `mob-templates` | `src/main/resources/content/pve/enemies.yml` |
+| `player-presentation` | `src/main/resources/content/trash/catalog.yml` |
+
+A `/suttogas megtagadás` minden saját szereppel rendelkező játékosnak elérhető;
+`megtagadas` és `leave` alias. Nem adminjog és nem szereplekérdezés másról.
+A `/prologue` live-ops gyökér `icesmp.admin.prologue` jogot kér a teljes végrehajtás
+és tab-complete előtt. A státusz, start, advance, stage, stability, breach és finale
+műveletek részletes kezelése a [Prologue-referenciában](PROLOGUE.md#14-admin-parancsok)
+van; `gate open/close --force` és `reset --force` csak tudatos teszt/override.
+
+Az `escort.force-use-player-anchor: false` a meglévő Escort-fallbackot teszi
+látható alapbeállítássá; nem kényszeríti a konvojt a játékosra.
