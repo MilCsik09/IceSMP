@@ -127,7 +127,7 @@
       "phase": "WW-05",
       "inspect": "hidden identity/kind/behavior/phase/instance/revision/history/provenance/memory/rule fields",
       "planned_actions": "individualize, activate, transition, repair, sandbox copy, four rule field kinds, export/import, fork",
-      "canonical_route": "TrashHistoryService owns markers and read-only item inspection; native TrashHistoryStore/TrashAnomalyStateStore tryInspect refuse storage contention and uncertain writes. TrashRuleFieldService owns detached bounded fields and claims. Shared Anomaly/Relic activation extraction is still required before provider mutation registration.",
+      "canonical_route": "TrashHistoryService owns markers and read-only item inspection; native history/anomaly stores fence mutation/save as well as inspection after uncertain writes until successful load assessment. TrashRuleFieldService owns bounded fields and claims. Native projectile-wall consumption requires verified co-ownership and never freezes before acknowledgement; recoverable cross-region completion and influence admission remain unimplemented. Shared Anomaly/Relic activation extraction is required before provider mutation registration.",
       "rationale": "The registered Trash inspection subset reads native identity/history/provenance, derives archaeology without awards, reports actual runtime memory and world-local fields; dynamic identity/rule catalogs use canonical registries. Full Trash remains an implementation blocker: shared activation APIs, all developer mutation actions, journal/recovery, prototype/influence admission, and projectile handoff/unload/disable hardening are unfinished. Read-only subset registration does not waive domain coverage or connected runtime evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
@@ -6436,7 +6436,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyStateStore.java",
       "domain": "trash",
-      "source_sha256": "1fc8ae4ef5d572349aeb62ea6a336dc23add7a5ba2dd8194e0d1d5fb5f0844dd",
+      "source_sha256": "0cb47861b0167dcbba1df3e8fd550ae6ba7770e67b71a24452c31f0b993c6659",
       "public_methods": [
         "add",
         "addDurably",
@@ -6558,7 +6558,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "91ec8b7889070484cfc8689ba373be532f93dd663bf8906ce57f9cfbf8d3c3a2",
+      "source_sha256": "fdf0a4f3c91d2ccf7f18a902e4263c376bd6bc5f27d41abe1f9dc197135af90e",
       "public_methods": [
         "HistoryEntry",
         "Inspection",
@@ -6642,13 +6642,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicPolicy.java",
       "domain": "trash",
-      "source_sha256": "fea602517b0f4da9ba90c140e97c299bb1386d17019dd784397bebb7954e284d",
+      "source_sha256": "c8a012217dc5fd89a0431a695b789be47f5883b991b74de84a202f6f48966d8e",
       "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "404b18ea8f241a819b9f0188a9e0d69a0773e9d59bc276f18b516841650df1a4",
+      "source_sha256": "d339c531050eaa98e0feaad55af2b25ec375f2a93c5aed75b841496fd55c86de",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",
@@ -6666,6 +6666,7 @@
         "onSpawn",
         "onUse",
         "onWorldLoad",
+        "onWorldUnload",
         "ruleFields",
         "shutdown",
         "start",

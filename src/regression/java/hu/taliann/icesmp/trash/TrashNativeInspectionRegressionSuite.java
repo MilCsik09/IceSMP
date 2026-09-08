@@ -17,7 +17,7 @@ public final class TrashNativeInspectionRegressionSuite {
     public static void main(String[] args) throws Exception {
         try {
             historyTransaction(); historyWriteFailure(); anomalyTransaction();
-            anomalyFailure(false); anomalyFailure(true);
+            anomalyFailure(false); anomalyFailure(true); historyAcknowledgementFailure(); unloadedWrites();
             System.out.println("Trash native inspection passed. assertions=" + assertions);
         } finally { IO.shutdownNow(); }
     }
@@ -84,6 +84,8 @@ public final class TrashNativeInspectionRegressionSuite {
         } catch (CriticalPersistenceWriteError expected) { assertions++; }
         check(store.find(id).isEmpty(), "failed write rolled back native working state");
         check(store.tryInspect(id).isEmpty(), "failed acknowledgement cannot be presented as healthy absence");
+        refuses(() -> store.transact(() -> { throw new AssertionError("fenced mutation entered"); }, null));
+        refuses(store::save);
         Files.delete(dir.resolve("history.wal")); store.load();
         check(store.tryInspect(id).orElseThrow().history().isEmpty(), "explicit disk assessment restores known absence");
     }
@@ -127,8 +129,71 @@ public final class TrashNativeInspectionRegressionSuite {
         catch (CriticalPersistenceWriteError expected) { assertions++; }
         check(store.get(id, LOCAL_PLAYER_DEATHS) == 2, "critical Error restores working memory just as RuntimeException does");
         check(store.tryInspect(id).isEmpty(), "ambiguous memory cannot be used as authoritative inspection");
+        final byte[] uncertainDisk = Files.readAllBytes(file.toPath());
+        fail.set(false);
+        refuses(() -> store.add(id, WATCHED_TICKS, 7));
+        refuses(() -> store.addDurably(id, LOCAL_PLAYER_DEATHS, 7));
+        refuses(store::save);
+        check(Arrays.equals(uncertainDisk, Files.readAllBytes(file.toPath())), "fenced save cannot overwrite an uncertain atomic replacement");
+        check(store.get(id, LOCAL_PLAYER_DEATHS) == 2 && store.get(id, WATCHED_TICKS) == 0,
+                "fenced mutations leave rolled-back memory untouched");
         store.load();
         check(store.tryInspect(id).orElseThrow().get(LOCAL_PLAYER_DEATHS) == (afterWrite ? 5 : 2), "disk assessment observes actual replacement without replay");
+        check(store.addDurably(id, LOCAL_PLAYER_DEATHS, 1) == (afterWrite ? 6 : 3), "acknowledged reload reopens native mutation admission");
+    }
+
+    private static void historyAcknowledgementFailure() throws Exception {
+        final var dir = Files.createTempDirectory("trash-history-ack-failure-");
+        final var catalog = catalog(); final UUID id = UUID.randomUUID();
+        final String base = catalog.snapshot().keySet().iterator().next();
+        final var fail = new AtomicBoolean();
+        final var store = new TrashHistoryStore(dir.resolve("history.yml").toFile(),
+                dir.resolve("history.wal").toFile(), LOGGER, catalog, (journal, sequence, payload) -> {
+                    journal.append(sequence, payload);
+                    if (fail.get()) throw new CriticalPersistenceWriteError(dir.resolve("history.wal").toFile(),
+                            new java.io.IOException("lost acknowledgement after actual fsync"));
+                });
+        store.load();
+        store.transact(() -> store.createAndRecord(id, base, "base", TrashHistoryEvent.CREATED_AMBIENT, null, ""), null);
+        final var acknowledged = store.tryInspect(id).orElseThrow();
+        fail.set(true); final var restored = new AtomicBoolean();
+        try {
+            store.transact(() -> store.record(id, base, "base", TrashHistoryEvent.REPAIRED, null, ""), () -> restored.set(true));
+            throw new AssertionError("uncertain actual WAL append accepted");
+        } catch (CriticalPersistenceWriteError expected) { assertions++; }
+        check(restored.get() && store.find(id).orElseThrow().revision() == acknowledged.history().orElseThrow().revision(),
+                "uncertain append rolls memory and external projection back");
+        final byte[] uncertainDisk = Files.readAllBytes(dir.resolve("history.wal"));
+        fail.set(false);
+        refuses(() -> store.transact(() -> { throw new AssertionError("uncertain history accepted another mutation"); }, null));
+        refuses(store::save);
+        check(Arrays.equals(uncertainDisk, Files.readAllBytes(dir.resolve("history.wal")))
+                && !Files.exists(dir.resolve("history.yml")), "fence prevents duplicate sequence append and rolled-back snapshot compaction");
+        check(store.tryInspect(id).isEmpty(), "rejected write cannot clear the uncertainty fence");
+        store.load();
+        check(store.tryInspect(id).orElseThrow().sequence() == acknowledged.sequence() + 1
+                && store.find(id).orElseThrow().revision() == acknowledged.history().orElseThrow().revision() + 1,
+                "load observes the actual fsynced event once without replaying mutation");
+        store.transact(() -> store.record(id, base, "base", TrashHistoryEvent.REPAIRED, null, ""), null);
+        store.save(); final var reloaded = history(dir, catalog); reloaded.load();
+        check(reloaded.tryInspect(id).equals(store.tryInspect(id)), "post-assessment append and compaction remain recoverable");
+    }
+
+    private static void unloadedWrites() throws Exception {
+        final var dir = Files.createTempDirectory("trash-unloaded-writes-"); final UUID id = UUID.randomUUID();
+        final var history = history(dir, catalog());
+        final var memory = new TrashAnomalyStateStore(dir.resolve("memory.yml").toFile(), LOGGER);
+        refuses(() -> history.transact(() -> { throw new AssertionError("unloaded history mutation entered"); }, null));
+        refuses(history::save);
+        refuses(() -> memory.add(id, WATCHED_TICKS, 1));
+        refuses(() -> memory.addDurably(id, LOCAL_PLAYER_DEATHS, 1));
+        refuses(memory::save);
+        try (final var files = Files.list(dir)) { check(files.findAny().isEmpty(), "unloaded stores wrote authority files"); }
+    }
+
+    private static void refuses(Runnable write) {
+        try { write.run(); throw new AssertionError("unassessed store accepted a write"); }
+        catch (IllegalStateException expected) { assertions++; }
     }
     private static void await(CountDownLatch latch) {
         try { if (!latch.await(5, TimeUnit.SECONDS)) throw new AssertionError("held native write timed out"); }

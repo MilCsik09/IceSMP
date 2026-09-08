@@ -101,6 +101,7 @@ public final class TrashAnomalyStateStore implements PersistentStore {
     public void save() {
         stateLock.lock();
         try {
+            requireLoadedAcknowledgement();
             final YamlConfiguration yaml = new YamlConfiguration();
             yaml.set("schema-version", 1);
             for (final Map.Entry<UUID, EnumMap<MemoryKey, Long>> entry : states.entrySet()) {
@@ -136,6 +137,7 @@ public final class TrashAnomalyStateStore implements PersistentStore {
     public long add(final UUID instanceId, final MemoryKey key, final long delta) {
         stateLock.lock();
         try {
+            requireLoadedAcknowledgement();
             Objects.requireNonNull(instanceId, "instanceId");
             Objects.requireNonNull(key, "key");
             if (delta < 0L) throw new IllegalArgumentException("a memory delta nem lehet negatív");
@@ -197,6 +199,11 @@ public final class TrashAnomalyStateStore implements PersistentStore {
     private void corrupt(final String reason) {
         YamlStore.failCorrupt(file, logger, reason);
         throw new IllegalStateException("Sérült Trash anomaly state: " + reason);
+    }
+
+    private void requireLoadedAcknowledgement() {
+        // Only load may assess an uncertain atomic replacement; save must not erase its evidence.
+        if (!readable) throw new IllegalStateException("Trash anomaly memory requires successful load assessment");
     }
 
     public enum MemoryKey {

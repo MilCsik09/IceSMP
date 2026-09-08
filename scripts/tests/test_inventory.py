@@ -31,6 +31,9 @@ class InventoryFixtureTest(unittest.TestCase):
         (self.root / "src/main/resources/config").mkdir(parents=True)
         (self.root / "docs").mkdir()
         subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
+        # Detached Git maintenance must not outlive this temporary repository.
+        subprocess.run(["git", "config", "maintenance.auto", "false"], cwd=self.root, check=True)
+        subprocess.run(["git", "config", "gc.auto", "0"], cwd=self.root, check=True)
         subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=self.root, check=True)
         subprocess.run(["git", "config", "user.name", "Fixture"], cwd=self.root, check=True)
 

@@ -30,10 +30,12 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.GenericGameEvent;
 import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.util.Vector;
 
@@ -46,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import hu.taliann.icesmp.trash.TrashRuleFieldService.FieldKind;
 import hu.taliann.icesmp.trash.TrashRuleFieldService.RuleField;
 import hu.taliann.icesmp.trash.TrashRuleFieldService.Point;
-import java.util.concurrent.Semaphore;
+import hu.taliann.icesmp.trash.TrashRelicPolicy.ProjectileTracking;
 
 /** Bounded, typed and protection-aware runtime for the 23 Phase E consuming identities. */
 public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
@@ -72,8 +74,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     private final NamespacedKey brickReservationKey;
     private final Set<UUID> effectVetoArmed = ConcurrentHashMap.newKeySet();
     private final Set<UUID> pendingConsumes = ConcurrentHashMap.newKeySet();
-    private final Set<UUID> trackedProjectiles = ConcurrentHashMap.newKeySet();
-    private final Semaphore projectileTrackerPermits = new Semaphore(MAX_TRACKED_PROJECTILES);
+    private final ProjectileTracking projectileTracking = new ProjectileTracking(MAX_TRACKED_PROJECTILES);
     private final TrashRuleFieldService ruleFields = new TrashRuleFieldService();
 
     public TrashRelicRuntime(final JavaPlugin plugin, final TrashCatalog catalog,
@@ -99,16 +100,15 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     public void start() {
         fractures.recover();
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            player.getScheduler().run(plugin,
-                    ignored -> clearStaleBrickReservations(player), null);
+            clearReservationsOnOwner(player.getUniqueId(), null);
         }
     }
 
     public void shutdown() {
+        projectileTracking.close();
         for (final RuleField field : ruleFields.close()) releaseReservation(field);
         effectVetoArmed.clear();
         pendingConsumes.clear();
-        trackedProjectiles.clear();
         fractures.shutdown();
     }
 
@@ -116,15 +116,13 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     public void clearPlayerState(final UUID playerId) {
         effectVetoArmed.remove(playerId);
         pendingConsumes.remove(playerId);
-        final Player player = Bukkit.getPlayer(playerId);
-        if (player != null) clearStaleBrickReservations(player);
         for (final RuleField field : ruleFields.snapshot().fields()) {
             if (field.kind() == FieldKind.PROJECTILE_WALL
                     && field.owner().equals(playerId) && ruleFields.remove(field)) {
-                ruleFields.releaseClaim(field.id());
-                if (player != null) clearBrickReservation(player, field.reservationToken());
+                releaseReservation(field);
             }
         }
+        clearReservationsOnOwner(playerId, null);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -351,6 +349,14 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         fractures.recoverWorld(event.getWorld());
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onWorldUnload(final WorldUnloadEvent event) {
+        final UUID worldId = event.getWorld().getUID();
+        for (final RuleField field : ruleFields.snapshot().fields()) {
+            if (field.center().world().equals(worldId) && ruleFields.remove(field)) releaseReservation(field);
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onGameEvent(final GenericGameEvent event) {
         final Entity source = event.getEntity();
@@ -364,38 +370,40 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         final Projectile projectile = event.getEntity();
         cleanupFields();
         final boolean wallActive = hasFieldKind(FieldKind.PROJECTILE_WALL);
-        if (!TrashRelicPolicy.mayTrackProjectile(wallActive, trackedProjectiles.size(),
-                MAX_TRACKED_PROJECTILES) || !projectileTrackerPermits.tryAcquire()) return;
-        if (!trackedProjectiles.add(projectile.getUniqueId())) {
-            projectileTrackerPermits.release();
-            return;
-        }
+        if (!wallActive) return;
+        final ProjectileTracking.Ticket ticket = projectileTracking.admit(projectile.getUniqueId());
+        if (ticket == null) return;
         final int[] age = {0};
-        projectile.getScheduler().runAtFixedRate(plugin, task -> {
-            if (!projectile.isValid() || ++age[0] > 100) {
-                releaseProjectileTracker(projectile.getUniqueId());
-                task.cancel();
-                return;
-            }
-            final RuleField hit = claimField(projectile.getLocation(), FieldKind.PROJECTILE_WALL);
-            if (hit == null) return;
-            final Vector priorVelocity = projectile.getVelocity().clone();
-            projectile.setVelocity(new Vector());
-            releaseProjectileTracker(projectile.getUniqueId());
-            task.cancel();
-            final Player owner = Bukkit.getPlayer(hit.owner());
-            if (owner == null) {
-                releaseFieldClaim(hit);
-                restoreProjectile(projectile, priorVelocity);
-                return;
-            }
-            owner.getScheduler().run(plugin,
-                    ignored -> resolveProjectileWall(owner, hit, projectile, priorVelocity),
-                    () -> {
+        try {
+            final var scheduled = projectile.getScheduler().runAtFixedRate(plugin, task -> {
+                try {
+                    if (!projectileTracking.active(ticket) || !projectile.isValid() || ++age[0] > 100) {
+                        task.cancel();
+                        projectileTracking.release(ticket);
+                        return;
+                    }
+                    final RuleField hit = claimField(projectile.getLocation(), FieldKind.PROJECTILE_WALL);
+                    if (hit == null) return;
+                    try {
+                        if (resolveProjectileWall(hit, projectile, ticket)) {
+                            task.cancel();
+                            projectileTracking.release(ticket);
+                        }
+                    } finally {
                         releaseFieldClaim(hit);
-                        restoreProjectile(projectile, priorVelocity);
-                    });
-        }, () -> releaseProjectileTracker(projectile.getUniqueId()), 1L, 1L);
+                    }
+                } catch (final RuntimeException | Error failure) {
+                    task.cancel();
+                    projectileTracking.release(ticket);
+                    throw failure;
+                }
+            }, () -> projectileTracking.release(ticket), 1L, 1L);
+            // A retired scheduler returns null without invoking either callback.
+            if (scheduled == null) projectileTracking.release(ticket);
+        } catch (final RuntimeException | Error failure) {
+            projectileTracking.release(ticket);
+            throw failure;
+        }
     }
 
     private void splitOffhand(final Player player, final TrashRelicBehavior knife) {
@@ -647,19 +655,20 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         return ruleFields.claim(point(location), kind).orElse(null);
     }
 
-    private void resolveProjectileWall(final Player owner, final RuleField field,
-                                       final Projectile projectile, final Vector priorVelocity) {
-        if (!ruleFields.contains(field) || !ruleFields.isClaimed(field.id())
-                || !consumeBrickReservation(owner, field.reservationToken())) {
-            releaseFieldClaim(field);
-            restoreProjectile(projectile, priorVelocity);
-            return;
-        }
-        ruleFields.remove(field);
-        ruleFields.releaseClaim(field.id());
-        projectile.getScheduler().run(plugin, ignored -> {
-            if (projectile.isValid()) projectile.remove();
-        }, () -> { });
+    private boolean resolveProjectileWall(final RuleField field, final Projectile projectile,
+                                          final ProjectileTracking.Ticket ticket) {
+        final Player owner = Bukkit.getPlayer(field.owner());
+        return TrashRelicPolicy.completeProjectileWall(owner != null
+                        && Bukkit.isOwnedByCurrentRegion(owner)
+                        && Bukkit.isOwnedByCurrentRegion(projectile),
+                () -> projectileTracking.active(ticket) && owner.isOnline() && projectile.isValid()
+                        && owner.getWorld().getUID().equals(field.center().world())
+                        && ruleFields.contains(field) && ruleFields.isClaimed(field.id()),
+                () -> consumeBrickReservation(owner, field.reservationToken()),
+                () -> {
+                    ruleFields.remove(field);
+                    projectile.remove();
+                });
     }
 
     private boolean consumeBrickReservation(final Player player, final String token) {
@@ -667,23 +676,20 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         if (slot < 0) return false;
         try {
             if (!history.transformInventorySlotOnSuccess(player, slot)) return false;
-            clearBrickReservation(player, token);
-            return true;
         } catch (final RuntimeException rejected) {
             telemetry.recordBehaviorRuntimeError();
             return false;
         }
+        // Marker cleanup must not turn an acknowledged consuming transition into a retry.
+        try {
+            clearBrickReservation(player, token);
+        } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
+        }
+        return true;
     }
 
-    private void restoreProjectile(final Projectile projectile, final Vector velocity) {
-        projectile.getScheduler().run(plugin, ignored -> {
-            if (projectile.isValid()) projectile.setVelocity(velocity.clone());
-        }, () -> { });
-    }
-
-    private void releaseProjectileTracker(final UUID projectileId) {
-        if (trackedProjectiles.remove(projectileId)) projectileTrackerPermits.release();
-    }
+    TrashRelicPolicy.TrackingSnapshot projectileTrackingState() { return projectileTracking.snapshot(); }
 
     private void releaseFieldClaim(final RuleField field) {
         ruleFields.releaseClaim(field.id());
@@ -712,9 +718,26 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
 
     private void releaseReservation(final RuleField field) {
         if (field.reservationToken() == null) return;
-        final Player owner = Bukkit.getPlayer(field.owner());
-        if (owner != null) owner.getScheduler().run(plugin,
-                ignored -> clearBrickReservation(owner, field.reservationToken()), null);
+        clearReservationsOnOwner(field.owner(), field.reservationToken());
+    }
+
+    private void clearReservationsOnOwner(final UUID ownerId, final String token) {
+        final Player owner = Bukkit.getPlayer(ownerId);
+        if (owner == null) return;
+        final Runnable cleanup = () -> {
+            if (token == null) clearStaleBrickReservations(owner);
+            else clearBrickReservation(owner, token);
+        };
+        if (Bukkit.isOwnedByCurrentRegion(owner)) {
+            cleanup.run();
+            return;
+        }
+        if (!plugin.isEnabled()) return;
+        try {
+            owner.getScheduler().run(plugin, ignored -> cleanup.run(), null);
+        } catch (final IllegalPluginAccessException disabled) {
+            // The marker grants no authority; join/start/use rechecks the native field registry.
+        }
     }
 
     private int findBrickReservation(final Player player, final String token) {

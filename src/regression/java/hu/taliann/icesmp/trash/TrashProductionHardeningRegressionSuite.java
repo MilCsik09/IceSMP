@@ -172,7 +172,11 @@ public final class TrashProductionHardeningRegressionSuite {
                 "runtime shutdown proof ran before Trash cleanup");
         require(probe, "SHUTDOWN_PASS_MARKER", "separate shutdown proof marker");
         require(probe, "activePhysics", "Anomaly shutdown-state proof");
-        require(probe, "trackedProjectiles", "Relic shutdown-state proof");
+        require(probe, "verifyProjectileTrackingState(relic.projectileTrackingState(), true)",
+                "native projectile startup lifecycle proof");
+        require(probe, "verifyProjectileTrackingState(relic.projectileTrackingState(), false)",
+                "native projectile shutdown lifecycle proof");
+        check(!probe.contains("\"trackedProjectiles\""), "probe depends on removed projectile permit registry");
         require(probe, "verifyRuleFieldState(relic.ruleFields().snapshot(), true)",
                 "native field startup lifecycle proof");
         require(probe, "verifyRuleFieldState(relic.ruleFields().snapshot(), false)",

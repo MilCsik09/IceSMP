@@ -103,7 +103,8 @@ public final class TrashHistoryRegressionSuite {
         check(transaction >= 0 && nativeLock > transaction && mutation > nativeLock
                         && unlock > mutation,
                 "native durable transaction must hold its shared state lock through mutation");
-        require(store, "journal.append(nextSequence", "durable per-transaction delta append");
+        require(store, "journalAppender.append(journal, nextSequence", "durable per-transaction delta append");
+        require(store, "TrashHistoryJournal::append", "production append uses the native fsync journal");
         require(store, "rollback(frame)", "touched-key rollback on journal failure");
         check(!store.contains("new LinkedHashMap<>(histories)"),
                 "history transaction must not copy the complete authority map");

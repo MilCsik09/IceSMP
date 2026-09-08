@@ -39,6 +39,7 @@ public final class TrashHistoryStore implements PersistentStore {
     private final TrashCatalog catalog;
     private final File file;
     private final TrashHistoryJournal journal;
+    private final JournalAppender journalAppender;
     private final Map<UUID, StoredHistory> histories = new LinkedHashMap<>();
     private final Map<UUID, StoredVendorReceipt> vendorReceipts = new LinkedHashMap<>();
     private long sequence;
@@ -53,10 +54,17 @@ public final class TrashHistoryStore implements PersistentStore {
 
     TrashHistoryStore(final File file, final File journalFile,
                       final java.util.logging.Logger logger, final TrashCatalog catalog) {
+        this(file, journalFile, logger, catalog, TrashHistoryJournal::append);
+    }
+
+    TrashHistoryStore(final File file, final File journalFile,
+                      final java.util.logging.Logger logger, final TrashCatalog catalog,
+                      final JournalAppender journalAppender) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.catalog = Objects.requireNonNull(catalog, "catalog");
         this.file = Objects.requireNonNull(file, "file");
         this.journal = new TrashHistoryJournal(logger, journalFile);
+        this.journalAppender = Objects.requireNonNull(journalAppender, "journalAppender");
         YamlStore.registerCriticalWrite(file);
     }
 
@@ -181,6 +189,7 @@ public final class TrashHistoryStore implements PersistentStore {
     public void save() {
         stateLock.lock();
         try {
+            requireLoadedAcknowledgement();
             persistSnapshotAndResetJournal();
         } catch (final RuntimeException | Error failure) {
             readable = false;
@@ -196,6 +205,7 @@ public final class TrashHistoryStore implements PersistentStore {
         stateLock.lock();
         try {
             Objects.requireNonNull(mutation, "mutation");
+            requireLoadedAcknowledgement();
             if (activeTransaction != null) {
                 throw new IllegalStateException("nested Trash history transaction");
             }
@@ -209,7 +219,7 @@ public final class TrashHistoryStore implements PersistentStore {
                     final long nextSequence = Math.addExact(sequence, 1L);
                     final String payload = journalPayload(frame);
                     enteredWrite = true;
-                    journal.append(nextSequence, payload);
+                    journalAppender.append(journal, nextSequence, payload);
                     sequence = nextSequence;
                     journalRecords++;
                 }
@@ -433,6 +443,16 @@ public final class TrashHistoryStore implements PersistentStore {
 
     public record Inspection(long sequence, Optional<Snapshot> history) {
         public Inspection { Objects.requireNonNull(history, "history"); }
+    }
+
+    private void requireLoadedAcknowledgement() {
+        // Rolled-back memory cannot overwrite a write whose durable outcome has not been assessed.
+        if (!readable) throw new IllegalStateException("Trash history requires successful load assessment");
+    }
+
+    @FunctionalInterface
+    interface JournalAppender {
+        void append(TrashHistoryJournal journal, long sequence, String payload);
     }
 
     private void putHistory(final UUID instanceId, final StoredHistory history) {

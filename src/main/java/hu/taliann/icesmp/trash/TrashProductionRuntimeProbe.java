@@ -88,8 +88,8 @@ public final class TrashProductionRuntimeProbe {
                         "Anomaly state survived shutdown");
             }
             verifyRuleFieldState(relic.ruleFields().snapshot(), false);
-            for (final String state : Set.of("effectVetoArmed", "pendingConsumes",
-                    "trackedProjectiles")) {
+            verifyProjectileTrackingState(relic.projectileTrackingState(), false);
+            for (final String state : Set.of("effectVetoArmed", "pendingConsumes")) {
                 check(sizeOf(readField(relic, state, Object.class)) == 0,
                         "Relic state survived shutdown");
             }
@@ -214,6 +214,7 @@ public final class TrashProductionRuntimeProbe {
         check(readField(anomaly, "heldTick", Object.class) != null,
                 "Anomaly runtime did not start");
         verifyRuleFieldState(relic.ruleFields().snapshot(), true);
+        verifyProjectileTrackingState(relic.projectileTrackingState(), true);
         check(sizeOf(readField(archaeology, "sessions", Object.class)) == 0,
                 "Archaeology runtime started with pending sessions");
         check(sizeOf(readField(ambient, "active", Object.class)) == 0,
@@ -231,6 +232,13 @@ public final class TrashProductionRuntimeProbe {
         check(snapshot.open() == expectedOpen, "Rule-field lifecycle state mismatch");
         check(snapshot.fields().isEmpty(), "Rule fields remain at lifecycle boundary");
         check(snapshot.claimed().isEmpty(), "Rule-field claims remain at lifecycle boundary");
+    }
+
+    static void verifyProjectileTrackingState(final TrashRelicPolicy.TrackingSnapshot snapshot,
+                                               final boolean expectedOpen) {
+        check(snapshot.open() == expectedOpen, "Projectile tracking lifecycle state mismatch");
+        check(snapshot.active() == 0, "Projectile tracking remains at lifecycle boundary");
+        check(snapshot.maximum() == 256, "Projectile tracking cap mismatch");
     }
 
     private static int sizeOf(final Object value) {
