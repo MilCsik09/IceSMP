@@ -299,6 +299,27 @@ public final class TrashHistoryService {
         return store.tryInspectWallReceipts();
     }
 
+    /** Caller owns the captured unit and projection; missing, drifted or duplicated units are never recreated. */
+    public boolean tryRestoreAcknowledgedWallProjection(final ItemStack source, final UUID actor,
+            final TrashHistoryStore.WallReceipt receipt, final java.util.function.BooleanSupplier admission,
+            final java.util.function.Consumer<ItemStack> projection) {
+        Objects.requireNonNull(actor); Objects.requireNonNull(receipt);
+        Objects.requireNonNull(admission); Objects.requireNonNull(projection);
+        if (!actor.equals(receipt.actor()) || source == null || source.getAmount() != 1
+                || !itemFactory.isKnownItem(source) || !receipt.baseId().equals(itemFactory.idOf(source).orElse(null))
+                || !"base".equals(itemFactory.phaseOf(source).orElse(null))
+                || !receipt.instanceId().equals(instanceIdOf(source).orElse(null))
+                || revisionOf(source) != receipt.beforeRevision() || preparedRepair(source).isPresent()) return false;
+        creationEventOf(source);
+        final ItemStack before = source.clone();
+        return store.tryRestoreWallProjection(receipt, admission, acknowledged -> {
+            final ItemStack restored = before.clone();
+            itemFactory.applyPhase(restored, receipt.phase());
+            writeAuthority(restored, acknowledged);
+            projection.accept(restored);
+        }, () -> projection.accept(before.clone()));
+    }
+
     /**
      * Splits and individualizes exactly one unit in the selected hand before a deferred effect
      * reserves it. The player inventory projection rolls back with the durable history write.

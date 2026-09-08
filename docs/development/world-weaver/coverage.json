@@ -6524,7 +6524,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "d713f8e32a8ae75f32f151419f6931fee1f602d4ec5039dd73fb7b5caabf0c9f",
+      "source_sha256": "a06c7bf18ee5f02fde52ce0444c39704d7165f4e19e4e5c4f17f4800db645977",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6557,6 +6557,7 @@
         "tryConsumeProjectileWall",
         "tryInspect",
         "tryInspectPendingProjectileWalls",
+        "tryRestoreAcknowledgedWallProjection",
         "tryTransformInventorySlotOnSuccess",
         "validateVendorSale"
       ]
@@ -6564,7 +6565,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "1adf117b5e7192e59be6f67de102559941b4b38c015d1908c9624b2c5319c9ea",
+      "source_sha256": "8dd55d5dda628e9e6f22d887e54ac2c8748828068d640fba8b43ddfed214ebeb",
       "public_methods": [
         "HistoryEntry",
         "Inspection",
@@ -6588,6 +6589,7 @@
         "tryConfirmWallRemoval",
         "tryInspect",
         "tryInspectWallReceipts",
+        "tryRestoreWallProjection",
         "tryTransact"
       ]
     },
@@ -6659,7 +6661,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "24f7dfbed475f52814869f61b78b9658d0c198076475d5bd8c6d2a9ca81f952f",
+      "source_sha256": "baaf9eab6108af168096093467428073017f77294956123bdce890ee9e2b339d",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",

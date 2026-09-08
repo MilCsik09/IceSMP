@@ -16,6 +16,7 @@ public final class TrashWallReceiptRegressionSuite {
 
     public static void main(String[] args) throws Exception {
         atomicConsumeAndObservedRemoval();
+        acknowledgedProjectionRecovery();
         lostAcknowledgement(false); lostAcknowledgement(true); rejectedAppend();
         busyWriterAndReentrantObservation();
         legacySnapshotAndMalformedReceipt();
@@ -127,6 +128,38 @@ public final class TrashWallReceiptRegressionSuite {
         }
     }
 
+    private static void acknowledgedProjectionRecovery() throws Exception {
+        try (var f = new Fixture()) {
+            final var receipt = f.consume(f.create()); f.store.load();
+            final var before = f.store.find(receipt.instanceId()).orElseThrow();
+            final byte[] wal = Files.readAllBytes(f.root.resolve("history.wal"));
+            final AtomicInteger projection = new AtomicInteger();
+            check(!f.store.tryRestoreWallProjection(receipt, () -> false,
+                    snapshot -> { throw new AssertionError("refused projection ran"); },
+                    () -> { throw new AssertionError("untouched projection restored"); }), "owner refusal was ignored");
+            expectFailure(() -> f.store.tryRestoreWallProjection(receipt, () -> true, snapshot -> {
+                check(snapshot.equals(before), "recovery invented a history generation");
+                projection.set(1); throw new IllegalStateException("injected projection failure");
+            }, () -> projection.set(0)));
+            check(projection.get() == 0 && f.store.tryInspectWallReceipts().orElseThrow().equals(List.of(receipt)),
+                    "failed projection lost either before state or native pending operation");
+            check(f.store.tryRestoreWallProjection(receipt, () -> true, snapshot -> {
+                check(snapshot.equals(before), "recovery used another native revision"); projection.set(1);
+            }, () -> projection.set(0)), "acknowledged projection recovery refused");
+            check(projection.get() == 1 && f.store.find(receipt.instanceId()).orElseThrow().equals(before),
+                    "projection recovery rewrote immutable history");
+            check(Arrays.equals(wal, Files.readAllBytes(f.root.resolve("history.wal"))),
+                    "projection recovery fabricated a second history/WAL event");
+            check(f.store.tryInspectWallReceipts().orElseThrow().equals(List.of(receipt)),
+                    "inventory projection was mistaken for projectile removal");
+            check(f.store.tryConfirmWallRemoval(receipt, () -> true), "observed fixture completion failed");
+            check(!f.store.tryRestoreWallProjection(receipt,
+                    () -> { throw new AssertionError("obsolete receipt entered owner admission"); },
+                    snapshot -> { throw new AssertionError("obsolete receipt recreated an item"); }, null),
+                    "completed operation still authorizes a recovery projection");
+        }
+    }
+
     private static void rejectedAppend() throws Exception {
         try (var f = new Fixture()) {
             UUID id = f.create(); f.failBeforeAppend.set(true);
@@ -146,6 +179,9 @@ public final class TrashWallReceiptRegressionSuite {
             var writer = executor.submit(() -> f.store.transact(() -> {
                 check(f.store.tryInspectWallReceipts().isEmpty(), "reentrant inspection exposed candidate receipts");
                 check(!f.store.tryConfirmWallRemoval(receipt, () -> true), "reentrant confirmation entered transaction");
+                check(!f.store.tryRestoreWallProjection(receipt, () -> true,
+                        snapshot -> { throw new AssertionError("reentrant projection ran"); }, null),
+                        "reentrant projection recovery entered a write");
                 entered.countDown();
                 try { if (!release.await(5, TimeUnit.SECONDS)) throw new AssertionError("writer release timeout"); }
                 catch (InterruptedException failure) { throw new AssertionError(failure); }
@@ -155,6 +191,9 @@ public final class TrashWallReceiptRegressionSuite {
                 check(entered.await(5, TimeUnit.SECONDS), "writer did not enter");
                 check(f.store.tryInspectWallReceipts().isEmpty(), "busy recovery inspection waited or exposed state");
                 check(!f.store.tryConfirmWallRemoval(receipt, () -> true), "busy completion waited or mutated native state");
+                check(!f.store.tryRestoreWallProjection(receipt, () -> true,
+                        snapshot -> { throw new AssertionError("busy projection ran"); }, null),
+                        "busy projection recovery waited or mutated a physical unit");
             } finally { release.countDown(); }
             writer.get(5, TimeUnit.SECONDS);
             check(f.store.tryInspectWallReceipts().orElseThrow().equals(List.of(receipt)), "busy refusal deleted pending receipt");

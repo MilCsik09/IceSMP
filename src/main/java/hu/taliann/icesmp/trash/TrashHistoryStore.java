@@ -293,6 +293,16 @@ public final class TrashHistoryStore implements PersistentStore {
                 }, null);
     }
 
+    /** Reprojects an already acknowledged consume; it neither replays effects nor appends history. */
+    public boolean tryRestoreWallProjection(final WallReceipt expected, final BooleanSupplier admission,
+                                             final java.util.function.Consumer<Snapshot> projection,
+                                             final Runnable restoreExternal) {
+        Objects.requireNonNull(expected); Objects.requireNonNull(admission); Objects.requireNonNull(projection);
+        return tryTransact(() -> expected.equals(wallReceipts.get(expected.operationId())) && admission.getAsBoolean(),
+                () -> projection.accept(snapshot(expected.instanceId(), histories.get(expected.instanceId()))),
+                restoreExternal);
+    }
+
     @Override
     public void save() {
         stateLock.lock();

@@ -239,6 +239,55 @@ public final class TrashProductionRuntimeProbe {
                 "inspection or derivation wrote item/history state");
         store.load();
         check(history.tryInspect(unit).orElseThrow().equals(current), "real native history reload changed inspection");
+        verifyAcknowledgedWallProjection(catalog, items, store, history, directory);
+    }
+
+    private static void verifyAcknowledgedWallProjection(final TrashCatalog catalog, final TrashItemFactory items,
+            final TrashHistoryStore store, final TrashHistoryService history, final java.nio.file.Path directory)
+            throws java.io.IOException {
+        // This fixture models stale physical save data, not a connected player or projectile interception.
+        final var brick = catalog.snapshot().values().stream().filter(value -> value.behavior().equals("TEGLA")).findFirst().orElseThrow();
+        final java.util.UUID actor = java.util.UUID.randomUUID();
+        final ItemStack oldPhysical = items.create(brick.id(), 1);
+        history.individualizeUnit(oldPhysical, TrashHistoryEvent.ACTIVATED, actor, "");
+        final var before = history.tryInspect(oldPhysical).orElseThrow().history().orElseThrow();
+        final var field = new TrashRuleFieldService.RuleField(java.util.UUID.randomUUID(),
+                TrashRuleFieldService.FieldKind.PROJECTILE_WALL,
+                new TrashRuleFieldService.Point(java.util.UUID.randomUUID(), 0, 64, 0), 2.5,
+                System.currentTimeMillis() + 20_000, actor, java.util.UUID.randomUUID().toString());
+        final var receipt = store.transact(() -> {
+            final var consumed = store.transform(before.instanceId(), brick.id(), "base", brick.successPhase(), actor);
+            final var pending = new TrashHistoryStore.WallReceipt(field.id(), actor, field.center().world(),
+                    java.util.UUID.randomUUID(), before.instanceId(), consumed.revision(), brick.id(), brick.successPhase(),
+                    System.currentTimeMillis(), field, before.revision());
+            store.putWallReceipt(pending); return pending;
+        }, null);
+        store.load();
+        check(history.tryInspect(oldPhysical).isEmpty(), "stale saved unit became current without native recovery");
+        final byte[] wal = java.nio.file.Files.readAllBytes(directory.resolve("history.wal"));
+        final var physical = new java.util.concurrent.atomic.AtomicReference<>(oldPhysical.clone());
+        final java.util.function.Consumer<ItemStack> untouched = ignored -> { throw new IllegalStateException("refused projection ran"); };
+        check(!history.tryRestoreAcknowledgedWallProjection(null, actor, receipt, () -> true, untouched), "missing unit was recreated");
+        check(!history.tryRestoreAcknowledgedWallProjection(oldPhysical, java.util.UUID.randomUUID(), receipt, () -> true, untouched), "another actor's unit was projected");
+        final ItemStack duplicate = oldPhysical.clone(); duplicate.setAmount(2);
+        check(!history.tryRestoreAcknowledgedWallProjection(duplicate, actor, receipt, () -> true, untouched), "duplicate stack was individualized by recovery");
+        check(!history.tryRestoreAcknowledgedWallProjection(oldPhysical, actor, receipt, () -> false, untouched), "owner refusal was ignored");
+        final var attempts = new java.util.concurrent.atomic.AtomicInteger();
+        boolean refused = false;
+        try {
+            history.tryRestoreAcknowledgedWallProjection(oldPhysical, actor, receipt, () -> true, result -> {
+                physical.set(result);
+                if (attempts.getAndIncrement() == 0) throw new IllegalStateException("injected physical projection failure");
+            });
+        } catch (IllegalStateException expected) { refused = true; }
+        check(refused && attempts.get() == 2 && physical.get().equals(oldPhysical), "failed native item projection did not restore its exact input");
+        check(history.tryRestoreAcknowledgedWallProjection(physical.get(), actor, receipt,
+                () -> physical.get().equals(oldPhysical), physical::set), "native stale-item projection was not restored");
+        final var restored = history.tryInspect(physical.get()).orElseThrow();
+        check(restored.phase().equals(receipt.phase()) && restored.history().orElseThrow().revision() == receipt.revision()
+                && restored.pendingWall().orElseThrow().equals(receipt), "restored item and pending native receipt disagree");
+        check(!history.tryRestoreAcknowledgedWallProjection(physical.get(), actor, receipt, () -> true, untouched), "already restored unit was consumed again");
+        check(java.util.Arrays.equals(wal, java.nio.file.Files.readAllBytes(directory.resolve("history.wal"))), "physical recovery appended a fake history event");
     }
 
     private static void verifyStartedAndCleanRuntime(
