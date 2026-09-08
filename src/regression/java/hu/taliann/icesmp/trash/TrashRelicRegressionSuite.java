@@ -250,8 +250,10 @@ public final class TrashRelicRegressionSuite {
                 "native wall uses the consumption/receipt transaction with immediate busy refusal");
         require(runtime, "if (!admitted.getAsBoolean()) {\n                            telemetry.recordBehaviorRuntimeError();\n                            return;\n                        }\n                        projectile.remove();",
                 "acknowledged consumption cannot bypass a later shutdown/expiry admission failure");
-        require(runtime, "history.tryConfirmProjectileWallRemoval(consumed.get(), () -> observedRemoved)",
-                "real owner-local removal observation must close the durable pending receipt");
+        require(runtime, "final boolean observedRemoved = !projectile.isValid();\n                        if (observedRemoved) confirmObservedWallRemoval(consumed.get(), 20);",
+                "only a real positive owner-local removal observation may enter acknowledgement retry");
+        require(runtime, "history.tryConfirmProjectileWallRemoval(receipt, () -> true)",
+                "immutable observed evidence must use the native durable acknowledgement");
         require(Files.readString(HISTORY), "store.putWallReceipt(recorded)",
                 "wall receipt is recorded inside the native item/history transaction");
         require(Files.readString(HISTORY), "store.tryTransact(admission, mutation, restore)",

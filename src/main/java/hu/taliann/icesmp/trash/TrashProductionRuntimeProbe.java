@@ -288,6 +288,24 @@ public final class TrashProductionRuntimeProbe {
                 && restored.pendingWall().orElseThrow().equals(receipt), "restored item and pending native receipt disagree");
         check(!history.tryRestoreAcknowledgedWallProjection(physical.get(), actor, receipt, () -> true, untouched), "already restored unit was consumed again");
         check(java.util.Arrays.equals(wal, java.nio.file.Files.readAllBytes(directory.resolve("history.wal"))), "physical recovery appended a fake history event");
+        // Explicit fixture acknowledgement exercises storage retention; no projectile is spawned or observed here.
+        check(store.tryConfirmWallRemoval(receipt, () -> true), "fixture completion was not acknowledged");
+        store.save(); store.load();
+        final var observed = history.tryInspectWallRecoveryReceipts(java.util.Set.of(receipt.instanceId()))
+                .orElseThrow().get(receipt.instanceId());
+        check(observed.removalObserved() && history.tryInspectPendingProjectileWalls().orElseThrow().isEmpty(),
+                "observed completion was lost or reported as pending after compaction");
+        check(history.tryConfirmProjectileWallRemoval(receipt,
+                () -> { throw new IllegalStateException("durable effect observation was replayed"); }),
+                "native retry cannot recognize its exact acknowledged completion");
+        physical.set(oldPhysical.clone());
+        check(history.tryRestoreAcknowledgedWallProjection(physical.get(), actor, observed,
+                () -> physical.get().equals(oldPhysical), physical::set), "observed completion lost stale-item recovery");
+        final var completed = history.tryInspect(physical.get()).orElseThrow();
+        check(completed.history().orElseThrow().revision() == receipt.revision() && completed.pendingWall().isEmpty(),
+                "observed recovery replayed consumption or resurrected an unobserved effect");
+        check(history.tryInspectWallRecoveryReceipts(java.util.Set.of(receipt.instanceId())).orElseThrow()
+                .get(receipt.instanceId()).equals(observed), "live ItemStack falsely retired durable recovery evidence");
     }
 
     private static void verifyStartedAndCleanRuntime(

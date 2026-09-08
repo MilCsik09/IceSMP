@@ -17,6 +17,7 @@ public final class TrashWallReceiptRegressionSuite {
     public static void main(String[] args) throws Exception {
         atomicConsumeAndObservedRemoval();
         acknowledgedProjectionRecovery();
+        retainedObservedCompletion(); legacyObservedCompletion(); invalidObservedTransitions();
         lostAcknowledgement(false); lostAcknowledgement(true); rejectedAppend();
         busyWriterAndReentrantObservation();
         legacySnapshotAndMalformedReceipt();
@@ -93,12 +94,17 @@ public final class TrashWallReceiptRegressionSuite {
             expectFailure(() -> loaded.transact(() -> loaded.record(id, f.brick.id(), f.brick.successPhase(),
                     TrashHistoryEvent.OWNER_OBSERVED, UUID.randomUUID(), ""), null));
             check(!loaded.tryConfirmWallRemoval(receipt, () -> false), "unobserved removal cleared receipt");
+            check(!loaded.tryInspectObservedWallRemoval(receipt).orElseThrow(), "pending receipt became positive evidence");
             var forged = new TrashHistoryStore.WallReceipt(receipt.operationId(), ACTOR,
                     WORLD, UUID.randomUUID(), id, receipt.revision(), receipt.baseId(), receipt.phase(), receipt.consumedAt(),
                     receipt.field(), receipt.beforeRevision());
             check(!loaded.tryConfirmWallRemoval(forged, () -> { throw new AssertionError("stale receipt observation invoked"); }),
                     "mismatched operation receipt accepted");
             check(loaded.tryConfirmWallRemoval(receipt, () -> true), "observed removal did not commit");
+            final byte[] acknowledged = Files.readAllBytes(f.root.resolve("history.wal"));
+            check(loaded.tryInspectObservedWallRemoval(receipt).orElseThrow(), "durable observation cannot be acknowledged again");
+            check(!loaded.tryInspectObservedWallRemoval(forged).orElseThrow(), "another projectile borrowed an observed receipt");
+            check(Arrays.equals(acknowledged, Files.readAllBytes(f.root.resolve("history.wal"))), "read acknowledgement appended an effect replay");
             check(!loaded.tryConfirmWallRemoval(receipt, () -> true), "duplicate completion replayed");
             loaded.transact(() -> loaded.record(id, f.brick.id(), f.brick.successPhase(),
                     TrashHistoryEvent.OWNER_OBSERVED, ACTOR, ""), null);
@@ -118,6 +124,7 @@ public final class TrashWallReceiptRegressionSuite {
                 projection.set(1); return f.consumeInside(id);
             }, () -> projection.set(0)));
             check(f.store.tryInspectWallReceipts().isEmpty(), "uncertain write exposed rollback as acknowledged recovery state");
+            if (completing) check(f.store.tryInspectObservedWallRemoval(prior).isEmpty(), "lost acknowledgement fabricated a ready outcome");
             check(projection.get() == 0, "failed consume did not restore external projection");
             expectFailure(() -> f.store.transact(() -> true, null));
             expectFailure(f.store::save);
@@ -125,6 +132,7 @@ public final class TrashWallReceiptRegressionSuite {
             check(loaded.find(id).orElseThrow().phase().equals(f.brick.successPhase()), "real fsynced consumption was lost");
             check(loaded.tryInspectWallReceipts().orElseThrow().size() == (completing ? 0 : 1),
                     "recovery did not distinguish consumed-pending from durably completed removal");
+            if (completing) check(loaded.tryInspectObservedWallRemoval(prior).orElseThrow(), "real WAL observation lost after acknowledgement failure");
         }
     }
 
@@ -178,6 +186,7 @@ public final class TrashWallReceiptRegressionSuite {
             CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
             var writer = executor.submit(() -> f.store.transact(() -> {
                 check(f.store.tryInspectWallReceipts().isEmpty(), "reentrant inspection exposed candidate receipts");
+                check(f.store.tryInspectObservedWallRemoval(receipt).isEmpty(), "reentrant acknowledgement exposed candidate observation");
                 check(!f.store.tryConfirmWallRemoval(receipt, () -> true), "reentrant confirmation entered transaction");
                 check(!f.store.tryRestoreWallProjection(receipt, () -> true,
                         snapshot -> { throw new AssertionError("reentrant projection ran"); }, null),
@@ -190,6 +199,7 @@ public final class TrashWallReceiptRegressionSuite {
             try {
                 check(entered.await(5, TimeUnit.SECONDS), "writer did not enter");
                 check(f.store.tryInspectWallReceipts().isEmpty(), "busy recovery inspection waited or exposed state");
+                check(f.store.tryInspectObservedWallRemoval(receipt).isEmpty(), "busy acknowledgement fabricated a negative result");
                 check(!f.store.tryConfirmWallRemoval(receipt, () -> true), "busy completion waited or mutated native state");
                 check(!f.store.tryRestoreWallProjection(receipt, () -> true,
                         snapshot -> { throw new AssertionError("busy projection ran"); }, null),
@@ -204,7 +214,7 @@ public final class TrashWallReceiptRegressionSuite {
         try (var f = new Fixture()) {
             UUID id = f.create(); f.store.save();
             var yaml = YamlConfiguration.loadConfiguration(f.root.resolve("history.yml").toFile());
-            check(yaml.getInt("schema-version") == 4, "new snapshot does not fence older binaries");
+            check(yaml.getInt("schema-version") == 5, "new snapshot does not fence older binaries");
             yaml.set("schema-version", 3); YamlStore.saveAtomic(f.root.resolve("history.yml").toFile(), yaml);
             var legacy = f.fresh(); legacy.load();
             check(legacy.find(id).orElseThrow().phase().equals("base"), "legacy snapshot data was not preserved");
@@ -237,11 +247,80 @@ public final class TrashWallReceiptRegressionSuite {
             f.consume(ids.get(1024));
             f.store.save(); var loaded = f.fresh(); loaded.load();
             check(loaded.tryInspectWallReceipts().orElseThrow().size() == 1024, "bounded pending receipts lost across compaction");
+            check(loaded.tryInspectWallRecoveryReceipts(Set.of(ids.getFirst())).orElseThrow()
+                            .get(ids.getFirst()).removalObserved(), "completed receipt was evicted to admit another pending unit");
+        }
+    }
+
+    private static void retainedObservedCompletion() throws Exception {
+        try (var f = new Fixture()) {
+            final var receipt = f.consume(f.create());
+            check(f.store.tryConfirmWallRemoval(receipt, () -> true), "owner observation did not commit");
+            final var loaded = f.fresh(); loaded.load();
+            final var observed = loaded.tryInspectWallRecoveryReceipts(Set.of(receipt.instanceId())).orElseThrow()
+                    .get(receipt.instanceId());
+            check(observed != null && observed.removalObserved() && observed.field().equals(receipt.field())
+                            && observed.beforeRevision() == receipt.beforeRevision(),
+                    "observed completion lost its physical recovery identity across WAL replay");
+            check(loaded.tryInspectWallReceipts().orElseThrow().isEmpty()
+                            && loaded.tryInspect(receipt.instanceId()).orElseThrow().pendingWall().isEmpty(),
+                    "observed effect is incorrectly reported as unobserved");
+            check(!loaded.tryConfirmWallRemoval(observed, () -> { throw new AssertionError("observation replayed"); }),
+                    "observed completion was applied twice");
+            final AtomicInteger physical = new AtomicInteger();
+            check(loaded.tryRestoreWallProjection(observed, () -> true, snapshot -> {
+                check(snapshot.revision() == receipt.revision(), "completed recovery invented a later revision");
+                physical.set(1);
+            }, () -> physical.set(0)), "observed completion cannot repair an old physical projection");
+            check(physical.get() == 1 && loaded.tryInspectWallRecoveryReceipts(Set.of(receipt.instanceId()))
+                    .orElseThrow().get(receipt.instanceId()).equals(observed),
+                    "an in-memory projection falsely retired durable recovery evidence");
+            loaded.transact(() -> {
+                for (int i = 0; i < 70; i++) loaded.record(receipt.instanceId(), receipt.baseId(), receipt.phase(),
+                        TrashHistoryEvent.OWNER_OBSERVED, ACTOR, "");
+                return true;
+            }, null);
+            check(!loaded.tryRestoreWallProjection(observed,
+                    () -> { throw new AssertionError("history drift entered physical admission"); },
+                    snapshot -> { throw new AssertionError("later canonical history was overwritten"); }, null),
+                    "completed receipt overwrote an externally advanced history revision");
+            loaded.save(); final var compacted = f.fresh(); compacted.load();
+            check(compacted.tryInspectWallRecoveryReceipts(Set.of(receipt.instanceId())).orElseThrow()
+                    .get(receipt.instanceId()).equals(observed), "bounded history-event pruning deleted observed operation evidence");
+            check(compacted.find(receipt.instanceId()).orElseThrow().revision() == receipt.revision() + 70,
+                    "observed receipt retention rolled back later native history");
+            check(compacted.tryInspectWallRecoveryReceipts(Set.of(UUID.randomUUID())).orElseThrow().isEmpty(),
+                    "unknown physical instance gained a fabricated recovery operation");
+            final Set<UUID> excessive = new HashSet<>(); for (int i = 0; i < 65; i++) excessive.add(UUID.randomUUID());
+            expectFailure(() -> compacted.tryInspectWallRecoveryReceipts(excessive));
+        }
+    }
+
+    private static void legacyObservedCompletion() throws Exception {
+        try (var f = new Fixture()) {
+            final var receipt = f.consume(f.create()); f.store.save();
+            var yaml = YamlConfiguration.loadConfiguration(f.root.resolve("history.yml").toFile());
+            yaml.set("schema-version", 4);
+            yaml.set("wall-operations." + receipt.operationId() + ".removal-observed", null);
+            YamlStore.saveAtomic(f.root.resolve("history.yml").toFile(), yaml);
+            final var legacy = f.fresh(); legacy.load();
+            check(legacy.tryInspectWallReceipts().orElseThrow().equals(List.of(receipt)), "legacy schema 4 pending receipt changed");
+            new TrashHistoryJournal(LOGGER, f.root.resolve("history.wal").toFile()).append(3L,
+                    "schema-version: 2\nremoved-wall-receipts: [" + receipt.operationId() + "]\n");
+            final var upgraded = f.fresh(); upgraded.load();
+            final var retained = upgraded.tryInspectWallRecoveryReceipts(Set.of(receipt.instanceId())).orElseThrow()
+                    .get(receipt.instanceId());
+            check(retained.removalObserved() && retained.field().equals(receipt.field())
+                            && upgraded.tryInspectWallReceipts().orElseThrow().isEmpty(),
+                    "explicit legacy completion was discarded rather than retained");
+            upgraded.save(); final var reloaded = f.fresh(); reloaded.load();
+            check(reloaded.tryInspectWallRecoveryReceipts(Set.of(receipt.instanceId())).orElseThrow()
+                    .get(receipt.instanceId()).equals(retained), "migrated observed completion failed new-schema compaction");
         }
     }
 
     private static void corruptedPendingSnapshots() throws Exception {
-        for (final String field : List.of("revision", "before-revision", "projectile", "reservation", "radius", "actor", "phase")) {
+        for (final String field : List.of("revision", "before-revision", "projectile", "reservation", "radius", "actor", "phase", "removal-observed")) {
             try (var f = new Fixture()) {
                 var receipt = f.consume(f.create()); f.store.save();
                 var yaml = YamlConfiguration.loadConfiguration(f.root.resolve("history.yml").toFile());
@@ -265,6 +344,44 @@ public final class TrashWallReceiptRegressionSuite {
                     "schema-version: 2\nremoved-wall-receipts: [" + UUID.randomUUID() + "]\n");
             var loaded = f.fresh(); expectFailure(loaded::load);
             check(loaded.tryInspectWallReceipts().isEmpty(), "unknown completion accepted as observed removal");
+        }
+    }
+
+    private static void invalidObservedTransitions() throws Exception {
+        for (final String mode : List.of("without-consume", "rewrite", "retire", "legacy-flag")) {
+            try (var f = new Fixture()) {
+                final var receipt = f.consume(f.create());
+                if (mode.equals("rewrite")) check(f.store.tryConfirmWallRemoval(receipt, () -> true), "setup observation failed");
+                f.store.save();
+                final var snapshot = YamlConfiguration.loadConfiguration(f.root.resolve("history.yml").toFile());
+                final var payload = new YamlConfiguration();
+                payload.set("schema-version", mode.equals("legacy-flag") ? 2 : 3);
+                final var value = snapshot.getConfigurationSection("wall-operations." + receipt.operationId());
+                if (mode.equals("retire")) payload.set("removed-wall-receipts", List.of(receipt.operationId().toString()));
+                else {
+                    value.set("removal-observed", true);
+                    payload.set("wall-receipts." + receipt.operationId(), value);
+                }
+                if (mode.equals("without-consume")) {
+                    snapshot.set("wall-operations", null);
+                    YamlStore.saveAtomic(f.root.resolve("history.yml").toFile(), snapshot);
+                }
+                new TrashHistoryJournal(LOGGER, f.root.resolve("history.wal").toFile()).append(
+                        snapshot.getLong("last-sequence") + 1, payload.saveToString());
+                final var loaded = f.fresh(); expectFailure(loaded::load);
+                check(loaded.tryInspectWallRecoveryReceipts(Set.of(receipt.instanceId())).isEmpty(),
+                        "invalid observed transition exposed acknowledged recovery: " + mode);
+                expectFailure(loaded::save);
+            }
+        }
+        try (var f = new Fixture()) {
+            final var receipt = f.consume(f.create());
+            final var preObserved = new TrashHistoryStore.WallReceipt(receipt.operationId(), receipt.actor(),
+                    receipt.worldId(), receipt.projectileId(), receipt.instanceId(), receipt.revision(), receipt.baseId(),
+                    receipt.phase(), receipt.consumedAt(), receipt.field(), receipt.beforeRevision(), true);
+            expectFailure(() -> f.store.transact(() -> { f.store.putWallReceipt(preObserved); return true; }, null));
+            check(f.store.tryInspectWallReceipts().orElseThrow().equals(List.of(receipt)),
+                    "direct pre-observed insertion replaced a pending native receipt");
         }
     }
 

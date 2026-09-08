@@ -664,12 +664,17 @@
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, WallReceipt> wallReceipts = new LinkedHashMap<>();",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
-      "reason": "Native Trash history WAL owns bounded unresolved wall-operation receipts keyed by field operation UUID; actor UUID is a reference. No player preference, progression or second PlayerProfile authority is stored. Entries survive restart until exact observed removal is durably acknowledged; pending entries are never evicted for capacity."
+      "reason": "Native Trash history WAL owns wall-operation receipts keyed by field operation UUID; actor UUID is a reference. Unresolved operations are capped at 1024 and never evicted; observed completions remain within the existing 100000-instance history lifetime because live item projection is not a Minecraft save acknowledgement. No player preference, progression or second PlayerProfile authority is stored."
     },
     {
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java|private final Map<UUID, FieldClaim> claimed = new HashMap<>();",
       "category": "RUNTIME",
       "reason": "Existing native transient field-claim authority, now holding unforgeable per-admission identity tokens keyed by field UUID. Bounded by the same 128 native fields, cleared by exact release/removal/close; no player progression, YAML or second field registry is introduced."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, UUID> wallOperationByInstance = new java.util.HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Derived lookup from native Trash instance UUID to its canonical wall operation UUID, rebuilt from retained native receipts and updated under the same transaction/load/rollback lock. Bounded by the existing history capacity; neither player state nor separately persisted authority."
     }
   ]
 }

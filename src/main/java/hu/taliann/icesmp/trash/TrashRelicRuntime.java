@@ -101,7 +101,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     public void start() {
         fractures.recover();
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            clearReservationsOnOwner(player.getUniqueId(), null);
+            clearReservationsOnOwner(player.getUniqueId());
         }
     }
 
@@ -123,7 +123,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                 releaseReservation(field);
             }
         }
-        clearReservationsOnOwner(playerId, null);
+        clearReservationsOnOwner(playerId);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -691,13 +691,35 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                         }
                         projectile.remove();
                         final boolean observedRemoved = !projectile.isValid();
-                        if (!history.tryConfirmProjectileWallRemoval(consumed.get(), () -> observedRemoved)) {
-                            telemetry.recordBehaviorRuntimeError();
-                        }
+                        if (observedRemoved) confirmObservedWallRemoval(consumed.get(), 20);
+                        else telemetry.recordBehaviorRuntimeError();
                     } finally {
                         ruleFields.removeClaimed(claim);
                     }
                 });
+    }
+
+    private void confirmObservedWallRemoval(final TrashHistoryStore.WallReceipt receipt, final int retries) {
+        if (!plugin.isEnabled() || !projectileTracking.snapshot().open()) return;
+        try {
+            // Only the preceding owner-local positive observation enters this path. A retry carries
+            // immutable native evidence, never an entity handle or an inference from later UUID absence.
+            if (history.tryConfirmProjectileWallRemoval(receipt, () -> true)) return;
+        } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
+            return;
+        }
+        if (retries == 0) {
+            telemetry.recordBehaviorRuntimeError();
+            return;
+        }
+        try {
+            Bukkit.getAsyncScheduler().runDelayed(plugin,
+                    ignored -> confirmObservedWallRemoval(receipt, retries - 1), 250,
+                    java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (final RuntimeException rejected) {
+            telemetry.recordBehaviorRuntimeError();
+        }
     }
 
     private TrashHistoryStore.WallReceipt consumeBrickReservation(
@@ -752,22 +774,13 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
 
     private void releaseReservation(final RuleField field) {
         if (field.reservationToken() == null) return;
-        clearReservationsOnOwner(field.owner(), field.reservationToken());
+        clearReservationsOnOwner(field.owner());
     }
 
-    private void clearReservationsOnOwner(final UUID ownerId, final String token) {
+    private void clearReservationsOnOwner(final UUID ownerId) {
         final Player owner = Bukkit.getPlayer(ownerId);
         if (owner == null) return;
-        final Runnable cleanup = () -> {
-            if (token == null) clearStaleBrickReservations(owner);
-            else {
-                final var pending = history.tryInspectPendingProjectileWalls();
-                if (pending.isPresent() && pending.orElseThrow().stream()
-                        .noneMatch(receipt -> token.equals(receipt.field().reservationToken()))) {
-                    clearBrickReservation(owner, token);
-                }
-            }
-        };
+        final Runnable cleanup = () -> clearStaleBrickReservations(owner);
         if (Bukkit.isOwnedByCurrentRegion(owner)) {
             cleanup.run();
             return;
@@ -820,7 +833,9 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             telemetry.recordBehaviorRuntimeError();
             return;
         }
-        for (final var receipt : pending.orElseThrow()) {
+        final var recovery = history.tryInspectWallRecoveryReceipts(slots.keySet());
+        if (recovery.isEmpty()) return;
+        for (final var receipt : recovery.orElseThrow().values()) {
             if (!receipt.actor().equals(player.getUniqueId()) || duplicates.contains(receipt.instanceId())) continue;
             final Integer slot = slots.get(receipt.instanceId());
             if (slot == null) continue;
@@ -834,6 +849,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                 .map(RuleField::reservationToken).filter(Objects::nonNull)
                 .collect(java.util.stream.Collectors.toSet());
         pending.orElseThrow().forEach(receipt -> active.add(receipt.field().reservationToken()));
+        recovery.orElseThrow().values().forEach(receipt -> active.add(receipt.field().reservationToken()));
         for (int slot = 0; slot < player.getInventory().getSize(); slot++) {
             final ItemStack item = player.getInventory().getItem(slot);
             final String token = reservationTokenOf(item);
@@ -846,10 +862,12 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         if (!Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return;
         final ItemStack before = player.getInventory().getItem(slot).clone();
         if (!receipt.field().reservationToken().equals(reservationTokenOf(before))) return;
-        history.tryRestoreAcknowledgedWallProjection(before, player.getUniqueId(), receipt,
+        if (history.tryRestoreAcknowledgedWallProjection(before, player.getUniqueId(), receipt,
                 () -> Bukkit.isOwnedByCurrentRegion(player) && player.isOnline()
                         && before.equals(player.getInventory().getItem(slot)),
-                restored -> player.getInventory().setItem(slot, restored));
+                restored -> player.getInventory().setItem(slot, restored))) {
+            clearBrickReservation(player, receipt.field().reservationToken());
+        }
     }
 
     private String reservationTokenOf(final ItemStack item) {

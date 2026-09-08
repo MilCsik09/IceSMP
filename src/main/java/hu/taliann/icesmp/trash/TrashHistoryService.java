@@ -292,11 +292,17 @@ public final class TrashHistoryService {
 
     public boolean tryConfirmProjectileWallRemoval(final TrashHistoryStore.WallReceipt receipt,
                                                     final java.util.function.BooleanSupplier observedRemoved) {
-        return store.tryConfirmWallRemoval(receipt, observedRemoved);
+        return store.tryInspectObservedWallRemoval(receipt).orElse(false)
+                || store.tryConfirmWallRemoval(receipt, observedRemoved);
     }
 
     public Optional<List<TrashHistoryStore.WallReceipt>> tryInspectPendingProjectileWalls() {
         return store.tryInspectWallReceipts();
+    }
+
+    public Optional<java.util.Map<UUID, TrashHistoryStore.WallReceipt>> tryInspectWallRecoveryReceipts(
+            final java.util.Set<UUID> instances) {
+        return store.tryInspectWallRecoveryReceipts(instances);
     }
 
     /** Caller owns the captured unit and projection; missing, drifted or duplicated units are never recreated. */

@@ -64,10 +64,20 @@ public final class TrashProductionHardeningRegressionSuite {
                         == occurrences(anomaly, "telemetry.recordBehaviorRuntimeError()"),
                 "an Anomaly best-effort failure bypasses aggregate telemetry");
         requireCatchTelemetry(relic);
-        final int confirmation = relic.indexOf("if (!history.tryConfirmProjectileWallRemoval(");
-        check(confirmation >= 0 && blockAt(relic, relic.indexOf('{', confirmation))
+        final int confirmation = relic.indexOf("private void confirmObservedWallRemoval(");
+        check(confirmation >= 0, "native observed-removal acknowledgement path is absent");
+        final String retry = blockAt(relic, relic.indexOf('{', confirmation));
+        final int exhausted = retry.indexOf("if (retries == 0)");
+        check(exhausted >= 0 && blockAt(retry, retry.indexOf('{', exhausted))
                         .contains("telemetry.recordBehaviorRuntimeError()"),
-                "unacknowledged wall completion bypasses aggregate telemetry");
+                "exhausted wall completion bypasses aggregate telemetry");
+        require(relic, "if (observedRemoved) confirmObservedWallRemoval(consumed.get(), 20);",
+                "positive owner-local observation admission");
+        require(relic, "else telemetry.recordBehaviorRuntimeError();", "unobserved removal telemetry");
+        require(retry, "!projectileTracking.snapshot().open()", "closed-runtime retry fence");
+        require(retry, "confirmObservedWallRemoval(receipt, retries - 1)", "bounded immutable receipt continuation");
+        check(!retry.contains("Bukkit.getPlayer(") && !retry.contains("projectile.")
+                        && !retry.contains("getInventory("), "async acknowledgement accesses a live entity");
         require(archaeology, "recordInspectionStarted()", "inspection start telemetry");
         require(archaeology, "recordInspectionCompleted()", "inspection completion telemetry");
         require(archaeology, "recordInspectionCancelled()", "inspection cancellation telemetry");
