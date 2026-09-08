@@ -655,6 +655,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java|private final Map<UUID, RuleField> fields = new LinkedHashMap<>();",
       "category": "RUNTIME",
       "reason": "Canonical transient rule-field UUID registry, capped at 128 globally and 32 per world. Keys identify fields rather than players; detached geometry, expiry, claims and reservation ownership have no PlayerProfile or YAML authority. Native runtime and developer adapters share this service."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java|private final java.util.Map<UUID, Set<UUID>> offered = new java.util.HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Actual offered resource-pack layer IDs per live connection, retained through uncertain sends/removals solely for owner cleanup; retired on quit or completed removal and cleared at disable. No persistent player preference or profile authority."
     }
   ]
 }

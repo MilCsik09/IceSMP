@@ -185,6 +185,11 @@ public final class HudManager {
     private final AtomicBoolean iceSmpHudReady = new AtomicBoolean();
     private final AtomicBoolean placeholderBridgeReady = new AtomicBoolean();
     private final AtomicBoolean survivalContractWarning = new AtomicBoolean();
+    private volatile boolean closing;
+
+    public void beginShutdown() {
+        closing = true;
+    }
     public HudManager(final JavaPlugin plugin, final ConfigManager configManager, final FactionManager factionManager,
                       final CurrencyManager currencyManager, final JobManager jobManager, final RaidManager raidManager,
                       final BloodMoonManager bloodMoonManager, final WorldBossManager worldBossManager,
@@ -221,6 +226,7 @@ public final class HudManager {
     }
 
     public boolean isEnabled() {
+        if (closing) return false;
         return configManager.getBoolean("hud.enabled", true);
     }
 
@@ -416,6 +422,7 @@ public final class HudManager {
     }
 
     public boolean refreshHudEditorPreview(final Player player) {
+        if (closing) return false;
         final HudEditorStateMachine.Session session = hudEditor.session(player.getUniqueId()).orElse(null);
         if (session == null || !editorSessionEnabled(session)) return false;
         return renderHudEditorProjection(player, session, snapshots.get(player.getUniqueId()),
@@ -487,6 +494,7 @@ public final class HudManager {
     }
 
     public void finishHudEditorSave(final Player player, final HudEditorSaveResult result) {
+        if (closing) return;
         if (player == null || result == null) return;
         if (result.status() != HudEditorSaveStatus.SAVED
                 && result.status() != HudEditorSaveStatus.NO_CHANGES) return;
@@ -700,6 +708,7 @@ public final class HudManager {
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> {
                 final hu.taliann.icesmp.listeners.DamageIndicatorListener indicators = damageIndicators;
+                if (closing) return;
                 if (indicators != null) indicators.sampleTarget(player);
                 final HudSnapshot snapshot = buildSnapshot(player);
                 snapshots.put(player.getUniqueId(), snapshot);
@@ -724,8 +733,10 @@ public final class HudManager {
 
     /** Fast, lightweight survival-resource tick; every entity read stays on its owning thread. */
     public void tickSurvivalHud() {
+        if (closing) return;
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> {
+                if (closing) return;
                 final SurvivalHudState survival = buildSurvivalSnapshot(player);
                 survivalSnapshots.put(player.getUniqueId(), survival);
                 renderIceSmpHud(player, snapshots.get(player.getUniqueId()));
@@ -858,6 +869,7 @@ public final class HudManager {
     }
 
     private boolean renderIceSmpHud(final Player player, final HudSnapshot snapshot) {
+        if (closing) return false;
         final SurvivalHudState survival = survivalSnapshots.get(player.getUniqueId());
         final boolean playerFrameVisible = survivalHudEnabled() && survival != null;
         final HudEditorStateMachine.Session editorSession = hudEditor.session(player.getUniqueId()).orElse(null);
@@ -887,6 +899,7 @@ public final class HudManager {
                                               final HudEditorStateMachine.Session session,
                                               final HudSnapshot snapshot,
                                               final SurvivalHudState survival) {
+        if (closing) return false;
         if (session.syntheticPreview()) {
             final IceSmpHudModel preview = HudPreviewCatalog.model(session.preview());
             final SurvivalHudState previewSurvival = survival == null
@@ -1013,6 +1026,7 @@ public final class HudManager {
     }
 
     private void restoreLiveHud(final Player player) {
+        if (closing) return;
         final HudSnapshot live = snapshots.get(player.getUniqueId());
         if (live == null && !survivalSnapshots.containsKey(player.getUniqueId())) {
             iceSmpHudBackend.hide(player);
@@ -1028,7 +1042,7 @@ public final class HudManager {
         if (ready) {
             plugin.getLogger().info("IceSMP HUD pack ready: first-party survival/class HUD active.");
         } else {
-            plugin.getLogger().warning("IceSMP HUD pack unavailable after being active; native HUD fallback restored.");
+            plugin.getLogger().warning("IceSMP HUD output is no longer active; client resource-pack removal/restoration is not confirmed by this server-side state.");
         }
     }
 

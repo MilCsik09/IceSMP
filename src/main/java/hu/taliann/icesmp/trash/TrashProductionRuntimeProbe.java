@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 public final class TrashProductionRuntimeProbe {
 
     public static final String PROPERTY = "icesmp.trash-production-runtime";
+    private static final String COOPERATIVE_PROPERTY = "icesmp.trash-production-cooperative-shutdown";
+    public static final String RELOAD_PASS_MARKER = "ICESMP_COMMAND_RELOAD_RUNTIME_PASS";
+    public static final String COOPERATIVE_PASS_MARKER = "ICESMP_COOPERATIVE_DISABLE_RUNTIME_PASS";
     public static final String PASS_MARKER = "ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS";
     public static final String SHUTDOWN_PASS_MARKER =
             "ICESMP_TRASH_PRODUCTION_RUNTIME_SHUTDOWN_PASS";
@@ -46,6 +49,7 @@ public final class TrashProductionRuntimeProbe {
                 verifyCatalogAndFactory(catalog, items);
                 verifyNativeInspection(plugin, catalog, items);
                 verifyStartedAndCleanRuntime(assembledCore, telemetry);
+                verifyPackagedReload(plugin, assembledCore);
                 session.startupPassed = true;
                 plugin.getLogger().info(PASS_MARKER + " platform="
                         + Bukkit.getServer().getName() + " minecraft="
@@ -56,7 +60,11 @@ public final class TrashProductionRuntimeProbe {
                 plugin.getLogger().severe(FAIL_MARKER + " type="
                         + failure.getClass().getSimpleName());
             } finally {
-                Bukkit.shutdown();
+                if (session.startupPassed && Boolean.getBoolean(COOPERATIVE_PROPERTY)) {
+                    hu.taliann.icesmp.IceSMP.requestDisable(plugin);
+                } else {
+                    Bukkit.shutdown();
+                }
             }
         }, 1L);
     }
@@ -101,11 +109,41 @@ public final class TrashProductionRuntimeProbe {
                             && sizeOf(readField(ambient, "nextAttemptAt", Object.class)) == 0
                             && sizeOf(readField(ambient, "chunkCounts", Object.class)) == 0,
                     "ambient runtime state survived shutdown");
+            if (Boolean.getBoolean(COOPERATIVE_PROPERTY)) {
+                final Object commands = readField(plugin, "commands", Object.class);
+                check(readField(commands, "closed", Boolean.class), "command admission survived disable");
+                check(readField(commands, "drained", java.util.concurrent.CompletableFuture.class).isDone(),
+                        "entered command did not drain before disable");
+                check(readField(plugin, "disableRequested", java.util.concurrent.atomic.AtomicBoolean.class).get(),
+                        "cooperative disable path was not exercised");
+                final var cleanup = readField(assembledCore, "playerShutdown",
+                        java.util.concurrent.CompletableFuture.class);
+                check(cleanup.isDone() && !cleanup.isCompletedExceptionally(),
+                        "native preparation did not complete before actual disable");
+                check(hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed().isEmpty(),
+                        "profile authority survived final teardown");
+                plugin.getLogger().info(COOPERATIVE_PASS_MARKER + " connectedPlayers="
+                        + Bukkit.getOnlinePlayers().size());
+            }
             plugin.getLogger().info(SHUTDOWN_PASS_MARKER);
         } catch (final Throwable failure) {
             plugin.getLogger().severe(FAIL_MARKER + " type="
                     + failure.getClass().getSimpleName());
+        } finally {
+            if (Boolean.getBoolean(COOPERATIVE_PROPERTY)) Bukkit.shutdown();
         }
+    }
+
+    private static void verifyPackagedReload(final JavaPlugin plugin, final Object core) throws Exception {
+        try (final var resource = plugin.getResource("content/progression/classes.yml")) {
+            check(resource != null && resource.read() >= 0, "packaged class authority is unavailable");
+        }
+        final var config = readField(core, "configManager", hu.taliann.icesmp.managers.ConfigManager.class);
+        final long generation = config.snapshot().generation();
+        check(Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "icesmp reload"),
+                "real operator reload command is not registered");
+        check(config.snapshot().generation() > generation, "operator reload did not publish a valid snapshot");
+        plugin.getLogger().info(RELOAD_PASS_MARKER);
     }
 
     private static void verifyCatalogAndFactory(final TrashCatalog catalog,

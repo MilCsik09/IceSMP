@@ -2284,7 +2284,20 @@ Várt diagnosztika:
 
 - `IceSMP HUD pack ready: first-party survival/class HUD active.`
 - hiányzó/elutasított pack esetén a natív fallback marad, a szerverindulás nem fatal;
-- egy korábban aktív HUD elvesztésekor: `native HUD fallback restored`.
+- egy korábban aktív HUD elvesztésekor: `IceSMP HUD output is no longer active`; ez önmagában nem igazolja, hogy a kliens eltávolította a packot és visszaállította a vanilla HUD-ot.
+
+A plugin által kezdeményezett védelmi leállítás először lezárja a parancsokat és a packküldést,
+majd még az aktív plugin játékosütemezőjén takarítja a HUD-ot és kéri az IceSMP által küldött
+packrétegek eltávolítását. Más plugin packját nem távolítja el. A letiltott példány parancsai és
+tabkiegészítése nem léphetnek vissza a leszerelt szolgáltatásokba. Külső, azonnali pluginletiltás
+esetén a Folia ütemező már lezárulhat a takarítás előtt; ilyenkor figyelmeztetés jelzi a nem
+igazolt eltávolítást. A kliensoldali visszaállást újracsatlakozás után is ellenőrizni kell.
+
+Elfogadási eset: betöltött IceSMP packkal és egy másik plugin külön packrétegével, legalább két
+külön Folia-régióban álló klienssel indítsd el a védelmi leállítást. Ellenőrizd a vanilla szív,
+éhség-, armor- és levegőkijelzést, a másik pack megmaradását, majd a `/hud`, `/icesmp reload` és
+tabkiegészítés elutasítását. Külön futtasd le a közben kilépő játékos és a külső azonnali letiltás
+esetét. A szervernapló vagy a kliens nélküli CI-próba nem helyettesíti ezt a vizuális bizonyítékot.
 
 ### Vizuális rendszer
 

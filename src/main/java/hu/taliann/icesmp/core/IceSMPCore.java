@@ -361,6 +361,13 @@ public final class IceSMPCore {
     private final List<PersistentStore> persistentStores;
     private final PersistentStoreCoordinator storeCoordinator;
     private volatile boolean enableCompleted;
+    private final java.util.concurrent.atomic.AtomicBoolean prepareDisableStarted =
+            new java.util.concurrent.atomic.AtomicBoolean();
+    private volatile boolean statefulShutdownPrepared;
+    private final java.util.concurrent.atomic.AtomicBoolean disableStarted =
+            new java.util.concurrent.atomic.AtomicBoolean();
+    private final java.util.concurrent.CompletableFuture<Void> playerShutdown =
+            new java.util.concurrent.CompletableFuture<>();
     private final StatsManager statsManager;
     private final AchievementManager achievementManager;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask questNpcMarkerTask;
@@ -1321,7 +1328,7 @@ public final class IceSMPCore {
                 if (!report.healthy()) {
                     plugin.getLogger().severe("FancyNpcs authored NPC snapshot is incomplete; "
                             + "IceSMP disables fail-closed instead of exposing dead onboarding content.");
-                    plugin.getServer().getPluginManager().disablePlugin(plugin);
+                    hu.taliann.icesmp.IceSMP.requestDisable(plugin);
                 }
             }, 20L * 60L);
             plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok, /npcbind kötések).");
@@ -1388,13 +1395,10 @@ public final class IceSMPCore {
      * Disables the plugin core by saving all manager data.
      */
     public void disable() {
-        factionManager.stopMembershipRecovery();
-        // A passzívok per-player megtorlási/célzási állapota nem perzisztens. Sikertelen
-        // enable után is takarítani kell, különben hot-reloadnál régi célok maradhatnak.
-        factionPassiveListener.clearAllState();
-        hu.taliann.icesmp.utils.SpellHealingUtil.setReceivingMultiplier(target -> 1.0D);
+        if (!disableStarted.compareAndSet(false, true)) return;
         try {
-            disableStateful();
+            prepareDisable();
+            if (statefulShutdownPrepared) finishProfileShutdown();
         } finally {
             // A "nem merek state-et menteni" döntés nem jelentheti azt, hogy külső erőforrás
             // (repository executor, HTTP adapter, Bukkit service, statikus authority) nyitva
@@ -1416,6 +1420,7 @@ public final class IceSMPCore {
                     () -> hu.taliann.icesmp.itemization.ItemTemplateRegistry.clearIfCurrent(itemTemplateRegistry));
             shutdownStep("ConfigManager.clearIfCurrent",
                     () -> hu.taliann.icesmp.managers.ConfigManager.clearIfCurrent(configManager));
+            plugin.getLogger().info("IceSMP core disabled.");
         }
     }
 
@@ -1533,6 +1538,33 @@ public final class IceSMPCore {
                 storeCoordinator.saveForShutdown(failure -> plugin.getLogger().severe("Store save() hiba ("
                         + failure.store().getClass().getSimpleName() + "): " + failure.cause())));
 
+        // Then clean up live player session state (HUD teams, restored armor, caches).
+        final var cleanup = cleanupPlayerSessions();
+        statefulShutdownPrepared = true;
+        cleanup.whenComplete((ignored, failure) -> {
+            if (failure == null) playerShutdown.complete(null);
+            else playerShutdown.completeExceptionally(failure);
+        });
+    }
+
+    public java.util.concurrent.CompletableFuture<Void> prepareDisable() {
+        if (!prepareDisableStarted.compareAndSet(false, true)) return playerShutdown.copy();
+        beginPresentationShutdown();
+        factionManager.stopMembershipRecovery();
+        factionPassiveListener.clearAllState();
+        hu.taliann.icesmp.utils.SpellHealingUtil.setReceivingMultiplier(target -> 1.0D);
+        try {
+            disableStateful();
+            if (!statefulShutdownPrepared) playerShutdown.completeExceptionally(
+                    new IllegalStateException("stateful shutdown preparation did not complete"));
+        } catch (final RuntimeException | Error failure) {
+            playerShutdown.completeExceptionally(failure);
+            throw failure;
+        }
+        return playerShutdown.copy();
+    }
+
+    private void finishProfileShutdown() {
         // Stateful consumers must finish rollback and final-save writes while Profile v2 remains
         // installed; only their completed durable boundary permits the authority teardown.
         final long profileDeadline = System.nanoTime()
@@ -1570,22 +1602,70 @@ public final class IceSMPCore {
                 .filter(installed -> installed == playerProfileAuthority).isPresent()) {
             playerProfileAuthority.uninstall();
         }
-        shutdownStep("ProfileGUI.closeAll", ProfileGUI::closeAll);
 
-        // Then clean up live player session state (HUD teams, restored armor, caches).
-        for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            shutdownStep("player-cleanup " + onlinePlayer.getName(), () -> {
-                hudManager.cleanup(onlinePlayer);
-                tablistManager.cleanup(onlinePlayer);
-                playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
-            });
-        }
-
-        plugin.getLogger().info("IceSMP core disabled.");
     }
 
     private static long remainingProfileShutdownNanos(final long deadline) {
         return Math.max(1L, deadline - System.nanoTime());
+    }
+
+    public void beginPresentationShutdown() {
+        hudManager.beginShutdown();
+        tablistManager.beginShutdown();
+    }
+
+    public void cleanupPresentation(final Player player) {
+        if (!Bukkit.isOwnedByCurrentRegion(player)) {
+            throw new IllegalStateException("presentation cleanup requires player ownership");
+        }
+        try {
+            hudManager.cleanup(player);
+        } finally {
+            tablistManager.cleanup(player);
+        }
+    }
+
+    public java.util.concurrent.CompletableFuture<Void> playerShutdownCompletion() {
+        return playerShutdown.copy();
+    }
+
+    private java.util.concurrent.CompletableFuture<Void> cleanupPlayerSessions() {
+        final var pending = new java.util.ArrayList<java.util.concurrent.CompletableFuture<Void>>();
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            final UUID id = player.getUniqueId();
+            final var completion = new java.util.concurrent.CompletableFuture<Void>();
+            pending.add(completion);
+            final Runnable cleanup = () -> {
+                try {
+                    try {
+                        cleanupPresentation(player);
+                    } finally {
+                        playerSessionCleanupListener.cleanupPlayerState(id);
+                    }
+                    completion.complete(null);
+                } catch (final RuntimeException | Error failure) {
+                    plugin.getLogger().severe("Player shutdown cleanup failed (" + id + "): " + failure);
+                    completion.completeExceptionally(failure);
+                }
+            };
+            if (Bukkit.isOwnedByCurrentRegion(player)) {
+                cleanup.run();
+            } else if (plugin.isEnabled()) {
+                try {
+                    if (player.getScheduler().run(plugin, ignored -> cleanup.run(),
+                            () -> completion.complete(null)) == null) completion.complete(null);
+                } catch (final RuntimeException failure) {
+                    completion.completeExceptionally(failure);
+                }
+            } else {
+                final var failure = new IllegalStateException(
+                        "external disable retired scheduling before player cleanup: " + id);
+                plugin.getLogger().warning(failure.getMessage());
+                completion.completeExceptionally(failure);
+            }
+        }
+        return java.util.concurrent.CompletableFuture.allOf(
+                pending.toArray(java.util.concurrent.CompletableFuture[]::new));
     }
 
     /**

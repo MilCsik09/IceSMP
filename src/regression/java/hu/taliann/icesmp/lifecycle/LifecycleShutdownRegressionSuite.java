@@ -12,6 +12,7 @@ public final class LifecycleShutdownRegressionSuite {
     }
 
     public static void main(final String[] args) throws Exception {
+        hu.taliann.icesmp.core.CommandLifecycleRegressionSuite.main(args);
         transientRemovalNeverSchedulesForDisabledPlugin();
         escortShutdownClearsStateBeforeCleanup();
         bossBarCleanupDoesNotScheduleAfterDisable();

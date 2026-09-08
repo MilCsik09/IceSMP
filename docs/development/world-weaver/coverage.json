@@ -3540,12 +3540,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HudManager.java",
       "domain": "presentation",
-      "source_sha256": "bc2c3ba692e6b0df63f45cf1f34c7e3ef58c36dd01a9124a1a5948d134609ec6",
+      "source_sha256": "8888a58baca6404a44d5ebae30affe6eb43797faee73d7b691aac13eb8e4e41a",
       "public_methods": [
         "HudCurrency",
         "HudEditorSaveResult",
         "HudSnapshot",
         "beginHudEditor",
+        "beginShutdown",
         "cancelHudEditor",
         "changeHudEditorMargin",
         "changeHudEditorScale",
@@ -3623,7 +3624,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/InvseeManager.java",
       "domain": "moderation",
-      "source_sha256": "e1b0bb1f6d24889817d965bc37aad0f58eaad38af6a0d0c3ed30fbf59caaea79",
+      "source_sha256": "ac8742273d9f882ea34db002dc8e3ab147e81561e653b8fb44cecdb4a4c1c7fb",
       "public_methods": [
         "Snapshot",
         "beginSwap",
@@ -3840,7 +3841,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ModerationManager.java",
       "domain": "moderation",
-      "source_sha256": "0453ea137f1c63174959d616c1a30cba0414d03b513e09b317becb572f055007",
+      "source_sha256": "25a9cb5e8d82b6e25510f419f4de5f650ffe9bbe61d77c86e0b77c6f8a38bc43",
       "public_methods": [
         "KnownPlayer",
         "MuteEntry",
@@ -4766,8 +4767,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TablistManager.java",
       "domain": "presentation",
-      "source_sha256": "680d071be9099bfe3ff7dda1a275ff2ce90bf8d10e47aff5f5c5537fc070800f",
+      "source_sha256": "0f631092924da4c6a30805b22bf473b4a89ed09f715f10fce42a4ca266f44a01",
       "public_methods": [
+        "beginShutdown",
         "cleanup",
         "factionColor",
         "isEnabled",
@@ -6930,6 +6932,7 @@
   ],
   "bootstrap_components": {
     "src/main/java/hu/taliann/icesmp/IceSMP.java": [
+      "src/main/java/hu/taliann/icesmp/core/CommandLifecycle.java",
       "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
       "src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java"
     ],
@@ -8008,6 +8011,14 @@
         "crime_whisper"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/core/CommandLifecycle.java",
+      "role": "DOMAIN_ADAPTER",
+      "domains": [
+        "transport_infrastructure"
+      ],
+      "rationale": "Retained Paper command-node lifecycle admission and entered-callback drain; no gameplay state or competing provider authority."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
