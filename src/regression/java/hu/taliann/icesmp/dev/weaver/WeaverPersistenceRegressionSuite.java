@@ -70,7 +70,7 @@ public final class WeaverPersistenceRegressionSuite {
         check(codec.decodeAudit(codec.encodeAudit(storage.audit)).equals(storage.audit), "audit codec round trip");
         check(new WeaverValue(WeaverTypeId.parse("weaver:int@1"), Map.of("value", 7), "fixture", "fixture.state", Set.of(), 1)
                 .equals(prepared.request().parameters().get("count")), "Integer/Long semantic identity differs across YAML load");
-        final Map<String, Object> future = new HashMap<>(codec.encodeState(storage.state)); future.put("schema-version", 4);
+        final Map<String, Object> future = new HashMap<>(codec.encodeState(storage.state)); future.put("schema-version", 5);
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> codec.decodeState(future));
         final Map<String, Object> unknown = new HashMap<>(codec.encodeState(storage.state)); unknown.put("raw-object", new Object());
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> codec.decodeState(unknown));

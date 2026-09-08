@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.integrity;
 
 import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -11,8 +12,34 @@ public final class GameplayEffectGate {
     private GameplayEffectGate() { }
     public static final class Binding implements AutoCloseable {
         private final Function<GameplayEffectContext, CompletionStage<GameplayEffectPermit>> policy;
+        private final Map<RewardSource, UUID> fences = new HashMap<>();
         private Binding(Function<GameplayEffectContext, CompletionStage<GameplayEffectPermit>> policy) { this.policy = Objects.requireNonNull(policy); }
         @Override public void close() { POLICY.compareAndSet(this, null); }
+    }
+    /** Held from owner-side observation until durable acknowledgement; never expires during an in-flight write. */
+    public static final class ObservationFence implements AutoCloseable {
+        private final Binding binding;
+        private final RewardSource target;
+        private final UUID id;
+        private ObservationFence(Binding binding, RewardSource target, UUID id) { this.binding = binding; this.target = target; this.id = id; }
+        public boolean activeFor(RewardSource source) {
+            synchronized (binding) { return POLICY.get() == binding && target.equals(normalize(source)) && id.equals(binding.fences.get(target)); }
+        }
+        @Override public void close() { synchronized (binding) { binding.fences.remove(target, id); } }
+    }
+    /** Caller must own the native target and observe it only after acquiring this fence. No blocking wait occurs. */
+    public static Optional<ObservationFence> fence(RewardSource source) {
+        final var binding = POLICY.get(); if (binding == null) return Optional.empty();
+        final RewardSource target = normalize(Objects.requireNonNull(source));
+        synchronized (binding) {
+            if (POLICY.get() != binding || binding.fences.size() >= 128 || binding.fences.containsKey(target)) return Optional.empty();
+            final UUID id = UUID.randomUUID(); binding.fences.put(target, id); return Optional.of(new ObservationFence(binding, target, id));
+        }
+    }
+    private static RewardSource normalize(RewardSource source) {
+        if (source instanceof RewardSource.Player player) return new RewardSource.Entity(player.id());
+        if (source instanceof RewardSource.Location point) return new RewardSource.Location(point.world(), Math.floor(point.x()), Math.floor(point.y()), Math.floor(point.z()));
+        return source;
     }
     public static Binding install(Function<GameplayEffectContext, CompletionStage<GameplayEffectPermit>> policy) {
         final var binding = new Binding(policy);
@@ -26,7 +53,12 @@ public final class GameplayEffectGate {
         try {
             return Objects.requireNonNull(binding.policy.apply(context)).handle((permit, failure) -> {
                 if (failure != null || permit == null) return GameplayEffectPermit.denied();
-                return GameplayEffectPermit.guarded(() -> POLICY.get() == binding && permit.claim() && POLICY.get() == binding);
+                return GameplayEffectPermit.guarded(() -> {
+                    synchronized (binding) {
+                        return POLICY.get() == binding && context.targets().stream().noneMatch(target -> binding.fences.containsKey(normalize(target)))
+                                && permit.claim() && POLICY.get() == binding;
+                    }
+                });
             });
         } catch (RuntimeException | LinkageError unavailable) { return CompletableFuture.completedFuture(GameplayEffectPermit.denied()); }
     }

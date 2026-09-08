@@ -25,14 +25,14 @@ public final class WeaverJournalCodec {
         state.projections().forEach((id, value) -> projections.put(id.toString(), effects.projection(value)));
         state.influences().forEach((id, value) -> influences.put(id.toString(), effects.influence(value)));
         state.effectDeltas().forEach((id, value) -> deltas.put(id.toString(), effects.delta(value)));
-        return Map.of("schema-version", 3, "revision", state.revision(), "operations", operations, "projection-sequence", state.projectionSequence(),
+        return Map.of("schema-version", 4, "revision", state.revision(), "operations", operations, "projection-sequence", state.projectionSequence(),
                 "intents", intents, "projections", projections, "influences", influences, "effect-deltas", deltas);
     }
     public WeaverJournalState decodeState(final Map<String, Object> data) {
         final long version = number(data, "schema-version");
         if (version == 1) keys(data, "schema-version", "revision", "operations");
         else if (version == 2) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences");
-        else if (version == 3) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences", "effect-deltas");
+        else if (version == 3 || version == 4) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences", "effect-deltas");
         else throw new IllegalArgumentException("Unknown journal schema");
         final Map<UUID, WeaverOperationRecord> operations = new HashMap<>(); final Map<UUID, WeaverReceipt> receipts = new HashMap<>();
         final Map<String, Object> values = map(data.get("operations"));
@@ -61,7 +61,7 @@ public final class WeaverJournalCodec {
                 }
             }
         } else {
-            final WeaverEffectCodec effects = new WeaverEffectCodec(this);
+            final WeaverEffectCodec effects = new WeaverEffectCodec(this, version >= 4);
             final Map<String, Object> intentRows = map(data.get("intents")), projectionRows = map(data.get("projections")), influenceRows = map(data.get("influences"));
             if (intentRows.size() > WeaverJournalState.MAX_OPERATIONS || projectionRows.size() > 1280 || influenceRows.size() > WeaverJournalState.MAX_INFLUENCES) throw new IllegalArgumentException("Effect capacity exceeded");
             intentRows.forEach((id, value) -> { final UUID decoded = uuid(Map.of("id", id), "id"); intents.put(decoded, effects.intent(value)); });
@@ -71,7 +71,7 @@ public final class WeaverJournalCodec {
         final Map<UUID, WeaverEffectDelta> deltas = new HashMap<>();
         if (version >= 3) {
             final Map<String, Object> encoded = map(data.get("effect-deltas")); if (encoded.size() > WeaverJournalState.MAX_RECEIPTS) throw new IllegalArgumentException("Effect delta cap");
-            final WeaverEffectCodec effects = new WeaverEffectCodec(this);
+            final WeaverEffectCodec effects = new WeaverEffectCodec(this, version >= 4);
             encoded.forEach((id, value) -> deltas.put(uuid(Map.of("id", id), "id"), effects.delta(map(value))));
         } else operations.forEach((id, operation) -> { if (operation.receipt().isPresent()) deltas.put(id, WeaverEffectDelta.unavailable()); });
         return new WeaverJournalState(number(data, "revision"), operations, receipts, version == 1 ? 0 : number(data, "projection-sequence"), intents, projections, influences, deltas);

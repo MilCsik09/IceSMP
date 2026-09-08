@@ -22,6 +22,7 @@ public final class WorldWeaverRuntime {
     private final WorldWeaverGUIListener listener;
     private final WorldWeaverProviderRegistry providers;
     private final hu.taliann.icesmp.dev.weaver.persistence.WeaverJournal journal;
+    private final hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceDispatcher influenceDispatcher;
     private final hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryCoordinator recovery;
     private final hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryListener recoveryListener;
     private final JavaPlugin plugin;
@@ -39,7 +40,9 @@ public final class WorldWeaverRuntime {
         final WeaverItemSlots slots = new WeaverItemSlots(identity);
         final SubjectSnapshotFactory snapshots = new SubjectSnapshotFactory(router, slots, providers);
         journal = new hu.taliann.icesmp.dev.weaver.persistence.WeaverJournal(new hu.taliann.icesmp.dev.weaver.persistence.YamlWeaverJournalStorage(
-                plugin.getDataFolder(), new hu.taliann.icesmp.dev.weaver.persistence.WeaverJournalCodec(types), plugin.getLogger()), projection -> providers.projectionConsumers().validate(projection));
+                plugin.getDataFolder(), new hu.taliann.icesmp.dev.weaver.persistence.WeaverJournalCodec(types), plugin.getLogger()), projection -> providers.projectionConsumers().validate(projection),
+                System::currentTimeMillis, providers::resolveInfluenceLifetime);
+        influenceDispatcher = new hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceDispatcher(journal, providers::observeInfluence);
         final var services = new hu.taliann.icesmp.dev.weaver.api.WeaverProviderServices(types,
                 new hu.taliann.icesmp.dev.weaver.projection.JournalProjectionSource(journal, providers::projectionConsumers), router, providers);
         for (final var factory : java.util.List.copyOf(providerFactories)) providers.register(factory.apply(services));
@@ -74,6 +77,7 @@ public final class WorldWeaverRuntime {
             journal.expireProjections(System.currentTimeMillis(), false)
                     .thenCompose(ignored -> closed ? java.util.concurrent.CompletableFuture.completedFuture(null) : projectionDispatcher.pulse(journal.snapshot().projections()))
                     .thenCompose(ignored -> closed ? java.util.concurrent.CompletableFuture.completedFuture(null) : recovery.profilesAvailable())
+                    .thenCompose(ignored -> closed ? java.util.concurrent.CompletableFuture.completedFuture(null) : influenceDispatcher.pulse())
                     .whenComplete((ignored, failure) -> maintaining.set(false));
         }
     }
@@ -90,7 +94,7 @@ public final class WorldWeaverRuntime {
     public void shutdown() {
         closed = true; started = false;
         final var task = maintenance; if (task != null) task.cancel();
-        kernel.shutdown(); recovery.close(); router.close();
+        kernel.shutdown(); recovery.close(); influenceDispatcher.close(); router.close();
         journal.expireProjections(System.currentTimeMillis(), true).handle((ignored, failure) -> null).thenCompose(ignored -> journal.close()).whenComplete((ignored, failure) -> {
             if (failure != null) plugin.getLogger().severe("Internal developer state shutdown requires recovery.");
         });
