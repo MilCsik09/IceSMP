@@ -241,13 +241,18 @@ public final class WorldWeaverProviderRegistry {
     }
     public hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment assessRecovery(final String providerId, final RecoveryContext context,
             final SubjectSnapshot snapshot, final hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationRecord operation) {
+        return assessRecovery(providerId, context, snapshot, operation, Optional.empty());
+    }
+    public hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment assessRecovery(final String providerId, final RecoveryContext context,
+            final SubjectSnapshot snapshot, final hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationRecord operation,
+            final Optional<hu.taliann.icesmp.dev.weaver.area.WeaverAreaCollection> collection) {
         requireFrozen();
         final Entry entry = providers.get(providerId);
         if (entry == null || !operation.providerId().equals(providerId)) throw new WeaverDomainRejection("UNKNOWN_PROVIDER");
         context.authority().require(operation);
         if (!snapshot.ref().equals(operation.subject())) throw new SecurityException("Recovery subject differs from operation");
         return entry.breaker().call(() -> {
-            final var assessment = Objects.requireNonNull(entry.provider().assessRecovery(context, snapshot, operation));
+            final var assessment = Objects.requireNonNull(collection.isPresent() ? entry.provider().assessAreaRecovery(context, snapshot, collection.get(), operation) : entry.provider().assessRecovery(context, snapshot, operation));
             assessment.receipt().ifPresent(receipt -> {
                 receipt.before().values().forEach(types::validate); receipt.after().values().forEach(types::validate);
                 if (!receipt.operationId().equals(operation.operationId()) || !receipt.providerId().equals(providerId)

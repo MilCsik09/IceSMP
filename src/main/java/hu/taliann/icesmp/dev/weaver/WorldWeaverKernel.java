@@ -24,6 +24,7 @@ public final class WorldWeaverKernel {
     private final WeaverItemSlots slots;
     private final WorldWeaverGUI gui;
     private final WeaverExecutionCoordinator execution;
+    private final hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine areas;
     private final hu.taliann.icesmp.dev.weaver.execution.WeaverUndoCoordinator undo;
     private final java.util.function.BooleanSupplier operational;
     private final WeaverParameterDialog input = new WeaverParameterDialog();
@@ -36,10 +37,12 @@ public final class WorldWeaverKernel {
     private volatile boolean closed;
     public WorldWeaverKernel(final DevItemManager artifacts, final WorldWeaverProviderRegistry providers, final WeaverTypeRegistry types,
                              final SubjectSnapshotSource snapshots, final WeaverItemSlots slots, final WorldWeaverGUI gui,
-                             final WeaverExecutionCoordinator execution, final hu.taliann.icesmp.dev.weaver.execution.WeaverUndoCoordinator undo, final java.util.function.BooleanSupplier operational) {
+                             final WeaverExecutionCoordinator execution, final hu.taliann.icesmp.dev.weaver.execution.WeaverUndoCoordinator undo,
+                             final hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine areas, final java.util.function.BooleanSupplier operational) {
         this.artifacts = Objects.requireNonNull(artifacts); this.providers = Objects.requireNonNull(providers); this.types = Objects.requireNonNull(types);
         this.snapshots = Objects.requireNonNull(snapshots); this.slots = Objects.requireNonNull(slots); this.gui = Objects.requireNonNull(gui);
         this.execution = Objects.requireNonNull(execution); this.undo = Objects.requireNonNull(undo); this.operational = Objects.requireNonNull(operational);
+        this.areas = Objects.requireNonNull(areas);
     }
     public ArtifactInteractionResult interact(final DevArtifactInteraction interaction) {
         final DevArtifactContext context = interaction.context();
@@ -86,6 +89,23 @@ public final class WorldWeaverKernel {
                 authorize(access);
                 if (failure != null) { access.session().arming().clear(); feedback(access, code(failure)); return; }
                 consumer.accept(snapshot);
+            } catch (final RuntimeException rejected) { access.session().arming().clear(); feedback(access, code(rejected)); }
+        }, () -> unavailable(access)));
+    }
+    private record ActionCapture(SubjectSnapshot snapshot, Optional<hu.taliann.icesmp.dev.weaver.area.WeaverAreaCollection> collection) { }
+    private void freshAction(final Access access, final WeaverActionDraft current, final Consumer<ActionCapture> consumer) {
+        final WeaverAuthorityToken authority = authorize(access); final long request = access.session().nextView();
+        snapshots.capture(authority.actor(), current.snapshot().ref()).thenCompose(snapshot -> {
+            if (snapshot.ref() instanceof AreaRef area && (current.descriptor().areaSupport() == AreaSupport.ENTITY_FANOUT || current.descriptor().areaSupport() == AreaSupport.BLOCK_FANOUT)) {
+                return areas.collect(authority, area, current.descriptor()).thenApply(collection -> new ActionCapture(collection.decorate(snapshot), Optional.of(collection)));
+            }
+            return java.util.concurrent.CompletableFuture.completedFuture(new ActionCapture(snapshot, Optional.empty()));
+        }).whenComplete((captured, failure) -> access.artifact().onOwner(player -> {
+            if (!valid(access) || !sessions.matches(access.artifact().owner(), access.session().id(), request)) return;
+            try {
+                authorize(access);
+                if (failure != null) { access.session().arming().clear(); feedback(access, code(failure)); return; }
+                consumer.accept(captured);
             } catch (final RuntimeException rejected) { access.session().arming().clear(); feedback(access, code(rejected)); }
         }, () -> unavailable(access)));
     }
@@ -308,7 +328,8 @@ public final class WorldWeaverKernel {
     private void confirm(final Access access, final WeaverActionDraft current) { confirm(access, current, false); }
     private void confirm(final Access access, final WeaverActionDraft current, final boolean finalStep) {
         current.validate(types).requireValid();
-        fresh(access, current.snapshot().ref(), snapshot -> {
+        freshAction(access, current, captured -> {
+            final SubjectSnapshot snapshot = captured.snapshot();
             requireDraft(current.id());
             if (undoClaim != null && !undoClaim.expectedFingerprint().equals(snapshot.revisionFingerprint())) throw new WeaverDomainRejection("CONFLICT");
             if (finalStep && !current.snapshot().revisionFingerprint().equals(snapshot.revisionFingerprint())) throw new WeaverDomainRejection(undoClaim == null ? "STALE_SUBJECT" : "CONFLICT");
@@ -327,9 +348,11 @@ public final class WorldWeaverKernel {
         requireDraft(current.id()); draft = null;
         final var claim = Optional.ofNullable(undoClaim); undoClaim = null;
         if (!access.session().arming().consume(access.session().id(), WeaverArming.required(current.descriptor(), current.integrityMode()))) throw new WeaverDomainRejection("ARMING_REQUIRED");
-        fresh(access, current.snapshot().ref(), snapshot -> {
+        freshAction(access, current, captured -> {
+            final SubjectSnapshot snapshot = captured.snapshot();
             if (!snapshot.revisionFingerprint().equals(current.snapshot().revisionFingerprint())) throw new WeaverDomainRejection(claim.isPresent() ? "CONFLICT" : "STALE_SUBJECT");
-            if (!rate.tryAcquire(current.descriptor().rateCost())) throw new WeaverDomainRejection("RATE_LIMITED");
+            if (captured.collection().isPresent() && captured.collection().get().targets().isEmpty()) throw new WeaverDomainRejection("AREA_EMPTY");
+            if (!(captured.collection().isPresent() ? rate.tryAcquireArea(captured.collection().get().targets().size(), current.descriptor().rateCost()) : rate.tryAcquire(current.descriptor().rateCost()))) throw new WeaverDomainRejection("RATE_LIMITED");
             final long executionView = access.session().viewRevision();
             final ProviderContext context = new ProviderContext(authorize(access), types, current.lifetime(), current.integrityMode());
             final String owner = providers.owner(current.descriptor().id());
@@ -340,17 +363,21 @@ public final class WorldWeaverKernel {
                     || discovered != null && discovered.blockedActions().containsKey(current.descriptor().id())) {
                 throw new WeaverDomainRejection("ACTION_UNAVAILABLE");
             }
-            final var prepared = claim.isPresent() ? undo.prepare(context, claim.get(), snapshot) : providers.invoke(owner, context, provider -> {
-                final var plan = provider.prepare(context, snapshot, request);
+            final var prepared = claim.isPresent() ? undo.prepare(context, claim.get(), snapshot, captured.collection()) : providers.invoke(owner, context, provider -> {
+                final var plan = captured.collection().isPresent() ? provider.prepareArea(context, snapshot, request, captured.collection().get()) : provider.prepare(context, snapshot, request);
                 if (!plan.descriptor().equals(current.descriptor())) throw new IllegalArgumentException("Prepared descriptor differs from manifest");
-                return plan;
+                return captured.collection().isPresent() ? areas.guard(captured.collection().get(), plan) : plan;
             });
             final Optional<hu.taliann.icesmp.dev.weaver.execution.PreparedEffects> effects = prepared.descriptor().requiresJournal()
                     ? Optional.of(providers.invoke(owner, context, provider -> {
                         final var planned = java.util.Objects.requireNonNull(provider.prepareEffects(context, snapshot, request, prepared));
                         if ((prepared.descriptor().integrityImpacts().contains(IntegrityImpact.TAINT_CREATED) || prepared.descriptor().integrityImpacts().contains(IntegrityImpact.EVENT_ORIGIN))
                                 && planned.intent().targets().isEmpty()) throw new IllegalArgumentException("Created/event effects lack pre-mutation quarantine scope");
-                        return planned;
+                        if (captured.collection().isEmpty()) return planned;
+                        final Set<hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceTarget> targets = new HashSet<>(planned.intent().targets());
+                        targets.add(hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceTarget.subject(snapshot.ref()));
+                        for (final SubjectSnapshot target : captured.collection().get().targets()) if (target.ref() instanceof EntityRef || target.ref() instanceof PlayerRef) targets.add(hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceTarget.subject(target.ref()));
+                        return new hu.taliann.icesmp.dev.weaver.execution.PreparedEffects(new hu.taliann.icesmp.dev.weaver.integrity.WeaverEffectIntent(targets), planned.factory());
                     })) : Optional.empty();
             providers.observeExecution(owner, execution.execute(owner, context, snapshot, request, prepared, effects, claim, () -> {
                 authorize(access);
@@ -388,11 +415,14 @@ public final class WorldWeaverKernel {
     }
     private void undoPreview(final Access access, final UUID id) {
         final WeaverReceipt receipt = requireReceipt(access, id);
-        fresh(access, WeaverUndoSubject.resolve(receipt), snapshot -> {
-            final var target = undo.target(authorize(access), id, snapshot); final var descriptor = target.descriptor();
-            final Lifetime lifetime = descriptor.lifetimes().contains(Lifetime.ONE_SHOT) ? Lifetime.ONE_SHOT
-                    : descriptor.lifetimes().contains(receipt.lifetime()) ? receipt.lifetime() : descriptor.lifetimes().stream().sorted().findFirst().orElseThrow();
-            if (!descriptor.integrityModes().contains(access.session().mode())) throw new WeaverDomainRejection("INTEGRITY_MODE_UNAVAILABLE");
+        final var spec = receipt.undo().orElseThrow(() -> new WeaverDomainRejection("UNDO_UNAVAILABLE"));
+        final var descriptor = providers.actions().get(spec.actionId());
+        if (descriptor == null || !descriptor.integrityModes().contains(access.session().mode())) throw new WeaverDomainRejection("UNDO_ACTION_UNAVAILABLE");
+        final Lifetime lifetime = descriptor.lifetimes().contains(Lifetime.ONE_SHOT) ? Lifetime.ONE_SHOT
+                : descriptor.lifetimes().contains(receipt.lifetime()) ? receipt.lifetime() : descriptor.lifetimes().stream().sorted().findFirst().orElseThrow();
+        final var candidate = new WeaverActionDraft(UUID.randomUUID(), descriptor, new SubjectSnapshot(WeaverUndoSubject.resolve(receipt), System.currentTimeMillis(), receipt.afterFingerprint(), Map.of()), lifetime, access.session().mode(), spec.parameters());
+        freshAction(access, candidate, captured -> {
+            final SubjectSnapshot snapshot = captured.snapshot(); final var target = undo.target(authorize(access), id, snapshot);
             undoClaim = target.claim(); draft = new WeaverActionDraft(UUID.randomUUID(), descriptor, snapshot, lifetime, access.session().mode(), target.receipt().undo().orElseThrow().parameters());
             draft.validate(types).requireValid(); renderAction(access, draft);
         });
@@ -453,7 +483,7 @@ public final class WorldWeaverKernel {
         if (active == null || active.session() != access.session()) return;
         sessions.close(access.artifact().owner()); active = null; screen = null; draft = null; undoClaim = null;
     }
-    public void shutdown() { closed = true; execution.close(); sessions.shutdown(); active = null; screen = null; draft = null; undoClaim = null; }
+    public void shutdown() { closed = true; areas.close(); execution.close(); sessions.shutdown(); active = null; screen = null; draft = null; undoClaim = null; }
     private void feedback(final Access access, final String code) {
         access.artifact().onOwner(player -> player.sendActionBar(Component.text("Világszövő · " + code)), () -> unavailable(access));
     }

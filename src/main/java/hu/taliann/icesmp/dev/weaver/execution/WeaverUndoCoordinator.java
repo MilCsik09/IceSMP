@@ -12,8 +12,13 @@ public final class WeaverUndoCoordinator {
     public record Target(WeaverReceipt receipt, WeaverUndoClaim claim, ActionDescriptor descriptor) { }
     private final WeaverJournal journal;
     private final WorldWeaverProviderRegistry providers;
+    private final hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine areas;
     public WeaverUndoCoordinator(final WeaverJournal journal, final WorldWeaverProviderRegistry providers) {
+        this(journal, providers, null);
+    }
+    public WeaverUndoCoordinator(final WeaverJournal journal, final WorldWeaverProviderRegistry providers, final hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine areas) {
         this.journal = Objects.requireNonNull(journal); this.providers = Objects.requireNonNull(providers);
+        this.areas = areas;
     }
     public List<WeaverReceipt> history(final WeaverAuthorityToken authority) {
         authority.requireValid(); return journal.snapshot().receipts().values().stream().sorted(Comparator.comparingLong(WeaverReceipt::createdAt).reversed().thenComparing(WeaverReceipt::receiptId)).toList();
@@ -38,12 +43,16 @@ public final class WeaverUndoCoordinator {
         return new Target(receipt, new WeaverUndoClaim(id, operation.revision(), snapshot.revisionFingerprint()), descriptor);
     }
     public PreparedAction prepare(final ProviderContext context, final WeaverUndoClaim claim, final SubjectSnapshot snapshot) {
+        return prepare(context, claim, snapshot, Optional.empty());
+    }
+    public PreparedAction prepare(final ProviderContext context, final WeaverUndoClaim claim, final SubjectSnapshot snapshot,
+            final Optional<hu.taliann.icesmp.dev.weaver.area.WeaverAreaCollection> collection) {
         final Target target = target(context.authority(), claim.receiptId(), snapshot);
         if (!target.claim().equals(claim)) throw new WeaverDomainRejection("CONFLICT");
         return providers.invoke(target.receipt().providerId(), context, provider -> {
-            final PreparedAction prepared = provider.prepareUndo(context, snapshot, target.receipt());
+            final PreparedAction prepared = collection.isPresent() ? provider.prepareAreaUndo(context, snapshot, target.receipt(), collection.get()) : provider.prepareUndo(context, snapshot, target.receipt());
             if (!prepared.descriptor().equals(target.descriptor()) || !prepared.subject().equals(snapshot.ref()) || !prepared.expectedBeforeFingerprint().equals(claim.expectedFingerprint())) throw new IllegalArgumentException("Undo plan differs from receipt contract");
-            return prepared;
+            return collection.isPresent() ? Objects.requireNonNull(areas, "AREA Undo engine unavailable").guard(collection.get(), prepared) : prepared;
         });
     }
 }
