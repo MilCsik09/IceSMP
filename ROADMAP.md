@@ -224,10 +224,11 @@ koordinátája, pozitív és negatív próbája, valamint visszaállítható men
   mobnál, provokációval és nélküle, régióhatáron át; a játékos–mob retaliation
   lease-ek target-függetlenségét, scheduler rejectiont, retired callbacket és
   state-cleanupot loggal kell bizonyítani.
-- ◇ Fault-injection stagingen külön bizonyítandó a fizetős frakcióváltás és az
-  adóbeszedés WAL-recoveryje: wallet-write hiba, domain-write hiba, sikeres és
+- ◇ Fault-injection stagingen külön bizonyítandó a fizetős frakcióváltás
+  WAL-recoveryje: wallet-write hiba, domain-write hiba, sikeres és
   sikertelen kompenzáció, journal-cleanup hiba, circuit-open és kontrollált
-  restart utáni idempotens folytatás.
+  restart utáni idempotens folytatás. Adóbeszedés nincs; régi adóadatok
+  migrációja nem átvételi követelmény a tiszta indulásnál.
 - ◇ Az Íjász és az Orgyilkos tényleges DPS-ét célbábun és valódi
   harchelyzetben is mérni kell; a DoT és a vanília sebzésréteg miatt a
   papírérték nem elég.
