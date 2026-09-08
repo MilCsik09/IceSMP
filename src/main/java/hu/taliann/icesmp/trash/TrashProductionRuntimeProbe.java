@@ -44,6 +44,7 @@ public final class TrashProductionRuntimeProbe {
                         "trashRuntimeTelemetry", TrashRuntimeTelemetry.class);
 
                 verifyCatalogAndFactory(catalog, items);
+                verifyNativeInspection(plugin, catalog, items);
                 verifyStartedAndCleanRuntime(assembledCore, telemetry);
                 session.startupPassed = true;
                 plugin.getLogger().info(PASS_MARKER + " platform="
@@ -145,6 +146,61 @@ public final class TrashProductionRuntimeProbe {
                         TrashKind.ANOMALY, 42, TrashKind.TRASH_RELIC, 23)),
                 "runtime category denominator drifted");
         check(transformed == 29, "runtime lifecycle reference denominator drifted");
+    }
+
+    private static void verifyNativeInspection(final JavaPlugin plugin, final TrashCatalog catalog,
+                                                final TrashItemFactory items) throws java.io.IOException {
+        // Detached stacks and isolated files never add synthetic history to the assembled gameplay store.
+        final var directory = java.nio.file.Files.createTempDirectory("trash-native-inspection-");
+        final var store = new TrashHistoryStore(directory.resolve("history.yml").toFile(),
+                directory.resolve("history.wal").toFile(), plugin.getLogger(), catalog);
+        final var history = new TrashHistoryService(plugin, catalog, items, store);
+        store.load();
+        final var definition = catalog.snapshot().values().stream().filter(value -> !value.successPhase().isBlank()).findFirst().orElseThrow();
+        final ItemStack fresh = items.create(definition.id(), 2);
+        final byte[] before = fresh.serializeAsBytes();
+        check(history.tryInspect(fresh).orElseThrow().history().isEmpty(), "fresh stack has invented history");
+        check(java.util.Arrays.equals(before, fresh.serializeAsBytes()), "inspection mutated a fresh item");
+        final ItemStack unit = items.create(definition.id(), 1);
+        history.markOrigin(unit, TrashLootSource.AMBIENT);
+        history.individualizeUnit(unit, TrashHistoryEvent.ACTIVATED, java.util.UUID.randomUUID(), "");
+        final var inspected = history.tryInspect(unit).orElseThrow();
+        check(inspected.history().isPresent() && inspected.origin().orElseThrow() == TrashHistoryEvent.CREATED_AMBIENT,
+                "native tracked inspection lost provenance");
+        final ItemStack stale = unit.clone();
+        history.recordIfTracked(unit, TrashHistoryEvent.REPAIRED, java.util.UUID.randomUUID(), "");
+        check(history.tryInspect(stale).isEmpty(), "stale native revision accepted");
+        final ItemStack duplicate = unit.clone(); duplicate.setAmount(2);
+        check(history.tryInspect(duplicate).isEmpty(), "duplicate tracked stack accepted");
+        check(history.tryInspect(items.createPhase(definition.id(), definition.successPhase(), 1)).isEmpty(),
+                "lifecycle phase without history accepted as fresh");
+        final ItemStack malformed = unit.clone();
+        final var meta = malformed.getItemMeta();
+        meta.getPersistentDataContainer().remove(new NamespacedKey(plugin, "trash_history_revision"));
+        malformed.setItemMeta(meta);
+        boolean refused = false;
+        try { history.tryInspect(malformed); } catch (IllegalStateException expected) { refused = true; }
+        check(refused, "partial authority marker accepted");
+        for (final String key : java.util.List.of("trash_instance", "trash_history_revision", "trash_origin", "trash_repair_pending")) {
+            final ItemStack invalid = items.create(definition.id(), 1);
+            final var invalidMeta = invalid.getItemMeta();
+            invalidMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, key),
+                    org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
+            invalid.setItemMeta(invalidMeta);
+            refused = false;
+            try { history.tryInspect(invalid); } catch (IllegalStateException | IllegalArgumentException expected) { refused = true; }
+            check(refused, "wrong-type native marker accepted as absent");
+        }
+        final byte[] itemBefore = unit.serializeAsBytes();
+        final byte[] walBefore = java.nio.file.Files.readAllBytes(directory.resolve("history.wal"));
+        final var current = history.tryInspect(unit).orElseThrow();
+        check(TrashArchaeologyFactEngine.evaluate(current.definition(), current.history(), 50).orElseThrow().facts()
+                        .stream().anyMatch(fact -> fact.id().equals("repaired")), "detached archaeology omitted native repair evidence");
+        check(java.util.Arrays.equals(itemBefore, unit.serializeAsBytes())
+                        && java.util.Arrays.equals(walBefore, java.nio.file.Files.readAllBytes(directory.resolve("history.wal"))),
+                "inspection or derivation wrote item/history state");
+        store.load();
+        check(history.tryInspect(unit).orElseThrow().equals(current), "real native history reload changed inspection");
     }
 
     private static void verifyStartedAndCleanRuntime(

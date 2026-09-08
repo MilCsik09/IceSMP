@@ -1270,12 +1270,21 @@ val trashArchaeologyRegressionTest = registerRegression(
     "trashArchaeologyRegressionTest",
     "Runs Phase F hidden progression, Brush session, overlay, secrecy and lifecycle gates.",
     "hu.taliann.icesmp.trash.TrashArchaeologyRegressionSuite")
+val trashNativeInspectionRegressionTest = registerRegression(
+    "trashNativeInspectionRegressionTest",
+    "Runs native history and anomaly nonblocking inspection, rollback and disk acknowledgement checks.",
+    "hu.taliann.icesmp.trash.TrashNativeInspectionRegressionSuite")
 val trashProductionHardeningRegressionTest = registerRegression(
     "trashProductionHardeningRegressionTest",
     "Runs Phase G aggregate telemetry, hard-cap, cleanup, security and staging-evidence gates.",
     "hu.taliann.icesmp.trash.TrashProductionHardeningRegressionSuite")
+val trashWeaverInspectionRegressionTest = registerRegression(
+    "trashWeaverInspectionRegressionTest",
+    "Runs hidden Trash provider catalogs, bounded native evidence and read-only generic discovery.",
+    "hu.taliann.icesmp.dev.weaver.provider.TrashWeaverInspectionRegressionSuite")
 
 tasks.check {
+    dependsOn(trashWeaverInspectionRegressionTest)
     dependsOn(auditIceSmpHudAssets)
     dependsOn(auditEquipmentAssets)
     dependsOn(trashSpriteAssetAudit)
@@ -1306,7 +1315,7 @@ tasks.check {
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
         trashAnomalyRegressionTest, trashRelicRegressionTest, trashRuleFieldRegressionTest, trashArchaeologyRegressionTest,
-        trashProductionHardeningRegressionTest,
+        trashProductionHardeningRegressionTest, trashNativeInspectionRegressionTest,
         factionReworkRegressionTest, whisperIntegrityRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,

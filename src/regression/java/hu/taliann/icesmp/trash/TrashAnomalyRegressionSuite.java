@@ -136,7 +136,8 @@ public final class TrashAnomalyRegressionSuite {
         require(store, "implements PersistentStore", "central persistence lifecycle");
         require(store, "trash-anomaly-state.yml", "dedicated anomaly memory store");
         require(store, "YamlStore.registerCriticalWrite", "critical state write circuit");
-        require(store, "YamlStore.saveAtomic", "atomic anomaly memory save");
+        require(store, "YamlStore::saveAtomic", "production atomic anomaly memory writer");
+        require(store, "writer.write(file, yaml)", "native anomaly memory save through atomic writer");
         require(store, "MAX_COUNTER = 1_000_000_000L", "bounded anomaly counters");
         require(store, "MAX_INSTANCES = 100_000", "bounded anomaly instance memory");
         require(store, "LOCAL_PLAYER_DEATHS", "death memory");

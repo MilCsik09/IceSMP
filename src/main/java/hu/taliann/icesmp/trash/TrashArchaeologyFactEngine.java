@@ -37,6 +37,18 @@ public final class TrashArchaeologyFactEngine {
         } catch (final RuntimeException malformed) {
             return Optional.empty();
         }
+        return evaluate(definition, Optional.ofNullable(snapshot), archaeologyLevel);
+    }
+
+    /** Pure read of already detached native evidence; grants neither discoveries nor progression. */
+    public static Optional<Evaluation> evaluate(final TrashDefinition definition,
+                                               final Optional<TrashHistoryStore.Snapshot> history,
+                                               final int archaeologyLevel) {
+        Objects.requireNonNull(definition); Objects.requireNonNull(history);
+        if (archaeologyLevel < 0 || archaeologyLevel > 50) return Optional.empty();
+        final String id = definition.id();
+        final TrashHistoryStore.Snapshot snapshot = history.orElse(null);
+        if (snapshot != null && !snapshot.baseId().equals(id)) return Optional.empty();
         final long revision = snapshot == null ? 0L : snapshot.revision();
         final String family = family(definition.material());
         final String domain = domain(definition);

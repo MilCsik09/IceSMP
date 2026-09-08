@@ -96,7 +96,13 @@ public final class TrashHistoryRegressionSuite {
         require(store, "YamlStore.registerCriticalWrite(file)", "critical history write circuit");
         require(store, "YamlStore.failCorrupt", "fail-closed corrupt-store handling");
         require(store, "history.revision() == revision", "exact revision match");
-        require(store, "public synchronized <T> T transact", "serialized durable transaction");
+        final int transaction = store.indexOf("public <T> T transact");
+        final int nativeLock = store.indexOf("stateLock.lock()", transaction);
+        final int mutation = store.indexOf("mutation.get()", transaction);
+        final int unlock = store.indexOf("stateLock.unlock()", transaction);
+        check(transaction >= 0 && nativeLock > transaction && mutation > nativeLock
+                        && unlock > mutation,
+                "native durable transaction must hold its shared state lock through mutation");
         require(store, "journal.append(nextSequence", "durable per-transaction delta append");
         require(store, "rollback(frame)", "touched-key rollback on journal failure");
         check(!store.contains("new LinkedHashMap<>(histories)"),

@@ -63,7 +63,7 @@ public final class TrashHistoryService {
         final PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
         final String raw = pdc.get(instanceKey, PersistentDataType.STRING);
         final Long revision = pdc.get(revisionKey, PersistentDataType.LONG);
-        if ((raw == null || raw.isBlank()) && revision == null) return Optional.empty();
+        if (!pdc.has(instanceKey) && !pdc.has(revisionKey)) return Optional.empty();
         if (raw == null || raw.isBlank() || revision == null || revision < 1L) {
             throw new IllegalStateException("hiányos Trash history authority marker");
         }
@@ -95,6 +95,35 @@ public final class TrashHistoryService {
     public Optional<TrashHistoryStore.Snapshot> historyOf(final ItemStack item) {
         if (!isValidTracked(item)) return Optional.empty();
         return instanceIdOf(item).flatMap(store::find);
+    }
+
+    /** Caller owns the item. A busy store is unavailable; stale markers never become fresh history. */
+    public Optional<ItemInspection> tryInspect(final ItemStack item) {
+        if (!itemFactory.isKnownItem(item) || item.getAmount() < 1) return Optional.empty();
+        final String baseId = itemFactory.idOf(item).orElseThrow();
+        final String phase = itemFactory.phaseOf(item).orElseThrow();
+        final Optional<UUID> instance = instanceIdOf(item);
+        final Optional<TrashHistoryEvent> origin = creationEventOf(item);
+        final Optional<PreparedRepair> pending = preparedRepair(item);
+        if (pending.isPresent()) return Optional.empty();
+        if (instance.isEmpty()) {
+            if (!"base".equals(phase)) return Optional.empty();
+            return Optional.of(new ItemInspection(catalog.require(baseId), phase, origin, Optional.empty()));
+        }
+        if (item.getAmount() != 1) return Optional.empty();
+        return store.tryInspect(instance.get()).flatMap(inspection -> inspection.history()
+                .filter(snapshot -> snapshot.baseId().equals(baseId) && snapshot.phase().equals(phase)
+                        && snapshot.revision() == revisionOf(item))
+                .map(snapshot -> new ItemInspection(catalog.require(baseId), phase, origin, Optional.of(snapshot))));
+    }
+
+    public record ItemInspection(TrashDefinition definition, String phase,
+                                 Optional<TrashHistoryEvent> origin,
+                                 Optional<TrashHistoryStore.Snapshot> history) {
+        public ItemInspection {
+            Objects.requireNonNull(definition); Objects.requireNonNull(phase);
+            Objects.requireNonNull(origin); Objects.requireNonNull(history);
+        }
     }
 
     public ItemStack individualizeUnit(final ItemStack rawItem, final TrashHistoryEvent event,
@@ -476,8 +505,8 @@ public final class TrashHistoryService {
         final String token = pdc.get(repairPendingKey, PersistentDataType.STRING);
         final Integer beforeDamage = pdc.get(repairBeforeDamageKey, PersistentDataType.INTEGER);
         final String rawActor = pdc.get(repairActorKey, PersistentDataType.STRING);
-        if ((token == null || token.isBlank()) && beforeDamage == null
-                && (rawActor == null || rawActor.isBlank())) return Optional.empty();
+        if (!pdc.has(repairPendingKey) && !pdc.has(repairBeforeDamageKey)
+                && !pdc.has(repairActorKey)) return Optional.empty();
         if (token == null || token.isBlank() || beforeDamage == null || beforeDamage < 1
                 || rawActor == null || rawActor.isBlank()) {
             throw new IllegalStateException("hiányos Trash repair transaction marker");
@@ -532,9 +561,10 @@ public final class TrashHistoryService {
 
     private Optional<TrashHistoryEvent> creationEventOf(final ItemStack item) {
         if (item == null || !item.hasItemMeta()) return Optional.empty();
-        final String raw = item.getItemMeta().getPersistentDataContainer().get(originKey,
-                PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) return Optional.empty();
+        final PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        if (!pdc.has(originKey)) return Optional.empty();
+        final String raw = pdc.get(originKey, PersistentDataType.STRING);
+        if (raw == null || raw.isBlank()) throw new IllegalStateException("hiányos Trash origin marker");
         try {
             return Optional.of(switch (TrashLootSource.valueOf(raw)) {
                 case FISHING -> TrashHistoryEvent.CREATED_FISHING;

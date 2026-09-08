@@ -34,18 +34,25 @@ public final class TrashCatalog {
             TrashKind.TRASH_RELIC, 23);
     private static final Set<String> FORBIDDEN_PLAYER_MARKERS = Set.of("anomália", "trash relic");
 
-    private final JavaPlugin plugin;
+    private final java.util.function.Supplier<InputStream> resource;
+    private final java.util.logging.Logger logger;
     private volatile Map<String, TrashDefinition> definitions = Map.of();
     private volatile Map<String, TrashLifecyclePhase> lifecyclePhases = Map.of();
     private volatile String rarityLabel = "";
     private volatile TrashLootTuning lootTuning;
 
     public TrashCatalog(final JavaPlugin plugin) {
-        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this(() -> plugin.getResource(RESOURCE), Objects.requireNonNull(plugin, "plugin").getLogger());
+    }
+
+    TrashCatalog(final java.util.function.Supplier<InputStream> resource,
+                 final java.util.logging.Logger logger) {
+        this.resource = Objects.requireNonNull(resource, "resource");
+        this.logger = Objects.requireNonNull(logger, "logger");
     }
 
     public synchronized void load() {
-        try (InputStream input = plugin.getResource(RESOURCE)) {
+        try (InputStream input = resource.get()) {
             if (input == null) {
                 throw new IllegalStateException("hiányzó packaged Trash catalog: " + RESOURCE);
             }
@@ -56,7 +63,7 @@ public final class TrashCatalog {
             lifecyclePhases = parsed.lifecyclePhases();
             rarityLabel = parsed.rarityLabel();
             lootTuning = parsed.lootTuning();
-            plugin.getLogger().info("Trash catalog ready: " + definitions.size() + " identities.");
+            logger.info("Trash catalog ready: " + definitions.size() + " identities.");
         } catch (final java.io.IOException impossibleForResourceStream) {
             throw new IllegalStateException("nem olvasható packaged Trash catalog: " + RESOURCE,
                     impossibleForResourceStream);

@@ -33,7 +33,9 @@ public final class TrashHistoryStore implements PersistentStore {
     private static final int MAX_DETAIL_LENGTH = 96;
     private static final Set<Integer> OWNER_MILESTONES = Set.of(1, 3, 5, 10, 25, 50);
 
-    private final JavaPlugin plugin;
+    private final java.util.logging.Logger logger;
+    private final java.util.concurrent.locks.ReentrantLock stateLock = new java.util.concurrent.locks.ReentrantLock();
+    private boolean readable;
     private final TrashCatalog catalog;
     private final File file;
     private final TrashHistoryJournal journal;
@@ -45,39 +47,51 @@ public final class TrashHistoryStore implements PersistentStore {
     private boolean replayingJournal;
 
     public TrashHistoryStore(final JavaPlugin plugin, final TrashCatalog catalog) {
-        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this(new File(plugin.getDataFolder(), "trash-history.yml"),
+                new File(plugin.getDataFolder(), "trash-history.wal"), plugin.getLogger(), catalog);
+    }
+
+    TrashHistoryStore(final File file, final File journalFile,
+                      final java.util.logging.Logger logger, final TrashCatalog catalog) {
+        this.logger = Objects.requireNonNull(logger, "logger");
         this.catalog = Objects.requireNonNull(catalog, "catalog");
-        this.file = new File(plugin.getDataFolder(), "trash-history.yml");
-        this.journal = new TrashHistoryJournal(plugin,
-                new File(plugin.getDataFolder(), "trash-history.wal"));
+        this.file = Objects.requireNonNull(file, "file");
+        this.journal = new TrashHistoryJournal(logger, journalFile);
         YamlStore.registerCriticalWrite(file);
     }
 
     @Override
-    public synchronized void load() {
-        histories.clear();
-        vendorReceipts.clear();
-        sequence = 0L;
-        journalRecords = 0;
-        activeTransaction = null;
-        replayingJournal = false;
-        if (file.exists()) {
-            final YamlConfiguration yaml = YamlStore.loadTracked(file, plugin.getLogger());
-            if (yaml.getInt("schema-version", 0) != SCHEMA_VERSION) {
-                YamlStore.failCorrupt(file, plugin.getLogger(),
-                        "trash history schema-version must be exactly " + SCHEMA_VERSION);
+    public void load() {
+        stateLock.lock();
+        try {
+            readable = false;
+            histories.clear();
+            vendorReceipts.clear();
+            sequence = 0L;
+            journalRecords = 0;
+            activeTransaction = null;
+            replayingJournal = false;
+            if (file.exists()) {
+                final YamlConfiguration yaml = YamlStore.loadTracked(file, logger);
+                if (yaml.getInt("schema-version", 0) != SCHEMA_VERSION) {
+                    YamlStore.failCorrupt(file, logger,
+                            "trash history schema-version must be exactly " + SCHEMA_VERSION);
+                }
+                sequence = yaml.getLong("last-sequence", -1L);
+                if (sequence < 0L) corrupt("érvénytelen Trash history snapshot sequence");
+                loadHistories(yaml.getConfigurationSection("instances"));
+                loadVendorReceipts(yaml.getConfigurationSection("vendor-operations"));
             }
-            sequence = yaml.getLong("last-sequence", -1L);
-            if (sequence < 0L) corrupt("érvénytelen Trash history snapshot sequence");
-            loadHistories(yaml.getConfigurationSection("instances"));
-            loadVendorReceipts(yaml.getConfigurationSection("vendor-operations"));
+            final TrashHistoryJournal.LoadResult recovered = journal.loadAfter(sequence);
+            for (final TrashHistoryJournal.Record record : recovered.records()) {
+                applyJournalRecord(record);
+            }
+            sequence = recovered.sequence();
+            journalRecords = recovered.completeRecords();
+            readable = true;
+        } finally {
+            stateLock.unlock();
         }
-        final TrashHistoryJournal.LoadResult recovered = journal.loadAfter(sequence);
-        for (final TrashHistoryJournal.Record record : recovered.records()) {
-            applyJournalRecord(record);
-        }
-        sequence = recovered.sequence();
-        journalRecords = recovered.completeRecords();
     }
 
     private void loadHistories(final ConfigurationSection root) {
@@ -164,176 +178,261 @@ public final class TrashHistoryStore implements PersistentStore {
     }
 
     @Override
-    public synchronized void save() {
-        persistSnapshotAndResetJournal();
+    public void save() {
+        stateLock.lock();
+        try {
+            persistSnapshotAndResetJournal();
+        } catch (final RuntimeException | Error failure) {
+            readable = false;
+            throw failure;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     /** Serializes a history mutation, its item projection and the durable write. */
-    public synchronized <T> T transact(final Supplier<T> mutation,
+    public <T> T transact(final Supplier<T> mutation,
                                        final Runnable restoreExternal) {
-        Objects.requireNonNull(mutation, "mutation");
-        if (activeTransaction != null) {
-            throw new IllegalStateException("nested Trash history transaction");
-        }
-        if (journalRecords >= MAX_JOURNAL_RECORDS) persistSnapshotAndResetJournal();
-        final TransactionFrame frame = new TransactionFrame();
-        activeTransaction = frame;
+        stateLock.lock();
         try {
-            final T result = mutation.get();
-            if (frame.changed()) {
-                final long nextSequence = Math.addExact(sequence, 1L);
-                journal.append(nextSequence, journalPayload(frame));
-                sequence = nextSequence;
-                journalRecords++;
+            Objects.requireNonNull(mutation, "mutation");
+            if (activeTransaction != null) {
+                throw new IllegalStateException("nested Trash history transaction");
             }
-            return result;
-        } catch (final RuntimeException | Error failure) {
-            rollback(frame);
-            if (restoreExternal != null) {
-                try {
-                    restoreExternal.run();
-                } catch (final RuntimeException | Error restoreFailure) {
-                    failure.addSuppressed(restoreFailure);
+            if (journalRecords >= MAX_JOURNAL_RECORDS) save();
+            final TransactionFrame frame = new TransactionFrame();
+            activeTransaction = frame;
+            boolean enteredWrite = false;
+            try {
+                final T result = mutation.get();
+                if (frame.changed()) {
+                    final long nextSequence = Math.addExact(sequence, 1L);
+                    final String payload = journalPayload(frame);
+                    enteredWrite = true;
+                    journal.append(nextSequence, payload);
+                    sequence = nextSequence;
+                    journalRecords++;
                 }
+                return result;
+            } catch (final RuntimeException | Error failure) {
+                if (enteredWrite) readable = false;
+                rollback(frame);
+                if (restoreExternal != null) {
+                    try {
+                        restoreExternal.run();
+                    } catch (final RuntimeException | Error restoreFailure) {
+                        failure.addSuppressed(restoreFailure);
+                    }
+                }
+                throw failure;
+            } finally {
+                activeTransaction = null;
             }
-            throw failure;
         } finally {
-            activeTransaction = null;
+            stateLock.unlock();
         }
     }
 
-    public synchronized Snapshot createAndRecord(final UUID instanceId, final String baseId,
+    public Snapshot createAndRecord(final UUID instanceId, final String baseId,
                                                  final String phase, final TrashHistoryEvent event,
                                                  final UUID actor, final String detail) {
-        Objects.requireNonNull(instanceId, "instanceId");
-        validateIdentity(baseId, phase);
-        if (histories.containsKey(instanceId)) {
-            throw new IllegalStateException("a Trash instance UUID már létezik");
+        stateLock.lock();
+        try {
+            Objects.requireNonNull(instanceId, "instanceId");
+            validateIdentity(baseId, phase);
+            if (histories.containsKey(instanceId)) {
+                throw new IllegalStateException("a Trash instance UUID már létezik");
+            }
+            if (histories.size() >= MAX_INSTANCES) {
+                throw new IllegalStateException("a Trash history instance hard cap betelt");
+            }
+            final long now = System.currentTimeMillis();
+            final StoredHistory initial = new StoredHistory(baseId, phase, 0L, now, now,
+                    List.of(), Set.of());
+            final StoredHistory recorded = append(initial, event, actor, detail, now);
+            putHistory(instanceId, recorded);
+            return snapshot(instanceId, recorded);
+        } finally {
+            stateLock.unlock();
         }
-        if (histories.size() >= MAX_INSTANCES) {
-            throw new IllegalStateException("a Trash history instance hard cap betelt");
-        }
-        final long now = System.currentTimeMillis();
-        final StoredHistory initial = new StoredHistory(baseId, phase, 0L, now, now,
-                List.of(), Set.of());
-        final StoredHistory recorded = append(initial, event, actor, detail, now);
-        putHistory(instanceId, recorded);
-        return snapshot(instanceId, recorded);
     }
 
-    public synchronized Snapshot record(final UUID instanceId, final String baseId,
+    public Snapshot record(final UUID instanceId, final String baseId,
                                         final String phase, final TrashHistoryEvent event,
                                         final UUID actor, final String detail) {
-        final StoredHistory current = requireMatching(instanceId, baseId, phase);
-        final StoredHistory recorded = append(current, event, actor, detail,
-                System.currentTimeMillis());
-        putHistory(instanceId, recorded);
-        return snapshot(instanceId, recorded);
+        stateLock.lock();
+        try {
+            final StoredHistory current = requireMatching(instanceId, baseId, phase);
+            final StoredHistory recorded = append(current, event, actor, detail,
+                    System.currentTimeMillis());
+            putHistory(instanceId, recorded);
+            return snapshot(instanceId, recorded);
+        } finally {
+            stateLock.unlock();
+        }
     }
 
-    public synchronized Snapshot observeOwner(final UUID instanceId, final String baseId,
+    public Snapshot observeOwner(final UUID instanceId, final String baseId,
                                               final String phase, final UUID owner,
                                               final boolean king) {
-        Objects.requireNonNull(owner, "owner");
-        StoredHistory current = requireMatching(instanceId, baseId, phase);
-        if (!current.owners().contains(owner) && current.owners().size() < MAX_OWNERS) {
-            final LinkedHashSet<UUID> owners = new LinkedHashSet<>(current.owners());
-            owners.add(owner);
-            current = new StoredHistory(current.baseId(), current.phase(), current.revision(),
-                    current.createdAt(), current.updatedAt(), current.events(), owners);
-            current = append(current, TrashHistoryEvent.OWNER_OBSERVED, owner, "",
-                    System.currentTimeMillis());
-            if (OWNER_MILESTONES.contains(owners.size())) {
-                current = append(current, TrashHistoryEvent.OWNER_COUNT_MILESTONE, null,
-                        Integer.toString(owners.size()), System.currentTimeMillis());
+        stateLock.lock();
+        try {
+            Objects.requireNonNull(owner, "owner");
+            StoredHistory current = requireMatching(instanceId, baseId, phase);
+            if (!current.owners().contains(owner) && current.owners().size() < MAX_OWNERS) {
+                final LinkedHashSet<UUID> owners = new LinkedHashSet<>(current.owners());
+                owners.add(owner);
+                current = new StoredHistory(current.baseId(), current.phase(), current.revision(),
+                        current.createdAt(), current.updatedAt(), current.events(), owners);
+                current = append(current, TrashHistoryEvent.OWNER_OBSERVED, owner, "",
+                        System.currentTimeMillis());
+                if (OWNER_MILESTONES.contains(owners.size())) {
+                    current = append(current, TrashHistoryEvent.OWNER_COUNT_MILESTONE, null,
+                            Integer.toString(owners.size()), System.currentTimeMillis());
+                }
             }
+            if (king && current.events().stream().noneMatch(entry ->
+                    entry.type() == TrashHistoryEvent.HELD_BY_KING && owner.equals(entry.actor()))) {
+                current = append(current, TrashHistoryEvent.HELD_BY_KING, owner, "",
+                        System.currentTimeMillis());
+            }
+            putHistory(instanceId, current);
+            return snapshot(instanceId, current);
+        } finally {
+            stateLock.unlock();
         }
-        if (king && current.events().stream().noneMatch(entry ->
-                entry.type() == TrashHistoryEvent.HELD_BY_KING && owner.equals(entry.actor()))) {
-            current = append(current, TrashHistoryEvent.HELD_BY_KING, owner, "",
-                    System.currentTimeMillis());
-        }
-        putHistory(instanceId, current);
-        return snapshot(instanceId, current);
     }
 
-    public synchronized Snapshot transform(final UUID instanceId, final String baseId,
+    public Snapshot transform(final UUID instanceId, final String baseId,
                                            final String fromPhase, final String toPhase,
                                            final UUID actor) {
-        final StoredHistory current = requireMatching(instanceId, baseId, fromPhase);
-        if (!catalog.isKnownPhase(baseId, toPhase) || "base".equals(toPhase)) {
-            throw new IllegalArgumentException("ismeretlen vagy érvénytelen Trash célphase");
+        stateLock.lock();
+        try {
+            final StoredHistory current = requireMatching(instanceId, baseId, fromPhase);
+            if (!catalog.isKnownPhase(baseId, toPhase) || "base".equals(toPhase)) {
+                throw new IllegalArgumentException("ismeretlen vagy érvénytelen Trash célphase");
+            }
+            final StoredHistory transitioned = new StoredHistory(current.baseId(), toPhase,
+                    current.revision(), current.createdAt(), current.updatedAt(), current.events(),
+                    current.owners());
+            final StoredHistory recorded = append(transitioned, TrashHistoryEvent.TRANSFORMED,
+                    actor, fromPhase + "->" + toPhase, System.currentTimeMillis());
+            putHistory(instanceId, recorded);
+            return snapshot(instanceId, recorded);
+        } finally {
+            stateLock.unlock();
         }
-        final StoredHistory transitioned = new StoredHistory(current.baseId(), toPhase,
-                current.revision(), current.createdAt(), current.updatedAt(), current.events(),
-                current.owners());
-        final StoredHistory recorded = append(transitioned, TrashHistoryEvent.TRANSFORMED,
-                actor, fromPhase + "->" + toPhase, System.currentTimeMillis());
-        putHistory(instanceId, recorded);
-        return snapshot(instanceId, recorded);
     }
 
-    public synchronized void putVendorReceipt(final UUID operationId, final UUID actor,
+    public void putVendorReceipt(final UUID operationId, final UUID actor,
                                               final String baseId, final String phase,
                                               final List<Snapshot> units) {
-        Objects.requireNonNull(operationId, "operationId");
-        Objects.requireNonNull(actor, "actor");
-        if (vendorReceipts.size() >= MAX_VENDOR_OPERATIONS || units == null || units.isEmpty()) {
-            throw new IllegalStateException("érvénytelen vagy túl sok Trash vendor receipt");
-        }
-        final List<InstanceRevision> references = new ArrayList<>(units.size());
-        for (final Snapshot unit : units) {
-            if (!unit.baseId().equals(baseId) || !unit.phase().equals(phase)
-                    || !matches(unit.instanceId(), baseId, phase, unit.revision())) {
-                throw new IllegalStateException("stale Trash vendor receipt unit");
+        stateLock.lock();
+        try {
+            Objects.requireNonNull(operationId, "operationId");
+            Objects.requireNonNull(actor, "actor");
+            if (vendorReceipts.size() >= MAX_VENDOR_OPERATIONS || units == null || units.isEmpty()) {
+                throw new IllegalStateException("érvénytelen vagy túl sok Trash vendor receipt");
             }
-            references.add(new InstanceRevision(unit.instanceId(), unit.revision()));
-        }
-        final StoredVendorReceipt receipt = new StoredVendorReceipt(
-                actor, baseId, phase, units.size(), references);
-        if (vendorReceipts.containsKey(operationId)) {
-            throw new IllegalStateException("a Trash vendor receipt már létezik");
-        }
-        putVendorReceipt(operationId, receipt);
-    }
-
-    public synchronized Optional<VendorReceipt> findVendorReceipt(final UUID operationId) {
-        final StoredVendorReceipt stored = vendorReceipts.get(operationId);
-        if (stored == null) return Optional.empty();
-        final List<Snapshot> units = new ArrayList<>(stored.units().size());
-        for (final InstanceRevision reference : stored.units()) {
-            final StoredHistory history = histories.get(reference.instanceId());
-            if (history == null || history.revision() != reference.revision()
-                    || !history.baseId().equals(stored.baseId())
-                    || !history.phase().equals(stored.phase())) {
-                throw new IllegalStateException("stale Trash vendor receipt");
+            final List<InstanceRevision> references = new ArrayList<>(units.size());
+            for (final Snapshot unit : units) {
+                if (!unit.baseId().equals(baseId) || !unit.phase().equals(phase)
+                        || !matches(unit.instanceId(), baseId, phase, unit.revision())) {
+                    throw new IllegalStateException("stale Trash vendor receipt unit");
+                }
+                references.add(new InstanceRevision(unit.instanceId(), unit.revision()));
             }
-            units.add(snapshot(reference.instanceId(), history));
+            final StoredVendorReceipt receipt = new StoredVendorReceipt(
+                    actor, baseId, phase, units.size(), references);
+            if (vendorReceipts.containsKey(operationId)) {
+                throw new IllegalStateException("a Trash vendor receipt már létezik");
+            }
+            putVendorReceipt(operationId, receipt);
+        } finally {
+            stateLock.unlock();
         }
-        return Optional.of(new VendorReceipt(operationId, stored.actor(), stored.baseId(),
-                stored.phase(), stored.amount(), units));
     }
 
-    public synchronized boolean removeVendorReceipt(final UUID operationId) {
-        if (!vendorReceipts.containsKey(operationId)) return false;
-        removeVendorReceiptInternal(operationId);
-        return true;
+    public Optional<VendorReceipt> findVendorReceipt(final UUID operationId) {
+        stateLock.lock();
+        try {
+            final StoredVendorReceipt stored = vendorReceipts.get(operationId);
+            if (stored == null) return Optional.empty();
+            final List<Snapshot> units = new ArrayList<>(stored.units().size());
+            for (final InstanceRevision reference : stored.units()) {
+                final StoredHistory history = histories.get(reference.instanceId());
+                if (history == null || history.revision() != reference.revision()
+                        || !history.baseId().equals(stored.baseId())
+                        || !history.phase().equals(stored.phase())) {
+                    throw new IllegalStateException("stale Trash vendor receipt");
+                }
+                units.add(snapshot(reference.instanceId(), history));
+            }
+            return Optional.of(new VendorReceipt(operationId, stored.actor(), stored.baseId(),
+                    stored.phase(), stored.amount(), units));
+        } finally {
+            stateLock.unlock();
+        }
     }
 
-    public synchronized Optional<Snapshot> find(final UUID instanceId) {
-        final StoredHistory history = histories.get(instanceId);
-        return history == null ? Optional.empty() : Optional.of(snapshot(instanceId, history));
+    public boolean removeVendorReceipt(final UUID operationId) {
+        stateLock.lock();
+        try {
+            if (!vendorReceipts.containsKey(operationId)) return false;
+            removeVendorReceiptInternal(operationId);
+            return true;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
-    public synchronized boolean matches(final UUID instanceId, final String baseId,
+    public Optional<Snapshot> find(final UUID instanceId) {
+        stateLock.lock();
+        try {
+            final StoredHistory history = histories.get(instanceId);
+            return history == null ? Optional.empty() : Optional.of(snapshot(instanceId, history));
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    public boolean matches(final UUID instanceId, final String baseId,
                                         final String phase, final long revision) {
-        final StoredHistory history = histories.get(instanceId);
-        return history != null && history.baseId().equals(baseId) && history.phase().equals(phase)
-                && history.revision() == revision;
+        stateLock.lock();
+        try {
+            final StoredHistory history = histories.get(instanceId);
+            return history != null && history.baseId().equals(baseId) && history.phase().equals(phase)
+                    && history.revision() == revision;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
-    public synchronized int size() {
-        return histories.size();
+    public int size() {
+        stateLock.lock();
+        try {
+            return histories.size();
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Refuses rather than waiting for storage or exposing a transaction's unacknowledged candidate. */
+    public Optional<Inspection> tryInspect(final UUID instanceId) {
+        Objects.requireNonNull(instanceId, "instanceId");
+        if (stateLock.isHeldByCurrentThread() || !stateLock.tryLock()) return Optional.empty();
+        try {
+            if (!readable) return Optional.empty();
+            final StoredHistory history = histories.get(instanceId);
+            return Optional.of(new Inspection(sequence, history == null
+                    ? Optional.empty() : Optional.of(snapshot(instanceId, history))));
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    public record Inspection(long sequence, Optional<Snapshot> history) {
+        public Inspection { Objects.requireNonNull(history, "history"); }
     }
 
     private void putHistory(final UUID instanceId, final StoredHistory history) {
@@ -584,7 +683,7 @@ public final class TrashHistoryStore implements PersistentStore {
             journal.corrupt(reason);
             return;
         }
-        YamlStore.failCorrupt(file, plugin.getLogger(), reason);
+        YamlStore.failCorrupt(file, logger, reason);
     }
 
     private UUID parseUuid(final String raw, final String field) {

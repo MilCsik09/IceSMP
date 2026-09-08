@@ -127,8 +127,8 @@
       "phase": "WW-05",
       "inspect": "hidden identity/kind/behavior/phase/instance/revision/history/provenance/memory/rule fields",
       "planned_actions": "individualize, activate, transition, repair, sandbox copy, four rule field kinds, export/import, fork",
-      "canonical_route": "TrashHistoryService individualize/transform/repair; native TrashRuleFieldService owns detached bounded field state and claims. Extract shared Anomaly/Relic activation services before registering the provider.",
-      "rationale": "The native relic runtime now delegates rule-field registration, geometry queries, claims, expiry, conditional removal and shutdown to one Bukkit-free service with world UUID/coordinates. Anomaly/relic activation still needs shared canonical API extraction; provider, journal integration, source influence and projectile handoff/unload/disable verification remain required. Fake events and natural-history spoofing are prohibited.",
+      "canonical_route": "TrashHistoryService owns markers and read-only item inspection; native TrashHistoryStore/TrashAnomalyStateStore tryInspect refuse storage contention and uncertain writes. TrashRuleFieldService owns detached bounded fields and claims. Shared Anomaly/Relic activation extraction is still required before provider mutation registration.",
+      "rationale": "The registered Trash inspection subset reads native identity/history/provenance, derives archaeology without awards, reports actual runtime memory and world-local fields; dynamic identity/rule catalogs use canonical registries. Full Trash remains an implementation blocker: shared activation APIs, all developer mutation actions, journal/recovery, prototype/influence admission, and projectile handoff/unload/disable hardening are unfinished. Read-only subset registration does not waive domain coverage or connected runtime evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
@@ -146,9 +146,15 @@
         "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
-        "src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java"
+        "src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "src/regression/java/hu/taliann/icesmp/trash/TrashNativeInspectionRegressionSuite.java",
+        "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverInspectionRegressionSuite.java",
+        "docs/development/world-weaver/WW-05-territory-policy.md"
+      ]
     },
     {
       "id": "archaeology_knowledge",
@@ -1949,6 +1955,28 @@
         "prepareEffects",
         "prepareUndo",
         "projectionConsumers",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
+      "domain": "trash",
+      "source_sha256": "e792d098b3689e1e115ade6a8cc4f3abffa733cb4be921155592eb1b593532c2",
+      "public_methods": [
+        "TrashWeaverProvider",
+        "assessRecovery",
+        "captureOnOwner",
+        "catalog",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareUndo",
         "supportedKinds",
         "validateImport"
       ]
@@ -6408,20 +6436,21 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyStateStore.java",
       "domain": "trash",
-      "source_sha256": "7660932b5fa7a562df77f4238b068e4af07cbe97f79ea543d68b20cbe1c5325c",
+      "source_sha256": "1fc8ae4ef5d572349aeb62ea6a336dc23add7a5ba2dd8194e0d1d5fb5f0844dd",
       "public_methods": [
         "add",
         "addDurably",
         "get",
         "load",
         "save",
-        "size"
+        "size",
+        "tryInspect"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
       "domain": "archaeology_knowledge",
-      "source_sha256": "edea96bd85b21dd9545f616addc56d869566ee70654a1f4bac6a8f4a4806348a",
+      "source_sha256": "c3bb733e75848df271170c426e4e29a2ce68a77136cc44d768e08355ea5ce960",
       "public_methods": [
         "Evaluation",
         "Fact",
@@ -6468,7 +6497,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
       "domain": "trash",
-      "source_sha256": "39b9c47ba504fadbfb1e8a379e5f3090fb92597b6867406f049ff0d974e5b611",
+      "source_sha256": "5a12c55e1b1fa1ba83ba0497f44c06a251195867c64fcb07fd277e92f7f6e868",
       "public_methods": [
         "find",
         "findPhase",
@@ -6493,8 +6522,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "fdb01f1efc922222dd96ebd2fcab744242ef6f81b3b3d7f7bb1d29a19e79f3a7",
+      "source_sha256": "e5e222e82f330ff27983fef0cf0a81cb1bf53acb8a5cc5bce8dde88d7ac94509",
       "public_methods": [
+        "ItemInspection",
         "SplitResult",
         "clearPreparedRepair",
         "completePreparedRepair",
@@ -6521,15 +6551,17 @@
         "transformInventorySlotOnSuccess",
         "transformMainHandOnSuccess",
         "transformOnSuccess",
+        "tryInspect",
         "validateVendorSale"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "500049b545b78b954014270e6ef11718e5972cc3ecb884f720cced0006fa71e5",
+      "source_sha256": "91ec8b7889070484cfc8689ba373be532f93dd663bf8906ce57f9cfbf8d3c3a2",
       "public_methods": [
         "HistoryEntry",
+        "Inspection",
         "Snapshot",
         "VendorReceipt",
         "createAndRecord",
@@ -6544,7 +6576,8 @@
         "save",
         "size",
         "transact",
-        "transform"
+        "transform",
+        "tryInspect"
       ]
     },
     {
@@ -6854,6 +6887,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritorySubjectInspection.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
@@ -6974,6 +7008,7 @@
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassivePolicy.java",
@@ -8057,6 +8092,12 @@
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
       "domains": [
         "territory"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
+      "domains": [
+        "trash"
       ]
     },
     {

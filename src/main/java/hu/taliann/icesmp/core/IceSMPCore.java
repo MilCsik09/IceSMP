@@ -919,7 +919,9 @@ public final class IceSMPCore {
                 java.util.List.of(services -> new hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider(services.types()),
                         services -> new hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProvider(services, mobAbilityRegistry, mobTemplateRegistry, mobScalingManager, mobAbilityRuntime),
                         services -> new hu.taliann.icesmp.dev.weaver.provider.FactionWeaverProvider(services, factionManager, factionMobContextResolver, factionPassiveConfig),
-                        services -> new hu.taliann.icesmp.dev.weaver.provider.TerritoryWeaverProvider(services, territoryManager, territoryProtectionService)));
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.TerritoryWeaverProvider(services, territoryManager, territoryProtectionService),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.TrashWeaverProvider(services, trashCatalog, trashHistoryService,
+                                trashAnomalyStateStore, trashRelicRuntime.ruleFields(), itemIdentityService)));
         rewardEligibilityBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(worldWeaverRuntime.rewardEligibility());
         effectEligibilityBinding = hu.taliann.icesmp.integrity.GameplayEffectGate.install(worldWeaverRuntime::prepareEffect);
         sourceCaptureBinding = hu.taliann.icesmp.integrity.GameplaySourceCaptureGate.install(worldWeaverRuntime::captureCausalSources);
