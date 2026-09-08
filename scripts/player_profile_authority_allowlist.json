@@ -665,6 +665,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, WallReceipt> wallReceipts = new LinkedHashMap<>();",
       "category": "GLOBAL_AGGREGATE_REFERENCE",
       "reason": "Native Trash history WAL owns bounded unresolved wall-operation receipts keyed by field operation UUID; actor UUID is a reference. No player preference, progression or second PlayerProfile authority is stored. Entries survive restart until exact observed removal is durably acknowledged; pending entries are never evicted for capacity."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java|private final Map<UUID, FieldClaim> claimed = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Existing native transient field-claim authority, now holding unforgeable per-admission identity tokens keyed by field UUID. Bounded by the same 128 native fields, cleared by exact release/removal/close; no player progression, YAML or second field registry is introduced."
     }
   ]
 }

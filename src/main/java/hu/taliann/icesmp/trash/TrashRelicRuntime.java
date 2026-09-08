@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import hu.taliann.icesmp.trash.TrashRuleFieldService.FieldKind;
+import hu.taliann.icesmp.trash.TrashRuleFieldService.FieldClaim;
 import hu.taliann.icesmp.trash.TrashRuleFieldService.RuleField;
 import hu.taliann.icesmp.trash.TrashRuleFieldService.Point;
 import hu.taliann.icesmp.trash.TrashRelicPolicy.ProjectileTracking;
@@ -382,7 +383,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                         projectileTracking.release(ticket);
                         return;
                     }
-                    final RuleField hit = claimField(projectile.getLocation(), FieldKind.PROJECTILE_WALL);
+                    final FieldClaim hit = claimField(projectile.getLocation(), FieldKind.PROJECTILE_WALL);
                     if (hit == null) return;
                     try {
                         if (resolveProjectileWall(hit, projectile, ticket)) {
@@ -650,19 +651,20 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
 
     public TrashRuleFieldService ruleFields() { return ruleFields; }
 
-    private RuleField claimField(final Location location, final FieldKind kind) {
+    private FieldClaim claimField(final Location location, final FieldKind kind) {
         cleanupFields();
         return ruleFields.claim(point(location), kind).orElse(null);
     }
 
-    private boolean resolveProjectileWall(final RuleField field, final Projectile projectile,
+    private boolean resolveProjectileWall(final FieldClaim claim, final Projectile projectile,
                                           final ProjectileTracking.Ticket ticket) {
+        final RuleField field = claim.field();
         final Player owner = Bukkit.getPlayer(field.owner());
         final java.util.function.BooleanSupplier admitted = () -> projectileTracking.active(ticket)
                 && owner != null && Bukkit.isOwnedByCurrentRegion(owner)
                 && Bukkit.isOwnedByCurrentRegion(projectile) && owner.isOnline() && projectile.isValid()
                 && owner.getWorld().getUID().equals(field.center().world())
-                && ruleFields.contains(field) && ruleFields.isClaimed(field.id());
+                && ruleFields.contains(field) && ruleFields.isClaimed(claim);
         final var consumed = new java.util.concurrent.atomic.AtomicReference<TrashHistoryStore.WallReceipt>();
         return TrashRelicPolicy.completeProjectileWall(owner != null
                         && Bukkit.isOwnedByCurrentRegion(owner)
@@ -686,7 +688,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                             telemetry.recordBehaviorRuntimeError();
                         }
                     } finally {
-                        ruleFields.remove(field);
+                        ruleFields.removeClaimed(claim);
                     }
                 });
     }
@@ -716,8 +718,8 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
 
     TrashRelicPolicy.TrackingSnapshot projectileTrackingState() { return projectileTracking.snapshot(); }
 
-    private void releaseFieldClaim(final RuleField field) {
-        ruleFields.releaseClaim(field.id());
+    private void releaseFieldClaim(final FieldClaim claim) {
+        ruleFields.releaseClaim(claim);
     }
 
     private boolean inField(final Location location, final FieldKind kind) {

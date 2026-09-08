@@ -13,7 +13,7 @@ public final class TrashRuleFieldRegressionSuite {
         return new RuleField(UUID.randomUUID(), kind, new Point(world, 0, 0, 0), 6, expiry, UUID.randomUUID(), kind == FieldKind.PROJECTILE_WALL ? UUID.randomUUID().toString() : null);
     }
     public static void main(String[] args) throws Exception {
-        geometryAndLifecycle(); capsAndSnapshots(); contention(); invalidValues(); lifecycleProbe();
+        geometryAndLifecycle(); capsAndSnapshots(); contention(); claimIdentity(); invalidValues(); lifecycleProbe();
         System.out.println("Trash rule-field authority passed. assertions=" + assertions);
     }
     private static void geometryAndLifecycle() {
@@ -28,11 +28,12 @@ public final class TrashRuleFieldRegressionSuite {
             check(!service.hasKind(kind), "removal reaches native query");
         }
         final var wall = field(world, FieldKind.PROJECTILE_WALL, 3000); service.add(wall);
-        final var observed = service.snapshot(); check(service.claim(new Point(world, 0, 0, 0), FieldKind.PROJECTILE_WALL).orElseThrow().equals(wall), "claim returns native immutable field");
+        final var observed = service.snapshot(); final var claim = service.claim(new Point(world, 0, 0, 0), FieldKind.PROJECTILE_WALL).orElseThrow();
+        check(claim.field().equals(wall), "claim carries native immutable field");
         check(!service.removeIdle(wall, observed.revision()) && !service.removeIdle(wall, service.snapshot().revision()), "developer removal cannot interrupt in-flight native claim");
-        clock.set(3000); check(!service.activeAt(wall.center(), wall.kind()) && !service.isClaimed(wall.id()), "expired claim cannot authorize late inventory consumption");
+        clock.set(3000); check(!service.activeAt(wall.center(), wall.kind()) && !service.isClaimed(claim), "expired claim cannot authorize late inventory consumption");
         check(service.expire().isEmpty() && service.snapshot().fields().size() == 1, "pending reservation retained for native release callback");
-        service.releaseClaim(wall.id()); check(service.expire().equals(List.of(wall)), "expiry returns reservation for owner cleanup");
+        service.releaseClaim(claim); check(service.expire().equals(List.of(wall)), "expiry returns reservation for owner cleanup");
         check(service.snapshot().fields().isEmpty() && service.snapshot().claimed().isEmpty(), "released field leaves no registry ghost");
         final var active = field(world, FieldKind.CEASEFIRE, 4000); service.add(active);
         final var removed = service.close(); check(removed.equals(List.of(active)) && !service.snapshot().open(), "shutdown drains fields for native cleanup");
@@ -57,10 +58,14 @@ public final class TrashRuleFieldRegressionSuite {
         final var executor = Executors.newFixedThreadPool(8);
         try {
             final List<Future<Boolean>> attempts = new ArrayList<>();
-            for (int i = 0; i < 32; i++) attempts.add(executor.submit(() -> service.claim(wall.center(), wall.kind()).isPresent()));
+            final var admitted = new java.util.concurrent.atomic.AtomicReference<FieldClaim>();
+            for (int i = 0; i < 32; i++) attempts.add(executor.submit(() -> {
+                final var claim = service.claim(wall.center(), wall.kind());
+                claim.ifPresent(admitted::set); return claim.isPresent();
+            }));
             int accepted = 0; for (final var attempt : attempts) if (attempt.get(5, TimeUnit.SECONDS)) accepted++;
             check(accepted == 1 && service.snapshot().claimed().size() == 1, "simultaneous projectiles receive one consumption claim");
-            service.releaseClaim(wall.id()); check(service.claim(wall.center(), wall.kind()).isPresent(), "failed native claim can retry");
+            service.releaseClaim(admitted.get()); check(service.claim(wall.center(), wall.kind()).isPresent(), "failed native claim can retry");
             check(service.remove(wall) && service.snapshot().claimed().isEmpty(), "native consumption removes field and claim together");
             for (int i = 0; i < MAX_FIELDS_PER_WORLD - 1; i++) service.add(field(wall.center().world(), FieldKind.CEASEFIRE, 2000));
             attempts.clear();
@@ -87,6 +92,35 @@ public final class TrashRuleFieldRegressionSuite {
             rejectsProbe(new Snapshot(0, List.of(), Set.of(wall.id()), open), open);
             rejectsProbe(new Snapshot(0, List.of(wall), Set.of(), open), open);
         }
+    }
+    private static void claimIdentity() throws Exception {
+        final var clock = new AtomicLong(1000); final var service = new TrashRuleFieldService(clock::get);
+        final var wall = field(UUID.randomUUID(), FieldKind.PROJECTILE_WALL, 2000); service.add(wall);
+        final var first = service.claim(wall.center(), wall.kind()).orElseThrow();
+        check(service.isClaimed(first) && service.releaseClaim(first), "first native claim cannot release itself");
+        final var second = service.claim(wall.center(), wall.kind()).orElseThrow();
+        check(first != second && !service.isClaimed(first) && service.isClaimed(second), "new claim reuses retired admission identity");
+        final long revision = service.snapshot().revision();
+        try (var executor = Executors.newFixedThreadPool(8)) {
+            final List<Future<Boolean>> stale = new ArrayList<>();
+            for (int index = 0; index < 32; index++) stale.add(executor.submit(() ->
+                    service.releaseClaim(first) || service.removeClaimed(first)));
+            for (final var result : stale) check(!result.get(5, TimeUnit.SECONDS), "late callback removed a newer field/claim");
+        }
+        check(service.snapshot().revision() == revision && service.isClaimed(second), "stale callbacks changed canonical field generation");
+        final var other = new TrashRuleFieldService(clock::get); other.add(wall);
+        final var foreign = other.claim(wall.center(), wall.kind()).orElseThrow();
+        check(!service.releaseClaim(foreign) && !service.removeClaimed(foreign), "claim from another authority instance was accepted");
+        check(service.remove(wall) && service.add(wall), "native remove/re-add fixture failed");
+        final var third = service.claim(wall.center(), wall.kind()).orElseThrow();
+        check(!service.isClaimed(second) && !service.removeClaimed(second) && !service.releaseClaim(second),
+                "removed/re-added identical field accepted an old token");
+        clock.set(2000);
+        check(!service.isClaimed(third) && service.removeClaimed(third),
+                "expired operation cannot finish its own exact cleanup");
+        check(service.snapshot().fields().isEmpty() && service.snapshot().claimed().isEmpty(), "exact completion left claim state behind");
+        service.close();
+        check(!service.releaseClaim(third) && !service.removeClaimed(third), "closed authority accepts a retired token");
     }
     private static void rejectsProbe(Snapshot snapshot, boolean expectedOpen) {
         try {

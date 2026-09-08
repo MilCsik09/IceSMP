@@ -6659,7 +6659,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "d267cf9aa8ff78ff61b21175d80dfde301d6a5e93f1dafebc2fab17cbe8bfa8a",
+      "source_sha256": "24f7dfbed475f52814869f61b78b9658d0c198076475d5bd8c6d2a9ca81f952f",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",
@@ -6699,15 +6699,17 @@
         "close",
         "contains",
         "expire",
+        "field",
         "hasCapacity",
         "hasKind",
         "isClaimed",
         "releaseClaim",
         "remove",
+        "removeClaimed",
         "removeIdle",
         "snapshot"
       ],
-      "source_sha256": "93c3307ae07f44e882df243dfc59cf34e926f4e0858a71c0cbbace0e4986c1b8"
+      "source_sha256": "2733bb1ca3f6be2b3b8a9a6ec4cf756f1acfcfebf525b3d656b0c2b5fe9d069b"
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",

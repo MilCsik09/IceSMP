@@ -34,14 +34,20 @@ public final class TrashRuleFieldService {
     public record Snapshot(long revision, List<RuleField> fields, Set<UUID> claimed, boolean open) {
         public Snapshot { fields = List.copyOf(fields); claimed = Set.copyOf(claimed); }
     }
+    /** Identity equality prevents a retired callback releasing a newer claim of the same field. */
+    public static final class FieldClaim {
+        private final RuleField field;
+        private FieldClaim(RuleField field) { this.field = field; }
+        public RuleField field() { return field; }
+    }
     private final LongSupplier clock;
     private final Map<UUID, RuleField> fields = new LinkedHashMap<>();
-    private final Set<UUID> claimed = new HashSet<>();
+    private final Map<UUID, FieldClaim> claimed = new HashMap<>();
     private long revision;
     private boolean open = true;
     public TrashRuleFieldService() { this(System::currentTimeMillis); }
     public TrashRuleFieldService(LongSupplier clock) { this.clock = Objects.requireNonNull(clock); }
-    public synchronized Snapshot snapshot() { return new Snapshot(revision, List.copyOf(fields.values()), claimed, open); }
+    public synchronized Snapshot snapshot() { return new Snapshot(revision, List.copyOf(fields.values()), claimed.keySet(), open); }
     public synchronized boolean hasCapacity(UUID world) {
         Objects.requireNonNull(world);
         return open && fields.size() < MAX_FIELDS_GLOBAL && fields.values().stream().filter(f -> f.center().world().equals(world)).count() < MAX_FIELDS_PER_WORLD;
@@ -59,22 +65,32 @@ public final class TrashRuleFieldService {
     }
     /** Developer removal cannot interrupt the native inventory-consumption claim. */
     public synchronized boolean removeIdle(RuleField field, long expectedRevision) {
-        return revision == expectedRevision && !claimed.contains(field.id()) && remove(field);
+        return revision == expectedRevision && !claimed.containsKey(field.id()) && remove(field);
     }
     public synchronized boolean contains(RuleField field) { return open && field.equals(fields.get(field.id())); }
-    public synchronized boolean isClaimed(UUID id) {
-        final var field = fields.get(id);
-        return open && field != null && field.active(clock.getAsLong()) && claimed.contains(id);
+    public synchronized boolean isClaimed(FieldClaim claim) {
+        Objects.requireNonNull(claim);
+        return open && claimed.get(claim.field().id()) == claim && contains(claim.field())
+                && claim.field().active(clock.getAsLong());
     }
-    public synchronized Optional<RuleField> claim(Point point, FieldKind kind) {
+    public synchronized Optional<FieldClaim> claim(Point point, FieldKind kind) {
         Objects.requireNonNull(point); Objects.requireNonNull(kind);
         if (!open) return Optional.empty(); final long now = clock.getAsLong();
-        for (final var field : fields.values()) if (field.kind() == kind && field.contains(point, now) && claimed.add(field.id())) {
-            revision++; return Optional.of(field);
+        for (final var field : fields.values()) if (field.kind() == kind && field.contains(point, now) && !claimed.containsKey(field.id())) {
+            final var claim = new FieldClaim(field); claimed.put(field.id(), claim);
+            revision++; return Optional.of(claim);
         }
         return Optional.empty();
     }
-    public synchronized void releaseClaim(UUID id) { if (claimed.remove(Objects.requireNonNull(id))) revision++; }
+    public synchronized boolean releaseClaim(FieldClaim claim) {
+        Objects.requireNonNull(claim);
+        if (!claimed.remove(claim.field().id(), claim)) return false;
+        revision++; return true;
+    }
+    public synchronized boolean removeClaimed(FieldClaim claim) {
+        Objects.requireNonNull(claim);
+        return claimed.get(claim.field().id()) == claim && remove(claim.field());
+    }
     public synchronized boolean activeAt(Point point, FieldKind kind) {
         Objects.requireNonNull(point); Objects.requireNonNull(kind); final long now = clock.getAsLong();
         return open && fields.values().stream().anyMatch(field -> field.kind() == kind && field.contains(point, now));
@@ -84,7 +100,7 @@ public final class TrashRuleFieldService {
     }
     /** The caller owns reservation release; never discard expired reservations silently. */
     public synchronized List<RuleField> expire() {
-        final long now = clock.getAsLong(); final List<RuleField> expired = fields.values().stream().filter(field -> !field.active(now) && !claimed.contains(field.id())).toList();
+        final long now = clock.getAsLong(); final List<RuleField> expired = fields.values().stream().filter(field -> !field.active(now) && !claimed.containsKey(field.id())).toList();
         expired.forEach(this::remove); return expired;
     }
     public synchronized List<RuleField> close() {
