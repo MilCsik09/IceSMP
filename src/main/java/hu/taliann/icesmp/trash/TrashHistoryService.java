@@ -224,13 +224,24 @@ public final class TrashHistoryService {
 
     /** Commits an arbitrary player-inventory slot projection with durable history rollback. */
     public boolean transformInventorySlotOnSuccess(final Player player, final int slot) {
+        return transformInventorySlotOnSuccess(player, slot, null);
+    }
+
+    /** Caller owns the inventory; a busy history writer refuses before any projection or waiting. */
+    public boolean tryTransformInventorySlotOnSuccess(final Player player, final int slot,
+                                                       final java.util.function.BooleanSupplier admission) {
+        return transformInventorySlotOnSuccess(player, slot, Objects.requireNonNull(admission, "admission"));
+    }
+
+    private boolean transformInventorySlotOnSuccess(final Player player, final int slot,
+                                                     final java.util.function.BooleanSupplier admission) {
         Objects.requireNonNull(player, "player");
         if (slot < 0 || slot >= player.getInventory().getSize()) return false;
         final ItemStack source = player.getInventory().getItem(slot);
         if (source == null || itemFactory.successPhaseOf(source).isEmpty()) return false;
         if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
         final ItemStack[] before = cloneContents(player.getInventory().getContents());
-        return store.transact(() -> {
+        final Runnable mutation = () -> {
             final ItemStack singleton = source.clone();
             singleton.setAmount(1);
             final SplitResult result = transformInternal(source, singleton, player.getUniqueId());
@@ -239,8 +250,10 @@ public final class TrashHistoryService {
                     && !player.getInventory().addItem(result.remainder()).isEmpty()) {
                 throw new IllegalStateException("a Trash transform remainder nem fér el");
             }
-            return true;
-        }, () -> player.getInventory().setContents(before));
+        };
+        final Runnable restore = () -> player.getInventory().setContents(before);
+        return admission == null ? store.transact(() -> { mutation.run(); return true; }, restore)
+                : store.tryTransact(admission, mutation, restore);
     }
 
     /**

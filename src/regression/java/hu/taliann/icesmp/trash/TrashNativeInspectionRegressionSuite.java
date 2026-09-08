@@ -18,6 +18,7 @@ public final class TrashNativeInspectionRegressionSuite {
         try {
             historyTransaction(); historyWriteFailure(); anomalyTransaction();
             anomalyFailure(false); anomalyFailure(true); historyAcknowledgementFailure(); unloadedWrites();
+            nativeTryAdmission(); nativeCompactionAdmission();
             System.out.println("Trash native inspection passed. assertions=" + assertions);
         } finally { IO.shutdownNow(); }
     }
@@ -166,6 +167,7 @@ public final class TrashNativeInspectionRegressionSuite {
         final byte[] uncertainDisk = Files.readAllBytes(dir.resolve("history.wal"));
         fail.set(false);
         refuses(() -> store.transact(() -> { throw new AssertionError("uncertain history accepted another mutation"); }, null));
+        refuses(() -> store.tryTransact(() -> true, () -> { throw new AssertionError("uncertain history accepted try-mutation"); }, null));
         refuses(store::save);
         check(Arrays.equals(uncertainDisk, Files.readAllBytes(dir.resolve("history.wal")))
                 && !Files.exists(dir.resolve("history.yml")), "fence prevents duplicate sequence append and rolled-back snapshot compaction");
@@ -184,6 +186,7 @@ public final class TrashNativeInspectionRegressionSuite {
         final var history = history(dir, catalog());
         final var memory = new TrashAnomalyStateStore(dir.resolve("memory.yml").toFile(), LOGGER);
         refuses(() -> history.transact(() -> { throw new AssertionError("unloaded history mutation entered"); }, null));
+        refuses(() -> history.tryTransact(() -> true, () -> { throw new AssertionError("unloaded try-mutation entered"); }, null));
         refuses(history::save);
         refuses(() -> memory.add(id, WATCHED_TICKS, 1));
         refuses(() -> memory.addDurably(id, LOCAL_PLAYER_DEATHS, 1));
@@ -194,6 +197,60 @@ public final class TrashNativeInspectionRegressionSuite {
     private static void refuses(Runnable write) {
         try { write.run(); throw new AssertionError("unassessed store accepted a write"); }
         catch (IllegalStateException expected) { assertions++; }
+    }
+
+    private static void nativeTryAdmission() throws Exception {
+        final var dir = Files.createTempDirectory("trash-try-admission-"); final var catalog = catalog();
+        final var store = history(dir, catalog); store.load(); final UUID id = UUID.randomUUID();
+        final String base = catalog.snapshot().keySet().iterator().next();
+        final var entered = new CountDownLatch(1); final var release = new CountDownLatch(1);
+        final Runnable unexpected = () -> { throw new AssertionError("unadmitted mutation/rollback ran"); };
+        final var holder = IO.submit(() -> store.transact(() -> {
+            check(!store.tryTransact(() -> { throw new AssertionError("reentrant admission called"); }, unexpected, unexpected),
+                    "reentrant try-transaction refused without touching the existing transaction");
+            entered.countDown(); await(release); return true;
+        }, null));
+        try {
+            check(entered.await(5, TimeUnit.SECONDS), "native writer held");
+            check(!IO.submit(() -> store.tryTransact(() -> { throw new AssertionError("busy admission called"); }, unexpected, unexpected))
+                    .get(2, TimeUnit.SECONDS), "owner try-transaction refuses another writer without waiting");
+        } finally { release.countDown(); }
+        check(holder.get(5, TimeUnit.SECONDS), "existing native writer is unaffected");
+        check(!store.tryTransact(() -> false, unexpected, unexpected), "initial lifecycle rejection enters no projection");
+        check(!Files.exists(dir.resolve("history.wal")), "unadmitted operation creates no WAL");
+        final var admissionCalls = new AtomicInteger();
+        check(!store.tryTransact(() -> admissionCalls.incrementAndGet() == 1, unexpected, unexpected)
+                && admissionCalls.get() == 2, "final lifecycle recheck can reject before mutation");
+        check(store.tryTransact(() -> true, () -> store.createAndRecord(id, base, "base", TrashHistoryEvent.CREATED_AMBIENT, null, ""), unexpected),
+                "admitted try-transaction writes through canonical native WAL");
+        final var acknowledged = store.tryInspect(id).orElseThrow();
+        final byte[] before = Files.readAllBytes(dir.resolve("history.wal")); final var restored = new AtomicBoolean();
+        final var failure = new IllegalArgumentException("projection refusal");
+        try {
+            store.tryTransact(() -> true, () -> {
+                store.record(id, base, "base", TrashHistoryEvent.REPAIRED, null, ""); throw failure;
+            }, () -> restored.set(true));
+            throw new AssertionError("try-transaction swallowed projection failure");
+        } catch (IllegalArgumentException actual) { check(actual == failure, "try-transaction preserves original failure"); }
+        check(restored.get() && store.tryInspect(id).orElseThrow().equals(acknowledged)
+                && Arrays.equals(before, Files.readAllBytes(dir.resolve("history.wal"))), "try-transaction keeps native item/history rollback semantics");
+    }
+
+    private static void nativeCompactionAdmission() throws Exception {
+        final var dir = Files.createTempDirectory("trash-compaction-admission-"); final var catalog = catalog();
+        final var store = history(dir, catalog); store.load(); final UUID id = UUID.randomUUID();
+        final String base = catalog.snapshot().keySet().iterator().next();
+        store.transact(() -> store.createAndRecord(id, base, "base", TrashHistoryEvent.CREATED_AMBIENT, null, ""), null);
+        for (int i = 1; i < 1024; i++) store.transact(() -> store.record(id, base, "base", TrashHistoryEvent.REPAIRED, null, ""), null);
+        final var before = store.tryInspect(id).orElseThrow();
+        final Runnable unexpected = () -> { throw new AssertionError("post-compaction refused projection/rollback ran"); };
+        check(!Files.exists(dir.resolve("history.yml")) && before.sequence() == 1024, "real journal reaches native compaction boundary");
+        check(!store.tryTransact(() -> !Files.exists(dir.resolve("history.yml")), unexpected, unexpected),
+                "lifecycle is rechecked after actual snapshot write and WAL compaction");
+        check(store.tryInspect(id).orElseThrow().equals(before) && Files.size(dir.resolve("history.wal")) == 0,
+                "compaction preserves acknowledged history without committing the refused request");
+        final var reload = history(dir, catalog); reload.load();
+        check(reload.tryInspect(id).orElseThrow().equals(before), "actual compacted state reloads exactly");
     }
     private static void await(CountDownLatch latch) {
         try { if (!latch.await(5, TimeUnit.SECONDS)) throw new AssertionError("held native write timed out"); }

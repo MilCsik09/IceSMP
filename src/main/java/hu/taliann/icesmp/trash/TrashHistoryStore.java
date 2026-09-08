@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 /** Durable hidden provenance indexed by opaque item-instance UUID. */
 public final class TrashHistoryStore implements PersistentStore {
@@ -238,6 +239,26 @@ public final class TrashHistoryStore implements PersistentStore {
             } finally {
                 activeTransaction = null;
             }
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Refuses another writer immediately; admitted work still uses the native synchronous WAL transaction. */
+    public boolean tryTransact(final BooleanSupplier admission, final Runnable mutation,
+                               final Runnable restoreExternal) {
+        Objects.requireNonNull(admission, "admission");
+        Objects.requireNonNull(mutation, "mutation");
+        if (stateLock.isHeldByCurrentThread() || !stateLock.tryLock()) return false;
+        try {
+            requireLoadedAcknowledgement();
+            if (!admission.getAsBoolean()) return false;
+            // Compaction may run inside transact; recheck lifecycle before item/history projection.
+            return transact(() -> {
+                if (!admission.getAsBoolean()) return false;
+                mutation.run();
+                return true;
+            }, restoreExternal);
         } finally {
             stateLock.unlock();
         }

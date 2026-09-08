@@ -6522,7 +6522,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "e5e222e82f330ff27983fef0cf0a81cb1bf53acb8a5cc5bce8dde88d7ac94509",
+      "source_sha256": "18b897780072006e4e6cc2e58611cfb2503f969721c68beafa1dff7e6f4e09be",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6552,13 +6552,14 @@
         "transformMainHandOnSuccess",
         "transformOnSuccess",
         "tryInspect",
+        "tryTransformInventorySlotOnSuccess",
         "validateVendorSale"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "fdf0a4f3c91d2ccf7f18a902e4263c376bd6bc5f27d41abe1f9dc197135af90e",
+      "source_sha256": "281002ed946eb006677f945e7d289ddf3531c78a47746cb13a1b6730e9d02acc",
       "public_methods": [
         "HistoryEntry",
         "Inspection",
@@ -6577,7 +6578,8 @@
         "size",
         "transact",
         "transform",
-        "tryInspect"
+        "tryInspect",
+        "tryTransact"
       ]
     },
     {
@@ -6648,7 +6650,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "d339c531050eaa98e0feaad55af2b25ec375f2a93c5aed75b841496fd55c86de",
+      "source_sha256": "c052a25f3d58e3e57f36840bce958fbe6009fd9dda36ed47ef89c6f1ca472f5e",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",

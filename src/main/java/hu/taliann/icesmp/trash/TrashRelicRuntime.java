@@ -658,24 +658,28 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     private boolean resolveProjectileWall(final RuleField field, final Projectile projectile,
                                           final ProjectileTracking.Ticket ticket) {
         final Player owner = Bukkit.getPlayer(field.owner());
+        final java.util.function.BooleanSupplier admitted = () -> projectileTracking.active(ticket)
+                && owner != null && Bukkit.isOwnedByCurrentRegion(owner)
+                && Bukkit.isOwnedByCurrentRegion(projectile) && owner.isOnline() && projectile.isValid()
+                && owner.getWorld().getUID().equals(field.center().world())
+                && ruleFields.contains(field) && ruleFields.isClaimed(field.id());
         return TrashRelicPolicy.completeProjectileWall(owner != null
                         && Bukkit.isOwnedByCurrentRegion(owner)
                         && Bukkit.isOwnedByCurrentRegion(projectile),
-                () -> projectileTracking.active(ticket) && owner.isOnline() && projectile.isValid()
-                        && owner.getWorld().getUID().equals(field.center().world())
-                        && ruleFields.contains(field) && ruleFields.isClaimed(field.id()),
-                () -> consumeBrickReservation(owner, field.reservationToken()),
+                admitted,
+                () -> consumeBrickReservation(owner, field.reservationToken(), admitted),
                 () -> {
                     ruleFields.remove(field);
                     projectile.remove();
                 });
     }
 
-    private boolean consumeBrickReservation(final Player player, final String token) {
+    private boolean consumeBrickReservation(final Player player, final String token,
+                                             final java.util.function.BooleanSupplier admitted) {
         final int slot = findBrickReservation(player, token);
         if (slot < 0) return false;
         try {
-            if (!history.transformInventorySlotOnSuccess(player, slot)) return false;
+            if (!history.tryTransformInventorySlotOnSuccess(player, slot, admitted)) return false;
         } catch (final RuntimeException rejected) {
             telemetry.recordBehaviorRuntimeError();
             return false;

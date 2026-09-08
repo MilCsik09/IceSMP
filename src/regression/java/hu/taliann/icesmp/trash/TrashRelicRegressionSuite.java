@@ -122,10 +122,10 @@ public final class TrashRelicRegressionSuite {
                 "atomic mug/input inventory projection");
         require(runtime, "trash_brick_reservation", "opaque brick reservation marker");
         require(history, "individualizeHandOnSuccess", "single-unit brick reservation");
-        require(runtime, "consumeBrickReservation(owner, field.reservationToken())",
+        require(runtime, "consumeBrickReservation(owner, field.reservationToken(), admitted)",
                 "exact brick reservation consumption");
         require(runtime, "transformHelmetOnSuccess", "equipped helmet-only transform");
-        check(runtime.indexOf("consumeBrickReservation(owner, field.reservationToken())")
+        check(runtime.indexOf("consumeBrickReservation(owner, field.reservationToken(), admitted)")
                         < runtime.lastIndexOf("projectile.remove()"),
                 "projectile was removed before brick transformation committed");
     }
@@ -244,6 +244,10 @@ public final class TrashRelicRegressionSuite {
         require(runtime, "Bukkit.isOwnedByCurrentRegion(owner)", "inventory owner admission");
         require(runtime, "Bukkit.isOwnedByCurrentRegion(projectile)", "projectile owner admission");
         require(runtime, "TrashRelicPolicy.completeProjectileWall", "native completion uses tested admission");
+        require(runtime, "history.tryTransformInventorySlotOnSuccess(player, slot, admitted)",
+                "native wall refuses a busy writer and rechecks final lifecycle admission");
+        require(Files.readString(HISTORY), "store.tryTransact(admission, mutation, restore)",
+                "owner inventory projection uses canonical native try-transaction");
     }
 
     private static void preservesConcurrentProjectileTracking() throws Exception {
