@@ -173,6 +173,13 @@ public final class TrashProductionHardeningRegressionSuite {
         require(probe, "SHUTDOWN_PASS_MARKER", "separate shutdown proof marker");
         require(probe, "activePhysics", "Anomaly shutdown-state proof");
         require(probe, "trackedProjectiles", "Relic shutdown-state proof");
+        require(probe, "verifyRuleFieldState(relic.ruleFields().snapshot(), true)",
+                "native field startup lifecycle proof");
+        require(probe, "verifyRuleFieldState(relic.ruleFields().snapshot(), false)",
+                "native field shutdown lifecycle proof");
+        check(!probe.contains("readField(relic, \"fields\"")
+                        && !probe.contains("\"claimedFields\""),
+                "probe depends on removed duplicate field registries");
         require(probe, "overlays", "tooltip shutdown-state proof");
         check(!probe.contains("failure.printStackTrace()")
                         && !probe.contains("failure.getMessage()"),

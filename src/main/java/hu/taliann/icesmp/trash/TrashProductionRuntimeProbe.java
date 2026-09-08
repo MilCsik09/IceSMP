@@ -72,7 +72,8 @@ public final class TrashProductionRuntimeProbe {
         try {
             final Object anomaly = readField(assembledCore,
                     "trashAnomalyRuntime", Object.class);
-            final Object relic = readField(assembledCore, "trashRelicRuntime", Object.class);
+            final TrashRelicRuntime relic = readField(assembledCore,
+                    "trashRelicRuntime", TrashRelicRuntime.class);
             final Object archaeology = readField(
                     assembledCore, "trashArchaeologyListener", Object.class);
             final Object tooltip = readField(
@@ -85,8 +86,9 @@ public final class TrashProductionRuntimeProbe {
                 check(sizeOf(readField(anomaly, state, Object.class)) == 0,
                         "Anomaly state survived shutdown");
             }
-            for (final String state : Set.of("fields", "effectVetoArmed", "pendingConsumes",
-                    "claimedFields", "trackedProjectiles")) {
+            verifyRuleFieldState(relic.ruleFields().snapshot(), false);
+            for (final String state : Set.of("effectVetoArmed", "pendingConsumes",
+                    "trackedProjectiles")) {
                 check(sizeOf(readField(relic, state, Object.class)) == 0,
                         "Relic state survived shutdown");
             }
@@ -148,14 +150,14 @@ public final class TrashProductionRuntimeProbe {
     private static void verifyStartedAndCleanRuntime(
             final Object assembledCore, final TrashRuntimeTelemetry telemetry) {
         final Object anomaly = readField(assembledCore, "trashAnomalyRuntime", Object.class);
-        final Object relic = readField(assembledCore, "trashRelicRuntime", Object.class);
+        final TrashRelicRuntime relic = readField(assembledCore,
+                "trashRelicRuntime", TrashRelicRuntime.class);
         final Object archaeology = readField(
                 assembledCore, "trashArchaeologyListener", Object.class);
         final Object ambient = readField(assembledCore, "trashAmbientManager", Object.class);
         check(readField(anomaly, "heldTick", Object.class) != null,
                 "Anomaly runtime did not start");
-        check(sizeOf(readField(relic, "fields", Object.class)) == 0,
-                "Relic runtime started with temporary fields");
+        verifyRuleFieldState(relic.ruleFields().snapshot(), true);
         check(sizeOf(readField(archaeology, "sessions", Object.class)) == 0,
                 "Archaeology runtime started with pending sessions");
         check(sizeOf(readField(ambient, "active", Object.class)) == 0,
@@ -166,6 +168,13 @@ public final class TrashProductionRuntimeProbe {
                         && snapshot.inspectionsCompleted() == 0L
                         && snapshot.inspectionsCancelled() == 0L,
                 "runtime started with non-zero operational counters");
+    }
+
+    static void verifyRuleFieldState(final TrashRuleFieldService.Snapshot snapshot,
+                                     final boolean expectedOpen) {
+        check(snapshot.open() == expectedOpen, "Rule-field lifecycle state mismatch");
+        check(snapshot.fields().isEmpty(), "Rule fields remain at lifecycle boundary");
+        check(snapshot.claimed().isEmpty(), "Rule-field claims remain at lifecycle boundary");
     }
 
     private static int sizeOf(final Object value) {

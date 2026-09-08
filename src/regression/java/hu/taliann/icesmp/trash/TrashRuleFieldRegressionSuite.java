@@ -13,7 +13,7 @@ public final class TrashRuleFieldRegressionSuite {
         return new RuleField(UUID.randomUUID(), kind, new Point(world, 0, 0, 0), 6, expiry, UUID.randomUUID(), kind == FieldKind.PROJECTILE_WALL ? UUID.randomUUID().toString() : null);
     }
     public static void main(String[] args) throws Exception {
-        geometryAndLifecycle(); capsAndSnapshots(); contention(); invalidValues();
+        geometryAndLifecycle(); capsAndSnapshots(); contention(); invalidValues(); lifecycleProbe();
         System.out.println("Trash rule-field authority passed. assertions=" + assertions);
     }
     private static void geometryAndLifecycle() {
@@ -68,6 +68,31 @@ public final class TrashRuleFieldRegressionSuite {
             accepted = 0; for (final var attempt : attempts) if (attempt.get(5, TimeUnit.SECONDS)) accepted++;
             check(accepted == 1 && service.snapshot().fields().size() == MAX_FIELDS_PER_WORLD, "concurrent creators cannot race beyond world cap");
         } finally { executor.shutdownNow(); }
+    }
+    private static void lifecycleProbe() {
+        final var service = new TrashRuleFieldService(() -> 1000);
+        TrashProductionRuntimeProbe.verifyRuleFieldState(service.snapshot(), true);
+        assertions++;
+        rejectsProbe(service.snapshot(), false);
+        final var wall = field(UUID.randomUUID(), FieldKind.PROJECTILE_WALL, 2000);
+        check(service.add(wall), "probe observes the native field service");
+        rejectsProbe(service.snapshot(), true);
+        check(service.claim(wall.center(), wall.kind()).isPresent(), "native claim admitted for shutdown proof");
+        rejectsProbe(service.snapshot(), true);
+        service.close();
+        TrashProductionRuntimeProbe.verifyRuleFieldState(service.snapshot(), false);
+        assertions++;
+        rejectsProbe(service.snapshot(), true);
+        for (boolean open : new boolean[]{true, false}) {
+            rejectsProbe(new Snapshot(0, List.of(), Set.of(wall.id()), open), open);
+            rejectsProbe(new Snapshot(0, List.of(wall), Set.of(), open), open);
+        }
+    }
+    private static void rejectsProbe(Snapshot snapshot, boolean expectedOpen) {
+        try {
+            TrashProductionRuntimeProbe.verifyRuleFieldState(snapshot, expectedOpen);
+            throw new AssertionError("lifecycle proof accepted invalid state");
+        } catch (IllegalStateException expected) { assertions++; }
     }
     private static void invalidValues() {
         final UUID world = UUID.randomUUID(); final var service = new TrashRuleFieldService(() -> 1000);
