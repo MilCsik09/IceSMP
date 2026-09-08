@@ -1,5 +1,46 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A teljes build korábbi két sérült Trash-forráslapját új imagegen-változat váltja:
+`dev-assets/trash/source/phase-batch-001-v2.png` és `phase-batch-002-v2.png`.
+Az eredeti tárgy-ID-k és sorrend megmaradnak; 27 fázisikon újragenerált. A promptok,
+stílusreferencia és feldolgozás a `dev-assets/trash/source/manifest.json` részei.
+Ez új forrás, nem az elveszett eredeti bájtok helyreállításának állítása.
+
+## Frakció–Suttogó kiegészítések, 2026-09-07
+
+Tiszta indulás: a korábbi tagságiadó- és profilmigráció nem követelmény. Elkészült
+a magányos, normál világbeli éjszakai rítus, a ritka privát discovery-hint, az
+eseményazonos bizonyíték, a vanish/invisibility/respawn kizárás és a régiónkénti
+rálátás. `/suttogas megtagadás`: kétszer megerősített kilépés, 24 órás várakozás,
+bűntisztítás nélkül. `/faction status`: következő jogi küszöb, vérdíj és a vezeklés
+helye. A civil jóvátétel DARK-belépés nélkül is elérhető a `/quest log` Megbízások
+fülén. A választás aktív létszámhoz igazodik, és megtartja az élő mandátumot.
+Részletes szabályok és korlátok: [FACTION_REWORK](FACTION_REWORK.md).
+
+
+## Frakció–Suttogó javítás, 2026-09-06
+
+Az eredeti W1–W33 követelmények visszanyerése után a készre jelentés pontosítva:
+a fő állapotmodell implementált, a teljes rework átvétele még nyitott.
+A felfedezhetőség, tanúzás, önkéntes visszaút és régiadat-kezelés fennmaradó
+feladatai a [ROADMAP-ben](../ROADMAP.md#frakcióbűnsuttogó-rework-átvételi-kapui) szerepelnek.
+A teljes titkos küldetéshálózat nem kötelező: egy működő kultista megbízás az
+eredeti W18 szerinti minimum.
+
+A részletes szabályok: [FACTION_REWORK.md](FACTION_REWORK.md). Nincs új HUD vagy
+frakciómérő. A DARK 70%-os normál gyógyítása a saját kasztgyógyításokra is érvényes;
+civil boltok, Tanács, karavánok és fővárosok a száműzetést is figyelembe veszik.
+A sötét specializációk feltétele DARK + Sötét Eskü, a párbaj nem bűntisztítás, és a
+NEUTRAL frakcióváltásnak azonos ára van. A személyes kasszakivét csak adminművelet.
+
+A Suttogó-bizonyíték tartós és pontos; beváltása, a harmadik fokozat, száműzetés és
+24 órás visszatérési várakozás egy mentés. A rítus mentési sorrendje javítva, a tárgy
+lore-ja misztikus utalásokat ad; helyes körülményeknél percenként legfeljebb egy privát hint segít. A chat álneves. `/suttogas állapot` és
+`/suttogas megbízás` ad részletes tájékoztatást. Kultista jutalom csak az átadással
+minősített résztvevőnek jár. A ligapont csökkenő létszámhozamot kap, a személyes
+bajnoki jutalom alapból három igazolt kategória/nap hozzájárulást igényel.
+
+
 - A gameplay-definíciók egyetlen kézzel authorolt `content/**` fába kerültek;
   a korábbi három expansion overlay és a gameplayt író advancement/profession
   generátorok megszűntek. A megmaradt tooling csak validál, evidence/reportot
@@ -443,21 +484,13 @@ frakciópasszívot, frakcióquestet, tanácsi szavazatot, community-hozzájárul
 vagy frakciós szezonpontot. A kezdőlánc Creutzér-útravalója caldesterai
 vendégsegély, nem rejtett frakciójutalom. A korábbi választás tartós nyoma miatt
 az assignment törlése sem nyit új „első választás” kerülőutat a szezonvégi zár
-vagy a szezonális váltási limit körül, és nem törli a már fennálló adóhátralékot
-vagy adócsalási strike-ot sem.
+vagy a szezonális váltási limit körül.
 
-Az adóhátralék most eredet-frakciónként külön ledgerben él. Frakcióváltás nem
-konvertálja a régi tartozást vagy strike-ot: a következő beszedés az eredeti
-valutából az eredeti kasszába rendezi. A legacy scalar séma egyáltalán nem őriz eredet-frakciót, ezért aktív vagy korábbi
-tagságból sem találunk ki hozzá valutát. Minden ilyen adat explicit adminmigrációt
-igénylő karanténban marad: nem veszhet el, de a játékos következő frakciójához
-sem kötődik automatikusan.
-
-A fizetős frakcióváltás és az adóbeszedés külön write-ahead journalban rögzíti
-a wallet és a domain előtte/utána állapotát. A live tagság csak a tartós
-assignment+history snapshot sikeres mentése után változik; treasury/debt hiba
-esetén a wallet tartós kompenzációt kap, rollbackhiba pedig fail-closed recovery
-állapotot hagy.
+A periodikus frakcióadó, az adóütemező és a királyi adókulcs-parancs megszűnt.
+A régi debt/outbox és protokollmezők csak kompatibilitási maradványok. A fizetős
+frakcióváltás WAL-védelme változatlan: a live tagság csak a tartós
+assignment+history snapshot sikeres mentése után változik, wallet-hiba esetén
+pedig a művelet fail-closed marad.
 
 A passzívok teljes immunitások helyett kontextusos, konfigurálható policyt
 használnak:
@@ -466,8 +499,8 @@ használnak:
   negyedét, a LAVA sebzés felét, az entitás okozta tűz háromnegyedét kapja; az
   IceSMP `TUZ` varázslat alapból teljes sebzést okoz;
 - BLUE továbbra sem kap fagyássebzést, fele fulladássebzést kap, és csak a
-  felsorolt természetes exhaustion események negyedét kerüli el — Hunger,
-  scripted éhség és food-duty nem tűnik el;
+  felsorolt természetes exhaustion események negyedét kerüli el — Hunger és
+  scripted éhség nem tűnik el; periodikus ételkötelezettség nincs;
 - az explicit NEUTRAL polgár fele zuhanássebzést kap, és csak a spontán
   békés/semleges mob- vagy Enderman-szemkontaktus-aggrót szűri; provokáció és
   scriptelt/event célzás működik;
@@ -475,7 +508,9 @@ használnak:
   ambient lakói békések, de támadás után 60 másodperces, játékos–mob páronkénti
   megtorlás indul; a 16 blokkos riadó csak a ténylegesen riasztott példányokra
   nyit külön lease-t. A vad undead előny csak éjjel, 50% eséllyel él. Vérhold
-  alatt az ambient és a vad DARK béke is alapból megszűnik.
+  alatt az ambient és a vad DARK béke is alapból megszűnik. Ellensúlyként a
+  normál gyógyítás 70%-os, a polgári bolt és játékos-karaván tiltott, a kompár
+  kétszeres; Vérhold/DUNGEON gyógyítása és a kijelölt feketepiac kivétel.
 
 Boss-, dungeon-, rontás-, invázió-, event-, quest- és koronaátok-célzás
 megelőzi a truce-ot. A target adapter a szűrt célpontot ténylegesen `null`-ra
@@ -483,6 +518,9 @@ megelőzi a truce-ot. A target adapter a szűrt célpontot ténylegesen `null`-r
 az aktuális explicit tagságot ellenőrzi, a régi itemstackből pedig eltávolítja
 a korábban beégetett feltétel nélküli potion effectet. Az összetartozó merged
 config és override-lista egyetlen immutable generációként frissül.
+Az Infamy, Wanted, Exile, DARK-eskü és tagság külön tengely. A Suttogó kockázata
+nem láthatatlan pont: a pontos tanú–cél bizonyíték három érvényes váddal fixen
+`CLEAN → OBSERVED → SUSPECTED → EXPOSED` állapotot jár be, decay nélkül.
 Az automatizált tesztek a policyt bizonyítják, nem a valódi szerveres AI- és
 szezonbalanszt; a stagingmátrix továbbra is nyitott.
 

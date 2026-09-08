@@ -1,5 +1,46 @@
 # IceSMP admin-, moderátori és tesztelői kézikönyv
 
+## Frakció–Suttogó kiegészítések, 2026-09-07
+
+Tiszta indulás: a korábbi tagságiadó- és profilmigráció nem követelmény. Elkészült
+a magányos, normál világbeli éjszakai rítus, a ritka privát discovery-hint, az
+eseményazonos bizonyíték, a vanish/invisibility/respawn kizárás és a régiónkénti
+rálátás. `/suttogas megtagadás`: kétszer megerősített kilépés, 24 órás várakozás,
+bűntisztítás nélkül. `/faction status`: következő jogi küszöb, vérdíj és a vezeklés
+helye. A civil jóvátétel DARK-belépés nélkül is elérhető a `/quest log` Megbízások
+fülén. A választás aktív létszámhoz igazodik, és megtartja az élő mandátumot.
+Részletes szabályok és korlátok: [FACTION_REWORK](FACTION_REWORK.md).
+
+
+## Frakció–Suttogó javítás, 2026-09-06
+
+A részletes szabályok: [FACTION_REWORK.md](FACTION_REWORK.md). Nincs új HUD vagy
+frakciómérő. A DARK 70%-os normál gyógyítása a saját kasztgyógyításokra is érvényes;
+civil boltok, Tanács, karavánok és fővárosok a száműzetést is figyelembe veszik.
+A sötét specializációk feltétele DARK + Sötét Eskü, a párbaj nem bűntisztítás, és a
+NEUTRAL frakcióváltásnak azonos ára van. A személyes kasszakivét csak adminművelet.
+
+A Suttogó-bizonyíték tartós és pontos; beváltása, a harmadik fokozat, száműzetés és
+24 órás visszatérési várakozás egy mentés. A rítus mentési sorrendje javítva, a tárgy
+lore-ja misztikus utalásokat ad; helyes körülményeknél percenként legfeljebb egy privát hint segít. A chat álneves. `/suttogas állapot` és
+`/suttogas megbízás` ad részletes tájékoztatást. Kultista jutalom csak az átadással
+minősített résztvevőnek jár. A ligapont csökkenő létszámhozamot kap, a személyes
+bajnoki jutalom alapból három igazolt kategória/nap hozzájárulást igényel.
+
+Üzemeltetés: a DARK menedékének spawnját és a civil `CAPITAL` zónákat helyesen kell
+beállítani. Belépéskor a bent rekedt kitaszított a konfigurált DARK-spawnra kerül,
+ha az valóban a civil fővároson kívül van. Wanted-menlevél nem old fel Exile/DARK zárat.
+A rítus kevert inventory-bizonylatát ne töröld és ne adj vissza automatikusan tárgyat;
+a mentett before/after állapotot és a szerver játékosmentését együtt kell vizsgálni.
+A leleplezés jogi állapota akkor is tartós, ha a hang vagy üzenet offline cél miatt kimarad.
+A `population-reference` és `minimum-contributions` a `world-events.season` alatti kulcs.
+Az integráció Java- és WAL-tesztjeitől külön Folia többjátékosos próba szükséges: fal,
+régióhatár, egyszerre beváltott vád, disconnect/crash a rítus lépései közt, önvédelem,
+fővárosi teleport/jármű és a teljes kasztgyógyítás-mátrix. A balance playtest eredménye
+nincs megelőlegezve. A W1–W33 forrás ismert; a tiszta indulásról szóló 2026-09-07-i tulajdonosi döntés
+felülírja a régiadat-migráció követelményét.
+
+
 <!-- icesmp-doc-id: feature.moderation -->
 
 <!-- icesmp-doc-id: guide.admin-and-moderator -->
@@ -67,7 +108,7 @@ pluginoktól. Az első teszt előtt:
 | `icesmp.moderation.history` | `/history`, `/punishments` | OP | Moderátor |
 | `icesmp.moderation.socialspy` | `/socialspy`; natív PM-ek tartalmának megfigyelése | OP | Szűk senior moderátori kör |
 | `icesmp.moderation.vanish` | Saját vagy online cél vanish állapotának kapcsolása | OP | Admin |
-| `icesmp.moderation.vanish.see` | Vanished játékosok megtekintése | OP | Admin vagy vezető moderátor |
+| `icesmp.moderation.vanish.see` | Vanished játékosok megtekintése | FALSE; külön grant kell | Admin vagy vezető moderátor |
 | `icesmp.moderation.offlinetp` | Online célhoz, illetve mentett kijelentkezési helyre teleport a moderációs GUI-ból; `/offlinetp` | OP | Admin vagy senior moderátor |
 | `icesmp.moderation.inventory.read` | Online inventory és ender chest csak olvasható nézete | OP | Senior moderátor |
 | `icesmp.moderation.inventory.edit` | Online inventory és ender chest szerkesztése | OP | Csak vezető admin |
@@ -930,7 +971,7 @@ játékos-only cél nélkül magyar elutasítást ad.
 | `icesmp.moderation.history` | History és aktív punishmentek. | Moderátor | /history, /punishments | Moderációs GUI 19/20 | — | icesmp.admin.moderation | OP | közepes | Moderátor | Új |
 | `icesmp.moderation.socialspy` | SocialSpy állapot. | Moderátor | /socialspy | Moderációs GUI 30 | PrivateMessageCommand | icesmp.admin.moderation | OP | magas | Senior moderátor | Új |
 | `icesmp.moderation.vanish` | Vanish kezelése. | Admin | /vanish | Moderációs GUI 31 | VanishManager/listenerek | icesmp.admin.moderation | OP | magas | Admin | Új |
-| `icesmp.moderation.vanish.see` | Vanish játékosok láthatósága. | Vezető admin | — | Játékoslista/moderációs célpontszűrés | VanishManager | icesmp.admin.moderation | OP | magas | Admin | Új |
+| `icesmp.moderation.vanish.see` | Vanish játékosok láthatósága. | Vezető admin | — | Játékoslista/moderációs célpontszűrés | VanishManager | icesmp.admin.moderation | FALSE; külön grant kell | magas | Admin | Új |
 | `icesmp.moderation.offlinetp` | Utolsó logouthelyre teleport. | Moderátor/Admin | /offlinetp | Moderációs GUI 28/29 | Logout location capture | icesmp.admin.moderation | OP | magas | Admin | Új |
 | `icesmp.moderation.inventory.read` | Online inventory/ender read. | Moderátor | /invsee ... read | Moderációs GUI 22/24 | InvseeGUIListener | icesmp.admin.moderation | OP | magas | Senior moderátor | Új |
 | `icesmp.moderation.inventory.edit` | Online inventory/ender szerkesztés escrow-val. | Vezető admin | /invsee ... edit | Moderációs GUI 23/25 | InvseeGUIListener | icesmp.admin.moderation | OP | kritikus | Csak vezető admin | Új |
@@ -1106,10 +1147,11 @@ A rejtett Suttogó-státusz ugyanazt a target-policyt használja, de külön
 `factions.whisper.*` kulcsokkal: `night-undead-target-cancel-chance: 0.35`,
 `night-undead-night-only: true`, `night-undead-disabled-during-blood-moon:
 true`, `night-undead-break-on-damage: true`,
-`night-undead-retaliation-seconds: 60`. A tanúk alapértékei:
-`truce-witness-chance: 0.02`, `truce-witness-radius: 16.0`,
-`truce-witness-suspicion: 1.0`. Ezek is live reloadolhatók; a Suttogó-előny nem
-DARK assignment és nem teljes undead-immunitás.
+`night-undead-retaliation-seconds: 60`. A közeli kívülálló a
+`truce-witness-radius: 16.0` sugárban célhoz kötött, egyszer használható
+bizonyítékot kap. Három érvényes vád fixen `CLEAN → OBSERVED → SUSPECTED →
+EXPOSED`; nincs gyanúpont vagy decay. A Suttogó-előny nem DARK assignment és
+nem teljes undead-immunitás.
 
 A célzási precedencia nem a YAML-sorrendtől függ:
 
@@ -1125,20 +1167,19 @@ A célzási precedencia nem a YAML-sorrendtől függ:
 Assignment nélküli játékos Menedék-vendég, nem implicit `NEUTRAL`: a
 `getEconomyFaction` megjelenítési/valuta-fallbackje nem jogosultság. Csak explicit assignment
 kap passzívot, frakcióquestet, tanácsi jogot, community- és season-creditet.
-A vendég nincs az aktuális periodikus polgári adóbeszedési körben; ez nem
-`NEUTRAL` adómentesség, és egy korábbi polgár assignment-hiánya nem törli a
-már fennálló hátralékot vagy adócsalási strike-ot. Az explicit `NEUTRAL` polgár
-a `factions.tax.exempt` defaultlistája alapján adómentes.
+A periodikus frakcióadó, az adóütemező és a `/faction king tax` útvonal
+megszűnt. A korábbi tax debt/outbox és protokollmezők kompatibilitási célból
+megmaradhatnak, de a runtime nem nyit új beszedést és nem jelenít meg adókulcsot.
 
-Az új `treasury.yml` séma a tartozást eredet szerint tárolja:
-`tax-debts.<uuid>.<FACTION>.amount|evasion-strikes`. Frakcióváltáskor a régi
-tartozás az eredeti valutában és az eredeti frakció kasszája felé marad fenn;
-az új frakció következő rendes beszedése külön bucketet nyithat. A régi scalar `tax-arrears` / `tax-evasion-strikes` nem tartalmaz bizonyítható
-eredet-frakciót vagy valutát, ezért sem az aktív assignmentből, sem a tartós
-utolsó választásból nem konvertálódik automatikusan. Minden ilyen rekord a
-`legacy-tax-debts-unresolved` karanténba kerül, és a következő explicit tagság
-sem köti hozzá automatikusan. Több eredet egyszerre is rendezhető,
-de egy beszedési kör játékosonként legfeljebb egy adócsalási bűnt jelent.
+Az új játékosparancsok permission nélküliek és csak a saját állapotot kezelik:
+
+- `/faction status` — tagság, Infamy, Wanted, Exile, DARK-eskü és Suttogó-fokozat;
+- `/faction status eskü` — csak Exile után rögzít esküt, tagságot nem vált;
+- `/faction join dark` — Exile és eskü után is két kiadással erősítendő meg.
+
+Admin `/faction set <játékos> dark` esetén az Exile és Oath előfeltétel a
+membership előtt kerül tartósításra, így DARK-tagság nem maradhat előfeltétel
+nélkül.
 ### Profile v2 kaszt/spec üzemeltetési kapu
 
 A Profile v2 mindig aktív és a kaszt/spec egyetlen autoritatív rendszere; nincs legacy migráció,
@@ -1621,29 +1662,30 @@ eloszlásra.
 | [ ] | MEM-02 Vendég frakcióquestje | Tesztelő | friss vendég, `neutral_heti_vasar` és más frakcióquest | nem fogadhatja el és nem halad benne; onboarding ettől működik | quest gate hibajegy | `faction-passives/MEM-02/` |
 | [ ] | MEM-03 Vendég és tanács | Tesztelő | nyitott tanácsi szavazás | nem jelölhető, nem szavazhat, voks nem kerül state-be | szavazás stop | `faction-passives/MEM-03/` |
 | [ ] | MEM-04 Community + season | Tesztelő | aktív NEUTRAL community goal és season source | vendég akciója nem növeli a NEUTRAL célt és nem ír NEUTRAL season-creditet | season/community stop | `faction-passives/MEM-04/` |
-| [ ] | MEM-05 Adómodell | Admin | friss vendég, korábban választott rekordhiányos játékos fennálló hátralékkal, explicit NEUTRAL és RED | friss vendégre nincs új citizen tax; rekordhiány nem törli a régi arrears/strike state-et; NEUTRAL explicit exempt; RED policy szerint adózik | tax scheduler tiltása | `faction-passives/MEM-05/` |
+| [ ] | MEM-05 Eltávolított adómodell | Admin | friss vendég, explicit NEUTRAL és RED, régi debt/outbox mezőket tartalmazó tesztprofil | nincs új beszedés, ütemező, királyi adóparancs vagy UI-adókulcs; a régi mezők betölthetők, de inaktívak | rollout stop | `faction-passives/MEM-05/` |
 | [ ] | MEM-06 Onboarding-útravaló | Tesztelő | friss vendég, teljes onboarding | fix Creutzér-jutalom érkezik, de assignment/passzív/tanácsjog nem | quest reward rollback | `faction-passives/MEM-06/` |
 | [ ] | MEM-07 Első választás | Tesztelő | friss vendég lockouton kívül | explicit join ingyenes, assignment létrejön, a választott passzív azonnal él | assignment backup, rollout stop | `faction-passives/MEM-07/` |
 | [ ] | MEM-08 Lockout és szezonlimit | Admin | season-end lockout; maxra fogyasztott váltás; korábban választott, majd rekordhiányos tesztmásolat | sem friss/missing assignment, sem leave+join nem kerüli meg a zárat vagy limitet; history nem ad új első választást | season rollout stop | `faction-passives/MEM-08/` |
 | [ ] | MEM-08B Szezonváltás | Admin | vendég és explicit polgár a kontrollált season rollover előtt | vendég vendég marad, nem kap frakciós záró/nyitó creditet; polgár assignmentje megmarad, az új szezon váltásszámlálója tisztán indul | season state backup, rollout stop | `faction-passives/MEM-08B/` |
 | [ ] | MEM-09 Frakcióváltás | Tesztelő | mind a négy explicit frakció egymás után, szabályos admin/staging út | régi passzív azonnal megszűnik, új azonnal él; transient retaliation ürül | játékos relog, state/log mentése | `faction-passives/MEM-09/` |
 | [ ] | MEM-10 Leave | Tesztelő | explicit RED vagy BLUE, szabályos leave | explicit `NEUTRAL` assignment keletkezik, nem vendégállapot; váltási kapuk és history megmaradnak | assignment visszaállítása | `faction-passives/MEM-10/` |
+| [ ] | MEM-11 DARK belépési sorrend | Tesztelő | külön Infamy, Wanted, Exile és Oath állapotok; `/faction status [eskü]` | Infamy/Wanted önmagában nem elég; Exile után az eskü még nem tagság; csak eskü után és kétszeri joinnal lesz DARK | profilmentés + rollout stop | `faction-passives/MEM-11/` |
 
-#### Durable membership-, wallet- és tax-tranzakciók
+#### Durable membership- és wallet-tranzakciók
 
 Ezek a próbák csak elkülönített staging-adatmásolaton, fault-injectionnel futtathatók. A
-WAL-fájlokat, walletet, `factions.yml`-t és `treasury.yml`-t minden megszakítás
-előtt és után mentsd el. Ismeretlen eredetű legacy debt nem része a normál
-beszedési útvonalnak: karanténban marad explicit adminmigrációig.
+WAL-fájlokat, walletet és `factions.yml`-t minden megszakítás előtt és után
+mentsd el. A régi tax debt/outbox mezőket csak kompatibilitási olvasással
+ellenőrizd; normál beszedési útvonal nincs.
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
 |---|---|---|---|---|---|---|
-| [ ] | TX-01 Wallet-write hiba | Üzemeltető | fizetős váltás és tax közben a wallet-store első durable írása hibázik | membership/treasury/debt live és disk state változatlan; sikerüzenet, hook és jutalom nem fut; WAL tisztán lezárható | fault kikapcsolása, store-összevetés | `faction-passives/TX-01/` |
-| [ ] | TX-02 Domain-write hiba + sikeres rollback | Üzemeltető | wallet durable commit után `factions.yml` vagy `treasury.yml` írás hibázik | exact wallet snapshot tartósan visszaáll; live domain state visszaáll; retry nem terhel kétszer | store backup visszaállítása | `faction-passives/TX-02/` |
+| [ ] | TX-01 Wallet-write hiba | Üzemeltető | fizetős váltás közben a wallet-store első durable írása hibázik | membership live és disk state változatlan; sikerüzenet, hook és jutalom nem fut; WAL tisztán lezárható | fault kikapcsolása, store-összevetés | `faction-passives/TX-01/` |
+| [ ] | TX-02 Domain-write hiba + sikeres rollback | Üzemeltető | wallet durable commit után a membership írása hibázik | exact wallet snapshot tartósan visszaáll; live membership változatlan; retry nem terhel kétszer | store backup visszaállítása | `faction-passives/TX-02/` |
 | [ ] | TX-03 Rollbackhiba/circuit open | Üzemeltető | domain-write és wallet-kompenzáció is hibázik, kritikus write circuit nyitva | a művelet nem látszik sikeresnek; WAL megmarad, új kritikus írás fail-closed; kontrollált restart recovery vagy egyértelmű corrupt-stop történik | szerver stop, WAL+store mentése | `faction-passives/TX-03/` |
 | [ ] | TX-04 Commit utáni journal-cleanup hiba | Üzemeltető | wallet és domain tartósan sikeres, csak a WAL törlése hibázik | nincs téves wallet-visszagörgetés; restart az all-after állapotot idempotensen felismeri és lezárja | szerver stop, WAL elemzés | `faction-passives/TX-04/` |
 | [ ] | TX-05 Assignment nélküli history-visszaállítás | Admin | korábban választott, admin reset után assignment nélküli játékos fizetős újraválasztása, majd mentési hiba | a teljes előállapot — assignment hiánya és tartós history — pontosan visszaáll; nincs ingyenes első-választás bypass | assignment/history backup | `faction-passives/TX-05/` |
-| [ ] | TX-06 Unknown-origin debt karantén | Admin | ismeretlen eredetű fejlesztői legacy debt, majd explicit frakcióválasztás és adókör | a rekord nem kötődik az új frakcióhoz, nem kerül levonásra; csak explicit adminmigráció után válik beszedhetővé | treasury scheduler stop | `faction-passives/TX-06/` |
+| [ ] | TX-06 Inaktív legacy tax state | Admin | régi debt/outbox mezőket tartalmazó profil, majd explicit frakcióválasztás | nem indul levonás, outbox-feldolgozás vagy adóüzenet; a tagsági tranzakció önállóan zárul | rollout stop | `faction-passives/TX-06/` |
 
 #### RED, BLUE és NEUTRAL
 
@@ -1662,7 +1704,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | FP-B03 Sprint/exhaustion | Tesztelő | chance `1.0`, majd `0.0`; sprint, sprintugrás, úszás | csak a felsorolt reasonök cancelődnek; default visszaállítva `0.25` | override unset | `faction-passives/FP-B03/` |
 | [ ] | FP-B04 Hunger-effekt | Tesztelő | BLUE aktív Hunger potion/effect mellett | `HUNGER_EFFECT` nincs a default okok közt; büntetés megmarad | effect törlése | `faction-passives/FP-B04/` |
 | [ ] | FP-B05 Script/admin food | Admin | scripted vagy admin food-level változás | nem semlegesíti a passzív | override/mechanika stop | `faction-passives/FP-B05/` |
-| [ ] | FP-B06 Food-duty lejárat | Tesztelő | BLUE grace lejárt, hal nélkül | honvágy-Hunger és figyelmeztetés megmarad; a passzív nem teljesíti a kötelességet | duty ideiglenes tiltása | `faction-passives/FP-B06/` |
+| [ ] | FP-B06 Eltávolított food-duty | Tesztelő | BLUE hosszú ideje signature étel nélkül | nincs honvágy-Hunger, periodikus figyelmeztetés vagy rejtett timestamp; az exhaustion-passzív ettől független | rollout stop | `faction-passives/FP-B06/` |
 | [ ] | FP-N01 Spontán béke | Tesztelő | explicit NEUTRAL, passzív állat/semleges wolf-bee és konfigurált piglin/spider | csak spontán aggró törlődik; a mob nincs globálisan módosítva | truce tiltása | `faction-passives/FP-N01/` |
 | [ ] | FP-N02 Provokáció | Tesztelő | ugyanazt a lényt a NEUTRAL játékos megüti | az áldozat visszatámadhat, megtorlás 60 s-ig él | játékos/mob szétválasztása | `faction-passives/FP-N02/` |
 | [ ] | FP-N03 Enderman stare | Tesztelő | NEUTRAL csak szemkontaktust létesít | spontán stare target törlődik | teszthely lezárása | `faction-passives/FP-N03/` |
@@ -1686,7 +1728,12 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | FP-D10 Event/quest/combat marker | Eventes | minden default combat- és quest-marker külön | target mindig engedett; markerlista reload után él | event stop | `faction-passives/FP-D10/` |
 | [ ] | FP-D11 Koronaátok | Tesztelő | DARK király, valódi CrownCurse undead-attraction; külön `icesmp:crown_curse_target` markerpróba | a CUSTOM/markerelt átokcélzás megmarad, ambient/wild truce nem törli | átok visszaállítása | `faction-passives/FP-D11/` |
 | [ ] | FP-D12 Wither sebzés és idő | Tesztelő | DARK Wither cause és véges Wither effect külön | sebzés ×`0.50`, idő ×`0.50`; külön kapcsolhatók és reloadolhatók | effect törlése | `faction-passives/FP-D12/` |
+| [ ] | FP-D13 Normál gyógyítás | Tesztelő | DARK természetes regen, étel, potion és spell heal; azonos kontrolljátékos | minden `EntityRegainHealthEvent` út ×`0.70`; nincs HUD-mérő vagy felhalmozódó állapot | gyógyítási forrás leállítása | `faction-passives/FP-D13/` |
+| [ ] | FP-D14 Gyógyítási kivételek | Eventes | DARK Vérhold alatt és DUNGEON zónában, azonos healforrás | mindkét esetben ×`1.0`; zónából/eventből kilépve újra ×`0.70` | event stop, játékos kimentése | `faction-passives/FP-D14/` |
+| [ ] | FP-D15 Civil kizárás | Tesztelő | DARK polgári bolt, kijelölt feketepiac, játékos-karaván és komp | polgári bolt/karaván elutasít; feketepiac nyílik; komp pontosan `2×` alapdíjat von | gazdasági backup, rollout stop | `faction-passives/FP-D15/` |
 | [ ] | FP-W01 Suttogó undead-policy | Tesztelő | nem-DARK Suttogó; chance `1.0/0.0`; nappal, éjjel, provokáció után és Vérholdban | csak éjjel/chance szerint szűr; provokáció 60 s-re és Vérhold teljesen felülírja; markerelt content harcol | státusz/config visszaállítása | `faction-passives/FP-W01/` |
+| [ ] | FP-W02 Pontos bizonyíték | Két tesztelő | tanú lát aktív Suttogó-árulást/átadást; másik cél és lejárt bizonyíték is próbálva | csak a látott cél ellen, lejárat előtt, egyszer használható; rossz cél és újrahasználat nem léptet | státusz-visszaállítás | `faction-passives/FP-W02/` |
+| [ ] | FP-W03 Fix fokozatok és fedezék | Tesztelő/eventes | három érvényes vád, majd külön SUSPECTED állapotú kultista siker | vádak: OBSERVED, SUSPECTED, EXPOSED; leleplezés csak Exile-t ad; kultista siker pontosan egy fokozatot vesz le és EXPOSED-ből nem állít vissza | státusz-visszaállítás | `faction-passives/FP-W03/` |
 | [ ] | FP-M01 DARK + nem-DARK ugyanazon mobnál | Két tesztelő | egy undead, DARK és más frakciójú célpont | döntés játékosonkénti; DARK-béke nem törli/módosítja a másik targetjét | mob reset | `faction-passives/FP-M01/` |
 | [ ] | FP-M02 NEUTRAL + nem-NEUTRAL ugyanazon mobnál | Két tesztelő | egy neutral mob, két külön frakció | csak az explicit NEUTRAL spontán targetje szűrhető | mob reset | `faction-passives/FP-M02/` |
 | [ ] | FP-M03 Egyik provokál, másik nem | Két tesztelő | két DARK és két NEUTRAL tesztelő, több külön mob | retaliation játékos–mob páronkénti; csak a provokált vagy explicit riadóval megjelölt mob lease-e nyílik, a másik játékos és másik mob state-je változatlan | state cleanup | `faction-passives/FP-M03/` |
@@ -1695,10 +1742,10 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 
 | Kész | Teszt | Felelős | Előkészítés | Elvárt eredmény | Hiba esetén | Bizonyíték |
 |---|---|---|---|---|---|---|
-| [ ] | FP-P01 RED étel és signature | Tesztelő | RED, más frakció és vendég ugyanazzal az új és legacy Főnixtojás-Rántottával; item megszerzése után váltás/reset | csak az elfogyasztás pillanatában explicit RED kapja a buffot és duty-creditet; régi item feltétel nélküli komponenshatása eltűnik; `TUZ` továbbra sem véletlenül immunis | item/passzív rollout stop | `faction-passives/FP-P01/` |
-| [ ] | FP-P02 BLUE étel és signature | Tesztelő | BLUE, más frakció és vendég új/legacy Pisztránggal és Sárkány-pörkölttel; váltás/reset fogyasztás előtt | csak az elfogyasztás pillanatában explicit BLUE kap Absorption/Strength buffot és duty-creditet; hamis vagy hiányos metadata nem ad frakcióbuffot; a lejárati Hunger megmarad | item/passzív rollout stop | `faction-passives/FP-P02/` |
+| [ ] | FP-P01 RED étel és signature | Tesztelő | RED, más frakció és vendég ugyanazzal az új és legacy Főnixtojás-Rántottával; item megszerzése után váltás/reset | csak az elfogyasztás pillanatában explicit RED kapja a buffot; nincs duty-state vagy periodikus debuff; régi item feltétel nélküli komponenshatása eltűnik; `TUZ` továbbra sem véletlenül immunis | item/passzív rollout stop | `faction-passives/FP-P01/` |
+| [ ] | FP-P02 BLUE étel és signature | Tesztelő | BLUE, más frakció és vendég új/legacy Pisztránggal és Sárkány-pörkölttel; váltás/reset fogyasztás előtt | csak az elfogyasztás pillanatában explicit BLUE kap Absorption/Strength buffot; nincs duty-state; hamis vagy hiányos metadata nem ad frakcióbuffot; a lejárati Hunger megmarad | item/passzív rollout stop | `faction-passives/FP-P02/` |
 | [ ] | FP-P03 NEUTRAL gazdaság és mobilitás | Tesztelő | explicit NEUTRAL signature szerszámok, Szellemszarvas és parkour | item saját drop/fogás/mount értéke él; a fél zuhanás nem ad cél- vagy jutalomkerülőt | pálya/item stop | `faction-passives/FP-P03/` |
-| [ ] | FP-P04 DARK loot/spec/étel | Tesztelő | DARK Hamukenyér, undead kill, soulstone/shard és DARK-kapus spec | Night Vision és spec-kapu él; a truce/Wither-védelem nem ad tiltott undead soulstone- vagy shard-farmot, food-duty továbbra sincs | DARK reward rollout stop | `faction-passives/FP-P04/` |
+| [ ] | FP-P04 DARK loot/spec/étel | Tesztelő | DARK Hamukenyér, undead kill, soulstone/shard és DARK-kapus spec | Night Vision és spec-kapu él; a truce/Wither-védelem nem ad tiltott undead soulstone- vagy shard-farmot; normál gyógyítás 70%, civil bolt/karaván tiltott, kompár kétszeres | DARK reward rollout stop | `faction-passives/FP-P04/` |
 | [ ] | FP-P05 Raid/war/duel/spy | Két tesztelő | guest és explicit tag, aktív hadiablak és jelölt combat content | csak explicit tag kap frakciós jogot/creditet; a combat marker megelőzi az AI-truce-ot | conflict rollout stop | `faction-passives/FP-P05/` |
 
 #### Reload, relog, restart és Folia
@@ -1882,7 +1929,7 @@ beszedési útvonalnak: karanténban marad explicit adminmigrációig.
 | [ ] | CLIENT-16 Party frame parity | Fejlesztő | PARTY_FRAME kliens + `client.features.party-frame` kapu nyitva; két játékos egy partyban | a kliens PARTY_STATE-et kap a taglistával (👑-jelölés, név, fél-szív életerő a vanilla HUD-sorral egyezően); a natív frame-ben és a HUD-panelben a party NEM jelenik meg duplán; a tag sebzésekor a frame fél-szív felbontással frissül; kilépés/disband után a frame eltűnik; invite/kick üzenettípus nem létezik a protokollban | `client.features.party-frame: false` | `client/CLIENT-16/` |
 | [ ] | CLIENT-17 Boss frame parity | Fejlesztő | BOSS_FRAME kliens + `client.features.boss-frame` kapu nyitva; /worldboss teszt-spawn | a kliens BOSS_STATE-et kap (archetípus-név, HP% a vanilla barral egyezően); a natív frame-et kapó játékosnál a vanilla világboss-bar NEM jelenik meg (vanilla kliensnél igen); 50% alatt a frame dühöngés-jelzést mutat a broadcast-üzenettel egy időben; a boss halála/elvonulása után a frame eltűnik és a vanilla bar sem marad fenn | `client.features.boss-frame: false` | `client/CLIENT-17/` |
 | [ ] | CLIENT-18 Territory overlay parity | Fejlesztő | TERRITORY_OVERLAY kliens + `client.features.territory-overlay` kapu nyitva | zónába lépve az overlay a vanilla actionbarral azonos nevet/típust/frakciót mutat (✦ főváros, ⛨ védett, ☠ doom jelekkel), kilépve „Vadon"-t; az aktuális zónán futó raidnél az overlay támadó/védő pontokat mutat a raid-barral egyező értékekkel, más zónában NEM; a határátlépés-actionbar natív kliensen is változatlanul megjelenik (múló értesítés) | `client.features.territory-overlay: false` | `client/CLIENT-18/` |
-| [ ] | CLIENT-19 Faction screen parity | Fejlesztő | FACTION_SCREEN kliens + `client.features.faction-screen` kapu nyitva | a képernyő a /menu frakció-fejlécével azonos kasszát/adókulcsot/királyt mutat, a /faction king tally-sorai egyeznek; Menedék-vendégnél a frakció-blokk üres, de a szezon-állás látszik az /events értékeivel; raid alatt a /faction raid status adataival egyező fázis/pontok/létszám; join/leave üzenettípus nem létezik a protokollban, a váltás a /menu FACTION_SWITCH útján marad | `client.features.faction-screen: false` | `client/CLIENT-19/` |
+| [ ] | CLIENT-19 Faction screen parity | Fejlesztő | FACTION_SCREEN kliens + `client.features.faction-screen` kapu nyitva | a képernyő a /menu frakció-fejlécével azonos kasszát és királyt mutat, az eltávolított adómező mindig `0`; a /faction king tally-sorai egyeznek; Menedék-vendégnél a frakció-blokk üres, de a szezon-állás látszik az /events értékeivel; raid alatt a /faction raid status adataival egyező fázis/pontok/létszám; join/leave üzenettípus nem létezik a protokollban, a váltás a /menu FACTION_SWITCH útján marad | `client.features.faction-screen: false` | `client/CLIENT-19/` |
 | [ ] | CLIENT-20 Attachment-renderer | Fejlesztő | RELIC_ATTACHMENT_V1 kliens + kapu nyitva; két játékos, az egyik aktív relic-viselő | a néző kliense a viselő feje fölött ✦ relikvia-jelvényt renderel a rádiuszon belül; rezonáló viselőnél a jelvény lüktet; láthatatlan vagy lopakodó viselőn NEM jelenik meg; a viselő kilépése/távozása után a jelvény eltűnik; saját relicnél az Awakening-kész HUD-sor lüktet | `client.features.relic-attachment-v1: false` | `client/CLIENT-20/` |
 | [ ] | CLIENT-21 FX-esemény csatorna | Fejlesztő | ADVANCED_FX_V1 kliens + `client.features.advanced-fx-v1` kapu nyitva; /worldboss teszt-spawn | SLAM/ZONE specialnál a kliens ⚠ telegráf-markert renderel a vanilla partikula-gyűrűvel egy helyen és időben, a becsapódásig; a `client.limits.fx-radius` körön kívüli kliens nem kap eseményt; vanilla kliensnél a telegráf-partikula/hang változatlan; sikeres /relic awakening armingnál a kliens banner-visszajelzést mutat; kikapcsolt kapunál egyetlen FX_EVENT sem megy ki | `client.features.advanced-fx-v1: false` | `client/CLIENT-21/` |
 
@@ -2387,3 +2434,34 @@ carrier-variánst és a sisak nélküli nappali undeadet. Ettől függetlenül m
 `HUMAN_GAMEPLAY_STAGING_REQUIRED`: 30–60 perc wilderness több biomban, nappal/éjjel/barlangban;
 azonos carrier több változata; archetype, telegraph, hang és particle olvashatóság; ranklépcsők;
 több világboss; invasion; Prologue; multiplayer és Folia multi-region/performance próba.
+
+## Konfigurációs leltár kiegészítése
+
+Az alábbi gyökerek a már létező konfiguráció/tartalom fájljaihoz tartoznak. A
+`content/` alatti szerzői adat nem új operátor-kapcsoló; a szerkesztési elveket a
+[CONTENT_AUTHORING](CONTENT_AUTHORING.md) rögzíti.
+
+| Gyökér | Kanonikus forrás |
+| --- | --- |
+| `client` | `src/main/resources/config/client.yml` |
+| `creature-species` | `src/main/resources/content/pve/enemies.yml` |
+| `item-sets` | `src/main/resources/content/equipment/equipment.yml` |
+| `item-templates` | `src/main/resources/content/equipment/equipment.yml` |
+| `itemization` | `src/main/resources/config/crafting.yml`, `src/main/resources/content/equipment/equipment.yml` |
+| `items` | `src/main/resources/content/trash/catalog.yml` |
+| `lifecycle-phases` | `src/main/resources/content/trash/catalog.yml` |
+| `loot-ecology` | `src/main/resources/content/trash/catalog.yml` |
+| `mob-abilities` | `src/main/resources/content/pve/enemies.yml` |
+| `mob-loot-profiles` | `src/main/resources/content/pve/enemies.yml` |
+| `mob-templates` | `src/main/resources/content/pve/enemies.yml` |
+| `player-presentation` | `src/main/resources/content/trash/catalog.yml` |
+
+A `/suttogas megtagadás` minden saját szereppel rendelkező játékosnak elérhető;
+`megtagadas` és `leave` alias. Nem adminjog és nem szereplekérdezés másról.
+A `/prologue` live-ops gyökér `icesmp.admin.prologue` jogot kér a teljes végrehajtás
+és tab-complete előtt. A státusz, start, advance, stage, stability, breach és finale
+műveletek részletes kezelése a [Prologue-referenciában](PROLOGUE.md#14-admin-parancsok)
+van; `gate open/close --force` és `reset --force` csak tudatos teszt/override.
+
+Az `escort.force-use-player-anchor: false` a meglévő Escort-fallbackot teszi
+látható alapbeállítássá; nem kényszeríti a konvojt a játékosra.

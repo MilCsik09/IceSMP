@@ -501,7 +501,7 @@ public final class SpecGUI {
             lore.add(label("Frakciókapu", text(specialization.getRequiredFaction().getDisplayName(),
                     themeColor(specialization.getRequiredFaction()))));
         }
-        if (specialization.requiresSinner()) lore.add(label("Bűnös kapu", text("szükséges", NamedTextColor.RED)));
+        if (specialization.requiresDarkOath()) lore.add(label("Sötét Eskü", text("szükséges", NamedTextColor.RED)));
         if (learned) lore.add(ok("Már megtanult út"));
         else blockReason.ifPresentOrElse(reason -> lore.add(error(reason)), () -> lore.add(click("Megtanulás")));
         return GuiUtil.icon(learned ? Material.ENCHANTED_BOOK

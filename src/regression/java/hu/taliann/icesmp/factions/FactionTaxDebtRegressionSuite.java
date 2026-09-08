@@ -14,7 +14,7 @@ public final class FactionTaxDebtRegressionSuite {
     public static void main(final String[] args) throws Exception {
         evasionPolicyStaysPendingUntilDurableSettlement();
         treasuryAmountMathFailsClosed();
-        productionManagerUsesPlayerProfileTaxAuthority();
+        productionManagerCannotProduceTaxOrCrime();
         legacyTaxAuthorityIsRemoved();
         System.out.println("Faction tax debt regression suite passed.");
     }
@@ -86,14 +86,15 @@ public final class FactionTaxDebtRegressionSuite {
                 "invalid or overflowing treasury balance was accepted");
     }
 
-    private static void productionManagerUsesPlayerProfileTaxAuthority() throws Exception {
+    private static void productionManagerCannotProduceTaxOrCrime() throws Exception {
         final String source = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java"));
         check(source.contains("PlayerProfileTaxStore")
-                        && source.contains("repository().listPlayerIds()")
-                        && source.contains("taxStore.collect(")
-                        && source.contains("taxStore.settle("),
-                "treasury manager bypasses PlayerProfile tax authority/outbox recovery");
+                        && !source.contains("collectTaxes(")
+                        && !source.contains("taxStore.collect(")
+                        && !source.contains("sinManager.addSin")
+                        && !source.contains("taxStore.settle("),
+                "retired membership-tax producer or crime route became active");
         check(!source.contains("FactionTaxDebtLedger")
                         && !source.contains("FactionTaxJournal")
                         && !source.contains("tax-debts.")
@@ -101,8 +102,8 @@ public final class FactionTaxDebtRegressionSuite {
                         && !source.contains("putUnresolvedLegacy")
                         && !source.contains("resolveLegacyOrigin"),
                 "legacy tax debt authority, journal or migration remains in production manager");
-        check(source.contains("CurrencyType.fromFactionType(origin)"),
-                "tax debt is not collected in its origin currency");
+        check(!source.contains("tax-rates.") && !source.contains("arrearsProjection"),
+                "fresh-start treasury retains retired membership-tax state");
     }
 
     private static void legacyTaxAuthorityIsRemoved() {

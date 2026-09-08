@@ -585,9 +585,8 @@ public final class PriestGameplayService implements Listener, PlayerStateCleanup
     }
 
     private static void healPlayer(final Player target, final double amount) {
-        final double maxHealth = maxHealth(target);
-        final double after = Math.min(maxHealth, target.getHealth() + Math.max(0.0D, amount));
-        if (after > target.getHealth()) target.setHealth(after);
+        hu.taliann.icesmp.utils.SpellHealingUtil.heal(target, amount,
+                hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
     }
 
     private double healthFloor(final Player player, final String key, final double fallback) {

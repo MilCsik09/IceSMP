@@ -172,8 +172,8 @@ public final class PlayerProfileFullAuthorityRegressionSuite {
         final PlayerProfileBountyStore bounties = new PlayerProfileBountyStore();
         final PlayerProfileEconomyStore economy = new PlayerProfileEconomyStore();
 
-        final var firstSin = sins.add(victim, 3, 99).toCompletableFuture().join().state();
-        check(firstSin.count() == 3 && firstSin.generation() == 1L,
+        final var firstSin = sins.add(victim, 3, 3, 99).toCompletableFuture().join().state();
+        check(firstSin.count() == 3 && firstSin.wanted() && firstSin.generation() == 1L,
                 "first sin generation created");
         final var reservation = bounties.reserve(victim, hunter, CurrencyType.NEUTRAL,
                         25_000L, 3, true, 0L)
@@ -199,7 +199,7 @@ public final class PlayerProfileFullAuthorityRegressionSuite {
         check(!bounties.complete(victim, reservation.pending()).toCompletableFuture().join(),
                 "bounty completion replay is no-op");
 
-        final var secondSin = sins.add(victim, 3, 99).toCompletableFuture().join().state();
+        final var secondSin = sins.add(victim, 3, 3, 99).toCompletableFuture().join().state();
         check(secondSin.generation() == 2L, "second sin generation advanced");
         final var second = bounties.reserve(victim, hunter, CurrencyType.RED,
                         10_000L, 3, false, 0L)

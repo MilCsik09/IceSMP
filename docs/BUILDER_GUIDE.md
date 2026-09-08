@@ -1,5 +1,13 @@
 # IceSMP builder kézikönyv
 
+A frakció–Suttogó rendszer tiszta világra készül. A rítushoz a normál világban sculk
+vagy sculk catalyst, éjszaka és szemtanú nélküli hely kell; Nether/End nem belépési
+hely. A civil `CAPITAL` zónák, DARK-spawn és feketepiac felépítését a világban kell
+befejezni. A `civil_penance` forrása `QUEST_BOARD`, leadása `AUTO`; a `/quest log`
+Megbízások fülén elérhető, ezért civil fővárosba bejutás nélkül is lehet vezekelni.
+Küldetésszerkesztő mezők: `requires-atonement` (logikai), `forbids-faction` (frakció).
+
+
 <!-- icesmp-doc-id: guide.builder-and-world-designer -->
 
 <details>
@@ -1132,3 +1140,17 @@ játékosos hozzáférés megfelel a Season 0 policynek. Külön próbáld ki:
 A world-hook acceptance kézi stagingkapu. A source-level Folia és regression
 tesztek nem helyettesítik a tényleges aréna-, collision-, spawn- és
 játékosforgalmi próbát.
+
+## Frakciórework: belépési és rítushelyek
+
+A civil fővárosok legyenek valóban `CAPITAL` zónaként, helyes frakcióval bekötve.
+A DARK-tagság és a száműzetés önálló belépési tiltás; a Wanted-menlevél nem kerüli meg.
+A sötét menedék biztonságos érkezőhelyét `/territory setspawn dark` rögzíti.
+Ez a civil városban bejelentkező vagy újraéledő száműzött visszairányításához is kell;
+hiányzó pontnál az üzenet megjelenik, de a teleport nem hajtható végre.
+
+A rítushoz nem kell új NPC vagy új területazonosító: sötétben, sculk/sculk catalyst
+felületen állva a meghívó főkézben, SHIFT + jobb kattintással használható. A meghívó
+lore-ja közli a feltételeket. Az aktív kultista rítus/hírvivő a titkos ametisztátadás
+célpontja. A takarás számít: fal mögül vagy bizonytalan Folia-régióhatáron át nem jár
+bizonyíték. A világkialakítás próbái a [ROADMAP](../ROADMAP.md) kiadási kapui.

@@ -20,6 +20,9 @@ class ReleaseInventoryCliTest(unittest.TestCase):
             manifest = {"version": 1, "commands": {}, "features": {}, "permissions": {}, "config-sections": {}, "components": {}, "explicit-ignores": {}}
             (root / "docs/documentation-manifest.yml").write_text(json.dumps(manifest), encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            # Detached Git maintenance must not outlive this temporary repository.
+            subprocess.run(["git", "config", "maintenance.auto", "false"], cwd=root, check=True)
+            subprocess.run(["git", "config", "gc.auto", "0"], cwd=root, check=True)
             subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=root, check=True)
             subprocess.run(["git", "config", "user.name", "Fixture"], cwd=root, check=True)
             (root / "src/main/java/x/A.java").write_text("package x; class A {}", encoding="utf-8")

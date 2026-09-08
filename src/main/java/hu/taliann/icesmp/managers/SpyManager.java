@@ -120,6 +120,7 @@ public final class SpyManager implements PlayerStateCleanup {
                 configManager.getInt("spy.points-daily-limit", 2));
         if (!hu.taliann.icesmp.utils.DailyBudget.tryConsumeOnOwnThread(
                 player, "spy_points", dailyLimit, 1L)) return;
+        seasonManager.recordContribution(player.getUniqueId(), own, "spy");
         seasonManager.addPoints(own,
                 Math.max(0, configManager.getInt("spy.season-points", 2)), "spy");
         player.sendMessage(messageManager.getMessage("spy-mission-success",

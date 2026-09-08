@@ -33,6 +33,12 @@ public final class ShopGUI {
     public static void open(final Player viewer, final ShopManager shopManager,
                             final CurrencyManager currencyManager, final MessageManager messageManager,
                             final String npcName) {
+        final String accessError = shopManager.accessError(viewer, npcName);
+        if (accessError != null) {
+            viewer.sendMessage(messageManager.get(accessError,
+                    "&5A Kitaszítottakat a polgári kereskedők nem szolgálják ki."));
+            return;
+        }
         final List<ConfigurationSection> items = shopManager.getItems(npcName);
         final int rows = Math.max(1, Math.min(6, (int) Math.ceil(items.size() / 9.0)));
         final int size = rows * 9;
@@ -49,7 +55,7 @@ public final class ShopGUI {
             if (material == null) {
                 continue;
             }
-            inventory.setItem(i, createDisplayItem(viewer, shopManager, currencyManager, messageManager, item, material));
+            inventory.setItem(i, createDisplayItem(viewer, shopManager, currencyManager, messageManager, npcName, item, material));
             holder.mapSlot(i, i);
         }
 
@@ -58,7 +64,7 @@ public final class ShopGUI {
 
     private static ItemStack createDisplayItem(final Player viewer, final ShopManager shopManager,
                                                final CurrencyManager currencyManager, final MessageManager messageManager,
-                                               final ConfigurationSection item, final Material material) {
+                                               final String npcName, final ConfigurationSection item, final Material material) {
         final int amount = shopManager.getAmount(item);
         final ItemStack display = new ItemStack(material, Math.min(64, amount));
         final ItemMeta meta = display.getItemMeta();
@@ -66,7 +72,7 @@ public final class ShopGUI {
             return display;
         }
 
-        final double price = shopManager.getPrice(item);
+        final double price = shopManager.getPriceFor(viewer, npcName, item);
         final String currencyName = shopManager.resolveCurrency(item, viewer).getDisplayName();
         final List<Component> lore = new ArrayList<>();
         lore.add(Component.empty());

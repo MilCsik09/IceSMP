@@ -11,6 +11,17 @@
 
 ---
 
+## Frakció és Suttogó: tiszta indulási szerződés
+
+A 2026-09-07-i döntés szerint nincs régi szerveradat-migráció. Az aktív szerep,
+nyomok, kilépés és várakozás továbbra is a FACTION PlayerProfile-szekció WAL-ján él.
+Az eseményazonos nyom és annak felhasználása egy tranzakció; a kilépés nem módosítja
+a jogi mezőket. `WhisperSightline` korlátos voxelbejárást oszt a blokkok saját
+régióira; az aktor állapota kizárólag saját entity-scheduleren készített pillanatkép.
+A jelölt tanúellenőrzése után az erőforrások újraellenőrzése megelőzi a rítusbizonylatot.
+A régi tagságiadó-helper nem része a kassza működésének. Ismeretlen, kevert rítusmentés
+adminvizsgálatot kér; az újraindítási integritás nem kompatibilitási adapter.
+
 ## 1. Nagy kép — életciklus
 
 ```
@@ -40,12 +51,12 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
 | `listeners/` | 123 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug); a procedural daily listenert az authored quest authority kiváltotta. |
 | `spells/` | 61 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
-| `commands/` | 95 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
+| `commands/` | 96 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
 | `quest/` | 10 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, közös quest-valuta resolver, az izolált content-integrity runtime probe, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
 | `gui/` | 72 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
-| `factions/` | 13 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta (policy + Adventure-adapter); a tartós tagság-, történet- és adóállapot a PlayerProfile faction/economy szekcióiban él. |
+| `factions/` | 14 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta; a tartós tagság és bűnállapot a PlayerProfile faction szekciójában él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
@@ -281,15 +292,21 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
     full inventory nem dob tárgyat a földre, az exact markeres item reconnect után commitolható.
     A boss transient, ezért restart után a COMMITTED eligibility újrakézbesíthető, a csak
     PREPARED jelölt exact-before állapotként rollbackelhető.
-  - **Frakcióváltás- és adó-WAL** (`faction-switch-journal.yml`,
-    `faction-tax-journal.yml`): a `DurableTransactionProtocol` előbb tartós prepare rekordot ír,
-    majd exact wallet before/after snapshotot commitol, ezután írja a teljes membership- vagy
-    treasury/debt snapshotot. Domain-write hiba esetén tartós wallet-kompenzáció történik; ha a
-    kompenzáció sem írható, a journal megmarad és a globális critical-write circuit fail-closed
-    állapotot tart fenn. Sikeres domain commit utáni journal-cleanup hiba nem fordítja vissza a
-    már commitolt store-okat: boot recovery az all-before/all-after kombinációt idempotensen lezárja.
-    Ez kontrollált process-crash recovery, nem hardverhibára vagy elvesző fsync-re vonatkozó
-    elosztott exactly-once garancia.
+  - **Frakcióváltás**: a `PlayerProfileFactionStore` a tagságot, historyt, díjat és
+    szezonváltási számlálót egy PlayerProfile WAL-tranzakcióban rögzíti. A külön DARK-join
+    ugyanabban a faction-szekció commitban ellenőrzi az Exile/Oath előfeltételt és a szezonplafont.
+    Az adóproducer végleg üres; a régi outbox formátum kompatibilitási maradvány, nem új adóforrás.
+  - **Suttogó**: a `PlayerProfileWhisperStore` egyetlen faction-szekció mutációban váltja be
+    a tanú–gyanúsított bizonyítékot, lépteti a fokozatot és leleplezéskor rögzíti az Exile-t,
+    a szerep megszűnését és a 24 órás visszatérési határidőt. Logout csak a routing cache-t törli.
+    A rítus sorrendje: tartós intent → exact inventory/HP újraellenőrzés → owner-thread
+    item/HP + `player.saveData()` → role commit → sikerjelzés. A két inventory-pillanatkép
+    egyikével sem egyező helyreállítás zárolva marad, adminvizsgálattal; vak visszaadás nincs.
+  - **Személyes szezonrészvétel**: faction-profilbeli, szezonra és tagsági időpontra kötött
+    aktivitásnyugták. Kategóriánként és UTC-naponként egy minősített esemény számít. A
+    betöltött projekció offline tagokra is megmarad; a szezon nem zárul a betöltése előtt.
+    Létszám: az elmúlt hét minősített résztvevői; a pont-osztó `sqrt(max(1, aktív/reference))`,
+    egész pontokra kerekítve, pozitív pontforrásnál minimum egy ponttal.
 
   - **Szezon–community generation commit** (`season.yml` → `community-goals.yml`): a community store tartós `season.number` markerrel jelöli, melyik szezonhoz tartozik a progressz. A zárás a community monitor alatt előbb rendezi az outboxot, majd commitolja az új `season.yml` generációt, és csak ezután nullázza/menti a community progresszt. Crash a két commit között egyetlen generációnyi marker-lemaradást hagy; bootkor ez idempotens resetként reconciliálódik. Függő régi payout, előreszaladt vagy több generációt átugró marker fail-closed.
 
@@ -624,18 +641,13 @@ Menedék vendége, de nem `NEUTRAL` polgár. A `FactionManager` API-jának szere
   hozhat létre új ingyenes első választást, és nem kerülheti meg a szezonvégi
   lockoutot vagy a szezonális váltási limitet.
 
-Quest, community goal, season source, council, tax, raid/duel/spy, caravan,
+Quest, community goal, season source, council, raid/duel/spy, caravan,
 dungeon/world-boss jutalom és minden más frakciós jogosultság ugyanebből az
 explicit modellből indul. Az onboarding fix `NEUTRAL` Creutzér-jutalma
-vendég-útravaló; nem tesz állampolgárrá. A vendég nincs az aktuális periodikus
-adóbeszedési körben, de a hiányzó assignment nem törölheti egy korábbi polgár
-adóhátralékát vagy adócsalási strike-ját. A `PlayerProfileTaxStore` minden
-tartozást és strike-ot az owner profil ECONOMY szekciójában, eredet-frakció szerint tart nyilván:
-váltáskor a régi tétel nem konvertálódik, hanem az eredeti valutából az eredeti kasszába
-törlesztődik. A legacy `tax-arrears` / `tax-evasion-strikes` import eredet-frakciója a scalar
-sémából nem bizonyítható, ezért nem kerül automatikusan új frakcióhoz. A támogatott runtime
-nem tart fenn külön YAML- vagy UUID-map authority-t: a PlayerProfile-tól független régi
-ledger/journal implementáció nincs bekötve.
+vendég-útravaló; nem tesz állampolgárrá. A periodikus adóbeszedés megszűnt.
+A `PlayerProfileTaxStore` régi debt/outbox adatai és a protokollmezők csak
+kompatibilitási formátumként maradnak, scheduler, játékosparancs és új beszedés
+nélkül. A támogatott runtime nem tart fenn külön YAML- vagy UUID-map authority-t.
 
 A `FactionManager` a teljes assignment+history generációt írja lemezre, mielőtt
 volatile live state-et vagy lifecycle-hookot publikál. Fizetős váltásnál a
@@ -704,9 +716,10 @@ a vad truce-ot felülírja**; provokáció és markerelt harci content szintén 
 A rejtett Suttogó-státusz ugyanezt a resolver/retaliation infrastruktúrát
 használja, de nem DARK polgárjog: alapból csak éjjel, targetenként `0.35`
 cancel-esélyt kap, Vérhold alatt leáll, provokációra `60 s`-re megtörik. A
-markerelt harci content itt is megelőzi. A truce tanúja külön
-`factions.whisper.truce-witness-*` gyanúágat indíthat; ez a rejtett státusz ára,
-nem faction-benefit assignment.
+markerelt harci content itt is megelőzi. A truce közeli tanúja a
+`WhisperEvidenceLedger` mulandó tanú–cél bejegyzését kapja. Egy bejegyzés csak a
+konkrét cél ellen és egyszer használható; három érvényes vád a tartós `CLEAN →
+OBSERVED → SUSPECTED → EXPOSED` állapotgépet lépteti. Nincs gyanúpont vagy decay.
 
 Minden `factions.passives.*` gameplay-érték reloadkor egyetlen config-generationből
 épülő új snapshotba kerül; `/icesmp reload` után restart nem szükséges. A
@@ -751,7 +764,7 @@ proximity/reward és más több-régiós hívási láncok valódi Folia tesztet 
 minták, amelyeket új kódnál is tartani kell:
 - **Nincs** legacy `Bukkit.getScheduler()` / `BukkitRunnable` / `runTask*` / nyers `Thread`/`Timer`/`Executor`.
 - **Nincs** szinkron `teleport(...)` — mindenhol `teleportAsync(...)`.
-- **Globális ismétlődő tickek** (`IceSMPCore`: world-events, HUD, pet, adó, gazdaság-esemény) csak
+- **Globális ismétlődő tickek** (`IceSMPCore`: world-events, HUD, pet, gazdaság-esemény) csak
   kockát dobnak / memóriabeli állapotot olvasnak; minden játékos-/entitás-munkára **hoppolnak**:
   `player.getScheduler().run(...)` (HUD, vér-hold), `pet.getScheduler().run(...)` (pet-mutáció),
   `anchor.getScheduler()` → `getRegionScheduler(location)` (world-boss / invázió mob-spawn).
@@ -1258,8 +1271,8 @@ Clicks only modify an in-memory per-admin session. **Save** performs one asynchr
 inventory or disconnecting writes nothing. Middle-click removes the override and restores the packaged default.
 A second admin save or external file edit makes an older session stale; stale sessions are rejected without overwriting data.
 
-Entries display whether their effect is live, applied by a reload hook, or requires a restart. In particular the faction-tax
-scheduler toggle/interval is restart-required; event safety and vanish capabilities are live/reload-safe.
+Entries display whether their effect is live, applied by a reload hook, or requires a restart. The former faction-tax
+scheduler controls are no longer exposed because the scheduler was removed; event safety and vanish capabilities are live/reload-safe.
 
 ## Frakcióhoz kötött játékosnév-színek
 
@@ -1911,8 +1924,8 @@ presentation).
 A `FACTION_STATE` a saját frakció display-projekciója a `FACTION_SCREEN` capability +
 `client.features.faction-screen` kapu mögött — az az adatkör, amit a /menu
 frakció-fejléce, a /faction king|treasury|raid status|war és az /events szezon-állása
-mutat: tagság (Menedék-vendégnél üres frakció-blokk), kincstár-egyenleg formázva +
-adókulcs, király + szavazat-tally (a menü-úttal azonos névfeloldással), szezon-állás
+mutat: tagság (Menedék-vendégnél üres frakció-blokk), kincstár-egyenleg formázva,
+király + szavazat-tally (a menü-úttal azonos névfeloldással), szezon-állás
 mind a négy frakcióra (publikus broadcast-adat — vendégnek is utazik), az élő raid
 teljes státusza és a hadi-ablak. A PlayerProfile-internals (membership-history,
 receipts, váltás-számlálók) nem kerülnek a vezetékre. Frakció-mutáció (join/leave)
@@ -1920,7 +1933,8 @@ szándékosan NEM protokoll-action: a csatlakozás forrás-kötött (a FactionSw
 csak a Menedék fővárosában validálja), egy kliens-csomag hely-authority bypass lenne
 — a váltás-folyamat a /faction és /menu validált útján marad. A perc-felbontású
 visszaszámlálók miatt a bájt-dedupe percenként legfeljebb egyszer enged ki friss
-state-et.
+state-et. A korábban kiadott kliensprotokoll adómezője bináris kompatibilitás miatt
+megmarad, de a szerver mindig `0` értéket küld és a natív UI nem jeleníti meg.
 
 ### FX-esemény csatorna (FX_EVENT, Phase 8b)
 
@@ -2018,3 +2032,291 @@ Invasion, Prologue, Cultist, Corruption, Wild Hunt, Escort és dungeon producer 
 ### Future Boundaries
 
 Nem része ennek a rendszernek: persistent world progression, local pressure/heat/ecology, custom model vagy texture pack, új weapon/off-hand tartalom és economy rewrite. Ezek csak külön, a gameplay staging elfogadása utáni scope-ok lehetnek.
+
+## A leltárból korábban kimaradt komponensek
+
+A következő táblázat a forrásfájl és a nyilvántartott felelősségi csoport pontos
+összerendelése. A típus/besorolás technikai forrásleltár, nem új játékosfunkció
+vagy szerveres teszteredmény. A működési szerződést az adott kaszt-, PvE-, tárgy-
+és perzisztencia-fejezetek, illetve a hivatkozott forrás rögzíti.
+
+| Komponens | Típus | Felelősségi csoport | Forrás |
+| --- | --- | --- | --- |
+| `ArcherCombatState` | `COMPONENT` | `` | [ArcherCombatState.java](../src/main/java/hu/taliann/icesmp/archer/ArcherCombatState.java) |
+| `ArcherGameplayService` | `SERVICE` | `feature.archer-gameplay` | [ArcherGameplayService.java](../src/main/java/hu/taliann/icesmp/archer/ArcherGameplayService.java) |
+| `ArcherShotLedger` | `COMPONENT` | `` | [ArcherShotLedger.java](../src/main/java/hu/taliann/icesmp/archer/ArcherShotLedger.java) |
+| `AssassinCombatState` | `COMPONENT` | `` | [AssassinCombatState.java](../src/main/java/hu/taliann/icesmp/assassin/AssassinCombatState.java) |
+| `AssassinGameplayService` | `SERVICE` | `feature.assassin-gameplay` | [AssassinGameplayService.java](../src/main/java/hu/taliann/icesmp/assassin/AssassinGameplayService.java) |
+| `ClassGameplaySignal` | `COMPONENT` | `` | [ClassGameplaySignal.java](../src/main/java/hu/taliann/icesmp/classrelic/ClassGameplaySignal.java) |
+| `ClassRelicResonanceContext` | `COMPONENT` | `` | [ClassRelicResonanceContext.java](../src/main/java/hu/taliann/icesmp/classrelic/ClassRelicResonanceContext.java) |
+| `PossessionSnapshot` | `COMPONENT` | `` | [PossessionSnapshot.java](../src/main/java/hu/taliann/icesmp/classrelic/PossessionSnapshot.java) |
+| `GameplayV2ClassPolicy` | `COMPONENT` | `` | [GameplayV2ClassPolicy.java](../src/main/java/hu/taliann/icesmp/classspec/application/GameplayV2ClassPolicy.java) |
+| `TargetRegistry` | `COMPONENT` | `` | [TargetRegistry.java](../src/main/java/hu/taliann/icesmp/classspec/application/TargetRegistry.java) |
+| `ClassHudMechanics` | `COMPONENT` | `` | [ClassHudMechanics.java](../src/main/java/hu/taliann/icesmp/classspec/integration/ClassHudMechanics.java) |
+| `ClassHudMetric` | `COMPONENT` | `` | [ClassHudMetric.java](../src/main/java/hu/taliann/icesmp/classspec/integration/ClassHudMetric.java) |
+| `ClassHudSlot` | `COMPONENT` | `` | [ClassHudSlot.java](../src/main/java/hu/taliann/icesmp/classspec/integration/ClassHudSlot.java) |
+| `ClassHudState` | `COMPONENT` | `` | [ClassHudState.java](../src/main/java/hu/taliann/icesmp/classspec/integration/ClassHudState.java) |
+| `ClassHudStateAdapter` | `COMPONENT` | `` | [ClassHudStateAdapter.java](../src/main/java/hu/taliann/icesmp/classspec/integration/ClassHudStateAdapter.java) |
+| `ClientCapability` | `COMPONENT` | `` | [ClientCapability.java](../src/main/java/hu/taliann/icesmp/client/ClientCapability.java) |
+| `ClientHandshake` | `COMPONENT` | `` | [ClientHandshake.java](../src/main/java/hu/taliann/icesmp/client/ClientHandshake.java) |
+| `ClientRateLimiter` | `COMPONENT` | `` | [ClientRateLimiter.java](../src/main/java/hu/taliann/icesmp/client/ClientRateLimiter.java) |
+| `ClientSession` | `COMPONENT` | `` | [ClientSession.java](../src/main/java/hu/taliann/icesmp/client/ClientSession.java) |
+| `ClientSessionRegistry` | `COMPONENT` | `` | [ClientSessionRegistry.java](../src/main/java/hu/taliann/icesmp/client/ClientSessionRegistry.java) |
+| `IceSmpClientBridge` | `INTEGRATION` | `feature.ice-smp-client` | [IceSmpClientBridge.java](../src/main/java/hu/taliann/icesmp/client/IceSmpClientBridge.java) |
+| `ClientFactionProjector` | `COMPONENT` | `` | [ClientFactionProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientFactionProjector.java) |
+| `ClientHudProjector` | `COMPONENT` | `` | [ClientHudProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientHudProjector.java) |
+| `ClientPartyProjector` | `COMPONENT` | `` | [ClientPartyProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientPartyProjector.java) |
+| `ClientProfessionProjector` | `COMPONENT` | `` | [ClientProfessionProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientProfessionProjector.java) |
+| `ClientProfileProjector` | `COMPONENT` | `` | [ClientProfileProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientProfileProjector.java) |
+| `ClientQuestProjector` | `COMPONENT` | `` | [ClientQuestProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientQuestProjector.java) |
+| `ClientRecipeProjector` | `COMPONENT` | `` | [ClientRecipeProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientRecipeProjector.java) |
+| `ClientRelicProjector` | `COMPONENT` | `` | [ClientRelicProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientRelicProjector.java) |
+| `ClientTalentProjector` | `COMPONENT` | `` | [ClientTalentProjector.java](../src/main/java/hu/taliann/icesmp/client/projection/ClientTalentProjector.java) |
+| `AbilityKitPayload` | `COMPONENT` | `` | [AbilityKitPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/AbilityKitPayload.java) |
+| `ActionResultPayload` | `COMPONENT` | `` | [ActionResultPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/ActionResultPayload.java) |
+| `BossStatePayload` | `COMPONENT` | `` | [BossStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/BossStatePayload.java) |
+| `BrowseRecipesPayload` | `COMPONENT` | `` | [BrowseRecipesPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/BrowseRecipesPayload.java) |
+| `CastSlotPayload` | `COMPONENT` | `` | [CastSlotPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/CastSlotPayload.java) |
+| `ClientHello` | `COMPONENT` | `` | [ClientHello.java](../src/main/java/hu/taliann/icesmp/client/protocol/ClientHello.java) |
+| `ClientMessageCodec` | `COMPONENT` | `` | [ClientMessageCodec.java](../src/main/java/hu/taliann/icesmp/client/protocol/ClientMessageCodec.java) |
+| `ClientProtocol` | `COMPONENT` | `` | [ClientProtocol.java](../src/main/java/hu/taliann/icesmp/client/protocol/ClientProtocol.java) |
+| `ClientProtocolException` | `COMPONENT` | `` | [ClientProtocolException.java](../src/main/java/hu/taliann/icesmp/client/protocol/ClientProtocolException.java) |
+| `FactionStatePayload` | `COMPONENT` | `` | [FactionStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/FactionStatePayload.java) |
+| `FxEventPayload` | `COMPONENT` | `` | [FxEventPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/FxEventPayload.java) |
+| `HudStatePayload` | `COMPONENT` | `` | [HudStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/HudStatePayload.java) |
+| `MessageEnvelope` | `COMPONENT` | `` | [MessageEnvelope.java](../src/main/java/hu/taliann/icesmp/client/protocol/MessageEnvelope.java) |
+| `PartyStatePayload` | `COMPONENT` | `` | [PartyStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/PartyStatePayload.java) |
+| `ProfessionActionPayload` | `COMPONENT` | `` | [ProfessionActionPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/ProfessionActionPayload.java) |
+| `ProfessionStatePayload` | `COMPONENT` | `` | [ProfessionStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/ProfessionStatePayload.java) |
+| `ProfileStatePayload` | `COMPONENT` | `` | [ProfileStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/ProfileStatePayload.java) |
+| `ProtocolReject` | `COMPONENT` | `` | [ProtocolReject.java](../src/main/java/hu/taliann/icesmp/client/protocol/ProtocolReject.java) |
+| `QuestStatePayload` | `COMPONENT` | `` | [QuestStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/QuestStatePayload.java) |
+| `QuestTrackPayload` | `COMPONENT` | `` | [QuestTrackPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/QuestTrackPayload.java) |
+| `RecipePagePayload` | `COMPONENT` | `` | [RecipePagePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/RecipePagePayload.java) |
+| `RelicAttachmentPayload` | `COMPONENT` | `` | [RelicAttachmentPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/RelicAttachmentPayload.java) |
+| `RelicStatePayload` | `COMPONENT` | `` | [RelicStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/RelicStatePayload.java) |
+| `ServerHello` | `COMPONENT` | `` | [ServerHello.java](../src/main/java/hu/taliann/icesmp/client/protocol/ServerHello.java) |
+| `SpellActionPayload` | `COMPONENT` | `` | [SpellActionPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/SpellActionPayload.java) |
+| `SpellbookStatePayload` | `COMPONENT` | `` | [SpellbookStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/SpellbookStatePayload.java) |
+| `TalentActionPayload` | `COMPONENT` | `` | [TalentActionPayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/TalentActionPayload.java) |
+| `TalentStatePayload` | `COMPONENT` | `` | [TalentStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/TalentStatePayload.java) |
+| `TerritoryStatePayload` | `COMPONENT` | `` | [TerritoryStatePayload.java](../src/main/java/hu/taliann/icesmp/client/protocol/TerritoryStatePayload.java) |
+| `PrologueCommand` | `COMMAND` | `feature.prologue` | [PrologueCommand.java](../src/main/java/hu/taliann/icesmp/commands/PrologueCommand.java) |
+| `FactionStatusSubcommand` | `COMPONENT` | `` | [FactionStatusSubcommand.java](../src/main/java/hu/taliann/icesmp/commands/faction/FactionStatusSubcommand.java) |
+| `DeathKnightCombatState` | `COMPONENT` | `` | [DeathKnightCombatState.java](../src/main/java/hu/taliann/icesmp/deathknight/DeathKnightCombatState.java) |
+| `DeathKnightGameplayService` | `SERVICE` | `feature.death-knight-gameplay` | [DeathKnightGameplayService.java](../src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java) |
+| `DemonHunterCombatState` | `COMPONENT` | `` | [DemonHunterCombatState.java](../src/main/java/hu/taliann/icesmp/demonhunter/DemonHunterCombatState.java) |
+| `DemonHunterGameplayService` | `SERVICE` | `feature.demon-hunter-gameplay` | [DemonHunterGameplayService.java](../src/main/java/hu/taliann/icesmp/demonhunter/DemonHunterGameplayService.java) |
+| `DruidCombatState` | `COMPONENT` | `` | [DruidCombatState.java](../src/main/java/hu/taliann/icesmp/druid/DruidCombatState.java) |
+| `DruidGameplayService` | `SERVICE` | `feature.druid-gameplay` | [DruidGameplayService.java](../src/main/java/hu/taliann/icesmp/druid/DruidGameplayService.java) |
+| `EvokerCombatState` | `COMPONENT` | `` | [EvokerCombatState.java](../src/main/java/hu/taliann/icesmp/evoker/EvokerCombatState.java) |
+| `EvokerGameplayService` | `SERVICE` | `feature.evoker-gameplay` | [EvokerGameplayService.java](../src/main/java/hu/taliann/icesmp/evoker/EvokerGameplayService.java) |
+| `WhisperSightline` | `COMPONENT` | `` | [WhisperSightline.java](../src/main/java/hu/taliann/icesmp/factions/WhisperSightline.java) |
+| `ClassGameplayConfigMenuGUI` | `GUI` | `feature.class-gameplay-config-menu` | [ClassGameplayConfigMenuGUI.java](../src/main/java/hu/taliann/icesmp/gui/ClassGameplayConfigMenuGUI.java) |
+| `ConfigStagedBatchValidator` | `GUI_COMPONENT` | `feature.config-staged-batch-validator` | [ConfigStagedBatchValidator.java](../src/main/java/hu/taliann/icesmp/gui/ConfigStagedBatchValidator.java) |
+| `ItemForgeGUI` | `GUI` | `feature.item-forge` | [ItemForgeGUI.java](../src/main/java/hu/taliann/icesmp/gui/ItemForgeGUI.java) |
+| `ItemForgeHolder` | `GUI_HOLDER` | `feature.item-forge` | [ItemForgeHolder.java](../src/main/java/hu/taliann/icesmp/gui/ItemForgeHolder.java) |
+| `ClassXpProgress` | `COMPONENT` | `` | [ClassXpProgress.java](../src/main/java/hu/taliann/icesmp/hud/ClassXpProgress.java) |
+| `HudComponent` | `COMPONENT` | `` | [HudComponent.java](../src/main/java/hu/taliann/icesmp/hud/HudComponent.java) |
+| `HudComponentLayout` | `COMPONENT` | `` | [HudComponentLayout.java](../src/main/java/hu/taliann/icesmp/hud/HudComponentLayout.java) |
+| `HudEditorAccessPolicy` | `COMPONENT` | `` | [HudEditorAccessPolicy.java](../src/main/java/hu/taliann/icesmp/hud/HudEditorAccessPolicy.java) |
+| `HudEditorStateMachine` | `COMPONENT` | `` | [HudEditorStateMachine.java](../src/main/java/hu/taliann/icesmp/hud/HudEditorStateMachine.java) |
+| `HudLayoutPreset` | `COMPONENT` | `` | [HudLayoutPreset.java](../src/main/java/hu/taliann/icesmp/hud/HudLayoutPreset.java) |
+| `HudLayoutSnapshot` | `COMPONENT` | `` | [HudLayoutSnapshot.java](../src/main/java/hu/taliann/icesmp/hud/HudLayoutSnapshot.java) |
+| `HudPreviewCatalog` | `COMPONENT` | `` | [HudPreviewCatalog.java](../src/main/java/hu/taliann/icesmp/hud/HudPreviewCatalog.java) |
+| `HudPreviewSelection` | `COMPONENT` | `` | [HudPreviewSelection.java](../src/main/java/hu/taliann/icesmp/hud/HudPreviewSelection.java) |
+| `IceSmpHudBackend` | `COMPONENT` | `` | [IceSmpHudBackend.java](../src/main/java/hu/taliann/icesmp/hud/IceSmpHudBackend.java) |
+| `IceSmpHudModel` | `COMPONENT` | `` | [IceSmpHudModel.java](../src/main/java/hu/taliann/icesmp/hud/IceSmpHudModel.java) |
+| `IceSmpHudRenderer` | `COMPONENT` | `` | [IceSmpHudRenderer.java](../src/main/java/hu/taliann/icesmp/hud/IceSmpHudRenderer.java) |
+| `PartyHudRenderer` | `COMPONENT` | `` | [PartyHudRenderer.java](../src/main/java/hu/taliann/icesmp/hud/PartyHudRenderer.java) |
+| `PartyHudState` | `COMPONENT` | `` | [PartyHudState.java](../src/main/java/hu/taliann/icesmp/hud/PartyHudState.java) |
+| `PlayerHudState` | `COMPONENT` | `` | [PlayerHudState.java](../src/main/java/hu/taliann/icesmp/hud/PlayerHudState.java) |
+| `SurvivalHudRenderer` | `COMPONENT` | `` | [SurvivalHudRenderer.java](../src/main/java/hu/taliann/icesmp/hud/SurvivalHudRenderer.java) |
+| `SurvivalHudState` | `COMPONENT` | `` | [SurvivalHudState.java](../src/main/java/hu/taliann/icesmp/hud/SurvivalHudState.java) |
+| `TargetFrameMetadataPolicy` | `COMPONENT` | `` | [TargetFrameMetadataPolicy.java](../src/main/java/hu/taliann/icesmp/hud/TargetFrameMetadataPolicy.java) |
+| `TargetFrameTracker` | `COMPONENT` | `` | [TargetFrameTracker.java](../src/main/java/hu/taliann/icesmp/hud/TargetFrameTracker.java) |
+| `TargetHudRenderer` | `COMPONENT` | `` | [TargetHudRenderer.java](../src/main/java/hu/taliann/icesmp/hud/TargetHudRenderer.java) |
+| `TargetHudState` | `COMPONENT` | `` | [TargetHudState.java](../src/main/java/hu/taliann/icesmp/hud/TargetHudState.java) |
+| `ArmorFamily` | `COMPONENT` | `` | [ArmorFamily.java](../src/main/java/hu/taliann/icesmp/itemization/ArmorFamily.java) |
+| `ArmorFamilyProfile` | `COMPONENT` | `` | [ArmorFamilyProfile.java](../src/main/java/hu/taliann/icesmp/itemization/ArmorFamilyProfile.java) |
+| `AtomicCursorRehome` | `COMPONENT` | `` | [AtomicCursorRehome.java](../src/main/java/hu/taliann/icesmp/itemization/AtomicCursorRehome.java) |
+| `BuildAwareLootService` | `SERVICE` | `feature.build-aware-loot` | [BuildAwareLootService.java](../src/main/java/hu/taliann/icesmp/itemization/BuildAwareLootService.java) |
+| `CanonicalPhysicalState` | `COMPONENT` | `` | [CanonicalPhysicalState.java](../src/main/java/hu/taliann/icesmp/itemization/CanonicalPhysicalState.java) |
+| `EquipmentBudgetModel` | `COMPONENT` | `` | [EquipmentBudgetModel.java](../src/main/java/hu/taliann/icesmp/itemization/EquipmentBudgetModel.java) |
+| `EquipmentCatalogValidator` | `COMPONENT` | `` | [EquipmentCatalogValidator.java](../src/main/java/hu/taliann/icesmp/itemization/EquipmentCatalogValidator.java) |
+| `EquipmentProficiencyPolicy` | `COMPONENT` | `` | [EquipmentProficiencyPolicy.java](../src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyPolicy.java) |
+| `EquipmentProficiencyService` | `SERVICE` | `feature.equipment-proficiency` | [EquipmentProficiencyService.java](../src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java) |
+| `EquipmentRehomeTransaction` | `COMPONENT` | `` | [EquipmentRehomeTransaction.java](../src/main/java/hu/taliann/icesmp/itemization/EquipmentRehomeTransaction.java) |
+| `ItemHistoryEvent` | `COMPONENT` | `` | [ItemHistoryEvent.java](../src/main/java/hu/taliann/icesmp/itemization/ItemHistoryEvent.java) |
+| `ItemIdentityService` | `SERVICE` | `feature.item-identity` | [ItemIdentityService.java](../src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java) |
+| `ItemInstance` | `COMPONENT` | `` | [ItemInstance.java](../src/main/java/hu/taliann/icesmp/itemization/ItemInstance.java) |
+| `ItemInstanceCodec` | `COMPONENT` | `` | [ItemInstanceCodec.java](../src/main/java/hu/taliann/icesmp/itemization/ItemInstanceCodec.java) |
+| `ItemMutationCoordinator` | `COMPONENT` | `` | [ItemMutationCoordinator.java](../src/main/java/hu/taliann/icesmp/itemization/ItemMutationCoordinator.java) |
+| `ItemMutationFaultMatrix` | `COMPONENT` | `` | [ItemMutationFaultMatrix.java](../src/main/java/hu/taliann/icesmp/itemization/ItemMutationFaultMatrix.java) |
+| `ItemMutationRecoveryPolicy` | `COMPONENT` | `` | [ItemMutationRecoveryPolicy.java](../src/main/java/hu/taliann/icesmp/itemization/ItemMutationRecoveryPolicy.java) |
+| `ItemMutationService` | `SERVICE` | `feature.item-mutation` | [ItemMutationService.java](../src/main/java/hu/taliann/icesmp/itemization/ItemMutationService.java) |
+| `ItemRarity` | `COMPONENT` | `` | [ItemRarity.java](../src/main/java/hu/taliann/icesmp/itemization/ItemRarity.java) |
+| `ItemSalvageService` | `SERVICE` | `feature.item-salvage` | [ItemSalvageService.java](../src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java) |
+| `ItemSetDefinition` | `COMPONENT` | `` | [ItemSetDefinition.java](../src/main/java/hu/taliann/icesmp/itemization/ItemSetDefinition.java) |
+| `ItemStatCatalog` | `COMPONENT` | `` | [ItemStatCatalog.java](../src/main/java/hu/taliann/icesmp/itemization/ItemStatCatalog.java) |
+| `ItemStatScaling` | `COMPONENT` | `` | [ItemStatScaling.java](../src/main/java/hu/taliann/icesmp/itemization/ItemStatScaling.java) |
+| `ItemState` | `COMPONENT` | `` | [ItemState.java](../src/main/java/hu/taliann/icesmp/itemization/ItemState.java) |
+| `ItemTemplate` | `COMPONENT` | `` | [ItemTemplate.java](../src/main/java/hu/taliann/icesmp/itemization/ItemTemplate.java) |
+| `ItemTemplateCatalogIndex` | `COMPONENT` | `` | [ItemTemplateCatalogIndex.java](../src/main/java/hu/taliann/icesmp/itemization/ItemTemplateCatalogIndex.java) |
+| `ItemTemplateRegistry` | `COMPONENT` | `` | [ItemTemplateRegistry.java](../src/main/java/hu/taliann/icesmp/itemization/ItemTemplateRegistry.java) |
+| `ItemTransformationPolicy` | `COMPONENT` | `` | [ItemTransformationPolicy.java](../src/main/java/hu/taliann/icesmp/itemization/ItemTransformationPolicy.java) |
+| `LootDiversityState` | `COMPONENT` | `` | [LootDiversityState.java](../src/main/java/hu/taliann/icesmp/itemization/LootDiversityState.java) |
+| `PaperSourceIntegrityRuntimeProbe` | `COMPONENT` | `` | [PaperSourceIntegrityRuntimeProbe.java](../src/main/java/hu/taliann/icesmp/itemization/PaperSourceIntegrityRuntimeProbe.java) |
+| `RuneMutationPolicy` | `COMPONENT` | `` | [RuneMutationPolicy.java](../src/main/java/hu/taliann/icesmp/itemization/RuneMutationPolicy.java) |
+| `SignatureEffectRegistry` | `COMPONENT` | `` | [SignatureEffectRegistry.java](../src/main/java/hu/taliann/icesmp/itemization/SignatureEffectRegistry.java) |
+| `RarityPresentationService` | `SERVICE` | `feature.rarity-presentation` | [RarityPresentationService.java](../src/main/java/hu/taliann/icesmp/items/RarityPresentationService.java) |
+| `WearablePresentation` | `ITEM` | `feature.wearable-presentation` | [WearablePresentation.java](../src/main/java/hu/taliann/icesmp/items/WearablePresentation.java) |
+| `EquipmentProficiencyListener` | `LISTENER` | `feature.equipment-proficiency` | [EquipmentProficiencyListener.java](../src/main/java/hu/taliann/icesmp/listeners/EquipmentProficiencyListener.java) |
+| `RareGatheringListener` | `LISTENER` | `feature.rare-gathering` | [RareGatheringListener.java](../src/main/java/hu/taliann/icesmp/listeners/RareGatheringListener.java) |
+| `VanillaCraftingBoundaryListener` | `LISTENER` | `feature.vanilla-crafting-boundary` | [VanillaCraftingBoundaryListener.java](../src/main/java/hu/taliann/icesmp/listeners/VanillaCraftingBoundaryListener.java) |
+| `ClientFxRoute` | `COMPONENT` | `` | [ClientFxRoute.java](../src/main/java/hu/taliann/icesmp/managers/ClientFxRoute.java) |
+| `DonationTransferLifecycle` | `COMPONENT` | `` | [DonationTransferLifecycle.java](../src/main/java/hu/taliann/icesmp/managers/DonationTransferLifecycle.java) |
+| `QuestPhysicalRewardDeliveryService` | `SERVICE` | `feature.quest-physical-reward-delivery` | [QuestPhysicalRewardDeliveryService.java](../src/main/java/hu/taliann/icesmp/managers/QuestPhysicalRewardDeliveryService.java) |
+| `MonkCombatState` | `COMPONENT` | `` | [MonkCombatState.java](../src/main/java/hu/taliann/icesmp/monk/MonkCombatState.java) |
+| `MonkGameplayService` | `SERVICE` | `feature.monk-gameplay` | [MonkGameplayService.java](../src/main/java/hu/taliann/icesmp/monk/MonkGameplayService.java) |
+| `PaladinCombatState` | `COMPONENT` | `` | [PaladinCombatState.java](../src/main/java/hu/taliann/icesmp/paladin/PaladinCombatState.java) |
+| `PaladinGameplayService` | `SERVICE` | `feature.paladin-gameplay` | [PaladinGameplayService.java](../src/main/java/hu/taliann/icesmp/paladin/PaladinGameplayService.java) |
+| `DeathEscrowDeliveryPlan` | `COMPONENT` | `` | [DeathEscrowDeliveryPlan.java](../src/main/java/hu/taliann/icesmp/playerprofile/application/DeathEscrowDeliveryPlan.java) |
+| `EconomyReceiptLedger` | `COMPONENT` | `` | [EconomyReceiptLedger.java](../src/main/java/hu/taliann/icesmp/playerprofile/application/EconomyReceiptLedger.java) |
+| `PlayerProfileLootDiversityStore` | `PERSISTENT_STORE` | `feature.player-profile-loot-diversity` | [PlayerProfileLootDiversityStore.java](../src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileLootDiversityStore.java) |
+| `PlayerProfileSeasonParticipationStore` | `PERSISTENT_STORE` | `feature.player-profile-season-participation` | [PlayerProfileSeasonParticipationStore.java](../src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileSeasonParticipationStore.java) |
+| `QuestRewardDeliveryProtocol` | `COMPONENT` | `` | [QuestRewardDeliveryProtocol.java](../src/main/java/hu/taliann/icesmp/playerprofile/application/QuestRewardDeliveryProtocol.java) |
+| `PriestCombatState` | `COMPONENT` | `` | [PriestCombatState.java](../src/main/java/hu/taliann/icesmp/priest/PriestCombatState.java) |
+| `PriestGameplayService` | `SERVICE` | `feature.priest-gameplay` | [PriestGameplayService.java](../src/main/java/hu/taliann/icesmp/priest/PriestGameplayService.java) |
+| `BlueprintRecoveryPolicy` | `COMPONENT` | `` | [BlueprintRecoveryPolicy.java](../src/main/java/hu/taliann/icesmp/professions/BlueprintRecoveryPolicy.java) |
+| `ProfessionCraftQualityPolicy` | `COMPONENT` | `` | [ProfessionCraftQualityPolicy.java](../src/main/java/hu/taliann/icesmp/professions/ProfessionCraftQualityPolicy.java) |
+| `ProfessionCraftTransaction` | `COMPONENT` | `` | [ProfessionCraftTransaction.java](../src/main/java/hu/taliann/icesmp/professions/ProfessionCraftTransaction.java) |
+| `ProfessionEconomyTelemetry` | `COMPONENT` | `` | [ProfessionEconomyTelemetry.java](../src/main/java/hu/taliann/icesmp/professions/ProfessionEconomyTelemetry.java) |
+| `ProfessionEffectiveCraftPlan` | `COMPONENT` | `` | [ProfessionEffectiveCraftPlan.java](../src/main/java/hu/taliann/icesmp/professions/ProfessionEffectiveCraftPlan.java) |
+| `ProfessionMaterialRegistry` | `COMPONENT` | `` | [ProfessionMaterialRegistry.java](../src/main/java/hu/taliann/icesmp/professions/ProfessionMaterialRegistry.java) |
+| `ProfessionSpecializationEconomyPolicy` | `COMPONENT` | `` | [ProfessionSpecializationEconomyPolicy.java](../src/main/java/hu/taliann/icesmp/professions/ProfessionSpecializationEconomyPolicy.java) |
+| `ProfessionsPaperRuntimeProbe` | `COMPONENT` | `` | [ProfessionsPaperRuntimeProbe.java](../src/main/java/hu/taliann/icesmp/professions/ProfessionsPaperRuntimeProbe.java) |
+| `BlockRewardOriginTracker` | `COMPONENT` | `` | [BlockRewardOriginTracker.java](../src/main/java/hu/taliann/icesmp/progression/BlockRewardOriginTracker.java) |
+| `ItemAcquisitionPolicy` | `COMPONENT` | `` | [ItemAcquisitionPolicy.java](../src/main/java/hu/taliann/icesmp/progression/ItemAcquisitionPolicy.java) |
+| `BreachSeverity` | `COMPONENT` | `` | [BreachSeverity.java](../src/main/java/hu/taliann/icesmp/prologue/BreachSeverity.java) |
+| `PrologueCeasefireListener` | `LISTENER` | `feature.prologue-ceasefire` | [PrologueCeasefireListener.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueCeasefireListener.java) |
+| `PrologueContentPolicy` | `COMPONENT` | `` | [PrologueContentPolicy.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueContentPolicy.java) |
+| `PrologueEncounterEngine` | `COMPONENT` | `` | [PrologueEncounterEngine.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueEncounterEngine.java) |
+| `PrologueFinaleManager` | `MANAGER` | `feature.prologue-finale` | [PrologueFinaleManager.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleManager.java) |
+| `PrologueFinalePhase` | `COMPONENT` | `` | [PrologueFinalePhase.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueFinalePhase.java) |
+| `PrologueFinaleRunState` | `COMPONENT` | `` | [PrologueFinaleRunState.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleRunState.java) |
+| `PrologueFinaleSafety` | `COMPONENT` | `` | [PrologueFinaleSafety.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleSafety.java) |
+| `PrologueFinaleSettlement` | `COMPONENT` | `` | [PrologueFinaleSettlement.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleSettlement.java) |
+| `PrologueHudController` | `COMPONENT` | `` | [PrologueHudController.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueHudController.java) |
+| `PrologueManager` | `MANAGER` | `feature.prologue` | [PrologueManager.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueManager.java) |
+| `PrologueParticipantTracker` | `COMPONENT` | `` | [PrologueParticipantTracker.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java) |
+| `ProloguePauseClock` | `COMPONENT` | `` | [ProloguePauseClock.java](../src/main/java/hu/taliann/icesmp/prologue/ProloguePauseClock.java) |
+| `PrologueProgression` | `COMPONENT` | `` | [PrologueProgression.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueProgression.java) |
+| `PrologueRewardService` | `SERVICE` | `feature.prologue-reward` | [PrologueRewardService.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueRewardService.java) |
+| `PrologueRuntime` | `COMPONENT` | `` | [PrologueRuntime.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java) |
+| `PrologueRuntimeConfigOverlay` | `COMPONENT` | `` | [PrologueRuntimeConfigOverlay.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueRuntimeConfigOverlay.java) |
+| `PrologueScaling` | `COMPONENT` | `` | [PrologueScaling.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueScaling.java) |
+| `PrologueSeasonTransition` | `COMPONENT` | `` | [PrologueSeasonTransition.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueSeasonTransition.java) |
+| `PrologueStage` | `COMPONENT` | `` | [PrologueStage.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueStage.java) |
+| `PrologueState` | `COMPONENT` | `` | [PrologueState.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueState.java) |
+| `PrologueTimelineController` | `COMPONENT` | `` | [PrologueTimelineController.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueTimelineController.java) |
+| `PrologueWorldAccess` | `COMPONENT` | `` | [PrologueWorldAccess.java](../src/main/java/hu/taliann/icesmp/prologue/PrologueWorldAccess.java) |
+| `AuthoredCreatureSpawnService` | `SERVICE` | `feature.authored-creature-spawn` | [AuthoredCreatureSpawnService.java](../src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java) |
+| `AuthoredPveContentValidator` | `COMPONENT` | `` | [AuthoredPveContentValidator.java](../src/main/java/hu/taliann/icesmp/pve/AuthoredPveContentValidator.java) |
+| `CombatPowerEstimator` | `COMPONENT` | `` | [CombatPowerEstimator.java](../src/main/java/hu/taliann/icesmp/pve/CombatPowerEstimator.java) |
+| `CombatTelemetry` | `COMPONENT` | `` | [CombatTelemetry.java](../src/main/java/hu/taliann/icesmp/pve/CombatTelemetry.java) |
+| `ContextualWeightedSelector` | `COMPONENT` | `` | [ContextualWeightedSelector.java](../src/main/java/hu/taliann/icesmp/pve/ContextualWeightedSelector.java) |
+| `ContributionLedger` | `COMPONENT` | `` | [ContributionLedger.java](../src/main/java/hu/taliann/icesmp/pve/ContributionLedger.java) |
+| `CreatureProfileService` | `SERVICE` | `feature.creature-profile` | [CreatureProfileService.java](../src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java) |
+| `CreatureSpeciesPolicy` | `COMPONENT` | `` | [CreatureSpeciesPolicy.java](../src/main/java/hu/taliann/icesmp/pve/CreatureSpeciesPolicy.java) |
+| `CreatureSpeciesRegistry` | `COMPONENT` | `` | [CreatureSpeciesRegistry.java](../src/main/java/hu/taliann/icesmp/pve/CreatureSpeciesRegistry.java) |
+| `DaylightProtectionPolicy` | `COMPONENT` | `` | [DaylightProtectionPolicy.java](../src/main/java/hu/taliann/icesmp/pve/DaylightProtectionPolicy.java) |
+| `EliteAffix` | `COMPONENT` | `` | [EliteAffix.java](../src/main/java/hu/taliann/icesmp/pve/EliteAffix.java) |
+| `EncounterRewardDeliveryService` | `SERVICE` | `feature.encounter-reward-delivery` | [EncounterRewardDeliveryService.java](../src/main/java/hu/taliann/icesmp/pve/EncounterRewardDeliveryService.java) |
+| `EncounterRewardRecoveryPolicy` | `COMPONENT` | `` | [EncounterRewardRecoveryPolicy.java](../src/main/java/hu/taliann/icesmp/pve/EncounterRewardRecoveryPolicy.java) |
+| `EncounterScalingPolicy` | `COMPONENT` | `` | [EncounterScalingPolicy.java](../src/main/java/hu/taliann/icesmp/pve/EncounterScalingPolicy.java) |
+| `EquippedCombatPowerModel` | `COMPONENT` | `` | [EquippedCombatPowerModel.java](../src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerModel.java) |
+| `EquippedCombatPowerService` | `SERVICE` | `feature.equipped-combat-power` | [EquippedCombatPowerService.java](../src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerService.java) |
+| `MobAbilityDefinition` | `COMPONENT` | `` | [MobAbilityDefinition.java](../src/main/java/hu/taliann/icesmp/pve/MobAbilityDefinition.java) |
+| `MobAbilityRegistry` | `COMPONENT` | `` | [MobAbilityRegistry.java](../src/main/java/hu/taliann/icesmp/pve/MobAbilityRegistry.java) |
+| `MobAbilityRuntime` | `COMPONENT` | `` | [MobAbilityRuntime.java](../src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java) |
+| `MobArchetype` | `COMPONENT` | `` | [MobArchetype.java](../src/main/java/hu/taliann/icesmp/pve/MobArchetype.java) |
+| `MobBehaviorProfile` | `COMPONENT` | `` | [MobBehaviorProfile.java](../src/main/java/hu/taliann/icesmp/pve/MobBehaviorProfile.java) |
+| `MobNaturalContext` | `COMPONENT` | `` | [MobNaturalContext.java](../src/main/java/hu/taliann/icesmp/pve/MobNaturalContext.java) |
+| `MobProgressionPolicy` | `COMPONENT` | `` | [MobProgressionPolicy.java](../src/main/java/hu/taliann/icesmp/pve/MobProgressionPolicy.java) |
+| `MobRank` | `COMPONENT` | `` | [MobRank.java](../src/main/java/hu/taliann/icesmp/pve/MobRank.java) |
+| `MobRankLootPolicy` | `COMPONENT` | `` | [MobRankLootPolicy.java](../src/main/java/hu/taliann/icesmp/pve/MobRankLootPolicy.java) |
+| `MobTechniqueAction` | `COMPONENT` | `` | [MobTechniqueAction.java](../src/main/java/hu/taliann/icesmp/pve/MobTechniqueAction.java) |
+| `MobTechniqueCondition` | `COMPONENT` | `` | [MobTechniqueCondition.java](../src/main/java/hu/taliann/icesmp/pve/MobTechniqueCondition.java) |
+| `MobTemplate` | `COMPONENT` | `` | [MobTemplate.java](../src/main/java/hu/taliann/icesmp/pve/MobTemplate.java) |
+| `MobTemplateRegistry` | `COMPONENT` | `` | [MobTemplateRegistry.java](../src/main/java/hu/taliann/icesmp/pve/MobTemplateRegistry.java) |
+| `OnboardingWelcomeCopy` | `COMPONENT` | `` | [OnboardingWelcomeCopy.java](../src/main/java/hu/taliann/icesmp/quest/OnboardingWelcomeCopy.java) |
+| `QuestCategory` | `COMPONENT` | `` | [QuestCategory.java](../src/main/java/hu/taliann/icesmp/quest/QuestCategory.java) |
+| `QuestChoiceRegistry` | `COMPONENT` | `` | [QuestChoiceRegistry.java](../src/main/java/hu/taliann/icesmp/quest/QuestChoiceRegistry.java) |
+| `QuestCurrencyResolver` | `COMPONENT` | `` | [QuestCurrencyResolver.java](../src/main/java/hu/taliann/icesmp/quest/QuestCurrencyResolver.java) |
+| `QuestGraphValidator` | `COMPONENT` | `` | [QuestGraphValidator.java](../src/main/java/hu/taliann/icesmp/quest/QuestGraphValidator.java) |
+| `QuestItemContentIntegrityPaperRuntimeProbe` | `COMPONENT` | `` | [QuestItemContentIntegrityPaperRuntimeProbe.java](../src/main/java/hu/taliann/icesmp/quest/QuestItemContentIntegrityPaperRuntimeProbe.java) |
+| `QuestMarkerPalette` | `COMPONENT` | `` | [QuestMarkerPalette.java](../src/main/java/hu/taliann/icesmp/quest/QuestMarkerPalette.java) |
+| `QuestSourceContext` | `COMPONENT` | `` | [QuestSourceContext.java](../src/main/java/hu/taliann/icesmp/quest/QuestSourceContext.java) |
+| `QuestSourcePolicy` | `COMPONENT` | `` | [QuestSourcePolicy.java](../src/main/java/hu/taliann/icesmp/quest/QuestSourcePolicy.java) |
+| `QuestVisibility` | `COMPONENT` | `` | [QuestVisibility.java](../src/main/java/hu/taliann/icesmp/quest/QuestVisibility.java) |
+| `RelicTransferExpectation` | `COMPONENT` | `` | [RelicTransferExpectation.java](../src/main/java/hu/taliann/icesmp/relics/RelicTransferExpectation.java) |
+| `RelicWorldStateSnapshot` | `COMPONENT` | `` | [RelicWorldStateSnapshot.java](../src/main/java/hu/taliann/icesmp/relics/RelicWorldStateSnapshot.java) |
+| `RelicWorldStateStore` | `PERSISTENT_STORE` | `feature.relic-world-state` | [RelicWorldStateStore.java](../src/main/java/hu/taliann/icesmp/relics/RelicWorldStateStore.java) |
+| `HiddenDevAuthority` | `COMPONENT` | `` | [HiddenDevAuthority.java](../src/main/java/hu/taliann/icesmp/security/HiddenDevAuthority.java) |
+| `ShamanCombatState` | `COMPONENT` | `` | [ShamanCombatState.java](../src/main/java/hu/taliann/icesmp/shaman/ShamanCombatState.java) |
+| `ShamanGameplayService` | `SERVICE` | `feature.shaman-gameplay` | [ShamanGameplayService.java](../src/main/java/hu/taliann/icesmp/shaman/ShamanGameplayService.java) |
+| `CastModifiers` | `SPELL_COMPONENT` | `feature.cast-modifiers` | [CastModifiers.java](../src/main/java/hu/taliann/icesmp/spells/CastModifiers.java) |
+| `CastOutcome` | `SPELL_COMPONENT` | `feature.cast-outcome` | [CastOutcome.java](../src/main/java/hu/taliann/icesmp/spells/CastOutcome.java) |
+| `DurableCompanionCallSpell` | `SPELL` | `feature.durable-companion-call` | [DurableCompanionCallSpell.java](../src/main/java/hu/taliann/icesmp/spells/DurableCompanionCallSpell.java) |
+| `SpellExecutionContext` | `SPELL_COMPONENT` | `feature.spell-execution-context` | [SpellExecutionContext.java](../src/main/java/hu/taliann/icesmp/spells/SpellExecutionContext.java) |
+| `ItemMutationJournal` | `PERSISTENT_STORE` | `feature.item-mutation-journal` | [ItemMutationJournal.java](../src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java) |
+| `ArchaeologyTooltipBridge` | `INTEGRATION` | `feature.archaeology-tooltip` | [ArchaeologyTooltipBridge.java](../src/main/java/hu/taliann/icesmp/trash/ArchaeologyTooltipBridge.java) |
+| `HiddenDiscipline` | `COMPONENT` | `` | [HiddenDiscipline.java](../src/main/java/hu/taliann/icesmp/trash/HiddenDiscipline.java) |
+| `TooltipPacketBridge_1_21_11` | `COMPONENT` | `` | [TooltipPacketBridge_1_21_11.java](../src/main/java/hu/taliann/icesmp/trash/TooltipPacketBridge_1_21_11.java) |
+| `TossableObjectRuntime` | `COMPONENT` | `` | [TossableObjectRuntime.java](../src/main/java/hu/taliann/icesmp/trash/TossableObjectRuntime.java) |
+| `TrashAmbientManager` | `MANAGER` | `feature.trash-ambient` | [TrashAmbientManager.java](../src/main/java/hu/taliann/icesmp/trash/TrashAmbientManager.java) |
+| `TrashAnomalyBehavior` | `COMPONENT` | `` | [TrashAnomalyBehavior.java](../src/main/java/hu/taliann/icesmp/trash/TrashAnomalyBehavior.java) |
+| `TrashAnomalyPolicy` | `COMPONENT` | `` | [TrashAnomalyPolicy.java](../src/main/java/hu/taliann/icesmp/trash/TrashAnomalyPolicy.java) |
+| `TrashAnomalyRuntime` | `COMPONENT` | `` | [TrashAnomalyRuntime.java](../src/main/java/hu/taliann/icesmp/trash/TrashAnomalyRuntime.java) |
+| `TrashAnomalyStateStore` | `PERSISTENT_STORE` | `feature.trash-anomaly-state` | [TrashAnomalyStateStore.java](../src/main/java/hu/taliann/icesmp/trash/TrashAnomalyStateStore.java) |
+| `TrashArchaeologyFactEngine` | `COMPONENT` | `` | [TrashArchaeologyFactEngine.java](../src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java) |
+| `TrashArchaeologyListener` | `LISTENER` | `feature.trash-archaeology` | [TrashArchaeologyListener.java](../src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyListener.java) |
+| `TrashArchaeologyProfileStore` | `PERSISTENT_STORE` | `feature.trash-archaeology-profile` | [TrashArchaeologyProfileStore.java](../src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyProfileStore.java) |
+| `TrashArchaeologyService` | `SERVICE` | `feature.trash-archaeology` | [TrashArchaeologyService.java](../src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyService.java) |
+| `TrashCatalog` | `COMPONENT` | `` | [TrashCatalog.java](../src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java) |
+| `TrashContext` | `COMPONENT` | `` | [TrashContext.java](../src/main/java/hu/taliann/icesmp/trash/TrashContext.java) |
+| `TrashContextResolver` | `COMPONENT` | `` | [TrashContextResolver.java](../src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java) |
+| `TrashDefinition` | `COMPONENT` | `` | [TrashDefinition.java](../src/main/java/hu/taliann/icesmp/trash/TrashDefinition.java) |
+| `TrashDevCommand` | `COMMAND` | `feature.trash-dev` | [TrashDevCommand.java](../src/main/java/hu/taliann/icesmp/trash/TrashDevCommand.java) |
+| `TrashFishingListener` | `LISTENER` | `feature.trash-fishing` | [TrashFishingListener.java](../src/main/java/hu/taliann/icesmp/trash/TrashFishingListener.java) |
+| `TrashHistoryEvent` | `COMPONENT` | `` | [TrashHistoryEvent.java](../src/main/java/hu/taliann/icesmp/trash/TrashHistoryEvent.java) |
+| `TrashHistoryJournal` | `COMPONENT` | `` | [TrashHistoryJournal.java](../src/main/java/hu/taliann/icesmp/trash/TrashHistoryJournal.java) |
+| `TrashHistoryListener` | `LISTENER` | `feature.trash-history` | [TrashHistoryListener.java](../src/main/java/hu/taliann/icesmp/trash/TrashHistoryListener.java) |
+| `TrashHistoryService` | `SERVICE` | `feature.trash-history` | [TrashHistoryService.java](../src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java) |
+| `TrashHistoryStore` | `PERSISTENT_STORE` | `feature.trash-history` | [TrashHistoryStore.java](../src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java) |
+| `TrashItemFactory` | `ITEM_FACTORY` | `feature.trash-item` | [TrashItemFactory.java](../src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java) |
+| `TrashKind` | `COMPONENT` | `` | [TrashKind.java](../src/main/java/hu/taliann/icesmp/trash/TrashKind.java) |
+| `TrashLifecyclePhase` | `COMPONENT` | `` | [TrashLifecyclePhase.java](../src/main/java/hu/taliann/icesmp/trash/TrashLifecyclePhase.java) |
+| `TrashLootSelector` | `COMPONENT` | `` | [TrashLootSelector.java](../src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java) |
+| `TrashLootService` | `SERVICE` | `feature.trash-loot` | [TrashLootService.java](../src/main/java/hu/taliann/icesmp/trash/TrashLootService.java) |
+| `TrashLootSource` | `COMPONENT` | `` | [TrashLootSource.java](../src/main/java/hu/taliann/icesmp/trash/TrashLootSource.java) |
+| `TrashLootTuning` | `COMPONENT` | `` | [TrashLootTuning.java](../src/main/java/hu/taliann/icesmp/trash/TrashLootTuning.java) |
+| `TrashMobDropListener` | `LISTENER` | `feature.trash-mob-drop` | [TrashMobDropListener.java](../src/main/java/hu/taliann/icesmp/trash/TrashMobDropListener.java) |
+| `TrashProductionRuntimeProbe` | `COMPONENT` | `` | [TrashProductionRuntimeProbe.java](../src/main/java/hu/taliann/icesmp/trash/TrashProductionRuntimeProbe.java) |
+| `TrashRecyclePool` | `COMPONENT` | `` | [TrashRecyclePool.java](../src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java) |
+| `TrashRelicBehavior` | `COMPONENT` | `` | [TrashRelicBehavior.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicBehavior.java) |
+| `TrashRelicPolicy` | `COMPONENT` | `` | [TrashRelicPolicy.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicPolicy.java) |
+| `TrashRelicRuntime` | `COMPONENT` | `` | [TrashRelicRuntime.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java) |
+| `TrashRuntimeTelemetry` | `COMPONENT` | `` | [TrashRuntimeTelemetry.java](../src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java) |
+| `TrashSourceBias` | `COMPONENT` | `` | [TrashSourceBias.java](../src/main/java/hu/taliann/icesmp/trash/TrashSourceBias.java) |
+| `TrashSpatialFractureStore` | `PERSISTENT_STORE` | `feature.trash-spatial-fracture` | [TrashSpatialFractureStore.java](../src/main/java/hu/taliann/icesmp/trash/TrashSpatialFractureStore.java) |
+| `TrashVendorService` | `SERVICE` | `feature.trash-vendor` | [TrashVendorService.java](../src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java) |
+| `PlatformCapabilities` | `COMPONENT` | `` | [PlatformCapabilities.java](../src/main/java/hu/taliann/icesmp/utils/PlatformCapabilities.java) |
+| `SpellHealingUtil` | `COMPONENT` | `` | [SpellHealingUtil.java](../src/main/java/hu/taliann/icesmp/utils/SpellHealingUtil.java) |
+| `WarlockCombatState` | `COMPONENT` | `` | [WarlockCombatState.java](../src/main/java/hu/taliann/icesmp/warlock/WarlockCombatState.java) |
+| `WarlockGameplayService` | `SERVICE` | `feature.warlock-gameplay` | [WarlockGameplayService.java](../src/main/java/hu/taliann/icesmp/warlock/WarlockGameplayService.java) |
+| `WarriorCombatState` | `COMPONENT` | `` | [WarriorCombatState.java](../src/main/java/hu/taliann/icesmp/warrior/WarriorCombatState.java) |
+| `WarriorGameplayService` | `SERVICE` | `feature.warrior-gameplay` | [WarriorGameplayService.java](../src/main/java/hu/taliann/icesmp/warrior/WarriorGameplayService.java) |
+| `WizardCombatState` | `COMPONENT` | `` | [WizardCombatState.java](../src/main/java/hu/taliann/icesmp/wizard/WizardCombatState.java) |
+| `WizardGameplayService` | `SERVICE` | `feature.wizard-gameplay` | [WizardGameplayService.java](../src/main/java/hu/taliann/icesmp/wizard/WizardGameplayService.java) |

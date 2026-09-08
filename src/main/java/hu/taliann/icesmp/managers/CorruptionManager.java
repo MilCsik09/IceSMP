@@ -713,6 +713,8 @@ public final class CorruptionManager implements PersistentStore {
         pendingSpawns.set(0);
 
         factionManager.getChosenFaction(cleanser.getUniqueId()).ifPresent(faction ->
+                seasonManager.recordContribution(cleanser.getUniqueId(), faction, "cleanse"));
+        factionManager.getChosenFaction(cleanser.getUniqueId()).ifPresent(faction ->
                 seasonManager.addPoints(faction,
                         configManager.getInt("corruption.season-points", 0), "cleanse"));
         Bukkit.getServer().broadcast(messageManager.getMessage(

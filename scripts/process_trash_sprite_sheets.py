@@ -25,6 +25,12 @@ TARGET_SIZE = 64
 CONTENT_SIZE = 56
 
 
+def pixels(image: Image.Image):
+    """Keep the same pixel checks on CI's Pillow 11 and newer local versions."""
+    getter = getattr(image, "get_flattened_data", None)
+    return getter() if getter is not None else image.getdata()
+
+
 def load_authority() -> tuple[list[str], list[str], dict[str, object]]:
     catalog = yaml.safe_load(CATALOG.read_text(encoding="utf-8"))
     item_ids = list(catalog["items"])
@@ -157,10 +163,10 @@ def validate(require_complete: bool, check_only: bool) -> None:
         image = Image.open(path)
         if image.size != (64, 64) or image.mode != "RGBA":
             raise ValueError(f"invalid final Trash sprite: {path}")
-        alpha_values = set(image.getchannel("A").get_flattened_data())
+        alpha_values = set(pixels(image.getchannel("A")))
         if not alpha_values.issubset({0, 255}) or 0 not in alpha_values or 255 not in alpha_values:
             raise ValueError(f"Trash sprite must use non-empty binary alpha: {path}")
-        colours = {pixel[:3] for pixel in image.get_flattened_data() if pixel[3] == 255}
+        colours = {pixel[:3] for pixel in pixels(image) if pixel[3] == 255}
         if not 1 <= len(colours) <= 8:
             raise ValueError(f"Trash sprite tone budget must be 1..8: {path} has {len(colours)}")
 

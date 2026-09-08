@@ -3,7 +3,6 @@ package hu.taliann.icesmp.commands.faction;
 import static hu.taliann.icesmp.utils.TabCompleteUtil.prefixAt;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.FactionManager;
-import hu.taliann.icesmp.managers.FactionTreasuryManager;
 import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Bukkit;
@@ -25,45 +24,13 @@ public final class FactionKingSubcommand implements FactionSubcommand {
 
     private final KingManager kingManager;
     private final FactionManager factionManager;
-    private final FactionTreasuryManager treasuryManager;
     private final MessageManager messageManager;
 
     public FactionKingSubcommand(final KingManager kingManager, final FactionManager factionManager,
-                                 final FactionTreasuryManager treasuryManager, final MessageManager messageManager) {
+                                 final MessageManager messageManager) {
         this.kingManager = kingManager;
         this.factionManager = factionManager;
-        this.treasuryManager = treasuryManager;
         this.messageManager = messageManager;
-    }
-
-    private boolean handleTax(final CommandSender sender, final String rawPercent) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(messageManager.get("messages.player-only", "&cEzt a parancsot csak játékos használhatja."));
-            return true;
-        }
-
-        if (!kingManager.isKing(player)) {
-            sender.sendMessage(messageManager.get("messages.faction-king-tax-not-king", "&cAdókulcsot csak a frakciód királya állíthat."));
-            return true;
-        }
-
-        final double requested;
-        try {
-            requested = Double.parseDouble(rawPercent);
-        } catch (final NumberFormatException exception) {
-            sender.sendMessage(messageManager.get("messages.invalid-amount", "&cÉrvénytelen összeg."));
-            return true;
-        }
-
-        final FactionType faction = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
-        if (faction == null) {
-            sender.sendMessage(messageManager.get("messages.faction-choose-first",
-                    "&cKirályi jogokhoz előbb válassz frakciót: &f/faction join <frakció>&c."));
-            return true;
-        }
-        final double applied = treasuryManager.setTaxRate(faction, requested);
-        sender.sendMessage(messageManager.get("messages.faction-king-tax-set", "&aA(z) %s frakció adókulcsa beállítva: &f%s%%", faction.getDisplayName(), applied));
-        return true;
     }
 
     @Override
@@ -93,10 +60,6 @@ public final class FactionKingSubcommand implements FactionSubcommand {
 
         if (args.length >= 2 && "clear".equalsIgnoreCase(args[0])) {
             return handleClear(sender, args[1]);
-        }
-
-        if (args.length >= 2 && "tax".equalsIgnoreCase(args[0])) {
-            return handleTax(sender, args[1]);
         }
 
         return handleInfo(sender);
@@ -129,6 +92,8 @@ public final class FactionKingSubcommand implements FactionSubcommand {
                         : String.valueOf(Bukkit.getOfflinePlayer(king).getName())
         ));
 
+        sender.sendMessage(messageManager.get("messages.faction-king-quorum",
+                "&7Választási küszöb: &f%s &7szavazat. Új választás a mandátum lejárta után.", kingManager.requiredVotes(faction)));
         final Map<UUID, Integer> tally = kingManager.getTally(faction);
         for (final Map.Entry<UUID, Integer> entry : tally.entrySet()) {
             sender.sendMessage(messageManager.get(
@@ -156,7 +121,7 @@ public final class FactionKingSubcommand implements FactionSubcommand {
         if (!kingManager.vote(player, candidate.getUniqueId())) {
             sender.sendMessage(messageManager.get(
                     "messages.faction-king-vote-failed",
-                    "&cNem szavazhatsz: a jelöltnek a te frakciód tagjának kell lennie (és a frakciódnak lehet uralkodója)."
+                    "&cSzavazni csak üres trónra, saját frakciótagra lehet. A frakciónak királyságot kell használnia. Részletek: /faction king"
             ));
             return true;
         }
@@ -208,8 +173,8 @@ public final class FactionKingSubcommand implements FactionSubcommand {
     @Override
     public List<String> tabComplete(final CommandSender sender, final String[] args) {
         final List<String> options = sender.hasPermission(ADMIN_PERMISSION)
-                ? List.of("vote", "tax", "set", "clear")
-                : List.of("vote", "tax");
+                ? List.of("vote", "set", "clear")
+                : List.of("vote");
         final String action = prefixAt(args, 0);
         final boolean actionComplete = options.contains(action);
 
