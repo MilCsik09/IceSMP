@@ -24,8 +24,9 @@ import java.util.function.BooleanSupplier;
 /** Durable hidden provenance indexed by opaque item-instance UUID. */
 public final class TrashHistoryStore implements PersistentStore {
 
-    private static final int SCHEMA_VERSION = 3;
-    private static final int JOURNAL_SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 4;
+    private static final int JOURNAL_SCHEMA_VERSION = 2;
+    private static final int MAX_WALL_OPERATIONS = 1_024;
     private static final int MAX_INSTANCES = 100_000;
     private static final int MAX_EVENTS = 64;
     private static final int MAX_OWNERS = 64;
@@ -43,6 +44,7 @@ public final class TrashHistoryStore implements PersistentStore {
     private final JournalAppender journalAppender;
     private final Map<UUID, StoredHistory> histories = new LinkedHashMap<>();
     private final Map<UUID, StoredVendorReceipt> vendorReceipts = new LinkedHashMap<>();
+    private final Map<UUID, WallReceipt> wallReceipts = new LinkedHashMap<>();
     private long sequence;
     private int journalRecords;
     private TransactionFrame activeTransaction;
@@ -76,20 +78,24 @@ public final class TrashHistoryStore implements PersistentStore {
             readable = false;
             histories.clear();
             vendorReceipts.clear();
+            wallReceipts.clear();
             sequence = 0L;
             journalRecords = 0;
             activeTransaction = null;
             replayingJournal = false;
             if (file.exists()) {
                 final YamlConfiguration yaml = YamlStore.loadTracked(file, logger);
-                if (yaml.getInt("schema-version", 0) != SCHEMA_VERSION) {
+                final int schema = yaml.getInt("schema-version", 0);
+                if (schema != 3 && schema != SCHEMA_VERSION) {
                     YamlStore.failCorrupt(file, logger,
-                            "trash history schema-version must be exactly " + SCHEMA_VERSION);
+                            "trash history schema-version must be 3 or " + SCHEMA_VERSION);
                 }
                 sequence = yaml.getLong("last-sequence", -1L);
                 if (sequence < 0L) corrupt("érvénytelen Trash history snapshot sequence");
                 loadHistories(yaml.getConfigurationSection("instances"));
                 loadVendorReceipts(yaml.getConfigurationSection("vendor-operations"));
+                if (schema == 3 && yaml.contains("wall-operations")) corrupt("wall receipt in legacy schema");
+                loadWallReceipts(yaml, "wall-operations");
             }
             final TrashHistoryJournal.LoadResult recovered = journal.loadAfter(sequence);
             for (final TrashHistoryJournal.Record record : recovered.records()) {
@@ -184,6 +190,107 @@ public final class TrashHistoryStore implements PersistentStore {
                 corrupt("duplikált Trash history vendor operation");
             }
         }
+    }
+
+    private void loadWallReceipts(final ConfigurationSection root, final String path) {
+        if (!root.contains(path)) return;
+        final ConfigurationSection section = root.getConfigurationSection(path);
+        if (section == null) corrupt("wall receipts are not an object");
+        if (section.getKeys(false).size() + wallReceipts.size() > MAX_WALL_OPERATIONS) {
+            corrupt("too many unresolved wall operations");
+        }
+        for (final String key : section.getKeys(false)) {
+            final ConfigurationSection value = section.getConfigurationSection(key);
+            if (value == null) corrupt("wall receipt is not an object");
+            for (final String numeric : List.of("revision", "before-revision", "consumed-at", "expires-at")) {
+                if (!value.isLong(numeric) && !value.isInt(numeric)) corrupt("wall receipt integer has the wrong type");
+            }
+            final WallReceipt receipt;
+            try {
+                receipt = new WallReceipt(parseUuid(key, "wall operation"),
+                        parseUuid(value.getString("actor", ""), "wall actor"),
+                        parseUuid(value.getString("world", ""), "wall world"),
+                        parseUuid(value.getString("projectile", ""), "wall projectile"),
+                        parseUuid(value.getString("instance", ""), "wall instance"),
+                        value.getLong("revision", -1L), value.getString("trash-id", ""),
+                        value.getString("phase", ""), value.getLong("consumed-at", -1L),
+                        new TrashRuleFieldService.RuleField(parseUuid(key, "wall field"),
+                                TrashRuleFieldService.FieldKind.PROJECTILE_WALL,
+                                new TrashRuleFieldService.Point(parseUuid(value.getString("world", ""), "wall world"),
+                                        value.getDouble("x", Double.NaN), value.getDouble("y", Double.NaN),
+                                        value.getDouble("z", Double.NaN)), value.getDouble("radius", Double.NaN),
+                                value.getLong("expires-at", -1L), parseUuid(value.getString("actor", ""), "wall owner"),
+                                value.getString("reservation", "")), value.getLong("before-revision", -1L));
+                validateWallReceipt(receipt);
+            } catch (final RuntimeException invalid) {
+                corrupt("invalid unresolved wall receipt");
+                throw new AssertionError("unreachable", invalid);
+            }
+            if (wallReceipts.putIfAbsent(receipt.operationId(), receipt) != null) {
+                corrupt("duplicate wall operation");
+            }
+        }
+    }
+
+    private void validateWallReceipt(final WallReceipt receipt) {
+        final StoredHistory history = histories.get(receipt.instanceId());
+        final TrashDefinition definition = catalog.find(receipt.baseId()).orElseThrow();
+        if (!definition.behavior().equals(TrashRelicBehavior.TEGLA.name())
+                || !definition.successPhase().equals(receipt.phase()) || history == null
+                || !history.baseId().equals(receipt.baseId()) || !history.phase().equals(receipt.phase())
+                || history.revision() != receipt.revision()
+                || history.events().isEmpty()
+                || history.events().getLast().type() != TrashHistoryEvent.TRANSFORMED
+                || !receipt.actor().equals(history.events().getLast().actor())) {
+            throw new IllegalStateException("wall receipt does not match consumed native history");
+        }
+        if (wallReceipts.values().stream().anyMatch(existing ->
+                !existing.operationId().equals(receipt.operationId())
+                        && (existing.instanceId().equals(receipt.instanceId())
+                        || existing.projectileId().equals(receipt.projectileId())))) {
+            throw new IllegalStateException("wall instance or projectile already has an unresolved operation");
+        }
+    }
+
+    /** Records the consumed item and pending effect in the same native history transaction. */
+    public void putWallReceipt(final WallReceipt receipt) {
+        stateLock.lock();
+        try {
+            requireLoadedAcknowledgement();
+            final TransactionFrame frame = requireTransaction();
+            Objects.requireNonNull(receipt, "receipt");
+            if (wallReceipts.size() >= MAX_WALL_OPERATIONS || wallReceipts.containsKey(receipt.operationId())) {
+                throw new IllegalStateException("wall receipt admission refused");
+            }
+            validateWallReceipt(receipt);
+            final StoredHistory before = frame.historyBefore().get(receipt.instanceId());
+            if (before == null || !before.phase().equals("base") || before.revision() != receipt.beforeRevision()) {
+                throw new IllegalStateException("wall receipt requires consumption in this transaction");
+            }
+            frame.wallBefore().putIfAbsent(receipt.operationId(), null);
+            wallReceipts.put(receipt.operationId(), receipt);
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Busy/unassessed state is unavailable, never a fabricated empty recovery inventory. */
+    public Optional<List<WallReceipt>> tryInspectWallReceipts() {
+        if (stateLock.isHeldByCurrentThread() || !stateLock.tryLock()) return Optional.empty();
+        try {
+            return readable ? Optional.of(List.copyOf(wallReceipts.values())) : Optional.empty();
+        } finally { stateLock.unlock(); }
+    }
+
+    /** The caller must supply a fresh owner-local removal observation; no inference from UUID absence. */
+    public boolean tryConfirmWallRemoval(final WallReceipt expected, final BooleanSupplier observedRemoved) {
+        Objects.requireNonNull(expected, "expected");
+        return tryTransact(() -> expected.equals(wallReceipts.get(expected.operationId()))
+                        && observedRemoved.getAsBoolean(),
+                () -> {
+                    final TransactionFrame frame = requireTransaction();
+                    frame.wallBefore().put(expected.operationId(), wallReceipts.remove(expected.operationId()));
+                }, null);
     }
 
     @Override
@@ -456,14 +563,15 @@ public final class TrashHistoryStore implements PersistentStore {
             if (!readable) return Optional.empty();
             final StoredHistory history = histories.get(instanceId);
             return Optional.of(new Inspection(sequence, history == null
-                    ? Optional.empty() : Optional.of(snapshot(instanceId, history))));
+                    ? Optional.empty() : Optional.of(snapshot(instanceId, history)),
+                    wallReceipts.values().stream().filter(receipt -> receipt.instanceId().equals(instanceId)).findFirst()));
         } finally {
             stateLock.unlock();
         }
     }
 
-    public record Inspection(long sequence, Optional<Snapshot> history) {
-        public Inspection { Objects.requireNonNull(history, "history"); }
+    public record Inspection(long sequence, Optional<Snapshot> history, Optional<WallReceipt> pendingWall) {
+        public Inspection { Objects.requireNonNull(history, "history"); Objects.requireNonNull(pendingWall, "pendingWall"); }
     }
 
     private void requireLoadedAcknowledgement() {
@@ -478,6 +586,9 @@ public final class TrashHistoryStore implements PersistentStore {
 
     private void putHistory(final UUID instanceId, final StoredHistory history) {
         final TransactionFrame frame = requireTransaction();
+        if (wallReceipts.values().stream().anyMatch(receipt -> receipt.instanceId().equals(instanceId))) {
+            throw new IllegalStateException("unresolved wall consumption fences further instance mutation");
+        }
         if (!frame.historyBefore().containsKey(instanceId)) {
             frame.historyBefore().put(instanceId, histories.get(instanceId));
         }
@@ -516,6 +627,10 @@ public final class TrashHistoryStore implements PersistentStore {
             if (entry.getValue() == null) vendorReceipts.remove(entry.getKey());
             else vendorReceipts.put(entry.getKey(), entry.getValue());
         }
+        for (final var entry : frame.wallBefore().entrySet()) {
+            if (entry.getValue() == null) wallReceipts.remove(entry.getKey());
+            else wallReceipts.put(entry.getKey(), entry.getValue());
+        }
     }
 
     private String journalPayload(final TransactionFrame frame) {
@@ -535,6 +650,13 @@ public final class TrashHistoryStore implements PersistentStore {
             else writeVendorReceipt(yaml, "vendor-receipts." + operationId, receipt);
         }
         yaml.set("removed-vendor-receipts", removedReceipts);
+        final List<String> removedWalls = new ArrayList<>();
+        for (final UUID operation : frame.wallBefore().keySet()) {
+            final WallReceipt receipt = wallReceipts.get(operation);
+            if (receipt == null) removedWalls.add(operation.toString());
+            else writeWallReceipt(yaml, "wall-receipts." + operation, receipt);
+        }
+        yaml.set("removed-wall-receipts", removedWalls);
         return yaml.saveToString();
     }
 
@@ -548,8 +670,12 @@ public final class TrashHistoryStore implements PersistentStore {
                 journal.corrupt("nem értelmezhető Trash history journal payload");
                 throw new AssertionError("unreachable", malformed);
             }
-            if (yaml.getInt("schema-version", 0) != JOURNAL_SCHEMA_VERSION) {
+            final int schema = yaml.getInt("schema-version", 0);
+            if (schema != 1 && schema != JOURNAL_SCHEMA_VERSION) {
                 journal.corrupt("ismeretlen Trash history journal payload schema");
+            }
+            if (schema == 1 && (yaml.contains("wall-receipts") || yaml.contains("removed-wall-receipts"))) {
+                journal.corrupt("wall receipt in legacy journal schema");
             }
             for (final String raw : yaml.getStringList("removed-histories")) {
                 histories.remove(parseJournalUuid(raw, "removed history"));
@@ -581,6 +707,20 @@ public final class TrashHistoryStore implements PersistentStore {
                 }
                 loadVendorReceipts(changedReceipts);
             }
+            if (yaml.contains("removed-wall-receipts") && !yaml.isList("removed-wall-receipts")) {
+                journal.corrupt("removed wall receipts are not a list");
+            }
+            for (final Object raw : yaml.getList("removed-wall-receipts", List.of())) {
+                if (!(raw instanceof String)) journal.corrupt("removed wall receipt is not a UUID string");
+                if (wallReceipts.remove(parseJournalUuid((String) raw, "removed wall receipt")) == null) {
+                    journal.corrupt("completion references an unknown wall operation");
+                }
+            }
+            loadWallReceipts(yaml, "wall-receipts");
+            for (final WallReceipt receipt : wallReceipts.values()) {
+                try { validateWallReceipt(receipt); }
+                catch (final RuntimeException invalid) { journal.corrupt("stale unresolved wall receipt"); }
+            }
         } finally {
             replayingJournal = false;
         }
@@ -606,6 +746,9 @@ public final class TrashHistoryStore implements PersistentStore {
         for (final Map.Entry<UUID, StoredVendorReceipt> entry : vendorReceipts.entrySet()) {
             final String path = "vendor-operations." + entry.getKey();
             writeVendorReceipt(yaml, path, entry.getValue());
+        }
+        for (final WallReceipt receipt : wallReceipts.values()) {
+            writeWallReceipt(yaml, "wall-operations." + receipt.operationId(), receipt);
         }
         try {
             YamlStore.saveAtomic(file, yaml);
@@ -645,6 +788,25 @@ public final class TrashHistoryStore implements PersistentStore {
         yaml.set(path + ".amount", receipt.amount());
         yaml.set(path + ".units", receipt.units().stream()
                 .map(unit -> unit.instanceId() + ":" + unit.revision()).toList());
+    }
+
+    private static void writeWallReceipt(final YamlConfiguration yaml, final String path,
+                                         final WallReceipt receipt) {
+        yaml.set(path + ".actor", receipt.actor().toString());
+        yaml.set(path + ".world", receipt.worldId().toString());
+        yaml.set(path + ".projectile", receipt.projectileId().toString());
+        yaml.set(path + ".instance", receipt.instanceId().toString());
+        yaml.set(path + ".revision", receipt.revision());
+        yaml.set(path + ".trash-id", receipt.baseId());
+        yaml.set(path + ".phase", receipt.phase());
+        yaml.set(path + ".consumed-at", receipt.consumedAt());
+        yaml.set(path + ".before-revision", receipt.beforeRevision());
+        yaml.set(path + ".x", receipt.field().center().x());
+        yaml.set(path + ".y", receipt.field().center().y());
+        yaml.set(path + ".z", receipt.field().center().z());
+        yaml.set(path + ".radius", receipt.field().radius());
+        yaml.set(path + ".expires-at", receipt.field().expiresAt());
+        yaml.set(path + ".reservation", receipt.field().reservationToken());
     }
 
     private StoredHistory requireMatching(final UUID instanceId, final String baseId,
@@ -777,13 +939,14 @@ public final class TrashHistoryStore implements PersistentStore {
     }
 
     private record TransactionFrame(Map<UUID, StoredHistory> historyBefore,
-                                    Map<UUID, StoredVendorReceipt> receiptBefore) {
+                                    Map<UUID, StoredVendorReceipt> receiptBefore,
+                                    Map<UUID, WallReceipt> wallBefore) {
         private TransactionFrame() {
-            this(new LinkedHashMap<>(), new LinkedHashMap<>());
+            this(new LinkedHashMap<>(), new LinkedHashMap<>(), new LinkedHashMap<>());
         }
 
         private boolean changed() {
-            return !historyBefore.isEmpty() || !receiptBefore.isEmpty();
+            return !historyBefore.isEmpty() || !receiptBefore.isEmpty() || !wallBefore.isEmpty();
         }
     }
 
@@ -801,6 +964,24 @@ public final class TrashHistoryStore implements PersistentStore {
         public Snapshot {
             events = List.copyOf(events);
             owners = Set.copyOf(owners);
+        }
+    }
+
+    public record WallReceipt(UUID operationId, UUID actor, UUID worldId, UUID projectileId,
+                              UUID instanceId, long revision, String baseId, String phase, long consumedAt,
+                              TrashRuleFieldService.RuleField field, long beforeRevision) {
+        public WallReceipt {
+            Objects.requireNonNull(operationId); Objects.requireNonNull(actor);
+            Objects.requireNonNull(worldId); Objects.requireNonNull(projectileId);
+            Objects.requireNonNull(instanceId); Objects.requireNonNull(baseId); Objects.requireNonNull(phase);
+            Objects.requireNonNull(field);
+            if (beforeRevision < 1 || revision <= beforeRevision || consumedAt < 1
+                    || consumedAt >= field.expiresAt() || baseId.isBlank() || phase.isBlank()
+                    || field.kind() != TrashRuleFieldService.FieldKind.PROJECTILE_WALL
+                    || field.reservationToken() == null || !operationId.equals(field.id())
+                    || !actor.equals(field.owner()) || !worldId.equals(field.center().world())) {
+                throw new IllegalArgumentException("invalid wall receipt");
+            }
         }
     }
 

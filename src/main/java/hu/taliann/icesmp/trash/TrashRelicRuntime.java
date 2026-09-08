@@ -663,26 +663,47 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                 && Bukkit.isOwnedByCurrentRegion(projectile) && owner.isOnline() && projectile.isValid()
                 && owner.getWorld().getUID().equals(field.center().world())
                 && ruleFields.contains(field) && ruleFields.isClaimed(field.id());
+        final var consumed = new java.util.concurrent.atomic.AtomicReference<TrashHistoryStore.WallReceipt>();
         return TrashRelicPolicy.completeProjectileWall(owner != null
                         && Bukkit.isOwnedByCurrentRegion(owner)
                         && Bukkit.isOwnedByCurrentRegion(projectile),
                 admitted,
-                () -> consumeBrickReservation(owner, field.reservationToken(), admitted),
                 () -> {
-                    ruleFields.remove(field);
-                    projectile.remove();
+                    consumed.set(consumeBrickReservation(owner, field, projectile.getUniqueId(), admitted));
+                    return consumed.get() != null;
+                },
+                () -> {
+                    try {
+                        // The consume acknowledgement may arrive after field expiry or shutdown.
+                        // Preserve the receipt rather than projecting an effect outside its admission.
+                        if (!admitted.getAsBoolean()) {
+                            telemetry.recordBehaviorRuntimeError();
+                            return;
+                        }
+                        projectile.remove();
+                        final boolean observedRemoved = !projectile.isValid();
+                        if (!history.tryConfirmProjectileWallRemoval(consumed.get(), () -> observedRemoved)) {
+                            telemetry.recordBehaviorRuntimeError();
+                        }
+                    } finally {
+                        ruleFields.remove(field);
+                    }
                 });
     }
 
-    private boolean consumeBrickReservation(final Player player, final String token,
-                                             final java.util.function.BooleanSupplier admitted) {
+    private TrashHistoryStore.WallReceipt consumeBrickReservation(
+            final Player player, final RuleField field, final UUID projectileId,
+            final java.util.function.BooleanSupplier admitted) {
+        final String token = field.reservationToken();
         final int slot = findBrickReservation(player, token);
-        if (slot < 0) return false;
+        if (slot < 0) return null;
+        final TrashHistoryStore.WallReceipt receipt;
         try {
-            if (!history.tryTransformInventorySlotOnSuccess(player, slot, admitted)) return false;
+            receipt = history.tryConsumeProjectileWall(player, slot, field, projectileId, admitted).orElse(null);
+            if (receipt == null) return null;
         } catch (final RuntimeException rejected) {
             telemetry.recordBehaviorRuntimeError();
-            return false;
+            return null;
         }
         // Marker cleanup must not turn an acknowledged consuming transition into a retry.
         try {
@@ -690,7 +711,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         } catch (final RuntimeException rejected) {
             telemetry.recordBehaviorRuntimeError();
         }
-        return true;
+        return receipt;
     }
 
     TrashRelicPolicy.TrackingSnapshot projectileTrackingState() { return projectileTracking.snapshot(); }

@@ -63,9 +63,11 @@ public final class TrashProductionHardeningRegressionSuite {
         check(occurrences(anomaly, "catch (final RuntimeException rejected)")
                         == occurrences(anomaly, "telemetry.recordBehaviorRuntimeError()"),
                 "an Anomaly best-effort failure bypasses aggregate telemetry");
-        check(occurrences(relic, "catch (final RuntimeException rejected)")
-                        == occurrences(relic, "telemetry.recordBehaviorRuntimeError()"),
-                "a Relic best-effort failure bypasses aggregate telemetry");
+        requireCatchTelemetry(relic);
+        final int confirmation = relic.indexOf("if (!history.tryConfirmProjectileWallRemoval(");
+        check(confirmation >= 0 && blockAt(relic, relic.indexOf('{', confirmation))
+                        .contains("telemetry.recordBehaviorRuntimeError()"),
+                "unacknowledged wall completion bypasses aggregate telemetry");
         require(archaeology, "recordInspectionStarted()", "inspection start telemetry");
         require(archaeology, "recordInspectionCompleted()", "inspection completion telemetry");
         require(archaeology, "recordInspectionCancelled()", "inspection cancellation telemetry");
@@ -76,6 +78,28 @@ public final class TrashProductionHardeningRegressionSuite {
                 "single-pass Adventure legacy-color decoding");
         check(!factory.contains("TextUtil.color("),
                 "factory pre-expanded ampersand colors into literal section codes");
+    }
+
+    private static void requireCatchTelemetry(final String source) {
+        final String marker = "catch (final RuntimeException rejected)";
+        int start = 0, checked = 0;
+        while ((start = source.indexOf(marker, start)) >= 0) {
+            final int opening = source.indexOf('{', start + marker.length());
+            check(occurrences(blockAt(source, opening), "telemetry.recordBehaviorRuntimeError()") == 1,
+                    "a Relic best-effort catch bypasses aggregate telemetry");
+            checked++; start = opening + 1;
+        }
+        check(checked >= 3, "Relic failure telemetry checks found no native rejection paths");
+    }
+
+    private static String blockAt(final String source, final int opening) {
+        check(opening >= 0 && source.charAt(opening) == '{', "native failure branch has no body");
+        int depth = 1;
+        for (int end = opening + 1; end < source.length(); end++) {
+            if (source.charAt(end) == '{') depth++;
+            else if (source.charAt(end) == '}' && --depth == 0) return source.substring(opening + 1, end);
+        }
+        throw new AssertionError("unterminated native failure branch");
     }
 
     private static void preservesPerformanceHardCaps() throws Exception {

@@ -26,7 +26,7 @@ public final class TrashWeaverInspectionRegressionSuite {
         final var definitions = new AtomicReference<>(Map.of("first", definition("first")));
         final var types = new WeaverTypeRegistry(); ScalarTypeCodec.registerBuiltins(types);
         final var reads = new AtomicInteger(); final var provider = new TrashWeaverProvider(types, definitions::get, ref -> {
-            reads.incrementAndGet(); return itemFacts(new TrashHistoryService.ItemInspection(definitions.get().values().iterator().next(), "base", Optional.empty(), Optional.empty()), Map.of(), 1);
+            reads.incrementAndGet(); return itemFacts(new TrashHistoryService.ItemInspection(definitions.get().values().iterator().next(), "base", Optional.empty(), Optional.empty(), Optional.empty()), Map.of(), 1);
         });
         final var registry = new WorldWeaverProviderRegistry(types, () -> 1L); registry.register(provider); registry.freezeAndValidate();
         final var context = WeaverProviderTestContext.sandbox(types);
@@ -50,14 +50,14 @@ public final class TrashWeaverInspectionRegressionSuite {
         refuses(() -> provider.catalog(revoked, snapshot, "trash.identities"));
         refuses(() -> provider.prepare(context, snapshot, new ActionRequest("trash.individualize_unit", Map.of(), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX)));
         check(provider.coverage().domains().get("trash.inspection_subset").level() == CoverageLevel.INSPECT_ONLY_BY_DESIGN, "no full-domain completion claim");
-        boundedHistory(types); fields(types);
+        boundedHistory(types); fields(types); pendingEffects(types);
         System.out.println("Trash Weaver inspection passed. assertions=" + assertions);
     }
     private static void boundedHistory(WeaverTypeRegistry types) {
         final var events = new ArrayList<TrashHistoryStore.HistoryEntry>(); final Set<UUID> owners = new HashSet<>();
         for (int index = 0; index < 64; index++) { owners.add(UUID.randomUUID()); events.add(new TrashHistoryStore.HistoryEntry(index + 1, TrashHistoryEvent.REPAIRED, index, UUID.randomUUID(), "x".repeat(96))); }
         final var history = new TrashHistoryStore.Snapshot(UUID.randomUUID(), "second", "base", 64, 0, 64, events, owners);
-        final var item = new TrashHistoryService.ItemInspection(definition("second"), "base", Optional.of(TrashHistoryEvent.CREATED_MOB_DROP), Optional.of(history));
+        final var item = new TrashHistoryService.ItemInspection(definition("second"), "base", Optional.of(TrashHistoryEvent.CREATED_MOB_DROP), Optional.of(history), Optional.empty());
         final var facts = itemFacts(item, Map.of(TrashAnomalyStateStore.MemoryKey.LOCAL_PLAYER_DEATHS, 1_000_000_000L), 1);
         final var bounded = new InspectionResult(FACET, facts, List.of());
         check(bounded.facts().keySet().stream().filter(key -> key.startsWith("trash.history.")).count() == 64, "all retained history entries fit inspection without truncation");
@@ -83,5 +83,53 @@ public final class TrashWeaverInspectionRegressionSuite {
         check(fieldFacts(before, world, 201).values().stream().noneMatch(value -> value.payload().toString().contains("active=true")), "expired retained fields not reported active");
         check(service.snapshot().equals(before), "inspection neither expires nor claims fields");
         service.close(); refuses(() -> fieldFacts(service.snapshot(), world, 100));
+    }
+
+    private static void pendingEffects(WeaverTypeRegistry types) {
+        final UUID world = UUID.randomUUID(), other = UUID.randomUUID(), actor = UUID.randomUUID();
+        final var service = new TrashRuleFieldService(() -> 100);
+        final List<TrashHistoryStore.WallReceipt> receipts = new ArrayList<>();
+        for (int index = 0; index < 34; index++) {
+            final var field = new TrashRuleFieldService.RuleField(UUID.randomUUID(),
+                    TrashRuleFieldService.FieldKind.PROJECTILE_WALL,
+                    new TrashRuleFieldService.Point(index == 33 ? other : world, index, 64, 0),
+                    2, 200, actor, UUID.randomUUID().toString());
+            receipts.add(new TrashHistoryStore.WallReceipt(field.id(), actor, field.center().world(),
+                    UUID.randomUUID(), UUID.randomUUID(), 3, "second", "consumed", 100, field, 1));
+        }
+        final var receipt = receipts.getFirst();
+        final var history = new TrashHistoryStore.Snapshot(receipt.instanceId(), "second", "consumed", 3,
+                1, 100, List.of(new TrashHistoryStore.HistoryEntry(3, TrashHistoryEvent.TRANSFORMED, 100, actor, "")), Set.of(actor));
+        final var item = new TrashHistoryService.ItemInspection(definition("second"), "consumed", Optional.empty(),
+                Optional.of(history), Optional.of(receipt));
+        final var facts = itemFacts(item, Map.of(), 100);
+        check(facts.get("trash.pending_effect").payload().get("value").equals("PROJECTILE_REMOVAL_UNOBSERVED"),
+                "pending consumption became effect completion");
+        check(facts.get("trash.pending_operation").payload().get("value").equals(receipt.operationId().toString())
+                        && facts.get("trash.revision").payload().get("value").equals("3"),
+                "item view lost exact native pending operation/revision");
+        check(facts.get("trash.pending_scope").payload().get("value").toString().contains("NOT_EFFECT_COMPLETION_PROOF"),
+                "item inspection claims physical effect completion");
+        refuses(() -> new TrashHistoryService.ItemInspection(definition("second"), "consumed", Optional.empty(),
+                Optional.empty(), Optional.of(receipt)));
+        refuses(() -> new TrashHistoryService.ItemInspection(definition("second"), "base", Optional.empty(),
+                Optional.of(history), Optional.of(receipt)));
+        refuses(() -> new TrashHistoryService.ItemInspection(definition("second"), "consumed", Optional.empty(),
+                Optional.of(history), Optional.of(receipts.get(1))));
+        final var worldFacts = fieldFacts(service.snapshot(), world, 300, receipts);
+        check(worldFacts.get("trash.pending_count").payload().get("value").equals("33")
+                        && worldFacts.get("trash.pending_truncated").payload().get("value").equals("true"),
+                "bounded world view conceals pending operation truncation");
+        check(worldFacts.keySet().stream().filter(key -> key.startsWith("trash.pending.")).count() == 32,
+                "pending operation rows exceed facet budget");
+        check(worldFacts.values().stream().noneMatch(value -> value.payload().toString().contains(receipts.getLast().operationId().toString())),
+                "world view leaks another world's pending operation");
+        check(worldFacts.get("trash.pending_scope").payload().get("value").toString().contains("NOT_EFFECT_COMPLETION_PROOF"),
+                "expired operation becomes completed or disappears without observation");
+        for (final var value : facts.values()) { types.require(value.type()).validate(value.payload()).requireValid(); assertions++; }
+        for (final var value : worldFacts.values()) { types.require(value.type()).validate(value.payload()).requireValid(); assertions++; }
+        new InspectionResult(FACET, facts, List.of()); new InspectionResult(FACET, worldFacts, List.of());
+        check(fieldFacts(service.snapshot(), world, 300, List.of()).get("trash.pending_count").payload().get("value").equals("0"),
+                "loaded empty recovery inventory was reported as unavailable");
     }
 }

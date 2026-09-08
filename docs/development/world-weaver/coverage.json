@@ -1962,7 +1962,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
       "domain": "trash",
-      "source_sha256": "e792d098b3689e1e115ade6a8cc4f3abffa733cb4be921155592eb1b593532c2",
+      "source_sha256": "183c32616480f53f0601b9e86b166bfea4235b8cfac59a2ffad32ea624d3deba",
       "public_methods": [
         "TrashWeaverProvider",
         "assessRecovery",
@@ -6524,7 +6524,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "18b897780072006e4e6cc2e58611cfb2503f969721c68beafa1dff7e6f4e09be",
+      "source_sha256": "d713f8e32a8ae75f32f151419f6931fee1f602d4ec5039dd73fb7b5caabf0c9f",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6553,7 +6553,10 @@
         "transformInventorySlotOnSuccess",
         "transformMainHandOnSuccess",
         "transformOnSuccess",
+        "tryConfirmProjectileWallRemoval",
+        "tryConsumeProjectileWall",
         "tryInspect",
+        "tryInspectPendingProjectileWalls",
         "tryTransformInventorySlotOnSuccess",
         "validateVendorSale"
       ]
@@ -6561,12 +6564,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "281002ed946eb006677f945e7d289ddf3531c78a47746cb13a1b6730e9d02acc",
+      "source_sha256": "1adf117b5e7192e59be6f67de102559941b4b38c015d1908c9624b2c5319c9ea",
       "public_methods": [
         "HistoryEntry",
         "Inspection",
         "Snapshot",
         "VendorReceipt",
+        "WallReceipt",
         "createAndRecord",
         "find",
         "findVendorReceipt",
@@ -6574,13 +6578,16 @@
         "matches",
         "observeOwner",
         "putVendorReceipt",
+        "putWallReceipt",
         "record",
         "removeVendorReceipt",
         "save",
         "size",
         "transact",
         "transform",
+        "tryConfirmWallRemoval",
         "tryInspect",
+        "tryInspectWallReceipts",
         "tryTransact"
       ]
     },
@@ -6652,7 +6659,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "c052a25f3d58e3e57f36840bce958fbe6009fd9dda36ed47ef89c6f1ca472f5e",
+      "source_sha256": "d267cf9aa8ff78ff61b21175d80dfde301d6a5e93f1dafebc2fab17cbe8bfa8a",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",

@@ -16,6 +16,7 @@ public final class TrashNativeInspectionRegressionSuite {
     private static final ExecutorService IO = Executors.newFixedThreadPool(3);
     public static void main(String[] args) throws Exception {
         try {
+            TrashWallReceiptRegressionSuite.main(args);
             historyTransaction(); historyWriteFailure(); anomalyTransaction();
             anomalyFailure(false); anomalyFailure(true); historyAcknowledgementFailure(); unloadedWrites();
             nativeTryAdmission(); nativeCompactionAdmission();

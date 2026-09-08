@@ -122,10 +122,12 @@ public final class TrashRelicRegressionSuite {
                 "atomic mug/input inventory projection");
         require(runtime, "trash_brick_reservation", "opaque brick reservation marker");
         require(history, "individualizeHandOnSuccess", "single-unit brick reservation");
-        require(runtime, "consumeBrickReservation(owner, field.reservationToken(), admitted)",
+        require(runtime, "consumeBrickReservation(owner, field, projectile.getUniqueId(), admitted)",
                 "exact brick reservation consumption");
+        require(runtime, "final String token = field.reservationToken();", "native field reservation token preserved");
+        require(runtime, "findBrickReservation(player, token)", "exact reserved inventory slot selected");
         require(runtime, "transformHelmetOnSuccess", "equipped helmet-only transform");
-        check(runtime.indexOf("consumeBrickReservation(owner, field.reservationToken(), admitted)")
+        check(runtime.indexOf("consumeBrickReservation(owner, field, projectile.getUniqueId(), admitted)")
                         < runtime.lastIndexOf("projectile.remove()"),
                 "projectile was removed before brick transformation committed");
     }
@@ -244,8 +246,14 @@ public final class TrashRelicRegressionSuite {
         require(runtime, "Bukkit.isOwnedByCurrentRegion(owner)", "inventory owner admission");
         require(runtime, "Bukkit.isOwnedByCurrentRegion(projectile)", "projectile owner admission");
         require(runtime, "TrashRelicPolicy.completeProjectileWall", "native completion uses tested admission");
-        require(runtime, "history.tryTransformInventorySlotOnSuccess(player, slot, admitted)",
-                "native wall refuses a busy writer and rechecks final lifecycle admission");
+        require(runtime, "history.tryConsumeProjectileWall(player, slot, field, projectileId, admitted)",
+                "native wall uses the consumption/receipt transaction with immediate busy refusal");
+        require(runtime, "if (!admitted.getAsBoolean()) {\n                            telemetry.recordBehaviorRuntimeError();\n                            return;\n                        }\n                        projectile.remove();",
+                "acknowledged consumption cannot bypass a later shutdown/expiry admission failure");
+        require(runtime, "history.tryConfirmProjectileWallRemoval(consumed.get(), () -> observedRemoved)",
+                "real owner-local removal observation must close the durable pending receipt");
+        require(Files.readString(HISTORY), "store.putWallReceipt(recorded)",
+                "wall receipt is recorded inside the native item/history transaction");
         require(Files.readString(HISTORY), "store.tryTransact(admission, mutation, restore)",
                 "owner inventory projection uses canonical native try-transaction");
     }

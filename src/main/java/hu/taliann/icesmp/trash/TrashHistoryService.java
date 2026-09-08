@@ -108,21 +108,31 @@ public final class TrashHistoryService {
         if (pending.isPresent()) return Optional.empty();
         if (instance.isEmpty()) {
             if (!"base".equals(phase)) return Optional.empty();
-            return Optional.of(new ItemInspection(catalog.require(baseId), phase, origin, Optional.empty()));
+            return Optional.of(new ItemInspection(catalog.require(baseId), phase, origin, Optional.empty(), Optional.empty()));
         }
         if (item.getAmount() != 1) return Optional.empty();
         return store.tryInspect(instance.get()).flatMap(inspection -> inspection.history()
                 .filter(snapshot -> snapshot.baseId().equals(baseId) && snapshot.phase().equals(phase)
                         && snapshot.revision() == revisionOf(item))
-                .map(snapshot -> new ItemInspection(catalog.require(baseId), phase, origin, Optional.of(snapshot))));
+                .map(snapshot -> new ItemInspection(catalog.require(baseId), phase, origin, Optional.of(snapshot), inspection.pendingWall())));
     }
 
     public record ItemInspection(TrashDefinition definition, String phase,
                                  Optional<TrashHistoryEvent> origin,
-                                 Optional<TrashHistoryStore.Snapshot> history) {
+                                 Optional<TrashHistoryStore.Snapshot> history,
+                                 Optional<TrashHistoryStore.WallReceipt> pendingWall) {
         public ItemInspection {
             Objects.requireNonNull(definition); Objects.requireNonNull(phase);
-            Objects.requireNonNull(origin); Objects.requireNonNull(history);
+            Objects.requireNonNull(origin); Objects.requireNonNull(history); Objects.requireNonNull(pendingWall);
+            if (pendingWall.isPresent()) {
+                final var receipt = pendingWall.orElseThrow();
+                final var snapshot = history.orElseThrow(() -> new IllegalArgumentException("pending wall lacks native history"));
+                if (!snapshot.instanceId().equals(receipt.instanceId()) || snapshot.revision() != receipt.revision()
+                        || !definition.id().equals(receipt.baseId()) || !phase.equals(receipt.phase())
+                        || !snapshot.baseId().equals(receipt.baseId()) || !snapshot.phase().equals(receipt.phase())) {
+                    throw new IllegalArgumentException("pending wall and history are from different native states");
+                }
+            }
         }
     }
 
@@ -224,17 +234,18 @@ public final class TrashHistoryService {
 
     /** Commits an arbitrary player-inventory slot projection with durable history rollback. */
     public boolean transformInventorySlotOnSuccess(final Player player, final int slot) {
-        return transformInventorySlotOnSuccess(player, slot, null);
+        return transformInventorySlotOnSuccess(player, slot, null, null);
     }
 
     /** Caller owns the inventory; a busy history writer refuses before any projection or waiting. */
     public boolean tryTransformInventorySlotOnSuccess(final Player player, final int slot,
                                                        final java.util.function.BooleanSupplier admission) {
-        return transformInventorySlotOnSuccess(player, slot, Objects.requireNonNull(admission, "admission"));
+        return transformInventorySlotOnSuccess(player, slot, Objects.requireNonNull(admission, "admission"), null);
     }
 
     private boolean transformInventorySlotOnSuccess(final Player player, final int slot,
-                                                     final java.util.function.BooleanSupplier admission) {
+                                                     final java.util.function.BooleanSupplier admission,
+                                                     final java.util.function.Consumer<ItemStack> afterProjection) {
         Objects.requireNonNull(player, "player");
         if (slot < 0 || slot >= player.getInventory().getSize()) return false;
         final ItemStack source = player.getInventory().getItem(slot);
@@ -250,10 +261,42 @@ public final class TrashHistoryService {
                     && !player.getInventory().addItem(result.remainder()).isEmpty()) {
                 throw new IllegalStateException("a Trash transform remainder nem fér el");
             }
+            if (afterProjection != null) afterProjection.accept(result.singleton());
         };
         final Runnable restore = () -> player.getInventory().setContents(before);
         return admission == null ? store.transact(() -> { mutation.run(); return true; }, restore)
                 : store.tryTransact(admission, mutation, restore);
+    }
+
+    /** Native wall consumption and its unresolved effect receipt share one fsynced history frame. */
+    public Optional<TrashHistoryStore.WallReceipt> tryConsumeProjectileWall(
+            final Player player, final int slot, final TrashRuleFieldService.RuleField field,
+            final UUID projectileId,
+            final java.util.function.BooleanSupplier admission) {
+        Objects.requireNonNull(admission, "admission");
+        if (slot < 0 || slot >= player.getInventory().getSize()) return Optional.empty();
+        final ItemStack before = player.getInventory().getItem(slot);
+        if (before == null || before.getAmount() != 1 || instanceIdOf(before).isEmpty()) return Optional.empty();
+        final long beforeRevision = revisionOf(before);
+        final var receipt = new java.util.concurrent.atomic.AtomicReference<TrashHistoryStore.WallReceipt>();
+        final boolean consumed = transformInventorySlotOnSuccess(player, slot, admission, singleton -> {
+            final var recorded = new TrashHistoryStore.WallReceipt(field.id(), player.getUniqueId(),
+                    field.center().world(), projectileId, instanceIdOf(singleton).orElseThrow(), revisionOf(singleton),
+                    itemFactory.idOf(singleton).orElseThrow(), itemFactory.phaseOf(singleton).orElseThrow(),
+                    System.currentTimeMillis(), field, beforeRevision);
+            store.putWallReceipt(recorded);
+            receipt.set(recorded);
+        });
+        return consumed ? Optional.of(receipt.get()) : Optional.empty();
+    }
+
+    public boolean tryConfirmProjectileWallRemoval(final TrashHistoryStore.WallReceipt receipt,
+                                                    final java.util.function.BooleanSupplier observedRemoved) {
+        return store.tryConfirmWallRemoval(receipt, observedRemoved);
+    }
+
+    public Optional<List<TrashHistoryStore.WallReceipt>> tryInspectPendingProjectileWalls() {
+        return store.tryInspectWallReceipts();
     }
 
     /**

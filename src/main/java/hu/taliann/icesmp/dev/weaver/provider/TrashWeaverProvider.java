@@ -24,7 +24,8 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
             TrashHistoryService history, TrashAnomalyStateStore memory, TrashRuleFieldService fields,
             ItemIdentityService identity) {
         this(services.types(), catalog::snapshot, subject -> {
-            if (subject instanceof WorldRef world) return fieldFacts(fields.snapshot(), world.worldId(), System.currentTimeMillis());
+            if (subject instanceof WorldRef world) return fieldFacts(fields.snapshot(), world.worldId(), System.currentTimeMillis(),
+                    history.tryInspectPendingProjectileWalls().orElseThrow(() -> new WeaverDomainRejection("TRASH_HISTORY_UNAVAILABLE")));
             if (!(subject instanceof ItemSlotRef item)) return Map.of();
             final var player = Bukkit.getPlayer(item.holderId());
             if (player == null) throw new WeaverDomainRejection("ITEM_HOLDER_UNAVAILABLE");
@@ -94,6 +95,13 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
             facts.put("trash.memory_scope", text("RUNTIME_OBSERVATION_NOT_DURABILITY_PROOF", now));
             memory.forEach((key, value) -> facts.put("trash.memory." + key.name().toLowerCase(Locale.ROOT), text(Long.toString(value), now)));
         });
+        item.pendingWall().ifPresent(receipt -> {
+            facts.put("trash.pending_effect", text("PROJECTILE_REMOVAL_UNOBSERVED", now));
+            facts.put("trash.pending_operation", text(receipt.operationId().toString(), now));
+            facts.put("trash.pending_projectile", text(receipt.projectileId().toString(), now));
+            facts.put("trash.pending_before_revision", text(Long.toString(receipt.beforeRevision()), now));
+            facts.put("trash.pending_scope", text("NATIVE_HISTORY_WAL_RECEIPT_NOT_EFFECT_COMPLETION_PROOF", now));
+        });
         // A level-50 developer derivation is not the inspecting player's learned knowledge or an award.
         facts.put("trash.archaeology_level", text("50", now));
         TrashArchaeologyFactEngine.evaluate(definition, item.history(), 50).ifPresent(evaluation -> {
@@ -117,6 +125,24 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
         }
         return Map.copyOf(facts);
     }
+    static Map<String, WeaverValue> fieldFacts(TrashRuleFieldService.Snapshot snapshot, UUID world, long now,
+                                              List<TrashHistoryStore.WallReceipt> pending) {
+        final Map<String, WeaverValue> facts = new TreeMap<>(fieldFacts(snapshot, world, now));
+        final var receipts = pending.stream().filter(receipt -> receipt.worldId().equals(world))
+                .sorted(Comparator.comparing(TrashHistoryStore.WallReceipt::operationId)).toList();
+        facts.put("trash.pending_count", text(Integer.toString(receipts.size()), now));
+        facts.put("trash.pending_truncated", text(Boolean.toString(receipts.size() > 32), now));
+        facts.put("trash.pending_scope", text("NATIVE_HISTORY_WAL_RECEIPTS_NOT_EFFECT_COMPLETION_PROOF", now));
+        for (int index = 0; index < Math.min(32, receipts.size()); index++) {
+            final var receipt = receipts.get(index);
+            facts.put("trash.pending." + String.format(Locale.ROOT, "%02d", index), text(receipt.operationId()
+                    + " | instance=" + receipt.instanceId() + " | revision=" + receipt.revision()
+                    + " | projectile=" + receipt.projectileId() + " | owner=" + receipt.actor()
+                    + " | consumed=" + receipt.consumedAt() + " | expires=" + receipt.field().expiresAt(), now));
+        }
+        return Map.copyOf(facts);
+    }
+
     @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef subject) { return Map.copyOf(capture.apply(subject)); }
     @Override public String id() { return "trash"; }
     @Override public int contractVersion() { return 1; }
