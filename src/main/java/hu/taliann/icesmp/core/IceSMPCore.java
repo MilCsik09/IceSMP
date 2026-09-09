@@ -819,6 +819,7 @@ public final class IceSMPCore {
                 plugin, trashCatalog, trashItemFactory, trashHistoryService,
                 trashSpatialFractureStore, bloodMoonManager, claimManager,
                 territoryProtectionService, trashRuntimeTelemetry);
+        mobAbilityRuntime.bindDisplacementPolicy(trashRelicRuntime::constrainDisplacement);
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);

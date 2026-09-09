@@ -241,6 +241,7 @@ public final class TrashProductionRuntimeProbe {
         check(history.tryInspect(unit).orElseThrow().equals(current), "real native history reload changed inspection");
         verifyAcknowledgedWallProjection(catalog, items, store, history, directory);
         verifyPlannedNativeUnit(plugin, catalog, items, store, history, directory);
+        verifyPlannedSuccessTransition(catalog, items, store, history);
     }
 
     private static void verifyPlannedNativeUnit(final JavaPlugin plugin, final TrashCatalog catalog,
@@ -284,6 +285,34 @@ public final class TrashProductionRuntimeProbe {
         check(failed && output.get() == null && store.find(rollback.instanceId()).isEmpty(), "failed planned projection did not roll back atomically");
         store.load();
         check(store.find(plan.instanceId()).orElseThrow().revision() == 3, "planned target did not survive real WAL reload");
+    }
+
+    private static void verifyPlannedSuccessTransition(final TrashCatalog catalog, final TrashItemFactory items,
+            final TrashHistoryStore store, final TrashHistoryService history) {
+        for (String behavior : java.util.List.of("FEKETE_VIASZDUGO", "SZAKADT_FEHER_ZASZLO", "MELYNEPI_SELEJTEK")) {
+            final var definition = catalog.snapshot().values().stream().filter(d -> d.behavior().equals(behavior)).findFirst().orElseThrow();
+            final var actor = java.util.UUID.randomUUID();
+            final ItemStack unit = items.create(definition.id(), 1); history.markOrigin(unit, TrashLootSource.AMBIENT);
+            final var plan = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+            final var output = new AtomicReference<ItemStack>();
+            check(history.tryTransformPlannedUnit(plan, unit, () -> true, () -> true, output::set, () -> output.set(null)),
+                    "native planned success transition refused");
+            final var committed = history.historyOf(output.get()).orElseThrow();
+            check(committed.instanceId().equals(plan.instanceId()) && committed.phase().equals(definition.successPhase())
+                            && committed.revision() == 3 && committed.events().getFirst().type() == TrashHistoryEvent.CREATED_AMBIENT
+                            && committed.events().getLast().type() == TrashHistoryEvent.TRANSFORMED,
+                    "planned success transition lost UUID, natural origin or actual native transformation");
+            check(!history.tryTransformPlannedUnit(plan, unit, () -> true, () -> true, output::set, () -> output.set(null)),
+                    "planned success transition replayed");
+            final var rollback = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+            boolean failed = false;
+            try { history.tryTransformPlannedUnit(rollback, unit, () -> true, () -> true,
+                    item -> { output.set(item); throw new IllegalStateException("injected native success projection failure"); }, () -> output.set(null)); }
+            catch (IllegalStateException expected) { failed = true; }
+            check(failed && output.get() == null && store.find(rollback.instanceId()).isEmpty(), "planned success rollback left history or physical projection");
+            store.load();
+            check(store.find(plan.instanceId()).orElseThrow().equals(committed), "native success transition lost after real WAL reload");
+        }
     }
 
     private static void verifyAcknowledgedWallProjection(final TrashCatalog catalog, final TrashItemFactory items,

@@ -86,6 +86,17 @@ public final class MobAbilityRuntime implements Listener {
     private final CreatureSpeciesRegistry species;
     private final Map<UUID, RuntimeState> states = new ConcurrentHashMap<>();
     private final java.util.Set<String> reportedScheduleRejections = ConcurrentHashMap.newKeySet();
+    private volatile java.util.function.BiFunction<Location, Vector, Vector> displacementPolicy;
+
+    /** Composition-only native field policy; player consequences still enter through affectPlayer's durable source gate. */
+    public synchronized void bindDisplacementPolicy(java.util.function.BiFunction<Location, Vector, Vector> policy) {
+        if (displacementPolicy != null) throw new IllegalStateException("Native displacement policy already bound");
+        displacementPolicy = java.util.Objects.requireNonNull(policy);
+    }
+    private Vector displacement(Location location, Vector proposed) {
+        final var policy = displacementPolicy;
+        return policy == null ? proposed.clone() : policy.apply(location, proposed.clone());
+    }
     private final NamespacedKey volatileArmedKey;
     private final NamespacedKey frenziedKey;
     private final NamespacedKey summonOwnerKey;
@@ -940,7 +951,7 @@ public final class MobAbilityRuntime implements Listener {
                 final Vector vector = player.getLocation().toVector()
                         .subtract(new Vector(source.x(), source.y(), source.z()));
                 if (vector.lengthSquared() > 0.01D) {
-                    player.setVelocity(vector.normalize().multiply(knockback).setY(0.32D));
+                    player.setVelocity(displacement(player.getLocation(), vector.normalize().multiply(knockback).setY(0.32D)));
                 }
             }
         });
@@ -1196,7 +1207,7 @@ public final class MobAbilityRuntime implements Listener {
                 if (knockback > 0.0D) {
                     final Vector vector = owned.getLocation().toVector().subtract(new Vector(point.x(), point.y(), point.z()));
                     if (vector.lengthSquared() > 0.01D) owned.setVelocity(
-                            vector.normalize().multiply(knockback).setY(0.45D));
+                            displacement(owned.getLocation(), vector.normalize().multiply(knockback).setY(0.45D)));
                 }
             });
             if (++affected >= 32) break;

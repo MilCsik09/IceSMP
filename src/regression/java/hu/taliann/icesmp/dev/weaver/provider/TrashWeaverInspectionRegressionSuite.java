@@ -5,6 +5,7 @@ import hu.taliann.icesmp.dev.weaver.api.*;
 import hu.taliann.icesmp.dev.weaver.gui.WeaverFacetView;
 import hu.taliann.icesmp.dev.weaver.subject.*;
 import hu.taliann.icesmp.trash.*;
+import hu.taliann.icesmp.integrity.*;
 import org.bukkit.Material;
 import java.util.*;
 import java.util.concurrent.atomic.*;
@@ -50,7 +51,7 @@ public final class TrashWeaverInspectionRegressionSuite {
         refuses(() -> provider.catalog(revoked, snapshot, "trash.identities"));
         refuses(() -> provider.prepare(context, snapshot, new ActionRequest("trash.individualize_unit", Map.of(), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX)));
         check(provider.coverage().domains().get("trash.inspection_subset").level() == CoverageLevel.INSPECT_ONLY_BY_DESIGN, "no full-domain completion claim");
-        boundedHistory(types); fields(types); pendingEffects(types);
+        boundedHistory(types); fields(types); pendingEffects(types); causalFields();
         System.out.println("Trash Weaver inspection passed. assertions=" + assertions);
     }
     private static void boundedHistory(WeaverTypeRegistry types) {
@@ -144,5 +145,42 @@ public final class TrashWeaverInspectionRegressionSuite {
         new InspectionResult(FACET, facts, List.of()); new InspectionResult(FACET, worldFacts, List.of());
         check(fieldFacts(service.snapshot(), world, 300, List.of()).get("trash.pending_count").payload().get("value").equals("0"),
                 "loaded empty recovery inventory was reported as unavailable");
+    }
+
+    private static void causalFields() {
+        final var fields = new TrashRuleFieldService(() -> 100L);
+        final UUID world = UUID.randomUUID(), other = UUID.randomUUID(), actor = UUID.randomUUID();
+        final var point = new TrashRuleFieldService.Point(world, 0, 64, 0);
+        final var active = new TrashRuleFieldService.RuleField(UUID.randomUUID(), TrashRuleFieldService.FieldKind.SPATIAL_ANCHOR,
+                point, 3, 200, actor, null);
+        final var pending = new TrashRuleFieldService.RuleField(UUID.randomUUID(), TrashRuleFieldService.FieldKind.CEASEFIRE,
+                point, 3, 200, actor, null);
+        check(fields.add(active), "active causal field refused"); fields.reserveCreation(pending).orElseThrow();
+        check(fieldSources(fields.snapshot(), point, 100).equals(List.of(new RewardSource.Event("trash.rule_field", active.id()))),
+                "native causal sources included a preparation or lost active field identity");
+        check(fieldSources(fields.snapshot(), new TrashRuleFieldService.Point(other, 0, 64, 0), 100).isEmpty()
+                        && fieldSources(fields.snapshot(), new TrashRuleFieldService.Point(world, 10, 64, 0), 100).isEmpty()
+                        && fieldSources(fields.snapshot(), point, 200).isEmpty(), "native causal sources crossed geometry, world or expiry");
+        final var types = new WeaverTypeRegistry(); ScalarTypeCodec.registerBuiltins(types);
+        final var reads = new AtomicInteger();
+        final var provider = new TrashWeaverProvider(types, Map::of, ignored -> Map.of(), subject -> {
+            reads.incrementAndGet(); return fieldSources(fields.snapshot(), point, 100);
+        });
+        final var registry = new WorldWeaverProviderRegistry(types, () -> 1L); registry.register(provider); registry.freezeAndValidate();
+        for (var kind : GameplaySourceSubject.Kind.values()) check(registry.captureCausalSources(new GameplaySourceSubject(actor, kind))
+                .equals(List.of(new RewardSource.Event("trash.rule_field", active.id()))), "generic source registry lost a native subject kind");
+        check(reads.get() == GameplaySourceSubject.Kind.values().length, "source discovery captured a live subject");
+        fields.cancelCreationsForOwner(actor);
+        final Set<RewardSource> expected = new HashSet<>(List.of(new RewardSource.Event("trash.rule_field", active.id())));
+        for (int index = 1; index < TrashRuleFieldService.MAX_FIELDS_PER_WORLD; index++) {
+            final var overlap = new TrashRuleFieldService.RuleField(UUID.randomUUID(), TrashRuleFieldService.FieldKind.CEASEFIRE,
+                    point, 3, 200, actor, null);
+            check(fields.add(overlap), "native overlapping field refused below canonical world capacity");
+            expected.add(new RewardSource.Event("trash.rule_field", overlap.id()));
+        }
+        final var captured = registry.captureCausalSources(new GameplaySourceSubject(actor, GameplaySourceSubject.Kind.PLAYER));
+        check(captured.size() == TrashRuleFieldService.MAX_FIELDS_PER_WORLD && new HashSet<>(captured).equals(expected),
+                "generic source capture truncated actual overlapping native fields");
+        fields.close(); refuses(() -> registry.captureCausalSources(new GameplaySourceSubject(actor, GameplaySourceSubject.Kind.PLAYER)));
     }
 }

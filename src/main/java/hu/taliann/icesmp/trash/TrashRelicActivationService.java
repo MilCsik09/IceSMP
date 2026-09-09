@@ -9,9 +9,22 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import hu.taliann.icesmp.integrity.GameplayEffectPermit;
 import hu.taliann.icesmp.integrity.RewardSource;
+import hu.taliann.icesmp.integrity.GameplayEffectContext;
+import hu.taliann.icesmp.integrity.GameplayEffectGate;
 
 /** Native relic activation coordination; history, fields and tracking keep their existing authorities. */
 public final class TrashRelicActivationService {
+    record CreationPermits(GameplayEffectPermit history, GameplayEffectPermit field) {
+        CreationPermits { Objects.requireNonNull(history); Objects.requireNonNull(field); }
+    }
+    interface CreationOwner {
+        boolean schedule(Runnable action, Runnable retired);
+        boolean admitted();
+        CompletionStage<CreationPermits> prepare();
+        List<RewardSource> sources();
+        boolean commit(BooleanSupplier admission, BooleanSupplier finalAdmission);
+        void abandonCommitted();
+    }
     record WallPermits(GameplayEffectPermit consumption, GameplayEffectPermit removal) {
         WallPermits { Objects.requireNonNull(consumption); Objects.requireNonNull(removal); }
     }
@@ -52,6 +65,98 @@ public final class TrashRelicActivationService {
     boolean dispatchWall(TrashRuleFieldService.FieldClaim claim, TrashRelicPolicy.ProjectileTracking.Ticket ticket,
                          InventoryOwner inventory, ProjectileOwner projectile) {
         return new WallOperation(claim, ticket, inventory, projectile).dispatch();
+    }
+
+    /** All native rule kinds share the same inactive capacity reservation and acknowledged publication route. */
+    boolean dispatchCreation(TrashRuleFieldService.CreationClaim claim, CreationOwner owner) {
+        return new CreationOperation(claim, owner).dispatch();
+    }
+
+    /** Event-local consequences never retain or replay a Bukkit event while journal admission is pending. */
+    boolean applyFieldEffect(TrashRuleFieldService.Point point, TrashRuleFieldService.FieldKind kind,
+            List<RewardSource> nativeSources, java.util.Set<RewardSource> targets, BooleanSupplier effect) {
+        if (!open.getAsBoolean()) return false;
+        final var matching = fields.matching(point, kind);
+        if (matching.isEmpty()) return false;
+        final var sources = new java.util.LinkedHashSet<>(nativeSources);
+        matching.forEach(field -> sources.add(new RewardSource.Event("trash.rule_field", field.id())));
+        final var captured = List.copyOf(sources);
+        final var context = new GameplayEffectContext(captured, targets, 0L);
+        // Clean or already durably propagated effects can enter synchronously. An unacknowledged
+        // lineage write authorizes no current event mutation; a future native event must read again.
+        final var permit = GameplayEffectGate.prepare(context).toCompletableFuture().getNow(null);
+        return permit != null && fields.tryApplyAt(point, kind, matching,
+                () -> open.getAsBoolean() && permit.claim(captured), effect);
+    }
+
+    private final class CreationOperation {
+        private final TrashRuleFieldService.CreationClaim claim;
+        private final CreationOwner owner;
+        private final AtomicBoolean preparing = new AtomicBoolean(), entered = new AtomicBoolean(), completed = new AtomicBoolean();
+        private final AtomicBoolean retired = new AtomicBoolean(), finished = new AtomicBoolean(), reported = new AtomicBoolean();
+        private final AtomicReference<Runnable> cancelDeadline = new AtomicReference<>();
+        private CreationOperation(TrashRuleFieldService.CreationClaim claim, CreationOwner owner) {
+            this.claim = Objects.requireNonNull(claim); this.owner = Objects.requireNonNull(owner);
+        }
+        private boolean admitted() { return !finished.get() && !retired.get() && open.getAsBoolean() && fields.isPreparing(claim); }
+        private boolean dispatch() {
+            boolean queued = false;
+            try {
+                if (!admitted()) return false;
+                cancelDeadline.set(Objects.requireNonNull(deadlines.schedule(5000, this::retire)));
+                if (finished.get()) cancelDeadline();
+                queued = admitted() && owner.schedule(this::prepareOnOwner, this::retire);
+                return queued;
+            } finally { if (!queued) finish(); }
+        }
+        private void prepareOnOwner() {
+            if (!preparing.compareAndSet(false, true)) return;
+            boolean waiting = false;
+            try {
+                if (!admitted() || !owner.admitted()) return;
+                Objects.requireNonNull(owner.prepare()).whenComplete((permits, failure) -> {
+                    boolean queued = false;
+                    try {
+                        if (failure != null) { report(); return; }
+                        if (permits == null || !admitted()) return;
+                        queued = owner.schedule(() -> commitOnOwner(permits), this::retire);
+                    } catch (RuntimeException | Error rejected) { report(); }
+                    finally { if (!queued) finish(); }
+                });
+                waiting = true;
+            } catch (RuntimeException | Error rejected) { report(); }
+            finally { if (!waiting) finish(); }
+        }
+        private void commitOnOwner(CreationPermits permits) {
+            if (!entered.compareAndSet(false, true)) return;
+            boolean committed = false, published = false;
+            TrashRuleFieldService.CreationWrite write = null;
+            try {
+                if (!admitted() || !owner.admitted()) return;
+                write = fields.beginCreationWrite(claim).orElse(null);
+                if (write == null) return;
+                committed = owner.commit(() -> admitted() && owner.admitted(),
+                        () -> permits.history().claim(owner.sources()));
+                if (!committed) return;
+                // Only fresh influence and the exact still-live reservation can expose the field.
+                published = fields.tryActivateCreation(claim,
+                        () -> admitted() && permits.field().claim(owner.sources()));
+            } catch (RuntimeException | Error rejected) { report(); }
+            finally {
+                try { if (committed && !published) { report(); owner.abandonCommitted(); } }
+                finally {
+                    if (write != null) fields.endCreationWrite(write);
+                    completed.set(true); finish();
+                }
+            }
+        }
+        private void retire() { retired.set(true); if (!entered.get() || completed.get()) finish(); }
+        private void finish() {
+            if (!finished.compareAndSet(false, true)) return;
+            fields.releaseCreation(claim); cancelDeadline();
+        }
+        private void cancelDeadline() { final Runnable cancel = cancelDeadline.getAndSet(null); if (cancel != null) cancel.run(); }
+        private void report() { if (reported.compareAndSet(false, true)) unresolved.run(); }
     }
 
     private final class WallOperation {

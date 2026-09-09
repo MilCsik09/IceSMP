@@ -100,18 +100,21 @@ public final class WeaverEffectPropagationRegressionSuite {
                     "refused post-WAL effect left active native field");
         } finally { fields.close(); await(journal.close()); }
         final String runtime = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java"));
-        final String wall = runtime.substring(runtime.indexOf("private void createProjectileWall("), runtime.indexOf("private void createField("));
-        check(wall.indexOf("reserveCreation(field)") < wall.indexOf("GameplayEffectGate.prepare(context)")
-                && wall.indexOf("GameplayEffectGate.prepare(context)") < wall.indexOf("history.tryIndividualizeHandOnSuccess")
-                && wall.indexOf("history.tryIndividualizeHandOnSuccess") < wall.indexOf("activateCreation(reservation)"), "native wall publication bypassed reserve/lineage/history order");
-        check(wall.contains("new RewardSource.Item(plan.instanceId())") && wall.contains("new RewardSource.Event(\"trash.rule_field\", field.id())")
-                && wall.contains("permits.history().claim(wallCreationSources(owner, itemInHand(owner, hand), field))"), "native wall lost planned identities or owner-fresh sources");
-        check(wall.contains("permits.field().claim(wallCreationSources(owner, itemInHand(owner, hand), field))"),
+        final String creation = runtime.substring(runtime.indexOf("private void createField("), runtime.indexOf("private void abandonLosingSword("));
+        final String activation = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java"));
+        check(creation.indexOf("reserveCreation(field)") < creation.indexOf("activation.dispatchCreation(reservation,")
+                && activation.contains("owner.prepare()") && activation.contains("permits.history().claim(owner.sources())")
+                && activation.indexOf("committed = owner.commit(") < activation.indexOf("published = fields.tryActivateCreation(claim,"),
+                "native rule creation bypassed reserve/lineage/history order");
+        check(creation.contains("new RewardSource.Item(plan.instanceId())") && creation.contains("new RewardSource.Event(\"trash.rule_field\", field.id())")
+                && creation.contains("history.tryTransformPlannedHandOnSuccess(player, hand, plan, admission, finalAdmission)"),
+                "native rule creation lost planned identities or consuming history admission");
+        check(activation.contains("admitted() && permits.field().claim(owner.sources())"),
                 "native field publication omitted post-WAL fresh influence admission");
-        check(wall.contains("final Player owner = Bukkit.getPlayer(ownerId);")
-                && wall.contains("owner == null || !Bukkit.isOwnedByCurrentRegion(owner)")
-                && wall.contains("java.util.Arrays.equals(captured, itemInHand(owner, hand).serializeAsBytes())"),
-                "native wall creation lost detached handoff or owner-local source revalidation");
+        check(creation.contains("final Player player = Bukkit.getPlayer(field.owner());")
+                && creation.contains("player != null && Bukkit.isOwnedByCurrentRegion(player)")
+                && creation.contains("java.util.Arrays.equals(captured, itemInHand(player, hand).serializeAsBytes())"),
+                "native rule creation lost detached handoff or owner-local source revalidation");
     }
 
     private static void acknowledgedInstantReuse() throws Exception {

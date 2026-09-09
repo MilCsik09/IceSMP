@@ -1478,7 +1478,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "1c169083354d98ba774b1e1c774695b1a695d0bdd8f30cab9b10944df6bdabd6",
+      "source_sha256": "015daf4c18718b978c2ac974f1124a1f909924c43a2978bd1389222449aaa801",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -1964,7 +1964,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
       "domain": "trash",
-      "source_sha256": "d46c95c56670b4b08b76f6714269276b3c8df07135c7252de92324503b63d431",
+      "source_sha256": "32b4df76316f6722cc0a7152eb7712ab136747059492967fecebdacade551646",
       "public_methods": [
         "TrashWeaverProvider",
         "assessRecovery",
@@ -2291,7 +2291,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java",
       "domain": "developer_self",
-      "source_sha256": "799ab1bfe0a1c9927c204246e1cc1ab94a4c27e205117f6bd89f689647a9b94a",
+      "source_sha256": "751883d49a8ce6a0a95d3b459ce7fc8108b4c16076e5f6cd9757c7831ef0eaf2",
       "public_methods": [
         "capture",
         "close",
@@ -6046,7 +6046,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "72f0e12762f9490eee7ba1fd0d2623cddfa16232f7b850b025a185ac5c94014a",
+      "source_sha256": "fe7efaa3b3dfa9c49d9d8d29ad925250aec175177614ba3fc81bbd963a7d2446",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
@@ -6526,7 +6526,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "268b56c374491d9c4c02ff57e03726b79d6ae5a7ff3d02c310c62d5e9116314e",
+      "source_sha256": "1ad06d0d930330461bbc0363d07099945087ba5c9dc658ee2df9b4c9d2d76357",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6664,7 +6664,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java",
       "domain": "trash",
-      "source_sha256": "4c77b38b50e293e8b1ef32ed2e36e42fea9b825b867681452a2577d9bb8701ca",
+      "source_sha256": "82aa3596c572037dba14afc103b69c89592912f1ffef3c3a492dad858ed622d0",
       "public_methods": []
     },
     {
@@ -6676,7 +6676,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "00e1aad71a2c94b00103c68d8df22a0f4fffb30a6115069255ce4779438fa1d6",
+      "source_sha256": "33b3e8f9195822647c2f37bd9cd2e36bd580967f433d641d2af519c926682cd3",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",
@@ -6733,7 +6733,7 @@
         "snapshot",
         "tryObserveClaimedEffect"
       ],
-      "source_sha256": "0d814cd9a695a68fa1d8bcd79fb18a0d3bca94f2c0f7c030e53e528c0614bdcd"
+      "source_sha256": "9cba961273e8f8f2374ab668a6a64fb068eadc4308daac3ed706b6b8f2295d22"
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",

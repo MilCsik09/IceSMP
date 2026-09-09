@@ -69,7 +69,10 @@ public final class TrashRelicRegressionSuite {
         final String fields = Files.readString(ROOT.resolve("trash/TrashRuleFieldService.java"));
         require(fields, "MAX_FIELDS_PER_WORLD = 32", "per-world field cap");
         require(fields, "MAX_FIELDS_GLOBAL = 128", "global field safety cap");
-        require(runtime, "ruleFields.add(field)", "native field creation shares canonical service");
+        require(runtime, "ruleFields.reserveCreation(field)", "native field creation shares inactive canonical capacity");
+        require(runtime, "activation.dispatchCreation(reservation,", "all rule kinds share acknowledged native activation");
+        require(ROOT.resolve("trash/TrashRelicActivationService.java"), "fields.tryActivateCreation(claim,",
+                "native final field admission uses canonical service");
         require(runtime, "ruleFields.activeAt(point(location), kind)", "native effective field consumer");
         check(!fields.contains("org.bukkit"), "field authority retains live Bukkit handles");
         require(runtime, "MAX_NEARBY_ENTITIES = 24", "nearby entity cap");
@@ -264,7 +267,7 @@ public final class TrashRelicRegressionSuite {
         require(Files.readString(HISTORY), "finalAdmission, mutation, restore)",
                 "owner inventory projection uses canonical native try-transaction");
         for (final Class<?> type : TrashRelicRuntime.class.getDeclaredClasses()) {
-            if (!type.getSimpleName().equals("WallInventoryOwner") && !type.getSimpleName().equals("WallProjectileOwner")) continue;
+            if (!java.util.Set.of("WallInventoryOwner", "WallProjectileOwner", "RuleCreationOwner").contains(type.getSimpleName())) continue;
             for (final var field : type.getDeclaredFields()) {
                 check(!org.bukkit.entity.Entity.class.isAssignableFrom(field.getType())
                                 && !org.bukkit.inventory.ItemStack.class.isAssignableFrom(field.getType())

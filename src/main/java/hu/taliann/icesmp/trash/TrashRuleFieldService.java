@@ -41,8 +41,16 @@ public final class TrashRuleFieldService {
     /** Capacity reservation is invisible to effect consumers until native acknowledgement activates it. */
     public static final class CreationClaim {
         private final RuleField field;
+        private CreationWrite writer;
+        private boolean cancelled;
         private CreationClaim(RuleField field) { this.field = field; }
         public RuleField field() { return field; }
+    }
+    /** An entered native acknowledgement keeps its existing capacity until this exact writer returns. */
+    public static final class CreationWrite {
+        private final TrashRuleFieldService authority;
+        private final CreationClaim claim;
+        private CreationWrite(TrashRuleFieldService authority, CreationClaim claim) { this.authority = authority; this.claim = claim; }
     }
     /** Identity equality prevents a retired callback releasing a newer claim of the same field. */
     public static final class FieldClaim {
@@ -78,14 +86,31 @@ public final class TrashRuleFieldService {
     }
     public synchronized boolean isPreparing(CreationClaim claim) {
         Objects.requireNonNull(claim);
-        return open && preparing.get(claim.field().id()) == claim && claim.field().active(clock.getAsLong());
+        return open && preparing.get(claim.field().id()) == claim && !claim.cancelled && claim.field().active(clock.getAsLong());
+    }
+    public synchronized Optional<CreationWrite> beginCreationWrite(CreationClaim claim) {
+        if (!isPreparing(claim) || claim.writer != null) return Optional.empty();
+        final var write = new CreationWrite(this, claim); claim.writer = write; return Optional.of(write);
+    }
+    public synchronized void endCreationWrite(CreationWrite write) {
+        Objects.requireNonNull(write);
+        if (write.authority == this && write.claim.writer == write) write.claim.writer = null;
     }
     public synchronized boolean activateCreation(CreationClaim claim) {
         if (!isPreparing(claim)) return false;
         preparing.remove(claim.field().id()); fields.put(claim.field().id(), claim.field()); revision++; return true;
     }
+    /** Final bounded influence admission is serialized with expiry, cancellation and shutdown. */
+    public synchronized boolean tryActivateCreation(CreationClaim claim, java.util.function.BooleanSupplier admission) {
+        Objects.requireNonNull(admission);
+        return isPreparing(claim) && admission.getAsBoolean() && activateCreation(claim);
+    }
     public synchronized boolean releaseCreation(CreationClaim claim) {
         Objects.requireNonNull(claim);
+        if (preparing.get(claim.field().id()) == claim && claim.writer != null) {
+            if (!claim.cancelled) { claim.cancelled = true; revision++; }
+            return false;
+        }
         if (!preparing.remove(claim.field().id(), claim)) return false;
         revision++; return true;
     }
@@ -97,7 +122,7 @@ public final class TrashRuleFieldService {
     }
     private List<RuleField> cancelCreations(java.util.function.Predicate<RuleField> predicate) {
         final var claims = preparing.values().stream().filter(claim -> predicate.test(claim.field())).toList();
-        claims.forEach(this::releaseCreation); return claims.stream().map(CreationClaim::field).toList();
+        return claims.stream().filter(this::releaseCreation).map(CreationClaim::field).toList();
     }
     /** Exact immutable field match; a reused/stale value cannot remove a different definition. */
     public synchronized boolean remove(RuleField field) {
@@ -143,6 +168,16 @@ public final class TrashRuleFieldService {
     public synchronized boolean activeAt(Point point, FieldKind kind) {
         Objects.requireNonNull(point); Objects.requireNonNull(kind); final long now = clock.getAsLong();
         return open && fields.values().stream().anyMatch(field -> field.kind() == kind && field.contains(point, now));
+    }
+    public synchronized List<RuleField> matching(Point point, FieldKind kind) {
+        Objects.requireNonNull(point); Objects.requireNonNull(kind); final long now = clock.getAsLong();
+        return open ? fields.values().stream().filter(field -> field.kind() == kind && field.contains(point, now)).toList() : List.of();
+    }
+    /** The caller supplies bounded owner-local observation only, with no I/O or scheduling under this monitor. */
+    public synchronized boolean tryApplyAt(Point point, FieldKind kind, List<RuleField> expected,
+            java.util.function.BooleanSupplier admission, java.util.function.BooleanSupplier effect) {
+        Objects.requireNonNull(expected); Objects.requireNonNull(admission); Objects.requireNonNull(effect);
+        return !expected.isEmpty() && matching(point, kind).equals(expected) && admission.getAsBoolean() && effect.getAsBoolean();
     }
     public synchronized boolean hasKind(FieldKind kind) {
         final long now = clock.getAsLong(); return open && fields.values().stream().anyMatch(field -> field.kind() == kind && field.active(now));

@@ -5,6 +5,8 @@ import hu.taliann.icesmp.dev.weaver.execution.PreparedAction;
 import hu.taliann.icesmp.dev.weaver.persistence.*;
 import hu.taliann.icesmp.dev.weaver.subject.*;
 import hu.taliann.icesmp.itemization.ItemIdentityService;
+import hu.taliann.icesmp.integrity.*;
+import hu.taliann.icesmp.dev.weaver.integrity.WeaverCausalSourceProvider;
 import hu.taliann.icesmp.trash.*;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -12,13 +14,14 @@ import java.util.*;
 import java.util.function.*;
 
 /** Hidden inspection adapter; native stores and authored catalogs remain the only authorities. */
-public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSnapshotContributor {
+public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSnapshotContributor, WeaverCausalSourceProvider {
     static final String FACET = "trash.inspection";
     static final WeaverTypeId IDENTITY = WeaverTypeId.parse("icesmp:trash_identity_ref@1");
     static final WeaverTypeId RULE = WeaverTypeId.parse("icesmp:trash_rule_ref@1");
     private final Function<SubjectRef, Map<String, WeaverValue>> capture;
     private final Map<String, WeaverValueCatalog> catalogs;
     private final ProviderContribution contribution;
+    private final Function<GameplaySourceSubject, List<RewardSource>> sourceCapture;
 
     public TrashWeaverProvider(WeaverProviderServices services, TrashCatalog catalog,
             TrashHistoryService history, TrashAnomalyStateStore memory, TrashRuleFieldService fields,
@@ -41,12 +44,25 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
                     : memory.tryInspect(inspected.history().orElseThrow().instanceId())
                             .orElseThrow(() -> new WeaverDomainRejection("TRASH_MEMORY_UNAVAILABLE"));
             return itemFacts(inspected, counters, System.currentTimeMillis());
+        }, subject -> {
+            final var entity = Bukkit.getEntity(subject.id());
+            if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) throw new WeaverDomainRejection("TRASH_SOURCE_OWNER_UNAVAILABLE");
+            final var location = entity.getLocation();
+            return fieldSources(fields.snapshot(), new TrashRuleFieldService.Point(location.getWorld().getUID(),
+                    location.getX(), location.getY(), location.getZ()), System.currentTimeMillis());
         });
     }
 
     TrashWeaverProvider(WeaverTypeRegistry types, Supplier<Map<String, TrashDefinition>> identities,
             Function<SubjectRef, Map<String, WeaverValue>> capture) {
+        this(types, identities, capture, ignored -> List.of());
+    }
+
+    TrashWeaverProvider(WeaverTypeRegistry types, Supplier<Map<String, TrashDefinition>> identities,
+            Function<SubjectRef, Map<String, WeaverValue>> capture,
+            Function<GameplaySourceSubject, List<RewardSource>> sourceCapture) {
         this.capture = Objects.requireNonNull(capture);
+        this.sourceCapture = Objects.requireNonNull(sourceCapture);
         types.register(ScalarTypeCodec.reference(IDENTITY, id -> identities.get().containsKey(id)));
         types.register(ScalarTypeCodec.reference(RULE, id -> rules().containsKey(id)));
         catalogs = Map.of(
@@ -66,6 +82,14 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
         for (final var kind : TrashRuleFieldService.FieldKind.values()) result.put(kind.name().toLowerCase(Locale.ROOT), kind.name());
         return Map.copyOf(result);
     }
+    static List<RewardSource> fieldSources(TrashRuleFieldService.Snapshot snapshot, TrashRuleFieldService.Point point, long now) {
+        if (!snapshot.open()) throw new WeaverDomainRejection("TRASH_FIELDS_UNAVAILABLE");
+        return snapshot.fields().stream().filter(field -> field.contains(point, now))
+                .map(field -> (RewardSource) new RewardSource.Event("trash.rule_field", field.id())).toList();
+    }
+    @Override public Set<GameplaySourceSubject.Kind> causalSourceKinds() { return Set.of(GameplaySourceSubject.Kind.values()); }
+    @Override public int maximumCausalSources() { return TrashRuleFieldService.MAX_FIELDS_PER_WORLD; }
+    @Override public List<RewardSource> captureCausalSources(GameplaySourceSubject subject) { return List.copyOf(sourceCapture.apply(subject)); }
     private static WeaverValue text(String value, long now) {
         return new WeaverValue(WeaverTypeId.parse("weaver:text@1"), Map.of("value", value), "trash", FACET, Set.of(), now);
     }

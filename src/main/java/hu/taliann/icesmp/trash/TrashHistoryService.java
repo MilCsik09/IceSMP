@@ -173,6 +173,24 @@ public final class TrashHistoryService {
             final java.util.function.BooleanSupplier admission,
             final java.util.function.BooleanSupplier finalAdmission,
             final java.util.function.Consumer<ItemStack> projection, final Runnable restoreProjection) {
+        return tryCommitPlannedUnit(plan, current, admission, finalAdmission, projection, restoreProjection, false);
+    }
+
+    /** Native success transition keeps the prepared UUID and the original origin in one WAL frame. */
+    public boolean tryTransformPlannedUnit(final UnitPlan plan, final ItemStack current,
+            final java.util.function.BooleanSupplier admission,
+            final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> projection, final Runnable restoreProjection) {
+        Objects.requireNonNull(plan);
+        if (plan.event != TrashHistoryEvent.ACTIVATED || itemFactory.successPhaseOf(plan.before).isEmpty()) return false;
+        return tryCommitPlannedUnit(plan, current, admission, finalAdmission, projection, restoreProjection, true);
+    }
+
+    private boolean tryCommitPlannedUnit(final UnitPlan plan, final ItemStack current,
+            final java.util.function.BooleanSupplier admission,
+            final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> projection, final Runnable restoreProjection,
+            final boolean transition) {
         Objects.requireNonNull(plan); Objects.requireNonNull(admission); Objects.requireNonNull(finalAdmission);
         Objects.requireNonNull(projection); Objects.requireNonNull(restoreProjection);
         if (plan.authority != this) return false;
@@ -180,7 +198,13 @@ public final class TrashHistoryService {
                         && plan.before.equals(current) && plannedHistoryMatches(plan) && admission.getAsBoolean(),
                 () -> plan.entered.compareAndSet(false, true) && finalAdmission.getAsBoolean(), () -> {
                     final ItemStack singleton = plan.before.clone();
-                    individualizeInternal(singleton, plan.event, plan.actor, "", plan.instanceId);
+                    final var activated = individualizeInternal(singleton, plan.event, plan.actor, "", plan.instanceId);
+                    if (transition) {
+                        final String phase = itemFactory.successPhaseOf(plan.before).orElseThrow();
+                        itemFactory.applyPhase(singleton, phase);
+                        writeAuthority(singleton, store.transform(activated.instanceId(), activated.baseId(),
+                                activated.phase(), phase, plan.actor));
+                    }
                     projection.accept(singleton);
                 }, restoreProjection);
     }
@@ -418,6 +442,17 @@ public final class TrashHistoryService {
     public boolean tryIndividualizeHandOnSuccess(final Player player, final EquipmentSlot hand, final UnitPlan plan,
             final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission,
             final java.util.function.Consumer<ItemStack> beforePublication) {
+        return tryCommitPlannedHand(player, hand, plan, admission, finalAdmission, beforePublication, false);
+    }
+
+    public boolean tryTransformPlannedHandOnSuccess(final Player player, final EquipmentSlot hand, final UnitPlan plan,
+            final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission) {
+        return tryCommitPlannedHand(player, hand, plan, admission, finalAdmission, ignored -> {}, true);
+    }
+
+    private boolean tryCommitPlannedHand(final Player player, final EquipmentSlot hand, final UnitPlan plan,
+            final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> beforePublication, final boolean transition) {
         Objects.requireNonNull(player); Objects.requireNonNull(plan); Objects.requireNonNull(beforePublication);
         if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(player) || !player.getUniqueId().equals(plan.actor)
                 || (hand != EquipmentSlot.HAND && hand != EquipmentSlot.OFF_HAND)) return false;
@@ -427,7 +462,8 @@ public final class TrashHistoryService {
         final ItemStack unit = captured.clone(); unit.setAmount(1);
         final int heldSlot = player.getInventory().getHeldItemSlot();
         final ItemStack[] before = cloneContents(player.getInventory().getContents());
-        return tryIndividualizePlannedUnit(plan, unit,
+        if (transition && (plan.event != TrashHistoryEvent.ACTIVATED || itemFactory.successPhaseOf(plan.before).isEmpty())) return false;
+        return tryCommitPlannedUnit(plan, unit,
                 () -> admission.getAsBoolean() && captured.equals(itemInHand(player, hand))
                         && (hand != EquipmentSlot.HAND || heldSlot == player.getInventory().getHeldItemSlot())
                         && (captured.getAmount() == 1 || player.getInventory().firstEmpty() >= 0),
@@ -438,7 +474,7 @@ public final class TrashHistoryService {
                     if (remainder != null && !player.getInventory().addItem(remainder).isEmpty()) {
                         throw new IllegalStateException("a Trash reservation remainder nem fér el");
                     }
-                }, () -> player.getInventory().setContents(before));
+                }, () -> player.getInventory().setContents(before), transition);
     }
 
     /** Transforms the exact helmet slot; an inventory copy cannot impersonate equipped state. */
