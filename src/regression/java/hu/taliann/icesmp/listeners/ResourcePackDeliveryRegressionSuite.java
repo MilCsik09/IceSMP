@@ -107,8 +107,11 @@ public final class ResourcePackDeliveryRegressionSuite {
         check(!pack.contains("player.removeResourcePacks()"), "cleanup removes another plugin's packs");
         check(plugin.contains("core.prepareDisable()") && plugin.contains("core.playerShutdownCompletion()")
                 && plugin.contains("resourcePackListener.prepareClose("), "real fail-closed route does not wait for native owner cleanup");
-        check(core.contains("hu.taliann.icesmp.IceSMP.requestDisable(plugin)")
-                && core.contains("if (!report.healthy())"), "NPC readiness gate was bypassed");
+        final String npc = core.substring(core.indexOf("private void registerNpcQuestBridge()"),
+                core.indexOf("private void scheduleQuestNpcMarkers()"));
+        check(npc.contains("bridgeRef.validateNpcs(questManager.getQuestNpcNames())")
+                && !npc.contains("requestDisable(") && !npc.contains("disablePlugin("),
+                "authored NPC diagnostics must not retire the plugin or its HUD");
         check(core.contains("prepareDisable();\n            if (statefulShutdownPrepared) finishProfileShutdown();"), "profile teardown no longer follows native preparation");
     }
 

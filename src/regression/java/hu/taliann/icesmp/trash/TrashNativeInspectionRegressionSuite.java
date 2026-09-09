@@ -20,7 +20,7 @@ public final class TrashNativeInspectionRegressionSuite {
             TrashWallHandoffRegressionSuite.main(args);
             historyTransaction(); historyWriteFailure(); anomalyTransaction();
             anomalyFailure(false); anomalyFailure(true); historyAcknowledgementFailure(); unloadedWrites();
-            nativeTryAdmission(); nativeCompactionAdmission();
+            nativeTryAdmission(); nativeCompactionAdmission(); nativeSingleUseAdmission();
             System.out.println("Trash native inspection passed. assertions=" + assertions);
         } finally { IO.shutdownNow(); }
     }
@@ -254,6 +254,60 @@ public final class TrashNativeInspectionRegressionSuite {
         final var reload = history(dir, catalog); reload.load();
         check(reload.tryInspect(id).orElseThrow().equals(before), "actual compacted state reloads exactly");
     }
+    private static void nativeSingleUseAdmission() throws Exception {
+        final var dir = Files.createTempDirectory("trash-single-use-admission-"); final var catalog = catalog();
+        final var store = history(dir, catalog); store.load();
+        final String base = catalog.snapshot().keySet().iterator().next(); final UUID id = UUID.randomUUID();
+        final var repeat = new AtomicInteger(); final var claims = new AtomicInteger();
+        final var permit = hu.taliann.icesmp.integrity.GameplayEffectPermit.guarded(() -> claims.incrementAndGet() == 1);
+        final Runnable unexpected = () -> { throw new AssertionError("unadmitted mutation or rollback"); };
+        check(!store.tryTransact(() -> false, permit::claim, unexpected, unexpected) && claims.get() == 0,
+                "initial refusal consumed a single-use permit");
+        check(!store.tryTransact(() -> repeat.incrementAndGet() == 1, permit::claim, unexpected, unexpected)
+                        && repeat.get() == 2 && claims.get() == 0,
+                "freshness rejection consumed a final permit");
+        final var entered = new CountDownLatch(1); final var release = new CountDownLatch(1);
+        final var holder = IO.submit(() -> store.transact(() -> {
+            check(!store.tryTransact(() -> true, permit::claim, unexpected, unexpected), "reentrant permit admitted");
+            entered.countDown(); await(release); return true;
+        }, null));
+        try {
+            check(entered.await(5, TimeUnit.SECONDS), "writer held before final permit");
+            check(!IO.submit(() -> store.tryTransact(() -> true, permit::claim, unexpected, unexpected)).get(2, TimeUnit.SECONDS),
+                    "busy writer waited or consumed final permit");
+            check(claims.get() == 0, "busy/reentrant refusal consumed permit");
+        } finally { release.countDown(); }
+        holder.get(5, TimeUnit.SECONDS);
+        repeat.set(0);
+        check(store.tryTransact(() -> repeat.incrementAndGet() <= 2, permit::claim,
+                () -> store.createAndRecord(id, base, "base", TrashHistoryEvent.ACTIVATED, null, ""), unexpected),
+                "single-use permit cannot reach native WAL");
+        check(repeat.get() == 2 && claims.get() == 1, "final permit evaluated as repeatable admission");
+        final byte[] committed = Files.readAllBytes(dir.resolve("history.wal"));
+        check(!store.tryTransact(() -> true, permit::claim, unexpected, unexpected), "consumed permit replayed native mutation");
+        check(Arrays.equals(committed, Files.readAllBytes(dir.resolve("history.wal"))), "rejected permit wrote another WAL frame");
+        for (int i = 1; i < 1024; i++) store.transact(() -> store.record(id, base, "base", TrashHistoryEvent.REPAIRED, null, ""), null);
+        final var compactPermit = hu.taliann.icesmp.integrity.GameplayEffectPermit.guarded(
+                () -> Files.exists(dir.resolve("history.yml")) && Files.exists(dir.resolve("history.wal")));
+        check(store.tryTransact(() -> true, compactPermit::claim,
+                () -> store.record(id, base, "base", TrashHistoryEvent.ACTIVATED, null, ""), unexpected),
+                "final permit did not run after actual compaction");
+        final var loaded = history(dir, catalog); loaded.load();
+        check(loaded.find(id).orElseThrow().revision() == 1025, "compacted permitted transaction not durable");
+        final var lostDir = Files.createTempDirectory("trash-permit-lost-ack-");
+        final var lost = new TrashHistoryStore(lostDir.resolve("history.yml").toFile(), lostDir.resolve("history.wal").toFile(),
+                LOGGER, catalog, (journal, sequence, payload) -> { journal.append(sequence, payload); throw new IllegalStateException("lost ack"); });
+        lost.load(); final var external = new AtomicInteger();
+        final var lostPermit = hu.taliann.icesmp.integrity.GameplayEffectPermit.guarded(() -> true);
+        refuses(() -> lost.tryTransact(() -> true, lostPermit::claim, () -> {
+            lost.createAndRecord(id, base, "base", TrashHistoryEvent.ACTIVATED, null, ""); external.set(1);
+        }, () -> external.set(0)));
+        check(external.get() == 0 && !lostPermit.claim(), "lost acknowledgement rearmed permit or lost external rollback");
+        check(lost.tryInspect(id).isEmpty(), "unassessed history became visible after permit consumption");
+        final var recovered = history(lostDir, catalog); recovered.load();
+        check(recovered.find(id).orElseThrow().revision() == 1, "real fsynced permitted mutation disappeared");
+    }
+
     private static void await(CountDownLatch latch) {
         try { if (!latch.await(5, TimeUnit.SECONDS)) throw new AssertionError("held native write timed out"); }
         catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); throw new AssertionError(interrupted); }

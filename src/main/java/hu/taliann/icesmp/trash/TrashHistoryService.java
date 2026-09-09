@@ -136,6 +136,62 @@ public final class TrashHistoryService {
         }
     }
 
+    /** Detached native target identity; preparation owns no history entry or second operation ledger. */
+    public static final class UnitPlan {
+        private final TrashHistoryService authority;
+        private final ItemStack before;
+        private final UUID instanceId;
+        private final UUID actor;
+        private final TrashHistoryEvent event;
+        private final java.util.concurrent.atomic.AtomicBoolean entered = new java.util.concurrent.atomic.AtomicBoolean();
+        private final long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+        private UnitPlan(TrashHistoryService authority, ItemStack before, UUID instanceId,
+                         UUID actor, TrashHistoryEvent event) {
+            this.authority = authority; this.before = before.clone(); this.instanceId = instanceId;
+            this.actor = actor; this.event = event;
+        }
+        public UUID instanceId() { return instanceId; }
+    }
+
+    /** Caller owns the singleton; no physical marker, history event or WAL frame is written here. */
+    public Optional<UnitPlan> tryPrepareUnit(final ItemStack singleton, final TrashHistoryEvent event,
+                                             final UUID actor) {
+        Objects.requireNonNull(event); Objects.requireNonNull(actor);
+        if (singleton == null || singleton.getAmount() != 1) return Optional.empty();
+        final var inspection = tryInspect(singleton);
+        if (inspection.isEmpty() || inspection.orElseThrow().pendingWall().isPresent()) return Optional.empty();
+        final UUID instance = instanceIdOf(singleton).orElseGet(UUID::randomUUID);
+        final var nativeState = store.tryInspect(instance);
+        if (nativeState.isEmpty()) return Optional.empty();
+        final var expected = inspection.orElseThrow().history();
+        if (!nativeState.orElseThrow().history().equals(expected)) return Optional.empty();
+        return Optional.of(new UnitPlan(this, singleton, instance, actor, event));
+    }
+
+    /** Both predicates and projection execute on the current item owner; the final permit is never retried. */
+    public boolean tryIndividualizePlannedUnit(final UnitPlan plan, final ItemStack current,
+            final java.util.function.BooleanSupplier admission,
+            final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> projection, final Runnable restoreProjection) {
+        Objects.requireNonNull(plan); Objects.requireNonNull(admission); Objects.requireNonNull(finalAdmission);
+        Objects.requireNonNull(projection); Objects.requireNonNull(restoreProjection);
+        if (plan.authority != this) return false;
+        return store.tryTransact(() -> !plan.entered.get() && System.nanoTime() - plan.deadline < 0
+                        && plan.before.equals(current) && plannedHistoryMatches(plan) && admission.getAsBoolean(),
+                () -> plan.entered.compareAndSet(false, true) && finalAdmission.getAsBoolean(), () -> {
+                    final ItemStack singleton = plan.before.clone();
+                    individualizeInternal(singleton, plan.event, plan.actor, "", plan.instanceId);
+                    projection.accept(singleton);
+                }, restoreProjection);
+    }
+
+    private boolean plannedHistoryMatches(final UnitPlan plan) {
+        final var existing = instanceIdOf(plan.before);
+        return existing.isEmpty() ? store.find(plan.instanceId).isEmpty()
+                : store.matches(plan.instanceId, itemFactory.idOf(plan.before).orElseThrow(),
+                        itemFactory.phaseOf(plan.before).orElseThrow(), revisionOf(plan.before));
+    }
+
     public ItemStack individualizeUnit(final ItemStack rawItem, final TrashHistoryEvent event,
                                        final UUID actor, final String detail) {
         final ItemStack item = Objects.requireNonNull(rawItem, "rawItem");
@@ -339,18 +395,23 @@ public final class TrashHistoryService {
         final ItemStack source = itemInHand(player, hand);
         if (!itemFactory.isKnownItem(source)) return false;
         if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        final ItemStack captured = source.clone();
+        final ItemStack unit = captured.clone(); unit.setAmount(1);
+        final var plan = tryPrepareUnit(unit, event, player.getUniqueId());
+        if (plan.isEmpty()) return false;
+        final int heldSlot = player.getInventory().getHeldItemSlot();
         final ItemStack[] before = cloneContents(player.getInventory().getContents());
-        return store.transact(() -> {
-            final ItemStack singleton = source.clone();
-            singleton.setAmount(1);
-            individualizeInternal(singleton, event, player.getUniqueId(), "");
-            setItemInHand(player, hand, singleton);
-            final ItemStack remainder = remainderOf(source);
-            if (remainder != null && !player.getInventory().addItem(remainder).isEmpty()) {
-                throw new IllegalStateException("a Trash reservation remainder nem fér el");
-            }
-            return true;
-        }, () -> player.getInventory().setContents(before));
+        return tryIndividualizePlannedUnit(plan.orElseThrow(), unit,
+                () -> captured.equals(itemInHand(player, hand))
+                        && (hand != EquipmentSlot.HAND || heldSlot == player.getInventory().getHeldItemSlot())
+                        && (captured.getAmount() == 1 || player.getInventory().firstEmpty() >= 0),
+                () -> true, singleton -> {
+                    setItemInHand(player, hand, singleton);
+                    final ItemStack remainder = remainderOf(captured);
+                    if (remainder != null && !player.getInventory().addItem(remainder).isEmpty()) {
+                        throw new IllegalStateException("a Trash reservation remainder nem fér el");
+                    }
+                }, () -> player.getInventory().setContents(before));
     }
 
     /** Transforms the exact helmet slot; an inventory copy cannot impersonate equipped state. */
@@ -525,13 +586,19 @@ public final class TrashHistoryService {
     private TrashHistoryStore.Snapshot individualizeInternal(
             final ItemStack item, final TrashHistoryEvent event,
             final UUID actor, final String detail) {
+        return individualizeInternal(item, event, actor, detail, null);
+    }
+
+    private TrashHistoryStore.Snapshot individualizeInternal(
+            final ItemStack item, final TrashHistoryEvent event,
+            final UUID actor, final String detail, final UUID plannedInstance) {
         validateSingleton(item);
         final String baseId = itemFactory.idOf(item).orElseThrow();
         final String phase = itemFactory.phaseOf(item).orElseThrow();
         final UUID existing = instanceIdOf(item).orElse(null);
         final TrashHistoryStore.Snapshot history;
         if (existing == null) {
-            final UUID instanceId = UUID.randomUUID();
+            final UUID instanceId = plannedInstance == null ? UUID.randomUUID() : plannedInstance;
             final TrashHistoryEvent creation = creationEventOf(item).orElse(null);
             final TrashHistoryStore.Snapshot created = store.createAndRecord(instanceId, baseId,
                     phase, creation == null ? event : creation, creation == null ? actor : null,
@@ -539,6 +606,9 @@ public final class TrashHistoryService {
             history = creation == null ? created
                     : store.record(instanceId, baseId, phase, event, actor, detail);
         } else {
+            if (plannedInstance != null && !existing.equals(plannedInstance)) {
+                throw new IllegalStateException("planned native instance changed");
+            }
             requireCurrent(item, existing, baseId, phase);
             history = store.record(existing, baseId, phase, event, actor, detail);
         }

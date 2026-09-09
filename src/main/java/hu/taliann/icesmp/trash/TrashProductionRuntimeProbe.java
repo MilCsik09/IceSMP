@@ -240,6 +240,50 @@ public final class TrashProductionRuntimeProbe {
         store.load();
         check(history.tryInspect(unit).orElseThrow().equals(current), "real native history reload changed inspection");
         verifyAcknowledgedWallProjection(catalog, items, store, history, directory);
+        verifyPlannedNativeUnit(plugin, catalog, items, store, history, directory);
+    }
+
+    private static void verifyPlannedNativeUnit(final JavaPlugin plugin, final TrashCatalog catalog,
+            final TrashItemFactory items, final TrashHistoryStore store, final TrashHistoryService history,
+            final java.nio.file.Path directory) throws java.io.IOException {
+        // Detached real ItemStacks exercise native identity and WAL, not connected inventory custody.
+        final String base = catalog.snapshot().keySet().iterator().next(); final var actor = java.util.UUID.randomUUID();
+        final ItemStack unit = items.create(base, 1); history.markOrigin(unit, TrashLootSource.AMBIENT);
+        final byte[] physical = unit.serializeAsBytes(), wal = java.nio.file.Files.readAllBytes(directory.resolve("history.wal"));
+        final var plan = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+        check(store.find(plan.instanceId()).isEmpty() && history.instanceIdOf(unit).isEmpty(), "planning allocated history or physical identity");
+        check(java.util.Arrays.equals(physical, unit.serializeAsBytes())
+                && java.util.Arrays.equals(wal, java.nio.file.Files.readAllBytes(directory.resolve("history.wal"))), "planning wrote native state");
+        final var output = new java.util.concurrent.atomic.AtomicReference<ItemStack>();
+        final Runnable unexpected = () -> { throw new IllegalStateException("untouched projection rolled back"); };
+        final var permit = hu.taliann.icesmp.integrity.GameplayEffectPermit.guarded(() -> true);
+        check(!history.tryIndividualizePlannedUnit(plan, unit, () -> false, permit::claim, output::set, unexpected), "initial refusal bypassed");
+        final ItemStack drifted = unit.clone(); drifted.setAmount(2);
+        check(!history.tryIndividualizePlannedUnit(plan, drifted, () -> true, permit::claim, output::set, unexpected), "physical drift bypassed");
+        final var other = new TrashHistoryService(plugin, catalog, items, store);
+        check(!other.tryIndividualizePlannedUnit(plan, unit, () -> true, permit::claim, output::set, unexpected), "foreign authority accepted plan");
+        check(history.tryIndividualizePlannedUnit(plan, unit, () -> true, permit::claim, output::set, unexpected), "native planned unit refused");
+        final ItemStack tracked = output.get(); final var nativeHistory = history.historyOf(tracked).orElseThrow();
+        check(nativeHistory.instanceId().equals(plan.instanceId()) && nativeHistory.revision() == 2
+                && nativeHistory.events().getFirst().type() == TrashHistoryEvent.CREATED_AMBIENT,
+                "planned identity or natural provenance changed at publication");
+        check(!history.tryIndividualizePlannedUnit(plan, unit, () -> true, () -> true, output::set, unexpected), "consumed plan replayed");
+        final var sameIdentity = history.tryPrepareUnit(tracked, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+        check(sameIdentity.instanceId().equals(plan.instanceId()), "tracked planning allocated another authority");
+        history.recordIfTracked(tracked, TrashHistoryEvent.REPAIRED, actor, "");
+        check(!history.tryIndividualizePlannedUnit(sameIdentity, tracked, () -> true, () -> true, output::set, unexpected), "stale planned history accepted");
+        final var refused = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+        check(!history.tryIndividualizePlannedUnit(refused, unit, () -> true, () -> false, output::set, unexpected), "denied final permit accepted");
+        check(!history.tryIndividualizePlannedUnit(refused, unit, () -> true, () -> true, output::set, unexpected), "denied final attempt rearmed");
+        check(store.find(refused.instanceId()).isEmpty(), "denied plan created a history instance");
+        final var rollback = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+        boolean failed = false;
+        try { history.tryIndividualizePlannedUnit(rollback, unit, () -> true, () -> true,
+                value -> { output.set(value); throw new IllegalStateException("injected publication failure"); }, () -> output.set(null)); }
+        catch (IllegalStateException expected) { failed = true; }
+        check(failed && output.get() == null && store.find(rollback.instanceId()).isEmpty(), "failed planned projection did not roll back atomically");
+        store.load();
+        check(store.find(plan.instanceId()).orElseThrow().revision() == 3, "planned target did not survive real WAL reload");
     }
 
     private static void verifyAcknowledgedWallProjection(final TrashCatalog catalog, final TrashItemFactory items,

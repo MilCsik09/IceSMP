@@ -429,15 +429,21 @@ public final class TrashHistoryStore implements PersistentStore {
     /** Refuses another writer immediately; admitted work still uses the native synchronous WAL transaction. */
     public boolean tryTransact(final BooleanSupplier admission, final Runnable mutation,
                                final Runnable restoreExternal) {
+        return tryTransact(admission, () -> true, mutation, restoreExternal);
+    }
+
+    /** Repeatable freshness surrounds compaction; a single-use permit is claimed only at final mutation admission. */
+    public boolean tryTransact(final BooleanSupplier admission, final BooleanSupplier finalAdmission,
+                               final Runnable mutation, final Runnable restoreExternal) {
         Objects.requireNonNull(admission, "admission");
+        Objects.requireNonNull(finalAdmission, "finalAdmission");
         Objects.requireNonNull(mutation, "mutation");
         if (stateLock.isHeldByCurrentThread() || !stateLock.tryLock()) return false;
         try {
             requireLoadedAcknowledgement();
             if (!admission.getAsBoolean()) return false;
-            // Compaction may run inside transact; recheck lifecycle before item/history projection.
             return transact(() -> {
-                if (!admission.getAsBoolean()) return false;
+                if (!admission.getAsBoolean() || !finalAdmission.getAsBoolean()) return false;
                 mutation.run();
                 return true;
             }, restoreExternal);
