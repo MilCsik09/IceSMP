@@ -1478,7 +1478,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "015daf4c18718b978c2ac974f1124a1f909924c43a2978bd1389222449aaa801",
+      "source_sha256": "c639172e10d854aee0cc84721a124bfd0722774ef9ad62fdf979b9f14d04dc94",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -1986,7 +1986,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
       "domain": "minecraft",
-      "source_sha256": "0b0c4e93a6aef98efbf2e92a9d51fcfd653dce956d438764d1f94372668639ba",
+      "source_sha256": "801937162a1c695738ab72f0c36c6fbb247fd419ddd3f8f0a6448bb19e346653",
       "public_methods": [
         "SubjectSnapshotFactory",
         "capture",
@@ -6542,7 +6542,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "1839776e5cf0f24a0d7ca3f4635af3e0ec4d1af67616b6efa04a3b141830dfcc",
+      "source_sha256": "ef0a48388b8d9b3734baa3654e93779e07cce78d59377457ca6c05275893f5af",
       "public_methods": [
         "ItemInspection",
         "SplitResult",

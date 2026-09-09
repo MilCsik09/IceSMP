@@ -132,7 +132,15 @@ public final class WeaverContractRegressionSuite {
         String refusal;
         boolean reserved;
         int captures;
+        int recoveryCaptures;
+        String recoveryValue;
         SnapshotProvider(String id) { super(id, safe(id), CoverageLevel.FULL_PROVIDER, Map.of()); }
+        @Override public Map<String, WeaverValue> captureRecoveryOnOwner(RecoveryContext context) {
+            context.authority().require(context.operation()); recoveryCaptures++;
+            if (recoveryValue == null) return WeaverSnapshotContributor.super.captureRecoveryOnOwner(context);
+            return Map.of(id + ".fact", new WeaverValue(WeaverTypeId.parse("weaver:text@1"),
+                    Map.of("value", recoveryValue), id, id, Set.of(), 1));
+        }
         @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef subject) {
             captures++;
             if (broken) throw new LinkageError("private provider detail");

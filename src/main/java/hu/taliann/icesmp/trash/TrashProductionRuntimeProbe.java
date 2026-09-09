@@ -299,6 +299,9 @@ public final class TrashProductionRuntimeProbe {
             current.set(before); store.load();
             check(history.tryRestoreDeveloperProjection(receipt, current::get, current::set, () -> current.set(before)), "exact pending physical recovery refused");
             check(java.util.Arrays.equals(after, current.get()), "native recovery did not restore exact item bytes");
+            final ItemStack[] changedAmount = current.get().clone(); changedAmount[output] = changedAmount[output].clone();
+            changedAmount[output].setAmount(changedAmount[output].getAmount() + 1);
+            check(!history.tryConfirmDeveloperProjection(receipt, () -> changedAmount), "changed native amount borrowed a projection acknowledgement");
             check(history.tryConfirmDeveloperProjection(receipt, current::get), "exact native projection was not acknowledged");
             final var evidence = history.historyOf(current.get()[output]).orElseThrow();
             check(evidence.events().getLast().type() == kind.event()

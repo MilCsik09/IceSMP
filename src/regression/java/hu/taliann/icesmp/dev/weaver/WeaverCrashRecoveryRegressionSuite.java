@@ -93,20 +93,26 @@ public final class WeaverCrashRecoveryRegressionSuite {
         for (int i = 0; i < 3; i++) providers.captureContributions(subject);
         check(providers.quarantined(target.id) && providers.quarantined(other.id), "snapshot quarantine fixture missing");
         target.broken = false; other.broken = false;
+        target.recoveryValue = "native-operation-observation";
         final int otherCaptures = other.captures;
         final java.util.concurrent.atomic.AtomicReference<RecoveryContext> observed = new java.util.concurrent.atomic.AtomicReference<>();
         final SubjectSnapshotSource source = new SubjectSnapshotSource() {
             public CompletionStage<SubjectSnapshot> capture(UUID actor, SubjectRef ref) { throw new AssertionError("recovery did not request scoped snapshot authority"); }
             public CompletionStage<SubjectSnapshot> captureRecovery(RecoveryContext context) {
                 observed.set(context);
-                return CompletableFuture.completedFuture(new SubjectSnapshot(context.operation().subject(), 1, "before", providers.captureRecoveryContributions(context)));
+                final var facts = providers.captureRecoveryContributions(context);
+                check(facts.get("fixture.fact").payload().get("value").equals("native-operation-observation"),
+                        "operation recovery was routed through ordinary stale-item inspection");
+                return CompletableFuture.completedFuture(new SubjectSnapshot(context.operation().subject(), 1, "before", facts));
             }
         };
         final var recovery = new WeaverRecoveryCoordinator(journal, source, providers, types); await(recovery.start());
         check(journal.snapshot().operations().get(operation.operationId()).status() == OperationStatus.ABORTED && other.captures == otherCaptures,
                 "scoped recovery failed to observe its provider or bypassed another provider's quarantine");
         check(providers.quarantined(target.id), "read-only recovery re-enabled interactive provider actions");
+        check(target.recoveryCaptures == 1 && other.recoveryCaptures == 0, "recovery capability escaped its own provider");
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> providers.captureRecoveryContributions(observed.get()));
+        check(target.recoveryCaptures == 1, "stale operation token entered a native recovery callback");
         recovery.close(); await(journal.close());
     }
     private static void profileMaintenanceAdmission() throws Exception {

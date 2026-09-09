@@ -250,16 +250,18 @@ public final class WorldWeaverProviderRegistry {
     /** The operation-scoped recovery token permits only its provider's owner-thread observation. */
     public Map<String, WeaverValue> captureRecoveryContributions(final RecoveryContext context) {
         context.authority().require(context.operation());
-        return captureContributions(context.operation().subject(), Optional.of(context.operation().providerId()));
+        return captureContributions(context.operation().subject(), Optional.of(context));
     }
-    private Map<String, WeaverValue> captureContributions(final hu.taliann.icesmp.dev.weaver.subject.SubjectRef subject, final Optional<String> recoveringProvider) {
+    private Map<String, WeaverValue> captureContributions(final hu.taliann.icesmp.dev.weaver.subject.SubjectRef subject, final Optional<RecoveryContext> recovery) {
         requireFrozen();
+        final Optional<String> recoveringProvider = recovery.map(context -> context.operation().providerId());
         final Map<String, WeaverValue> facts = new TreeMap<>();
         for (final Entry entry : providers.values()) {
             if (!entry.kinds().contains(subject.kind()) || !(entry.provider() instanceof WeaverSnapshotContributor contributor)) continue;
             try {
                 final Map<String, WeaverValue> captured = entry.breaker().call(() -> {
-                    final Map<String, WeaverValue> values = Map.copyOf(contributor.captureOnOwner(subject));
+                    final Map<String, WeaverValue> values = Map.copyOf(recoveringProvider.filter(entry.id()::equals).isPresent()
+                            ? contributor.captureRecoveryOnOwner(recovery.orElseThrow()) : contributor.captureOnOwner(subject));
                     if (values.size() > 128) throw new IllegalArgumentException("Provider snapshot fact cap");
                     values.forEach((key, value) -> {
                         if (!key.startsWith(entry.id() + ".") || !value.sourceProvider().equals(entry.id()) || key.endsWith(".snapshot_unavailable")) throw new IllegalArgumentException("Foreign/reserved snapshot fact");

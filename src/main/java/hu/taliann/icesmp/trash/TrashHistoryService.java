@@ -290,7 +290,10 @@ public final class TrashHistoryService {
     private boolean matchesProjection(final TrashDeveloperReceipt receipt, final ItemStack[] inventory, final boolean after) {
         if (inventory == null || inventory.length != 41) return false;
         for (final var slot : receipt.slots()) {
-            if (!(after ? slot.after() : slot.before()).equals(encodeSlot(inventory[slot.slot()]))) return false;
+            // Paper may reorder native NBT across deserialize/serialize. Compare the complete decoded item,
+            // including amount and all metadata, rather than treating byte ordering as an authority revision.
+            final ItemStack expected = decodeSlot(after ? slot.after() : slot.before());
+            if (expected == null ? !empty(inventory[slot.slot()]) : !expected.equals(inventory[slot.slot()])) return false;
         }
         for (int slot = 0; slot < inventory.length; slot++) {
             final int index = slot;
