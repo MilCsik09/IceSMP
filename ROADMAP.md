@@ -185,7 +185,8 @@ A kód és a csomagolt config önmagában nem építi meg a szezont. A következ
 tételek a szervercsapat feladatai:
 
 - ◇ **18 NPC-szerep** fizikai kihelyezése és `/npcbind` kötése a
-  [teljes quest- és NPC-leltár](docs/QUESTS.md) alapján;
+  [teljes quest- és NPC-leltár](docs/QUESTS.md) alapján. Hiányuk naplózott
+  tartalomhiány, nem pluginleállítás; az érintett NPC-útvonalak ettől még nem készek;
 - ◇ a szükséges **4 territory ID** kijelölése, majd a **4 frakcióspawn**
   pontos állóhelyének és nézési irányának mentése;
 - ◇ a `kezdo_parkour` pálya megépítése és bekötése;

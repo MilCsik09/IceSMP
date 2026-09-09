@@ -1190,6 +1190,13 @@ enforcement mellett hiányzó vagy eltérő kötelező plugin fail-closed startu
 Jelenleg FancyNpcs az egyetlen kötelező külső gameplay dependency. MythicMobs nem tervezett;
 PacketEvents és FancyDialogs csak jövőbeli integrációs jelölt, ezért egyik sem szerepel az aktív
 Paper metadata- vagy provisioning contractban.
+A hiányzó vagy hibás belső nevű quest-NPC **nem állítja le az IceSMP-t**.
+Az indulás után 60 másodperccel futó ellenőrzés továbbra is kilistázza a problémás
+neveket és quest-hivatkozásokat. Az érintett NPC-függő felvétel, beszélgetés és
+leadás a megfelelő NPC létrehozásáig/javításáig nem használható; a többi rendszer
+és a helyesen bekötött NPC-k működnek. Az ellenőrzés nem teljesít questet és nem
+ad jutalmat. A hiányzó vagy inkompatibilis FancyNpcs plugin továbbra is külön
+startup-hiba.
 Quarantine esetén az evidence megőrzendő, és csak az explicit
 `/spec recover <player|uuid> confirm` parancs használható (`icesmp.admin.spec.recover`).
 A részletes persistence-, recovery- és shutdown-folyamat:
@@ -1949,6 +1956,7 @@ ellenőrizd; normál beszedési útvonal nincs.
 | [ ] | WORLD-02 Territórium/claim | Builder/admin | határpontok és bypass profil | védelem, trust és zónaszabály helyes | építés stop | `world/WORLD-02/` |
 | [ ] | WORLD-02B 3D főváros | Builder/admin | radiusos és claim-kijelöléses főváros stagingen | radius mód változatlan; a hat XYZ-határ, vertikális/világváltás, restart, `/territory show`, claim-konfliktus, kijelölés-életciklus és biztonságos tp/home helyes | rollout stop; hibánál kijelölés megtartása | `world/WORLD-02B/` |
 | [ ] | WORLD-03 Quest/NPC | Builder/eventes | minden használt NPC és questhely | FancyNpcs-kötés és az admin `/quest talk` áthidalás működik | kötés újraépítése | `world/WORLD-03/` |
+| [ ] | WORLD-03A Hiányzó NPC-binding | Admin/Builder | FancyNpcs működik, egy quest-NPC hiányzik vagy hibás nevű; várj 60 másodpercet | IceSMP aktív, HUD/parancsok működnek; napló pontos nevet és quest-hivatkozást ír; nincs automatikus quest-haladás/jutalom; helyes NPC létrehozása után a valódi kattintás működik | binding javítása, a plugin leállítása nélkül | `world/WORLD-03A/` |
 | [ ] | WORLD-03B Quest-forrás v2 | Tesztelő/eventes | NPC-quest + megbízás + lánc-quest stagingen | NPC-quest csak az adó NPC-nél vehető fel és NÁLA adható le (KÉSZ állapot + záró dialógus ott); megbízás a napló Megbízások füléről indul és auto-zárul; `/quest accept`/`talk` játékosként tagadva; lánc-feloldás értesít, auto-lánc explicit auto-accepttel fut; hibás quests.yml reloadnál a korábbi registry él | quest-rollout stop, hibajegy | `world/WORLD-03B/` |
 | [ ] | WORLD-04 Boss/event anchor | Eventes | minden fix spawnhely | biztonságos, nem WG/claim-konfliktusos | anchor eltávolítása | `world/WORLD-04/` |
 | [ ] | WORLD-05 WorldEdit/világcsere | Builder | staging másolat utáni bejárás | crate, territory, NPC, ritual, dungeon ép | rollback snapshot | `world/WORLD-05/` |

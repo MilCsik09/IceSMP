@@ -1283,7 +1283,7 @@ public final class IceSMPCore {
         }
     }
 
-    /** Registers the required FancyNpcs production bridge; every failure is startup-fatal. */
+    /** Bridge initialization is required; missing authored NPCs remain a deployment diagnostic. */
     private void registerNpcQuestBridge() {
         if (!plugin.getServer().getPluginManager().isPluginEnabled("FancyNpcs")) {
             throw new IllegalStateException("FancyNpcs required production dependency is not enabled; "
@@ -1320,17 +1320,11 @@ public final class IceSMPCore {
                     hu.taliann.icesmp.gui.CommandMenus.openFaction(player, commandMenuContext));
             scheduleQuestNpcMarkers();
             questManager.setNpcBridgeActive(true);
-            // NPC-létezés ellenőrzés késleltetve (a FancyNpcs a saját NPC-it a világok
-            // betöltése után éleszti) — hiányos authored snapshot fail-closed letiltást kap.
+            // FancyNpcs loads authored NPCs after worlds. Missing bindings must not retire
+            // unrelated authorities; quest admission stays with the existing interaction authority.
             final hu.taliann.icesmp.integration.FancyNpcsQuestBridge bridgeRef = npcQuestBridge;
-            questNpcValidationTask = Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
-                final var report = bridgeRef.validateNpcs(questManager.getQuestNpcNames());
-                if (!report.healthy()) {
-                    plugin.getLogger().severe("FancyNpcs authored NPC snapshot is incomplete; "
-                            + "IceSMP disables fail-closed instead of exposing dead onboarding content.");
-                    hu.taliann.icesmp.IceSMP.requestDisable(plugin);
-                }
-            }, 20L * 60L);
+            questNpcValidationTask = Bukkit.getGlobalRegionScheduler().runDelayed(plugin,
+                    task -> bridgeRef.validateNpcs(questManager.getQuestNpcNames()), 20L * 60L);
             plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok, /npcbind kötések).");
         } catch (final Throwable throwable) {
             throw new IllegalStateException("FancyNpcs required production bridge failed to initialize", throwable);
