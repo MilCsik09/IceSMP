@@ -116,6 +116,15 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
         facts.put("trash.fields_revision", text(Long.toString(snapshot.revision()), now));
         final var fields = snapshot.fields().stream().filter(field -> field.center().world().equals(world)).sorted(Comparator.comparing(TrashRuleFieldService.RuleField::id)).toList();
         facts.put("trash.fields_count", text(Integer.toString(fields.size()), now));
+        final var preparing = snapshot.preparing().stream().filter(field -> field.center().world().equals(world))
+                .sorted(Comparator.comparing(TrashRuleFieldService.RuleField::id)).toList();
+        facts.put("trash.preparing_count", text(Integer.toString(preparing.size()), now));
+        for (int index = 0; index < preparing.size(); index++) {
+            final var field = preparing.get(index);
+            facts.put("trash.preparing." + String.format(Locale.ROOT, "%02d", index), text(field.id()
+                    + " | " + field.kind() + " | owner=" + field.owner() + " | expires=" + field.expiresAt()
+                    + " | PREPARING_NO_ACTIVE_EFFECT", now));
+        }
         for (int index = 0; index < fields.size(); index++) {
             final var field = fields.get(index); final var center = field.center();
             facts.put("trash.field." + String.format(Locale.ROOT, "%02d", index), text(field.id() + " | " + field.kind().name()

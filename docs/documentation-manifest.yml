@@ -926,7 +926,7 @@
         "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "95e85d08d61d281a8d805af5bfc83c6b36f7149095596dc4887f619593206b56",
         "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "957c8a7a4afa78310ffb05ed933bf883fc2bbc3bba085c572570d5a9b9ef7b5a",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "f4465642a6bf4d482b99f48cb9a9bbe1a91f7bb15a53acdad2a4f0124c11a1bb",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "a28d7e3f8025cd6802e08d8bf4fc5db538669620687315664c3c585584efb92c",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "cbfd4f86bddc1f145a5282f135300f6e6272dac2f66efb5b90d486505582298b",
         "src/main/java/hu/taliann/icesmp/core/Permissions.java": "744df8e6380105f102d4b3d88375db3c272d7bde41ba7412b35cf040818ae5d8",
         "src/main/java/hu/taliann/icesmp/gui/CommandMenus.java": "20d8601d82e5de18029cc3e98d1f4a8ce8f350a702cc3563646d0acc89198a63",
         "src/main/java/hu/taliann/icesmp/gui/ModerationGUI.java": "791c36f5c07a92045bcfa6e745dcadd5dacaa64f92258ae898504a157b358b73",
@@ -8679,7 +8679,7 @@
         "arfolyamtabla",
         "ratesboard"
       ],
-      "registration_line": 2110,
+      "registration_line": 2104,
       "implementation": "ExchangeBoardCommand"
     },
     "command.punishments": {
@@ -8691,7 +8691,7 @@
       "name": "punishments",
       "description": "Aktív büntetések (admin)",
       "aliases": [],
-      "registration_line": 2015,
+      "registration_line": 2009,
       "implementation": "ActivePunishmentsCommand"
     },
     "route.market.sell-r-valuta-57dd501253": {
@@ -8722,7 +8722,7 @@
       "name": "sinner",
       "description": "Bűnös állapot kezelése (admin)",
       "aliases": [],
-      "registration_line": 2051,
+      "registration_line": 2045,
       "implementation": "SinnerCommand"
     },
     "route.bank.withdraw-red-blue-neutral-dark-sszeg-837b26fa49": {
@@ -8826,7 +8826,7 @@
         "eco",
         "money"
       ],
-      "registration_line": 2041,
+      "registration_line": 2035,
       "implementation": "CurrencyCommand"
     },
     "route.parkour.setstart-id-n-v-873b963232": {
@@ -9113,7 +9113,7 @@
         "lelek",
         "soul"
       ],
-      "registration_line": 2107,
+      "registration_line": 2101,
       "implementation": "SoulCommand"
     },
     "command.offlinetp": {
@@ -9125,7 +9125,7 @@
       "name": "offlinetp",
       "description": "Teleport az utolsó kijelentkezési helyre",
       "aliases": [],
-      "registration_line": 2026,
+      "registration_line": 2020,
       "implementation": "OfflineTeleportCommand"
     },
     "route.bank.root-5546d57526": {
@@ -9209,7 +9209,7 @@
         "esemeny",
         "event"
       ],
-      "registration_line": 2090,
+      "registration_line": 2084,
       "implementation": "EventsCommand"
     },
     "route.events.spawnpoint-list-79877fb1e0": {
@@ -9522,7 +9522,7 @@
         "emlekek",
         "memory"
       ],
-      "registration_line": 2093,
+      "registration_line": 2087,
       "implementation": "MemoryCommand"
     },
     "route.crate.set-l-da-id-9e3e673970": {
@@ -9722,7 +9722,7 @@
       "aliases": [
         "duel"
       ],
-      "registration_line": 2077,
+      "registration_line": 2071,
       "implementation": "HonorDuelCommand"
     },
     "route-alias.lore.t-ma-e42a542b71.mortengrad-f0de9006": {
@@ -10017,7 +10017,7 @@
         "job",
         "kaszt"
       ],
-      "registration_line": 2046,
+      "registration_line": 2040,
       "implementation": "JobCommand"
     },
     "route.sit.root-be684d6e26": {
@@ -10136,7 +10136,7 @@
       "name": "tell",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 2032,
+      "registration_line": 2026,
       "implementation": "PrivateMessageCommand"
     },
     "route.crate.list-aa44f4dfea": {
@@ -10180,7 +10180,7 @@
         "kuldetes",
         "quests"
       ],
-      "registration_line": 2066,
+      "registration_line": 2060,
       "implementation": "QuestCommand"
     },
     "command.crate": {
@@ -10195,7 +10195,7 @@
         "crates",
         "ladak"
       ],
-      "registration_line": 1985,
+      "registration_line": 1979,
       "implementation": "CrateCommand"
     },
     "route.profession.clear-online-j-t-kos-gathering-crafting-94f838cfa8": {
@@ -10336,7 +10336,7 @@
       "aliases": [
         "ismp"
       ],
-      "registration_line": 1978,
+      "registration_line": 1972,
       "implementation": "IceSMPCommand"
     },
     "route.party.zenet-aa13d37028": {
@@ -10369,7 +10369,7 @@
       "aliases": [
         "weeklygoal"
       ],
-      "registration_line": 2081,
+      "registration_line": 2075,
       "implementation": "ProfessionWeeklyCommand"
     },
     "route.spec.info-2f86e46064": {
@@ -10723,7 +10723,7 @@
       "aliases": [
         "sutt"
       ],
-      "registration_line": 2095,
+      "registration_line": 2089,
       "implementation": "WhisperCommand"
     },
     "route.icesmp.root-3d9c831e41": {
@@ -10767,7 +10767,7 @@
         "relics",
         "relikvia"
       ],
-      "registration_line": 2053,
+      "registration_line": 2047,
       "implementation": "RelicCommand"
     },
     "route.bank.deposit-d3026e7f77": {
@@ -11139,7 +11139,7 @@
         "vault",
         "wallet"
       ],
-      "registration_line": 2042,
+      "registration_line": 2036,
       "implementation": "BankCommand"
     },
     "route.msg.j-t-kos-zenet-59f5bb82b9": {
@@ -11210,7 +11210,7 @@
       "name": "tempban",
       "description": "Ideiglenes kitiltás (admin)",
       "aliases": [],
-      "registration_line": 2006,
+      "registration_line": 2000,
       "implementation": "ModerationActionCommand"
     },
     "route.territory.rename-id-j-n-v-0e55b1e6f3": {
@@ -11295,7 +11295,7 @@
         "fejvadasz",
         "korozes"
       ],
-      "registration_line": 2052,
+      "registration_line": 2046,
       "implementation": "BountyCommand"
     },
     "command.vanish": {
@@ -11309,7 +11309,7 @@
       "aliases": [
         "v"
       ],
-      "registration_line": 2023,
+      "registration_line": 2017,
       "implementation": "VanishCommand"
     },
     "alias.exchangeboard.arfolyamtabla": {
@@ -11352,7 +11352,7 @@
       "aliases": [
         "spy"
       ],
-      "registration_line": 2079,
+      "registration_line": 2073,
       "implementation": "SpyCommand"
     },
     "alias.spellbook.konyv": {
@@ -11538,7 +11538,7 @@
         "companion",
         "tars"
       ],
-      "registration_line": 2056,
+      "registration_line": 2050,
       "implementation": "PetCommand"
     },
     "command.lore": {
@@ -11552,7 +11552,7 @@
       "aliases": [
         "kodex"
       ],
-      "registration_line": 2097,
+      "registration_line": 2091,
       "implementation": "LoreCommand"
     },
     "route.parbaj.kihiv-online-j-t-kos-77340a6a59": {
@@ -11646,7 +11646,7 @@
       "name": "hud",
       "description": "HUD beállítások",
       "aliases": [],
-      "registration_line": 1981,
+      "registration_line": 1975,
       "implementation": "HudCommand"
     },
     "route.events.archeology-59c0c86dd5": {
@@ -11760,7 +11760,7 @@
       "name": "sit",
       "description": "Ülés (leül/feláll)",
       "aliases": [],
-      "registration_line": 1983,
+      "registration_line": 1977,
       "implementation": "SitCommand"
     },
     "route.tanacs.vasarhet-2b790f1d02": {
@@ -11793,7 +11793,7 @@
       "aliases": [
         "terulet"
       ],
-      "registration_line": 2065,
+      "registration_line": 2059,
       "implementation": "TerritoryCommand"
     },
     "alias.parbaj.duel": {
@@ -11825,7 +11825,7 @@
       "name": "unban",
       "description": "Kitiltás feloldása (admin)",
       "aliases": [],
-      "registration_line": 2009,
+      "registration_line": 2003,
       "implementation": "ModerationRevokeCommand"
     },
     "command.adomany": {
@@ -11840,7 +11840,7 @@
         "adomanylada",
         "donate"
       ],
-      "registration_line": 2068,
+      "registration_line": 2062,
       "implementation": "DonationChestCommand"
     },
     "alias.territory.terulet": {
@@ -11885,7 +11885,7 @@
       "name": "invsee",
       "description": "Online inventory/ender live nézet (admin)",
       "aliases": [],
-      "registration_line": 1979,
+      "registration_line": 1973,
       "implementation": "InvseeCommand"
     },
     "route.warn.j-t-kos-ok-73731e594b": {
@@ -11949,7 +11949,7 @@
         "bestiary",
         "lajstrom"
       ],
-      "registration_line": 2072,
+      "registration_line": 2066,
       "implementation": "BestiaryCommand"
     },
     "route-alias.events.spawnpoint-add-world-boss-escort-caravan-cultists-any-id-8274b4ad60.spawnpont-f9cb59a1": {
@@ -11976,7 +11976,7 @@
         "rangsor",
         "top"
       ],
-      "registration_line": 2049,
+      "registration_line": 2043,
       "implementation": "LeaderboardCommand"
     },
     "route.claim.claim-20ce366db5": {
@@ -12302,7 +12302,7 @@
       "aliases": [
         "ferry"
       ],
-      "registration_line": 2091,
+      "registration_line": 2085,
       "implementation": "KompCommand"
     },
     "route-alias.profession.recipes-d99cf16c6c.receptek-326be994": {
@@ -12415,7 +12415,7 @@
         "palya",
         "trial"
       ],
-      "registration_line": 2054,
+      "registration_line": 2048,
       "implementation": "ParkourCommand"
     },
     "route-alias.events.worldboss-b1d9efaf9c.boss-a5e7c002": {
@@ -12611,7 +12611,7 @@
         "prof",
         "szakma"
       ],
-      "registration_line": 2057,
+      "registration_line": 2051,
       "implementation": "ProfessionCommand"
     },
     "route.events.cultists-835d9785cd": {
@@ -12740,7 +12740,7 @@
       "name": "w",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 2035,
+      "registration_line": 2029,
       "implementation": "PrivateMessageCommand"
     },
     "alias.currency.money": {
@@ -12784,7 +12784,7 @@
       "name": "afk",
       "description": "Önkéntes AFK-jelölés",
       "aliases": [],
-      "registration_line": 1984,
+      "registration_line": 1978,
       "implementation": "AfkCommand"
     },
     "command.spec": {
@@ -12799,7 +12799,7 @@
         "specializacio",
         "specialization"
       ],
-      "registration_line": 2061,
+      "registration_line": 2055,
       "implementation": "SpecCommand"
     },
     "route.territory.list-8b41a6ee36": {
@@ -12832,7 +12832,7 @@
       "aliases": [
         "council"
       ],
-      "registration_line": 2092,
+      "registration_line": 2086,
       "implementation": "TanacsCommand"
     },
     "alias.quest.quests": {
@@ -12892,7 +12892,7 @@
       "name": "history",
       "description": "Teljes büntetési előzmény (admin)",
       "aliases": [],
-      "registration_line": 2012,
+      "registration_line": 2006,
       "implementation": "PunishmentHistoryCommand"
     },
     "alias.spellbook.sb": {
@@ -13537,7 +13537,7 @@
       "name": "kick",
       "description": "Játékos kirúgása (admin)",
       "aliases": [],
-      "registration_line": 1994,
+      "registration_line": 1988,
       "implementation": "ModerationActionCommand"
     },
     "route-alias.events.archeology-59c0c86dd5.regeszet-e40487bd": {
@@ -13583,7 +13583,7 @@
         "karakter",
         "status"
       ],
-      "registration_line": 2050,
+      "registration_line": 2044,
       "implementation": "ProfileCommand"
     },
     "route.faction.caravan-send-sszeg-19f36c48e1": {
@@ -13638,7 +13638,7 @@
         "hub",
         "m"
       ],
-      "registration_line": 2047,
+      "registration_line": 2041,
       "implementation": "MenuCommand"
     },
     "command.claim": {
@@ -13652,7 +13652,7 @@
       "aliases": [
         "birtok"
       ],
-      "registration_line": 2083,
+      "registration_line": 2077,
       "implementation": "ClaimCommand"
     },
     "route-alias.profession.recipes-d99cf16c6c.book-92719fe0": {
@@ -13775,7 +13775,7 @@
         "ah",
         "piac"
       ],
-      "registration_line": 2067,
+      "registration_line": 2061,
       "implementation": "MarketCommand"
     },
     "alias.kem.spy": {
@@ -14093,7 +14093,7 @@
       "name": "stats",
       "description": "Statisztika-profil",
       "aliases": [],
-      "registration_line": 1982,
+      "registration_line": 1976,
       "implementation": "StatsCommand"
     },
     "route.szakmacel.root-5b9277c302": {
@@ -14148,7 +14148,7 @@
         "icegive",
         "iitem"
       ],
-      "registration_line": 2101,
+      "registration_line": 2095,
       "implementation": "ItemGiveCommand"
     },
     "route.w.j-t-kos-zenet-f5a5ab9bc2": {
@@ -14297,7 +14297,7 @@
       "name": "warn",
       "description": "Figyelmeztetés (admin)",
       "aliases": [],
-      "registration_line": 1991,
+      "registration_line": 1985,
       "implementation": "ModerationActionCommand"
     },
     "route.faction.join-frakci-3aa58cfbd1": {
@@ -14407,7 +14407,7 @@
       "name": "mute",
       "description": "Némítás (admin)",
       "aliases": [],
-      "registration_line": 1997,
+      "registration_line": 1991,
       "implementation": "ModerationActionCommand"
     },
     "alias.bestiarium.bestiary": {
@@ -14467,7 +14467,7 @@
       "name": "socialspy",
       "description": "Privát üzenetek megfigyelése (admin)",
       "aliases": [],
-      "registration_line": 2020,
+      "registration_line": 2014,
       "implementation": "SocialSpyCommand"
     },
     "route.territory.info-bc573dcb2e": {
@@ -14588,7 +14588,7 @@
         "gild",
         "guild"
       ],
-      "registration_line": 2070,
+      "registration_line": 2064,
       "implementation": "GuildCommand"
     },
     "route.icesmp.inspect-n-v-cf976d4f92": {
@@ -14638,7 +14638,7 @@
       "name": "ban",
       "description": "Kitiltás (admin)",
       "aliases": [],
-      "registration_line": 2003,
+      "registration_line": 1997,
       "implementation": "ModerationActionCommand"
     },
     "route.emlek.talent-c777d563f2": {
@@ -14729,7 +14729,7 @@
         "p",
         "parti"
       ],
-      "registration_line": 2069,
+      "registration_line": 2063,
       "implementation": "PartyCommand"
     },
     "route.faction.raid-c-lfrakci-ter-let-6fc1e21fb6": {
@@ -14800,7 +14800,7 @@
       "aliases": [
         "chronicle"
       ],
-      "registration_line": 2099,
+      "registration_line": 2093,
       "implementation": "KronikaCommand"
     },
     "alias.ceh.gild": {
@@ -14953,7 +14953,7 @@
       "aliases": [
         "r"
       ],
-      "registration_line": 2038,
+      "registration_line": 2032,
       "implementation": "PrivateMessageCommand"
     },
     "command.soulforge": {
@@ -14967,7 +14967,7 @@
       "aliases": [
         "lelekkovacs"
       ],
-      "registration_line": 2074,
+      "registration_line": 2068,
       "implementation": "SoulforgeCommand"
     },
     "alias.report.bejelent": {
@@ -15002,7 +15002,7 @@
       "aliases": [
         "npckotes"
       ],
-      "registration_line": 2111,
+      "registration_line": 2105,
       "implementation": "NpcBindCommand"
     },
     "command.spellbook": {
@@ -15018,7 +15018,7 @@
         "sb",
         "varazskonyv"
       ],
-      "registration_line": 2109,
+      "registration_line": 2103,
       "implementation": "SpellbookCommand"
     },
     "route.quest.admin-addobjective-id-objekt-va-darab-le-r-s-eb03e45589": {
@@ -15348,7 +15348,7 @@
       "name": "unmute",
       "description": "Némítás feloldása (admin)",
       "aliases": [],
-      "registration_line": 2000,
+      "registration_line": 1994,
       "implementation": "ModerationRevokeCommand"
     },
     "route.afk.root-5475cc764f": {
@@ -15451,7 +15451,7 @@
       "line": 1
     },
     "_contract": {
-      "entries_sha256": "c47210e2a3408d5da118fcf55ac42ab16e0298cb177f2c9f835e782633f63f69",
+      "entries_sha256": "b27edc8420bf94836b8b55ded0427987e5843d338e277e22f3a925fb3ad92f99",
       "version": 1,
       "source_sha256": {
         "src/main/java/hu/taliann/icesmp/IceSMP.java": "d218431292efeb75b5ca656be193129d0838d79e5f09752bbb67e353485b6111",
@@ -15541,7 +15541,7 @@
         "src/main/java/hu/taliann/icesmp/commands/job/JobSetXpSubcommand.java": "95e85d08d61d281a8d805af5bfc83c6b36f7149095596dc4887f619593206b56",
         "src/main/java/hu/taliann/icesmp/commands/job/JobStatusSubcommand.java": "957c8a7a4afa78310ffb05ed933bf883fc2bbc3bba085c572570d5a9b9ef7b5a",
         "src/main/java/hu/taliann/icesmp/commands/job/JobUnlockSpellSubcommand.java": "f4465642a6bf4d482b99f48cb9a9bbe1a91f7bb15a53acdad2a4f0124c11a1bb",
-        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "a28d7e3f8025cd6802e08d8bf4fc5db538669620687315664c3c585584efb92c",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java": "cbfd4f86bddc1f145a5282f135300f6e6272dac2f66efb5b90d486505582298b",
         "src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java": "201b23c33a4bb5a918fbf93ba48593f00c8ccf62b9240ab147577f69910166c6"
       },
       "source_snapshot_sha256": "48089a2357fe8a1c70a8ea826ee90f370f065089a752613e51041e50527ee598",
@@ -15695,7 +15695,7 @@
         "mesterseg",
         "spells"
       ],
-      "registration_line": 2108,
+      "registration_line": 2102,
       "implementation": "SpellCommand"
     },
     "route.iceitem.root-77ef588c2d": {
@@ -15899,7 +15899,7 @@
       "aliases": [
         "f"
       ],
-      "registration_line": 2045,
+      "registration_line": 2039,
       "implementation": "FactionCommand"
     },
     "route.claim.untrust-online-j-t-kos-b0b336ee22": {
@@ -16206,7 +16206,7 @@
         "talentfa",
         "talents"
       ],
-      "registration_line": 2062,
+      "registration_line": 2056,
       "implementation": "TalentCommand"
     },
     "route.market.auction-kiki-lt-si-r-ra-valuta-buyout-r-bo-r-9e5a92f7db": {
@@ -16308,7 +16308,7 @@
         "ach",
         "eleresek"
       ],
-      "registration_line": 2048,
+      "registration_line": 2042,
       "implementation": "AchievementsCommand"
     },
     "route.talent.list-1240393f51": {
@@ -16473,7 +16473,7 @@
       "name": "reports",
       "description": "Bejelentések kezelése (admin)",
       "aliases": [],
-      "registration_line": 1989,
+      "registration_line": 1983,
       "implementation": "ReportsCommand"
     },
     "route.emlek.spec-495f15ff26": {
@@ -16525,7 +16525,7 @@
       "aliases": [
         "napi"
       ],
-      "registration_line": 2055,
+      "registration_line": 2049,
       "implementation": "DailyCommand"
     },
     "route.iceitem.tervrajz-recept-id-darab-online-j-t-kos-4c749ad1a2": {
@@ -16558,7 +16558,7 @@
       "aliases": [
         "bejelent"
       ],
-      "registration_line": 1987,
+      "registration_line": 1981,
       "implementation": "ReportCommand"
     },
     "route.kem.c-lfrakci-91c0c8e276": {
@@ -16648,7 +16648,7 @@
       "name": "msg",
       "description": "Privát üzenet",
       "aliases": [],
-      "registration_line": 2029,
+      "registration_line": 2023,
       "implementation": "PrivateMessageCommand"
     },
     "alias.profile.karakter": {
@@ -16710,7 +16710,7 @@
       "aliases": [
         "mod"
       ],
-      "registration_line": 2018,
+      "registration_line": 2012,
       "implementation": "ModerationGuiCommand"
     },
     "alias.crate.ladak": {

@@ -76,13 +76,26 @@ public final class TrashWeaverInspectionRegressionSuite {
                 new TrashRuleFieldService.Point(other, 0, 64, 0), 1, 200, actor, null)), "other-world field admitted");
         service.claim(new TrashRuleFieldService.Point(world, 0, 64, 0), TrashRuleFieldService.FieldKind.CEASEFIRE).orElseThrow();
         final var before = service.snapshot(); final var facts = fieldFacts(before, world, 100);
-        check(facts.size() == 34 && facts.values().stream().noneMatch(value -> value.payload().toString().contains(other.toString())), "world-local bounded field view excludes other world");
+        check(facts.size() == 35 && facts.values().stream().noneMatch(value -> value.payload().toString().contains(other.toString())), "world-local bounded field view excludes other world");
         check(facts.values().stream().anyMatch(value -> value.payload().toString().contains("claimed=true")), "native in-flight claim visible");
         for (final var value : facts.values()) { types.require(value.type()).validate(value.payload()).requireValid(); assertions++; }
         new InspectionResult(FACET, facts, List.of());
         check(fieldFacts(before, world, 201).values().stream().noneMatch(value -> value.payload().toString().contains("active=true")), "expired retained fields not reported active");
         check(service.snapshot().equals(before), "inspection neither expires nor claims fields");
         service.close(); refuses(() -> fieldFacts(service.snapshot(), world, 100));
+        final var pendingService = new TrashRuleFieldService(clock::get);
+        final var reserved = new TrashRuleFieldService.RuleField(UUID.randomUUID(), TrashRuleFieldService.FieldKind.PROJECTILE_WALL,
+                new TrashRuleFieldService.Point(world, 0, 64, 0), 1, 200, actor, UUID.randomUUID().toString());
+        pendingService.reserveCreation(reserved).orElseThrow();
+        pendingService.reserveCreation(new TrashRuleFieldService.RuleField(UUID.randomUUID(), TrashRuleFieldService.FieldKind.CEASEFIRE,
+                new TrashRuleFieldService.Point(other, 0, 64, 0), 1, 200, actor, null)).orElseThrow();
+        final var pendingSnapshot = pendingService.snapshot(); final var pendingFacts = fieldFacts(pendingSnapshot, world, 100);
+        check(pendingFacts.get("trash.fields_count").payload().get("value").equals("0")
+                && pendingFacts.get("trash.preparing_count").payload().get("value").equals("1"), "preparation reported as active field");
+        check(pendingFacts.values().stream().anyMatch(value -> value.payload().toString().contains("PREPARING_NO_ACTIVE_EFFECT"))
+                && pendingFacts.values().stream().noneMatch(value -> value.payload().toString().contains(other.toString())), "pending field scope leaks another world");
+        check(pendingService.snapshot().equals(pendingSnapshot), "inspection changed preparation");
+        for (final var value : pendingFacts.values()) { types.require(value.type()).validate(value.payload()).requireValid(); assertions++; }
     }
 
     private static void pendingEffects(WeaverTypeRegistry types) {

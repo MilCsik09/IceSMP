@@ -399,13 +399,28 @@ public final class TrashHistoryService {
         final ItemStack unit = captured.clone(); unit.setAmount(1);
         final var plan = tryPrepareUnit(unit, event, player.getUniqueId());
         if (plan.isEmpty()) return false;
+        return tryIndividualizeHandOnSuccess(player, hand, plan.orElseThrow(), () -> true, () -> true, ignored -> {});
+    }
+
+    /** Native inventory projection shares the prepared unit's WAL boundary; caller supplies only bounded owner-local work. */
+    public boolean tryIndividualizeHandOnSuccess(final Player player, final EquipmentSlot hand, final UnitPlan plan,
+            final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> beforePublication) {
+        Objects.requireNonNull(player); Objects.requireNonNull(plan); Objects.requireNonNull(beforePublication);
+        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(player) || !player.getUniqueId().equals(plan.actor)
+                || (hand != EquipmentSlot.HAND && hand != EquipmentSlot.OFF_HAND)) return false;
+        final ItemStack source = itemInHand(player, hand);
+        if (!itemFactory.isKnownItem(source)) return false;
+        final ItemStack captured = source.clone();
+        final ItemStack unit = captured.clone(); unit.setAmount(1);
         final int heldSlot = player.getInventory().getHeldItemSlot();
         final ItemStack[] before = cloneContents(player.getInventory().getContents());
-        return tryIndividualizePlannedUnit(plan.orElseThrow(), unit,
-                () -> captured.equals(itemInHand(player, hand))
+        return tryIndividualizePlannedUnit(plan, unit,
+                () -> admission.getAsBoolean() && captured.equals(itemInHand(player, hand))
                         && (hand != EquipmentSlot.HAND || heldSlot == player.getInventory().getHeldItemSlot())
                         && (captured.getAmount() == 1 || player.getInventory().firstEmpty() >= 0),
-                () -> true, singleton -> {
+                finalAdmission, singleton -> {
+                    beforePublication.accept(singleton);
                     setItemInHand(player, hand, singleton);
                     final ItemStack remainder = remainderOf(captured);
                     if (remainder != null && !player.getInventory().addItem(remainder).isEmpty()) {

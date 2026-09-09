@@ -1964,7 +1964,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
       "domain": "trash",
-      "source_sha256": "183c32616480f53f0601b9e86b166bfea4235b8cfac59a2ffad32ea624d3deba",
+      "source_sha256": "d46c95c56670b4b08b76f6714269276b3c8df07135c7252de92324503b63d431",
       "public_methods": [
         "TrashWeaverProvider",
         "assessRecovery",
@@ -6526,7 +6526,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "67b1172d30a1997a04522573a88d7b41bda9b2c33d013e64e2df1ba47b27a8a7",
+      "source_sha256": "4a95a8372b25adf3cee5957608e767087a9066bd6211b9f4e9451bc78bb2c7f7",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6558,6 +6558,7 @@
         "transformOnSuccess",
         "tryConfirmProjectileWallRemoval",
         "tryConsumeProjectileWall",
+        "tryIndividualizeHandOnSuccess",
         "tryIndividualizePlannedUnit",
         "tryInspect",
         "tryInspectPendingProjectileWalls",
@@ -6675,7 +6676,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "6283c82ebef1f9aa0be4bf277467065ce72f09accd5341c3824d367793a38a88",
+      "source_sha256": "e18b39c218f11948519fd81584713653f9edb41c160493a6032e02cea870e0bf",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",
@@ -6708,9 +6709,12 @@
         "RuleField",
         "Snapshot",
         "TrashRuleFieldService",
+        "activateCreation",
         "active",
         "activeAt",
         "add",
+        "cancelCreationsForOwner",
+        "cancelCreationsForWorld",
         "claim",
         "close",
         "contains",
@@ -6719,14 +6723,17 @@
         "hasCapacity",
         "hasKind",
         "isClaimed",
+        "isPreparing",
         "releaseClaim",
+        "releaseCreation",
         "remove",
         "removeClaimed",
         "removeIdle",
+        "reserveCreation",
         "snapshot",
         "tryObserveClaimedEffect"
       ],
-      "source_sha256": "d12b6a55b125ccf97d3ea79a1c09630142b4567e2bce4936adf60a4851a93bf4"
+      "source_sha256": "0d814cd9a695a68fa1d8bcd79fb18a0d3bca94f2c0f7c030e53e528c0614bdcd"
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",

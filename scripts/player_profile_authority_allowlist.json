@@ -675,6 +675,11 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, UUID> wallOperationByInstance = new java.util.HashMap<>();",
       "category": "RUNTIME",
       "reason": "Derived lookup from native Trash instance UUID to its canonical wall operation UUID, rebuilt from retained native receipts and updated under the same transaction/load/rollback lock. Bounded by the existing history capacity; neither player state nor separately persisted authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java|private final Map<UUID, CreationClaim> preparing = new LinkedHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Pending creation capacity within the existing native field authority, keyed by actual field UUID and sharing the 32/world and 128/global cap with active fields. Exact identity tokens are released/activated or cancelled on expiry, owner cleanup, world unload and close. No player progression, persistence or separate field authority."
     }
   ]
 }

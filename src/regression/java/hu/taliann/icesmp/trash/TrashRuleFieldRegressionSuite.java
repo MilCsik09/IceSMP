@@ -13,9 +13,62 @@ public final class TrashRuleFieldRegressionSuite {
         return new RuleField(UUID.randomUUID(), kind, new Point(world, 0, 0, 0), 6, expiry, UUID.randomUUID(), kind == FieldKind.PROJECTILE_WALL ? UUID.randomUUID().toString() : null);
     }
     public static void main(String[] args) throws Exception {
-        geometryAndLifecycle(); capsAndSnapshots(); contention(); claimIdentity(); finalEffectAdmission(); invalidValues(); lifecycleProbe();
+        geometryAndLifecycle(); capsAndSnapshots(); contention(); claimIdentity(); finalEffectAdmission(); invalidValues(); lifecycleProbe(); creationReservations();
         System.out.println("Trash rule-field authority passed. assertions=" + assertions);
     }
+    private static void creationReservations() throws Exception {
+        final var clock = new AtomicLong(1000); final var service = new TrashRuleFieldService(clock::get);
+        final UUID world = UUID.randomUUID(); final var wall = field(world, FieldKind.PROJECTILE_WALL, 2000);
+        final var first = service.reserveCreation(wall).orElseThrow(); final var before = service.snapshot();
+        check(before.preparing().equals(List.of(wall)) && before.fields().isEmpty(), "preparation exposed an active field");
+        check(!service.hasKind(wall.kind()) && !service.activeAt(wall.center(), wall.kind())
+                && service.claim(wall.center(), wall.kind()).isEmpty(), "unacknowledged preparation affects gameplay");
+        check(service.reserveCreation(wall).isEmpty() && !service.add(wall), "duplicate identity bypassed preparation");
+        try { before.preparing().clear(); throw new AssertionError("mutable preparations"); }
+        catch (UnsupportedOperationException expected) { assertions++; }
+        final var other = new TrashRuleFieldService(clock::get); final var foreign = other.reserveCreation(wall).orElseThrow();
+        check(!service.activateCreation(foreign) && !service.releaseCreation(foreign), "foreign creation claim accepted");
+        check(service.releaseCreation(first), "creation release refused");
+        final var replacement = service.reserveCreation(wall).orElseThrow();
+        check(!service.activateCreation(first) && !service.releaseCreation(first) && service.isPreparing(replacement),
+                "stale creation callback affected replacement");
+        for (int i = 0; i < MAX_FIELDS_PER_WORLD - 1; i++) check(service.add(field(world, FieldKind.CEASEFIRE, 2000)), "mixed-cap setup");
+        check(!service.hasCapacity(world) && service.reserveCreation(field(world, FieldKind.ACOUSTIC_NULL, 2000)).isEmpty(),
+                "preparation omitted from native capacity");
+        check(service.activateCreation(replacement) && service.snapshot().fields().size() == MAX_FIELDS_PER_WORLD
+                && service.snapshot().preparing().isEmpty(), "activation lost or exceeded reserved capacity");
+        check(!service.activateCreation(replacement) && !service.releaseCreation(replacement) && service.contains(wall),
+                "late preparation cleanup removed active effect");
+        check(before.preparing().equals(List.of(wall)) && before.fields().isEmpty(), "old snapshot changed with activation");
+        final UUID anotherWorld = UUID.randomUUID(); final var expired = service.reserveCreation(field(anotherWorld, FieldKind.SPATIAL_ANCHOR, 2000)).orElseThrow();
+        clock.set(2000);
+        check(!service.activateCreation(expired), "expired preparation activated");
+        check(service.expire().contains(expired.field()) && service.snapshot().preparing().isEmpty(), "expired preparation capacity leaked");
+        clock.set(1000);
+        final var ownerClaim = service.reserveCreation(wall).orElseThrow();
+        final var worldClaim = service.reserveCreation(field(anotherWorld, FieldKind.CEASEFIRE, 2000)).orElseThrow();
+        check(service.cancelCreationsForOwner(wall.owner()).equals(List.of(wall)) && !service.activateCreation(ownerClaim)
+                && service.isPreparing(worldClaim), "owner cleanup crossed another owner or left late activation");
+        check(service.cancelCreationsForWorld(anotherWorld).equals(List.of(worldClaim.field())) && !service.activateCreation(worldClaim), "world cleanup left late activation");
+        for (int i = 0; i < MAX_FIELDS_PER_WORLD - 1; i++) service.reserveCreation(field(world, FieldKind.CEASEFIRE, 2000)).orElseThrow();
+        try (var pool = Executors.newFixedThreadPool(8)) {
+            final List<Future<Boolean>> tasks = new ArrayList<>();
+            for (int i = 0; i < 32; i++) tasks.add(pool.submit(() -> service.reserveCreation(field(world, FieldKind.CEASEFIRE, 2000)).isPresent()));
+            int accepted = 0; for (final var task : tasks) if (task.get(5, TimeUnit.SECONDS)) accepted++;
+            check(accepted == 1 && service.snapshot().preparing().size() == MAX_FIELDS_PER_WORLD, "concurrent preparations exceeded world cap");
+        }
+        check(service.close().size() == MAX_FIELDS_PER_WORLD && service.snapshot().preparing().isEmpty(), "close leaked reserved capacity");
+        check(service.reserveCreation(wall).isEmpty() && !service.activateCreation(first), "closed field authority reopened");
+        final var global = new TrashRuleFieldService(() -> 1000);
+        for (int w = 0; w < 4; w++) {
+            final UUID nextWorld = UUID.randomUUID();
+            for (int i = 0; i < MAX_FIELDS_PER_WORLD; i++) global.reserveCreation(field(nextWorld, FieldKind.ACOUSTIC_NULL, 2000)).orElseThrow();
+        }
+        check(global.snapshot().preparing().size() == MAX_FIELDS_GLOBAL && global.snapshot().fields().isEmpty()
+                && global.reserveCreation(field(UUID.randomUUID(), FieldKind.CEASEFIRE, 2000)).isEmpty(), "global capacity ignored in-flight preparations");
+        check(global.close().size() == MAX_FIELDS_GLOBAL && global.snapshot().preparing().isEmpty(), "global preparation cleanup incomplete");
+    }
+
     private static void geometryAndLifecycle() {
         final var clock = new AtomicLong(1000); final var service = new TrashRuleFieldService(clock::get); final UUID world = UUID.randomUUID();
         for (final var kind : FieldKind.values()) {

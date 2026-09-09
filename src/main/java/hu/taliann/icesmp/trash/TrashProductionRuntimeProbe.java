@@ -381,6 +381,7 @@ public final class TrashProductionRuntimeProbe {
         check(snapshot.open() == expectedOpen, "Rule-field lifecycle state mismatch");
         check(snapshot.fields().isEmpty(), "Rule fields remain at lifecycle boundary");
         check(snapshot.claimed().isEmpty(), "Rule-field claims remain at lifecycle boundary");
+        check(snapshot.preparing().isEmpty(), "Rule-field preparations remain at lifecycle boundary");
     }
 
     static void verifyProjectileTrackingState(final TrashRelicPolicy.TrackingSnapshot snapshot,

@@ -60,9 +60,56 @@ public final class WeaverEffectPropagationRegressionSuite {
         await(restart.close());
         final var shutdown = await(journal.prepareDerivedEffect(context)); await(journal.close());
         check(!shutdown.claim(), "shutdown permit remained usable");
-        failures(); publicationFence(); slowAcknowledgement(); bindings(); freshSources(); acknowledgedInstantReuse();
+        failures(); publicationFence(); slowAcknowledgement(); bindings(); freshSources(); acknowledgedInstantReuse(); trashFieldCreation();
         System.out.println("Derived influence propagation passed: " + assertions + " assertions; durable all-scope targets, transitive origin, no receipt mutation, one-use admission, publication race, crash uncertainty and real YAML restart.");
     }
+    private static void trashFieldCreation() throws Exception {
+        final var storage = new Storage(); final var journal = new WeaverJournal(storage); await(journal.load());
+        final var root = new EntityRef(UUID.randomUUID());
+        apply(journal, operation(root, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX), WeaverEffectCommit.none());
+        final var fields = new hu.taliann.icesmp.trash.TrashRuleFieldService();
+        final var field = new hu.taliann.icesmp.trash.TrashRuleFieldService.RuleField(UUID.randomUUID(),
+                hu.taliann.icesmp.trash.TrashRuleFieldService.FieldKind.PROJECTILE_WALL,
+                new hu.taliann.icesmp.trash.TrashRuleFieldService.Point(UUID.randomUUID(), 0, 64, 0),
+                2.5, System.currentTimeMillis() + 20000, root.entityId(), UUID.randomUUID().toString());
+        final var reservation = fields.reserveCreation(field).orElseThrow();
+        final var item = new RewardSource.Item(UUID.randomUUID()); final var event = new RewardSource.Event("trash.rule_field", field.id());
+        final var sources = List.<RewardSource>of(new RewardSource.Entity(root.entityId()));
+        try (var binding = GameplayEffectGate.install(journal::prepareDerivedEffect)) {
+            final var permit = await(GameplayEffectGate.prepare(new GameplayEffectContext(sources, Set.of(item, event), 0)));
+            check(fields.snapshot().fields().isEmpty() && fields.isPreparing(reservation), "field active before native publication");
+            check(storage.state.equals(journal.snapshot()) && journal.influenceIndex().quarantined(item, System.currentTimeMillis())
+                    && journal.influenceIndex().quarantined(event, System.currentTimeMillis()), "actual item/field lineage not durable before permission");
+            check(permit.claim(sources) && fields.activateCreation(reservation), "durably admitted field refused publication");
+            final var origin = journal.influenceIndex().trace(sources, System.currentTimeMillis()).origins();
+            check(journal.influenceIndex().trace(List.of(item, event), System.currentTimeMillis()).origins().equals(origin), "field/item lost original developer lineage");
+            check(!permit.claim(sources) && !fields.activateCreation(reservation), "field creation replayed");
+            fields.remove(field);
+            check(journal.influenceIndex().quarantined(item, System.currentTimeMillis())
+                    && journal.influenceIndex().quarantined(event, System.currentTimeMillis()), "field removal washed monotonic lineage");
+            final var pending = fields.reserveCreation(field).orElseThrow();
+            final var context = new GameplayEffectContext(sources, Set.of(item, event), 0);
+            final var historyPermit = await(GameplayEffectGate.prepare(context));
+            final var fieldPermit = await(GameplayEffectGate.prepare(context));
+            check(historyPermit.claim(sources), "pre-WAL influence admission refused");
+            final var changedSource = new EntityRef(UUID.randomUUID());
+            apply(journal, operation(changedSource, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX), WeaverEffectCommit.none());
+            check(!fieldPermit.claim(List.of(new RewardSource.Entity(changedSource.entityId()))),
+                    "post-WAL source change borrowed the pre-WAL permit");
+            check(fields.releaseCreation(pending) && fields.snapshot().fields().isEmpty(),
+                    "refused post-WAL effect left active native field");
+        } finally { fields.close(); await(journal.close()); }
+        final String runtime = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java"));
+        final String wall = runtime.substring(runtime.indexOf("private void createProjectileWall("), runtime.indexOf("private void createField("));
+        check(wall.indexOf("reserveCreation(field)") < wall.indexOf("GameplayEffectGate.prepare(context)")
+                && wall.indexOf("GameplayEffectGate.prepare(context)") < wall.indexOf("history.tryIndividualizeHandOnSuccess")
+                && wall.indexOf("history.tryIndividualizeHandOnSuccess") < wall.indexOf("activateCreation(reservation)"), "native wall publication bypassed reserve/lineage/history order");
+        check(wall.contains("new RewardSource.Item(plan.instanceId())") && wall.contains("new RewardSource.Event(\"trash.rule_field\", field.id())")
+                && wall.contains("permits.history().claim(wallCreationSources(player, unit, field))"), "native wall lost planned identities or owner-fresh sources");
+        check(wall.contains("permits.field().claim(wallCreationSources(player, itemInHand(player, hand), field))"),
+                "native field publication omitted post-WAL fresh influence admission");
+    }
+
     private static void acknowledgedInstantReuse() throws Exception {
         final var storage = new Storage(); final var clock = new java.util.concurrent.atomic.AtomicLong(100L);
         final var journal = new WeaverJournal(storage, ignored -> { }, clock::get); await(journal.load());

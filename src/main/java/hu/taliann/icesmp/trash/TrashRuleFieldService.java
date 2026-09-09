@@ -31,8 +31,18 @@ public final class TrashRuleFieldService {
             return x * x + y * y + z * z <= radius * radius;
         }
     }
-    public record Snapshot(long revision, List<RuleField> fields, Set<UUID> claimed, boolean open) {
-        public Snapshot { fields = List.copyOf(fields); claimed = Set.copyOf(claimed); }
+    public record Snapshot(long revision, List<RuleField> fields, Set<UUID> claimed, boolean open,
+                           List<RuleField> preparing) {
+        public Snapshot { fields = List.copyOf(fields); claimed = Set.copyOf(claimed); preparing = List.copyOf(preparing); }
+        public Snapshot(long revision, List<RuleField> fields, Set<UUID> claimed, boolean open) {
+            this(revision, fields, claimed, open, List.of());
+        }
+    }
+    /** Capacity reservation is invisible to effect consumers until native acknowledgement activates it. */
+    public static final class CreationClaim {
+        private final RuleField field;
+        private CreationClaim(RuleField field) { this.field = field; }
+        public RuleField field() { return field; }
     }
     /** Identity equality prevents a retired callback releasing a newer claim of the same field. */
     public static final class FieldClaim {
@@ -43,19 +53,51 @@ public final class TrashRuleFieldService {
     private final LongSupplier clock;
     private final Map<UUID, RuleField> fields = new LinkedHashMap<>();
     private final Map<UUID, FieldClaim> claimed = new HashMap<>();
+    private final Map<UUID, CreationClaim> preparing = new LinkedHashMap<>();
     private long revision;
     private boolean open = true;
     public TrashRuleFieldService() { this(System::currentTimeMillis); }
     public TrashRuleFieldService(LongSupplier clock) { this.clock = Objects.requireNonNull(clock); }
-    public synchronized Snapshot snapshot() { return new Snapshot(revision, List.copyOf(fields.values()), claimed.keySet(), open); }
+    public synchronized Snapshot snapshot() { return new Snapshot(revision, List.copyOf(fields.values()), claimed.keySet(), open, preparing.values().stream().map(CreationClaim::field).toList()); }
     public synchronized boolean hasCapacity(UUID world) {
         Objects.requireNonNull(world);
-        return open && fields.size() < MAX_FIELDS_GLOBAL && fields.values().stream().filter(f -> f.center().world().equals(world)).count() < MAX_FIELDS_PER_WORLD;
+        return open && fields.size() + preparing.size() < MAX_FIELDS_GLOBAL
+                && fields.values().stream().filter(f -> f.center().world().equals(world)).count()
+                + preparing.values().stream().filter(c -> c.field().center().world().equals(world)).count() < MAX_FIELDS_PER_WORLD;
     }
     public synchronized boolean add(RuleField field) {
         Objects.requireNonNull(field); final long now = clock.getAsLong();
-        if (now < 0 || !field.active(now) || field.expiresAt() - now > MAX_LIFETIME_MILLIS || fields.containsKey(field.id()) || !hasCapacity(field.center().world())) return false;
+        if (now < 0 || !field.active(now) || field.expiresAt() - now > MAX_LIFETIME_MILLIS || fields.containsKey(field.id()) || preparing.containsKey(field.id()) || !hasCapacity(field.center().world())) return false;
         fields.put(field.id(), field); revision++; return true;
+    }
+    public synchronized Optional<CreationClaim> reserveCreation(RuleField field) {
+        Objects.requireNonNull(field); final long now = clock.getAsLong();
+        if (now < 0 || !field.active(now) || field.expiresAt() - now > MAX_LIFETIME_MILLIS
+                || fields.containsKey(field.id()) || preparing.containsKey(field.id()) || !hasCapacity(field.center().world())) return Optional.empty();
+        final var claim = new CreationClaim(field); preparing.put(field.id(), claim); revision++; return Optional.of(claim);
+    }
+    public synchronized boolean isPreparing(CreationClaim claim) {
+        Objects.requireNonNull(claim);
+        return open && preparing.get(claim.field().id()) == claim && claim.field().active(clock.getAsLong());
+    }
+    public synchronized boolean activateCreation(CreationClaim claim) {
+        if (!isPreparing(claim)) return false;
+        preparing.remove(claim.field().id()); fields.put(claim.field().id(), claim.field()); revision++; return true;
+    }
+    public synchronized boolean releaseCreation(CreationClaim claim) {
+        Objects.requireNonNull(claim);
+        if (!preparing.remove(claim.field().id(), claim)) return false;
+        revision++; return true;
+    }
+    public synchronized List<RuleField> cancelCreationsForOwner(UUID owner) {
+        return cancelCreations(field -> field.owner().equals(Objects.requireNonNull(owner)));
+    }
+    public synchronized List<RuleField> cancelCreationsForWorld(UUID world) {
+        return cancelCreations(field -> field.center().world().equals(Objects.requireNonNull(world)));
+    }
+    private List<RuleField> cancelCreations(java.util.function.Predicate<RuleField> predicate) {
+        final var claims = preparing.values().stream().filter(claim -> predicate.test(claim.field())).toList();
+        claims.forEach(this::releaseCreation); return claims.stream().map(CreationClaim::field).toList();
     }
     /** Exact immutable field match; a reused/stale value cannot remove a different definition. */
     public synchronized boolean remove(RuleField field) {
@@ -108,9 +150,13 @@ public final class TrashRuleFieldService {
     /** The caller owns reservation release; never discard expired reservations silently. */
     public synchronized List<RuleField> expire() {
         final long now = clock.getAsLong(); final List<RuleField> expired = fields.values().stream().filter(field -> !field.active(now) && !claimed.containsKey(field.id())).toList();
-        expired.forEach(this::remove); return expired;
+        expired.forEach(this::remove);
+        final List<RuleField> removed = new ArrayList<>(expired);
+        removed.addAll(cancelCreations(field -> !field.active(now))); return List.copyOf(removed);
     }
     public synchronized List<RuleField> close() {
-        final List<RuleField> removed = List.copyOf(fields.values()); fields.clear(); claimed.clear(); open = false; revision++; return removed;
+        final List<RuleField> removed = new ArrayList<>(fields.values());
+        removed.addAll(preparing.values().stream().map(CreationClaim::field).toList());
+        fields.clear(); claimed.clear(); preparing.clear(); open = false; revision++; return List.copyOf(removed);
     }
 }
