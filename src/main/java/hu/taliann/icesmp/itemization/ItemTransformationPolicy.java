@@ -22,7 +22,8 @@ public final class ItemTransformationPolicy {
         VANILLA_SURVIVAL,
         BASIC_SURVIVAL_GEAR,
         CANONICAL_MMO_GEAR,
-        LEGACY
+        LEGACY,
+        DEV_PROTOTYPE
     }
 
     public enum Transformation {
@@ -67,7 +68,7 @@ public final class ItemTransformationPolicy {
         }
 
         public boolean transformationProtected() {
-            return domain == Domain.CANONICAL_MMO_GEAR || domain == Domain.LEGACY;
+            return domain == Domain.CANONICAL_MMO_GEAR || domain == Domain.LEGACY || domain == Domain.DEV_PROTOTYPE;
         }
     }
 
@@ -114,6 +115,10 @@ public final class ItemTransformationPolicy {
     }
 
     public Classification classify(final ItemStack item) {
+        if (ItemPrototypePolicy.scan(item) != ItemPrototypePolicy.Scan.CLEAN) {
+            return new Classification(Domain.DEV_PROTOTYPE, ItemIdentityService.Status.POLICY_VIOLATION,
+                    ItemIdentityService.LegacyKind.NONE, "prototype or uninspectable nested custody");
+        }
         final ItemIdentityService.Inspection inspected = identity.inspectIdentity(item);
         if (inspected.status() != ItemIdentityService.Status.NOT_MANAGED) {
             return new Classification(Domain.CANONICAL_MMO_GEAR, inspected.status(),
@@ -142,6 +147,7 @@ public final class ItemTransformationPolicy {
         java.util.Objects.requireNonNull(domain, "domain");
         java.util.Objects.requireNonNull(transformation, "transformation");
         java.util.Objects.requireNonNull(rules, "rules");
+        if (domain == Domain.DEV_PROTOTYPE) return deny("itemization-vanilla-boundary-blocked", "Fejlesztői prototípus nem használható normál játékmenetben.");
         if (domain == Domain.VANILLA_SURVIVAL || domain == Domain.BASIC_SURVIVAL_GEAR) {
             if (transformation == Transformation.CANONICAL_SALVAGE
                     || transformation == Transformation.CANONICAL_PROFESSION_MUTATION) {

@@ -43,7 +43,14 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
             final Map<TrashAnomalyStateStore.MemoryKey, Long> counters = inspected.history().isEmpty() ? Map.of()
                     : memory.tryInspect(inspected.history().orElseThrow().instanceId())
                             .orElseThrow(() -> new WeaverDomainRejection("TRASH_MEMORY_UNAVAILABLE"));
-            return itemFacts(inspected, counters, System.currentTimeMillis());
+            final long now = System.currentTimeMillis();
+            final Map<String, WeaverValue> facts = new TreeMap<>(itemFacts(inspected, counters, now));
+            facts.put("trash.prototype", text(Boolean.toString(hu.taliann.icesmp.itemization.ItemPrototypePolicy.direct(stack)), now));
+            hu.taliann.icesmp.itemization.ItemPrototypePolicy.identity(stack).ifPresent(prototype -> {
+                facts.put("trash.prototype_owner", text(prototype.owner().toString(), now));
+                facts.put("trash.prototype_operation", text(prototype.operation().toString(), now));
+            });
+            return Map.copyOf(facts);
         }, subject -> {
             final var entity = Bukkit.getEntity(subject.id());
             if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) throw new WeaverDomainRejection("TRASH_SOURCE_OWNER_UNAVAILABLE");

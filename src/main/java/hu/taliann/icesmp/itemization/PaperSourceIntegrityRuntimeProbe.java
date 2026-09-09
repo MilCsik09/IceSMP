@@ -140,6 +140,7 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 verifyRp2ProductionPresentation(identity);
                 verifyActualInventoryAtomicity();
                 verifyMutationPhysicalState(identity);
+                verifyPrototypeQuarantine(identity, readField(assembledCore, "itemTransformationPolicy", ItemTransformationPolicy.class));
                 verifyCatalogPositiveLoad(identity, catalog, templates);
                 verifyCreatureRuntime(creatureSpecies, mobAbilities);
                 verifyCommandRuntime();
@@ -889,6 +890,65 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final var canonical = vanilla.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
         check(canonical != null && canonical.modifiers().isEmpty(),
                 "explicit empty canonical projection must suppress backing Material defaults");
+    }
+
+    /** Detached real Paper stacks/serialization; this does not assert connected player custody. */
+    public static void verifyPrototypeQuarantine(final ItemIdentityService identity, final ItemTransformationPolicy transformations) {
+        final var canonical = identity.create("glatziendorfi_jegvert", "runtime:prototype-control", "paper", null);
+        final var beforeBytes = canonical.serializeAsBytes(); final var inspected = identity.inspect(canonical);
+        final var owner = hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER; final var operation = java.util.UUID.randomUUID();
+        final var copy = new ItemMutationService().clonePrototype(inspected.template(), inspected.instance(), java.util.UUID.randomUUID(), owner, operation, 100);
+        final var prototype = identity.render(inspected.template(), copy);
+        check(java.util.Arrays.equals(beforeBytes, canonical.serializeAsBytes()), "prototype mutated original physical item");
+        check(identity.inspect(prototype).status() == ItemIdentityService.Status.VALID, "native prototype render is not inspectable");
+        check(ItemPrototypePolicy.allowedCustody(prototype, owner, owner)
+                && !ItemPrototypePolicy.allowedCustody(prototype, java.util.UUID.randomUUID(), owner)
+                && !ItemPrototypePolicy.allowedCustody(prototype, owner, java.util.UUID.randomUUID())
+                && !ItemPrototypePolicy.allowedCustody(prototype, owner, null), "native prototype custody accepted a foreign or unavailable primary developer");
+        final var restored = ItemStack.deserializeBytes(prototype.serializeAsBytes());
+        check(ItemPrototypePolicy.identity(restored).equals(ItemPrototypePolicy.identity(prototype)), "physical serialization lost prototype custody");
+        identity.setEquipmentSuppressed(restored, inspected.template(), copy, false);
+        identity.refreshPresentation(restored, inspected.template(), copy);
+        check(identity.isEquipmentSuppressed(restored) && identity.abilityPowerOf(restored) == 0 && identity.runesOf(restored).isEmpty()
+                && restored.getEnchantments().isEmpty() && restored.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS).modifiers().isEmpty(), "native reconciliation restored prototype equipment power");
+        final var missingMarker = prototype.clone(); final var missingMeta = missingMarker.getItemMeta();
+        for (final String key : List.of("dev_prototype", "dev_prototype_owner", "dev_prototype_operation")) missingMeta.getPersistentDataContainer().remove(new NamespacedKey("icesmp", key));
+        missingMarker.setItemMeta(missingMeta);
+        check(ItemPrototypePolicy.direct(missingMarker) && identity.inspect(missingMarker).status() == ItemIdentityService.Status.INTEGRITY_MISMATCH
+                && !ItemPrototypePolicy.allowedCustody(missingMarker, owner, owner), "removed markers washed intrinsic native prototype origin");
+        final var bundle = new ItemStack(Material.BUNDLE); final var bundleMeta = (org.bukkit.inventory.meta.BundleMeta) bundle.getItemMeta();
+        bundleMeta.addItem(prototype); bundle.setItemMeta(bundleMeta);
+        check(ItemPrototypePolicy.scan(bundle) == ItemPrototypePolicy.Scan.PROTOTYPE && !ItemPrototypePolicy.allowedCustody(bundle, owner, owner), "bundle concealed a prototype");
+        final var box = new ItemStack(Material.SHULKER_BOX); final var boxMeta = (org.bukkit.inventory.meta.BlockStateMeta) box.getItemMeta();
+        final var state = (org.bukkit.block.ShulkerBox) boxMeta.getBlockState(); state.getInventory().setItem(0, bundle); boxMeta.setBlockState(state); box.setItemMeta(boxMeta);
+        check(ItemPrototypePolicy.scan(ItemStack.deserializeBytes(box.serializeAsBytes())) == ItemPrototypePolicy.Scan.PROTOTYPE, "nested serialized container concealed a prototype");
+        final var malformed = new ItemStack(Material.STICK); final var malformedMeta = malformed.getItemMeta();
+        malformedMeta.getPersistentDataContainer().set(new NamespacedKey("icesmp", "dev_prototype"), org.bukkit.persistence.PersistentDataType.STRING, "wrong-type"); malformed.setItemMeta(malformedMeta);
+        check(ItemPrototypePolicy.direct(malformed) && !ItemPrototypePolicy.allowedCustody(malformed, owner, owner), "malformed native marker became ordinary item");
+        final var artifact = new ItemStack(Material.STICK); final var artifactMeta = artifact.getItemMeta();
+        artifactMeta.getPersistentDataContainer().set(new NamespacedKey("icesmp", "dev_item_id"), org.bukkit.persistence.PersistentDataType.STRING, "world_weaver"); artifact.setItemMeta(artifactMeta);
+        boolean refused = false;
+        try { ItemPrototypePolicy.mark(artifact, new ItemPrototypePolicy.Identity(owner, operation)); } catch (IllegalArgumentException expected) { refused = true; }
+        check(refused && !ItemPrototypePolicy.direct(artifact), "developer artifact was converted into prototype");
+        final var otherOwner = java.util.UUID.randomUUID(); final var foreign = new ItemStack(Material.STICK);
+        ItemPrototypePolicy.mark(foreign, new ItemPrototypePolicy.Identity(otherOwner, operation));
+        check(!ItemPrototypePolicy.allowedCustody(foreign, otherOwner, otherOwner), "caller-supplied/configurable owner became primary developer");
+        final var arrow = new ItemStack(Material.ARROW); ItemPrototypePolicy.mark(arrow, new ItemPrototypePolicy.Identity(owner, operation));
+        final var crossbow = new ItemStack(Material.CROSSBOW); final var charged = (org.bukkit.inventory.meta.CrossbowMeta) crossbow.getItemMeta();
+        charged.addChargedProjectile(arrow); crossbow.setItemMeta(charged);
+        check(ItemPrototypePolicy.scan(ItemStack.deserializeBytes(crossbow.serializeAsBytes())) == ItemPrototypePolicy.Scan.PROTOTYPE,
+                "charged crossbow concealed prototype ammunition");
+        check(ItemPrototypePolicy.scan(canonical) == ItemPrototypePolicy.Scan.CLEAN
+                && ItemPrototypePolicy.scan(new ItemStack(Material.STICK)) == ItemPrototypePolicy.Scan.CLEAN, "ordinary native items became prototypes");
+        for (final var item : List.of(prototype, restored, missingMarker, bundle, box, malformed, crossbow)) {
+            final var classification = transformations.classify(item);
+            check(classification.transformationProtected(), "prototype was skipped by actual native boundary classification");
+            for (final var operationType : ItemTransformationPolicy.Transformation.values()) {
+                check(transformations.decide(classification, operationType).action() == ItemTransformationPolicy.Action.DENY,
+                        "actual native prototype boundary allowed " + operationType);
+            }
+        }
+        Bukkit.getLogger().info("ICESMP_PROTOTYPE_RUNTIME_PROBE_PASS scope=detached_native_identity_custody_projection");
     }
 
     /** Final P1-009 matrix on real Paper ItemStacks. */

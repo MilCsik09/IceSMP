@@ -110,6 +110,9 @@ public final class ItemMutationCoordinator implements Listener {
                     Map.of(), "A korábbi művelet tartós recoveryre vár");
         }
         final ItemStack held = player.getInventory().getItemInMainHand();
+        if (ItemPrototypePolicy.scan(held) != ItemPrototypePolicy.Scan.CLEAN) {
+            return new Preview(false, "itemization-invalid-identity", null, null, Map.of(), "Fejlesztői prototípus");
+        }
         final ItemIdentityService.Inspection inspection = identity.inspect(held);
         if (inspection.status() != ItemIdentityService.Status.VALID) {
             return new Preview(false, inspection.status() == ItemIdentityService.Status.NOT_MANAGED
@@ -222,6 +225,9 @@ public final class ItemMutationCoordinator implements Listener {
         }
         final ItemStack[] contents = player.getInventory().getContents();
         if (targetSlot < 0 || targetSlot >= contents.length) {
+            return runeDenied("rune-managed-invalid", null, null, action, socketIndex);
+        }
+        if (ItemPrototypePolicy.scan(contents[targetSlot]) != ItemPrototypePolicy.Scan.CLEAN) {
             return runeDenied("rune-managed-invalid", null, null, action, socketIndex);
         }
         final ItemIdentityService.Inspection inspection = identity.inspect(contents[targetSlot]);
@@ -656,7 +662,8 @@ public final class ItemMutationCoordinator implements Listener {
             int remaining = cost.getValue();
             for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
                 final ItemStack item = contents[slot];
-                if (item == null || !cost.getKey().equals(materials.idOf(item))) continue;
+                if (item == null || ItemPrototypePolicy.scan(item) != ItemPrototypePolicy.Scan.CLEAN
+                        || !cost.getKey().equals(materials.idOf(item))) continue;
                 final int take = Math.min(remaining, item.getAmount());
                 remaining -= take;
                 if (take == item.getAmount()) contents[slot] = null;
@@ -670,7 +677,8 @@ public final class ItemMutationCoordinator implements Listener {
         for (final Map.Entry<String, Integer> cost : costs.entrySet()) {
             int count = 0;
             for (final ItemStack item : contents) {
-                if (item != null && cost.getKey().equals(materials.idOf(item))) count += item.getAmount();
+                if (item != null && ItemPrototypePolicy.scan(item) == ItemPrototypePolicy.Scan.CLEAN
+                        && cost.getKey().equals(materials.idOf(item))) count += item.getAmount();
             }
             if (count < cost.getValue()) return false;
         }

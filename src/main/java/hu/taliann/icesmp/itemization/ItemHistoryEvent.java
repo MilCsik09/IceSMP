@@ -20,7 +20,8 @@ public record ItemHistoryEvent(Type type, long occurredAt, String detail) {
         ASCENDED,
         SIGNATURE_UPGRADED,
         SALVAGED,
-        DESTROYED
+        DESTROYED,
+        DEV_PROTOTYPED
     }
 
     public ItemHistoryEvent {

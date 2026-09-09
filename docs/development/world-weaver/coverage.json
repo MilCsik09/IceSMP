@@ -1964,7 +1964,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
       "domain": "trash",
-      "source_sha256": "32b4df76316f6722cc0a7152eb7712ab136747059492967fecebdacade551646",
+      "source_sha256": "b6ceb9c2115e720dda532d233d8625bf499e2265bfcda194bc96ee8ad5ac0fc1",
       "public_methods": [
         "TrashWeaverProvider",
         "assessRecovery",
@@ -2355,7 +2355,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java",
       "domain": "itemization",
-      "source_sha256": "43cc9d7bbc95469a3292fda687c3e79a10ab2d17c1d02401fa0f6489accdfc3f",
+      "source_sha256": "f213fb7775e12d2ca1530ed0d50494577d5845000ec1eea4af77a5c31ddb3836",
       "public_methods": [
         "Activity",
         "LevelDecision",
@@ -2382,7 +2382,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
       "domain": "itemization",
-      "source_sha256": "f79fffc37bee8787a61ea372eef6111093e6632078f8f34cdd7a3267984d54f0",
+      "source_sha256": "27d0e4d870b8f1f8a636ddf75666fbfcf6abaa7cb4809d52961b255a76f3f4e9",
       "public_methods": [
         "DuplicateReport",
         "Inspection",
@@ -2419,7 +2419,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationCoordinator.java",
       "domain": "itemization",
-      "source_sha256": "3ba564de289541b1ba496d112c7e3e934d01d040a84b0643682befd58d6a13fa",
+      "source_sha256": "b959d2380e127a636ae78abcce3a306dccbf85b28d9545aef17885bf05e565de",
       "public_methods": [
         "Options",
         "Outcome",
@@ -2450,7 +2450,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationService.java",
       "domain": "itemization",
-      "source_sha256": "a1295656ecce6210cf9f16c527fac2f612ba54ef5f8102e4000f57dc6318d73e",
+      "source_sha256": "9dfdb14329e4d8beec03b82075265ffeaa91f07e510471d4048fc48399c974b3",
       "public_methods": [
         "AscensionRequest",
         "RerollRequest",
@@ -2459,14 +2459,30 @@
         "ascend",
         "boundedGeometricCost",
         "changeRunes",
+        "clonePrototype",
         "preserveRelativeQuality",
         "reroll"
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/itemization/ItemPrototypePolicy.java",
+      "domain": "itemization",
+      "source_sha256": "2cd6ebf30decdc1aec022be7302f4b98f9d737e8e7e8e7f97987e8ca0d09e421",
+      "public_methods": [
+        "Identity",
+        "allowedCustody",
+        "direct",
+        "identity",
+        "isPrototype",
+        "mark",
+        "quarantinePlayer",
+        "scan"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java",
       "domain": "itemization",
-      "source_sha256": "7e81f263acce8af0fed6cae41e8f05fd7c86edda5ee024077ff50ea84fb6cfe4",
+      "source_sha256": "fca9c47c0320e8a5bceb80ac9a1ff75f3792add376167c14776d3dbf0ad2e0e0",
       "public_methods": [
         "Preview",
         "Tuning",
@@ -2507,7 +2523,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemTransformationPolicy.java",
       "domain": "itemization",
-      "source_sha256": "66e9975c5fd88508aa17f3480e56679bb961050f4bcfbfc049da65e0a4ee0a65",
+      "source_sha256": "7ab758b41aa3a0ff32a1b9f2e27ff41a5cef303e7a3ca755520f1b9ad1398229",
       "public_methods": [
         "Classification",
         "Decision",
@@ -3175,7 +3191,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
       "domain": "developer_self",
-      "source_sha256": "a7bbd37e28331e0d54bf2c732b6bc9a8d5ef63723265eb017c5c630787e41c32",
+      "source_sha256": "9a8e320504d6578cb84ebe7cf8f3428cd7f3c73b7aacaf69ee8724e26949c3a5",
       "public_methods": [
         "DevItemManager",
         "Diagnostics",
@@ -3725,7 +3741,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/MarketManager.java",
       "domain": "market",
-      "source_sha256": "2e4aab03002dcdfcadb8ccb37469ffddaba4ed7d23f77c74ad02827e739fc99a",
+      "source_sha256": "ffdb3d4a44023733c02e67f25aeedbd1145a11cec73e5478b2a6408d4345831b",
       "public_methods": [
         "BidOutcome",
         "BuyOutcome",
@@ -6407,7 +6423,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyRuntime.java",
       "domain": "trash",
-      "source_sha256": "69994fa960f208c7c60019a77938eac407368acd02e390b7c7a85aedaa4a3aec",
+      "source_sha256": "074a8b9ea888784a3c1cdbeeb67aa6624896d0d37cc6cb371da6b238f295e516",
       "public_methods": [
         "clearPlayerState",
         "onAutomationMove",
@@ -6486,7 +6502,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyService.java",
       "domain": "archaeology_knowledge",
-      "source_sha256": "8f4ada4dd1354d06f2671b2ab2175e6ff384bec9da2fb15fed822432a024ab3e",
+      "source_sha256": "27210c8c93ffc3d513748f320734d18f29351c43b926bf04f01a88c0560818bf",
       "public_methods": [
         "Result",
         "addInsight",
@@ -6676,7 +6692,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "33b3e8f9195822647c2f37bd9cd2e36bd580967f433d641d2af519c926682cd3",
+      "source_sha256": "9efe0cf6509b013efebfc166021c810f5c172e0dcbe329cfc9df56212a4454cc",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",
@@ -6766,7 +6782,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java",
       "domain": "trash",
-      "source_sha256": "48f9d273538ea93b29622014a37843dd0c0af15dfae290856251d30f645e330a",
+      "source_sha256": "a9f78fb49eac4c096a517728d08776033a3b2f0a0c9f78b1700afc27abbe5a56",
       "public_methods": [
         "onJoin",
         "tryHandle"
@@ -7116,6 +7132,7 @@
       "src/main/java/hu/taliann/icesmp/listeners/HudListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/IntroListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/InvseeGUIListener.java",
+      "src/main/java/hu/taliann/icesmp/listeners/ItemPrototypeProtectionListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/ItemProvenanceListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/JobCraftRestrictionListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/JobGUIListener.java",
@@ -8745,6 +8762,16 @@
         "moderation"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/listeners/ItemPrototypeProtectionListener.java",
+      "role": "DOMAIN_ADAPTER",
+      "domains": [
+        "itemization",
+        "trash",
+        "developer_self"
+      ],
+      "rationale": "Native physical prototype custody/cleanup. Uses the primary developer identity and shared ItemPrototypePolicy; no issuance, synthetic event or full provider claim."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/listeners/ItemProvenanceListener.java",

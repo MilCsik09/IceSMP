@@ -34,6 +34,7 @@ public final class ItemizationDomainRegressionSuite {
         recoveryNeverGuessesAcrossAmbiguousSnapshots();
         mutationCrashRecoverySettlesExactlyOnce();
         mutationFaultMatrixCoversRerollRuneAndAscension();
+        prototypeIdentityCannotBecomeNativeValue();
         System.out.println("Itemization domain regression suite passed. assertions=" + assertions);
     }
 
@@ -491,6 +492,37 @@ public final class ItemizationDomainRegressionSuite {
                 Set.of("profession:armorer"), Set.of(), Set.of("mining:test"),
                 Set.of("armorer:test"), Map.of(), List.of("awakened"),
                 Map.of("awakened", awakened));
+    }
+
+    private static void prototypeIdentityCannotBecomeNativeValue() {
+        final var template = mutationTemplate(); final var before = mutationInstance(template, 0.3D, 0.7D);
+        final String original = ItemInstanceCodec.encode(before);
+        final var service = new ItemMutationService(); final UUID owner = hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER,
+                operation = UUID.randomUUID(), copy = UUID.randomUUID();
+        final var prototype = service.clonePrototype(template, before, copy, owner, operation, 100);
+        check(!ItemPrototypePolicy.isPrototype(before) && ItemInstanceCodec.encode(before).equals(original), "prototype clone changed the original native item");
+        check(prototype.itemId().equals(copy) && !prototype.itemId().equals(before.itemId()) && prototype.rolls().equals(before.rolls()), "prototype copied identity or lost actual authored rolls");
+        check(prototype.history().size() == 1 && prototype.history().getFirst().type() == ItemHistoryEvent.Type.DEV_PROTOTYPED
+                && !prototype.origin().masterwork() && prototype.origin().professionId().isEmpty(), "prototype invented natural crafting/history evidence");
+        check(ItemPrototypePolicy.identity(prototype).equals(new ItemPrototypePolicy.Identity(owner, operation)), "prototype lost exact owner or operation");
+        check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(prototype)).equals(prototype), "durable native codec lost prototype restriction");
+        expectFailure(() -> service.clonePrototype(template, before, before.itemId(), owner, operation, 100), "prototype accepted the original item UUID");
+        expectFailure(() -> service.clonePrototype(template, before, copy, UUID.randomUUID(), operation, 100), "configurable artifact owner or OP became primary developer");
+        final var rerolled = service.reroll(template, prototype, new ItemMutationService.RerollRequest(UUID.randomUUID(), "", 0, false, 110), () -> 0.5D).candidate();
+        final var ascended = service.ascend(template, rerolled, new ItemMutationService.AscensionRequest(UUID.randomUUID(), 120)).candidate();
+        final var runed = service.changeRunes(template, ascended, UUID.randomUUID(), List.of("fagy_runa"), 130);
+        final var removed = service.changeRunes(template, runed, UUID.randomUUID(), List.of(), 140);
+        for (final var candidate : List.of(rerolled, ascended, runed, removed)) {
+            check(candidate.itemId().equals(copy) && ItemPrototypePolicy.identity(candidate).equals(ItemPrototypePolicy.identity(prototype)), "native mutation washed prototype origin or replaced copy identity");
+            check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(candidate)).equals(candidate), "mutation restart lost intrinsic prototype state");
+            final var salvage = new ItemSalvageService().preview(template, candidate, new ItemSalvageService.Tuning(1, 1, 1, 1, 8), 64, false);
+            check(!salvage.allowed() && salvage.outputs().isEmpty(), "prototype created salvage value");
+        }
+        for (final var boundary : ItemTransformationPolicy.Transformation.values()) {
+            check(ItemTransformationPolicy.decide(ItemTransformationPolicy.Domain.DEV_PROTOTYPE, true, boundary,
+                    ItemTransformationPolicy.Rules.safeDefaults()).action() == ItemTransformationPolicy.Action.DENY,
+                    "prototype escaped native transformation boundary " + boundary);
+        }
     }
 
     private static ItemInstance mutationInstance(final ItemTemplate template,

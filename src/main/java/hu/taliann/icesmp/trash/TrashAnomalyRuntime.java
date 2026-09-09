@@ -1178,6 +1178,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     }
 
     private Optional<TrashAnomalyBehavior> behaviorOf(final ItemStack stack) {
+        if (hu.taliann.icesmp.itemization.ItemPrototypePolicy.direct(stack)) return Optional.empty();
         if (!items.isBaseIdentity(stack)) return Optional.empty();
         final String id = items.idOf(stack).orElse(null);
         if (id == null) return Optional.empty();

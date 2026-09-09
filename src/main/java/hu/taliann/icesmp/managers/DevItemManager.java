@@ -439,6 +439,8 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
     }
     private void cleanForeignItems(final Player player) {
         requireOwnerThread(player);
+        hu.taliann.icesmp.itemization.ItemPrototypePolicy.quarantinePlayer(player,
+                hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER);
         for (final ItemStack item : player.getInventory().getContents()) {
             final String id = itemFactory.itemIdOf(item);
             if (id != null && (!entries.containsKey(id) || !player.getUniqueId().equals(state(id).owner()))) removeItems(player, id);

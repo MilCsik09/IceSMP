@@ -48,6 +48,9 @@ public final class TrashProductionRuntimeProbe {
 
                 verifyCatalogAndFactory(catalog, items);
                 verifyNativeInspection(plugin, catalog, items);
+                hu.taliann.icesmp.itemization.PaperSourceIntegrityRuntimeProbe.verifyPrototypeQuarantine(
+                        readField(assembledCore, "itemIdentityService", hu.taliann.icesmp.itemization.ItemIdentityService.class),
+                        readField(assembledCore, "itemTransformationPolicy", hu.taliann.icesmp.itemization.ItemTransformationPolicy.class));
                 verifyStartedAndCleanRuntime(assembledCore, telemetry);
                 verifyPackagedReload(plugin, assembledCore);
                 session.startupPassed = true;

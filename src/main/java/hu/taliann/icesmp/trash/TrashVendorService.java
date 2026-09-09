@@ -60,7 +60,8 @@ public final class TrashVendorService implements Listener {
     public boolean tryHandle(final Player player, final ItemStack hand) {
         final String id = itemFactory.idOf(hand).orElse(null);
         if (id == null) return false;
-        if (!itemFactory.isKnownItem(hand)) {
+        if (!itemFactory.isKnownItem(hand) || hu.taliann.icesmp.itemization.ItemPrototypePolicy.scan(hand)
+                != hu.taliann.icesmp.itemization.ItemPrototypePolicy.Scan.CLEAN) {
             player.sendMessage(messageManager.getMessage("buyer-not-buying",
                     "<gray>🪙 „Ilyesmire most nincs vevőm.”</gray>"));
             return true;

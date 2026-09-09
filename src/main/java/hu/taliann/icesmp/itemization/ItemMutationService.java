@@ -11,6 +11,20 @@ import java.util.function.DoubleSupplier;
 /** Pure candidate builder. Payment and publication remain outside this immutable domain boundary. */
 public final class ItemMutationService {
 
+    public ItemInstance clonePrototype(final ItemTemplate template, final ItemInstance before,
+            final UUID copyId, final UUID owner, final UUID operationId, final long occurredAt) {
+        requireMatchingIdentity(template, before);
+        Objects.requireNonNull(copyId); Objects.requireNonNull(owner); Objects.requireNonNull(operationId);
+        if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(owner)) throw new IllegalArgumentException("Primary developer prototype required");
+        if (copyId.equals(before.itemId())) throw new IllegalArgumentException("Prototype needs a fresh native identity");
+        final var states = java.util.EnumSet.noneOf(ItemState.class); states.addAll(before.states()); states.add(ItemState.DEV_PROTOTYPE);
+        return new ItemInstance(copyId, ItemInstance.CURRENT_SCHEMA, before.templateId(), before.templateVersion(), before.itemLevel(),
+                before.rolls(), before.runes(), before.ascension(),
+                new ItemInstance.Origin("dev:prototype", operationId.toString(), owner, "", occurredAt), states, 0L,
+                List.of(new ItemHistoryEvent(ItemHistoryEvent.Type.DEV_PROTOTYPED, occurredAt, before.itemId().toString())),
+                ItemInstance.MutationState.fresh().afterMutation(operationId));
+    }
+
     public enum Status { APPLIED, ALREADY_APPLIED, INVALID_LOCK, NOT_ASCENDABLE, TERMINAL_STAGE }
 
     public record RerollRequest(UUID operationId, String lockedStatId,

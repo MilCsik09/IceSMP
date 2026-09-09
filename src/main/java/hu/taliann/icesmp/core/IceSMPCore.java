@@ -2186,6 +2186,8 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DevItemProtectionListener(plugin, devItemManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ItemPrototypeProtectionListener(plugin,
+                () -> hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER), plugin);
         pluginManager.registerEvents(worldWeaverRuntime.listener(), plugin);
         pluginManager.registerEvents(worldWeaverRuntime.recoveryListener(), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.integrity.VanillaRewardIntegrityListener(), plugin);
