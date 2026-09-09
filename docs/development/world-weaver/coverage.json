@@ -6542,7 +6542,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "ef0a48388b8d9b3734baa3654e93779e07cce78d59377457ca6c05275893f5af",
+      "source_sha256": "febdc5b11deb458d261fd2feb9efc41d1579449c6324aed0bb5c241410051f4c",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6588,7 +6588,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "1eaddf8c86198d0e4fb303bdb0125b603fe6d467794753f96b6bfad92637d3f8",
+      "source_sha256": "2a43479faf0c3e2ec5f4d18cb96dc241691a45617a0863fb8054af0400d74555",
       "public_methods": [
         "HistoryEntry",
         "Inspection",

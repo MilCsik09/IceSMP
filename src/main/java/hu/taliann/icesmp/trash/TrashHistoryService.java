@@ -144,13 +144,20 @@ public final class TrashHistoryService {
         private final int source, destination;
         private final ItemStack[] before;
         private final ItemInspection inspection;
+        private final Optional<TrashDeveloperReceipt> reverses;
         private final java.util.concurrent.atomic.AtomicBoolean entered = new java.util.concurrent.atomic.AtomicBoolean();
         private final long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
         private DeveloperPlan(TrashHistoryService authority, UUID operation, UUID actor, UUID instance,
                 TrashDeveloperReceipt.Kind kind, int source, int destination, ItemStack[] before, ItemInspection inspection) {
+            this(authority, operation, actor, instance, kind, source, destination, before, inspection, Optional.empty());
+        }
+        private DeveloperPlan(TrashHistoryService authority, UUID operation, UUID actor, UUID instance,
+                TrashDeveloperReceipt.Kind kind, int source, int destination, ItemStack[] before, ItemInspection inspection,
+                Optional<TrashDeveloperReceipt> reverses) {
             this.authority = authority; this.operation = operation; this.actor = actor; this.instance = instance;
             this.kind = kind; this.source = source; this.destination = destination;
             this.before = cloneContents(before); this.inspection = inspection;
+            this.reverses = reverses;
         }
         public UUID instanceId() { return instance; }
         public UUID operationId() { return operation; }
@@ -161,7 +168,7 @@ public final class TrashHistoryService {
     public Optional<DeveloperPlan> tryPrepareDeveloperMutation(final UUID operation, final UUID actor,
             final TrashDeveloperReceipt.Kind kind, final int source, final ItemStack[] inventory) {
         Objects.requireNonNull(operation); Objects.requireNonNull(actor); Objects.requireNonNull(kind);
-        if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actor) || inventory == null
+        if (kind == TrashDeveloperReceipt.Kind.REVERT || !hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actor) || inventory == null
                 || inventory.length != 41 || source < 0 || source >= inventory.length) return Optional.empty();
         final ItemStack held = inventory[source];
         if (held == null || held.getAmount() < 1) return Optional.empty();
@@ -194,6 +201,28 @@ public final class TrashHistoryService {
         return Optional.of(new DeveloperPlan(this, operation, actor, instance, kind, source, destination, inventory, item));
     }
 
+    /** Reverse only an observed, unchanged native effect; allocated identity and truthful history remain. */
+    public Optional<DeveloperPlan> tryPrepareDeveloperReversal(final UUID operation, final UUID actor,
+            final TrashDeveloperReceipt original, final ItemStack[] inventory) {
+        Objects.requireNonNull(operation); Objects.requireNonNull(actor); Objects.requireNonNull(original);
+        if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actor) || !actor.equals(original.actor())
+                || !original.projectionObserved() || original.kind() == TrashDeveloperReceipt.Kind.INDIVIDUALIZE
+                || original.kind() == TrashDeveloperReceipt.Kind.REVERT || inventory == null || inventory.length != 41
+                || !matchesProjection(original, inventory, true)) return Optional.empty();
+        final var stored = store.tryInspectDeveloperReceipt(original.operationId());
+        final var operationState = store.tryInspectDeveloperReceipt(operation);
+        final var nativeState = store.tryInspect(original.instanceId());
+        if (stored.isEmpty() || !stored.orElseThrow().filter(original::equals).isPresent()
+                || operationState.isEmpty() || operationState.orElseThrow().isPresent() || nativeState.isEmpty()
+                || nativeState.orElseThrow().history().filter(value -> value.revision() == original.afterRevision()
+                    && value.baseId().equals(original.baseId()) && value.phase().equals(original.afterPhase())).isEmpty()) return Optional.empty();
+        final int source = original.slots().getFirst().slot();
+        final var inspection = tryInspect(inventory[source]);
+        if (inspection.isEmpty() || inspection.orElseThrow().pendingWall().isPresent()) return Optional.empty();
+        return Optional.of(new DeveloperPlan(this, operation, actor, original.instanceId(), TrashDeveloperReceipt.Kind.REVERT,
+                source, original.slots().getLast().slot(), inventory, inspection.orElseThrow(), Optional.of(original)));
+    }
+
     /** Actual owner admission and the one-use influence/authority permit precede the existing native WAL boundary. */
     public Optional<TrashDeveloperReceipt> tryCommitDeveloperMutation(final DeveloperPlan plan,
             final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission,
@@ -205,6 +234,10 @@ public final class TrashHistoryService {
         final boolean committed = store.tryTransact(() -> !plan.entered.get() && System.nanoTime() - plan.deadline < 0
                 && developerHistoryMatches(plan) && admission.getAsBoolean(),
                 () -> plan.entered.compareAndSet(false, true) && finalAdmission.getAsBoolean(), () -> {
+            if (plan.reverses.isPresent()) {
+                commitDeveloperReversal(plan, receipt, projection);
+                return;
+            }
             final ItemStack[] after = cloneContents(plan.before);
             final ItemStack singleton = after[plan.source].clone(); singleton.setAmount(1);
             final String base = plan.inspection.definition().id(), phase = plan.inspection.phase();
@@ -254,8 +287,36 @@ public final class TrashHistoryService {
         return committed ? Optional.ofNullable(receipt.get()) : Optional.empty();
     }
 
+    private void commitDeveloperReversal(final DeveloperPlan plan,
+            final java.util.concurrent.atomic.AtomicReference<TrashDeveloperReceipt> receipt,
+            final java.util.function.Consumer<ItemStack[]> projection) {
+        final var original = plan.reverses.orElseThrow();
+        final var result = store.revertDeveloper(original, plan.operation);
+        final ItemStack[] after = cloneContents(plan.before);
+        if (original.kind() == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+            for (final var slot : original.slots()) after[slot.slot()] = decodeSlot(slot.before());
+        } else {
+            final ItemStack restored = decodeSlot(original.slots().getFirst().before());
+            if (restored == null) throw new IllegalStateException("Native reversal has no original unit");
+            restored.setAmount(1);
+            // Keep any tracked or newly allocated UUID. Recombining an untracked batch would erase monotonic provenance.
+            writeAuthority(restored, result);
+            after[plan.source] = restored;
+        }
+        final List<TrashDeveloperReceipt.SlotChange> changes = new ArrayList<>();
+        for (final var slot : original.slots()) changes.add(new TrashDeveloperReceipt.SlotChange(slot.slot(),
+                encodeSlot(plan.before[slot.slot()]), encodeSlot(after[slot.slot()])));
+        final var inverse = new TrashDeveloperReceipt(plan.operation, plan.actor, TrashDeveloperReceipt.Kind.REVERT,
+                plan.instance, original.baseId(), original.afterPhase(), original.afterRevision(), result.phase(), result.revision(),
+                result.updatedAt(), changes, false, Optional.of(original.operationId()));
+        store.putDeveloperReceipt(inverse);
+        projection.accept(cloneContents(after));
+        receipt.set(inverse);
+    }
+
     private boolean developerHistoryMatches(final DeveloperPlan plan) {
         if (!store.developerMutationAvailable(plan.operation, plan.instance)) return false;
+        if (plan.reverses.isPresent()) return store.developerReversalAvailable(plan.reverses.orElseThrow());
         final var expected = plan.inspection.history();
         if (expected.isPresent()) {
             final var before = expected.orElseThrow();

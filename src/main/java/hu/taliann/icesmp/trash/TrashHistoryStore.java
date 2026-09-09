@@ -24,8 +24,8 @@ import java.util.function.BooleanSupplier;
 /** Durable hidden provenance indexed by opaque item-instance UUID. */
 public final class TrashHistoryStore implements PersistentStore {
 
-    private static final int SCHEMA_VERSION = 6;
-    private static final int JOURNAL_SCHEMA_VERSION = 4;
+    private static final int SCHEMA_VERSION = 7;
+    private static final int JOURNAL_SCHEMA_VERSION = 5;
     private static final int MAX_DEVELOPER_OPERATIONS = 1_024;
     private static final int MAX_DEVELOPER_PROJECTION_CHARACTERS = 16 * 1024 * 1024;
     private static final int MAX_INSTANCES = 100_000;
@@ -110,7 +110,7 @@ public final class TrashHistoryStore implements PersistentStore {
                 if (schema == 3 && yaml.contains("wall-operations")) corrupt("wall receipt in legacy schema");
                 loadWallReceipts(yaml, "wall-operations", schema >= 5, false);
                 if (schema < 6 && yaml.contains("developer-operations")) corrupt("developer receipt in legacy snapshot");
-                loadDeveloperReceipts(yaml, "developer-operations", false);
+                loadDeveloperReceipts(yaml, "developer-operations", false, schema >= 7);
             }
             final TrashHistoryJournal.LoadResult recovered = journal.loadAfter(sequence);
             for (final TrashHistoryJournal.Record record : recovered.records()) {
@@ -119,6 +119,10 @@ public final class TrashHistoryStore implements PersistentStore {
             sequence = recovered.sequence();
             journalRecords = recovered.completeRecords();
             for (final var entry : histories.entrySet()) validateDeveloperEventReceipts(entry.getKey(), entry.getValue());
+            for (final var receipt : developerReceipts.values()) {
+                try { validateDeveloperReversal(receipt); }
+                catch (final RuntimeException invalid) { corrupt("Invalid native developer reversal"); }
+            }
             readable = true;
         } finally {
             stateLock.unlock();
@@ -362,6 +366,7 @@ public final class TrashHistoryStore implements PersistentStore {
                 throw new IllegalStateException("Developer receipt does not describe this transaction's before state");
             }
             validateDeveloperReceipt(receipt);
+            validateDeveloperReversal(receipt);
             frame.developerBefore().put(receipt.operationId(), null);
             replaceDeveloperReceipt(receipt);
         } finally { stateLock.unlock(); }
@@ -381,6 +386,30 @@ public final class TrashHistoryStore implements PersistentStore {
         return !developerReceipts.containsKey(operation) && !unresolvedDeveloperByInstance.containsKey(instance)
                 && developerReceipts.size() < MAX_DEVELOPER_OPERATIONS
                 && developerProjectionCharacters < MAX_DEVELOPER_PROJECTION_CHARACTERS;
+    }
+
+    boolean developerReversalAvailable(final TrashDeveloperReceipt original) {
+        if (!stateLock.isHeldByCurrentThread()) throw new IllegalStateException("Native history admission lock required");
+        return original.projectionObserved() && original.equals(developerReceipts.get(original.operationId()))
+                && original.kind() != TrashDeveloperReceipt.Kind.INDIVIDUALIZE && original.kind() != TrashDeveloperReceipt.Kind.REVERT
+                && matches(original.instanceId(), original.baseId(), original.afterPhase(), original.afterRevision());
+    }
+
+    private void validateDeveloperReversal(final TrashDeveloperReceipt receipt) {
+        if (receipt.reverses().isEmpty()) return;
+        final var original = developerReceipts.get(receipt.reverses().orElseThrow());
+        if (original == null || !original.projectionObserved()
+                || original.kind() == TrashDeveloperReceipt.Kind.INDIVIDUALIZE || original.kind() == TrashDeveloperReceipt.Kind.REVERT
+                || !original.actor().equals(receipt.actor()) || !original.instanceId().equals(receipt.instanceId())
+                || !original.baseId().equals(receipt.baseId()) || original.afterRevision() != receipt.beforeRevision()
+                || receipt.afterRevision() != receipt.beforeRevision() + 1
+                || developerReceipts.values().stream().anyMatch(existing -> !existing.operationId().equals(receipt.operationId())
+                    && existing.reverses().equals(receipt.reverses()))
+                || !original.afterPhase().equals(receipt.beforePhase()) || !original.beforePhase().equals(receipt.afterPhase())
+                || !original.slots().stream().map(TrashDeveloperReceipt.SlotChange::slot).toList()
+                    .equals(receipt.slots().stream().map(TrashDeveloperReceipt.SlotChange::slot).toList())) {
+            throw new IllegalStateException("Reversal differs from its observed native operation");
+        }
     }
 
     public Optional<List<TrashDeveloperReceipt>> tryInspectDeveloperReceipts(final UUID actor) {
@@ -430,13 +459,29 @@ public final class TrashHistoryStore implements PersistentStore {
         } finally { stateLock.unlock(); }
     }
 
-    private void loadDeveloperReceipts(final ConfigurationSection root, final String path, final boolean updates) {
+    /** Reversal appends truthful history and preserves instance identity, origin and owner observations. */
+    Snapshot revertDeveloper(final TrashDeveloperReceipt original, final UUID operation) {
+        stateLock.lock();
+        try {
+            if (!developerReversalAvailable(original)) throw new IllegalStateException("Native operation is not reversibly current");
+            final var current = histories.get(original.instanceId());
+            final var restored = new StoredHistory(current.baseId(), original.beforePhase(), current.revision(),
+                    current.createdAt(), current.updatedAt(), current.events(), current.owners());
+            final var recorded = append(restored, TrashHistoryEvent.DEV_REVERTED, original.actor(),
+                    Objects.requireNonNull(operation).toString(), System.currentTimeMillis());
+            putHistory(original.instanceId(), recorded);
+            return snapshot(original.instanceId(), recorded);
+        } finally { stateLock.unlock(); }
+    }
+
+    private void loadDeveloperReceipts(final ConfigurationSection root, final String path, final boolean updates, final boolean reversalSchema) {
         if (!root.contains(path)) return;
         final var section = root.getConfigurationSection(path);
         if (section == null || section.getKeys(false).size() > MAX_DEVELOPER_OPERATIONS) corrupt("Invalid developer receipt object or count");
         for (final String key : section.getKeys(false)) {
             final var value = section.getConfigurationSection(key);
             if (value == null || !value.isBoolean("projection-observed") || !value.isList("slots")) corrupt("Invalid developer receipt fields");
+            if (reversalSchema ? !value.isString("reverses") : value.contains("reverses")) corrupt("Invalid developer reversal schema");
             for (final String numeric : List.of("before-revision", "after-revision", "recorded-at")) {
                 if (!value.isLong(numeric) && !value.isInt(numeric)) corrupt("Invalid developer receipt number");
             }
@@ -456,7 +501,8 @@ public final class TrashHistoryStore implements PersistentStore {
                         parseUuid(value.getString("instance", ""), "developer instance"),
                         value.getString("trash-id", ""), value.getString("before-phase", ""), value.getLong("before-revision"),
                         value.getString("after-phase", ""), value.getLong("after-revision"), value.getLong("recorded-at"),
-                        slots, value.getBoolean("projection-observed"));
+                        slots, value.getBoolean("projection-observed"), reversalSchema && !value.getString("reverses", "").isEmpty()
+                            ? Optional.of(parseUuid(value.getString("reverses"), "reversed operation")) : Optional.empty());
                 validateDeveloperReceipt(receipt);
             } catch (final RuntimeException invalid) {
                 corrupt("Invalid native developer receipt"); throw new AssertionError("unreachable", invalid);
@@ -485,6 +531,7 @@ public final class TrashHistoryStore implements PersistentStore {
         yaml.set(path + ".after-revision", receipt.afterRevision());
         yaml.set(path + ".recorded-at", receipt.recordedAt());
         yaml.set(path + ".projection-observed", receipt.projectionObserved());
+        yaml.set(path + ".reverses", receipt.reverses().map(UUID::toString).orElse(""));
         yaml.set(path + ".slots", receipt.slots().stream().map(slot -> Map.of(
                 "slot", slot.slot(), "before", slot.before(), "after", slot.after())).toList());
     }
@@ -1025,7 +1072,11 @@ public final class TrashHistoryStore implements PersistentStore {
                 replaceWallReceipt(previous.withObservedRemoval());
             }
             loadWallReceipts(yaml, "wall-receipts", schema >= 3, true);
-            loadDeveloperReceipts(yaml, "developer-receipts", true);
+            loadDeveloperReceipts(yaml, "developer-receipts", true, schema >= 5);
+            for (final var receipt : developerReceipts.values()) {
+                try { validateDeveloperReversal(receipt); }
+                catch (final RuntimeException invalid) { journal.corrupt("Invalid native developer reversal"); }
+            }
             final Set<String> changedInstances = new java.util.HashSet<>(yaml.getStringList("removed-histories"));
             if (changedHistories != null) changedInstances.addAll(changedHistories.getKeys(false));
             for (final String instance : changedInstances) {

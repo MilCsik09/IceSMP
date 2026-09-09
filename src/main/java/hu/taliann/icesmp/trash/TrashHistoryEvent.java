@@ -19,10 +19,11 @@ public enum TrashHistoryEvent {
     DEV_INDIVIDUALIZED,
     DEV_TRANSITIONED,
     DEV_REPAIRED,
-    DEV_PROTOTYPED;
+    DEV_PROTOTYPED,
+    DEV_REVERTED;
 
     public boolean developer() {
         return this == DEV_INDIVIDUALIZED || this == DEV_TRANSITIONED
-                || this == DEV_REPAIRED || this == DEV_PROTOTYPED;
+                || this == DEV_REPAIRED || this == DEV_PROTOTYPED || this == DEV_REVERTED;
     }
 }

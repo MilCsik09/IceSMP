@@ -17,7 +17,7 @@ public final class TrashDeveloperReceiptRegressionSuite {
             new TrashDeveloperReceipt.SlotChange(0, "YQ==", "Yg=="));
     public static void main(String[] args) throws Exception {
         nativeKinds(); lostAcknowledgement(false); lostAcknowledgement(true); rollbackAndAdmission();
-        heldWriter(); malformedReceipts(); boundedReceipts(); truthfulArchaeology();
+        heldWriter(); malformedReceipts(); boundedReceipts(); truthfulArchaeology(); nativeReversal();
         System.out.println("Trash developer receipts passed. assertions=" + assertions);
     }
     private static final class Fixture implements AutoCloseable {
@@ -50,7 +50,9 @@ public final class TrashDeveloperReceiptRegressionSuite {
         }
     }
     private static void nativeKinds() throws Exception {
-        for (var kind : TrashDeveloperReceipt.Kind.values()) try (var f = new Fixture()) {
+        for (var kind : TrashDeveloperReceipt.Kind.values()) {
+            if (kind == TrashDeveloperReceipt.Kind.REVERT) continue;
+            try (var f = new Fixture()) {
             var receipt = f.commit(kind); var loaded = f.fresh(); loaded.load();
             check(loaded.tryInspectDeveloperReceipt(receipt.operationId()).orElseThrow().orElseThrow().equals(receipt), "WAL lost exact native receipt");
             check(loaded.tryInspect(receipt.instanceId()).isEmpty(), "unobserved physical projection exposed mutable item");
@@ -67,6 +69,50 @@ public final class TrashDeveloperReceiptRegressionSuite {
             loaded.save(); var again = f.fresh(); again.load();
             check(again.tryInspectDeveloperReceipt(receipt.operationId()).orElseThrow().orElseThrow().equals(receipt.withObservedProjection()), "bounded history evicted retained physical witness");
             check(again.tryInspectDeveloperReceipts(UUID.randomUUID()).orElseThrow().isEmpty(), "foreign actor borrowed custody receipt");
+            }
+        }
+    }
+
+    private static void nativeReversal() throws Exception {
+        for (var kind : List.of(TrashDeveloperReceipt.Kind.REPAIR, TrashDeveloperReceipt.Kind.TRANSITION_SUCCESS,
+                TrashDeveloperReceipt.Kind.SANDBOX_COPY)) try (var f = new Fixture()) {
+            final var forward = f.commit(kind);
+            refuse(() -> f.store.transact(() -> f.store.revertDeveloper(forward, UUID.randomUUID()), null));
+            check(f.store.tryConfirmDeveloperProjection(forward, () -> true), "forward projection not observed");
+            final var observed = forward.withObservedProjection(); final var inverseId = UUID.randomUUID();
+            final var inverse = f.store.transact(() -> {
+                final var result = f.store.revertDeveloper(observed, inverseId);
+                final var value = new TrashDeveloperReceipt(inverseId, ACTOR, TrashDeveloperReceipt.Kind.REVERT,
+                        observed.instanceId(), observed.baseId(), observed.afterPhase(), observed.afterRevision(),
+                        result.phase(), result.revision(), result.updatedAt(),
+                        List.of(new TrashDeveloperReceipt.SlotChange(0, "Yg==", "YQ==")), false, Optional.of(observed.operationId()));
+                f.store.putDeveloperReceipt(value); return value;
+            }, null);
+            check(inverse.instanceId().equals(forward.instanceId()) && inverse.afterRevision() == forward.afterRevision() + 1,
+                    "reversal reset native UUID or history revision");
+            check(f.store.find(forward.instanceId()).orElseThrow().events().getLast().type() == TrashHistoryEvent.DEV_REVERTED,
+                    "reversal fabricated natural history");
+            refuse(() -> f.store.transact(() -> f.store.revertDeveloper(observed, UUID.randomUUID()), null));
+            check(f.store.tryConfirmDeveloperProjection(inverse, () -> true), "inverse projection not observed");
+            f.store.save(); final var loaded = f.fresh(); loaded.load();
+            check(loaded.tryInspectDeveloperReceipt(inverseId).orElseThrow().orElseThrow().equals(inverse.withObservedProjection()),
+                    "native snapshot lost inverse relationship");
+            check(loaded.tryInspectDeveloperReceipt(observed.operationId()).orElseThrow().orElseThrow().equals(observed),
+                    "reversal rewrote original native receipt");
+            refuse(() -> loaded.transact(() -> loaded.revertDeveloper(observed, UUID.randomUUID()), null));
+            refuse(() -> loaded.transact(() -> loaded.revertDeveloper(inverse.withObservedProjection(), UUID.randomUUID()), null));
+        }
+        try (var f = new Fixture()) {
+            final var forward = f.commit(TrashDeveloperReceipt.Kind.INDIVIDUALIZE);
+            f.store.tryConfirmDeveloperProjection(forward, () -> true);
+            refuse(() -> f.store.transact(() -> f.store.revertDeveloper(forward.withObservedProjection(), UUID.randomUUID()), null));
+            // Legacy schema 6 has the same forward receipt, without a reversal field.
+            f.store.save(); final var legacy = YamlConfiguration.loadConfiguration(f.root.resolve("history.yml").toFile());
+            legacy.set("schema-version", 6); legacy.set("developer-operations." + forward.operationId() + ".reverses", null);
+            Files.writeString(f.root.resolve("history.yml"), legacy.saveToString());
+            final var loaded = f.fresh(); loaded.load();
+            check(loaded.tryInspectDeveloperReceipt(forward.operationId()).orElseThrow().orElseThrow().equals(forward.withObservedProjection()),
+                    "legacy forward receipt migration changed native evidence");
         }
     }
     private static void lostAcknowledgement(boolean confirming) throws Exception {
@@ -117,7 +163,7 @@ public final class TrashDeveloperReceiptRegressionSuite {
         }
     }
     private static void malformedReceipts() throws Exception {
-        for (String field : List.of("projection-observed", "after-revision", "actor", "kind", "instance", "slots")) try (var f = new Fixture()) {
+        for (String field : List.of("projection-observed", "after-revision", "actor", "kind", "instance", "slots", "reverses")) try (var f = new Fixture()) {
             var receipt = f.commit(TrashDeveloperReceipt.Kind.SANDBOX_COPY); f.store.save();
             var yaml = YamlConfiguration.loadConfiguration(f.root.resolve("history.yml").toFile());
             yaml.set("developer-operations." + receipt.operationId() + "." + field, "wrong");

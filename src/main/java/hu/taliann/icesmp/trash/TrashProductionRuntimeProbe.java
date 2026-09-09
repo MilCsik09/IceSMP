@@ -264,6 +264,7 @@ public final class TrashProductionRuntimeProbe {
         final var phased = catalog.snapshot().values().stream().filter(d -> !d.successPhase().isBlank()).findFirst().orElseThrow();
         final var repairable = catalog.snapshot().values().stream().filter(d -> d.material().getMaxDurability() > 0).findFirst().orElseThrow();
         for (final var kind : TrashDeveloperReceipt.Kind.values()) {
+            if (kind == TrashDeveloperReceipt.Kind.REVERT) continue;
             final var definition = kind == TrashDeveloperReceipt.Kind.REPAIR ? repairable : phased;
             final ItemStack[] before = new ItemStack[41]; before[0] = items.create(definition.id(), kind == TrashDeveloperReceipt.Kind.REPAIR ? 1 : 3);
             history.markOrigin(before[0], TrashLootSource.AMBIENT);
@@ -313,8 +314,38 @@ public final class TrashProductionRuntimeProbe {
             else check(evidence.events().getFirst().type() == TrashHistoryEvent.CREATED_AMBIENT, "developer mutation erased real origin");
             store.save(); store.load();
             check(history.tryInspectDeveloperReceipt(operation).orElseThrow().orElseThrow().equals(receipt.withObservedProjection()), "snapshot lost developer receipt");
+            final ItemStack[] committedAfter = current.get();
             current.set(before);
             check(!history.tryRestoreDeveloperProjection(receipt.withObservedProjection(), current::get, current::set, () -> current.set(before)), "observed developer operation recreated a missing item");
+            current.set(committedAfter);
+            if (kind == TrashDeveloperReceipt.Kind.INDIVIDUALIZE) {
+                check(history.tryPrepareDeveloperReversal(java.util.UUID.randomUUID(), actor, receipt.withObservedProjection(), current.get()).isEmpty(),
+                        "identity allocation could be undone into an untracked batch");
+            } else {
+                final var inversePlan = history.tryPrepareDeveloperReversal(java.util.UUID.randomUUID(), actor,
+                        receipt.withObservedProjection(), current.get()).orElseThrow();
+                final var inverse = history.tryCommitDeveloperMutation(inversePlan, () -> inversePlan.matchesInventory(current.get()),
+                        () -> true, current::set, () -> current.set(committedAfter)).orElseThrow();
+                check(history.tryConfirmDeveloperProjection(inverse, current::get), "native reversal projection not acknowledged");
+                check(history.tryPrepareDeveloperReversal(java.util.UUID.randomUUID(), actor, receipt.withObservedProjection(), current.get()).isEmpty(),
+                        "original native effect could be reversed twice");
+                if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+                    check(current.get()[1] == null && current.get()[0].equals(before[0]), "sandbox reversal changed source or retained copy");
+                } else {
+                    final var reversed = history.historyOf(current.get()[0]).orElseThrow();
+                    check(reversed.instanceId().equals(plan.instanceId()) && reversed.revision() == inverse.afterRevision()
+                            && reversed.events().getLast().type() == TrashHistoryEvent.DEV_REVERTED,
+                            "native reversal erased instance identity or developer history");
+                    check(reversed.phase().equals(receipt.beforePhase()), "native reversal did not restore authored phase");
+                    if (kind == TrashDeveloperReceipt.Kind.REPAIR) check(((org.bukkit.inventory.meta.Damageable)
+                            current.get()[0].getItemMeta()).getDamage() == 1, "native reversal did not restore original durability");
+                    else check(current.get()[0].getAmount() == 1 && current.get()[1].getAmount() == 2,
+                            "phase reversal washed the tracked unit into the original batch");
+                }
+                store.save(); store.load();
+                check(history.tryInspectDeveloperReceipt(inverse.operationId()).orElseThrow().orElseThrow().equals(inverse.withObservedProjection()),
+                        "native inverse receipt lost after restart");
+            }
         }
         final ItemStack[] before = new ItemStack[41]; before[0] = items.create(phased.id(), 1);
         final var plan = history.tryPrepareDeveloperMutation(java.util.UUID.randomUUID(), actor,
