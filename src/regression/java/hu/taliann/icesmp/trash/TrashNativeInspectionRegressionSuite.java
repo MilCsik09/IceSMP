@@ -19,6 +19,7 @@ public final class TrashNativeInspectionRegressionSuite {
             TrashWallReceiptRegressionSuite.main(args);
             TrashWallHandoffRegressionSuite.main(args);
             TrashRuleCreationRegressionSuite.main(args);
+            TrashDeveloperReceiptRegressionSuite.main(args);
             historyTransaction(); historyWriteFailure(); anomalyTransaction();
             anomalyFailure(false); anomalyFailure(true); historyAcknowledgementFailure(); unloadedWrites();
             nativeTryAdmission(); nativeCompactionAdmission(); nativeSingleUseAdmission();

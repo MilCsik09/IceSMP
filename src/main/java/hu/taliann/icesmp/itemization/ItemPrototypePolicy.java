@@ -20,6 +20,7 @@ public final class ItemPrototypePolicy {
     private static final NamespacedKey OPERATION = new NamespacedKey("icesmp", "dev_prototype_operation");
     private static final NamespacedKey PAYLOAD = new NamespacedKey("icesmp", "item_instance");
     private static final NamespacedKey ARTIFACT = new NamespacedKey("icesmp", "dev_item_id");
+    private static final NamespacedKey TRASH_ORIGIN = new NamespacedKey("icesmp", "trash_origin");
     private ItemPrototypePolicy() { }
 
     public static boolean isPrototype(ItemInstance instance) {
@@ -51,6 +52,7 @@ public final class ItemPrototypePolicy {
         if (item == null || item.getType().isAir() || !item.hasItemMeta()) return false;
         final var pdc = item.getItemMeta().getPersistentDataContainer();
         if (pdc.has(MARKER) || pdc.has(OWNER) || pdc.has(OPERATION)) return true;
+        if ("DEV_PROTOTYPE".equals(pdc.get(TRASH_ORIGIN, PersistentDataType.STRING))) return true;
         final String payload = pdc.get(PAYLOAD, PersistentDataType.STRING);
         if (payload == null || payload.length() > 87_384) return false;
         try { return isPrototype(ItemInstanceCodec.decode(payload)); }

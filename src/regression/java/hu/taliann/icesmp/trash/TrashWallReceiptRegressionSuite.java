@@ -214,7 +214,7 @@ public final class TrashWallReceiptRegressionSuite {
         try (var f = new Fixture()) {
             UUID id = f.create(); f.store.save();
             var yaml = YamlConfiguration.loadConfiguration(f.root.resolve("history.yml").toFile());
-            check(yaml.getInt("schema-version") == 5, "new snapshot does not fence older binaries");
+            check(yaml.getInt("schema-version") == 6, "new snapshot does not fence older binaries");
             yaml.set("schema-version", 3); YamlStore.saveAtomic(f.root.resolve("history.yml").toFile(), yaml);
             var legacy = f.fresh(); legacy.load();
             check(legacy.find(id).orElseThrow().phase().equals("base"), "legacy snapshot data was not preserved");

@@ -15,5 +15,14 @@ public enum TrashHistoryEvent {
     PRESENT_AT_PLAYER_DEATH,
     NETHER_TRANSIT,
     WORLD_EVENT_PRESENT,
-    ACTIVATED
+    ACTIVATED,
+    DEV_INDIVIDUALIZED,
+    DEV_TRANSITIONED,
+    DEV_REPAIRED,
+    DEV_PROTOTYPED;
+
+    public boolean developer() {
+        return this == DEV_INDIVIDUALIZED || this == DEV_TRANSITIONED
+                || this == DEV_REPAIRED || this == DEV_PROTOTYPED;
+    }
 }

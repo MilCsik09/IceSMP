@@ -245,6 +245,73 @@ public final class TrashProductionRuntimeProbe {
         verifyAcknowledgedWallProjection(catalog, items, store, history, directory);
         verifyPlannedNativeUnit(plugin, catalog, items, store, history, directory);
         verifyPlannedSuccessTransition(catalog, items, store, history);
+        verifyDeveloperMutations(plugin, catalog, items, store, history);
+    }
+
+    private static void verifyDeveloperMutations(final JavaPlugin plugin, final TrashCatalog catalog,
+            final TrashItemFactory items, final TrashHistoryStore store, final TrashHistoryService history) {
+        final var actor = hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER;
+        final var phased = catalog.snapshot().values().stream().filter(d -> !d.successPhase().isBlank()).findFirst().orElseThrow();
+        final var repairable = catalog.snapshot().values().stream().filter(d -> d.material().getMaxDurability() > 0).findFirst().orElseThrow();
+        for (final var kind : TrashDeveloperReceipt.Kind.values()) {
+            final var definition = kind == TrashDeveloperReceipt.Kind.REPAIR ? repairable : phased;
+            final ItemStack[] before = new ItemStack[41]; before[0] = items.create(definition.id(), kind == TrashDeveloperReceipt.Kind.REPAIR ? 1 : 3);
+            history.markOrigin(before[0], TrashLootSource.AMBIENT);
+            if (kind == TrashDeveloperReceipt.Kind.REPAIR) {
+                final var damaged = (org.bukkit.inventory.meta.Damageable) before[0].getItemMeta(); damaged.setDamage(1); before[0].setItemMeta(damaged);
+            }
+            final byte[] original = before[0].serializeAsBytes();
+            final var current = new AtomicReference<ItemStack[]>(before);
+            final var operation = java.util.UUID.randomUUID();
+            check(history.tryPrepareDeveloperMutation(operation, java.util.UUID.randomUUID(), kind, 0, before).isEmpty(), "foreign developer mutation prepared");
+            final var plan = history.tryPrepareDeveloperMutation(operation, actor, kind, 0, before).orElseThrow();
+            check(java.util.Arrays.equals(original, before[0].serializeAsBytes()) && store.find(plan.instanceId()).isEmpty(), "preparation mutated source or history");
+            final var receipt = history.tryCommitDeveloperMutation(plan, () -> plan.matchesInventory(current.get()),
+                    () -> true, current::set, () -> current.set(before)).orElseThrow();
+            check(store.tryInspect(plan.instanceId()).isEmpty(), "pending native developer item escaped physical observation fence");
+            check(history.tryCommitDeveloperMutation(plan, () -> true, () -> true, current::set, () -> current.set(before)).isEmpty(), "developer operation replayed");
+            final ItemStack[] after = current.get();
+            final int output = kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY ? 1 : 0;
+            final ItemStack result = after[output];
+            check(history.instanceIdOf(result).orElseThrow().equals(plan.instanceId()), "developer result borrowed another item identity");
+            if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+                check(java.util.Arrays.equals(original, after[0].serializeAsBytes()), "sandbox copy changed original");
+                check(hu.taliann.icesmp.itemization.ItemPrototypePolicy.allowedCustody(result, actor, actor), "native sandbox copy missing owner restriction");
+                final ItemStack washed = result.clone(); final var meta = washed.getItemMeta();
+                for (String marker : java.util.List.of("dev_prototype", "dev_prototype_owner", "dev_prototype_operation")) meta.getPersistentDataContainer().remove(new NamespacedKey(plugin, marker));
+                washed.setItemMeta(meta);
+                check(hu.taliann.icesmp.itemization.ItemPrototypePolicy.direct(washed)
+                        && !hu.taliann.icesmp.itemization.ItemPrototypePolicy.allowedCustody(washed, actor, actor), "Trash native prototype origin washed by removing custody markers");
+            } else if (kind == TrashDeveloperReceipt.Kind.REPAIR) {
+                check(((org.bukkit.inventory.meta.Damageable) result.getItemMeta()).getDamage() == 0, "developer repair did not repair native durability");
+            } else check(after[1].getAmount() == 2 && history.instanceIdOf(after[1]).isEmpty(), "developer split individualized or lost remainder");
+            // Exercise stale player-save projection against the real WAL, without claiming connected playerdata proof.
+            current.set(before); store.load();
+            check(history.tryRestoreDeveloperProjection(receipt, current::get, current::set, () -> current.set(before)), "exact pending physical recovery refused");
+            check(java.util.Arrays.equals(after, current.get()), "native recovery did not restore exact item bytes");
+            check(history.tryConfirmDeveloperProjection(receipt, current::get), "exact native projection was not acknowledged");
+            final var evidence = history.historyOf(current.get()[output]).orElseThrow();
+            check(evidence.events().getLast().type() == kind.event()
+                    && evidence.events().stream().noneMatch(event -> event.type() == TrashHistoryEvent.REPAIRED
+                        || event.type() == TrashHistoryEvent.TRANSFORMED || event.type() == TrashHistoryEvent.ACTIVATED), "developer action fabricated natural history");
+            if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) check(evidence.events().size() == 1
+                    && history.tryInspect(current.get()[output]).orElseThrow().origin().orElseThrow() == TrashHistoryEvent.DEV_PROTOTYPED,
+                    "sandbox copy inherited natural provenance");
+            else check(evidence.events().getFirst().type() == TrashHistoryEvent.CREATED_AMBIENT, "developer mutation erased real origin");
+            store.save(); store.load();
+            check(history.tryInspectDeveloperReceipt(operation).orElseThrow().orElseThrow().equals(receipt.withObservedProjection()), "snapshot lost developer receipt");
+            current.set(before);
+            check(!history.tryRestoreDeveloperProjection(receipt.withObservedProjection(), current::get, current::set, () -> current.set(before)), "observed developer operation recreated a missing item");
+        }
+        final ItemStack[] before = new ItemStack[41]; before[0] = items.create(phased.id(), 1);
+        final var plan = history.tryPrepareDeveloperMutation(java.util.UUID.randomUUID(), actor,
+                TrashDeveloperReceipt.Kind.INDIVIDUALIZE, 0, before).orElseThrow();
+        check(history.tryCommitDeveloperMutation(plan, () -> true, () -> false,
+                ignored -> { throw new AssertionError("refused permit projected item"); }, () -> {}).isEmpty(), "final developer permit refusal ignored");
+        check(history.tryCommitDeveloperMutation(plan, () -> true, () -> true,
+                ignored -> { throw new AssertionError("spent plan replayed"); }, () -> {}).isEmpty(), "spent developer plan admitted again");
+        check(store.find(plan.instanceId()).isEmpty(), "refused final permit wrote developer history");
+        plugin.getLogger().info("ICESMP_TRASH_DEVELOPER_MUTATION_PROBE_PASS scope=detached_native_items_wal_projection");
     }
 
     private static void verifyPlannedNativeUnit(final JavaPlugin plugin, final TrashCatalog catalog,

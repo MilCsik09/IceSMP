@@ -2467,7 +2467,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemPrototypePolicy.java",
       "domain": "itemization",
-      "source_sha256": "2cd6ebf30decdc1aec022be7302f4b98f9d737e8e7e8e7f97987e8ca0d09e421",
+      "source_sha256": "a3f55ce0117f457a88149e63b85ef7ff683c61f3700d098526799e280fa992db",
       "public_methods": [
         "Identity",
         "allowedCustody",
@@ -6470,7 +6470,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
       "domain": "archaeology_knowledge",
-      "source_sha256": "c3bb733e75848df271170c426e4e29a2ce68a77136cc44d768e08355ea5ce960",
+      "source_sha256": "cf938de6788b3d2bf0017af02b6de2cae8d941d7ef4fab6d08ffcc441b34c32f",
       "public_methods": [
         "Evaluation",
         "Fact",
@@ -6542,7 +6542,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "1ad06d0d930330461bbc0363d07099945087ba5c9dc658ee2df9b4c9d2d76357",
+      "source_sha256": "1839776e5cf0f24a0d7ca3f4635af3e0ec4d1af67616b6efa04a3b141830dfcc",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6588,7 +6588,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "bf1760cea05fc5805cef9bba9ce99f7e826f144a24554b419a8aea549f426bb1",
+      "source_sha256": "1eaddf8c86198d0e4fb303bdb0125b603fe6d467794753f96b6bfad92637d3f8",
       "public_methods": [
         "HistoryEntry",
         "Inspection",
@@ -6782,7 +6782,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java",
       "domain": "trash",
-      "source_sha256": "a9f78fb49eac4c096a517728d08776033a3b2f0a0c9f78b1700afc27abbe5a56",
+      "source_sha256": "ec9094e66e22306c63e454e71263e8528c45b949c14e79e3082ea8a9087b0141",
       "public_methods": [
         "onJoin",
         "tryHandle"

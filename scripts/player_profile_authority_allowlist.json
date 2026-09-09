@@ -680,6 +680,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java|private final Map<UUID, CreationClaim> preparing = new LinkedHashMap<>();",
       "category": "RUNTIME",
       "reason": "Pending creation capacity within the existing native field authority, keyed by actual field UUID and sharing the 32/world and 128/global cap with active fields. Exact identity tokens are released/activated or cancelled on expiry, owner cleanup, world unload and close. No player progression, persistence or separate field authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, TrashDeveloperReceipt> developerReceipts = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Existing native Trash history WAL owns developer operation receipts keyed by operation UUID, with actor only as a custody reference. Exact bounded item-slot projections share the same history acknowledgement, rollback and schema; 1024 receipts and 16 MiB encoded projection capacity refuse admission without eviction. Observed projection is distinct from playerdata durability. No player progression, preferences or replacement inventory/Profile ledger."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, UUID> unresolvedDeveloperByInstance = new java.util.HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Derived native instance-to-pending-operation index rebuilt exclusively from the existing Trash history developer receipts under the transaction/load/rollback lock. At most 1024 entries, removed only by observed projection or transaction rollback; no independently persisted identity or player authority."
     }
   ]
 }

@@ -79,7 +79,7 @@ public final class TrashArchaeologyFactEngine {
         if (visible.isEmpty()) return Optional.empty();
         final boolean historical = definition.internalKind() == TrashKind.STORY
                 || snapshot != null && snapshot.events().stream().anyMatch(event ->
-                event.type() != TrashHistoryEvent.ACTIVATED
+                !event.type().developer() && event.type() != TrashHistoryEvent.ACTIVATED
                         && event.type() != TrashHistoryEvent.TRANSFORMED);
         return Optional.of(new Evaluation(id, revision, family, domain, historical, visible));
     }

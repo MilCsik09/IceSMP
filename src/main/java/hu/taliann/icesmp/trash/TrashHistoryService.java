@@ -136,6 +136,177 @@ public final class TrashHistoryService {
         }
     }
 
+    /** Detached, bounded native plan. Preparation never grants an item or writes an operation receipt. */
+    public static final class DeveloperPlan {
+        private final TrashHistoryService authority;
+        private final UUID operation, actor, instance;
+        private final TrashDeveloperReceipt.Kind kind;
+        private final int source, destination;
+        private final ItemStack[] before;
+        private final ItemInspection inspection;
+        private final java.util.concurrent.atomic.AtomicBoolean entered = new java.util.concurrent.atomic.AtomicBoolean();
+        private final long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+        private DeveloperPlan(TrashHistoryService authority, UUID operation, UUID actor, UUID instance,
+                TrashDeveloperReceipt.Kind kind, int source, int destination, ItemStack[] before, ItemInspection inspection) {
+            this.authority = authority; this.operation = operation; this.actor = actor; this.instance = instance;
+            this.kind = kind; this.source = source; this.destination = destination;
+            this.before = cloneContents(before); this.inspection = inspection;
+        }
+        public UUID instanceId() { return instance; }
+        public UUID operationId() { return operation; }
+        public boolean matchesInventory(ItemStack[] current) { return java.util.Arrays.equals(before, current); }
+    }
+
+    /** Native player inventory indices only. The caller must capture the complete inventory on its owner. */
+    public Optional<DeveloperPlan> tryPrepareDeveloperMutation(final UUID operation, final UUID actor,
+            final TrashDeveloperReceipt.Kind kind, final int source, final ItemStack[] inventory) {
+        Objects.requireNonNull(operation); Objects.requireNonNull(actor); Objects.requireNonNull(kind);
+        if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actor) || inventory == null
+                || inventory.length != 41 || source < 0 || source >= inventory.length) return Optional.empty();
+        final ItemStack held = inventory[source];
+        if (held == null || held.getAmount() < 1) return Optional.empty();
+        final var prototype = hu.taliann.icesmp.itemization.ItemPrototypePolicy.scan(held);
+        if (prototype != hu.taliann.icesmp.itemization.ItemPrototypePolicy.Scan.CLEAN
+                && !hu.taliann.icesmp.itemization.ItemPrototypePolicy.allowedCustody(held, actor,
+                    hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER)) return Optional.empty();
+        if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY
+                && prototype != hu.taliann.icesmp.itemization.ItemPrototypePolicy.Scan.CLEAN) return Optional.empty();
+        final var inspected = tryInspect(held);
+        if (inspected.isEmpty() || inspected.orElseThrow().pendingWall().isPresent()) return Optional.empty();
+        final var item = inspected.orElseThrow();
+        if (kind == TrashDeveloperReceipt.Kind.INDIVIDUALIZE && item.history().isPresent()
+                || kind == TrashDeveloperReceipt.Kind.TRANSITION_SUCCESS && itemFactory.successPhaseOf(held).isEmpty()
+                || kind == TrashDeveloperReceipt.Kind.REPAIR
+                    && (!(held.getItemMeta() instanceof Damageable damage) || damage.getDamage() <= 0)) return Optional.empty();
+        final UUID instance = kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY ? UUID.randomUUID()
+                : item.history().map(TrashHistoryStore.Snapshot::instanceId).orElseGet(UUID::randomUUID);
+        final var nativeState = store.tryInspect(instance);
+        final var operationState = store.tryInspectDeveloperReceipt(operation);
+        if (nativeState.isEmpty() || operationState.isEmpty() || operationState.orElseThrow().isPresent()
+                || !nativeState.orElseThrow().history().equals(kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY
+                    ? Optional.empty() : item.history())) return Optional.empty();
+        int destination = source;
+        if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY || held.getAmount() > 1) {
+            destination = -1;
+            for (int slot = 0; slot < 36; slot++) if (slot != source && empty(inventory[slot])) { destination = slot; break; }
+            if (destination < 0) return Optional.empty();
+        }
+        return Optional.of(new DeveloperPlan(this, operation, actor, instance, kind, source, destination, inventory, item));
+    }
+
+    /** Actual owner admission and the one-use influence/authority permit precede the existing native WAL boundary. */
+    public Optional<TrashDeveloperReceipt> tryCommitDeveloperMutation(final DeveloperPlan plan,
+            final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack[]> projection, final Runnable restoreProjection) {
+        Objects.requireNonNull(plan); Objects.requireNonNull(admission); Objects.requireNonNull(finalAdmission);
+        Objects.requireNonNull(projection); Objects.requireNonNull(restoreProjection);
+        if (plan.authority != this) return Optional.empty();
+        final var receipt = new java.util.concurrent.atomic.AtomicReference<TrashDeveloperReceipt>();
+        final boolean committed = store.tryTransact(() -> !plan.entered.get() && System.nanoTime() - plan.deadline < 0
+                && developerHistoryMatches(plan) && admission.getAsBoolean(),
+                () -> plan.entered.compareAndSet(false, true) && finalAdmission.getAsBoolean(), () -> {
+            final ItemStack[] after = cloneContents(plan.before);
+            final ItemStack singleton = after[plan.source].clone(); singleton.setAmount(1);
+            final String base = plan.inspection.definition().id(), phase = plan.inspection.phase();
+            final long beforeRevision = plan.kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY ? 0
+                    : plan.inspection.history().map(TrashHistoryStore.Snapshot::revision).orElse(0L);
+            final TrashHistoryStore.Snapshot result;
+            if (plan.kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+                final var meta = singleton.getItemMeta(); final var pdc = meta.getPersistentDataContainer();
+                pdc.remove(instanceKey); pdc.remove(revisionKey); pdc.remove(originKey);
+                pdc.set(originKey, PersistentDataType.STRING, "DEV_PROTOTYPE");
+                singleton.setItemMeta(meta);
+                result = store.createAndRecord(plan.instance, base, phase, plan.kind.event(), plan.actor, plan.operation.toString());
+            } else if (plan.kind == TrashDeveloperReceipt.Kind.TRANSITION_SUCCESS) {
+                if (beforeRevision == 0) {
+                    store.createAndRecord(plan.instance, base, phase,
+                            plan.inspection.origin().orElse(TrashHistoryEvent.DEV_INDIVIDUALIZED),
+                            plan.inspection.origin().isPresent() ? null : plan.actor,
+                            plan.inspection.origin().isPresent() ? "" : plan.operation.toString());
+                }
+                final String target = plan.inspection.definition().successPhase();
+                result = store.transitionDeveloper(plan.instance, base, phase, target, plan.actor, plan.operation);
+                itemFactory.applyPhase(singleton, target);
+            } else {
+                result = individualizeInternal(singleton, plan.kind.event(), plan.actor, plan.operation.toString(), plan.instance);
+                if (plan.kind == TrashDeveloperReceipt.Kind.REPAIR) {
+                    final Damageable meta = (Damageable) singleton.getItemMeta(); meta.setDamage(0); singleton.setItemMeta(meta);
+                }
+            }
+            writeAuthority(singleton, result);
+            if (plan.kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+                hu.taliann.icesmp.itemization.ItemPrototypePolicy.mark(singleton,
+                        new hu.taliann.icesmp.itemization.ItemPrototypePolicy.Identity(plan.actor, plan.operation));
+            }
+            if (plan.destination == plan.source) after[plan.source] = singleton;
+            else if (plan.kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) after[plan.destination] = singleton;
+            else { after[plan.source] = singleton; after[plan.destination] = remainderOf(plan.before[plan.source]); }
+            final List<TrashDeveloperReceipt.SlotChange> changes = new ArrayList<>();
+            changes.add(new TrashDeveloperReceipt.SlotChange(plan.source, encodeSlot(plan.before[plan.source]), encodeSlot(after[plan.source])));
+            if (plan.destination != plan.source) changes.add(new TrashDeveloperReceipt.SlotChange(plan.destination,
+                    encodeSlot(plan.before[plan.destination]), encodeSlot(after[plan.destination])));
+            final var acknowledged = new TrashDeveloperReceipt(plan.operation, plan.actor, plan.kind, plan.instance, base,
+                    phase, beforeRevision, result.phase(), result.revision(), result.updatedAt(), changes, false);
+            store.putDeveloperReceipt(acknowledged);
+            projection.accept(cloneContents(after));
+            receipt.set(acknowledged);
+        }, restoreProjection);
+        return committed ? Optional.ofNullable(receipt.get()) : Optional.empty();
+    }
+
+    private boolean developerHistoryMatches(final DeveloperPlan plan) {
+        if (!store.developerMutationAvailable(plan.operation, plan.instance)) return false;
+        final var expected = plan.inspection.history();
+        if (expected.isPresent()) {
+            final var before = expected.orElseThrow();
+            if (!store.matches(before.instanceId(), before.baseId(), before.phase(), before.revision())) return false;
+        }
+        return plan.kind != TrashDeveloperReceipt.Kind.SANDBOX_COPY && expected.isPresent() || store.find(plan.instance).isEmpty();
+    }
+
+    public Optional<Optional<TrashDeveloperReceipt>> tryInspectDeveloperReceipt(final UUID operation) {
+        return store.tryInspectDeveloperReceipt(operation);
+    }
+
+    /** Native observation is separate from the write acknowledgement and carries no item recreation authority. */
+    public boolean tryConfirmDeveloperProjection(final TrashDeveloperReceipt receipt,
+            final java.util.function.Supplier<ItemStack[]> ownerInventory) {
+        Objects.requireNonNull(ownerInventory);
+        return store.tryConfirmDeveloperProjection(receipt, () -> matchesProjection(receipt, ownerInventory.get(), true));
+    }
+
+    /** Exact pending before-state recovery only; never overwrites a conflict or reissues an observed completion. */
+    public boolean tryRestoreDeveloperProjection(final TrashDeveloperReceipt receipt,
+            final java.util.function.Supplier<ItemStack[]> ownerInventory,
+            final java.util.function.Consumer<ItemStack[]> projection, final Runnable restoreProjection) {
+        Objects.requireNonNull(ownerInventory); Objects.requireNonNull(projection); Objects.requireNonNull(restoreProjection);
+        return store.tryRestoreDeveloperProjection(receipt, () -> matchesProjection(receipt, ownerInventory.get(), false), () -> {
+            final ItemStack[] restored = cloneContents(ownerInventory.get());
+            for (final var slot : receipt.slots()) restored[slot.slot()] = decodeSlot(slot.after());
+            projection.accept(restored);
+        }, restoreProjection);
+    }
+
+    private boolean matchesProjection(final TrashDeveloperReceipt receipt, final ItemStack[] inventory, final boolean after) {
+        if (inventory == null || inventory.length != 41) return false;
+        for (final var slot : receipt.slots()) {
+            if (!(after ? slot.after() : slot.before()).equals(encodeSlot(inventory[slot.slot()]))) return false;
+        }
+        for (int slot = 0; slot < inventory.length; slot++) {
+            final int index = slot;
+            if (receipt.slots().stream().anyMatch(change -> change.slot() == index)) continue;
+            if (instanceIdOf(inventory[slot]).filter(receipt.instanceId()::equals).isPresent()) return false;
+        }
+        return true;
+    }
+    private static boolean empty(ItemStack item) { return item == null || item.getType().isAir(); }
+    private static String encodeSlot(ItemStack item) {
+        return empty(item) ? "" : java.util.Base64.getEncoder().encodeToString(item.serializeAsBytes());
+    }
+    private static ItemStack decodeSlot(String encoded) {
+        return encoded.isEmpty() ? null : ItemStack.deserializeBytes(java.util.Base64.getDecoder().decode(encoded));
+    }
+
     /** Detached native target identity; preparation owns no history entry or second operation ledger. */
     public static final class UnitPlan {
         private final TrashHistoryService authority;
@@ -781,6 +952,7 @@ public final class TrashHistoryService {
         if (!pdc.has(originKey)) return Optional.empty();
         final String raw = pdc.get(originKey, PersistentDataType.STRING);
         if (raw == null || raw.isBlank()) throw new IllegalStateException("hiányos Trash origin marker");
+        if (raw.equals("DEV_PROTOTYPE")) return Optional.of(TrashHistoryEvent.DEV_PROTOTYPED);
         try {
             return Optional.of(switch (TrashLootSource.valueOf(raw)) {
                 case FISHING -> TrashHistoryEvent.CREATED_FISHING;
