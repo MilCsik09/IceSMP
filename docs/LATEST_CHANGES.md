@@ -6,6 +6,9 @@ Az eredeti tárgy-ID-k és sorrend megmaradnak; 27 fázisikon újragenerált. A 
 stílusreferencia és feldolgozás a `dev-assets/trash/source/manifest.json` részei.
 Ez új forrás, nem az elveszett eredeti bájtok helyreállításának állítása.
 
+A korábbi futásban időzített anomália-visszhangok és késleltetett síphangok a
+rendszer leállítása és újraindítása után már nem szólalnak meg.
+
 ## Frakció–Suttogó kiegészítések, 2026-09-07
 
 Tiszta indulás: a korábbi tagságiadó- és profilmigráció nem követelmény. Elkészült

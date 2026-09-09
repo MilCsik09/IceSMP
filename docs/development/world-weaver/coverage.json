@@ -129,7 +129,7 @@
       "phase": "WW-05",
       "inspect": "hidden identity/kind/behavior/phase/instance/revision/history/provenance/memory/rule fields",
       "planned_actions": "individualize, activate, transition, repair, sandbox copy, four rule field kinds, export/import, fork",
-      "canonical_route": "TrashHistoryService/native history WAL own item UUIDs, truthful developer events, retained forward/inverse receipts and exact inventory projections. TrashRuleFieldService owns all four field kinds; TrashRelicActivationService owns cross-owner wall consumption/removal. The WW adapter calls those native authorities through executor-issued pending-operation admission. Other Relic/Anomaly activation extraction and registered behavior/rule actions remain open.",
+      "canonical_route": "TrashHistoryService/native history WAL own item UUIDs, truthful developer events, retained forward/inverse receipts and exact inventory projections. TrashRuleFieldService owns all four field kinds; TrashRelicActivationService owns cross-owner wall consumption/removal. The WW adapter calls those native authorities through executor-issued pending-operation admission. Other Relic/Anomaly activation extraction and registered behavior/rule actions remain open. TrashAnomalyActivationService now owns normal native use admission and lifecycle; developer activation provenance and delayed consequence lineage are still required before WW activate_behavior registration.",
       "rationale": "The registered surface includes native inspection/catalogs, four SANDBOX item actions, exact target lineage, conditional native inverse and read-only operation recovery. Native owner lifecycle reconciles only unobserved exact projections. Full Trash remains an implementation blocker: shared general activation APIs, behavior/create/remove rule actions, remaining native consequence influence, export/import/Fork and connected custody/playerdata/cross-region acceptance are unfinished. Registered-surface coverage does not close this whole-domain blocker.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
@@ -151,7 +151,8 @@
         "src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
-        "src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java"
+        "src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java",
+        "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyActivationService.java"
       ],
       "implementation_evidence": [
         "src/regression/java/hu/taliann/icesmp/trash/TrashNativeInspectionRegressionSuite.java",
@@ -160,7 +161,8 @@
         "src/regression/java/hu/taliann/icesmp/trash/TrashWallHandoffRegressionSuite.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverActions.java",
         "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverActionRegressionSuite.java",
-        "src/regression/java/hu/taliann/icesmp/trash/TrashDeveloperReceiptRegressionSuite.java"
+        "src/regression/java/hu/taliann/icesmp/trash/TrashDeveloperReceiptRegressionSuite.java",
+        "src/regression/java/hu/taliann/icesmp/trash/TrashAnomalyRegressionSuite.java"
       ]
     },
     {
@@ -6446,6 +6448,17 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyActivationService.java",
+      "domain": "trash",
+      "source_sha256": "d4706ef9e5b699908348cde4b7e7c4aa7f61ff140026d18442ca9c72a12d27c3",
+      "public_methods": [
+        "behaviorOf",
+        "cancel",
+        "denyItem",
+        "useOnOwner"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyPolicy.java",
       "domain": "trash",
       "source_sha256": "c10eda21a51bed1b2173e089802e0393c47e02ca889274b1d84c1d5de3464f6e",
@@ -6454,8 +6467,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyRuntime.java",
       "domain": "trash",
-      "source_sha256": "074a8b9ea888784a3c1cdbeeb67aa6624896d0d37cc6cb371da6b238f295e516",
+      "source_sha256": "e5eedbda1df507495b06813280e52324ff9b13f44f0ef14b92e8d33e4ede82a2",
       "public_methods": [
+        "activationService",
         "clearPlayerState",
         "onAutomationMove",
         "onAutomationPickup",

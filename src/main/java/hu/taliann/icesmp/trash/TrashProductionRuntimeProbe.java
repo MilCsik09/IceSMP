@@ -47,6 +47,7 @@ public final class TrashProductionRuntimeProbe {
                         "trashRuntimeTelemetry", TrashRuntimeTelemetry.class);
 
                 verifyCatalogAndFactory(catalog, items);
+                verifyAnomalyApi(plugin, catalog, items, readField(assembledCore, "trashAnomalyRuntime", TrashAnomalyRuntime.class).activationService());
                 verifyNativeInspection(plugin, catalog, items);
                 hu.taliann.icesmp.itemization.PaperSourceIntegrityRuntimeProbe.verifyPrototypeQuarantine(
                         readField(assembledCore, "itemIdentityService", hu.taliann.icesmp.itemization.ItemIdentityService.class),
@@ -92,8 +93,9 @@ public final class TrashProductionRuntimeProbe {
             return;
         }
         try {
-            final Object anomaly = readField(assembledCore,
-                    "trashAnomalyRuntime", Object.class);
+            final TrashAnomalyRuntime anomaly = readField(assembledCore,
+                    "trashAnomalyRuntime", TrashAnomalyRuntime.class);
+            check(!anomaly.activationService().lifetime().getAsBoolean(), "Anomaly use API remained open after shutdown");
             final TrashRelicRuntime relic = readField(assembledCore,
                     "trashRelicRuntime", TrashRelicRuntime.class);
             final Object archaeology = readField(
@@ -499,9 +501,29 @@ public final class TrashProductionRuntimeProbe {
                 .get(receipt.instanceId()).equals(observed), "live ItemStack falsely retired durable recovery evidence");
     }
 
+    private static void verifyAnomalyApi(final JavaPlugin plugin, final TrashCatalog catalog,
+            final TrashItemFactory items, final TrashAnomalyActivationService activation) {
+        for (final var definition : catalog.snapshot().values()) {
+            final var item = items.create(definition.id(), 1);
+            final var behavior = activation.behaviorOf(item);
+            check(behavior.isPresent() == (definition.internalKind() == TrashKind.ANOMALY), "shared anomaly API crossed native kind authority");
+            if (behavior.isPresent()) {
+                check(behavior.orElseThrow() == TrashAnomalyBehavior.parse(definition.behavior()), "shared anomaly API changed authored behavior");
+                final var prototype = item.clone();
+                hu.taliann.icesmp.itemization.ItemPrototypePolicy.mark(prototype,
+                        new hu.taliann.icesmp.itemization.ItemPrototypePolicy.Identity(
+                            hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER, java.util.UUID.randomUUID()));
+                check(activation.behaviorOf(prototype).isEmpty(), "shared native use API activated a prototype");
+            }
+        }
+        check(activation.lifetime().getAsBoolean(), "shared anomaly API lifecycle is unavailable");
+        plugin.getLogger().info("ICESMP_TRASH_ANOMALY_API_PROBE_PASS scope=detached_native_identity_and_lifecycle");
+    }
+
     private static void verifyStartedAndCleanRuntime(
             final Object assembledCore, final TrashRuntimeTelemetry telemetry) {
-        final Object anomaly = readField(assembledCore, "trashAnomalyRuntime", Object.class);
+        final TrashAnomalyRuntime anomaly = readField(assembledCore, "trashAnomalyRuntime", TrashAnomalyRuntime.class);
+        check(anomaly.activationService().lifetime().getAsBoolean(), "Anomaly use API did not start with its native runtime");
         final TrashRelicRuntime relic = readField(assembledCore,
                 "trashRelicRuntime", TrashRelicRuntime.class);
         final Object archaeology = readField(
