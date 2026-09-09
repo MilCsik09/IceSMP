@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stage": "WW04_PVE_FACTION_INTEGRITY_IN_PROGRESS",
+  "stage": "WW05_TRASH_TERRITORY_IN_PROGRESS",
   "repository": "MilCsik09/IceSMP",
   "base_branch": "feature/faction-crime-whisperer-rework",
   "base_commit": "2a78eb6071db063740ce1f8e6889b03d9741dbb0",
@@ -6526,7 +6526,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "4a95a8372b25adf3cee5957608e767087a9066bd6211b9f4e9451bc78bb2c7f7",
+      "source_sha256": "268b56c374491d9c4c02ff57e03726b79d6ae5a7ff3d02c310c62d5e9116314e",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6664,7 +6664,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java",
       "domain": "trash",
-      "source_sha256": "3388484aea9075591b32962892134f104d8c51807bc973d2f9c4d3e1f0905384",
+      "source_sha256": "4c77b38b50e293e8b1ef32ed2e36e42fea9b825b867681452a2577d9bb8701ca",
       "public_methods": []
     },
     {
@@ -6676,7 +6676,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "e18b39c218f11948519fd81584713653f9edb41c160493a6032e02cea870e0bf",
+      "source_sha256": "00e1aad71a2c94b00103c68d8df22a0f4fffb30a6115069255ce4779438fa1d6",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",

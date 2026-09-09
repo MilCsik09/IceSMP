@@ -75,10 +75,11 @@ public final class TrashRelicRegressionSuite {
         require(runtime, "MAX_NEARBY_ENTITIES = 24", "nearby entity cap");
         require(runtime, "MAX_ANCHORED_DROPS = 64", "death-bundle work cap");
         require(runtime, "MAX_TRACKED_PROJECTILES = 256", "projectile task cap");
-        require(runtime, "projectileTracking.admit(projectile.getUniqueId())", "atomic projectile task admission");
+        require(runtime, "projectileTracking.admit(projectileId)", "atomic projectile task admission");
         require(runtime, "hasFieldKind(FieldKind.PROJECTILE_WALL)",
                 "inactive projectile-wall fast path");
-        require(runtime, "projectile.getScheduler().runAtFixedRate", "projectile owner tick");
+        require(runtime, "final var scheduler = event.getEntity().getScheduler();", "native projectile scheduler capture");
+        require(runtime, "scheduler.runAtFixedRate(plugin, task ->", "projectile owner tick");
         require(runtime, "living.getScheduler().run(plugin", "remote entity ownership hop");
         require(runtime, "player.getScheduler().run(plugin", "player ownership hop");
         require(runtime, "Bukkit.getRegionScheduler().run(plugin, destination",
@@ -122,12 +123,12 @@ public final class TrashRelicRegressionSuite {
                 "atomic mug/input inventory projection");
         require(runtime, "trash_brick_reservation", "opaque brick reservation marker");
         require(history, "individualizeHandOnSuccess", "single-unit brick reservation");
-        require(runtime, "consumeBrickReservation(owner, field, projectile.getUniqueId(), admitted)",
+        require(runtime, "consumeBrickReservation(owner, field, projectileId, admission, finalAdmission)",
                 "exact brick reservation consumption");
         require(runtime, "final String token = field.reservationToken();", "native field reservation token preserved");
         require(runtime, "findBrickReservation(player, token)", "exact reserved inventory slot selected");
         require(runtime, "transformHelmetOnSuccess", "equipped helmet-only transform");
-        check(runtime.indexOf("consumeBrickReservation(owner, field, projectile.getUniqueId(), admitted)")
+        check(runtime.indexOf("consumeBrickReservation(owner, field, projectileId, admission, finalAdmission)")
                         < runtime.lastIndexOf("projectile.remove()"),
                 "projectile was removed before brick transformation committed");
     }
@@ -243,24 +244,34 @@ public final class TrashRelicRegressionSuite {
         require(launch, "if (scheduled == null) projectileTracking.release(ticket)", "retired scheduler refusal cleanup");
         require(launch, "catch (final RuntimeException | Error failure)", "scheduling/tick failure cleanup");
         require(launch, "finally {\n                        if (!transferred) releaseFieldClaim(hit);", "claim cleanup unless exact ownership transferred to native handoff");
-        require(launch, "transferred = dispatchForeignProjectileWall(hit, projectile, ticket);", "canonical owner handoff");
+        require(launch, "transferred = dispatchProjectileWall(hit, projectile, ticket);", "canonical owner handoff");
+        require(launch, "final Entity entity = Bukkit.getEntity(projectileId);", "tracking resolves the current native owner");
         require(runtime, "Bukkit.isOwnedByCurrentRegion(owner)", "inventory owner admission");
         require(runtime, "Bukkit.isOwnedByCurrentRegion(projectile)", "projectile owner admission");
-        require(runtime, "TrashRelicPolicy.completeProjectileWall", "native completion uses tested admission");
-        require(runtime, "history.tryConsumeProjectileWall(player, slot, field, projectileId, admitted)",
-                "native wall uses the consumption/receipt transaction with immediate busy refusal");
-        require(runtime, "ruleFields.tryObserveClaimedEffect(claim, admitted, () -> {\n                            projectile.remove();\n                            return !projectile.isValid();\n                        })",
-                "acknowledged consumption must serialize final effect admission with native claim close");
-        require(runtime, "if (observation.isEmpty()) {\n                            telemetry.recordBehaviorRuntimeError();\n                            return;\n                        }",
-                "refused native observation cannot become effect evidence");
-        require(runtime, "final boolean observedRemoved = observation.orElseThrow();\n                        if (observedRemoved) confirmObservedWallRemoval(consumed.get(), 20);",
-                "only a real positive owner-local removal observation may enter acknowledgement retry");
+        final String activation = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java"));
+        require(runtime, "activation.dispatchWall(claim, ticket", "all native wall interception uses the shared owner coordinator");
+        check(!runtime.contains("resolveProjectileWall("), "co-owned interception bypassed shared influence admission");
+        require(runtime, "history.tryConsumeProjectileWall(player, slot, field, projectileId, admitted, finalAdmission)",
+                "native wall consumption uses separate final single-use admission");
+        require(activation, "fields.tryObserveClaimedEffect(claim", "final effect admission is serialized with claim close");
+        require(activation, "permits.removal().claim(projectile.sources())", "final effect uses fresh projectile owner influence");
+        require(activation, "if (result.isEmpty()) return;", "refused observation cannot become effect evidence");
+        require(activation, "if (observed) acknowledge.accept(receipt);", "only positive owner removal enters acknowledgement");
         require(runtime, "history.tryConfirmProjectileWallRemoval(receipt, () -> true)",
                 "immutable observed evidence must use the native durable acknowledgement");
         require(Files.readString(HISTORY), "store.putWallReceipt(recorded)",
                 "wall receipt is recorded inside the native item/history transaction");
-        require(Files.readString(HISTORY), "store.tryTransact(admission, mutation, restore)",
+        require(Files.readString(HISTORY), "finalAdmission, mutation, restore)",
                 "owner inventory projection uses canonical native try-transaction");
+        for (final Class<?> type : TrashRelicRuntime.class.getDeclaredClasses()) {
+            if (!type.getSimpleName().equals("WallInventoryOwner") && !type.getSimpleName().equals("WallProjectileOwner")) continue;
+            for (final var field : type.getDeclaredFields()) {
+                check(!org.bukkit.entity.Entity.class.isAssignableFrom(field.getType())
+                                && !org.bukkit.inventory.ItemStack.class.isAssignableFrom(field.getType())
+                                && !org.bukkit.Location.class.isAssignableFrom(field.getType()),
+                        "wall owner continuation retained a mutable Bukkit object: " + field.getName());
+            }
+        }
     }
 
     private static void preservesConcurrentProjectileTracking() throws Exception {

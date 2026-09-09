@@ -71,9 +71,17 @@ public final class TrashProductionHardeningRegressionSuite {
         check(exhausted >= 0 && blockAt(retry, retry.indexOf('{', exhausted))
                         .contains("telemetry.recordBehaviorRuntimeError()"),
                 "exhausted wall completion bypasses aggregate telemetry");
-        require(relic, "if (observedRemoved) confirmObservedWallRemoval(consumed.get(), 20);",
-                "positive owner-local observation admission");
-        require(relic, "else telemetry.recordBehaviorRuntimeError();", "unobserved removal telemetry");
+        final String activation = source("TrashRelicActivationService.java");
+        require(relic, "receipt -> confirmObservedWallRemoval(receipt, 20), telemetry::recordBehaviorRuntimeError",
+                "shared native activation acknowledgement and aggregate telemetry binding");
+        require(activation, "fields.tryObserveClaimedEffect(claim,",
+                "serialized owner-local observation admission");
+        require(activation, "if (observed) acknowledge.accept(receipt);",
+                "positive removal observation before acknowledgement");
+        require(activation, "if (receipt != null && !observed) report();",
+                "unobserved removal telemetry");
+        require(activation, "if (reported.compareAndSet(false, true)) unresolved.run();",
+                "single aggregate report across racing cleanup callbacks");
         require(retry, "!projectileTracking.snapshot().open()", "closed-runtime retry fence");
         require(retry, "confirmObservedWallRemoval(receipt, retries - 1)", "bounded immutable receipt continuation");
         check(!retry.contains("Bukkit.getPlayer(") && !retry.contains("projectile.")

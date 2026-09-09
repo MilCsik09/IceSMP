@@ -302,11 +302,19 @@ public final class TrashHistoryService {
     private boolean transformInventorySlotOnSuccess(final Player player, final int slot,
                                                      final java.util.function.BooleanSupplier admission,
                                                      final java.util.function.Consumer<ItemStack> afterProjection) {
+        return transformInventorySlotOnSuccess(player, slot, admission, () -> true, afterProjection);
+    }
+
+    private boolean transformInventorySlotOnSuccess(final Player player, final int slot,
+                                                     final java.util.function.BooleanSupplier admission,
+                                                     final java.util.function.BooleanSupplier finalAdmission,
+                                                     final java.util.function.Consumer<ItemStack> afterProjection) {
         Objects.requireNonNull(player, "player");
         if (slot < 0 || slot >= player.getInventory().getSize()) return false;
         final ItemStack source = player.getInventory().getItem(slot);
         if (source == null || itemFactory.successPhaseOf(source).isEmpty()) return false;
         if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        final ItemStack captured = source.clone();
         final ItemStack[] before = cloneContents(player.getInventory().getContents());
         final Runnable mutation = () -> {
             final ItemStack singleton = source.clone();
@@ -321,21 +329,25 @@ public final class TrashHistoryService {
         };
         final Runnable restore = () -> player.getInventory().setContents(before);
         return admission == null ? store.transact(() -> { mutation.run(); return true; }, restore)
-                : store.tryTransact(admission, mutation, restore);
+                : store.tryTransact(() -> admission.getAsBoolean()
+                        && captured.equals(player.getInventory().getItem(slot)), finalAdmission, mutation, restore);
     }
 
     /** Native wall consumption and its unresolved effect receipt share one fsynced history frame. */
     public Optional<TrashHistoryStore.WallReceipt> tryConsumeProjectileWall(
             final Player player, final int slot, final TrashRuleFieldService.RuleField field,
             final UUID projectileId,
-            final java.util.function.BooleanSupplier admission) {
+            final java.util.function.BooleanSupplier admission,
+            final java.util.function.BooleanSupplier finalAdmission) {
         Objects.requireNonNull(admission, "admission");
+        Objects.requireNonNull(finalAdmission, "finalAdmission");
+        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(player) || !player.getUniqueId().equals(field.owner())) return Optional.empty();
         if (slot < 0 || slot >= player.getInventory().getSize()) return Optional.empty();
         final ItemStack before = player.getInventory().getItem(slot);
         if (before == null || before.getAmount() != 1 || instanceIdOf(before).isEmpty()) return Optional.empty();
         final long beforeRevision = revisionOf(before);
         final var receipt = new java.util.concurrent.atomic.AtomicReference<TrashHistoryStore.WallReceipt>();
-        final boolean consumed = transformInventorySlotOnSuccess(player, slot, admission, singleton -> {
+        final boolean consumed = transformInventorySlotOnSuccess(player, slot, admission, finalAdmission, singleton -> {
             final var recorded = new TrashHistoryStore.WallReceipt(field.id(), player.getUniqueId(),
                     field.center().world(), projectileId, instanceIdOf(singleton).orElseThrow(), revisionOf(singleton),
                     itemFactory.idOf(singleton).orElseThrow(), itemFactory.phaseOf(singleton).orElseThrow(),

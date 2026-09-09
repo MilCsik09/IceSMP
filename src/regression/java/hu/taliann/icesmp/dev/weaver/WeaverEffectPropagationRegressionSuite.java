@@ -105,9 +105,13 @@ public final class WeaverEffectPropagationRegressionSuite {
                 && wall.indexOf("GameplayEffectGate.prepare(context)") < wall.indexOf("history.tryIndividualizeHandOnSuccess")
                 && wall.indexOf("history.tryIndividualizeHandOnSuccess") < wall.indexOf("activateCreation(reservation)"), "native wall publication bypassed reserve/lineage/history order");
         check(wall.contains("new RewardSource.Item(plan.instanceId())") && wall.contains("new RewardSource.Event(\"trash.rule_field\", field.id())")
-                && wall.contains("permits.history().claim(wallCreationSources(player, unit, field))"), "native wall lost planned identities or owner-fresh sources");
-        check(wall.contains("permits.field().claim(wallCreationSources(player, itemInHand(player, hand), field))"),
+                && wall.contains("permits.history().claim(wallCreationSources(owner, itemInHand(owner, hand), field))"), "native wall lost planned identities or owner-fresh sources");
+        check(wall.contains("permits.field().claim(wallCreationSources(owner, itemInHand(owner, hand), field))"),
                 "native field publication omitted post-WAL fresh influence admission");
+        check(wall.contains("final Player owner = Bukkit.getPlayer(ownerId);")
+                && wall.contains("owner == null || !Bukkit.isOwnedByCurrentRegion(owner)")
+                && wall.contains("java.util.Arrays.equals(captured, itemInHand(owner, hand).serializeAsBytes())"),
+                "native wall creation lost detached handoff or owner-local source revalidation");
     }
 
     private static void acknowledgedInstantReuse() throws Exception {
