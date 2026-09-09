@@ -329,6 +329,21 @@ public final class TrashHistoryService {
         return store.tryInspectDeveloperReceipt(operation);
     }
 
+    /** Pure owner-local assessment. This neither confirms nor restores the native projection. */
+    public Optional<Boolean> tryObserveDeveloperProjection(final TrashDeveloperReceipt receipt, final ItemStack[] inventory) {
+        return store.tryObserveDeveloperProjection(receipt, () -> matchesProjection(receipt, inventory, true));
+    }
+
+    public Optional<Boolean> tryObserveDeveloperBeforeProjection(final TrashDeveloperReceipt receipt, final ItemStack[] inventory) {
+        return store.tryObserveDeveloperProjection(receipt, () -> !receipt.projectionObserved() && matchesProjection(receipt, inventory, false));
+    }
+
+    public Optional<List<TrashDeveloperReceipt>> tryInspectPendingDeveloperProjections(final UUID actor) {
+        return store.tryInspectDeveloperReceipts(actor).map(receipts -> receipts.stream()
+                .filter(receipt -> !receipt.projectionObserved()).sorted(java.util.Comparator.comparingLong(TrashDeveloperReceipt::recordedAt)
+                    .thenComparing(TrashDeveloperReceipt::operationId)).limit(16).toList());
+    }
+
     /** Native observation is separate from the write acknowledgement and carries no item recreation authority. */
     public boolean tryConfirmDeveloperProjection(final TrashDeveloperReceipt receipt,
             final java.util.function.Supplier<ItemStack[]> ownerInventory) {

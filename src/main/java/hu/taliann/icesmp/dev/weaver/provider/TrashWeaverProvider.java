@@ -2,6 +2,7 @@ package hu.taliann.icesmp.dev.weaver.provider;
 
 import hu.taliann.icesmp.dev.weaver.api.*;
 import hu.taliann.icesmp.dev.weaver.execution.PreparedAction;
+import hu.taliann.icesmp.dev.weaver.execution.PreparedEffects;
 import hu.taliann.icesmp.dev.weaver.persistence.*;
 import hu.taliann.icesmp.dev.weaver.subject.*;
 import hu.taliann.icesmp.itemization.ItemIdentityService;
@@ -21,6 +22,7 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
     private final Function<SubjectRef, Map<String, WeaverValue>> capture;
     private final Map<String, WeaverValueCatalog> catalogs;
     private final ProviderContribution contribution;
+    private final TrashWeaverActions actions;
     private final Function<GameplaySourceSubject, List<RewardSource>> sourceCapture;
 
     public TrashWeaverProvider(WeaverProviderServices services, TrashCatalog catalog,
@@ -57,7 +59,7 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
             final var location = entity.getLocation();
             return fieldSources(fields.snapshot(), new TrashRuleFieldService.Point(location.getWorld().getUID(),
                     location.getX(), location.getY(), location.getZ()), System.currentTimeMillis());
-        });
+        }, new TrashWeaverActions(services, history, new WeaverItemSlots(identity)));
     }
 
     TrashWeaverProvider(WeaverTypeRegistry types, Supplier<Map<String, TrashDefinition>> identities,
@@ -68,6 +70,13 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
     TrashWeaverProvider(WeaverTypeRegistry types, Supplier<Map<String, TrashDefinition>> identities,
             Function<SubjectRef, Map<String, WeaverValue>> capture,
             Function<GameplaySourceSubject, List<RewardSource>> sourceCapture) {
+        this(types, identities, capture, sourceCapture, null);
+    }
+
+    private TrashWeaverProvider(WeaverTypeRegistry types, Supplier<Map<String, TrashDefinition>> identities,
+            Function<SubjectRef, Map<String, WeaverValue>> capture,
+            Function<GameplaySourceSubject, List<RewardSource>> sourceCapture, TrashWeaverActions actions) {
+        this.actions = actions;
         this.capture = Objects.requireNonNull(capture);
         this.sourceCapture = Objects.requireNonNull(sourceCapture);
         types.register(ScalarTypeCodec.reference(IDENTITY, id -> identities.get().containsKey(id)));
@@ -78,10 +87,11 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
                 "trash.rules", new RegistryValueCatalog<>(RULE, "trash", FACET, Set.of("trash.rule"),
                         TrashWeaverProvider::rules, Component::text, System::currentTimeMillis));
         contribution = new ProviderContribution(List.of(new FacetDescriptor(FACET, Component.text("Lelet"),
-                Component.text("Natív tárgytörténet, emlékezet és szabálymezők"), 40)), List.of(),
+                Component.text("Natív tárgytörténet, emlékezet és szabálymezők"), 40)), actions == null ? List.of() : actions.descriptors(),
                 catalogs.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(entry -> new CatalogDescriptor(
                         entry.getKey(), FACET, Component.text(entry.getKey()), entry.getValue().type())).toList(),
-                List.of(), List.of(), Map.of());
+                List.of(), List.of(), actions == null ? Map.of() : TrashWeaverActions.KINDS.keySet().stream()
+                    .collect(java.util.stream.Collectors.toUnmodifiableMap(Function.identity(), ignored -> "trash.observe_native_item")));
     }
 
     private static Map<String, String> rules() {
@@ -183,19 +193,31 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
         return Map.copyOf(facts);
     }
 
-    @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef subject) { return Map.copyOf(capture.apply(subject)); }
+    @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef subject) {
+        final var facts = new TreeMap<>(capture.apply(subject));
+        if (actions != null) facts.putAll(actions.capture(subject));
+        return Map.copyOf(facts);
+    }
+    @Override public Map<String, WeaverValue> captureRecoveryOnOwner(RecoveryContext context) {
+        context.authority().require(context.operation());
+        return actions != null && context.operation().subject() instanceof ItemSlotRef
+                ? actions.captureRecovery(context) : captureOnOwner(context.operation().subject());
+    }
     @Override public String id() { return "trash"; }
     @Override public int contractVersion() { return 1; }
     @Override public Set<WeaverSubjectKind> supportedKinds() { return Set.of(WeaverSubjectKind.ITEM_SLOT, WeaverSubjectKind.WORLD); }
     @Override public ProviderContribution contribution() { return contribution; }
     @Override public ProviderCoverage coverage() {
-        return new ProviderCoverage("trash.inspection_subset", CoverageLevel.INSPECT_ONLY_BY_DESIGN,
-                "Only the read-only inspection subset is registered. Trash actions and full WW-00 Trash coverage remain DEFERRED_BLOCKER.",
-                Set.of(FACET, "trash.identities", "trash.rules"));
+        if (actions == null) return new ProviderCoverage("trash.inspection_subset", CoverageLevel.INSPECT_ONLY_BY_DESIGN,
+                "Read-only fixture contribution; no native owner ports are installed.", Set.of(FACET, "trash.identities", "trash.rules"));
+        final var surfaces = new HashSet<>(Set.of(FACET, "trash.identities", "trash.rules"));
+        surfaces.addAll(TrashWeaverActions.KINDS.keySet());
+        return new ProviderCoverage("trash.registered_surface", CoverageLevel.FULL_PROVIDER,
+                "Native inspection, four item actions, conditional inverse and read-only receipt recovery. The independent WW-00 Trash domain remains blocked by behavior/rule-field actions, shared activation APIs and connected runtime acceptance.", surfaces);
     }
     @Override public ProviderDiscovery discover(SubjectSnapshot snapshot) {
         final boolean available = snapshot.facts().containsKey("trash.identity") || snapshot.facts().containsKey("trash.fields_revision");
-        return new ProviderDiscovery(available ? Set.of(FACET) : Set.of(), Set.of(), available ? catalogs.keySet() : Set.of(), Set.of(), Set.of(), Map.of());
+        return new ProviderDiscovery(available ? Set.of(FACET) : Set.of(), actions == null ? Set.of() : actions.discover(snapshot), available ? catalogs.keySet() : Set.of(), Set.of(), Set.of(), Map.of());
     }
     @Override public InspectionResult inspect(ProviderContext context, SubjectSnapshot snapshot, String facetId) {
         context.authority().requireValid();
@@ -208,10 +230,19 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
         context.authority().requireValid(); return Optional.ofNullable(catalogs.get(catalogId));
     }
     @Override public PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request) {
-        context.authority().requireValid(); throw new WeaverDomainRejection("TRASH_ACTIONS_UNAVAILABLE");
+        context.authority().requireValid();
+        if (actions == null) throw new WeaverDomainRejection("TRASH_ACTIONS_UNAVAILABLE");
+        return actions.prepare(context, snapshot, request);
+    }
+    @Override public PreparedEffects prepareEffects(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request, PreparedAction prepared) {
+        context.authority().requireValid();
+        if (actions == null) throw new WeaverDomainRejection("TRASH_ACTIONS_UNAVAILABLE");
+        return actions.effects(context, prepared);
     }
     @Override public PreparedAction prepareUndo(ProviderContext context, SubjectSnapshot snapshot, WeaverReceipt receipt) {
-        context.authority().requireValid(); throw new WeaverDomainRejection("TRASH_UNDO_UNAVAILABLE");
+        context.authority().requireValid();
+        if (actions == null) throw new WeaverDomainRejection("TRASH_UNDO_UNAVAILABLE");
+        return actions.undo(context, snapshot, receipt);
     }
     @Override public ValueExportResult exportValue(ProviderContext context, SubjectSnapshot snapshot, String exportId) {
         context.authority().requireValid(); return ValueExportResult.rejected("TRASH_EXPORT_UNAVAILABLE");
@@ -220,6 +251,8 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
         context.authority().requireValid(); return ImportValidation.rejected("TRASH_IMPORT_UNAVAILABLE");
     }
     @Override public RecoveryAssessment assessRecovery(RecoveryContext context, SubjectSnapshot snapshot, WeaverOperationRecord operation) {
-        return new RecoveryAssessment(ObservedOperationState.PARTIAL_OR_CONFLICT, false, Optional.empty(), "TRASH_RECOVERY_UNAVAILABLE");
+        context.authority().require(operation);
+        return actions == null ? new RecoveryAssessment(ObservedOperationState.PARTIAL_OR_CONFLICT, false, Optional.empty(), "TRASH_RECOVERY_UNAVAILABLE")
+                : actions.assess(context, snapshot, operation);
     }
 }

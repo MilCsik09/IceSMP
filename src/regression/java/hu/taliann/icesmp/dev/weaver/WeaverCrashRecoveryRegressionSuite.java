@@ -21,7 +21,8 @@ public final class WeaverCrashRecoveryRegressionSuite {
     }
     public static void main(final String[] args) throws Exception {
         snapshotRecoveryIsolation();
-        profileMaintenanceAdmission();
+        profileMaintenanceAdmission(false);
+        profileMaintenanceAdmission(true);
         for (final boolean applied : List.of(false, true)) {
             for (final ObservedOperationState observed : ObservedOperationState.values()) {
                 for (final boolean exact : List.of(false, true)) {
@@ -115,7 +116,7 @@ public final class WeaverCrashRecoveryRegressionSuite {
         check(target.recoveryCaptures == 1, "stale operation token entered a native recovery callback");
         recovery.close(); await(journal.close());
     }
-    private static void profileMaintenanceAdmission() throws Exception {
+    private static void profileMaintenanceAdmission(boolean nativeProjection) throws Exception {
         final var journal = new WeaverJournal(new Storage()); await(journal.load());
         for (int i = 0; i < 8; i++) {
             final var original = prepared(); final long now = System.currentTimeMillis();
@@ -128,14 +129,18 @@ public final class WeaverCrashRecoveryRegressionSuite {
         final AtomicBoolean ready = new AtomicBoolean(); final var barrier = new CompletableFuture<Void>();
         final var captures = new java.util.concurrent.atomic.AtomicInteger();
         final var recovery = new WeaverRecoveryCoordinator(journal, (actor, ref) -> {
-            if (!ready.get()) return CompletableFuture.failedFuture(new WeaverDomainRejection("PROFILE_UNAVAILABLE"));
+            if (!ready.get()) return CompletableFuture.failedFuture(new WeaverDomainRejection(nativeProjection ? "NATIVE_PROJECTION_PENDING" : "PROFILE_UNAVAILABLE"));
             captures.incrementAndGet(); return barrier.thenApply(ignored -> new SubjectSnapshot(ref, 1, "before", Map.of()));
         }, providers, types);
         await(recovery.start()); check(recovery.pending().size() == 8, "pending profile batch was lost"); ready.set(true);
-        final var pulse = recovery.profilesAvailable(); await(recovery.profilesAvailable());
+        final var pulse = maintenance(recovery, nativeProjection); await(maintenance(recovery, nativeProjection));
         check(captures.get() == 1, "overlapping maintenance duplicated work or started unbounded parallel profile reads"); barrier.complete(null); await(pulse);
         check(captures.get() == 8 && provider.reads == 8 && recovery.pending().isEmpty(), "bounded maintenance failed to visit every pending profile");
-        await(recovery.profilesAvailable()); recovery.close(); await(recovery.profilesAvailable());
+        await(maintenance(recovery, nativeProjection)); recovery.close(); await(maintenance(recovery, nativeProjection));
         check(captures.get() == 8, "settled or closed maintenance repeated profile reads"); await(journal.close());
     }
+    private static java.util.concurrent.CompletionStage<Void> maintenance(WeaverRecoveryCoordinator recovery, boolean nativeProjection) {
+        return nativeProjection ? recovery.nativeProjectionsAvailable() : recovery.profilesAvailable();
+    }
+
 }

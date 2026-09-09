@@ -49,8 +49,20 @@ public final class GameplayEffectGate {
         Objects.requireNonNull(context);
         final var binding = POLICY.get();
         if (binding == null) return CompletableFuture.completedFuture(GameplayEffectPermit.denied());
+        return guardedAdmission(binding, context, () -> binding.policy.apply(context));
+    }
+    /** Adds current-policy and observation-fence restrictions to an independently authorized native admission. */
+    public static CompletionStage<GameplayEffectPermit> guardNativeAdmission(GameplayEffectContext context,
+            java.util.function.Supplier<CompletionStage<GameplayEffectPermit>> admission) {
+        Objects.requireNonNull(context); Objects.requireNonNull(admission);
+        final var binding = POLICY.get();
+        return binding == null ? CompletableFuture.completedFuture(GameplayEffectPermit.denied())
+                : guardedAdmission(binding, context, admission);
+    }
+    private static CompletionStage<GameplayEffectPermit> guardedAdmission(Binding binding, GameplayEffectContext context,
+            java.util.function.Supplier<CompletionStage<GameplayEffectPermit>> admission) {
         try {
-            return Objects.requireNonNull(binding.policy.apply(context)).handle((permit, failure) -> {
+            return Objects.requireNonNull(admission.get()).handle((permit, failure) -> {
                 if (failure != null || permit == null) return GameplayEffectPermit.denied();
                 return GameplayEffectPermit.guardedSources(currentSources -> {
                     synchronized (FENCES) {

@@ -24,6 +24,7 @@ public final class TrashWeaverInspectionRegressionSuite {
                 List.of(), new TrashSourceBias("GLOBAL", Set.of()), TrashKind.STORY, "", "");
     }
     public static void main(String[] args) {
+        TrashWeaverActionRegressionSuite.main(args);
         final var definitions = new AtomicReference<>(Map.of("first", definition("first")));
         final var types = new WeaverTypeRegistry(); ScalarTypeCodec.registerBuiltins(types);
         final var reads = new AtomicInteger(); final var provider = new TrashWeaverProvider(types, definitions::get, ref -> {

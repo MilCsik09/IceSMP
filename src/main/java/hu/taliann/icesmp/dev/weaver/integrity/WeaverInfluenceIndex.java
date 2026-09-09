@@ -13,7 +13,7 @@ public final class WeaverInfluenceIndex {
         public SourceEvidence { origins = Set.copyOf(origins); }
         public boolean clean() { return !uncertain && origins.isEmpty(); }
     }
-    private record Evidence(Optional<WeaverInfluenceRecord> record, Optional<AreaRef> area) {
+    private record Evidence(Optional<WeaverInfluenceRecord> record, Optional<UUID> pendingOperation, Optional<AreaRef> area) {
         boolean active(final long now) { return record.isEmpty() || record.get().quarantines(now); }
     }
     private record Chunk(UUID world, int x, int z) { }
@@ -23,17 +23,17 @@ public final class WeaverInfluenceIndex {
         final Map<RewardSource, List<Evidence>> targets = new HashMap<>(); final Map<Chunk, List<Evidence>> regions = new HashMap<>();
         state.intents().forEach((operation, intent) -> {
             if (state.operations().get(operation).request().integrityMode() == IntegrityMode.SANDBOX) {
-                intent.targets().forEach(target -> add(targets, regions, target, Optional.empty()));
+                intent.targets().forEach(target -> add(targets, regions, target, Optional.empty(), Optional.of(operation)));
             }
         });
         state.influences().values().stream().filter(record -> record.influence().quarantinesRewards())
-                .forEach(record -> add(targets, regions, record.target(), Optional.of(record)));
+                .forEach(record -> add(targets, regions, record.target(), Optional.of(record), Optional.empty()));
         targets.replaceAll((source, values) -> List.copyOf(values)); regions.replaceAll((chunk, values) -> List.copyOf(values));
         exact = Map.copyOf(targets); spatial = Map.copyOf(regions);
     }
     private static void add(final Map<RewardSource, List<Evidence>> exact, final Map<Chunk, List<Evidence>> spatial,
-                            final WeaverInfluenceTarget target, final Optional<WeaverInfluenceRecord> record) {
-        final Evidence evidence = new Evidence(record, target.area());
+                            final WeaverInfluenceTarget target, final Optional<WeaverInfluenceRecord> record, final Optional<UUID> pendingOperation) {
+        final Evidence evidence = new Evidence(record, pendingOperation, target.area());
         if (target.area().isEmpty()) { exact.computeIfAbsent(normalize(target.source()), ignored -> new ArrayList<>()).add(evidence); return; }
         final AreaRef area = target.area().get(); final var bounds = area.shape().bounds();
         for (int x = bounds.minX() >> 4; x <= bounds.maxX() >> 4; x++) for (int z = bounds.minZ() >> 4; z <= bounds.maxZ() >> 4; z++) {
@@ -51,6 +51,14 @@ public final class WeaverInfluenceIndex {
     }
     /** Detached source lineage for durable derived effects; a PREPARED intent is uncertainty, not an applied origin. */
     public SourceEvidence trace(final Collection<RewardSource> sources, final long now) {
+        return trace(sources, now, Optional.empty());
+    }
+    /** The executor-issued capability can exclude its own intent, never another pending operation or an applied origin. */
+    public SourceEvidence traceNativeEffect(final Collection<RewardSource> sources, final long now,
+            final hu.taliann.icesmp.dev.weaver.execution.WeaverNativeEffectAuthority authority) {
+        return trace(sources, now, Optional.of(Objects.requireNonNull(authority).pendingOperation()));
+    }
+    private SourceEvidence trace(final Collection<RewardSource> sources, final long now, final Optional<UUID> executingOperation) {
         if (now < 0 || sources.isEmpty() || sources.size() > 64) throw new IllegalArgumentException("Influence trace bounds");
         final Set<DeveloperInfluence> origins = new HashSet<>(); boolean uncertain = false;
         for (final RewardSource source : sources) {
@@ -62,7 +70,7 @@ public final class WeaverInfluenceIndex {
                         .filter(value -> value.area().orElseThrow().shape().contains(x, y, z)).forEach(evidence::add);
             }
             for (final Evidence value : evidence) if (value.active(now)) {
-                if (value.record().isEmpty()) uncertain = true;
+                if (value.record().isEmpty()) uncertain |= executingOperation.isEmpty() || !value.pendingOperation().equals(executingOperation);
                 else origins.add(value.record().get().influence());
             }
         }

@@ -420,6 +420,19 @@ public final class TrashHistoryStore implements PersistentStore {
         finally { stateLock.unlock(); }
     }
 
+    /** Read-only native receipt/history and physical projection assessment, including pending projections. */
+    Optional<Boolean> tryObserveDeveloperProjection(final TrashDeveloperReceipt expected, final BooleanSupplier observation) {
+        Objects.requireNonNull(expected); Objects.requireNonNull(observation);
+        if (stateLock.isHeldByCurrentThread() || !stateLock.tryLock()) return Optional.empty();
+        try {
+            if (!readable) return Optional.empty();
+            final var current = histories.get(expected.instanceId());
+            return Optional.of(expected.equals(developerReceipts.get(expected.operationId())) && current != null
+                    && current.revision() == expected.afterRevision() && current.baseId().equals(expected.baseId())
+                    && current.phase().equals(expected.afterPhase()) && observation.getAsBoolean());
+        } finally { stateLock.unlock(); }
+    }
+
     /** A fresh owner-local exact projection observation is required, never inferred from missing UUIDs. */
     public boolean tryConfirmDeveloperProjection(final TrashDeveloperReceipt expected, final BooleanSupplier observation) {
         Objects.requireNonNull(expected); Objects.requireNonNull(observation);

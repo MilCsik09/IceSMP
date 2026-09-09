@@ -298,10 +298,14 @@ public final class TrashProductionRuntimeProbe {
             } else check(after[1].getAmount() == 2 && history.instanceIdOf(after[1]).isEmpty(), "developer split individualized or lost remainder");
             // Exercise stale player-save projection against the real WAL, without claiming connected playerdata proof.
             current.set(before); store.load();
+            check(history.tryObserveDeveloperBeforeProjection(receipt, current.get()).orElseThrow(), "read-only recovery missed exact pending before state");
             check(history.tryRestoreDeveloperProjection(receipt, current::get, current::set, () -> current.set(before)), "exact pending physical recovery refused");
             check(java.util.Arrays.equals(after, current.get()), "native recovery did not restore exact item bytes");
             final ItemStack[] changedAmount = current.get().clone(); changedAmount[output] = changedAmount[output].clone();
             changedAmount[output].setAmount(changedAmount[output].getAmount() + 1);
+            check(!history.tryObserveDeveloperProjection(receipt, changedAmount).orElseThrow(), "changed amount accepted by native read-only recovery");
+            check(history.tryObserveDeveloperProjection(receipt, current.get()).orElseThrow(), "native read-only recovery missed exact pending state");
+            check(history.tryInspectDeveloperReceipt(operation).orElseThrow().orElseThrow().equals(receipt), "read-only assessment changed native observation state");
             check(!history.tryConfirmDeveloperProjection(receipt, () -> changedAmount), "changed native amount borrowed a projection acknowledgement");
             check(history.tryConfirmDeveloperProjection(receipt, current::get), "exact native projection was not acknowledged");
             final var evidence = history.historyOf(current.get()[output]).orElseThrow();

@@ -56,7 +56,15 @@ public final class WeaverDurableExecutionCoordinator {
             for (final ExecutionStage stage : prepared.stages()) {
                 chain = chain.thenCompose(done -> renew(context, actorGuard).thenCompose(authority -> router.submit(stage.owner(), authority.actor(), Duration.ofMillis(stage.timeoutMillis()), () -> {
                     if (closed) throw new WeaverDomainRejection("EXECUTION_CLOSED"); authority.requireValid(); entered.set(true);
-                    return stage.apply().execute(new ExecutionContext(authority, snapshot, List.copyOf(results)), stage.payload());
+                    final AtomicBoolean nativeActive = new AtomicBoolean(true);
+                    final var nativeAuthority = new WeaverNativeEffectAuthority(journal, operation, authority,
+                            () -> nativeActive.get() && !closed);
+                    try {
+                        return stage.apply().execute(new ExecutionContext(authority, snapshot, List.copyOf(results),
+                                Optional.of(nativeAuthority)), stage.payload()).whenComplete((value, failure) -> nativeActive.set(false));
+                    } catch (RuntimeException | Error failure) {
+                        nativeActive.set(false); throw failure;
+                    }
                 })).thenAccept(result -> {
                     Objects.requireNonNull(result); result.facts().values().forEach(types::validate); results.add(result);
                 }));
@@ -87,7 +95,8 @@ public final class WeaverDurableExecutionCoordinator {
                 || !receipt.subject().equals(operation.subject()) || receipt.risk() != prepared.descriptor().risk() || receipt.lifetime() != operation.request().lifetime()
                 || receipt.integrityMode() != operation.request().integrityMode() || receipt.status() != ReceiptStatus.COMMITTED || receipt.createdAt() < operation.preparedAt()
                 || !receipt.beforeFingerprint().equals(operation.beforeFingerprint()) || !receipt.afterFingerprint().equals(results.getLast().afterFingerprint())
-                || receipt.undo().isPresent() != prepared.descriptor().undoable()) throw new IllegalArgumentException("Provider receipt manifest violation");
+                || receipt.undo().isPresent() && !prepared.descriptor().undoable()
+                || receipt.undo().isEmpty() && prepared.descriptor().undoable() && operation.undoClaim().isEmpty()) throw new IllegalArgumentException("Provider receipt manifest violation");
         receipt.before().values().forEach(types::validate); receipt.after().values().forEach(types::validate);
         receipt.undo().ifPresent(undo -> undo.parameters().values().forEach(types::validate));
     }

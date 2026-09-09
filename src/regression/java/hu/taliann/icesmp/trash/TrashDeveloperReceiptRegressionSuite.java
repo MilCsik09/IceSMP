@@ -58,6 +58,11 @@ public final class TrashDeveloperReceiptRegressionSuite {
             check(loaded.tryInspect(receipt.instanceId()).isEmpty(), "unobserved physical projection exposed mutable item");
             check(!loaded.matches(receipt.instanceId(), receipt.baseId(), receipt.afterPhase(), receipt.afterRevision()), "unobserved item admitted normal use");
             refuse(() -> loaded.transact(() -> loaded.record(receipt.instanceId(), receipt.baseId(), receipt.afterPhase(), TrashHistoryEvent.REPAIRED, ACTOR, ""), null));
+            final byte[] beforeObservation = Files.readAllBytes(f.root.resolve("history.wal"));
+            check(!loaded.tryObserveDeveloperProjection(receipt, () -> false).orElseThrow(), "invented read-only physical observation");
+            check(loaded.tryObserveDeveloperProjection(receipt, () -> true).orElseThrow(), "exact pending state cannot be assessed read-only");
+            check(loaded.tryInspectDeveloperReceipt(receipt.operationId()).orElseThrow().orElseThrow().equals(receipt)
+                    && Arrays.equals(beforeObservation, Files.readAllBytes(f.root.resolve("history.wal"))), "read-only assessment wrote native history or observation");
             check(!loaded.tryConfirmDeveloperProjection(receipt, () -> false), "invented projection observation");
             check(loaded.tryRestoreDeveloperProjection(receipt, () -> true, () -> {}, null), "exact pending native projection refused");
             check(loaded.tryConfirmDeveloperProjection(receipt, () -> true), "fresh observation refused");

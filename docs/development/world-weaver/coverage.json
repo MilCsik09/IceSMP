@@ -48,7 +48,9 @@
         "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
         "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
-        "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java"
+        "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverNativeEffectAuthority.java",
+        "src/regression/java/hu/taliann/icesmp/dev/weaver/WeaverNativeEffectRegressionSuite.java"
       ]
     },
     {
@@ -127,8 +129,8 @@
       "phase": "WW-05",
       "inspect": "hidden identity/kind/behavior/phase/instance/revision/history/provenance/memory/rule fields",
       "planned_actions": "individualize, activate, transition, repair, sandbox copy, four rule field kinds, export/import, fork",
-      "canonical_route": "TrashHistoryService and native history/anomaly WAL own item markers, receipts and inspection. TrashRuleFieldService owns fields, exact claims and final effect admission. TrashRelicActivationService now coordinates the native cross-region projectile-wall owner hops using those existing authorities; other relic and anomaly activation extraction remains required before provider mutation registration. Retained observed receipts and bounded live acknowledgement retries do not imply Minecraft playerdata-save proof. Complete native influence admission remains unimplemented.",
-      "rationale": "The registered Trash inspection subset reads native identity/history/provenance, derives archaeology without awards, reports actual runtime memory and world-local fields; dynamic identity/rule catalogs use canonical registries. Full Trash remains an implementation blocker: shared activation APIs, all developer mutation actions, journal/recovery, prototype/influence admission, and projectile handoff/unload/disable hardening are unfinished. Read-only subset registration does not waive domain coverage or connected runtime evidence.",
+      "canonical_route": "TrashHistoryService/native history WAL own item UUIDs, truthful developer events, retained forward/inverse receipts and exact inventory projections. TrashRuleFieldService owns all four field kinds; TrashRelicActivationService owns cross-owner wall consumption/removal. The WW adapter calls those native authorities through executor-issued pending-operation admission. Other Relic/Anomaly activation extraction and registered behavior/rule actions remain open.",
+      "rationale": "The registered surface includes native inspection/catalogs, four SANDBOX item actions, exact target lineage, conditional native inverse and read-only operation recovery. Native owner lifecycle reconciles only unobserved exact projections. Full Trash remains an implementation blocker: shared general activation APIs, behavior/create/remove rule actions, remaining native consequence influence, export/import/Fork and connected custody/playerdata/cross-region acceptance are unfinished. Registered-surface coverage does not close this whole-domain blocker.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
@@ -155,7 +157,10 @@
         "src/regression/java/hu/taliann/icesmp/trash/TrashNativeInspectionRegressionSuite.java",
         "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverInspectionRegressionSuite.java",
         "docs/development/world-weaver/WW-05-territory-policy.md",
-        "src/regression/java/hu/taliann/icesmp/trash/TrashWallHandoffRegressionSuite.java"
+        "src/regression/java/hu/taliann/icesmp/trash/TrashWallHandoffRegressionSuite.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverActions.java",
+        "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverActionRegressionSuite.java",
+        "src/regression/java/hu/taliann/icesmp/trash/TrashDeveloperReceiptRegressionSuite.java"
       ]
     },
     {
@@ -1512,7 +1517,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "b36ef716bf42669a80bb74d7daad200f024098a2a0a59199e2499c9c0783c973",
+      "source_sha256": "d6617fa6284aaa036855594f54e0cc83c4819782a9d5c2774f65aac481adf908",
       "public_methods": [
         "WorldWeaverRuntime",
         "captureCausalSources",
@@ -1627,7 +1632,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverDurableExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "29ea97a6714ae9f1e35e10553a9387c337ff146f351b0ee1ea0e8646791751fa",
+      "source_sha256": "ad8f42cf05168f1465a4dd60cb14f0a15618f689b891df96e6a4d128becc5704",
       "public_methods": [
         "WeaverDurableExecutionCoordinator",
         "close",
@@ -1646,6 +1651,17 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverNativeEffectAuthority.java",
+      "domain": "developer_self",
+      "source_sha256": "2628b6b8958bd789c9a1039a7c00250dcaa7f221286dbc9ea758f6acd7390939",
+      "public_methods": [
+        "pendingOperation",
+        "prepare",
+        "requireFor",
+        "requireValid"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryAuthority.java",
       "domain": "developer_self",
       "source_sha256": "d8f419134f09d786dff8eb5bb3154cdba97d9c38d116972fde131b9abfdc1a55",
@@ -1656,11 +1672,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "41be529538159ae38849525ba218b9437ee880ed13d5dac38917de43db8f33d5",
+      "source_sha256": "f823c3f78a0ded0c6e61ddd7bfd3ceb584177516e76d04b4851ce1c4be5eec08",
       "public_methods": [
         "WeaverRecoveryCoordinator",
         "close",
         "entityAvailable",
+        "nativeProjectionsAvailable",
         "pending",
         "profilesAvailable",
         "reconcile",
@@ -1696,13 +1713,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
       "domain": "developer_self",
-      "source_sha256": "7488f566aeaaff0164c4ad5eb28ccc5b275c03b1f352bea7fb1e526da810e0f5",
+      "source_sha256": "0e3a25ae47f225ea19445809c2a40b7f4fe55159b1d525b2a30ca4d0e4d5bcae",
       "public_methods": [
-        "WeaverInfluenceIndex",
         "SourceEvidence",
+        "WeaverInfluenceIndex",
         "clean",
         "quarantined",
-        "trace"
+        "trace",
+        "traceNativeEffect"
       ]
     },
     {
@@ -1716,7 +1734,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "d17f1963f5d8d5e770ab6b0be41d651549deb165a844131b93b8517acce460e2",
+      "source_sha256": "d649ae8f5e4488b9c7815ce3770555f91e44d844ad7ac49fb6acd1044e1b51d4",
       "public_methods": [
         "WeaverJournal",
         "applied",
@@ -1728,6 +1746,7 @@
         "load",
         "prepare",
         "prepareDerivedEffect",
+        "prepareNativeEffect",
         "ready",
         "resolve",
         "snapshot"
@@ -1962,14 +1981,23 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverActions.java",
+      "domain": "trash",
+      "source_sha256": "d44496744fb97b2a2afc9f845f22d532c28089a2e896468dfcb89f663a8f28ba",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
       "domain": "trash",
-      "source_sha256": "b6ceb9c2115e720dda532d233d8625bf499e2265bfcda194bc96ee8ad5ac0fc1",
+      "source_sha256": "54d57f8007698b5af4e46f717fcb784b3c097eaa50d08d6fae4dc70a185d65ff",
       "public_methods": [
         "TrashWeaverProvider",
         "assessRecovery",
+        "captureCausalSources",
         "captureOnOwner",
+        "captureRecoveryOnOwner",
         "catalog",
+        "causalSourceKinds",
         "contractVersion",
         "contribution",
         "coverage",
@@ -1977,7 +2005,9 @@
         "exportValue",
         "id",
         "inspect",
+        "maximumCausalSources",
         "prepare",
+        "prepareEffects",
         "prepareUndo",
         "supportedKinds",
         "validateImport"
@@ -2268,11 +2298,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
       "domain": "developer_self",
-      "source_sha256": "6b619dd1cc3b7aaf060f35995d1246d66a66d7e3e8923dd2e318f3e7ddd329c6",
+      "source_sha256": "bab039cce16cba414166122e445eb4b659ec9726cf63908fd7c67b7476865374",
       "public_methods": [
         "activeFor",
         "close",
         "fence",
+        "guardNativeAdmission",
         "install",
         "prepare"
       ]
@@ -6542,10 +6573,11 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "febdc5b11deb458d261fd2feb9efc41d1579449c6324aed0bb5c241410051f4c",
+      "source_sha256": "148a29391bab05d120675349e85dbef3573273284dd4daa33199cf45bd8258d6",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
+        "TrashHistoryService",
         "clearPreparedRepair",
         "completePreparedRepair",
         "completeVendorOperation",
@@ -6559,7 +6591,9 @@
         "isValidTracked",
         "markOrigin",
         "markPreparedRepair",
+        "matchesInventory",
         "observeOwnerIfTracked",
+        "operationId",
         "prepareVendorUnits",
         "preparedRepairToken",
         "recordIfTracked",
@@ -6572,27 +6606,39 @@
         "transformInventorySlotOnSuccess",
         "transformMainHandOnSuccess",
         "transformOnSuccess",
+        "tryCommitDeveloperMutation",
+        "tryConfirmDeveloperProjection",
         "tryConfirmProjectileWallRemoval",
         "tryConsumeProjectileWall",
         "tryIndividualizeHandOnSuccess",
         "tryIndividualizePlannedUnit",
         "tryInspect",
+        "tryInspectDeveloperReceipt",
+        "tryInspectPendingDeveloperProjections",
         "tryInspectPendingProjectileWalls",
         "tryInspectWallRecoveryReceipts",
+        "tryObserveDeveloperBeforeProjection",
+        "tryObserveDeveloperProjection",
+        "tryPrepareDeveloperMutation",
+        "tryPrepareDeveloperReversal",
         "tryPrepareUnit",
         "tryRestoreAcknowledgedWallProjection",
+        "tryRestoreDeveloperProjection",
         "tryTransformInventorySlotOnSuccess",
+        "tryTransformPlannedHandOnSuccess",
+        "tryTransformPlannedUnit",
         "validateVendorSale"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "2a43479faf0c3e2ec5f4d18cb96dc241691a45617a0863fb8054af0400d74555",
+      "source_sha256": "ce2b00f4566572a7401adbac0f9a4cba48efd8d094f91fb4bdfe88fac3d28597",
       "public_methods": [
         "HistoryEntry",
         "Inspection",
         "Snapshot",
+        "TrashHistoryStore",
         "VendorReceipt",
         "WallReceipt",
         "createAndRecord",
@@ -6609,8 +6655,11 @@
         "size",
         "transact",
         "transform",
+        "tryConfirmDeveloperProjection",
         "tryConfirmWallRemoval",
         "tryInspect",
+        "tryInspectDeveloperReceipt",
+        "tryInspectDeveloperReceipts",
         "tryInspectObservedWallRemoval",
         "tryInspectWallReceipts",
         "tryInspectWallRecoveryReceipts",
@@ -6941,6 +6990,7 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritorySubjectInspection.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",

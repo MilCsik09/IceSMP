@@ -20,9 +20,10 @@ public final class WeaverUndoRegressionSuite {
         UUID projection; int applications;
         final ActionDescriptor undo;
         @Override public Set<WeaverSubjectKind> supportedKinds() { return Set.of(WeaverSubjectKind.PLAYER, WeaverSubjectKind.ENTITY, WeaverSubjectKind.ITEM_SLOT); }
-        Provider() {
+        Provider() { this(false); }
+        Provider(boolean terminalInverse) {
             final ActionDescriptor source = WeaverContractRegressionSuite.action("fixture", RiskLevel.MUTATING, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX, IntegrityMode.LIVE_GM), Set.of(IntegrityImpact.TAINT_SUBJECT), false, 1);
-            undo = new ActionDescriptor("fixture.undo", source.facetId(), source.label(), source.risk(), source.lifetimes(), source.integrityModes(), source.integrityImpacts(), Set.of(WeaverSubjectKind.PLAYER, WeaverSubjectKind.ENTITY, WeaverSubjectKind.ITEM_SLOT), source.parameters(), source.areaSupport(), source.areaLimits(), false, Optional.empty(), 1);
+            undo = new ActionDescriptor("fixture.undo", source.facetId(), source.label(), source.risk(), source.lifetimes(), source.integrityModes(), source.integrityImpacts(), Set.of(WeaverSubjectKind.PLAYER, WeaverSubjectKind.ENTITY, WeaverSubjectKind.ITEM_SLOT), source.parameters(), source.areaSupport(), source.areaLimits(), terminalInverse, Optional.empty(), 1);
         }
         @Override public ProviderContribution contribution() {
             final var base = super.contribution(); return new ProviderContribution(base.facets(), List.of(base.actions().getFirst(), undo), List.of(), List.of(), List.of(), Map.of("fixture.action", "fixture.assess", "fixture.undo", "fixture.assess"));
@@ -46,12 +47,14 @@ public final class WeaverUndoRegressionSuite {
         @Override public void close() { }
     }
     static final class Fixture implements AutoCloseable {
-        final Storage storage = new Storage(); final Provider provider = new Provider(); final WorldWeaverProviderRegistry providers = WeaverContractRegressionSuite.registry(provider);
+        final Storage storage = new Storage(); final Provider provider; final WorldWeaverProviderRegistry providers;
         final WeaverTypeRegistry types = types(); final WeaverJournal journal; final WeaverUndoCoordinator undo;
         final WeaverAuthorityToken authority = new WeaverAuthorityToken(HiddenDevAuthority.PRIMARY_DEVELOPER, UUID.randomUUID(), Long.MAX_VALUE, () -> true, () -> 0L);
         final ProviderContext context = new ProviderContext(authority, types, Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
         final WeaverDurableExecutionCoordinator execution; final WeaverOperationRecord original; final WeaverReceipt receipt; final SubjectSnapshot snapshot;
-        Fixture() throws Exception {
+        Fixture() throws Exception { this(false); }
+        Fixture(boolean terminalInverse) throws Exception {
+            provider = new Provider(terminalInverse); providers = WeaverContractRegressionSuite.registry(provider);
             providers.freezeAndValidate(); journal = new WeaverJournal(storage, providers.projectionConsumers()::validate); await(journal.load());
             original = operation(new PlayerRef(UUID.randomUUID()), Lifetime.PERSISTENT, IntegrityMode.SANDBOX); final var projection = projection(original, 1, 7, OptionalLong.empty()); provider.projection = projection.projectionId();
             receipt = apply(journal, original, effect(projection)).receipt().orElseThrow(); snapshot = new SubjectSnapshot(original.subject(), 3, "after", Map.of());
@@ -64,6 +67,24 @@ public final class WeaverUndoRegressionSuite {
         @Override public void close() throws Exception { execution.close(); if (journal.ready()) await(journal.close()); else fails(journal.close()); }
     }
     public static void main(final String[] args) throws Exception {
+        try (final Fixture f = new Fixture(true)) {
+            final var target = f.undo.target(f.authority, f.receipt.receiptId(), f.snapshot);
+            final var plan = f.undo.prepare(f.context, target.claim(), f.snapshot);
+            final var inverse = await(f.run(target, plan));
+            check(inverse.undo().isEmpty() && !f.undo.available(f.authority, inverse.receiptId())
+                    && !f.undo.available(f.authority, f.receipt.receiptId()), "terminal native inverse offered a second Undo");
+            check(f.journal.snapshot().receipts().get(f.receipt.receiptId()).status() == ReceiptStatus.UNDONE
+                    && f.provider.applications == 1, "terminal inverse did not settle its exact original claim once");
+        }
+        try (final Fixture f = new Fixture(true)) {
+            final var target = f.undo.target(f.authority, f.receipt.receiptId(), f.snapshot);
+            final var plan = f.undo.prepare(f.context, target.claim(), f.snapshot);
+            final var request = new ActionRequest(plan.descriptor().id(), Map.of(), Lifetime.ONE_SHOT, IntegrityMode.SANDBOX);
+            fails(f.execution.execute("fixture", f.context, f.snapshot, request, plan,
+                    f.provider.prepareEffects(f.context, f.snapshot, request, plan), () -> f.authority));
+            check(f.journal.snapshot().operations().get(plan.operationId()).status() == OperationStatus.NEEDS_REVIEW
+                    && f.journal.snapshot().intents().containsKey(plan.operationId()), "missing forward Undo was accepted without a durable inverse claim");
+        }
         try (final Fixture f = new Fixture()) {
             rejects(() -> f.undo.target(f.authority, f.receipt.receiptId(), new SubjectSnapshot(f.original.subject(), 4, "external", Map.of())));
             check(f.provider.applications == 0 && f.journal.snapshot().operations().size() == 1, "drift reached mutation preparation");
