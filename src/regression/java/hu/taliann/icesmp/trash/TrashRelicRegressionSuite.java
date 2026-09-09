@@ -242,15 +242,18 @@ public final class TrashRelicRegressionSuite {
                 "unacknowledged projectile freeze/restore handoff returned");
         require(launch, "if (scheduled == null) projectileTracking.release(ticket)", "retired scheduler refusal cleanup");
         require(launch, "catch (final RuntimeException | Error failure)", "scheduling/tick failure cleanup");
-        require(launch, "finally {\n                        releaseFieldClaim(hit);", "claim cleanup on every completion path");
+        require(launch, "finally {\n                        if (!transferred) releaseFieldClaim(hit);", "claim cleanup unless exact ownership transferred to native handoff");
+        require(launch, "transferred = dispatchForeignProjectileWall(hit, projectile, ticket);", "canonical owner handoff");
         require(runtime, "Bukkit.isOwnedByCurrentRegion(owner)", "inventory owner admission");
         require(runtime, "Bukkit.isOwnedByCurrentRegion(projectile)", "projectile owner admission");
         require(runtime, "TrashRelicPolicy.completeProjectileWall", "native completion uses tested admission");
         require(runtime, "history.tryConsumeProjectileWall(player, slot, field, projectileId, admitted)",
                 "native wall uses the consumption/receipt transaction with immediate busy refusal");
-        require(runtime, "if (!admitted.getAsBoolean()) {\n                            telemetry.recordBehaviorRuntimeError();\n                            return;\n                        }\n                        projectile.remove();",
-                "acknowledged consumption cannot bypass a later shutdown/expiry admission failure");
-        require(runtime, "final boolean observedRemoved = !projectile.isValid();\n                        if (observedRemoved) confirmObservedWallRemoval(consumed.get(), 20);",
+        require(runtime, "ruleFields.tryObserveClaimedEffect(claim, admitted, () -> {\n                            projectile.remove();\n                            return !projectile.isValid();\n                        })",
+                "acknowledged consumption must serialize final effect admission with native claim close");
+        require(runtime, "if (observation.isEmpty()) {\n                            telemetry.recordBehaviorRuntimeError();\n                            return;\n                        }",
+                "refused native observation cannot become effect evidence");
+        require(runtime, "final boolean observedRemoved = observation.orElseThrow();\n                        if (observedRemoved) confirmObservedWallRemoval(consumed.get(), 20);",
                 "only a real positive owner-local removal observation may enter acknowledgement retry");
         require(runtime, "history.tryConfirmProjectileWallRemoval(receipt, () -> true)",
                 "immutable observed evidence must use the native durable acknowledgement");

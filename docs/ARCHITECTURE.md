@@ -60,7 +60,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
-| `trash/` | 42 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, bounded delta-journalos history authority, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, identity-mentes aggregált runtime telemetry, opt-in Paper/Folia smoke probe, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
+| `trash/` | 43 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, bounded delta-journalos history authority, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, identity-mentes aggregált runtime telemetry, opt-in Paper/Folia smoke probe, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
 | `security/` | 1 | Immutable, permissiontől és OP-státusztól független fejlesztői authority a rejtett tartalomfelületekhez. |
 | `warrior/` | 2 | Harcos gameplay vertical slice: transiens harci állapot + konkrét runtime (Csatatempó, Berserker, Guardian). |
 | `evoker/` | 2 | Sárkányidéző gameplay vertical slice: transiens állapot + konkrét runtime (Felerősítés, Vörös–Kék Eszencia, Visszhang/Időlenyomat). |
@@ -2305,6 +2305,7 @@ vagy szerveres teszteredmény. A működési szerződést az adott kaszt-, PvE-,
 | `TrashMobDropListener` | `LISTENER` | `feature.trash-mob-drop` | [TrashMobDropListener.java](../src/main/java/hu/taliann/icesmp/trash/TrashMobDropListener.java) |
 | `TrashProductionRuntimeProbe` | `COMPONENT` | `` | [TrashProductionRuntimeProbe.java](../src/main/java/hu/taliann/icesmp/trash/TrashProductionRuntimeProbe.java) |
 | `TrashRecyclePool` | `COMPONENT` | `` | [TrashRecyclePool.java](../src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java) |
+| `TrashRelicActivationService` | `SERVICE` | `feature.trash-history` | [TrashRelicActivationService.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java) |
 | `TrashRelicBehavior` | `COMPONENT` | `` | [TrashRelicBehavior.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicBehavior.java) |
 | `TrashRelicPolicy` | `COMPONENT` | `` | [TrashRelicPolicy.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicPolicy.java) |
 | `TrashRelicRuntime` | `COMPONENT` | `` | [TrashRelicRuntime.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java) |

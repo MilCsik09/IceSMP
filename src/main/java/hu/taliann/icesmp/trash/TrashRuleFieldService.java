@@ -91,6 +91,13 @@ public final class TrashRuleFieldService {
         Objects.requireNonNull(claim);
         return claimed.get(claim.field().id()) == claim && remove(claim.field());
     }
+    /** Serializes final owner-local effect observation with claim release/close; never do WAL or scheduler waits here. */
+    public synchronized Optional<Boolean> tryObserveClaimedEffect(FieldClaim claim,
+            java.util.function.BooleanSupplier admission, java.util.function.BooleanSupplier effect) {
+        Objects.requireNonNull(admission); Objects.requireNonNull(effect);
+        if (!isClaimed(claim) || !admission.getAsBoolean()) return Optional.empty();
+        return Optional.of(effect.getAsBoolean());
+    }
     public synchronized boolean activeAt(Point point, FieldKind kind) {
         Objects.requireNonNull(point); Objects.requireNonNull(kind); final long now = clock.getAsLong();
         return open && fields.values().stream().anyMatch(field -> field.kind() == kind && field.contains(point, now));

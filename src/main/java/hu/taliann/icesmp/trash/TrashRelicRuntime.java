@@ -77,6 +77,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     private final Set<UUID> pendingConsumes = ConcurrentHashMap.newKeySet();
     private final ProjectileTracking projectileTracking = new ProjectileTracking(MAX_TRACKED_PROJECTILES);
     private final TrashRuleFieldService ruleFields = new TrashRuleFieldService();
+    private final TrashRelicActivationService activation;
 
     public TrashRelicRuntime(final JavaPlugin plugin, final TrashCatalog catalog,
                              final TrashItemFactory items, final TrashHistoryService history,
@@ -96,6 +97,8 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         this.telemetry = Objects.requireNonNull(telemetry, "telemetry");
         this.deathAnchorKey = new NamespacedKey(plugin, "trash_death_anchor_until");
         this.brickReservationKey = new NamespacedKey(plugin, "trash_brick_reservation");
+        this.activation = new TrashRelicActivationService(ruleFields, projectileTracking, plugin::isEnabled,
+                receipt -> confirmObservedWallRemoval(receipt, 20), telemetry::recordBehaviorRuntimeError);
     }
 
     public void start() {
@@ -385,13 +388,19 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                     }
                     final FieldClaim hit = claimField(projectile.getLocation(), FieldKind.PROJECTILE_WALL);
                     if (hit == null) return;
+                    boolean transferred = false;
                     try {
+                        transferred = dispatchForeignProjectileWall(hit, projectile, ticket);
+                        if (transferred) {
+                            task.cancel();
+                            return;
+                        }
                         if (resolveProjectileWall(hit, projectile, ticket)) {
                             task.cancel();
                             projectileTracking.release(ticket);
                         }
                     } finally {
-                        releaseFieldClaim(hit);
+                        if (!transferred) releaseFieldClaim(hit);
                     }
                 } catch (final RuntimeException | Error failure) {
                     task.cancel();
@@ -685,18 +694,55 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                     try {
                         // The consume acknowledgement may arrive after field expiry or shutdown.
                         // Preserve the receipt rather than projecting an effect outside its admission.
-                        if (!admitted.getAsBoolean()) {
+                        final var observation = ruleFields.tryObserveClaimedEffect(claim, admitted, () -> {
+                            projectile.remove();
+                            return !projectile.isValid();
+                        });
+                        if (observation.isEmpty()) {
                             telemetry.recordBehaviorRuntimeError();
                             return;
                         }
-                        projectile.remove();
-                        final boolean observedRemoved = !projectile.isValid();
+                        final boolean observedRemoved = observation.orElseThrow();
                         if (observedRemoved) confirmObservedWallRemoval(consumed.get(), 20);
                         else telemetry.recordBehaviorRuntimeError();
                     } finally {
                         ruleFields.removeClaimed(claim);
                     }
                 });
+    }
+
+    private boolean dispatchForeignProjectileWall(final FieldClaim claim, final Projectile projectile,
+                                                   final ProjectileTracking.Ticket ticket) {
+        if (!Bukkit.isOwnedByCurrentRegion(projectile)) throw new IllegalStateException("Foreign projectile dispatch");
+        final RuleField field = claim.field();
+        final Player owner = Bukkit.getPlayer(field.owner());
+        if (owner == null || Bukkit.isOwnedByCurrentRegion(owner)) return false;
+        final UUID projectileId = projectile.getUniqueId();
+        final var projectileScheduler = projectile.getScheduler();
+        return activation.dispatchWall(claim, ticket, new TrashRelicActivationService.InventoryOwner() {
+            @Override public boolean schedule(Runnable action, Runnable retired) {
+                return owner.getScheduler().run(plugin, ignored -> action.run(), retired) != null;
+            }
+            @Override public boolean admitted() {
+                return Bukkit.isOwnedByCurrentRegion(owner) && owner.isOnline()
+                        && owner.getWorld().getUID().equals(field.center().world());
+            }
+            @Override public TrashHistoryStore.WallReceipt consume(java.util.function.BooleanSupplier admission) {
+                return consumeBrickReservation(owner, field, projectileId, admission);
+            }
+        }, new TrashRelicActivationService.ProjectileOwner() {
+            @Override public boolean schedule(Runnable action, Runnable retired) {
+                return projectileScheduler.run(plugin, ignored -> action.run(), retired) != null;
+            }
+            @Override public boolean admitted() {
+                return Bukkit.isOwnedByCurrentRegion(projectile) && projectile.isValid()
+                        && field.contains(point(projectile.getLocation()), System.currentTimeMillis());
+            }
+            @Override public boolean removeObserved() {
+                projectile.remove();
+                return !projectile.isValid();
+            }
+        });
     }
 
     private void confirmObservedWallRemoval(final TrashHistoryStore.WallReceipt receipt, final int retries) {

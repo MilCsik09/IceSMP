@@ -127,7 +127,7 @@
       "phase": "WW-05",
       "inspect": "hidden identity/kind/behavior/phase/instance/revision/history/provenance/memory/rule fields",
       "planned_actions": "individualize, activate, transition, repair, sandbox copy, four rule field kinds, export/import, fork",
-      "canonical_route": "TrashHistoryService owns markers and read-only item inspection; native history/anomaly stores fence mutation/save as well as inspection after uncertain writes until successful load assessment. TrashRuleFieldService owns bounded fields and claims. Native projectile-wall consumption requires verified co-ownership and never freezes before acknowledgement; recoverable cross-region completion and influence admission remain unimplemented. Shared Anomaly/Relic activation extraction is required before provider mutation registration.",
+      "canonical_route": "TrashHistoryService and native history/anomaly WAL own item markers, receipts and inspection. TrashRuleFieldService owns fields, exact claims and final effect admission. TrashRelicActivationService now coordinates the native cross-region projectile-wall owner hops using those existing authorities; other relic and anomaly activation extraction remains required before provider mutation registration. Retained observed receipts and bounded live acknowledgement retries do not imply Minecraft playerdata-save proof. Complete native influence admission remains unimplemented.",
       "rationale": "The registered Trash inspection subset reads native identity/history/provenance, derives archaeology without awards, reports actual runtime memory and world-local fields; dynamic identity/rule catalogs use canonical registries. Full Trash remains an implementation blocker: shared activation APIs, all developer mutation actions, journal/recovery, prototype/influence admission, and projectile handoff/unload/disable hardening are unfinished. Read-only subset registration does not waive domain coverage or connected runtime evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
@@ -148,12 +148,14 @@
         "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java",
         "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
-        "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java"
+        "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
+        "src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java"
       ],
       "implementation_evidence": [
         "src/regression/java/hu/taliann/icesmp/trash/TrashNativeInspectionRegressionSuite.java",
         "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverInspectionRegressionSuite.java",
-        "docs/development/world-weaver/WW-05-territory-policy.md"
+        "docs/development/world-weaver/WW-05-territory-policy.md",
+        "src/regression/java/hu/taliann/icesmp/trash/TrashWallHandoffRegressionSuite.java"
       ]
     },
     {
@@ -6656,15 +6658,21 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java",
+      "domain": "trash",
+      "source_sha256": "3388484aea9075591b32962892134f104d8c51807bc973d2f9c4d3e1f0905384",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicPolicy.java",
       "domain": "trash",
-      "source_sha256": "c8a012217dc5fd89a0431a695b789be47f5883b991b74de84a202f6f48966d8e",
+      "source_sha256": "28b5e73fda23977c462cbe20aa6e926ce4341a6da786c187552b67f3192d7bc4",
       "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "9a1983972fb16d3a10164d233e379fde5eff7dc1949b21571c5c174b20d467bd",
+      "source_sha256": "6283c82ebef1f9aa0be4bf277467065ce72f09accd5341c3824d367793a38a88",
       "public_methods": [
         "TrashRelicRuntime",
         "blocksCombatAt",
@@ -6712,9 +6720,10 @@
         "remove",
         "removeClaimed",
         "removeIdle",
-        "snapshot"
+        "snapshot",
+        "tryObserveClaimedEffect"
       ],
-      "source_sha256": "2733bb1ca3f6be2b3b8a9a6ec4cf756f1acfcfebf525b3d656b0c2b5fe9d069b"
+      "source_sha256": "d12b6a55b125ccf97d3ea79a1c09630142b4567e2bce4936adf60a4851a93bf4"
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",

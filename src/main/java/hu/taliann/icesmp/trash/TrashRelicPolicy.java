@@ -27,7 +27,7 @@ final class TrashRelicPolicy {
                                           final BooleanSupplier admitted,
                                           final BooleanSupplier consume,
                                           final Runnable remove) {
-        // No entity handoff is safe here without a recoverable native consumption receipt.
+        // Co-owned fast path only; cross-owner receipt coordination belongs to the native activation service.
         if (!ownsBothEntities || !admitted.getAsBoolean() || !consume.getAsBoolean()) return false;
         remove.run();
         return true;

@@ -17,6 +17,7 @@ public final class TrashNativeInspectionRegressionSuite {
     public static void main(String[] args) throws Exception {
         try {
             TrashWallReceiptRegressionSuite.main(args);
+            TrashWallHandoffRegressionSuite.main(args);
             historyTransaction(); historyWriteFailure(); anomalyTransaction();
             anomalyFailure(false); anomalyFailure(true); historyAcknowledgementFailure(); unloadedWrites();
             nativeTryAdmission(); nativeCompactionAdmission();

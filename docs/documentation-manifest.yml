@@ -7248,6 +7248,12 @@
         "docs/ARCHITECTURE.md"
       ]
     },
+    "component.hu.taliann.icesmp.trash.TrashRelicActivationService": {
+      "feature": "feature.trash-history",
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
     "component.hu.taliann.icesmp.trash.TrashRelicBehavior": {
       "feature": "",
       "docs": [

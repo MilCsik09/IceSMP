@@ -13,7 +13,7 @@ public final class TrashRuleFieldRegressionSuite {
         return new RuleField(UUID.randomUUID(), kind, new Point(world, 0, 0, 0), 6, expiry, UUID.randomUUID(), kind == FieldKind.PROJECTILE_WALL ? UUID.randomUUID().toString() : null);
     }
     public static void main(String[] args) throws Exception {
-        geometryAndLifecycle(); capsAndSnapshots(); contention(); claimIdentity(); invalidValues(); lifecycleProbe();
+        geometryAndLifecycle(); capsAndSnapshots(); contention(); claimIdentity(); finalEffectAdmission(); invalidValues(); lifecycleProbe();
         System.out.println("Trash rule-field authority passed. assertions=" + assertions);
     }
     private static void geometryAndLifecycle() {
@@ -38,6 +38,38 @@ public final class TrashRuleFieldRegressionSuite {
         final var active = field(world, FieldKind.CEASEFIRE, 4000); service.add(active);
         final var removed = service.close(); check(removed.equals(List.of(active)) && !service.snapshot().open(), "shutdown drains fields for native cleanup");
         check(!service.add(field(world, FieldKind.CEASEFIRE, 4000)) && service.claim(active.center(), active.kind()).isEmpty(), "closed service fails admission and claims");
+    }
+    private static void finalEffectAdmission() throws Exception {
+        final var service = new TrashRuleFieldService(() -> 1000);
+        final var wall = field(UUID.randomUUID(), FieldKind.PROJECTILE_WALL, 3000); service.add(wall);
+        final var claim = service.claim(wall.center(), wall.kind()).orElseThrow();
+        check(service.tryObserveClaimedEffect(claim, () -> false,
+                () -> { throw new AssertionError("refused effect ran"); }).isEmpty(), "owner refusal became a negative observation");
+        check(!service.tryObserveClaimedEffect(claim, () -> true, () -> false).orElseThrow(),
+                "unobserved removal became positive evidence");
+        final var entered = new CountDownLatch(1); final var release = new CountDownLatch(1);
+        final var closing = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var effect = executor.submit(() -> service.tryObserveClaimedEffect(claim, () -> true, () -> {
+                entered.countDown();
+                try { if (!release.await(5, TimeUnit.SECONDS)) throw new AssertionError("effect wait timed out"); }
+                catch (InterruptedException failure) { throw new AssertionError(failure); }
+                return true;
+            }));
+            Future<List<RuleField>> close = null;
+            try {
+                check(entered.await(5, TimeUnit.SECONDS), "native effect did not enter");
+                close = executor.submit(() -> { closing.countDown(); return service.close(); });
+                check(closing.await(5, TimeUnit.SECONDS), "native close did not enter");
+                try { close.get(50, TimeUnit.MILLISECONDS); throw new AssertionError("claim closed between final admission and observation"); }
+                catch (TimeoutException expected) { assertions++; }
+            } finally { release.countDown(); }
+            check(effect.get(5, TimeUnit.SECONDS).orElseThrow(), "entered native observation was lost");
+            check(close.get(5, TimeUnit.SECONDS).equals(List.of(wall)), "close did not resume after the bounded effect");
+        }
+        check(service.tryObserveClaimedEffect(claim,
+                () -> { throw new AssertionError("closed claim entered owner admission"); },
+                () -> { throw new AssertionError("closed claim replayed effect"); }).isEmpty(), "closed claim admitted a late effect");
     }
     private static void capsAndSnapshots() {
         final var service = new TrashRuleFieldService(() -> 1000); final UUID world = UUID.randomUUID(); final var original = field(world, FieldKind.ACOUSTIC_NULL, 2000);
