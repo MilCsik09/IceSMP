@@ -61,7 +61,7 @@ public final class TrashProductionRuntimeProbe {
                 // Never print the exception message: a malformed hidden identity must not enter logs.
                 ACTIVE.compareAndSet(session, null);
                 plugin.getLogger().severe(FAIL_MARKER + " type="
-                        + failure.getClass().getSimpleName());
+                        + failure.getClass().getSimpleName() + " code=" + failureLocation(failure));
             } finally {
                 if (session.startupPassed && Boolean.getBoolean(COOPERATIVE_PROPERTY)) {
                     hu.taliann.icesmp.IceSMP.requestDisable(plugin);
@@ -70,6 +70,16 @@ public final class TrashProductionRuntimeProbe {
                 }
             }
         }, 1L);
+    }
+
+    /** Source locations identify failed assertions without publishing messages, identities or item contents. */
+    private static String failureLocation(final Throwable failure) {
+        return java.util.Arrays.stream(failure.getStackTrace())
+                .filter(frame -> frame.getClassName().startsWith("hu.taliann.icesmp."))
+                .filter(frame -> !frame.getMethodName().equals("check")).limit(3)
+                .map(frame -> frame.getClassName().substring(frame.getClassName().lastIndexOf('.') + 1)
+                        + "." + frame.getMethodName() + ":" + frame.getLineNumber())
+                .collect(java.util.stream.Collectors.joining(","));
     }
 
     /** Called immediately after the core's Trash shutdown hooks have returned. */
