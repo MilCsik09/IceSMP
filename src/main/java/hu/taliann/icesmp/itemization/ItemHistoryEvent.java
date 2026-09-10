@@ -21,7 +21,11 @@ public record ItemHistoryEvent(Type type, long occurredAt, String detail) {
         SIGNATURE_UPGRADED,
         SALVAGED,
         DESTROYED,
-        DEV_PROTOTYPED
+        DEV_PROTOTYPED,
+        DEV_REROLLED,
+        DEV_ASCENDED,
+        DEV_RUNE_CHANGED,
+        DEV_SIGNATURE_UPGRADED
     }
 
     public ItemHistoryEvent {

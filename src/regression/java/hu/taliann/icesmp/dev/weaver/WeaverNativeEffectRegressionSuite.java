@@ -96,6 +96,15 @@ public final class WeaverNativeEffectRegressionSuite {
             final var origins = f.journal.influenceIndex().trace(f.sources, System.currentTimeMillis()).origins();
             final var plan = f.plan((execution, payload) -> {
                 final var authority = execution.nativeEffects().orElseThrow(); f.issued.set(authority);
+                authority.requireAction("fixture", "fixture.native", IntegrityMode.SANDBOX, f.snapshot.ref());
+                for (int mismatch = 0; mismatch < 4; mismatch++) {
+                    try {
+                        authority.requireAction(mismatch == 0 ? "item" : "fixture", mismatch == 1 ? "fixture.other" : "fixture.native",
+                                mismatch == 2 ? IntegrityMode.LIVE_GM : IntegrityMode.SANDBOX,
+                                mismatch == 3 ? new EntityRef(UUID.randomUUID()) : f.snapshot.ref());
+                        throw new AssertionError("Native authority accepted another action/mode/subject");
+                    } catch (WeaverDomainRejection expected) { assertions++; }
+                }
                 check(f.journal.snapshot().operations().get(authority.pendingOperation()).status() == OperationStatus.PREPARED,
                         "native authority entered before PREPARED acknowledgement");
                 check(f.journal.influenceIndex().trace(f.sources, System.currentTimeMillis()).uncertain(), "ordinary sources lost pending quarantine");

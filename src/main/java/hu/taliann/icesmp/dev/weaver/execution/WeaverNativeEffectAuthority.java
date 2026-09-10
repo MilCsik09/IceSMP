@@ -39,6 +39,17 @@ public final class WeaverNativeEffectAuthority {
     /** A data-only operation UUID can never request this exclusion. Every other pending intent still refuses effects. */
     public UUID pendingOperation() { requireValid(); return operation.operationId(); }
 
+    /** Native domains can bind a prepared plan to its acknowledged action and immutable subject. */
+    public void requireAction(String provider, String action,
+            hu.taliann.icesmp.dev.weaver.api.IntegrityMode mode,
+            hu.taliann.icesmp.dev.weaver.subject.SubjectRef subject) {
+        requireValid();
+        if (!operation.providerId().equals(provider) || !operation.request().actionId().equals(action)
+                || operation.request().integrityMode() != mode || !operation.subject().equals(subject)) {
+            throw new WeaverDomainRejection("NATIVE_OPERATION_ACTION_CONFLICT");
+        }
+    }
+
     public void requireFor(WeaverJournal expected, GameplayEffectContext context) {
         requireValid(); Objects.requireNonNull(context);
         if (journal != expected || context.durationMillis() != 0 || context.lifetime().isPresent()

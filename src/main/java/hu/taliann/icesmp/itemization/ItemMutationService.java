@@ -54,6 +54,16 @@ public final class ItemMutationService {
 
     public Result reroll(final ItemTemplate template, final ItemInstance before,
                          final RerollRequest request, final DoubleSupplier qualitySource) {
+        return reroll(template, before, request, qualitySource, false);
+    }
+
+    public Result rerollFromDeveloper(final ItemTemplate template, final ItemInstance before,
+                                      final RerollRequest request, final DoubleSupplier qualitySource) {
+        return reroll(template, before, request, qualitySource, true);
+    }
+
+    private Result reroll(final ItemTemplate template, final ItemInstance before,
+                          final RerollRequest request, final DoubleSupplier qualitySource, final boolean developer) {
         requireMatchingIdentity(template, before);
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(qualitySource, "qualitySource");
@@ -81,13 +91,23 @@ public final class ItemMutationService {
         final ItemInstance candidate = before.withMutation(rolls, before.runes(), before.ascension(),
                 before.itemLevel(), before.mutation().afterReroll(
                         request.operationId(), request.stabilitySeal()),
-                new ItemHistoryEvent(ItemHistoryEvent.Type.REROLLED, request.occurredAt(),
+                new ItemHistoryEvent(developer ? ItemHistoryEvent.Type.DEV_REROLLED : ItemHistoryEvent.Type.REROLLED, request.occurredAt(),
                         request.lockedStatId().isBlank() ? "full" : "lock:" + request.lockedStatId()));
         return new Result(Status.APPLIED, before, candidate, request.operationId().toString());
     }
 
     public Result ascend(final ItemTemplate template, final ItemInstance before,
                          final AscensionRequest request) {
+        return ascend(template, before, request, false);
+    }
+
+    public Result ascendFromDeveloper(final ItemTemplate template, final ItemInstance before,
+                                      final AscensionRequest request) {
+        return ascend(template, before, request, true);
+    }
+
+    private Result ascend(final ItemTemplate template, final ItemInstance before,
+                           final AscensionRequest request, final boolean developer) {
         requireMatchingIdentity(template, before);
         Objects.requireNonNull(request, "request");
         if (before.mutation().hasReceipt(request.operationId())) {
@@ -114,11 +134,11 @@ public final class ItemMutationService {
         ItemInstance candidate = before.withMutation(rolls, before.runes(),
                 new ItemInstance.AscensionState(nextStageId, nextIndex + 1), stage.itemLevel(),
                 before.mutation().afterMutation(request.operationId()),
-                new ItemHistoryEvent(ItemHistoryEvent.Type.ASCENDED, request.occurredAt(), nextStageId));
+                new ItemHistoryEvent(developer ? ItemHistoryEvent.Type.DEV_ASCENDED : ItemHistoryEvent.Type.ASCENDED, request.occurredAt(), nextStageId));
         if (template.signatureTierAt(nextStageId)
                 > template.signatureTierAt(before.ascension().stageId())) {
             candidate = candidate.appendHistory(new ItemHistoryEvent(
-                    ItemHistoryEvent.Type.SIGNATURE_UPGRADED, request.occurredAt(),
+                    developer ? ItemHistoryEvent.Type.DEV_SIGNATURE_UPGRADED : ItemHistoryEvent.Type.SIGNATURE_UPGRADED, request.occurredAt(),
                     "tier:" + template.signatureTierAt(nextStageId)));
         }
         return new Result(Status.APPLIED, before, candidate, request.operationId().toString());
@@ -127,6 +147,18 @@ public final class ItemMutationService {
     public ItemInstance changeRunes(final ItemTemplate template, final ItemInstance before,
                                     final UUID operationId, final List<String> nextRunes,
                                     final long occurredAt) {
+        return changeRunes(template, before, operationId, nextRunes, occurredAt, false);
+    }
+
+    public ItemInstance changeRunesFromDeveloper(final ItemTemplate template, final ItemInstance before,
+                                                 final UUID operationId, final List<String> nextRunes,
+                                                 final long occurredAt) {
+        return changeRunes(template, before, operationId, nextRunes, occurredAt, true);
+    }
+
+    private ItemInstance changeRunes(final ItemTemplate template, final ItemInstance before,
+                                     final UUID operationId, final List<String> nextRunes,
+                                     final long occurredAt, final boolean developer) {
         requireMatchingIdentity(template, before);
         Objects.requireNonNull(operationId, "operationId");
         if (before.mutation().hasReceipt(operationId)) return before;
@@ -142,7 +174,7 @@ public final class ItemMutationService {
         final String detail = runeChangeDetail(before.runes(), normalized);
         return before.withMutation(before.rolls(), normalized, before.ascension(), before.itemLevel(),
                 before.mutation().afterMutation(operationId),
-                new ItemHistoryEvent(ItemHistoryEvent.Type.RUNE_CHANGED, occurredAt,
+                new ItemHistoryEvent(developer ? ItemHistoryEvent.Type.DEV_RUNE_CHANGED : ItemHistoryEvent.Type.RUNE_CHANGED, occurredAt,
                         detail));
     }
 

@@ -75,7 +75,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `assassin/` | 2 | Orgyilkos gameplay vertical slice: transiens állapot + konkrét runtime (Lehetőség négy nyitányból, háromhelyes Toxinkészlet + Dózis, Észleltség/időkorlátos rejtőzés, korlátos Járvány-nyilvántartás). |
 | `warlock/` | 2 | Boszorkánymester gameplay vertical slice: transiens állapot + konkrét runtime (Paktum/Lélekadósság, háromhelyes Átokgrimoár + Lélekfonal, Izzó Parázs/Túlhevülés). A Demonológus paktum NEM transziens: egyetlen authorityja a durable `demonologist.roster` companion névsor, amit a runtime csak a közös `ClassSpecCatalog.companionProjection` szabállyal olvas, és a `PetManager` companion-gatewayen keresztül, durable-first módon mutál. |
 | `wizard/` | 2 | Varázsló gameplay vertical slice: transiens állapot + konkrét runtime (Rúnaszövés öt tételes párral, három ráhangolódás Konvergenciával/Elemi Koronával; a lecsengés rögzített horgonyból számol, ezért lekérdezés-gyakoriságtól független). A Holtak Udvara NEM transziens: egyetlen authorityja a durable `necromancer.court` companion névsor, és ugyanaz a felvételi szabály (`ClassSpecCatalog.admitsCompanion`) dönt a cast előtt és a commitban. |
-| `storage/` | 8 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
+| `storage/` | 9 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 28 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, `PlatformCapabilities`, egyebek. |
 | `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
@@ -279,12 +279,13 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
     több-store atomicitás vagy exactly-once bizonyítás; a globális currency gate külön
     egyszerűsítési és runtime-validációs scope.
   - **`storage/ItemMutationJournal`** (`item-mutation-journal.yml`): kizárólag a
-    reroll/ascension/salvage egy-játékosos inventory-határára szolgáló szűk WAL, nem
+    reroll/rúna/ascension/salvage egy-játékosos inventory-határára szolgáló szűk WAL, nem
     általános transaction framework. A domain előbb immutable candidate-et épít; a WAL
     exact teljes before/after inventory snapshotot ír, majd ugyanazon owner threaden
     payment+item publish és `player.saveData()` történik. Boot/join recovery csak a két
     exact állapotot fogadja el; mixed snapshot kézi review. Az itembe írt bounded operation
-    receipt és revision védi a retry/double-click utat.
+    receipt és revision védi a retry/double-click utat. Bizonytalan írás után a napló
+    további módosítást nem fogad el; a tényleges lemezállapot újraolvasása szükséges.
   - **Encounter reward receipt/outbox** (PlayerProfile v2 `OPERATIONS`): a világboss
     meaningful-contribution küszöbénél először bounded eligibility receipt készül.
     Settlementkor ez COMMITTED állapotba kerül, majd a személyes delivery külön PREPARED

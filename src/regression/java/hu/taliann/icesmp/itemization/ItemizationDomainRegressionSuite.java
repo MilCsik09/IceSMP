@@ -14,7 +14,7 @@ public final class ItemizationDomainRegressionSuite {
     private ItemizationDomainRegressionSuite() {
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws Exception {
         templateRejectsDeadStatsAndInvalidSockets();
         normalizedQualityProducesStableRolls();
         instanceCodecRoundTripsEveryIdentityField();
@@ -35,6 +35,9 @@ public final class ItemizationDomainRegressionSuite {
         mutationCrashRecoverySettlesExactlyOnce();
         mutationFaultMatrixCoversRerollRuneAndAscension();
         prototypeIdentityCannotBecomeNativeValue();
+        developerMutationPreservesTruthfulNativeHistory();
+        developerModesAndPhysicalSlotsStayExact();
+        hu.taliann.icesmp.storage.ItemDeveloperJournalRegressionSuite.main(args);
         System.out.println("Itemization domain regression suite passed. assertions=" + assertions);
     }
 
@@ -523,6 +526,51 @@ public final class ItemizationDomainRegressionSuite {
                     ItemTransformationPolicy.Rules.safeDefaults()).action() == ItemTransformationPolicy.Action.DENY,
                     "prototype escaped native transformation boundary " + boundary);
         }
+    }
+
+    private static void developerMutationPreservesTruthfulNativeHistory() {
+        final var template = mutationTemplate(); final var before = mutationInstance(template, 0.3D, 0.7D);
+        final var service = new ItemMutationService(); final UUID rerollId = UUID.randomUUID();
+        final var rerolled = service.rerollFromDeveloper(template, before,
+                new ItemMutationService.RerollRequest(rerollId, "attack_damage", 0.6, false, 100), () -> 0.5).candidate();
+        check(rerolled.history().getLast().type() == ItemHistoryEvent.Type.DEV_REROLLED
+                && rerolled.rolls().get("attack_damage").equals(before.rolls().get("attack_damage")), "developer reroll records true cause and preserves selected stat");
+        check(service.rerollFromDeveloper(template, rerolled,
+                new ItemMutationService.RerollRequest(rerollId, "attack_damage", 0.6, false, 100), () -> 0.1).status()
+                == ItemMutationService.Status.ALREADY_APPLIED, "developer reroll keeps native operation deduplication");
+        final var ascended = service.ascendFromDeveloper(template, rerolled,
+                new ItemMutationService.AscensionRequest(UUID.randomUUID(), 101)).candidate();
+        check(ascended.history().getLast().type() == ItemHistoryEvent.Type.DEV_SIGNATURE_UPGRADED
+                && ascended.history().get(ascended.history().size() - 2).type() == ItemHistoryEvent.Type.DEV_ASCENDED,
+                "developer ascension does not manufacture natural signature progress");
+        final var runed = service.changeRunesFromDeveloper(template, ascended, UUID.randomUUID(), List.of("runa_fagy"), 102);
+        final var removed = service.changeRunesFromDeveloper(template, runed, UUID.randomUUID(), List.of(), 103);
+        for (final var candidate : List.of(rerolled, ascended, runed, removed)) {
+            check(candidate.origin().equals(before.origin()) && candidate.itemId().equals(before.itemId())
+                    && candidate.mutationRevision() > before.mutationRevision(), "developer action retains genuine original identity/history");
+            check(candidate.history().stream().skip(before.history().size()).allMatch(event -> event.type().name().startsWith("DEV_")), "developer action invented natural mutation history");
+            check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(candidate)).equals(candidate), "developer history survives actual native codec");
+        }
+    }
+
+    private static void developerModesAndPhysicalSlotsStayExact() {
+        for (final var kind : ItemDeveloperMutation.Kind.values()) {
+            for (final var mode : hu.taliann.icesmp.dev.weaver.api.IntegrityMode.values()) {
+                for (final boolean prototype : List.of(false, true)) {
+                    final boolean allowed = kind == ItemDeveloperMutation.Kind.REFRESH_PRESENTATION
+                            ? (mode == hu.taliann.icesmp.dev.weaver.api.IntegrityMode.SANDBOX) == prototype
+                            : kind == ItemDeveloperMutation.Kind.CLONE_PROTOTYPE
+                            ? mode == hu.taliann.icesmp.dev.weaver.api.IntegrityMode.SANDBOX && !prototype
+                            : kind.prototype() ? mode == hu.taliann.icesmp.dev.weaver.api.IntegrityMode.SANDBOX && prototype
+                            : mode == hu.taliann.icesmp.dev.weaver.api.IntegrityMode.LIVE_GM && !prototype;
+                    if (allowed) { ItemDeveloperMutationRuntime.requireMode(kind, mode, prototype); assertions++; }
+                    else expectStateFailure(() -> ItemDeveloperMutationRuntime.requireMode(kind, mode, prototype), "mode cannot mutate a foreign item class");
+                }
+            }
+        }
+        for (int index = 0; index < 41; index++) check(ItemDeveloperMutationRuntime.index(ItemDeveloperMutationRuntime.slot(index), 3) == index, "exact native physical slot round trip");
+        expectStateFailure(() -> ItemDeveloperMutationRuntime.index(hu.taliann.icesmp.dev.weaver.subject.WeaverSlot.named(
+                hu.taliann.icesmp.dev.weaver.subject.WeaverSlot.Kind.CURSOR), 0), "cursor is not silently rebound to storage");
     }
 
     private static ItemInstance mutationInstance(final ItemTemplate template,

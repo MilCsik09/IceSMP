@@ -899,6 +899,19 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final var owner = hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER; final var operation = java.util.UUID.randomUUID();
         final var copy = new ItemMutationService().clonePrototype(inspected.template(), inspected.instance(), java.util.UUID.randomUUID(), owner, operation, 100);
         final var prototype = identity.render(inspected.template(), copy);
+        check(ItemMutationCoordinator.current() != null && ItemMutationCoordinator.current().developerMutations() != null,
+                "assembled native developer item ingress missing");
+        final var inventory = new ItemStack[41]; inventory[0] = canonical; inventory[40] = prototype;
+        final var encoded = hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(inventory);
+        check(ItemDeveloperMutationRuntime.matches(inventory, encoded)
+                && ItemDeveloperMutationRuntime.matches(hu.taliann.icesmp.storage.ItemMutationJournal.decodeInventory(encoded), encoded),
+                "native developer inventory comparison lost exact serialized state");
+        final var changedAmount = hu.taliann.icesmp.storage.ItemMutationJournal.decodeInventory(encoded);
+        changedAmount[40].setAmount(2);
+        check(!ItemDeveloperMutationRuntime.matches(changedAmount, encoded), "native developer comparison ignored item amount");
+        final var changedSlot = hu.taliann.icesmp.storage.ItemMutationJournal.decodeInventory(encoded);
+        changedSlot[39] = changedSlot[40]; changedSlot[40] = null;
+        check(!ItemDeveloperMutationRuntime.matches(changedSlot, encoded), "native developer comparison ignored physical slot");
         check(java.util.Arrays.equals(beforeBytes, canonical.serializeAsBytes()), "prototype mutated original physical item");
         check(identity.inspect(prototype).status() == ItemIdentityService.Status.VALID, "native prototype render is not inspectable");
         check(ItemPrototypePolicy.allowedCustody(prototype, owner, owner)

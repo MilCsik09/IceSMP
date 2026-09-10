@@ -232,7 +232,7 @@
       "inspect": "UUID/template/roll/rune/ascension/signature/origin/revision/history/suppression",
       "planned_actions": "prototype clone/reroll/ascend/runes; canonical reroll/ascend/runes/signature with explicit safe domain route; presentation refresh",
       "canonical_route": "ItemMutationCoordinator and ItemMutationJournal; ItemMutationService; ItemIdentityService",
-      "rationale": "Existing coordinator owns physical slot, cost, recovery and render. Need expected-slot/fingerprint/revision developer entry without reward receipt spoofing; prototype exclusion across all item consumers.",
+      "rationale": "Native coordinator now owns an authenticated exact-slot developer ingress for ten planned actions, truthful DEV mutation history and bounded retained receipts in the existing item WAL; owner inspection uses immutable acknowledged views. Registered provider/actions, conditional Undo/WW recovery and connected physical custody/playerdata evidence remain incomplete; whole-domain status remains DEFERRED_BLOCKER.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/itemization/ItemTemplateRegistry.java",
         "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
@@ -241,7 +241,9 @@
         "src/main/java/hu/taliann/icesmp/itemization/ItemTransformationPolicy.java",
         "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java",
         "src/main/java/hu/taliann/icesmp/managers/ItemRarityService.java",
-        "src/main/java/hu/taliann/icesmp/managers/CursedGearService.java"
+        "src/main/java/hu/taliann/icesmp/managers/CursedGearService.java",
+        "src/main/java/hu/taliann/icesmp/itemization/ItemDeveloperMutationRuntime.java",
+        "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java"
       ],
       "implementation_evidence": []
     },
@@ -1655,10 +1657,11 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverNativeEffectAuthority.java",
       "domain": "developer_self",
-      "source_sha256": "2628b6b8958bd789c9a1039a7c00250dcaa7f221286dbc9ea758f6acd7390939",
+      "source_sha256": "3f4eeb333430b0c409bf10bd3d5bb17668e9b1b30b979294374bae5c3060d199",
       "public_methods": [
         "pendingOperation",
         "prepare",
+        "requireAction",
         "requireFor",
         "requireValid"
       ]
@@ -2413,6 +2416,22 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/itemization/ItemDeveloperMutationRuntime.java",
+      "domain": "itemization",
+      "source_sha256": "7af2ade632f410dce3e6a742aedf37e64c73b8d53b74e34c5ff87a3faa31a60c",
+      "public_methods": [
+        "Plan",
+        "Result",
+        "actionId",
+        "executeOnOwner",
+        "inspect",
+        "matches",
+        "prepareOnOwner",
+        "receipt",
+        "subject"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
       "domain": "itemization",
       "source_sha256": "27d0e4d870b8f1f8a636ddf75666fbfcf6abaa7cb4809d52961b255a76f3f4e9",
@@ -2452,7 +2471,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationCoordinator.java",
       "domain": "itemization",
-      "source_sha256": "b959d2380e127a636ae78abcce3a306dccbf85b28d9545aef17885bf05e565de",
+      "source_sha256": "367a8862c22f674022a1bc6b1b15af9961802250c9b0f2bfd51c00a001764133",
       "public_methods": [
         "Options",
         "Outcome",
@@ -2460,7 +2479,9 @@
         "ResolutionOutcome",
         "RunePreview",
         "current",
+        "developerMutations",
         "execute",
+        "executeFromWorldWeaver",
         "executeRune",
         "executeRuneMutation",
         "onJoin",
@@ -2483,18 +2504,21 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationService.java",
       "domain": "itemization",
-      "source_sha256": "9dfdb14329e4d8beec03b82075265ffeaa91f07e510471d4048fc48399c974b3",
+      "source_sha256": "cf22c1621996454d6f1be5d8acd7099769e6140b77afde1b8325418e9e2f6284",
       "public_methods": [
         "AscensionRequest",
         "RerollRequest",
         "Result",
         "applied",
         "ascend",
+        "ascendFromDeveloper",
         "boundedGeometricCost",
         "changeRunes",
+        "changeRunesFromDeveloper",
         "clonePrototype",
         "preserveRelativeQuality",
-        "reroll"
+        "reroll",
+        "rerollFromDeveloper"
       ]
     },
     {
@@ -6337,6 +6361,26 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java",
+      "domain": "itemization",
+      "source_sha256": "54a235670e27b0d1febd1047f9121e7477b309463ce21318a84a108c73f6f33d",
+      "public_methods": [
+        "Entry",
+        "complete",
+        "decodeInventory",
+        "encodeInventory",
+        "entriesFor",
+        "find",
+        "findDeveloper",
+        "hasPendingForDeveloper",
+        "isHealthy",
+        "load",
+        "prepare",
+        "prepareDeveloper",
+        "resolveDeveloper"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/storage/PersistentStore.java",
       "domain": "storage_infrastructure",
       "source_sha256": "bef0fd016d2004acc1c7f65c3fb502dd6d4129bd3c46055cd0c4be62877cfe3c",
@@ -7030,6 +7074,7 @@
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java",
     "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustment.java",
     "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentReceipt.java",
     "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentResult.java",

@@ -75,6 +75,7 @@ public final class ItemMutationCoordinator implements Listener {
     private final ItemSalvageService salvage = new ItemSalvageService();
     private final ItemMutationJournal journal;
     private final Set<UUID> inFlight = ConcurrentHashMap.newKeySet();
+    private final ItemDeveloperMutationRuntime developer;
     private volatile RuneMutationPolicy.FamilyCompatibility runeFamilyCompatibility =
             RuneMutationPolicy.unrestrictedFamilies();
 
@@ -90,7 +91,18 @@ public final class ItemMutationCoordinator implements Listener {
         this.journal = new ItemMutationJournal(plugin, new File(plugin.getDataFolder(),
                 "item-mutation-journal.yml"), plugin.getLogger());
         this.journal.load();
+        this.developer = new ItemDeveloperMutationRuntime(plugin, identity, materials, mutations, journal, inFlight,
+                () -> runeFamilyCompatibility, () -> activeInstance == this);
         activeInstance = this;
+    }
+
+    /** Shared native WW ingress; retains the normal coordinator's journal and in-flight reservation. */
+    public ItemDeveloperMutationRuntime developerMutations() { return developer; }
+
+    public java.util.concurrent.CompletionStage<ItemDeveloperMutationRuntime.Result> executeFromWorldWeaver(
+            final ItemDeveloperMutationRuntime.Plan plan,
+            final hu.taliann.icesmp.dev.weaver.execution.WeaverNativeEffectAuthority authority) {
+        return developer.executeOnOwner(plan, authority);
     }
 
     /** Runtime wiring seam for the legacy listener constructor; the plugin owns exactly one coordinator. */
@@ -348,6 +360,7 @@ public final class ItemMutationCoordinator implements Listener {
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
+        if (developer.hasInFlight(player.getUniqueId())) return;
         inFlight.remove(player.getUniqueId());
         final List<ItemMutationJournal.Entry> entries = journal.entriesFor(player.getUniqueId());
         if (entries.isEmpty()) return;
@@ -357,17 +370,23 @@ public final class ItemMutationCoordinator implements Listener {
 
     @EventHandler
     public void onQuit(final PlayerQuitEvent event) {
+        if (developer.hasInFlight(event.getPlayer().getUniqueId())) return;
         inFlight.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onKick(final PlayerKickEvent event) {
+        if (developer.hasInFlight(event.getPlayer().getUniqueId())) return;
         inFlight.remove(event.getPlayer().getUniqueId());
     }
 
     private void recover(final Player player, final List<ItemMutationJournal.Entry> entries) {
         final List<String> current = ItemMutationJournal.encodeInventory(player.getInventory().getContents());
         for (final ItemMutationJournal.Entry entry : entries) {
+            if (entry.type().startsWith("DEV_")) {
+                developer.recoverOnOwner(player, entry);
+                continue;
+            }
             switch (ItemMutationRecoveryPolicy.decide(current, entry.beforeInventory(),
                     entry.afterInventory())) {
                 case ABORT_BEFORE, COMMIT_AFTER -> journal.complete(entry.operationId());
@@ -387,6 +406,10 @@ public final class ItemMutationCoordinator implements Listener {
                               final Consumer<ResolutionOutcome> callback) {
         if (player == null || operationId == null || witness == null || callback == null) return;
         final ItemMutationJournal.Entry entry = journal.find(operationId).orElse(null);
+        if (entry != null && entry.type().startsWith("DEV_")) {
+            callback.accept(new ResolutionOutcome(false, "itemization-recovery-witness-mismatch", false));
+            return;
+        }
         if (entry == null) {
             plugin.getLogger().info("Item mutation recovery resolution idempotent no-op: op="
                     + operationId + " actor=" + safeActor(actor));
