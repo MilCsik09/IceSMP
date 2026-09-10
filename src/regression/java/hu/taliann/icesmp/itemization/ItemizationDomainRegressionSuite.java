@@ -38,6 +38,7 @@ public final class ItemizationDomainRegressionSuite {
         developerMutationPreservesTruthfulNativeHistory();
         developerModesAndPhysicalSlotsStayExact();
         hu.taliann.icesmp.storage.ItemDeveloperJournalRegressionSuite.main(args);
+        hu.taliann.icesmp.dev.weaver.provider.ItemizationWeaverRegressionSuite.main(args);
         System.out.println("Itemization domain regression suite passed. assertions=" + assertions);
     }
 

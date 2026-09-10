@@ -232,7 +232,7 @@
       "inspect": "UUID/template/roll/rune/ascension/signature/origin/revision/history/suppression",
       "planned_actions": "prototype clone/reroll/ascend/runes; canonical reroll/ascend/runes/signature with explicit safe domain route; presentation refresh",
       "canonical_route": "ItemMutationCoordinator and ItemMutationJournal; ItemMutationService; ItemIdentityService",
-      "rationale": "Native coordinator now owns an authenticated exact-slot developer ingress for ten planned actions, truthful DEV mutation history and bounded retained receipts in the existing item WAL; owner inspection uses immutable acknowledged views. Registered provider/actions, conditional Undo/WW recovery and connected physical custody/playerdata evidence remain incomplete; whole-domain status remains DEFERRED_BLOCKER.",
+      "rationale": "Native coordinator and registered item provider expose ten exact-slot actions, bounded retained item WAL results and read-only WW recovery through renewed native authority. Conditional Undo, typed import/export/Fork, complete prototype custody and connected physical playerdata/cross-region evidence remain unfinished; whole-domain coverage stays DEFERRED_BLOCKER.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/itemization/ItemTemplateRegistry.java",
         "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
@@ -243,7 +243,9 @@
         "src/main/java/hu/taliann/icesmp/managers/ItemRarityService.java",
         "src/main/java/hu/taliann/icesmp/managers/CursedGearService.java",
         "src/main/java/hu/taliann/icesmp/itemization/ItemDeveloperMutationRuntime.java",
-        "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java"
+        "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverActions.java"
       ],
       "implementation_evidence": []
     },
@@ -1849,6 +1851,36 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverActions.java",
+      "domain": "itemization",
+      "source_sha256": "9bd345bc0b441066e0c8d52777dc190016396809a33e10f59cb99763b81b6259",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
+      "domain": "itemization",
+      "source_sha256": "a0453085cde66d2d3b7768050ae617717ca51a650f2329781e0dc6e36d9cc1e7",
+      "public_methods": [
+        "ItemizationWeaverProvider",
+        "assessRecovery",
+        "captureOnOwner",
+        "captureRecoveryOnOwner",
+        "catalog",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareEffects",
+        "prepareUndo",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "domain": "minecraft",
       "source_sha256": "72f36001e0f1df3338789bd4453838c91e5b00845cede241102e73e71b8fa2dd",
@@ -1994,7 +2026,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
       "domain": "trash",
-      "source_sha256": "54d57f8007698b5af4e46f717fcb784b3c097eaa50d08d6fae4dc70a185d65ff",
+      "source_sha256": "84bd9131e3b1e1ca43137f72016787d9ae6c79c5b9eb357dc8f029aaff2054fa",
       "public_methods": [
         "TrashWeaverProvider",
         "assessRecovery",
@@ -7037,6 +7069,8 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
@@ -7169,6 +7203,7 @@
       "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
@@ -8246,6 +8281,12 @@
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
       "domains": [
         "faction"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
+      "domains": [
+        "itemization"
       ]
     },
     {

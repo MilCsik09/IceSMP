@@ -36,9 +36,10 @@ public final class TrashWeaverProvider implements WorldWeaverProvider, WeaverSna
             if (player == null) throw new WeaverDomainRejection("ITEM_HOLDER_UNAVAILABLE");
             if (!Bukkit.isOwnedByCurrentRegion(player)) throw new IllegalStateException("Foreign Trash item inspection");
             if (!player.isOnline()) throw new WeaverDomainRejection("ITEM_HOLDER_UNAVAILABLE");
-            final var slots = new WeaverItemSlots(identity); slots.verify(player, item);
-            final var stack = slots.require(player, item.slot());
+            final var slots = new WeaverItemSlots(identity);
+            final var stack = slots.peek(player, item.slot()).orElse(null);
             if (!history.isTrash(stack)) return Map.of();
+            slots.verify(player, item);
             final TrashHistoryService.ItemInspection inspected;
             try { inspected = history.tryInspect(stack).orElseThrow(() -> new WeaverDomainRejection("TRASH_HISTORY_UNAVAILABLE")); }
             catch (IllegalStateException | IllegalArgumentException malformed) { throw new WeaverDomainRejection("TRASH_HISTORY_UNAVAILABLE"); }
