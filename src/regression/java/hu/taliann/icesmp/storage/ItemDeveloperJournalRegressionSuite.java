@@ -24,6 +24,9 @@ public final class ItemDeveloperJournalRegressionSuite {
         receiptAndRequestContracts();
         rejectedSchedulerMakesNoDiskClaim();
         ownerInspectionDoesNotWaitForFsync();
+        compensationRequiresObservedOriginalAndRemainsSingleUse();
+        compensationCorruptionAndLostAcknowledgement();
+        priorSchemasRemainReadable();
         System.out.println("Item developer journal regression suite passed. assertions=" + assertions);
     }
     private static File file() throws IOException { return Files.createTempDirectory("item-dev-wal-").resolve("journal.yml").toFile(); }
@@ -48,11 +51,14 @@ public final class ItemDeveloperJournalRegressionSuite {
         journal = open(path);
         check(journal.isHealthy() && journal.findDeveloper(receipt.entry().operationId()).orElseThrow().equals(receipt), "pending exact disk round trip");
         check(journal.entriesFor(HiddenDevAuthority.PRIMARY_DEVELOPER).equals(List.of(receipt.entry())), "one native player reservation");
+        check(journal.pendingDeveloper(HiddenDevAuthority.PRIMARY_DEVELOPER).orElseThrow().equals(receipt)
+                && journal.pendingDeveloper(UUID.randomUUID()).isEmpty(), "nonblocking maintenance reads only the actual pending owner receipt");
         check(!done(journal.prepareDeveloper(receipt)), "same operation cannot prepare twice");
         check(!done(journal.prepareDeveloper(receipt(kind))), "same player cannot hold another pending operation");
         check(done(journal.resolveDeveloper(receipt, ItemDeveloperReceipt.State.OBSERVED)), "owner observation retained");
         journal = open(path);
         check(journal.entriesFor(HiddenDevAuthority.PRIMARY_DEVELOPER).isEmpty(), "observed releases pending slot");
+        check(journal.pendingDeveloper(HiddenDevAuthority.PRIMARY_DEVELOPER).isEmpty(), "observed operations are never replay candidates");
         final var observed = journal.findDeveloper(receipt.entry().operationId()).orElseThrow();
         check(observed.entry().equals(receipt.entry()) && observed.state() == ItemDeveloperReceipt.State.OBSERVED, "terminal retains full projection");
         check(done(journal.resolveDeveloper(receipt, ItemDeveloperReceipt.State.OBSERVED)), "same observed result is idempotent");
@@ -148,6 +154,7 @@ public final class ItemDeveloperJournalRegressionSuite {
                 final var read = workers.submit(() -> {
                     expectFailure(() -> journal.findDeveloper(receipt.entry().operationId()), "unacknowledged write is unavailable");
                     expectFailure(() -> journal.hasPendingForDeveloper(HiddenDevAuthority.PRIMARY_DEVELOPER), "owner preparation cannot mistake unacknowledged write for idle");
+                    expectFailure(() -> journal.pendingDeveloper(HiddenDevAuthority.PRIMARY_DEVELOPER), "native maintenance does not wait on unacknowledged fsync");
                 });
                 read.get(1, java.util.concurrent.TimeUnit.SECONDS);
                 check(!pending.toCompletableFuture().isDone(), "owner inspection did not force a writer acknowledgement");
@@ -155,6 +162,89 @@ public final class ItemDeveloperJournalRegressionSuite {
             check(pending.toCompletableFuture().get(3, java.util.concurrent.TimeUnit.SECONDS), "released writer acknowledges");
             check(journal.hasPendingForDeveloper(HiddenDevAuthority.PRIMARY_DEVELOPER), "acknowledged immutable view retains pending player");
         }
+    }
+    private static ItemDeveloperReceipt inverse(ItemDeveloperReceipt original) {
+        final var before = original.entry().afterInventory(); final var after = new ArrayList<>(before);
+        after.set(original.targetSlot(), original.kind() == Kind.CLONE_PROTOTYPE ? "-"
+                : before.get(original.targetSlot()).equals("BwgJ") ? "AQID" : "BwgJ");
+        return new ItemDeveloperReceipt(new ItemMutationJournal.Entry(UUID.randomUUID(), original.entry().playerId(), "DEV_REVERT_" + original.kind(),
+                original.resultItemId(), before, after, 200), original.kind(), original.targetSlot(), original.targetSlot(), original.resultItemId(),
+                original.afterRevision(), original.kind() == Kind.CLONE_PROTOTYPE ? original.afterRevision() : original.afterRevision() + 1,
+                ItemDeveloperReceipt.State.PENDING, 0, Optional.of(original.entry().operationId()));
+    }
+    private static void compensationRequiresObservedOriginalAndRemainsSingleUse() throws Exception {
+        for (final var kind : Kind.values()) {
+            if (kind == Kind.REFRESH_PRESENTATION) continue;
+            final File path = file(); var journal = open(path); final var original = receipt(kind); final var inverse = inverse(original);
+            check(!done(journal.prepareDeveloper(inverse)), "missing original cannot authorize compensation");
+            check(done(journal.prepareDeveloper(original)), "original prepared");
+            check(!done(journal.prepareDeveloper(inverse)), "unobserved original cannot compensate");
+            check(done(journal.resolveDeveloper(original, ItemDeveloperReceipt.State.OBSERVED)), "original observed");
+            check(!done(journal.prepare(inverse.entry())), "legacy ingress cannot issue compensation");
+            check(done(journal.prepareDeveloper(inverse)), "exact native compensation prepared");
+            journal = open(path);
+            check(journal.findDeveloper(inverse.entry().operationId()).orElseThrow().equals(inverse), "compensation survives actual fsync/reload");
+            check(!done(journal.prepareDeveloper(inverse(original))), "concurrent compensation refused");
+            check(done(journal.resolveDeveloper(inverse, ItemDeveloperReceipt.State.ABORTED)), "known pre-effect abort settles without altering original");
+            final var retry = inverse(original);
+            check(done(journal.prepareDeveloper(retry)), "known aborted compensation permits a new reserved attempt");
+            check(done(journal.resolveDeveloper(retry, ItemDeveloperReceipt.State.OBSERVED)), "compensation observed");
+            journal = open(path);
+            check(!done(journal.prepareDeveloper(inverse(original))), "observed compensation cannot run again under a new UUID");
+            if (kind == Kind.CLONE_PROTOTYPE) expectFailure(() -> inverse(retry), "deleted prototype cannot become another inverse subject");
+            else check(!done(journal.prepareDeveloper(inverse(retry))), "compensation cannot erase its own evidence through another inverse");
+            check(!done(journal.complete(retry.entry().operationId())), "legacy completion cannot erase compensation");
+            check(journal.findDeveloper(original.entry().operationId()).orElseThrow().state() == ItemDeveloperReceipt.State.OBSERVED,
+                    "original history remains observed after compensation");
+        }
+    }
+    private static void compensationCorruptionAndLostAcknowledgement() throws Exception {
+        for (final String scenario : List.of("missing_original", "wrong_original", "aborted_original", "old_schema", "duplicate_inverse", "lost_ack")) {
+            final File path = file(); final var original = receipt(Kind.REROLL_CANONICAL); final var journal = open(path);
+            check(done(journal.prepareDeveloper(original)) && done(journal.resolveDeveloper(original, ItemDeveloperReceipt.State.OBSERVED)), "durable compensation fixture");
+            final var inverse = inverse(original);
+            if (scenario.equals("lost_ack")) {
+                final var count = new AtomicInteger();
+                final var uncertain = new ItemMutationJournal(path, LOG, Runnable::run, (file, yaml) -> {
+                    YamlStore.saveAtomic(file, yaml);
+                    if (count.incrementAndGet() == 2) throw new IOException("compensation ack lost after fsync");
+                });
+                uncertain.load(); check(done(uncertain.prepareDeveloper(inverse)), "inverse prepare acknowledged");
+                check(!done(uncertain.resolveDeveloper(inverse, ItemDeveloperReceipt.State.OBSERVED)), "lost compensation ack reported");
+                expectFailure(() -> uncertain.findDeveloper(inverse.entry().operationId()), "uncertain compensation read refused");
+                final var reloaded = open(path);
+                check(reloaded.findDeveloper(inverse.entry().operationId()).orElseThrow().state() == ItemDeveloperReceipt.State.OBSERVED
+                        && !done(reloaded.prepareDeveloper(inverse(original))), "actual observed disk state prevents a duplicate inverse");
+                continue;
+            }
+            check(done(journal.prepareDeveloper(inverse)) && done(journal.resolveDeveloper(inverse, ItemDeveloperReceipt.State.OBSERVED)), "inverse fixture observed");
+            final var yaml = YamlConfiguration.loadConfiguration(path);
+            final String prefix = "developer-receipts." + inverse.entry().operationId() + ".";
+            switch (scenario) {
+                case "missing_original" -> yaml.set("developer-receipts." + original.entry().operationId(), null);
+                case "wrong_original" -> yaml.set(prefix + "reverses", UUID.randomUUID().toString());
+                case "aborted_original" -> yaml.set("developer-receipts." + original.entry().operationId() + ".state", "ABORTED");
+                case "old_schema" -> yaml.set("schema", 2);
+                case "duplicate_inverse" -> {
+                    final String duplicate = "developer-receipts." + UUID.randomUUID() + ".";
+                    yaml.getConfigurationSection(prefix.substring(0, prefix.length() - 1)).getValues(false)
+                            .forEach((key, value) -> yaml.set(duplicate + key, value));
+                }
+            }
+            YamlStore.saveAtomic(path, yaml); final byte[] bytes = Files.readAllBytes(path.toPath());
+            try { open(path); throw new AssertionError("invalid compensation chain accepted"); }
+            catch (CorruptStateFileError expected) { assertions++; }
+            check(Arrays.equals(bytes, Files.readAllBytes(path.toPath())), "invalid compensation chain preserved for review");
+        }
+    }
+    private static void priorSchemasRemainReadable() throws Exception {
+        final File path = file(); final var original = receipt(Kind.CLONE_PROTOTYPE); final var journal = open(path);
+        check(done(journal.prepareDeveloper(original)), "schema compatibility fixture prepared");
+        final var yaml = YamlConfiguration.loadConfiguration(path); yaml.set("schema", 2);
+        yaml.set("developer-receipts." + original.entry().operationId() + ".reverses", null); YamlStore.saveAtomic(path, yaml);
+        check(open(path).findDeveloper(original.entry().operationId()).orElseThrow().equals(original), "schema 2 receipt retains identity without synthetic undo metadata");
+        final File legacy = file(); final var old = new YamlConfiguration(); old.set("schema", 1); YamlStore.saveAtomic(legacy, old);
+        check(open(legacy).isHealthy(), "schema 1 journal remains readable");
     }
     private static void check(boolean value, String label) { assertions++; if (!value) throw new AssertionError(label); }
     private static void expectFailure(Runnable run, String label) {

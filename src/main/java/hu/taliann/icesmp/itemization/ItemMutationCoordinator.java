@@ -99,6 +99,9 @@ public final class ItemMutationCoordinator implements Listener {
     /** Shared native WW ingress; retains the normal coordinator's journal and in-flight reservation. */
     public ItemDeveloperMutationRuntime developerMutations() { return developer; }
 
+    public void startDeveloperRecovery() { developer.start(); }
+    public void stopDeveloperRecovery() { developer.close(); }
+
     public java.util.concurrent.CompletionStage<ItemDeveloperMutationRuntime.Result> executeFromWorldWeaver(
             final ItemDeveloperMutationRuntime.Plan plan,
             final hu.taliann.icesmp.dev.weaver.execution.WeaverNativeEffectAuthority authority) {
@@ -157,7 +160,7 @@ public final class ItemMutationCoordinator implements Listener {
             callback.accept(new Outcome(false, "itemization-rune-target-required", null));
             return;
         }
-        if (!inFlight.add(player.getUniqueId())) {
+        if (developer.hasInFlight(player.getUniqueId()) || !inFlight.add(player.getUniqueId())) {
             callback.accept(new Outcome(false, "itemization-operation-pending", null));
             return;
         }
@@ -205,7 +208,7 @@ public final class ItemMutationCoordinator implements Listener {
             callback.accept(new Outcome(false, "rune-managed-new-rune-required", null));
             return;
         }
-        if (!inFlight.add(player.getUniqueId())) {
+        if (developer.hasInFlight(player.getUniqueId()) || !inFlight.add(player.getUniqueId())) {
             callback.accept(new Outcome(false, "itemization-operation-pending", null));
             return;
         }
@@ -365,7 +368,7 @@ public final class ItemMutationCoordinator implements Listener {
         final List<ItemMutationJournal.Entry> entries = journal.entriesFor(player.getUniqueId());
         if (entries.isEmpty()) return;
         schedulePlayer(player, () -> recover(player, entries),
-                () -> inFlight.remove(player.getUniqueId()));
+                () -> { if (!developer.hasInFlight(player.getUniqueId())) inFlight.remove(player.getUniqueId()); });
     }
 
     @EventHandler
@@ -422,7 +425,7 @@ public final class ItemMutationCoordinator implements Listener {
                     "itemization-recovery-wrong-player", false));
             return;
         }
-        if (!inFlight.add(player.getUniqueId())) {
+        if (developer.hasInFlight(player.getUniqueId()) || !inFlight.add(player.getUniqueId())) {
             callback.accept(new ResolutionOutcome(false,
                     "itemization-operation-pending", false));
             return;

@@ -29,7 +29,8 @@ public final class ItemizationWeaverRegressionSuite {
             check(canonical ? descriptor.risk() == RiskLevel.CANONICAL && descriptor.rateCost() == 10
                     && descriptor.integrityModes().equals(Set.of(IntegrityMode.LIVE_GM))
                     : descriptor.risk() == RiskLevel.MUTATING, "canonical action retains canonical confirmation/cost");
-            check(!descriptor.undoable() && descriptor.irreversibleReason().isPresent(), "unavailable native reversal is explicitly disclosed");
+            check(kind == ItemDeveloperMutation.Kind.REFRESH_PRESENTATION ? !descriptor.undoable() && descriptor.irreversibleReason().isPresent()
+                    : descriptor.undoable() && descriptor.irreversibleReason().isEmpty(), "native compensation is declared for nine mutations; presentation remains explicit");
             final var parameters = new HashMap<String, WeaverValue>();
             if (kind.addRune()) parameters.put("rune", new WeaverValue(ItemizationWeaverProvider.RUNE, Map.of("id", "runa_fagy"), "item", ItemizationWeaverProvider.FACET, Set.of("item.rune"), 0));
             final var mode = descriptor.integrityModes().contains(IntegrityMode.SANDBOX) ? IntegrityMode.SANDBOX : IntegrityMode.LIVE_GM;
@@ -54,9 +55,27 @@ public final class ItemizationWeaverRegressionSuite {
             final var before = Map.of(INVENTORY, scalar("c".repeat(64)));
             final var after = Map.of(INVENTORY, scalar("d".repeat(64)), AFTER_SUBJECT,
                     new WeaverValue(WeaverUndoSubject.TYPE, SubjectKeyCodec.payload(afterRef), "item", ItemizationWeaverProvider.FACET, Set.of(WeaverUndoSubject.CAPABILITY), 0));
-            final var receipt = receipt(operation, descriptor, mode, ref, before, after, 101);
-            check(receipt.receiptId().equals(operation) && receipt.subject().equals(ref) && receipt.undo().isEmpty()
+            final var receipt = receipt(operation, descriptor, request, ref, before, after, true, 101);
+            check(receipt.receiptId().equals(operation) && receipt.subject().equals(ref) && receipt.undo().isPresent() == descriptor.undoable()
                     && WeaverUndoSubject.resolve(receipt).equals(afterRef) && receipt.afterFingerprint().equals(fingerprint(afterRef, after)), "actual resulting slot has its own fingerprint without rebinding original operation");
+            final var legacyReceipt = receipt(operation, descriptor, request, ref, before, after, false, 101);
+            check(legacyReceipt.undo().isEmpty(), "previous schema recovery does not invent a new Undo promise");
+            final var modern = new HashMap<>(payload); modern.put("reverses", "");
+            check(recoveryFields(versioned(pending, 2, modern, Optional.empty())).get("reverses").equals(""), "modern forward recovery accepted");
+            if (descriptor.undoable()) {
+                check(receipt.undo().orElseThrow().parameters().equals(request.parameters()), "Undo retains original typed parameters");
+                final UUID original = UUID.randomUUID();
+                modern.put("reverses", original.toString()); modern.put("source", 3L); modern.put("target", 3L); modern.put("result_item", ITEM.toString());
+                final var claim = new WeaverUndoClaim(original, 2, pending.beforeFingerprint());
+                check(recoveryFields(versioned(pending, 2, modern, Optional.of(claim))).get("reverses").equals(original.toString()), "compensation recovery bound to the durable Undo claim");
+                rejects(() -> recoveryFields(versioned(pending, 2, modern, Optional.empty())));
+                rejects(() -> recoveryFields(versioned(pending, 1, modern, Optional.of(claim))));
+                rejects(() -> recoveryFields(versioned(pending, 2, modern, Optional.of(new WeaverUndoClaim(UUID.randomUUID(), 2, pending.beforeFingerprint())))));
+                final var compensation = receipt(UUID.randomUUID(), descriptor, request, afterRef, after,
+                        kind == ItemDeveloperMutation.Kind.CLONE_PROTOTYPE ? Map.of(INVENTORY, scalar("e".repeat(64))) : after, false, 102);
+                check(compensation.undo().isEmpty() && (kind != ItemDeveloperMutation.Kind.CLONE_PROTOTYPE || !compensation.after().containsKey(AFTER_SUBJECT)),
+                        "compensation cannot be undone recursively; prototype deletion does not invent an empty item identity");
+            }
         }
         final var ref = slotSubject(new WeaverSlot(WeaverSlot.Kind.INVENTORY, 3));
         check(subject(ref, ACTOR).equals(ref), "primary native slot available");
@@ -89,6 +108,11 @@ public final class ItemizationWeaverRegressionSuite {
         return new WeaverOperationRecord(operation, ACTOR, "item", new ActionRequest(action, Map.of(), Lifetime.ONE_SHOT, mode), ref,
                 fingerprint(ref, Map.of(INVENTORY, scalar("c".repeat(64)))), Optional.empty(), new OperationRecoveryPayload(1, payload),
                 OperationStatus.PREPARED, 0, 100, 100, Optional.empty(), false);
+    }
+    private static WeaverOperationRecord versioned(WeaverOperationRecord original, int schema, Map<String, Object> payload, Optional<WeaverUndoClaim> claim) {
+        return new WeaverOperationRecord(original.operationId(), original.actorId(), original.providerId(), original.request(), original.subject(),
+                original.beforeFingerprint(), original.afterFingerprint(), new OperationRecoveryPayload(schema, payload), original.status(), original.revision(),
+                original.preparedAt(), original.updatedAt(), original.receipt(), original.pendingAudit(), claim);
     }
     private static void check(boolean value, String reason) { assertions++; if (!value) throw new AssertionError(reason); }
     private static void rejects(Runnable action) {

@@ -46,7 +46,7 @@ public final class ItemizationWeaverProvider implements WorldWeaverProvider, Wea
     @Override public ProviderCoverage coverage() {
         final var surfaces = new HashSet<>(Set.of(FACET, "item.templates", "item.runes")); surfaces.addAll(ItemizationWeaverActions.KINDS.keySet());
         return new ProviderCoverage("item.registered_surface", CoverageLevel.FULL_PROVIDER,
-                "Native inspection, ten owner-bound actions and read-only durable receipt recovery. Independent Itemization domain coverage remains deferred for conditional Undo, imports/exports, connected custody/playerdata and complete acceptance.", surfaces);
+                "Native inspection, ten owner-bound actions, nine conditional compensations and read-only durable receipt recovery. Independent Itemization domain coverage remains deferred for imports/exports, connected custody/playerdata and complete acceptance.", surfaces);
     }
     @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef ref) {
         if (!(ref instanceof ItemSlotRef subject)) return Map.of();
@@ -106,7 +106,7 @@ public final class ItemizationWeaverProvider implements WorldWeaverProvider, Wea
     @Override public PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request) { return actions.prepare(context, snapshot, request); }
     @Override public PreparedEffects prepareEffects(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request, PreparedAction action) { return actions.effects(context, action); }
     @Override public PreparedAction prepareUndo(ProviderContext context, SubjectSnapshot snapshot, WeaverReceipt receipt) {
-        context.authority().requireValid(); throw new WeaverDomainRejection("ITEM_NATIVE_UNDO_UNAVAILABLE");
+        return actions.undo(context, snapshot, receipt);
     }
     @Override public ValueExportResult exportValue(ProviderContext context, SubjectSnapshot snapshot, String id) {
         context.authority().requireValid(); return ValueExportResult.rejected("ITEM_EXPORT_UNAVAILABLE");

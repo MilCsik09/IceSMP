@@ -1177,6 +1177,7 @@ public final class IceSMPCore {
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
         worldWeaverRuntime.start();
+        itemMutationCoordinator.startDeveloperRecovery();
         registerListeners();
         hu.taliann.icesmp.pve.MobRuntimeControlProbe.maybeRun(plugin, mobAbilityRuntime, authoredCreatureSpawns, mobTemplateRegistry, mobAbilityRegistry, achievementManager);
         trashAmbientManager.start();
@@ -1546,6 +1547,7 @@ public final class IceSMPCore {
 
     public java.util.concurrent.CompletableFuture<Void> prepareDisable() {
         if (!prepareDisableStarted.compareAndSet(false, true)) return playerShutdown.copy();
+        shutdownStep("ItemMutationCoordinator.stopDeveloperRecovery", itemMutationCoordinator::stopDeveloperRecovery);
         beginPresentationShutdown();
         factionManager.stopMembershipRecovery();
         factionPassiveListener.clearAllState();

@@ -54,8 +54,9 @@ final class ItemizationWeaverActions {
         return new ActionDescriptor(ItemDeveloperMutationRuntime.actionId(kind), ItemizationWeaverProvider.FACET,
                 Component.text(label(kind)), canonical ? RiskLevel.CANONICAL : RiskLevel.MUTATING, Set.of(Lifetime.ONE_SHOT), modes,
                 Set.of(kind == ItemDeveloperMutation.Kind.CLONE_PROTOTYPE ? IntegrityImpact.TAINT_CREATED : IntegrityImpact.TAINT_SUBJECT),
-                Set.of(WeaverSubjectKind.ITEM_SLOT), parameters, AreaSupport.NONE, Optional.empty(), false,
-                Optional.of("Ez a művelet jelenleg nem vonható vissza."), canonical ? 10 : 5, SCOPE);
+                Set.of(WeaverSubjectKind.ITEM_SLOT), parameters, AreaSupport.NONE, Optional.empty(), kind != ItemDeveloperMutation.Kind.REFRESH_PRESENTATION,
+                kind == ItemDeveloperMutation.Kind.REFRESH_PRESENTATION ? Optional.of("A megjelenést az aktuális tárgysablon állítja elő; a régi megjelenés nem állítható vissza.")
+                        : Optional.empty(), canonical ? 10 : 5, SCOPE);
     }
     private static String label(ItemDeveloperMutation.Kind kind) {
         return switch (kind) {
@@ -138,6 +139,25 @@ final class ItemizationWeaverActions {
         return inventoryFacts(owner(subject.holderId()).getInventory().getContents());
     }
     PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request) {
+        return prepare(context, snapshot, request, Optional.empty());
+    }
+    PreparedAction undo(ProviderContext context, SubjectSnapshot snapshot, WeaverReceipt receipt) {
+        context.authority().requireValid();
+        final var undo = receipt.undo().orElseThrow(() -> refused("ITEM_UNDO_UNAVAILABLE"));
+        if (!receipt.providerId().equals("item") || !receipt.receiptId().equals(receipt.operationId())
+                || receipt.status() != ReceiptStatus.COMMITTED || !receipt.actionId().equals(undo.actionId())
+                || receipt.integrityMode() != context.integrityMode() || receipt.lifetime() != context.lifetime()
+                || !WeaverUndoSubject.resolve(receipt).equals(snapshot.ref())
+                || !undo.expectedCurrentFingerprint().equals(snapshot.revisionFingerprint())) throw refused("CONFLICT");
+        final ItemDeveloperReceipt nativeReceipt;
+        try { nativeReceipt = nativeItems.inspect(receipt.operationId()).orElseThrow(() -> refused("ITEM_UNDO_RECEIPT_MISSING")); }
+        catch (IllegalStateException unavailable) { throw refused("ITEM_NATIVE_UNAVAILABLE"); }
+        if (nativeReceipt.kind() != KINDS.get(receipt.actionId()) || nativeReceipt.state() != ItemDeveloperReceipt.State.OBSERVED
+                || nativeReceipt.reverses().isPresent()) throw refused("ITEM_UNDO_UNAVAILABLE");
+        return prepare(context, snapshot, new ActionRequest(undo.actionId(), undo.parameters(), context.lifetime(), context.integrityMode()),
+                Optional.of(receipt.operationId()));
+    }
+    private PreparedAction prepare(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request, Optional<UUID> reverses) {
         context.authority().requireValid(); final var subject = subject(snapshot.ref(), context.authority().actor());
         final var descriptor = Optional.ofNullable(actions.get(request.actionId())).orElseThrow(() -> refused("ITEM_ACTION_UNAVAILABLE"));
         if (context.lifetime() != Lifetime.ONE_SHOT || request.lifetime() != Lifetime.ONE_SHOT || request.integrityMode() != context.integrityMode()
@@ -148,29 +168,33 @@ final class ItemizationWeaverActions {
         final var mutation = request(descriptor, request, types);
         final UUID operation = UUID.randomUUID();
         final ItemDeveloperMutationRuntime.Plan plan;
-        try { plan = nativeItems.prepareOnOwner(actor, subject.slot(), subject.fingerprint(), subject.revision().orElseThrow(), operation, mutation, request.integrityMode()); }
+        try { plan = reverses.isPresent() ? nativeItems.prepareReversalOnOwner(actor, subject.slot(), subject.fingerprint(), subject.revision().orElseThrow(),
+                operation, reverses.orElseThrow(), request.integrityMode())
+                : nativeItems.prepareOnOwner(actor, subject.slot(), subject.fingerprint(), subject.revision().orElseThrow(), operation, mutation, request.integrityMode()); }
         catch (IllegalStateException | IllegalArgumentException rejected) { throw refused("ITEM_NATIVE_PREPARATION_REFUSED"); }
         final var nativeReceipt = plan.receipt();
-        final var recovery = new OperationRecoveryPayload(1, Map.of("kind", "itemization", "operation", operation.toString(),
+        final var recovery = new OperationRecoveryPayload(2, Map.of("kind", "itemization", "operation", operation.toString(),
                 "native_kind", mutation.kind().name(), "result_item", nativeReceipt.resultItemId().toString(), "source", nativeReceipt.sourceSlot(),
-                "target", nativeReceipt.targetSlot(), "before", scalarValue(before, INVENTORY)));
+                "target", nativeReceipt.targetSlot(), "before", scalarValue(before, INVENTORY), "reverses", reverses.map(UUID::toString).orElse("")));
         final var stage = new ExecutionStage("item.native_mutation", new EntityOwner(subject.holderId()), Map.of(), (execution, ignored) -> {
             execution.authority().requireValid();
             return coordinator.executeFromWorldWeaver(plan, execution.nativeEffects().orElseThrow()).thenApply(result -> {
                 final var observed = observedFacts(result);
-                return new StageResult(fingerprint(result.observedSubject(), observed), observed, Map.of());
+                return new StageResult(fingerprint(result.observedSubject().orElse(subject), observed), observed, Map.of());
             });
         }, Optional.empty(), 5000);
         return new PreparedAction(operation, descriptor, subject, snapshot.revisionFingerprint(), List.of(stage), recovery,
-                (prepared, results, now) -> receipt(operation, descriptor, request.integrityMode(), subject, before, results.getLast().facts(), now));
+                (prepared, results, now) -> receipt(operation, descriptor, request, subject, before, results.getLast().facts(), reverses.isEmpty(), now));
     }
     private Map<String, WeaverValue> observedFacts(ItemDeveloperMutationRuntime.Result result) {
         if (result.receipt().state() != ItemDeveloperReceipt.State.OBSERVED) throw refused("ITEM_PROJECTION_PENDING");
         final var actor = owner(result.receipt().entry().playerId());
         if (!ItemDeveloperMutationRuntime.matches(actor.getInventory().getContents(), result.receipt().entry().afterInventory())) throw refused("ITEM_PROJECTION_CHANGED");
         final var facts = new HashMap<>(inventoryFacts(actor.getInventory().getContents()));
-        facts.put(AFTER_SUBJECT, new WeaverValue(WeaverUndoSubject.TYPE, SubjectKeyCodec.payload(result.observedSubject()), "item",
-                ItemizationWeaverProvider.FACET, Set.of(WeaverUndoSubject.CAPABILITY), 0));
+        if (result.observedSubject().isEmpty() && (result.receipt().reverses().isEmpty()
+                || result.receipt().kind() != ItemDeveloperMutation.Kind.CLONE_PROTOTYPE)) throw refused("ITEM_RESULT_SUBJECT_MISSING");
+        result.observedSubject().ifPresent(ref -> facts.put(AFTER_SUBJECT, new WeaverValue(WeaverUndoSubject.TYPE, SubjectKeyCodec.payload(ref), "item",
+                ItemizationWeaverProvider.FACET, Set.of(WeaverUndoSubject.CAPABILITY), 0)));
         return Map.copyOf(facts);
     }
     PreparedEffects effects(ProviderContext context, PreparedAction prepared) {
@@ -179,19 +203,32 @@ final class ItemizationWeaverActions {
         return new PreparedEffects(new WeaverEffectIntent(Set.of(WeaverInfluenceTarget.exact(new RewardSource.Item(
                 UUID.fromString((String) prepared.recoveryPayload().fields().get("result_item")))))), (action, results, receipt, sequence) -> WeaverEffectCommit.none());
     }
-    static WeaverReceipt receipt(UUID operation, ActionDescriptor descriptor, IntegrityMode mode, SubjectRef subject,
-                                 Map<String, WeaverValue> before, Map<String, WeaverValue> after, long now) {
-        final var resultSubject = SubjectKeyCodec.decodePayload(after.get(AFTER_SUBJECT).payload());
-        return new WeaverReceipt(operation, operation, "item", descriptor.id(), subject, descriptor.risk(), Lifetime.ONE_SHOT, mode,
-                fingerprint(subject, before), fingerprint(resultSubject, after), before, after, Optional.empty(), now, ReceiptStatus.COMMITTED);
+    static WeaverReceipt receipt(UUID operation, ActionDescriptor descriptor, ActionRequest request, SubjectRef subject,
+                                 Map<String, WeaverValue> before, Map<String, WeaverValue> after, boolean offerUndo, long now) {
+        final var resultSubject = after.containsKey(AFTER_SUBJECT) ? SubjectKeyCodec.decodePayload(after.get(AFTER_SUBJECT).payload()) : subject;
+        final var afterFingerprint = fingerprint(resultSubject, after);
+        if (offerUndo && descriptor.undoable() && !after.containsKey(AFTER_SUBJECT)) throw refused("ITEM_RESULT_SUBJECT_MISSING");
+        return new WeaverReceipt(operation, operation, "item", descriptor.id(), subject, descriptor.risk(), Lifetime.ONE_SHOT, request.integrityMode(),
+                fingerprint(subject, before), afterFingerprint, before, after,
+                offerUndo && descriptor.undoable() ? Optional.of(new UndoSpec(descriptor.id(), afterFingerprint, request.parameters())) : Optional.empty(), now, ReceiptStatus.COMMITTED);
     }
     static Map<String, Object> recoveryFields(WeaverOperationRecord operation) {
         final var subject = subject(operation.subject(), operation.actorId());
         final var fields = new HashMap<>(operation.recoveryPayload().fields()); fields.remove(WeaverOperationScope.RESERVATIONS);
-        if (!operation.providerId().equals("item") || !KINDS.containsKey(operation.request().actionId()) || operation.undoClaim().isPresent()
+        final boolean legacy = operation.recoveryPayload().schemaVersion() == 1;
+        if (legacy) {
+            if (fields.containsKey("reverses") || operation.undoClaim().isPresent()) throw refused("ITEM_RECOVERY_PLAN_CONFLICT");
+            fields.put("reverses", "");
+        }
+        if (!operation.providerId().equals("item") || !KINDS.containsKey(operation.request().actionId())
                 || !descriptor(KINDS.get(operation.request().actionId())).integrityModes().contains(operation.request().integrityMode())
-                || operation.request().lifetime() != Lifetime.ONE_SHOT || operation.recoveryPayload().schemaVersion() != 1
-                || !fields.keySet().equals(Set.of("kind", "operation", "native_kind", "result_item", "source", "target", "before"))
+                || operation.request().lifetime() != Lifetime.ONE_SHOT || !legacy && operation.recoveryPayload().schemaVersion() != 2
+                || !fields.keySet().equals(Set.of("kind", "operation", "native_kind", "result_item", "source", "target", "before", "reverses"))
+                || !(fields.get("reverses") instanceof String inverse)
+                || !inverse.equals(operation.undoClaim().map(claim -> claim.receiptId().toString()).orElse(""))
+                || operation.undoClaim().isPresent() && (!descriptor(KINDS.get(operation.request().actionId())).undoable()
+                    || !operation.undoClaim().orElseThrow().expectedFingerprint().equals(operation.beforeFingerprint())
+                    || operation.undoClaim().orElseThrow().receiptId().equals(operation.operationId()))
                 || !"itemization".equals(fields.get("kind")) || !operation.operationId().toString().equals(fields.get("operation"))
                 || !KINDS.get(operation.request().actionId()).name().equals(fields.get("native_kind"))
                 || !(fields.get("before") instanceof String before) || !before.matches("[a-f0-9]{64}")
@@ -204,7 +241,7 @@ final class ItemizationWeaverActions {
         final int source = ((Number) fields.get("source")).intValue(), target = ((Number) fields.get("target")).intValue();
         if (subject.slot().kind() != WeaverSlot.Kind.MAIN_HAND && !fixedSlot(source).equals(subject.slot())) throw refused("ITEM_RECOVERY_SLOT_CONFLICT");
         if (subject.slot().kind() == WeaverSlot.Kind.MAIN_HAND && source > 8) throw refused("ITEM_RECOVERY_SLOT_CONFLICT");
-        if (KINDS.get(operation.request().actionId()) == ItemDeveloperMutation.Kind.CLONE_PROTOTYPE
+        if (operation.undoClaim().isEmpty() && KINDS.get(operation.request().actionId()) == ItemDeveloperMutation.Kind.CLONE_PROTOTYPE
                 ? source == target || target > 35 || result.equals(subject.instanceId().orElseThrow().toString())
                 : source != target || !result.equals(subject.instanceId().orElseThrow().toString())) throw refused("ITEM_RECOVERY_IDENTITY_CONFLICT");
         return Map.copyOf(fields);
@@ -228,6 +265,7 @@ final class ItemizationWeaverActions {
                     || !nativeReceipt.resultItemId().toString().equals(fields.get("result_item"))
                     || nativeReceipt.sourceSlot() != ((Number) fields.get("source")).intValue()
                     || nativeReceipt.targetSlot() != ((Number) fields.get("target")).intValue()
+                    || !nativeReceipt.reverses().map(UUID::toString).orElse("").equals(fields.get("reverses"))
                     || !recordedInventoryFingerprint(nativeReceipt.entry().beforeInventory()).equals(fields.get("before"))
                     || !WeaverItemSlots.fingerprint(Base64.getDecoder().decode(nativeReceipt.entry().beforeInventory().get(nativeReceipt.sourceSlot()))).equals(subject.fingerprint()))
                 return conflict("ITEM_NATIVE_RECEIPT_CONFLICT");
@@ -240,10 +278,12 @@ final class ItemizationWeaverActions {
             if (nativeReceipt.state() == ItemDeveloperReceipt.State.ABORTED) return ItemDeveloperMutationRuntime.matches(inventory, nativeReceipt.entry().beforeInventory())
                     ? new RecoveryAssessment(ObservedOperationState.BEFORE, false, Optional.empty(), "ITEM_NATIVE_ABORT_OBSERVED") : conflict("ITEM_NATIVE_ABORT_CONFLICT");
             if (!ItemDeveloperMutationRuntime.matches(inventory, nativeReceipt.entry().afterInventory())) return conflict("ITEM_NATIVE_AFTER_CHANGED");
-            final var resultSubject = slots.capture(actor, fixedSlot(nativeReceipt.targetSlot()));
+            final var resultSubject = nativeReceipt.reverses().isPresent() && nativeReceipt.kind() == ItemDeveloperMutation.Kind.CLONE_PROTOTYPE
+                    ? Optional.<ItemSlotRef>empty() : Optional.of(slots.capture(actor, fixedSlot(nativeReceipt.targetSlot())));
             final var after = observedFacts(new ItemDeveloperMutationRuntime.Result(nativeReceipt, resultSubject));
-            final var recovered = receipt(operation.operationId(), actions.get(operation.request().actionId()), operation.request().integrityMode(),
-                    subject, before, after, operation.receipt().map(WeaverReceipt::createdAt).orElseGet(() -> Math.max(System.currentTimeMillis(), operation.preparedAt())));
+            final var recovered = receipt(operation.operationId(), actions.get(operation.request().actionId()), operation.request(),
+                    subject, before, after, operation.undoClaim().isEmpty() && operation.recoveryPayload().schemaVersion() >= 2,
+                    operation.receipt().map(WeaverReceipt::createdAt).orElseGet(() -> Math.max(System.currentTimeMillis(), operation.preparedAt())));
             if (operation.receipt().isPresent() && !operation.receipt().orElseThrow().equals(recovered)) return conflict("ITEM_WW_RECEIPT_CHANGED");
             return new RecoveryAssessment(ObservedOperationState.APPLIED, false, Optional.of(recovered), "ITEM_NATIVE_RECEIPT_AND_PROJECTION_OBSERVED");
         } catch (WeaverDomainRejection unavailable) {

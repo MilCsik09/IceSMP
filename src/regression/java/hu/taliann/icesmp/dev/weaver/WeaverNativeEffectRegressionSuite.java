@@ -97,6 +97,11 @@ public final class WeaverNativeEffectRegressionSuite {
             final var plan = f.plan((execution, payload) -> {
                 final var authority = execution.nativeEffects().orElseThrow(); f.issued.set(authority);
                 authority.requireAction("fixture", "fixture.native", IntegrityMode.SANDBOX, f.snapshot.ref());
+                authority.requireUndoReceipt(Optional.empty());
+                try {
+                    authority.requireUndoReceipt(Optional.of(UUID.randomUUID()));
+                    throw new AssertionError("Forward native authority accepted an unrelated Undo receipt");
+                } catch (WeaverDomainRejection expected) { assertions++; }
                 for (int mismatch = 0; mismatch < 4; mismatch++) {
                     try {
                         authority.requireAction(mismatch == 0 ? "item" : "fixture", mismatch == 1 ? "fixture.other" : "fixture.native",

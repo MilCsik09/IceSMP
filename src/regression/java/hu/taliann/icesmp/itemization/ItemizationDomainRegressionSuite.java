@@ -36,6 +36,7 @@ public final class ItemizationDomainRegressionSuite {
         mutationFaultMatrixCoversRerollRuneAndAscension();
         prototypeIdentityCannotBecomeNativeValue();
         developerMutationPreservesTruthfulNativeHistory();
+        developerCompensationPreservesHistoryAndPreventsReplay();
         developerModesAndPhysicalSlotsStayExact();
         hu.taliann.icesmp.storage.ItemDeveloperJournalRegressionSuite.main(args);
         hu.taliann.icesmp.dev.weaver.provider.ItemizationWeaverRegressionSuite.main(args);
@@ -551,6 +552,40 @@ public final class ItemizationDomainRegressionSuite {
                     && candidate.mutationRevision() > before.mutationRevision(), "developer action retains genuine original identity/history");
             check(candidate.history().stream().skip(before.history().size()).allMatch(event -> event.type().name().startsWith("DEV_")), "developer action invented natural mutation history");
             check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(candidate)).equals(candidate), "developer history survives actual native codec");
+        }
+    }
+
+    private static void developerCompensationPreservesHistoryAndPreventsReplay() {
+        final var template = mutationTemplate(); final var service = new ItemMutationService();
+        for (boolean prototype : List.of(false, true)) for (int kind = 0; kind < 4; kind++) {
+            var before = mutationInstance(template, 0.3D, 0.7D);
+            if (prototype) before = service.clonePrototype(template, before, UUID.randomUUID(),
+                    hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER, UUID.randomUUID(), 90);
+            if (kind == 3) before = service.changeRunesFromDeveloper(template, before, UUID.randomUUID(), List.of("runa_fagy"), 99);
+            final UUID original = UUID.randomUUID(), inverse = UUID.randomUUID();
+            final var current = switch (kind) {
+                case 0 -> service.rerollFromDeveloper(template, before, new ItemMutationService.RerollRequest(original, "", 0.8, false, 100), () -> 0.5).candidate();
+                case 1 -> service.ascendFromDeveloper(template, before, new ItemMutationService.AscensionRequest(original, 100)).candidate();
+                case 2 -> service.changeRunesFromDeveloper(template, before, original, List.of("runa_fagy"), 100);
+                default -> service.changeRunesFromDeveloper(template, before, original, List.of(), 100);
+            };
+            final var restored = service.revertFromDeveloper(template, current, before, original, inverse, 101);
+            check(restored.itemId().equals(before.itemId()) && restored.origin().equals(before.origin()) && restored.states().equals(before.states()),
+                    "compensation retains exact identity, provenance and prototype quarantine");
+            check(restored.rolls().equals(before.rolls()) && restored.runes().equals(before.runes()) && restored.ascension().equals(before.ascension())
+                    && restored.itemLevel() == before.itemLevel(), "native compensation restores the original gameplay properties");
+            check(restored.mutation().rerollCount() == before.mutation().rerollCount() && restored.mutation().rerollCostStep() == before.mutation().rerollCostStep(),
+                    "compensation restores native reroll counters");
+            check(restored.mutationRevision() == current.mutationRevision() + 1 && restored.history().subList(0, current.history().size()).equals(current.history())
+                    && restored.history().getLast().type() == ItemHistoryEvent.Type.DEV_REVERTED
+                    && restored.history().getLast().detail().equals(original.toString()), "original developer effect remains visible in the growing native history");
+            check(restored.mutation().recentOperationReceipts().containsAll(current.mutation().recentOperationReceipts()) && restored.mutation().hasReceipt(inverse),
+                    "compensation retains original deduplication and records its own identity");
+            check(service.revertFromDeveloper(template, restored, before, original, inverse, 102).equals(restored), "same compensation operation is idempotent");
+            check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(restored)).equals(restored), "DEV_REVERTED survives the actual native codec");
+            final var originalBefore = before;
+            expectFailure(() -> service.revertFromDeveloper(template, current, originalBefore, UUID.randomUUID(), inverse, 102), "unrecorded original operation cannot compensate");
+            expectFailure(() -> service.revertFromDeveloper(template, current, originalBefore, original, original, 102), "inverse cannot reuse original operation identity");
         }
     }
 

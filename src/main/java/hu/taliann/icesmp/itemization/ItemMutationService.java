@@ -178,6 +178,25 @@ public final class ItemMutationService {
                         detail));
     }
 
+    /** Logical compensation preserves provenance, prior mutation receipts and the native revision chain. */
+    public ItemInstance revertFromDeveloper(ItemTemplate template, ItemInstance current, ItemInstance originalBefore,
+                                            UUID originalOperation, UUID operation, long occurredAt) {
+        requireMatchingIdentity(template, current); requireMatchingIdentity(template, originalBefore);
+        Objects.requireNonNull(originalOperation); Objects.requireNonNull(operation);
+        if (operation.equals(originalOperation)) throw new IllegalArgumentException("Compensation needs a new operation");
+        if (current.mutation().hasReceipt(operation)) return current;
+        if (!current.itemId().equals(originalBefore.itemId()) || !current.origin().equals(originalBefore.origin())
+                || !current.states().equals(originalBefore.states()) || current.mutationRevision() <= originalBefore.mutationRevision()
+                || !current.mutation().hasReceipt(originalOperation) || originalBefore.mutation().hasReceipt(originalOperation)
+                || originalBefore.runes().size() > template.runeSocketCountAt(originalBefore.ascension().stageId())) {
+            throw new IllegalArgumentException("Compensation identity or native history conflict");
+        }
+        final var mutation = new ItemInstance.MutationState(originalBefore.mutation().rerollCount(),
+                originalBefore.mutation().rerollCostStep(), current.mutation().recentOperationReceipts()).afterMutation(operation);
+        return current.withMutation(originalBefore.rolls(), originalBefore.runes(), originalBefore.ascension(), originalBefore.itemLevel(),
+                mutation, new ItemHistoryEvent(ItemHistoryEvent.Type.DEV_REVERTED, occurredAt, originalOperation.toString()));
+    }
+
     private static String runeChangeDetail(final List<String> before, final List<String> after) {
         if (after.size() > before.size()) {
             return "insert:" + after.stream().filter(rune -> !before.contains(rune)).findFirst().orElse("");

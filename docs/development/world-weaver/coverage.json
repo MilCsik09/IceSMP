@@ -232,7 +232,7 @@
       "inspect": "UUID/template/roll/rune/ascension/signature/origin/revision/history/suppression",
       "planned_actions": "prototype clone/reroll/ascend/runes; canonical reroll/ascend/runes/signature with explicit safe domain route; presentation refresh",
       "canonical_route": "ItemMutationCoordinator and ItemMutationJournal; ItemMutationService; ItemIdentityService",
-      "rationale": "Native coordinator and registered item provider expose ten exact-slot actions, bounded retained item WAL results and read-only WW recovery through renewed native authority. Conditional Undo, typed import/export/Fork, complete prototype custody and connected physical playerdata/cross-region evidence remain unfinished; whole-domain coverage stays DEFERRED_BLOCKER.",
+      "rationale": "Native coordinator and registered item provider expose ten exact-slot actions, nine conditional native compensations, bounded retained item WAL results and read-only WW recovery through renewed native authority. Native owner maintenance only observes pending before/after state; it never replays mutations. Typed import/export/Fork, complete prototype custody and connected physical playerdata/cross-region evidence remain unfinished; whole-domain coverage stays DEFERRED_BLOCKER.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/itemization/ItemTemplateRegistry.java",
         "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
@@ -1659,12 +1659,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverNativeEffectAuthority.java",
       "domain": "developer_self",
-      "source_sha256": "3f4eeb333430b0c409bf10bd3d5bb17668e9b1b30b979294374bae5c3060d199",
+      "source_sha256": "ccf6787d58ed06d7bd582effb395eb435264601d5ec2fbfdc5f7ab76a5c7dffa",
       "public_methods": [
         "pendingOperation",
         "prepare",
         "requireAction",
         "requireFor",
+        "requireUndoReceipt",
         "requireValid"
       ]
     },
@@ -1853,13 +1854,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverActions.java",
       "domain": "itemization",
-      "source_sha256": "9bd345bc0b441066e0c8d52777dc190016396809a33e10f59cb99763b81b6259",
+      "source_sha256": "e927fbd01b4d2354f36663a19d0edd37b1592dbb8e1c70f48a5280c23c6c63e0",
       "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
       "domain": "itemization",
-      "source_sha256": "a0453085cde66d2d3b7768050ae617717ca51a650f2329781e0dc6e36d9cc1e7",
+      "source_sha256": "ce73238cdab57515634ecc0b286629ac0737aa9af341e9a301e535d4a67aaf49",
       "public_methods": [
         "ItemizationWeaverProvider",
         "assessRecovery",
@@ -2450,7 +2451,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemDeveloperMutationRuntime.java",
       "domain": "itemization",
-      "source_sha256": "7af2ade632f410dce3e6a742aedf37e64c73b8d53b74e34c5ff87a3faa31a60c",
+      "source_sha256": "b7f43df71568cbb78477e83ffa82fbd6e7ecc43e199274d8b05a1d72bbbb6645",
       "public_methods": [
         "Plan",
         "Result",
@@ -2459,6 +2460,7 @@
         "inspect",
         "matches",
         "prepareOnOwner",
+        "prepareReversalOnOwner",
         "receipt",
         "subject"
       ]
@@ -2503,7 +2505,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationCoordinator.java",
       "domain": "itemization",
-      "source_sha256": "367a8862c22f674022a1bc6b1b15af9961802250c9b0f2bfd51c00a001764133",
+      "source_sha256": "8384e13f6670532bc1db52b7e7ac719b751535dddc2390b798aec11808157baa",
       "public_methods": [
         "Options",
         "Outcome",
@@ -2522,7 +2524,9 @@
         "preview",
         "previewRune",
         "resolveManual",
-        "setRuneFamilyCompatibility"
+        "setRuneFamilyCompatibility",
+        "startDeveloperRecovery",
+        "stopDeveloperRecovery"
       ]
     },
     {
@@ -2536,7 +2540,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationService.java",
       "domain": "itemization",
-      "source_sha256": "cf22c1621996454d6f1be5d8acd7099769e6140b77afde1b8325418e9e2f6284",
+      "source_sha256": "e5712c50ca4918c9ed88a876bf7c6e30b537b17e1c995fd93a3c54678e2ab215",
       "public_methods": [
         "AscensionRequest",
         "RerollRequest",
@@ -2550,7 +2554,8 @@
         "clonePrototype",
         "preserveRelativeQuality",
         "reroll",
-        "rerollFromDeveloper"
+        "rerollFromDeveloper",
+        "revertFromDeveloper"
       ]
     },
     {
@@ -6395,7 +6400,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java",
       "domain": "itemization",
-      "source_sha256": "54a235670e27b0d1febd1047f9121e7477b309463ce21318a84a108c73f6f33d",
+      "source_sha256": "f7f56d135a988526f434fe0657e725c3330fc842402bc9a426b441aa10841ad6",
       "public_methods": [
         "Entry",
         "complete",
@@ -6407,6 +6412,7 @@
         "hasPendingForDeveloper",
         "isHealthy",
         "load",
+        "pendingDeveloper",
         "prepare",
         "prepareDeveloper",
         "resolveDeveloper"

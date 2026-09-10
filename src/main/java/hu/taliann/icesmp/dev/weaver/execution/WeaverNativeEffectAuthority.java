@@ -50,6 +50,13 @@ public final class WeaverNativeEffectAuthority {
         }
     }
 
+    public void requireUndoReceipt(Optional<UUID> receipt) {
+        requireValid();
+        if (!operation.undoClaim().map(WeaverUndoClaim::receiptId).equals(Objects.requireNonNull(receipt))) {
+            throw new WeaverDomainRejection("NATIVE_OPERATION_UNDO_CONFLICT");
+        }
+    }
+
     public void requireFor(WeaverJournal expected, GameplayEffectContext context) {
         requireValid(); Objects.requireNonNull(context);
         if (journal != expected || context.durationMillis() != 0 || context.lifetime().isPresent()

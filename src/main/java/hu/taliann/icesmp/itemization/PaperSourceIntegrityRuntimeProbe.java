@@ -893,12 +893,45 @@ public final class PaperSourceIntegrityRuntimeProbe {
     }
 
     /** Detached real Paper stacks/serialization; this does not assert connected player custody. */
+    private static void verifyDeveloperCompensation(ItemIdentityService identity, ItemStack canonical, ItemStack prototype) {
+        final var mutations = new ItemMutationService();
+        for (final var physical : List.of(canonical, prototype)) {
+            final var inspected = identity.inspect(physical); final var original = java.util.UUID.randomUUID();
+            check(!inspected.template().rolledStatsAt(inspected.instance().ascension().stageId()).isEmpty(), "native compensation probe needs actual authored rolls");
+            final var changed = mutations.rerollFromDeveloper(inspected.template(), inspected.instance(),
+                    new ItemMutationService.RerollRequest(original, "", 0.8, false, 100), () -> 0.5).candidate();
+            final var inverse = java.util.UUID.randomUUID();
+            final var restored = mutations.revertFromDeveloper(inspected.template(), changed, inspected.instance(), original, inverse, 101);
+            final var before = new ItemStack[41]; before[0] = identity.render(inspected.template(), changed);
+            final var after = before.clone(); after[0] = CanonicalPhysicalState.preserve(before[0], identity.render(inspected.template(), restored));
+            final var decoded = ItemStack.deserializeBytes(after[0].serializeAsBytes());
+            check(identity.inspect(decoded).status() == ItemIdentityService.Status.VALID && identity.inspect(decoded).instance().equals(restored),
+                    "native compensation rendering/serialization lost revision or DEV history");
+            check(restored.rolls().equals(inspected.instance().rolls()) && restored.origin().equals(inspected.instance().origin())
+                    && restored.mutation().hasReceipt(original) && restored.mutation().hasReceipt(inverse)
+                    && restored.history().getLast().type() == ItemHistoryEvent.Type.DEV_REVERTED,
+                    "native compensation washed original provenance or receipts");
+            check(ItemPrototypePolicy.isPrototype(restored) == ItemPrototypePolicy.isPrototype(inspected.instance()), "native compensation lost prototype quarantine");
+            final var entry = new hu.taliann.icesmp.storage.ItemMutationJournal.Entry(inverse,
+                    hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER,
+                    "DEV_REVERT_" + (ItemPrototypePolicy.isPrototype(restored) ? "REROLL_PROTOTYPE" : "REROLL_CANONICAL"), restored.itemId(),
+                    hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(before), hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(after), 101);
+            check(ItemDeveloperMutationRuntime.observedState(before, entry).orElseThrow() == hu.taliann.icesmp.storage.ItemDeveloperReceipt.State.ABORTED
+                    && ItemDeveloperMutationRuntime.observedState(after, entry).orElseThrow() == hu.taliann.icesmp.storage.ItemDeveloperReceipt.State.OBSERVED,
+                    "native compensation observation confused exact before and after");
+            final var conflict = after.clone(); conflict[0] = after[0].clone(); conflict[0].setAmount(2);
+            check(ItemDeveloperMutationRuntime.observedState(conflict, entry).isEmpty(), "native compensation accepted changed physical state");
+        }
+        Bukkit.getLogger().info("ICESMP_ITEM_COMPENSATION_RUNTIME_PROBE_PASS scope=detached_native_compensation_projection");
+    }
+
     public static void verifyPrototypeQuarantine(final ItemIdentityService identity, final ItemTransformationPolicy transformations) {
         final var canonical = identity.create("glatziendorfi_jegvert", "runtime:prototype-control", "paper", null);
         final var beforeBytes = canonical.serializeAsBytes(); final var inspected = identity.inspect(canonical);
         final var owner = hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER; final var operation = java.util.UUID.randomUUID();
         final var copy = new ItemMutationService().clonePrototype(inspected.template(), inspected.instance(), java.util.UUID.randomUUID(), owner, operation, 100);
         final var prototype = identity.render(inspected.template(), copy);
+        verifyDeveloperCompensation(identity, canonical, prototype);
         check(ItemMutationCoordinator.current() != null && ItemMutationCoordinator.current().developerMutations() != null,
                 "assembled native developer item ingress missing");
         final var inventory = new ItemStack[41]; inventory[0] = canonical; inventory[40] = prototype;

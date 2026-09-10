@@ -25,7 +25,8 @@ public record ItemHistoryEvent(Type type, long occurredAt, String detail) {
         DEV_REROLLED,
         DEV_ASCENDED,
         DEV_RUNE_CHANGED,
-        DEV_SIGNATURE_UPGRADED
+        DEV_SIGNATURE_UPGRADED,
+        DEV_REVERTED
     }
 
     public ItemHistoryEvent {

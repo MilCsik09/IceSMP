@@ -89,7 +89,7 @@ public final class ItemMutationJournal {
             if (file.length() > 64L * 1024 * 1024) throw new IllegalStateException("oversized item mutation journal");
             final YamlConfiguration yaml = YamlStore.loadTracked(file, logger);
             final int schema = yaml.getInt("schema", 1);
-            if (schema < 1 || schema > 2) throw new IllegalStateException("unsupported item mutation journal schema");
+            if (schema < 1 || schema > 3) throw new IllegalStateException("unsupported item mutation journal schema");
             final ConfigurationSection root = yaml.getConfigurationSection("operations");
             if (yaml.contains("operations") && root == null) throw new IllegalStateException("invalid operations section");
             if (root != null && root.getKeys(false).size() > MAX_PENDING_OPERATIONS) {
@@ -107,7 +107,7 @@ public final class ItemMutationJournal {
             }
             final var receipts = yaml.getConfigurationSection("developer-receipts");
             if (yaml.contains("developer-receipts") && receipts == null) throw new IllegalStateException("invalid developer receipts section");
-            if (receipts != null && (schema != 2 || receipts.getKeys(false).size() > MAX_DEVELOPER_RECEIPTS)) {
+            if (receipts != null && (schema < 2 || receipts.getKeys(false).size() > MAX_DEVELOPER_RECEIPTS)) {
                 throw new IllegalStateException("invalid developer receipt count/schema");
             }
             long retained = 0;
@@ -120,7 +120,7 @@ public final class ItemMutationJournal {
                         UUID.fromString(yaml.getString(path + "result-item", "")),
                         yaml.getLong(path + "before-revision", -1), yaml.getLong(path + "after-revision", -1),
                         ItemDeveloperReceipt.State.valueOf(yaml.getString(path + "state", "")),
-                        yaml.getLong(path + "resolved-at", -1));
+                        yaml.getLong(path + "resolved-at", -1), readReversal(yaml, path, schema));
                 if (receipt.state() == ItemDeveloperReceipt.State.PENDING
                         ? !receipt.entry().equals(entries.get(id)) : entries.containsKey(id)) {
                     throw new IllegalStateException("developer pending/terminal receipt conflict");
@@ -128,6 +128,9 @@ public final class ItemMutationJournal {
                 retained += projectionChars(receipt.entry());
                 if (retained > MAX_DEVELOPER_PROJECTION_CHARS) throw new IllegalStateException("developer receipt projection capacity");
                 developerReceipts.put(id, receipt);
+            }
+            for (final var receipt : developerReceipts.values()) {
+                if (!validReversal(receipt)) throw new IllegalStateException("invalid developer compensation chain");
             }
             if (entries.values().stream().anyMatch(entry -> entry.type().startsWith("DEV_")
                     && !developerReceipts.containsKey(entry.operationId()))) {
@@ -165,12 +168,19 @@ public final class ItemMutationJournal {
         return view.pendingPlayers().contains(playerId);
     }
 
+    public Optional<ItemDeveloperReceipt> pendingDeveloper(final UUID playerId) {
+        final var view = developerView;
+        if (!isHealthy() || !view.available()) throw new IllegalStateException("Item mutation journal unavailable");
+        return view.receipts().values().stream().filter(receipt -> receipt.entry().playerId().equals(playerId)
+                && receipt.state() == ItemDeveloperReceipt.State.PENDING).findFirst();
+    }
+
     public CompletionStage<Boolean> prepareDeveloper(final ItemDeveloperReceipt receipt) {
         Objects.requireNonNull(receipt);
         if (receipt.state() != ItemDeveloperReceipt.State.PENDING) return CompletableFuture.completedFuture(false);
         return update(() -> {
             final Entry entry = receipt.entry();
-            if (!canPrepare(entry) || developerReceipts.size() >= MAX_DEVELOPER_RECEIPTS
+            if (!canPrepare(entry) || !validReversal(receipt) || developerReceipts.size() >= MAX_DEVELOPER_RECEIPTS
                     || developerReceipts.values().stream().mapToLong(value -> projectionChars(value.entry())).sum()
                     + projectionChars(entry) > MAX_DEVELOPER_PROJECTION_CHARS) return false;
             entries.put(entry.operationId(), entry);
@@ -203,7 +213,26 @@ public final class ItemMutationJournal {
         return left.entry().equals(right.entry()) && left.kind() == right.kind()
                 && left.sourceSlot() == right.sourceSlot() && left.targetSlot() == right.targetSlot()
                 && left.resultItemId().equals(right.resultItemId()) && left.beforeRevision() == right.beforeRevision()
-                && left.afterRevision() == right.afterRevision();
+                && left.afterRevision() == right.afterRevision() && left.reverses().equals(right.reverses());
+    }
+
+    private boolean validReversal(ItemDeveloperReceipt receipt) {
+        if (receipt.reverses().isEmpty()) return true;
+        final UUID originalId = receipt.reverses().orElseThrow();
+        final var original = developerReceipts.get(originalId);
+        if (original == null || original.state() != ItemDeveloperReceipt.State.OBSERVED || original.reverses().isPresent()
+                || receipt.kind() != original.kind() || !receipt.entry().playerId().equals(original.entry().playerId())
+                || !receipt.entry().itemId().equals(original.resultItemId()) || receipt.sourceSlot() != original.targetSlot()
+                || receipt.beforeRevision() != original.afterRevision()) return false;
+        return receipt.state() == ItemDeveloperReceipt.State.ABORTED || developerReceipts.values().stream().noneMatch(other ->
+                !other.entry().operationId().equals(receipt.entry().operationId()) && other.reverses().equals(receipt.reverses())
+                        && other.state() != ItemDeveloperReceipt.State.ABORTED);
+    }
+
+    private static Optional<UUID> readReversal(YamlConfiguration yaml, String path, int schema) {
+        final Object raw = yaml.get(path + "reverses", "");
+        if (!(raw instanceof String value) || schema < 3 && !value.isEmpty()) throw new IllegalStateException("invalid compensation schema");
+        return value.isEmpty() ? Optional.empty() : Optional.of(UUID.fromString(value));
     }
 
     private boolean canPrepare(Entry entry) {
@@ -279,7 +308,7 @@ public final class ItemMutationJournal {
         if (!isHealthy()) return false;
         developerView = new DeveloperReadView(false, Map.of(), Set.of());
         final YamlConfiguration yaml = new YamlConfiguration();
-        yaml.set("schema", 2);
+        yaml.set("schema", 3);
         for (final Entry entry : entries.values()) {
             final String path = "operations." + entry.operationId() + '.';
             writeEntry(yaml, path, entry);
@@ -295,6 +324,7 @@ public final class ItemMutationJournal {
             yaml.set(path + "after-revision", receipt.afterRevision());
             yaml.set(path + "state", receipt.state().name());
             yaml.set(path + "resolved-at", receipt.resolvedAt());
+            yaml.set(path + "reverses", receipt.reverses().map(UUID::toString).orElse(""));
         }
         try {
             writer.save(file, yaml);
@@ -332,7 +362,8 @@ public final class ItemMutationJournal {
     }
     private static boolean knownOperation(String type) {
         if (OPERATION_TYPES.contains(type)) return true;
-        return java.util.Arrays.stream(ItemDeveloperMutation.Kind.values()).anyMatch(kind -> type.equals("DEV_" + kind.name()));
+        return java.util.Arrays.stream(ItemDeveloperMutation.Kind.values()).anyMatch(kind -> type.equals("DEV_" + kind.name())
+                || kind != ItemDeveloperMutation.Kind.REFRESH_PRESENTATION && type.equals("DEV_REVERT_" + kind.name()));
     }
 
     public static List<String> encodeInventory(final ItemStack[] contents) {
