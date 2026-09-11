@@ -65,6 +65,12 @@ public final class TrashVendorService implements Listener {
                     "<gray>🪙 „Ilyesmire most nincs vevőm.”</gray>"));
             return true;
         }
+        if (hu.taliann.icesmp.itemization.ItemPrototypePolicy.scan(hand)
+                != hu.taliann.icesmp.itemization.ItemPrototypePolicy.Scan.CLEAN) {
+            player.sendMessage(messageManager.getMessage("buyer-not-buying",
+                    "<gray>🪙 „Ilyesmire most nincs vevőm.”</gray>"));
+            return true;
+        }
         if (!recyclePool.openSales(player.getUniqueId()).isEmpty()) {
             recover(player, true);
             if (!recyclePool.openSales(player.getUniqueId()).isEmpty()) {

@@ -63,7 +63,7 @@ public final class TrashHistoryService {
         final PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
         final String raw = pdc.get(instanceKey, PersistentDataType.STRING);
         final Long revision = pdc.get(revisionKey, PersistentDataType.LONG);
-        if ((raw == null || raw.isBlank()) && revision == null) return Optional.empty();
+        if (!pdc.has(instanceKey) && !pdc.has(revisionKey)) return Optional.empty();
         if (raw == null || raw.isBlank() || revision == null || revision < 1L) {
             throw new IllegalStateException("hiányos Trash history authority marker");
         }
@@ -95,6 +95,375 @@ public final class TrashHistoryService {
     public Optional<TrashHistoryStore.Snapshot> historyOf(final ItemStack item) {
         if (!isValidTracked(item)) return Optional.empty();
         return instanceIdOf(item).flatMap(store::find);
+    }
+
+    /** Caller owns the item. A busy store is unavailable; stale markers never become fresh history. */
+    public Optional<ItemInspection> tryInspect(final ItemStack item) {
+        if (!itemFactory.isKnownItem(item) || item.getAmount() < 1) return Optional.empty();
+        final String baseId = itemFactory.idOf(item).orElseThrow();
+        final String phase = itemFactory.phaseOf(item).orElseThrow();
+        final Optional<UUID> instance = instanceIdOf(item);
+        final Optional<TrashHistoryEvent> origin = creationEventOf(item);
+        final Optional<PreparedRepair> pending = preparedRepair(item);
+        if (pending.isPresent()) return Optional.empty();
+        if (instance.isEmpty()) {
+            if (!"base".equals(phase)) return Optional.empty();
+            return Optional.of(new ItemInspection(catalog.require(baseId), phase, origin, Optional.empty(), Optional.empty()));
+        }
+        if (item.getAmount() != 1) return Optional.empty();
+        return store.tryInspect(instance.get()).flatMap(inspection -> inspection.history()
+                .filter(snapshot -> snapshot.baseId().equals(baseId) && snapshot.phase().equals(phase)
+                        && snapshot.revision() == revisionOf(item))
+                .map(snapshot -> new ItemInspection(catalog.require(baseId), phase, origin, Optional.of(snapshot), inspection.pendingWall())));
+    }
+
+    public record ItemInspection(TrashDefinition definition, String phase,
+                                 Optional<TrashHistoryEvent> origin,
+                                 Optional<TrashHistoryStore.Snapshot> history,
+                                 Optional<TrashHistoryStore.WallReceipt> pendingWall) {
+        public ItemInspection {
+            Objects.requireNonNull(definition); Objects.requireNonNull(phase);
+            Objects.requireNonNull(origin); Objects.requireNonNull(history); Objects.requireNonNull(pendingWall);
+            if (pendingWall.isPresent()) {
+                final var receipt = pendingWall.orElseThrow();
+                final var snapshot = history.orElseThrow(() -> new IllegalArgumentException("pending wall lacks native history"));
+                if (!snapshot.instanceId().equals(receipt.instanceId()) || snapshot.revision() != receipt.revision()
+                        || !definition.id().equals(receipt.baseId()) || !phase.equals(receipt.phase())
+                        || !snapshot.baseId().equals(receipt.baseId()) || !snapshot.phase().equals(receipt.phase())) {
+                    throw new IllegalArgumentException("pending wall and history are from different native states");
+                }
+            }
+        }
+    }
+
+    /** Detached, bounded native plan. Preparation never grants an item or writes an operation receipt. */
+    public static final class DeveloperPlan {
+        private final TrashHistoryService authority;
+        private final UUID operation, actor, instance;
+        private final TrashDeveloperReceipt.Kind kind;
+        private final int source, destination;
+        private final ItemStack[] before;
+        private final ItemInspection inspection;
+        private final Optional<TrashDeveloperReceipt> reverses;
+        private final java.util.concurrent.atomic.AtomicBoolean entered = new java.util.concurrent.atomic.AtomicBoolean();
+        private final long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+        private DeveloperPlan(TrashHistoryService authority, UUID operation, UUID actor, UUID instance,
+                TrashDeveloperReceipt.Kind kind, int source, int destination, ItemStack[] before, ItemInspection inspection) {
+            this(authority, operation, actor, instance, kind, source, destination, before, inspection, Optional.empty());
+        }
+        private DeveloperPlan(TrashHistoryService authority, UUID operation, UUID actor, UUID instance,
+                TrashDeveloperReceipt.Kind kind, int source, int destination, ItemStack[] before, ItemInspection inspection,
+                Optional<TrashDeveloperReceipt> reverses) {
+            this.authority = authority; this.operation = operation; this.actor = actor; this.instance = instance;
+            this.kind = kind; this.source = source; this.destination = destination;
+            this.before = cloneContents(before); this.inspection = inspection;
+            this.reverses = reverses;
+        }
+        public UUID instanceId() { return instance; }
+        public UUID operationId() { return operation; }
+        public boolean matchesInventory(ItemStack[] current) { return java.util.Arrays.equals(before, current); }
+    }
+
+    /** Native player inventory indices only. The caller must capture the complete inventory on its owner. */
+    public Optional<DeveloperPlan> tryPrepareDeveloperMutation(final UUID operation, final UUID actor,
+            final TrashDeveloperReceipt.Kind kind, final int source, final ItemStack[] inventory) {
+        Objects.requireNonNull(operation); Objects.requireNonNull(actor); Objects.requireNonNull(kind);
+        if (kind == TrashDeveloperReceipt.Kind.REVERT || !hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actor) || inventory == null
+                || inventory.length != 41 || source < 0 || source >= inventory.length) return Optional.empty();
+        final ItemStack held = inventory[source];
+        if (held == null || held.getAmount() < 1) return Optional.empty();
+        final var prototype = hu.taliann.icesmp.itemization.ItemPrototypePolicy.scan(held);
+        if (prototype != hu.taliann.icesmp.itemization.ItemPrototypePolicy.Scan.CLEAN
+                && !hu.taliann.icesmp.itemization.ItemPrototypePolicy.allowedCustody(held, actor,
+                    hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER)) return Optional.empty();
+        if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY
+                && prototype != hu.taliann.icesmp.itemization.ItemPrototypePolicy.Scan.CLEAN) return Optional.empty();
+        final var inspected = tryInspect(held);
+        if (inspected.isEmpty() || inspected.orElseThrow().pendingWall().isPresent()) return Optional.empty();
+        final var item = inspected.orElseThrow();
+        if (kind == TrashDeveloperReceipt.Kind.INDIVIDUALIZE && item.history().isPresent()
+                || kind == TrashDeveloperReceipt.Kind.TRANSITION_SUCCESS && itemFactory.successPhaseOf(held).isEmpty()
+                || kind == TrashDeveloperReceipt.Kind.REPAIR
+                    && (!(held.getItemMeta() instanceof Damageable damage) || damage.getDamage() <= 0)) return Optional.empty();
+        final UUID instance = kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY ? UUID.randomUUID()
+                : item.history().map(TrashHistoryStore.Snapshot::instanceId).orElseGet(UUID::randomUUID);
+        final var nativeState = store.tryInspect(instance);
+        final var operationState = store.tryInspectDeveloperReceipt(operation);
+        if (nativeState.isEmpty() || operationState.isEmpty() || operationState.orElseThrow().isPresent()
+                || !nativeState.orElseThrow().history().equals(kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY
+                    ? Optional.empty() : item.history())) return Optional.empty();
+        int destination = source;
+        if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY || held.getAmount() > 1) {
+            destination = -1;
+            for (int slot = 0; slot < 36; slot++) if (slot != source && empty(inventory[slot])) { destination = slot; break; }
+            if (destination < 0) return Optional.empty();
+        }
+        return Optional.of(new DeveloperPlan(this, operation, actor, instance, kind, source, destination, inventory, item));
+    }
+
+    /** Reverse only an observed, unchanged native effect; allocated identity and truthful history remain. */
+    public Optional<DeveloperPlan> tryPrepareDeveloperReversal(final UUID operation, final UUID actor,
+            final TrashDeveloperReceipt original, final ItemStack[] inventory) {
+        Objects.requireNonNull(operation); Objects.requireNonNull(actor); Objects.requireNonNull(original);
+        if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actor) || !actor.equals(original.actor())
+                || !original.projectionObserved() || original.kind() == TrashDeveloperReceipt.Kind.INDIVIDUALIZE
+                || original.kind() == TrashDeveloperReceipt.Kind.REVERT || inventory == null || inventory.length != 41
+                || !matchesProjection(original, inventory, true)) return Optional.empty();
+        final var stored = store.tryInspectDeveloperReceipt(original.operationId());
+        final var operationState = store.tryInspectDeveloperReceipt(operation);
+        final var nativeState = store.tryInspect(original.instanceId());
+        if (stored.isEmpty() || !stored.orElseThrow().filter(original::equals).isPresent()
+                || operationState.isEmpty() || operationState.orElseThrow().isPresent() || nativeState.isEmpty()
+                || nativeState.orElseThrow().history().filter(value -> value.revision() == original.afterRevision()
+                    && value.baseId().equals(original.baseId()) && value.phase().equals(original.afterPhase())).isEmpty()) return Optional.empty();
+        final int source = original.slots().getFirst().slot();
+        final var inspection = tryInspect(inventory[source]);
+        if (inspection.isEmpty() || inspection.orElseThrow().pendingWall().isPresent()) return Optional.empty();
+        return Optional.of(new DeveloperPlan(this, operation, actor, original.instanceId(), TrashDeveloperReceipt.Kind.REVERT,
+                source, original.slots().getLast().slot(), inventory, inspection.orElseThrow(), Optional.of(original)));
+    }
+
+    /** Actual owner admission and the one-use influence/authority permit precede the existing native WAL boundary. */
+    public Optional<TrashDeveloperReceipt> tryCommitDeveloperMutation(final DeveloperPlan plan,
+            final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack[]> projection, final Runnable restoreProjection) {
+        Objects.requireNonNull(plan); Objects.requireNonNull(admission); Objects.requireNonNull(finalAdmission);
+        Objects.requireNonNull(projection); Objects.requireNonNull(restoreProjection);
+        if (plan.authority != this) return Optional.empty();
+        final var receipt = new java.util.concurrent.atomic.AtomicReference<TrashDeveloperReceipt>();
+        final boolean committed = store.tryTransact(() -> !plan.entered.get() && System.nanoTime() - plan.deadline < 0
+                && developerHistoryMatches(plan) && admission.getAsBoolean(),
+                () -> plan.entered.compareAndSet(false, true) && finalAdmission.getAsBoolean(), () -> {
+            if (plan.reverses.isPresent()) {
+                commitDeveloperReversal(plan, receipt, projection);
+                return;
+            }
+            final ItemStack[] after = cloneContents(plan.before);
+            final ItemStack singleton = after[plan.source].clone(); singleton.setAmount(1);
+            final String base = plan.inspection.definition().id(), phase = plan.inspection.phase();
+            final long beforeRevision = plan.kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY ? 0
+                    : plan.inspection.history().map(TrashHistoryStore.Snapshot::revision).orElse(0L);
+            final TrashHistoryStore.Snapshot result;
+            if (plan.kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+                final var meta = singleton.getItemMeta(); final var pdc = meta.getPersistentDataContainer();
+                pdc.remove(instanceKey); pdc.remove(revisionKey); pdc.remove(originKey);
+                pdc.set(originKey, PersistentDataType.STRING, "DEV_PROTOTYPE");
+                singleton.setItemMeta(meta);
+                result = store.createAndRecord(plan.instance, base, phase, plan.kind.event(), plan.actor, plan.operation.toString());
+            } else if (plan.kind == TrashDeveloperReceipt.Kind.TRANSITION_SUCCESS) {
+                if (beforeRevision == 0) {
+                    store.createAndRecord(plan.instance, base, phase,
+                            plan.inspection.origin().orElse(TrashHistoryEvent.DEV_INDIVIDUALIZED),
+                            plan.inspection.origin().isPresent() ? null : plan.actor,
+                            plan.inspection.origin().isPresent() ? "" : plan.operation.toString());
+                }
+                final String target = plan.inspection.definition().successPhase();
+                result = store.transitionDeveloper(plan.instance, base, phase, target, plan.actor, plan.operation);
+                itemFactory.applyPhase(singleton, target);
+            } else {
+                result = individualizeInternal(singleton, plan.kind.event(), plan.actor, plan.operation.toString(), plan.instance);
+                if (plan.kind == TrashDeveloperReceipt.Kind.REPAIR) {
+                    final Damageable meta = (Damageable) singleton.getItemMeta(); meta.setDamage(0); singleton.setItemMeta(meta);
+                }
+            }
+            writeAuthority(singleton, result);
+            if (plan.kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+                hu.taliann.icesmp.itemization.ItemPrototypePolicy.mark(singleton,
+                        new hu.taliann.icesmp.itemization.ItemPrototypePolicy.Identity(plan.actor, plan.operation));
+            }
+            if (plan.destination == plan.source) after[plan.source] = singleton;
+            else if (plan.kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) after[plan.destination] = singleton;
+            else { after[plan.source] = singleton; after[plan.destination] = remainderOf(plan.before[plan.source]); }
+            final List<TrashDeveloperReceipt.SlotChange> changes = new ArrayList<>();
+            changes.add(new TrashDeveloperReceipt.SlotChange(plan.source, encodeSlot(plan.before[plan.source]), encodeSlot(after[plan.source])));
+            if (plan.destination != plan.source) changes.add(new TrashDeveloperReceipt.SlotChange(plan.destination,
+                    encodeSlot(plan.before[plan.destination]), encodeSlot(after[plan.destination])));
+            final var acknowledged = new TrashDeveloperReceipt(plan.operation, plan.actor, plan.kind, plan.instance, base,
+                    phase, beforeRevision, result.phase(), result.revision(), result.updatedAt(), changes, false);
+            store.putDeveloperReceipt(acknowledged);
+            projection.accept(cloneContents(after));
+            receipt.set(acknowledged);
+        }, restoreProjection);
+        return committed ? Optional.ofNullable(receipt.get()) : Optional.empty();
+    }
+
+    private void commitDeveloperReversal(final DeveloperPlan plan,
+            final java.util.concurrent.atomic.AtomicReference<TrashDeveloperReceipt> receipt,
+            final java.util.function.Consumer<ItemStack[]> projection) {
+        final var original = plan.reverses.orElseThrow();
+        final var result = store.revertDeveloper(original, plan.operation);
+        final ItemStack[] after = cloneContents(plan.before);
+        if (original.kind() == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+            for (final var slot : original.slots()) after[slot.slot()] = decodeSlot(slot.before());
+        } else {
+            final ItemStack restored = decodeSlot(original.slots().getFirst().before());
+            if (restored == null) throw new IllegalStateException("Native reversal has no original unit");
+            restored.setAmount(1);
+            // Keep any tracked or newly allocated UUID. Recombining an untracked batch would erase monotonic provenance.
+            writeAuthority(restored, result);
+            after[plan.source] = restored;
+        }
+        final List<TrashDeveloperReceipt.SlotChange> changes = new ArrayList<>();
+        for (final var slot : original.slots()) changes.add(new TrashDeveloperReceipt.SlotChange(slot.slot(),
+                encodeSlot(plan.before[slot.slot()]), encodeSlot(after[slot.slot()])));
+        final var inverse = new TrashDeveloperReceipt(plan.operation, plan.actor, TrashDeveloperReceipt.Kind.REVERT,
+                plan.instance, original.baseId(), original.afterPhase(), original.afterRevision(), result.phase(), result.revision(),
+                result.updatedAt(), changes, false, Optional.of(original.operationId()));
+        store.putDeveloperReceipt(inverse);
+        projection.accept(cloneContents(after));
+        receipt.set(inverse);
+    }
+
+    private boolean developerHistoryMatches(final DeveloperPlan plan) {
+        if (!store.developerMutationAvailable(plan.operation, plan.instance)) return false;
+        if (plan.reverses.isPresent()) return store.developerReversalAvailable(plan.reverses.orElseThrow());
+        final var expected = plan.inspection.history();
+        if (expected.isPresent()) {
+            final var before = expected.orElseThrow();
+            if (!store.matches(before.instanceId(), before.baseId(), before.phase(), before.revision())) return false;
+        }
+        return plan.kind != TrashDeveloperReceipt.Kind.SANDBOX_COPY && expected.isPresent() || store.find(plan.instance).isEmpty();
+    }
+
+    public Optional<Optional<TrashDeveloperReceipt>> tryInspectDeveloperReceipt(final UUID operation) {
+        return store.tryInspectDeveloperReceipt(operation);
+    }
+
+    /** Pure owner-local assessment. This neither confirms nor restores the native projection. */
+    public Optional<Boolean> tryObserveDeveloperProjection(final TrashDeveloperReceipt receipt, final ItemStack[] inventory) {
+        return store.tryObserveDeveloperProjection(receipt, () -> matchesProjection(receipt, inventory, true));
+    }
+
+    public Optional<Boolean> tryObserveDeveloperBeforeProjection(final TrashDeveloperReceipt receipt, final ItemStack[] inventory) {
+        return store.tryObserveDeveloperProjection(receipt, () -> !receipt.projectionObserved() && matchesProjection(receipt, inventory, false));
+    }
+
+    public Optional<List<TrashDeveloperReceipt>> tryInspectPendingDeveloperProjections(final UUID actor) {
+        return store.tryInspectDeveloperReceipts(actor).map(receipts -> receipts.stream()
+                .filter(receipt -> !receipt.projectionObserved()).sorted(java.util.Comparator.comparingLong(TrashDeveloperReceipt::recordedAt)
+                    .thenComparing(TrashDeveloperReceipt::operationId)).limit(16).toList());
+    }
+
+    /** Native observation is separate from the write acknowledgement and carries no item recreation authority. */
+    public boolean tryConfirmDeveloperProjection(final TrashDeveloperReceipt receipt,
+            final java.util.function.Supplier<ItemStack[]> ownerInventory) {
+        Objects.requireNonNull(ownerInventory);
+        return store.tryConfirmDeveloperProjection(receipt, () -> matchesProjection(receipt, ownerInventory.get(), true));
+    }
+
+    /** Exact pending before-state recovery only; never overwrites a conflict or reissues an observed completion. */
+    public boolean tryRestoreDeveloperProjection(final TrashDeveloperReceipt receipt,
+            final java.util.function.Supplier<ItemStack[]> ownerInventory,
+            final java.util.function.Consumer<ItemStack[]> projection, final Runnable restoreProjection) {
+        Objects.requireNonNull(ownerInventory); Objects.requireNonNull(projection); Objects.requireNonNull(restoreProjection);
+        return store.tryRestoreDeveloperProjection(receipt, () -> matchesProjection(receipt, ownerInventory.get(), false), () -> {
+            final ItemStack[] restored = cloneContents(ownerInventory.get());
+            for (final var slot : receipt.slots()) restored[slot.slot()] = decodeSlot(slot.after());
+            projection.accept(restored);
+        }, restoreProjection);
+    }
+
+    private boolean matchesProjection(final TrashDeveloperReceipt receipt, final ItemStack[] inventory, final boolean after) {
+        if (inventory == null || inventory.length != 41) return false;
+        for (final var slot : receipt.slots()) {
+            // Paper may reorder native NBT across deserialize/serialize. Compare the complete decoded item,
+            // including amount and all metadata, rather than treating byte ordering as an authority revision.
+            final ItemStack expected = decodeSlot(after ? slot.after() : slot.before());
+            if (expected == null ? !empty(inventory[slot.slot()]) : !expected.equals(inventory[slot.slot()])) return false;
+        }
+        for (int slot = 0; slot < inventory.length; slot++) {
+            final int index = slot;
+            if (receipt.slots().stream().anyMatch(change -> change.slot() == index)) continue;
+            if (instanceIdOf(inventory[slot]).filter(receipt.instanceId()::equals).isPresent()) return false;
+        }
+        return true;
+    }
+    private static boolean empty(ItemStack item) { return item == null || item.getType().isAir(); }
+    private static String encodeSlot(ItemStack item) {
+        return empty(item) ? "" : java.util.Base64.getEncoder().encodeToString(item.serializeAsBytes());
+    }
+    private static ItemStack decodeSlot(String encoded) {
+        return encoded.isEmpty() ? null : ItemStack.deserializeBytes(java.util.Base64.getDecoder().decode(encoded));
+    }
+
+    /** Detached native target identity; preparation owns no history entry or second operation ledger. */
+    public static final class UnitPlan {
+        private final TrashHistoryService authority;
+        private final ItemStack before;
+        private final UUID instanceId;
+        private final UUID actor;
+        private final TrashHistoryEvent event;
+        private final java.util.concurrent.atomic.AtomicBoolean entered = new java.util.concurrent.atomic.AtomicBoolean();
+        private final long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+        private UnitPlan(TrashHistoryService authority, ItemStack before, UUID instanceId,
+                         UUID actor, TrashHistoryEvent event) {
+            this.authority = authority; this.before = before.clone(); this.instanceId = instanceId;
+            this.actor = actor; this.event = event;
+        }
+        public UUID instanceId() { return instanceId; }
+    }
+
+    /** Caller owns the singleton; no physical marker, history event or WAL frame is written here. */
+    public Optional<UnitPlan> tryPrepareUnit(final ItemStack singleton, final TrashHistoryEvent event,
+                                             final UUID actor) {
+        Objects.requireNonNull(event); Objects.requireNonNull(actor);
+        if (singleton == null || singleton.getAmount() != 1) return Optional.empty();
+        final var inspection = tryInspect(singleton);
+        if (inspection.isEmpty() || inspection.orElseThrow().pendingWall().isPresent()) return Optional.empty();
+        final UUID instance = instanceIdOf(singleton).orElseGet(UUID::randomUUID);
+        final var nativeState = store.tryInspect(instance);
+        if (nativeState.isEmpty()) return Optional.empty();
+        final var expected = inspection.orElseThrow().history();
+        if (!nativeState.orElseThrow().history().equals(expected)) return Optional.empty();
+        return Optional.of(new UnitPlan(this, singleton, instance, actor, event));
+    }
+
+    /** Both predicates and projection execute on the current item owner; the final permit is never retried. */
+    public boolean tryIndividualizePlannedUnit(final UnitPlan plan, final ItemStack current,
+            final java.util.function.BooleanSupplier admission,
+            final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> projection, final Runnable restoreProjection) {
+        return tryCommitPlannedUnit(plan, current, admission, finalAdmission, projection, restoreProjection, false);
+    }
+
+    /** Native success transition keeps the prepared UUID and the original origin in one WAL frame. */
+    public boolean tryTransformPlannedUnit(final UnitPlan plan, final ItemStack current,
+            final java.util.function.BooleanSupplier admission,
+            final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> projection, final Runnable restoreProjection) {
+        Objects.requireNonNull(plan);
+        if (plan.event != TrashHistoryEvent.ACTIVATED || itemFactory.successPhaseOf(plan.before).isEmpty()) return false;
+        return tryCommitPlannedUnit(plan, current, admission, finalAdmission, projection, restoreProjection, true);
+    }
+
+    private boolean tryCommitPlannedUnit(final UnitPlan plan, final ItemStack current,
+            final java.util.function.BooleanSupplier admission,
+            final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> projection, final Runnable restoreProjection,
+            final boolean transition) {
+        Objects.requireNonNull(plan); Objects.requireNonNull(admission); Objects.requireNonNull(finalAdmission);
+        Objects.requireNonNull(projection); Objects.requireNonNull(restoreProjection);
+        if (plan.authority != this) return false;
+        return store.tryTransact(() -> !plan.entered.get() && System.nanoTime() - plan.deadline < 0
+                        && plan.before.equals(current) && plannedHistoryMatches(plan) && admission.getAsBoolean(),
+                () -> plan.entered.compareAndSet(false, true) && finalAdmission.getAsBoolean(), () -> {
+                    final ItemStack singleton = plan.before.clone();
+                    final var activated = individualizeInternal(singleton, plan.event, plan.actor, "", plan.instanceId);
+                    if (transition) {
+                        final String phase = itemFactory.successPhaseOf(plan.before).orElseThrow();
+                        itemFactory.applyPhase(singleton, phase);
+                        writeAuthority(singleton, store.transform(activated.instanceId(), activated.baseId(),
+                                activated.phase(), phase, plan.actor));
+                    }
+                    projection.accept(singleton);
+                }, restoreProjection);
+    }
+
+    private boolean plannedHistoryMatches(final UnitPlan plan) {
+        final var existing = instanceIdOf(plan.before);
+        return existing.isEmpty() ? store.find(plan.instanceId).isEmpty()
+                : store.matches(plan.instanceId, itemFactory.idOf(plan.before).orElseThrow(),
+                        itemFactory.phaseOf(plan.before).orElseThrow(), revisionOf(plan.before));
     }
 
     public ItemStack individualizeUnit(final ItemStack rawItem, final TrashHistoryEvent event,
@@ -195,13 +564,33 @@ public final class TrashHistoryService {
 
     /** Commits an arbitrary player-inventory slot projection with durable history rollback. */
     public boolean transformInventorySlotOnSuccess(final Player player, final int slot) {
+        return transformInventorySlotOnSuccess(player, slot, null, null);
+    }
+
+    /** Caller owns the inventory; a busy history writer refuses before any projection or waiting. */
+    public boolean tryTransformInventorySlotOnSuccess(final Player player, final int slot,
+                                                       final java.util.function.BooleanSupplier admission) {
+        return transformInventorySlotOnSuccess(player, slot, Objects.requireNonNull(admission, "admission"), null);
+    }
+
+    private boolean transformInventorySlotOnSuccess(final Player player, final int slot,
+                                                     final java.util.function.BooleanSupplier admission,
+                                                     final java.util.function.Consumer<ItemStack> afterProjection) {
+        return transformInventorySlotOnSuccess(player, slot, admission, () -> true, afterProjection);
+    }
+
+    private boolean transformInventorySlotOnSuccess(final Player player, final int slot,
+                                                     final java.util.function.BooleanSupplier admission,
+                                                     final java.util.function.BooleanSupplier finalAdmission,
+                                                     final java.util.function.Consumer<ItemStack> afterProjection) {
         Objects.requireNonNull(player, "player");
         if (slot < 0 || slot >= player.getInventory().getSize()) return false;
         final ItemStack source = player.getInventory().getItem(slot);
         if (source == null || itemFactory.successPhaseOf(source).isEmpty()) return false;
         if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        final ItemStack captured = source.clone();
         final ItemStack[] before = cloneContents(player.getInventory().getContents());
-        return store.transact(() -> {
+        final Runnable mutation = () -> {
             final ItemStack singleton = source.clone();
             singleton.setAmount(1);
             final SplitResult result = transformInternal(source, singleton, player.getUniqueId());
@@ -210,8 +599,73 @@ public final class TrashHistoryService {
                     && !player.getInventory().addItem(result.remainder()).isEmpty()) {
                 throw new IllegalStateException("a Trash transform remainder nem fér el");
             }
-            return true;
-        }, () -> player.getInventory().setContents(before));
+            if (afterProjection != null) afterProjection.accept(result.singleton());
+        };
+        final Runnable restore = () -> player.getInventory().setContents(before);
+        return admission == null ? store.transact(() -> { mutation.run(); return true; }, restore)
+                : store.tryTransact(() -> admission.getAsBoolean()
+                        && captured.equals(player.getInventory().getItem(slot)), finalAdmission, mutation, restore);
+    }
+
+    /** Native wall consumption and its unresolved effect receipt share one fsynced history frame. */
+    public Optional<TrashHistoryStore.WallReceipt> tryConsumeProjectileWall(
+            final Player player, final int slot, final TrashRuleFieldService.RuleField field,
+            final UUID projectileId,
+            final java.util.function.BooleanSupplier admission,
+            final java.util.function.BooleanSupplier finalAdmission) {
+        Objects.requireNonNull(admission, "admission");
+        Objects.requireNonNull(finalAdmission, "finalAdmission");
+        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(player) || !player.getUniqueId().equals(field.owner())) return Optional.empty();
+        if (slot < 0 || slot >= player.getInventory().getSize()) return Optional.empty();
+        final ItemStack before = player.getInventory().getItem(slot);
+        if (before == null || before.getAmount() != 1 || instanceIdOf(before).isEmpty()) return Optional.empty();
+        final long beforeRevision = revisionOf(before);
+        final var receipt = new java.util.concurrent.atomic.AtomicReference<TrashHistoryStore.WallReceipt>();
+        final boolean consumed = transformInventorySlotOnSuccess(player, slot, admission, finalAdmission, singleton -> {
+            final var recorded = new TrashHistoryStore.WallReceipt(field.id(), player.getUniqueId(),
+                    field.center().world(), projectileId, instanceIdOf(singleton).orElseThrow(), revisionOf(singleton),
+                    itemFactory.idOf(singleton).orElseThrow(), itemFactory.phaseOf(singleton).orElseThrow(),
+                    System.currentTimeMillis(), field, beforeRevision);
+            store.putWallReceipt(recorded);
+            receipt.set(recorded);
+        });
+        return consumed ? Optional.of(receipt.get()) : Optional.empty();
+    }
+
+    public boolean tryConfirmProjectileWallRemoval(final TrashHistoryStore.WallReceipt receipt,
+                                                    final java.util.function.BooleanSupplier observedRemoved) {
+        return store.tryInspectObservedWallRemoval(receipt).orElse(false)
+                || store.tryConfirmWallRemoval(receipt, observedRemoved);
+    }
+
+    public Optional<List<TrashHistoryStore.WallReceipt>> tryInspectPendingProjectileWalls() {
+        return store.tryInspectWallReceipts();
+    }
+
+    public Optional<java.util.Map<UUID, TrashHistoryStore.WallReceipt>> tryInspectWallRecoveryReceipts(
+            final java.util.Set<UUID> instances) {
+        return store.tryInspectWallRecoveryReceipts(instances);
+    }
+
+    /** Caller owns the captured unit and projection; missing, drifted or duplicated units are never recreated. */
+    public boolean tryRestoreAcknowledgedWallProjection(final ItemStack source, final UUID actor,
+            final TrashHistoryStore.WallReceipt receipt, final java.util.function.BooleanSupplier admission,
+            final java.util.function.Consumer<ItemStack> projection) {
+        Objects.requireNonNull(actor); Objects.requireNonNull(receipt);
+        Objects.requireNonNull(admission); Objects.requireNonNull(projection);
+        if (!actor.equals(receipt.actor()) || source == null || source.getAmount() != 1
+                || !itemFactory.isKnownItem(source) || !receipt.baseId().equals(itemFactory.idOf(source).orElse(null))
+                || !"base".equals(itemFactory.phaseOf(source).orElse(null))
+                || !receipt.instanceId().equals(instanceIdOf(source).orElse(null))
+                || revisionOf(source) != receipt.beforeRevision() || preparedRepair(source).isPresent()) return false;
+        creationEventOf(source);
+        final ItemStack before = source.clone();
+        return store.tryRestoreWallProjection(receipt, admission, acknowledged -> {
+            final ItemStack restored = before.clone();
+            itemFactory.applyPhase(restored, receipt.phase());
+            writeAuthority(restored, acknowledged);
+            projection.accept(restored);
+        }, () -> projection.accept(before.clone()));
     }
 
     /**
@@ -227,18 +681,50 @@ public final class TrashHistoryService {
         final ItemStack source = itemInHand(player, hand);
         if (!itemFactory.isKnownItem(source)) return false;
         if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        final ItemStack captured = source.clone();
+        final ItemStack unit = captured.clone(); unit.setAmount(1);
+        final var plan = tryPrepareUnit(unit, event, player.getUniqueId());
+        if (plan.isEmpty()) return false;
+        return tryIndividualizeHandOnSuccess(player, hand, plan.orElseThrow(), () -> true, () -> true, ignored -> {});
+    }
+
+    /** Native inventory projection shares the prepared unit's WAL boundary; caller supplies only bounded owner-local work. */
+    public boolean tryIndividualizeHandOnSuccess(final Player player, final EquipmentSlot hand, final UnitPlan plan,
+            final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> beforePublication) {
+        return tryCommitPlannedHand(player, hand, plan, admission, finalAdmission, beforePublication, false);
+    }
+
+    public boolean tryTransformPlannedHandOnSuccess(final Player player, final EquipmentSlot hand, final UnitPlan plan,
+            final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission) {
+        return tryCommitPlannedHand(player, hand, plan, admission, finalAdmission, ignored -> {}, true);
+    }
+
+    private boolean tryCommitPlannedHand(final Player player, final EquipmentSlot hand, final UnitPlan plan,
+            final java.util.function.BooleanSupplier admission, final java.util.function.BooleanSupplier finalAdmission,
+            final java.util.function.Consumer<ItemStack> beforePublication, final boolean transition) {
+        Objects.requireNonNull(player); Objects.requireNonNull(plan); Objects.requireNonNull(beforePublication);
+        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(player) || !player.getUniqueId().equals(plan.actor)
+                || (hand != EquipmentSlot.HAND && hand != EquipmentSlot.OFF_HAND)) return false;
+        final ItemStack source = itemInHand(player, hand);
+        if (!itemFactory.isKnownItem(source)) return false;
+        final ItemStack captured = source.clone();
+        final ItemStack unit = captured.clone(); unit.setAmount(1);
+        final int heldSlot = player.getInventory().getHeldItemSlot();
         final ItemStack[] before = cloneContents(player.getInventory().getContents());
-        return store.transact(() -> {
-            final ItemStack singleton = source.clone();
-            singleton.setAmount(1);
-            individualizeInternal(singleton, event, player.getUniqueId(), "");
-            setItemInHand(player, hand, singleton);
-            final ItemStack remainder = remainderOf(source);
-            if (remainder != null && !player.getInventory().addItem(remainder).isEmpty()) {
-                throw new IllegalStateException("a Trash reservation remainder nem fér el");
-            }
-            return true;
-        }, () -> player.getInventory().setContents(before));
+        if (transition && (plan.event != TrashHistoryEvent.ACTIVATED || itemFactory.successPhaseOf(plan.before).isEmpty())) return false;
+        return tryCommitPlannedUnit(plan, unit,
+                () -> admission.getAsBoolean() && captured.equals(itemInHand(player, hand))
+                        && (hand != EquipmentSlot.HAND || heldSlot == player.getInventory().getHeldItemSlot())
+                        && (captured.getAmount() == 1 || player.getInventory().firstEmpty() >= 0),
+                finalAdmission, singleton -> {
+                    beforePublication.accept(singleton);
+                    setItemInHand(player, hand, singleton);
+                    final ItemStack remainder = remainderOf(captured);
+                    if (remainder != null && !player.getInventory().addItem(remainder).isEmpty()) {
+                        throw new IllegalStateException("a Trash reservation remainder nem fér el");
+                    }
+                }, () -> player.getInventory().setContents(before), transition);
     }
 
     /** Transforms the exact helmet slot; an inventory copy cannot impersonate equipped state. */
@@ -413,13 +899,19 @@ public final class TrashHistoryService {
     private TrashHistoryStore.Snapshot individualizeInternal(
             final ItemStack item, final TrashHistoryEvent event,
             final UUID actor, final String detail) {
+        return individualizeInternal(item, event, actor, detail, null);
+    }
+
+    private TrashHistoryStore.Snapshot individualizeInternal(
+            final ItemStack item, final TrashHistoryEvent event,
+            final UUID actor, final String detail, final UUID plannedInstance) {
         validateSingleton(item);
         final String baseId = itemFactory.idOf(item).orElseThrow();
         final String phase = itemFactory.phaseOf(item).orElseThrow();
         final UUID existing = instanceIdOf(item).orElse(null);
         final TrashHistoryStore.Snapshot history;
         if (existing == null) {
-            final UUID instanceId = UUID.randomUUID();
+            final UUID instanceId = plannedInstance == null ? UUID.randomUUID() : plannedInstance;
             final TrashHistoryEvent creation = creationEventOf(item).orElse(null);
             final TrashHistoryStore.Snapshot created = store.createAndRecord(instanceId, baseId,
                     phase, creation == null ? event : creation, creation == null ? actor : null,
@@ -427,6 +919,9 @@ public final class TrashHistoryService {
             history = creation == null ? created
                     : store.record(instanceId, baseId, phase, event, actor, detail);
         } else {
+            if (plannedInstance != null && !existing.equals(plannedInstance)) {
+                throw new IllegalStateException("planned native instance changed");
+            }
             requireCurrent(item, existing, baseId, phase);
             history = store.record(existing, baseId, phase, event, actor, detail);
         }
@@ -476,8 +971,8 @@ public final class TrashHistoryService {
         final String token = pdc.get(repairPendingKey, PersistentDataType.STRING);
         final Integer beforeDamage = pdc.get(repairBeforeDamageKey, PersistentDataType.INTEGER);
         final String rawActor = pdc.get(repairActorKey, PersistentDataType.STRING);
-        if ((token == null || token.isBlank()) && beforeDamage == null
-                && (rawActor == null || rawActor.isBlank())) return Optional.empty();
+        if (!pdc.has(repairPendingKey) && !pdc.has(repairBeforeDamageKey)
+                && !pdc.has(repairActorKey)) return Optional.empty();
         if (token == null || token.isBlank() || beforeDamage == null || beforeDamage < 1
                 || rawActor == null || rawActor.isBlank()) {
             throw new IllegalStateException("hiányos Trash repair transaction marker");
@@ -532,9 +1027,11 @@ public final class TrashHistoryService {
 
     private Optional<TrashHistoryEvent> creationEventOf(final ItemStack item) {
         if (item == null || !item.hasItemMeta()) return Optional.empty();
-        final String raw = item.getItemMeta().getPersistentDataContainer().get(originKey,
-                PersistentDataType.STRING);
-        if (raw == null || raw.isBlank()) return Optional.empty();
+        final PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        if (!pdc.has(originKey)) return Optional.empty();
+        final String raw = pdc.get(originKey, PersistentDataType.STRING);
+        if (raw == null || raw.isBlank()) throw new IllegalStateException("hiányos Trash origin marker");
+        if (raw.equals("DEV_PROTOTYPE")) return Optional.of(TrashHistoryEvent.DEV_PROTOTYPED);
         try {
             return Optional.of(switch (TrashLootSource.valueOf(raw)) {
                 case FISHING -> TrashHistoryEvent.CREATED_FISHING;

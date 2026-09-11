@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.data;
 
 import java.util.List;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A faction territory zone. Two shapes are supported:
@@ -43,6 +45,37 @@ public record Territory(
         int minY,
         int maxY
 ) {
+
+    public Territory {
+        polygon = copyPolygon(polygon);
+    }
+
+    /** Vertex arrays must not let readers mutate the canonical geometry or its revision. */
+    @Override public List<int[]> polygon() { return copyPolygon(polygon); }
+
+    private static List<int[]> copyPolygon(final List<int[]> source) {
+        if (source == null || source.isEmpty()) return List.of();
+        return source.stream().map(point -> {
+            if (point == null || point.length != 2) throw new IllegalArgumentException("Invalid territory vertex");
+            return point.clone();
+        }).toList();
+    }
+
+    @Override public boolean equals(final Object other) {
+        if (this == other) return true;
+        if (!(other instanceof Territory value) || !Objects.equals(id, value.id)
+                || faction != value.faction || !Objects.equals(name, value.name) || type != value.type
+                || !Objects.equals(world, value.world) || x != value.x || z != value.z || radius != value.radius
+                || minY != value.minY || maxY != value.maxY || polygon.size() != value.polygon.size()) return false;
+        for (int i = 0; i < polygon.size(); i++) if (!Arrays.equals(polygon.get(i), value.polygon.get(i))) return false;
+        return true;
+    }
+
+    @Override public int hashCode() {
+        int result = Objects.hash(id, faction, name, type, world, x, z, radius, minY, maxY);
+        for (final int[] point : polygon) result = 31 * result + Arrays.hashCode(point);
+        return result;
+    }
 
     public static final int NO_MIN_Y = Integer.MIN_VALUE;
     public static final int NO_MAX_Y = Integer.MAX_VALUE;

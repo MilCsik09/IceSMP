@@ -4,5 +4,6 @@ public enum ItemState {
     DAMAGED,
     CURSED,
     POOR_CONDITION,
-    LEGACY
+    LEGACY,
+    DEV_PROTOTYPE
 }

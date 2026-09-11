@@ -11,6 +11,20 @@ import java.util.function.DoubleSupplier;
 /** Pure candidate builder. Payment and publication remain outside this immutable domain boundary. */
 public final class ItemMutationService {
 
+    public ItemInstance clonePrototype(final ItemTemplate template, final ItemInstance before,
+            final UUID copyId, final UUID owner, final UUID operationId, final long occurredAt) {
+        requireMatchingIdentity(template, before);
+        Objects.requireNonNull(copyId); Objects.requireNonNull(owner); Objects.requireNonNull(operationId);
+        if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(owner)) throw new IllegalArgumentException("Primary developer prototype required");
+        if (copyId.equals(before.itemId())) throw new IllegalArgumentException("Prototype needs a fresh native identity");
+        final var states = java.util.EnumSet.noneOf(ItemState.class); states.addAll(before.states()); states.add(ItemState.DEV_PROTOTYPE);
+        return new ItemInstance(copyId, ItemInstance.CURRENT_SCHEMA, before.templateId(), before.templateVersion(), before.itemLevel(),
+                before.rolls(), before.runes(), before.ascension(),
+                new ItemInstance.Origin("dev:prototype", operationId.toString(), owner, "", occurredAt), states, 0L,
+                List.of(new ItemHistoryEvent(ItemHistoryEvent.Type.DEV_PROTOTYPED, occurredAt, before.itemId().toString())),
+                ItemInstance.MutationState.fresh().afterMutation(operationId));
+    }
+
     public enum Status { APPLIED, ALREADY_APPLIED, INVALID_LOCK, NOT_ASCENDABLE, TERMINAL_STAGE }
 
     public record RerollRequest(UUID operationId, String lockedStatId,
@@ -40,6 +54,16 @@ public final class ItemMutationService {
 
     public Result reroll(final ItemTemplate template, final ItemInstance before,
                          final RerollRequest request, final DoubleSupplier qualitySource) {
+        return reroll(template, before, request, qualitySource, false);
+    }
+
+    public Result rerollFromDeveloper(final ItemTemplate template, final ItemInstance before,
+                                      final RerollRequest request, final DoubleSupplier qualitySource) {
+        return reroll(template, before, request, qualitySource, true);
+    }
+
+    private Result reroll(final ItemTemplate template, final ItemInstance before,
+                          final RerollRequest request, final DoubleSupplier qualitySource, final boolean developer) {
         requireMatchingIdentity(template, before);
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(qualitySource, "qualitySource");
@@ -67,13 +91,23 @@ public final class ItemMutationService {
         final ItemInstance candidate = before.withMutation(rolls, before.runes(), before.ascension(),
                 before.itemLevel(), before.mutation().afterReroll(
                         request.operationId(), request.stabilitySeal()),
-                new ItemHistoryEvent(ItemHistoryEvent.Type.REROLLED, request.occurredAt(),
+                new ItemHistoryEvent(developer ? ItemHistoryEvent.Type.DEV_REROLLED : ItemHistoryEvent.Type.REROLLED, request.occurredAt(),
                         request.lockedStatId().isBlank() ? "full" : "lock:" + request.lockedStatId()));
         return new Result(Status.APPLIED, before, candidate, request.operationId().toString());
     }
 
     public Result ascend(final ItemTemplate template, final ItemInstance before,
                          final AscensionRequest request) {
+        return ascend(template, before, request, false);
+    }
+
+    public Result ascendFromDeveloper(final ItemTemplate template, final ItemInstance before,
+                                      final AscensionRequest request) {
+        return ascend(template, before, request, true);
+    }
+
+    private Result ascend(final ItemTemplate template, final ItemInstance before,
+                           final AscensionRequest request, final boolean developer) {
         requireMatchingIdentity(template, before);
         Objects.requireNonNull(request, "request");
         if (before.mutation().hasReceipt(request.operationId())) {
@@ -100,11 +134,11 @@ public final class ItemMutationService {
         ItemInstance candidate = before.withMutation(rolls, before.runes(),
                 new ItemInstance.AscensionState(nextStageId, nextIndex + 1), stage.itemLevel(),
                 before.mutation().afterMutation(request.operationId()),
-                new ItemHistoryEvent(ItemHistoryEvent.Type.ASCENDED, request.occurredAt(), nextStageId));
+                new ItemHistoryEvent(developer ? ItemHistoryEvent.Type.DEV_ASCENDED : ItemHistoryEvent.Type.ASCENDED, request.occurredAt(), nextStageId));
         if (template.signatureTierAt(nextStageId)
                 > template.signatureTierAt(before.ascension().stageId())) {
             candidate = candidate.appendHistory(new ItemHistoryEvent(
-                    ItemHistoryEvent.Type.SIGNATURE_UPGRADED, request.occurredAt(),
+                    developer ? ItemHistoryEvent.Type.DEV_SIGNATURE_UPGRADED : ItemHistoryEvent.Type.SIGNATURE_UPGRADED, request.occurredAt(),
                     "tier:" + template.signatureTierAt(nextStageId)));
         }
         return new Result(Status.APPLIED, before, candidate, request.operationId().toString());
@@ -113,6 +147,18 @@ public final class ItemMutationService {
     public ItemInstance changeRunes(final ItemTemplate template, final ItemInstance before,
                                     final UUID operationId, final List<String> nextRunes,
                                     final long occurredAt) {
+        return changeRunes(template, before, operationId, nextRunes, occurredAt, false);
+    }
+
+    public ItemInstance changeRunesFromDeveloper(final ItemTemplate template, final ItemInstance before,
+                                                 final UUID operationId, final List<String> nextRunes,
+                                                 final long occurredAt) {
+        return changeRunes(template, before, operationId, nextRunes, occurredAt, true);
+    }
+
+    private ItemInstance changeRunes(final ItemTemplate template, final ItemInstance before,
+                                     final UUID operationId, final List<String> nextRunes,
+                                     final long occurredAt, final boolean developer) {
         requireMatchingIdentity(template, before);
         Objects.requireNonNull(operationId, "operationId");
         if (before.mutation().hasReceipt(operationId)) return before;
@@ -128,8 +174,27 @@ public final class ItemMutationService {
         final String detail = runeChangeDetail(before.runes(), normalized);
         return before.withMutation(before.rolls(), normalized, before.ascension(), before.itemLevel(),
                 before.mutation().afterMutation(operationId),
-                new ItemHistoryEvent(ItemHistoryEvent.Type.RUNE_CHANGED, occurredAt,
+                new ItemHistoryEvent(developer ? ItemHistoryEvent.Type.DEV_RUNE_CHANGED : ItemHistoryEvent.Type.RUNE_CHANGED, occurredAt,
                         detail));
+    }
+
+    /** Logical compensation preserves provenance, prior mutation receipts and the native revision chain. */
+    public ItemInstance revertFromDeveloper(ItemTemplate template, ItemInstance current, ItemInstance originalBefore,
+                                            UUID originalOperation, UUID operation, long occurredAt) {
+        requireMatchingIdentity(template, current); requireMatchingIdentity(template, originalBefore);
+        Objects.requireNonNull(originalOperation); Objects.requireNonNull(operation);
+        if (operation.equals(originalOperation)) throw new IllegalArgumentException("Compensation needs a new operation");
+        if (current.mutation().hasReceipt(operation)) return current;
+        if (!current.itemId().equals(originalBefore.itemId()) || !current.origin().equals(originalBefore.origin())
+                || !current.states().equals(originalBefore.states()) || current.mutationRevision() <= originalBefore.mutationRevision()
+                || !current.mutation().hasReceipt(originalOperation) || originalBefore.mutation().hasReceipt(originalOperation)
+                || originalBefore.runes().size() > template.runeSocketCountAt(originalBefore.ascension().stageId())) {
+            throw new IllegalArgumentException("Compensation identity or native history conflict");
+        }
+        final var mutation = new ItemInstance.MutationState(originalBefore.mutation().rerollCount(),
+                originalBefore.mutation().rerollCostStep(), current.mutation().recentOperationReceipts()).afterMutation(operation);
+        return current.withMutation(originalBefore.rolls(), originalBefore.runes(), originalBefore.ascension(), originalBefore.itemLevel(),
+                mutation, new ItemHistoryEvent(ItemHistoryEvent.Type.DEV_REVERTED, occurredAt, originalOperation.toString()));
     }
 
     private static String runeChangeDetail(final List<String> before, final List<String> after) {

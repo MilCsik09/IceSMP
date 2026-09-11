@@ -22,6 +22,7 @@ public final class TrashAnomalyRegressionSuite {
     private TrashAnomalyRegressionSuite() { }
 
     public static void main(final String[] args) throws Exception {
+        preservesActivationLifecycle();
         preservesClosedFortyTwoBehaviorAuthority();
         preservesEveryAuthoredRuntimeBinding();
         preservesAuthoredStackCompassEchoAndPairBehavior();
@@ -30,6 +31,30 @@ public final class TrashAnomalyRegressionSuite {
         preservesTransactionalTransforms();
         preservesSecretRuntimeBoundary();
         System.out.println("Trash anomaly regression suite passed.");
+    }
+
+    private static void preservesActivationLifecycle() {
+        final var plugin = new java.util.concurrent.atomic.AtomicBoolean(true);
+        final var lifecycle = new TrashAnomalyActivationService.Lifecycle(plugin::get);
+        final var beforeStart = lifecycle.lifetime();
+        check(!beforeStart.getAsBoolean(), "unstarted anomaly use admitted");
+        lifecycle.start(); final var first = lifecycle.lifetime();
+        check(first.getAsBoolean() && !beforeStart.getAsBoolean(), "startup revived an old native consequence");
+        final var delayed = new java.util.ArrayList<Runnable>();
+        final var effects = new java.util.concurrent.atomic.AtomicInteger();
+        delayed.add(() -> { if (first.getAsBoolean()) effects.incrementAndGet(); });
+        lifecycle.close(); lifecycle.start(); final var second = lifecycle.lifetime();
+        delayed.add(() -> { if (second.getAsBoolean()) effects.incrementAndGet(); });
+        delayed.forEach(Runnable::run);
+        check(effects.get() == 1 && second.getAsBoolean() && !first.getAsBoolean(), "cooperative restart replayed a stale delayed sound");
+        plugin.set(false); check(!second.getAsBoolean(), "disabled plugin still admitted native effects");
+        lifecycle.close(); plugin.set(true); lifecycle.start();
+        check(!second.getAsBoolean() && lifecycle.lifetime().getAsBoolean(), "new native lifecycle borrowed an old admission");
+        lifecycle.close(); check(!lifecycle.lifetime().getAsBoolean(), "closed anomaly runtime remained active");
+        check(!TrashAnomalyActivationService.Result.CONTINUE.cancel() && !TrashAnomalyActivationService.Result.CONTINUE.denyItem()
+                && TrashAnomalyActivationService.Result.DENY_ITEM.denyItem() && !TrashAnomalyActivationService.Result.DENY_ITEM.cancel()
+                && TrashAnomalyActivationService.Result.CANCEL.cancel() && TrashAnomalyActivationService.Result.REFUSED.cancel(),
+                "native event disposition changes vanilla cancellation semantics");
     }
 
     private static void preservesAuthoredStackCompassEchoAndPairBehavior() throws Exception {
@@ -91,7 +116,8 @@ public final class TrashAnomalyRegressionSuite {
     }
 
     private static void preservesEveryAuthoredRuntimeBinding() throws Exception {
-        final String runtime = Files.readString(RUNTIME) + Files.readString(TOSSES);
+        final String runtime = Files.readString(RUNTIME) + Files.readString(TOSSES)
+                + Files.readString(ROOT.resolve("trash/TrashAnomalyActivationService.java"));
         for (final TrashAnomalyBehavior behavior : TrashAnomalyBehavior.values()) {
             require(runtime, behavior.name(), "runtime binding for " + behavior.name());
         }
@@ -136,7 +162,8 @@ public final class TrashAnomalyRegressionSuite {
         require(store, "implements PersistentStore", "central persistence lifecycle");
         require(store, "trash-anomaly-state.yml", "dedicated anomaly memory store");
         require(store, "YamlStore.registerCriticalWrite", "critical state write circuit");
-        require(store, "YamlStore.saveAtomic", "atomic anomaly memory save");
+        require(store, "YamlStore::saveAtomic", "production atomic anomaly memory writer");
+        require(store, "writer.write(file, yaml)", "native anomaly memory save through atomic writer");
         require(store, "MAX_COUNTER = 1_000_000_000L", "bounded anomaly counters");
         require(store, "MAX_INSTANCES = 100_000", "bounded anomaly instance memory");
         require(store, "LOCAL_PLAYER_DEATHS", "death memory");

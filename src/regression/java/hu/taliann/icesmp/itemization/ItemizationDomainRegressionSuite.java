@@ -14,7 +14,7 @@ public final class ItemizationDomainRegressionSuite {
     private ItemizationDomainRegressionSuite() {
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws Exception {
         templateRejectsDeadStatsAndInvalidSockets();
         normalizedQualityProducesStableRolls();
         instanceCodecRoundTripsEveryIdentityField();
@@ -34,6 +34,12 @@ public final class ItemizationDomainRegressionSuite {
         recoveryNeverGuessesAcrossAmbiguousSnapshots();
         mutationCrashRecoverySettlesExactlyOnce();
         mutationFaultMatrixCoversRerollRuneAndAscension();
+        prototypeIdentityCannotBecomeNativeValue();
+        developerMutationPreservesTruthfulNativeHistory();
+        developerCompensationPreservesHistoryAndPreventsReplay();
+        developerModesAndPhysicalSlotsStayExact();
+        hu.taliann.icesmp.storage.ItemDeveloperJournalRegressionSuite.main(args);
+        hu.taliann.icesmp.dev.weaver.provider.ItemizationWeaverRegressionSuite.main(args);
         System.out.println("Itemization domain regression suite passed. assertions=" + assertions);
     }
 
@@ -491,6 +497,116 @@ public final class ItemizationDomainRegressionSuite {
                 Set.of("profession:armorer"), Set.of(), Set.of("mining:test"),
                 Set.of("armorer:test"), Map.of(), List.of("awakened"),
                 Map.of("awakened", awakened));
+    }
+
+    private static void prototypeIdentityCannotBecomeNativeValue() {
+        final var template = mutationTemplate(); final var before = mutationInstance(template, 0.3D, 0.7D);
+        final String original = ItemInstanceCodec.encode(before);
+        final var service = new ItemMutationService(); final UUID owner = hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER,
+                operation = UUID.randomUUID(), copy = UUID.randomUUID();
+        final var prototype = service.clonePrototype(template, before, copy, owner, operation, 100);
+        check(!ItemPrototypePolicy.isPrototype(before) && ItemInstanceCodec.encode(before).equals(original), "prototype clone changed the original native item");
+        check(prototype.itemId().equals(copy) && !prototype.itemId().equals(before.itemId()) && prototype.rolls().equals(before.rolls()), "prototype copied identity or lost actual authored rolls");
+        check(prototype.history().size() == 1 && prototype.history().getFirst().type() == ItemHistoryEvent.Type.DEV_PROTOTYPED
+                && !prototype.origin().masterwork() && prototype.origin().professionId().isEmpty(), "prototype invented natural crafting/history evidence");
+        check(ItemPrototypePolicy.identity(prototype).equals(new ItemPrototypePolicy.Identity(owner, operation)), "prototype lost exact owner or operation");
+        check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(prototype)).equals(prototype), "durable native codec lost prototype restriction");
+        expectFailure(() -> service.clonePrototype(template, before, before.itemId(), owner, operation, 100), "prototype accepted the original item UUID");
+        expectFailure(() -> service.clonePrototype(template, before, copy, UUID.randomUUID(), operation, 100), "configurable artifact owner or OP became primary developer");
+        final var rerolled = service.reroll(template, prototype, new ItemMutationService.RerollRequest(UUID.randomUUID(), "", 0, false, 110), () -> 0.5D).candidate();
+        final var ascended = service.ascend(template, rerolled, new ItemMutationService.AscensionRequest(UUID.randomUUID(), 120)).candidate();
+        final var runed = service.changeRunes(template, ascended, UUID.randomUUID(), List.of("fagy_runa"), 130);
+        final var removed = service.changeRunes(template, runed, UUID.randomUUID(), List.of(), 140);
+        for (final var candidate : List.of(rerolled, ascended, runed, removed)) {
+            check(candidate.itemId().equals(copy) && ItemPrototypePolicy.identity(candidate).equals(ItemPrototypePolicy.identity(prototype)), "native mutation washed prototype origin or replaced copy identity");
+            check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(candidate)).equals(candidate), "mutation restart lost intrinsic prototype state");
+            final var salvage = new ItemSalvageService().preview(template, candidate, new ItemSalvageService.Tuning(1, 1, 1, 1, 8), 64, false);
+            check(!salvage.allowed() && salvage.outputs().isEmpty(), "prototype created salvage value");
+        }
+        for (final var boundary : ItemTransformationPolicy.Transformation.values()) {
+            check(ItemTransformationPolicy.decide(ItemTransformationPolicy.Domain.DEV_PROTOTYPE, true, boundary,
+                    ItemTransformationPolicy.Rules.safeDefaults()).action() == ItemTransformationPolicy.Action.DENY,
+                    "prototype escaped native transformation boundary " + boundary);
+        }
+    }
+
+    private static void developerMutationPreservesTruthfulNativeHistory() {
+        final var template = mutationTemplate(); final var before = mutationInstance(template, 0.3D, 0.7D);
+        final var service = new ItemMutationService(); final UUID rerollId = UUID.randomUUID();
+        final var rerolled = service.rerollFromDeveloper(template, before,
+                new ItemMutationService.RerollRequest(rerollId, "attack_damage", 0.6, false, 100), () -> 0.5).candidate();
+        check(rerolled.history().getLast().type() == ItemHistoryEvent.Type.DEV_REROLLED
+                && rerolled.rolls().get("attack_damage").equals(before.rolls().get("attack_damage")), "developer reroll records true cause and preserves selected stat");
+        check(service.rerollFromDeveloper(template, rerolled,
+                new ItemMutationService.RerollRequest(rerollId, "attack_damage", 0.6, false, 100), () -> 0.1).status()
+                == ItemMutationService.Status.ALREADY_APPLIED, "developer reroll keeps native operation deduplication");
+        final var ascended = service.ascendFromDeveloper(template, rerolled,
+                new ItemMutationService.AscensionRequest(UUID.randomUUID(), 101)).candidate();
+        check(ascended.history().getLast().type() == ItemHistoryEvent.Type.DEV_SIGNATURE_UPGRADED
+                && ascended.history().get(ascended.history().size() - 2).type() == ItemHistoryEvent.Type.DEV_ASCENDED,
+                "developer ascension does not manufacture natural signature progress");
+        final var runed = service.changeRunesFromDeveloper(template, ascended, UUID.randomUUID(), List.of("runa_fagy"), 102);
+        final var removed = service.changeRunesFromDeveloper(template, runed, UUID.randomUUID(), List.of(), 103);
+        for (final var candidate : List.of(rerolled, ascended, runed, removed)) {
+            check(candidate.origin().equals(before.origin()) && candidate.itemId().equals(before.itemId())
+                    && candidate.mutationRevision() > before.mutationRevision(), "developer action retains genuine original identity/history");
+            check(candidate.history().stream().skip(before.history().size()).allMatch(event -> event.type().name().startsWith("DEV_")), "developer action invented natural mutation history");
+            check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(candidate)).equals(candidate), "developer history survives actual native codec");
+        }
+    }
+
+    private static void developerCompensationPreservesHistoryAndPreventsReplay() {
+        final var template = mutationTemplate(); final var service = new ItemMutationService();
+        for (boolean prototype : List.of(false, true)) for (int kind = 0; kind < 4; kind++) {
+            var before = mutationInstance(template, 0.3D, 0.7D);
+            if (prototype) before = service.clonePrototype(template, before, UUID.randomUUID(),
+                    hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER, UUID.randomUUID(), 90);
+            if (kind == 3) before = service.changeRunesFromDeveloper(template, before, UUID.randomUUID(), List.of("runa_fagy"), 99);
+            final UUID original = UUID.randomUUID(), inverse = UUID.randomUUID();
+            final var current = switch (kind) {
+                case 0 -> service.rerollFromDeveloper(template, before, new ItemMutationService.RerollRequest(original, "", 0.8, false, 100), () -> 0.5).candidate();
+                case 1 -> service.ascendFromDeveloper(template, before, new ItemMutationService.AscensionRequest(original, 100)).candidate();
+                case 2 -> service.changeRunesFromDeveloper(template, before, original, List.of("runa_fagy"), 100);
+                default -> service.changeRunesFromDeveloper(template, before, original, List.of(), 100);
+            };
+            final var restored = service.revertFromDeveloper(template, current, before, original, inverse, 101);
+            check(restored.itemId().equals(before.itemId()) && restored.origin().equals(before.origin()) && restored.states().equals(before.states()),
+                    "compensation retains exact identity, provenance and prototype quarantine");
+            check(restored.rolls().equals(before.rolls()) && restored.runes().equals(before.runes()) && restored.ascension().equals(before.ascension())
+                    && restored.itemLevel() == before.itemLevel(), "native compensation restores the original gameplay properties");
+            check(restored.mutation().rerollCount() == before.mutation().rerollCount() && restored.mutation().rerollCostStep() == before.mutation().rerollCostStep(),
+                    "compensation restores native reroll counters");
+            check(restored.mutationRevision() == current.mutationRevision() + 1 && restored.history().subList(0, current.history().size()).equals(current.history())
+                    && restored.history().getLast().type() == ItemHistoryEvent.Type.DEV_REVERTED
+                    && restored.history().getLast().detail().equals(original.toString()), "original developer effect remains visible in the growing native history");
+            check(restored.mutation().recentOperationReceipts().containsAll(current.mutation().recentOperationReceipts()) && restored.mutation().hasReceipt(inverse),
+                    "compensation retains original deduplication and records its own identity");
+            check(service.revertFromDeveloper(template, restored, before, original, inverse, 102).equals(restored), "same compensation operation is idempotent");
+            check(ItemInstanceCodec.decode(ItemInstanceCodec.encode(restored)).equals(restored), "DEV_REVERTED survives the actual native codec");
+            final var originalBefore = before;
+            expectFailure(() -> service.revertFromDeveloper(template, current, originalBefore, UUID.randomUUID(), inverse, 102), "unrecorded original operation cannot compensate");
+            expectFailure(() -> service.revertFromDeveloper(template, current, originalBefore, original, original, 102), "inverse cannot reuse original operation identity");
+        }
+    }
+
+    private static void developerModesAndPhysicalSlotsStayExact() {
+        for (final var kind : ItemDeveloperMutation.Kind.values()) {
+            for (final var mode : hu.taliann.icesmp.dev.weaver.api.IntegrityMode.values()) {
+                for (final boolean prototype : List.of(false, true)) {
+                    final boolean allowed = kind == ItemDeveloperMutation.Kind.REFRESH_PRESENTATION
+                            ? (mode == hu.taliann.icesmp.dev.weaver.api.IntegrityMode.SANDBOX) == prototype
+                            : kind == ItemDeveloperMutation.Kind.CLONE_PROTOTYPE
+                            ? mode == hu.taliann.icesmp.dev.weaver.api.IntegrityMode.SANDBOX && !prototype
+                            : kind.prototype() ? mode == hu.taliann.icesmp.dev.weaver.api.IntegrityMode.SANDBOX && prototype
+                            : mode == hu.taliann.icesmp.dev.weaver.api.IntegrityMode.LIVE_GM && !prototype;
+                    if (allowed) { ItemDeveloperMutationRuntime.requireMode(kind, mode, prototype); assertions++; }
+                    else expectStateFailure(() -> ItemDeveloperMutationRuntime.requireMode(kind, mode, prototype), "mode cannot mutate a foreign item class");
+                }
+            }
+        }
+        for (int index = 0; index < 41; index++) check(ItemDeveloperMutationRuntime.index(ItemDeveloperMutationRuntime.slot(index), 3) == index, "exact native physical slot round trip");
+        expectStateFailure(() -> ItemDeveloperMutationRuntime.index(hu.taliann.icesmp.dev.weaver.subject.WeaverSlot.named(
+                hu.taliann.icesmp.dev.weaver.subject.WeaverSlot.Kind.CURSOR), 0), "cursor is not silently rebound to storage");
     }
 
     private static ItemInstance mutationInstance(final ItemTemplate template,

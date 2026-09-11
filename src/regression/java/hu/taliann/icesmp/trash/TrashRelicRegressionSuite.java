@@ -30,6 +30,8 @@ public final class TrashRelicRegressionSuite {
         preservesTransactionalLifecycleProjection();
         preservesRuntimeLifecycleAndEventExclusion();
         preservesSecretRuntimeBoundary();
+        preservesProjectileAdmissionAndCompletion();
+        preservesConcurrentProjectileTracking();
         System.out.println("Trash relic regression suite passed.");
     }
 
@@ -64,15 +66,23 @@ public final class TrashRelicRegressionSuite {
 
     private static void preservesBoundedTypedFoliaPrimitives() throws Exception {
         final String runtime = Files.readString(RUNTIME);
-        require(runtime, "MAX_FIELDS_PER_WORLD = 32", "per-world field cap");
-        require(runtime, "MAX_FIELDS_GLOBAL = 128", "global field safety cap");
+        final String fields = Files.readString(ROOT.resolve("trash/TrashRuleFieldService.java"));
+        require(fields, "MAX_FIELDS_PER_WORLD = 32", "per-world field cap");
+        require(fields, "MAX_FIELDS_GLOBAL = 128", "global field safety cap");
+        require(runtime, "ruleFields.reserveCreation(field)", "native field creation shares inactive canonical capacity");
+        require(runtime, "activation.dispatchCreation(reservation,", "all rule kinds share acknowledged native activation");
+        require(ROOT.resolve("trash/TrashRelicActivationService.java"), "fields.tryActivateCreation(claim,",
+                "native final field admission uses canonical service");
+        require(runtime, "ruleFields.activeAt(point(location), kind)", "native effective field consumer");
+        check(!fields.contains("org.bukkit"), "field authority retains live Bukkit handles");
         require(runtime, "MAX_NEARBY_ENTITIES = 24", "nearby entity cap");
         require(runtime, "MAX_ANCHORED_DROPS = 64", "death-bundle work cap");
         require(runtime, "MAX_TRACKED_PROJECTILES = 256", "projectile task cap");
-        require(runtime, "projectileTrackerPermits.tryAcquire()", "atomic projectile task permit");
+        require(runtime, "projectileTracking.admit(projectileId)", "atomic projectile task admission");
         require(runtime, "hasFieldKind(FieldKind.PROJECTILE_WALL)",
                 "inactive projectile-wall fast path");
-        require(runtime, "projectile.getScheduler().runAtFixedRate", "projectile owner tick");
+        require(runtime, "final var scheduler = event.getEntity().getScheduler();", "native projectile scheduler capture");
+        require(runtime, "scheduler.runAtFixedRate(plugin, task ->", "projectile owner tick");
         require(runtime, "living.getScheduler().run(plugin", "remote entity ownership hop");
         require(runtime, "player.getScheduler().run(plugin", "player ownership hop");
         require(runtime, "Bukkit.getRegionScheduler().run(plugin, destination",
@@ -116,10 +126,12 @@ public final class TrashRelicRegressionSuite {
                 "atomic mug/input inventory projection");
         require(runtime, "trash_brick_reservation", "opaque brick reservation marker");
         require(history, "individualizeHandOnSuccess", "single-unit brick reservation");
-        require(runtime, "consumeBrickReservation(owner, field.reservationToken())",
+        require(runtime, "consumeBrickReservation(owner, field, projectileId, admission, finalAdmission)",
                 "exact brick reservation consumption");
+        require(runtime, "final String token = field.reservationToken();", "native field reservation token preserved");
+        require(runtime, "findBrickReservation(player, token)", "exact reserved inventory slot selected");
         require(runtime, "transformHelmetOnSuccess", "equipped helmet-only transform");
-        check(runtime.indexOf("consumeBrickReservation(owner, field.reservationToken())")
+        check(runtime.indexOf("consumeBrickReservation(owner, field, projectileId, admission, finalAdmission)")
                         < runtime.lastIndexOf("projectile.remove()"),
                 "projectile was removed before brick transformation committed");
     }
@@ -196,6 +208,125 @@ public final class TrashRelicRegressionSuite {
                             && !source.contains("Trash Relic primitives"),
                     "Phase E leaked into public/admin docs: " + publicDoc);
         }
+    }
+
+    private static void preservesProjectileAdmissionAndCompletion() throws Exception {
+        final var calls = new java.util.ArrayList<String>();
+        final java.util.function.BooleanSupplier admitted = () -> { calls.add("admitted"); return true; };
+        final java.util.function.BooleanSupplier consume = () -> { calls.add("durable"); return true; };
+        final Runnable remove = () -> calls.add("remove");
+        check(!TrashRelicPolicy.completeProjectileWall(false, admitted, consume, remove)
+                && calls.isEmpty(), "foreign ownership accessed admission/history/projectile");
+        check(!TrashRelicPolicy.completeProjectileWall(true, () -> false, consume, remove)
+                && calls.isEmpty(), "closed/offline/stale admission mutated history or projectile");
+        check(!TrashRelicPolicy.completeProjectileWall(true, admitted, () -> false, remove)
+                && calls.equals(List.of("admitted")), "rejected history consumed projectile");
+        calls.clear();
+        check(TrashRelicPolicy.completeProjectileWall(true, admitted, consume, remove)
+                && calls.equals(List.of("admitted", "durable", "remove")), "durable acknowledgement order drifted");
+        for (final boolean critical : List.of(false, true)) {
+            calls.clear();
+            final Throwable failure = critical ? new AssertionError("critical storage failure")
+                    : new IllegalStateException("storage refusal");
+            try {
+                TrashRelicPolicy.completeProjectileWall(true, admitted, () -> {
+                    if (failure instanceof Error error) throw error;
+                    throw (RuntimeException) failure;
+                }, remove);
+                throw new AssertionError("storage failure swallowed");
+            } catch (final RuntimeException | Error actual) {
+                check(actual == failure && calls.equals(List.of("admitted")),
+                        "failed history removed projectile or lost original failure");
+            }
+        }
+        final String runtime = Files.readString(RUNTIME);
+        final String launch = runtime.substring(runtime.indexOf("public void onProjectileLaunch("),
+                runtime.indexOf("private void splitOffhand("));
+        check(!launch.contains("setVelocity") && !runtime.contains("restoreProjectile("),
+                "unacknowledged projectile freeze/restore handoff returned");
+        require(launch, "if (scheduled == null) projectileTracking.release(ticket)", "retired scheduler refusal cleanup");
+        require(launch, "catch (final RuntimeException | Error failure)", "scheduling/tick failure cleanup");
+        require(launch, "finally {\n                        if (!transferred) releaseFieldClaim(hit);", "claim cleanup unless exact ownership transferred to native handoff");
+        require(launch, "transferred = dispatchProjectileWall(hit, projectile, ticket);", "canonical owner handoff");
+        require(launch, "final Entity entity = Bukkit.getEntity(projectileId);", "tracking resolves the current native owner");
+        require(runtime, "Bukkit.isOwnedByCurrentRegion(owner)", "inventory owner admission");
+        require(runtime, "Bukkit.isOwnedByCurrentRegion(projectile)", "projectile owner admission");
+        final String activation = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java"));
+        require(runtime, "activation.dispatchWall(claim, ticket", "all native wall interception uses the shared owner coordinator");
+        check(!runtime.contains("resolveProjectileWall("), "co-owned interception bypassed shared influence admission");
+        require(runtime, "history.tryConsumeProjectileWall(player, slot, field, projectileId, admitted, finalAdmission)",
+                "native wall consumption uses separate final single-use admission");
+        require(activation, "fields.tryObserveClaimedEffect(claim", "final effect admission is serialized with claim close");
+        require(activation, "permits.removal().claim(projectile.sources())", "final effect uses fresh projectile owner influence");
+        require(activation, "if (result.isEmpty()) return;", "refused observation cannot become effect evidence");
+        require(activation, "if (observed) acknowledge.accept(receipt);", "only positive owner removal enters acknowledgement");
+        require(runtime, "history.tryConfirmProjectileWallRemoval(receipt, () -> true)",
+                "immutable observed evidence must use the native durable acknowledgement");
+        require(Files.readString(HISTORY), "store.putWallReceipt(recorded)",
+                "wall receipt is recorded inside the native item/history transaction");
+        require(Files.readString(HISTORY), "finalAdmission, mutation, restore)",
+                "owner inventory projection uses canonical native try-transaction");
+        for (final Class<?> type : TrashRelicRuntime.class.getDeclaredClasses()) {
+            if (!java.util.Set.of("WallInventoryOwner", "WallProjectileOwner", "RuleCreationOwner").contains(type.getSimpleName())) continue;
+            for (final var field : type.getDeclaredFields()) {
+                check(!org.bukkit.entity.Entity.class.isAssignableFrom(field.getType())
+                                && !org.bukkit.inventory.ItemStack.class.isAssignableFrom(field.getType())
+                                && !org.bukkit.Location.class.isAssignableFrom(field.getType()),
+                        "wall owner continuation retained a mutable Bukkit object: " + field.getName());
+            }
+        }
+    }
+
+    private static void preservesConcurrentProjectileTracking() throws Exception {
+        final var tracking = new TrashRelicPolicy.ProjectileTracking(256);
+        TrashProductionRuntimeProbe.verifyProjectileTrackingState(tracking.snapshot(), true);
+        final var executor = java.util.concurrent.Executors.newFixedThreadPool(8);
+        try {
+            final var work = new java.util.ArrayList<java.util.concurrent.Callable<TrashRelicPolicy.ProjectileTracking.Ticket>>();
+            for (int i = 0; i < 1024; i++) work.add(() -> tracking.admit(java.util.UUID.randomUUID()));
+            final var accepted = new java.util.ArrayList<TrashRelicPolicy.ProjectileTracking.Ticket>();
+            for (final var result : executor.invokeAll(work)) {
+                final var ticket = result.get();
+                if (ticket != null) accepted.add(ticket);
+            }
+            check(accepted.size() == 256 && tracking.snapshot().active() == 256,
+                    "concurrent admissions exceeded or leaked task capacity");
+            for (final var ticket : accepted) { tracking.release(ticket); tracking.release(ticket); }
+            check(tracking.snapshot().active() == 0, "duplicate completion leaked task capacity");
+            final var id = java.util.UUID.randomUUID();
+            final var first = tracking.admit(id);
+            check(first != null && tracking.admit(id) == null, "same projectile admitted twice");
+            tracking.release(first);
+            final var second = tracking.admit(id);
+            tracking.release(first);
+            check(tracking.active(second), "old retirement released a later admission of the same entity UUID");
+            rejectsProjectileProbe(tracking.snapshot(), true);
+            rejectsProjectileProbe(tracking.snapshot(), false);
+            tracking.close(); tracking.close(); tracking.release(second);
+            check(!tracking.active(second) && tracking.admit(id) == null && tracking.snapshot().active() == 0,
+                    "shutdown admitted tasks or retained capacity");
+            TrashProductionRuntimeProbe.verifyProjectileTrackingState(tracking.snapshot(), false);
+            rejectsProjectileProbe(tracking.snapshot(), true);
+            rejectsProjectileProbe(new TrashRelicPolicy.TrackingSnapshot(false, 0, 255), false);
+            for (int attempt = 0; attempt < 32; attempt++) {
+                final var raced = new TrashRelicPolicy.ProjectileTracking(256);
+                final var start = new java.util.concurrent.CountDownLatch(1);
+                final var close = executor.submit(() -> { start.await(); raced.close(); return null; });
+                final var admit = executor.submit(() -> { start.await(); return raced.admit(id); });
+                start.countDown(); close.get(); final var ticket = admit.get();
+                check(!raced.snapshot().open() && raced.snapshot().active() == 0
+                        && !raced.active(ticket) && raced.admit(id) == null,
+                        "shutdown/admission race leaked an active projectile ticket");
+            }
+        } finally { executor.shutdownNow(); }
+    }
+
+    private static void rejectsProjectileProbe(final TrashRelicPolicy.TrackingSnapshot snapshot,
+                                                final boolean expectedOpen) {
+        try {
+            TrashProductionRuntimeProbe.verifyProjectileTrackingState(snapshot, expectedOpen);
+        } catch (final IllegalStateException expected) { return; }
+        throw new AssertionError("runtime probe accepted incorrect projectile lifecycle state");
     }
 
     private static void require(final Path source, final String token, final String description)

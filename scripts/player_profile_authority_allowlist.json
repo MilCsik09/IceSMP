@@ -640,6 +640,66 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/managers/WhisperManager.java|private final Map<UUID, Long> leaveConfirmation = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Thirty-second, player-owned confirmation prompt only. Consumed on repeat command and removed on quit; restart merely requires confirming again. Role, evidence and return cooldown remain exclusively in PlayerProfileWhisperStore WAL."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java|TerritoryProtectionPolicy.Overlay resolve(UUID worldId, String territoryId, TerritoryProtectionPolicy.Rule rule);",
+      "category": "RUNTIME",
+      "reason": "Read-only native territory rule projection port keyed by world UUID and territory ID; no player UUID, filesystem path, YAML access or profile mutation is present. The canonical protection evaluator consumes a detached enum, while territory storage and ownership do not consume this port."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java|@Override public Overlay resolve(UUID worldId, String territoryId, Rule rule) {",
+      "category": "RUNTIME",
+      "reason": "Read-only journal projection lookup keyed by world UUID and territory ID. Validates detached typed protection values and the canonical territory fingerprint; no player profile, filesystem write or YAML path mutation."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java|private final Map<UUID, RuleField> fields = new LinkedHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Canonical transient rule-field UUID registry, capped at 128 globally and 32 per world. Keys identify fields rather than players; detached geometry, expiry, claims and reservation ownership have no PlayerProfile or YAML authority. Native runtime and developer adapters share this service."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java|private final java.util.Map<UUID, Set<UUID>> offered = new java.util.HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Actual offered resource-pack layer IDs per live connection, retained through uncertain sends/removals solely for owner cleanup; retired on quit or completed removal and cleared at disable. No persistent player preference or profile authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, WallReceipt> wallReceipts = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Native Trash history WAL owns wall-operation receipts keyed by field operation UUID; actor UUID is a reference. Unresolved operations are capped at 1024 and never evicted; observed completions remain within the existing 100000-instance history lifetime because live item projection is not a Minecraft save acknowledgement. No player preference, progression or second PlayerProfile authority is stored."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java|private final Map<UUID, FieldClaim> claimed = new HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Existing native transient field-claim authority, now holding unforgeable per-admission identity tokens keyed by field UUID. Bounded by the same 128 native fields, cleared by exact release/removal/close; no player progression, YAML or second field registry is introduced."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, UUID> wallOperationByInstance = new java.util.HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Derived lookup from native Trash instance UUID to its canonical wall operation UUID, rebuilt from retained native receipts and updated under the same transaction/load/rollback lock. Bounded by the existing history capacity; neither player state nor separately persisted authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java|private final Map<UUID, CreationClaim> preparing = new LinkedHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Pending creation capacity within the existing native field authority, keyed by actual field UUID and sharing the 32/world and 128/global cap with active fields. Exact identity tokens are released/activated or cancelled on expiry, owner cleanup, world unload and close. No player progression, persistence or separate field authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, TrashDeveloperReceipt> developerReceipts = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Existing native Trash history WAL owns developer operation receipts keyed by operation UUID, with actor only as a custody reference. Exact bounded item-slot projections share the same history acknowledgement, rollback and schema; 1024 receipts and 16 MiB encoded projection capacity refuse admission without eviction. Observed projection is distinct from playerdata durability. No player progression, preferences or replacement inventory/Profile ledger."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, UUID> unresolvedDeveloperByInstance = new java.util.HashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Derived native instance-to-pending-operation index rebuilt exclusively from the existing Trash history developer receipts under the transaction/load/rollback lock. At most 1024 entries, removed only by observed projection or transaction rollback; no independently persisted identity or player authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/dev/weaver/provider/DeveloperWeaverProvider.java|private final Map<UUID, WeaverBindingBudget> budgets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Binding projection UUID (not player UUID) indexes bounded 120-second VFX counters; no player progression or canonical profile state. Cleared on session end and projection removal."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEForkActions.java|private final Map<UUID, UUID> forkEntityByOperation = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Bounded operation UUID to transient entity UUID cleanup index; neither key nor value is player profile state. Native authored origin remains authoritative; session close clears the index."
     }
   ]
 }

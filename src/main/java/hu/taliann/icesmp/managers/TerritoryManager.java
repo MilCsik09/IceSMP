@@ -9,6 +9,10 @@ import hu.taliann.icesmp.data.BlockCuboid;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
+import hu.taliann.icesmp.territory.TerritoryAdjustment;
+import hu.taliann.icesmp.territory.TerritoryAdjustmentReceipt;
+import hu.taliann.icesmp.territory.TerritoryAdjustmentResult;
+import hu.taliann.icesmp.territory.TerritoryRevision;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -42,7 +46,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class TerritoryManager implements PersistentStore, PlayerStateCleanup {
 
-    private final JavaPlugin plugin;
+    private final java.util.logging.Logger logger;
+    @FunctionalInterface public interface StateWriter {
+        void save(File file, YamlConfiguration yaml) throws IOException;
+    }
+    private final StateWriter writer;
+    private volatile boolean writeUncertain;
+    private volatile boolean loaded;
+    private final Map<UUID, hu.taliann.icesmp.territory.TerritoryAdjustmentReceipt> adjustmentReceipts = new java.util.LinkedHashMap<>();
+    private static final int MAX_ADJUSTMENT_RECEIPTS = 4096;
     private final File storageFile;
     private final Map<String, Territory> territories = new ConcurrentHashMap<>();
     /** Admin-set kingdom spawn points per faction (first-join / faction-join / respawn target). */
@@ -52,7 +64,10 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
      * on every (rare) mutation, so the hot-path lookup is a lock-free read of an
      * immutable snapshot.
      */
-    private volatile Map<String, List<Territory>> chunkIndex = Map.of();
+    private record Published(Map<String, Territory> territories, Map<FactionType, FactionSpawn> spawns,
+                             Map<String, List<Territory>> chunks,
+                             Map<UUID, hu.taliann.icesmp.territory.TerritoryAdjustmentReceipt> receipts) { }
+    private volatile Published published = new Published(Map.of(), Map.of(), Map.of(), Map.of());
     /** Per-player boundary-point buffer for polygon definition (world + {x,z} points). */
     private final Map<UUID, PointBuffer> pointBuffers = new ConcurrentHashMap<>();
 
@@ -63,9 +78,14 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
     }
 
     public TerritoryManager(final JavaPlugin plugin) {
-        this.plugin = plugin;
-        this.storageFile = new File(plugin.getDataFolder(), "territories.yml");
-        plugin.getDataFolder().mkdirs();
+        this(new File(plugin.getDataFolder(), "territories.yml"), plugin.getLogger(), YamlStore::saveAtomic);
+    }
+
+    /** Explicit persistence port for native lifecycle/failure verification without Bukkit mocks. */
+    public TerritoryManager(final File storageFile, final java.util.logging.Logger logger, final StateWriter writer) {
+        this.storageFile = java.util.Objects.requireNonNull(storageFile);
+        this.logger = java.util.Objects.requireNonNull(logger);
+        this.writer = java.util.Objects.requireNonNull(writer);
     }
 
     /**
@@ -89,18 +109,20 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         }
         factionSpawns.put(faction, new FactionSpawn(location.getWorld().getName(),
                 location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()));
-        save();
+        commitChanges();
     }
 
     /** The faction's kingdom spawn as a live Location, or null if unset / world missing. */
     public Location getFactionSpawn(final FactionType faction) {
-        final FactionSpawn spawn = faction == null ? null : factionSpawns.get(faction);
+        final FactionSpawn spawn = faction == null ? null : published.spawns().get(faction);
         return spawn == null ? null : spawn.toLocation();
     }
 
     public synchronized void load() {
+        writeUncertain = true;
         territories.clear();
         factionSpawns.clear();
+        adjustmentReceipts.clear();
         loadFactionSpawns();
 
         if (!storageFile.exists()) {
@@ -109,7 +131,8 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         }
 
         try {
-            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
+            final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, logger);
+            readAdjustmentReceipts(yaml);
             final ConfigurationSection territoriesSection = yaml.getConfigurationSection("territories");
             if (territoriesSection == null) {
                 rebuildIndex();
@@ -125,7 +148,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 final FactionType faction = FactionType.fromString(section.getString("faction", "NEUTRAL"));
                 final String world = section.getString("world", "");
                 if (world.isBlank()) {
-                    plugin.getLogger().warning("Invalid territory entry '" + territoryId + "' in territories.yml; skipping.");
+                    logger.warning("Invalid territory entry '" + territoryId + "' in territories.yml; skipping.");
                     continue;
                 }
 
@@ -152,14 +175,23 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 ));
             }
 
-            hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), null, "Loaded " + territories.size() + " faction territory zone(s).");
+            hu.taliann.icesmp.utils.StartupLog.info(logger, null, "Loaded " + territories.size() + " faction territory zone(s).");
         } catch (final Exception exception) {
-            plugin.getLogger().severe("Failed to load territories: " + exception.getMessage());
+            logger.severe("Failed to load territories: " + exception.getMessage());
+            throw new IllegalStateException("Territory state unavailable", exception);
         }
         rebuildIndex();
     }
 
     public synchronized void save() {
+        persist(() -> true);
+    }
+
+    private static final class AdmissionRejected extends RuntimeException { }
+
+    private void persist(final java.util.function.BooleanSupplier finalAdmission) {
+        if (writeUncertain) throw new IllegalStateException("Territory write requires reload assessment");
+        boolean enteredWrite = false;
         try {
             final YamlConfiguration yaml = new YamlConfiguration();
             for (final Territory territory : territories.values()) {
@@ -194,19 +226,126 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 yaml.set(basePath + ".pitch", spawn.pitch());
             }
 
-            YamlStore.saveAtomic(storageFile, yaml);
+            for (final var receipt : adjustmentReceipts.values()) {
+                final String base = "developer-adjustments." + receipt.operationId();
+                yaml.set(base + ".territory", receipt.territoryId());
+                yaml.set(base + ".before", receipt.beforeFingerprint());
+                yaml.set(base + ".after", receipt.afterFingerprint());
+                yaml.set(base + ".request", receipt.adjustmentFingerprint());
+                yaml.set(base + ".committed-at", receipt.committedAt());
+            }
+            if (!finalAdmission.getAsBoolean()) throw new AdmissionRejected();
+            enteredWrite = true;
+            writer.save(storageFile, yaml);
         } catch (final IOException exception) {
-            plugin.getLogger().severe("Failed to save territories: " + exception.getMessage());
+            writeUncertain = true;
+            logger.severe("Failed to save territories: " + exception.getMessage());
             throw new java.io.UncheckedIOException("Failed to save territories", exception);
+        } catch (final RuntimeException | Error failure) {
+            if (enteredWrite) writeUncertain = true;
+            throw failure;
         }
     }
+
+    /** Only this writer lock stages changes; lock-free readers see one acknowledged map/index view. */
+    private void commitChanges() {
+        commitChanges(() -> true);
+    }
+
+    private void commitChanges(final java.util.function.BooleanSupplier finalAdmission) {
+        final Published before = published;
+        try {
+            if (writeUncertain) throw new IllegalStateException("Territory write requires reload assessment");
+            final Published after = new Published(Map.copyOf(territories), Map.copyOf(factionSpawns),
+                    buildIndex(territories), Map.copyOf(adjustmentReceipts));
+            persist(finalAdmission);
+            published = after;
+        } catch (final RuntimeException | Error failure) {
+            territories.clear(); territories.putAll(before.territories());
+            factionSpawns.clear(); factionSpawns.putAll(before.spawns());
+            adjustmentReceipts.clear(); adjustmentReceipts.putAll(before.receipts());
+            throw failure;
+        }
+    }
+
+    private void readAdjustmentReceipts(final YamlConfiguration yaml) {
+        if (yaml.contains("developer-adjustments") && !yaml.isConfigurationSection("developer-adjustments")) {
+            throw new IllegalStateException("Invalid territory adjustment ledger");
+        }
+        final ConfigurationSection section = yaml.getConfigurationSection("developer-adjustments");
+        if (section == null) return;
+        if (section.getKeys(false).size() > MAX_ADJUSTMENT_RECEIPTS) throw new IllegalStateException("Territory adjustment ledger capacity exceeded");
+        for (final String key : section.getKeys(false)) {
+            final UUID operation = UUID.fromString(key);
+            final ConfigurationSection entry = section.getConfigurationSection(key);
+            if (!operation.toString().equals(key) || entry == null
+                    || !entry.isString("territory") || !entry.isString("before")
+                    || !entry.isString("after") || !entry.isString("request")
+                    || !entry.isLong("committed-at") && !entry.isInt("committed-at")) {
+                throw new IllegalStateException("Invalid territory adjustment acknowledgement");
+            }
+            final var receipt = new TerritoryAdjustmentReceipt(operation, entry.getString("territory"),
+                    entry.getString("before"), entry.getString("after"), entry.getString("request"), entry.getLong("committed-at"));
+            if (adjustmentReceipts.putIfAbsent(operation, receipt) != null) throw new IllegalStateException("Duplicate territory adjustment acknowledgement");
+        }
+    }
+
+    /**
+     * Storage-executor entry point: no live Bukkit reads. The caller must durably prepare its
+     * operation first. The real acknowledgement and zone state share one fsynced replacement.
+     * A capital collision is explicit; this bounded transaction never silently edits a second zone.
+     */
+    public synchronized TerritoryAdjustmentResult adjustConditionally(final UUID operationId, final String id,
+            final String expectedFingerprint, final TerritoryAdjustment adjustment, final long now,
+            final java.util.function.BooleanSupplier finalAdmission) {
+        java.util.Objects.requireNonNull(operationId); java.util.Objects.requireNonNull(id);
+        java.util.Objects.requireNonNull(adjustment); java.util.Objects.requireNonNull(finalAdmission);
+        if (now < 0 || expectedFingerprint == null || !expectedFingerprint.matches("[0-9a-f]{64}")) {
+            throw new IllegalArgumentException("Invalid territory adjustment admission");
+        }
+        if (!loaded || writeUncertain) throw new IllegalStateException("Territory state unavailable for adjustment");
+        if (!finalAdmission.getAsBoolean()) return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.DENIED);
+        final String normalized = id.toLowerCase(Locale.ROOT);
+        final TerritoryAdjustmentReceipt previous = adjustmentReceipts.get(operationId);
+        if (previous != null) {
+            if (!previous.territoryId().equals(normalized) || !previous.beforeFingerprint().equals(expectedFingerprint)
+                    || !previous.adjustmentFingerprint().equals(adjustment.fingerprint())) {
+                return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.CONFLICT);
+            }
+            return new TerritoryAdjustmentResult(TerritoryAdjustmentResult.Status.ALREADY_APPLIED, java.util.Optional.of(previous));
+        }
+        final Territory before = published.territories().get(normalized);
+        if (before == null) return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.UNKNOWN_TERRITORY);
+        if (!TerritoryRevision.fingerprint(before).equals(expectedFingerprint)) return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.CONFLICT);
+        final Territory after = adjustment.apply(before);
+        if (before.equals(after)) return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.NO_CHANGE);
+        if (after.capital() && published.territories().values().stream()
+                .anyMatch(zone -> zone.capital() && zone.faction() == after.faction() && !zone.id().equals(after.id()))) {
+            return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.CAPITAL_CONFLICT);
+        }
+        if (adjustmentReceipts.size() >= MAX_ADJUSTMENT_RECEIPTS) return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.CAPACITY);
+        final var receipt = new TerritoryAdjustmentReceipt(operationId, normalized, expectedFingerprint,
+                TerritoryRevision.fingerprint(after), adjustment.fingerprint(), now);
+        if (!finalAdmission.getAsBoolean()) return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.DENIED);
+        territories.put(normalized, after); adjustmentReceipts.put(operationId, receipt);
+        try { commitChanges(finalAdmission); }
+        catch (final AdmissionRejected denied) { return TerritoryAdjustmentResult.rejected(TerritoryAdjustmentResult.Status.DENIED); }
+        return new TerritoryAdjustmentResult(TerritoryAdjustmentResult.Status.APPLIED, java.util.Optional.of(receipt));
+    }
+
+    /** Native observed-state assessment; reads never replay a mutation or consume a receipt. */
+    public java.util.Optional<TerritoryAdjustmentReceipt> adjustmentReceipt(final UUID operationId) {
+        return java.util.Optional.ofNullable(published.receipts().get(java.util.Objects.requireNonNull(operationId)));
+    }
+
+    public boolean adjustmentStateAvailable() { return loaded && !writeUncertain; }
 
     /** Reads the per-faction kingdom spawns from territories.yml (own pass, runs before the zone early-returns). */
     private void loadFactionSpawns() {
         if (!storageFile.exists()) {
             return;
         }
-        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, plugin.getLogger());
+        final YamlConfiguration yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(storageFile, logger);
         final ConfigurationSection section = yaml.getConfigurationSection("spawns");
         if (section == null) {
             return;
@@ -215,7 +354,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
             final FactionType faction = FactionType.fromInput(key);
             final String world = section.getString(key + ".world", "");
             if (faction == null || world.isBlank()) {
-                plugin.getLogger().warning("Hibás frakció-spawn bejegyzés kihagyva: " + key);
+                logger.warning("Hibás frakció-spawn bejegyzés kihagyva: " + key);
                 continue;
             }
             factionSpawns.put(faction, new FactionSpawn(world,
@@ -282,8 +421,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 Territory.NO_MAX_Y
         );
         territories.put(normalizedId, territory);
-        rebuildIndex();
-        save();
+        commitChanges();
         return territory;
     }
 
@@ -330,8 +468,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 Territory.NO_MAX_Y
         );
         territories.put(normalizedId, territory);
-        rebuildIndex();
-        save();
+        commitChanges();
         return territory;
     }
 
@@ -380,8 +517,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         // demoted, so a bad/overflowing selection cannot leave the faction seatless.
         demotePreviousCapital(type, faction, normalizedId);
         territories.put(normalizedId, territory);
-        rebuildIndex();
-        save();
+        commitChanges();
         return territory;
     }
 
@@ -409,8 +545,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 existing.world(), existing.x(), existing.z(), existing.radius(), existing.polygon(),
                 existing.minY(), existing.maxY());
         territories.put(existing.id(), updated);
-        rebuildIndex();
-        save();
+        commitChanges();
         return updated;
     }
 
@@ -424,8 +559,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 existing.world(), existing.x(), existing.z(), Math.max(1, radius), null,
                 existing.minY(), existing.maxY());
         territories.put(existing.id(), updated);
-        rebuildIndex();
-        save();
+        commitChanges();
         return updated;
     }
 
@@ -438,8 +572,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         demotePreviousCapital(type, existing.faction(), existing.id());
         final Territory updated = withType(existing, type);
         territories.put(existing.id(), updated);
-        rebuildIndex();
-        save();
+        commitChanges();
         return updated;
     }
 
@@ -457,8 +590,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         final Territory updated = new Territory(existing.id(), existing.faction(), existing.name(), existing.type(),
                 existing.world(), existing.x(), existing.z(), existing.radius(), existing.polygon(), lo, hi);
         territories.put(existing.id(), updated);
-        rebuildIndex();
-        save();
+        commitChanges();
         return updated;
     }
 
@@ -482,8 +614,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
                 existing.world(), existing.x(), existing.z(), existing.radius(), existing.polygon(),
                 existing.minY(), existing.maxY());
         territories.put(existing.id(), updated);
-        rebuildIndex();
-        save();
+        commitChanges();
         return updated;
     }
 
@@ -500,8 +631,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
 
         final boolean removed = territories.remove(id.toLowerCase(Locale.ROOT)) != null;
         if (removed) {
-            rebuildIndex();
-            save();
+            commitChanges();
         }
         return removed;
     }
@@ -511,7 +641,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
             return null;
         }
 
-        return territories.get(id.toLowerCase(Locale.ROOT));
+        return published.territories().get(id.toLowerCase(Locale.ROOT));
     }
 
     /** Whether the location lies inside ANY faction's capital (banking/exchange gate). */
@@ -544,7 +674,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
             return null;
         }
         final String worldName = location.getWorld().getName();
-        final List<Territory> candidates = chunkIndex.get(
+        final List<Territory> candidates = published.chunks().get(
                 chunkKey(worldName, location.getBlockX() >> 4, location.getBlockZ() >> 4));
         if (candidates == null) {
             return null;
@@ -573,7 +703,8 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         if (candidateProtected != best.type().isProtectedZone()) {
             return candidateProtected;
         }
-        return candidate.radius() < best.radius();
+        return candidate.radius() < best.radius()
+                || candidate.radius() == best.radius() && candidate.id().compareTo(best.id()) < 0;
     }
 
     /**
@@ -582,7 +713,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
      * not overlap a protected zone's footprint at ANY height, even a Y-limited one.
      */
     public Territory getTerritoryColumnAt(final String worldName, final int x, final int z) {
-        final List<Territory> candidates = chunkIndex.get(chunkKey(worldName, x >> 4, z >> 4));
+        final List<Territory> candidates = published.chunks().get(chunkKey(worldName, x >> 4, z >> 4));
         if (candidates == null) {
             return null;
         }
@@ -599,7 +730,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
     }
 
     public Territory getCapital(final FactionType faction) {
-        for (final Territory territory : territories.values()) {
+        for (final Territory territory : published.territories().values()) {
             if (territory.capital() && territory.faction() == faction) {
                 return territory;
             }
@@ -609,7 +740,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
     }
 
     public Collection<Territory> all() {
-        return territories.values();
+        return published.territories().values();
     }
 
     /**
@@ -628,7 +759,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
         }
         final String worldName = location.getWorld().getName();
         double best = -1.0D;
-        for (final Territory zone : territories.values()) {
+        for (final Territory zone : published.territories().values()) {
             if (zone.type() == TerritoryType.DOOM_GATE || zone.type() == TerritoryType.DUNGEON) {
                 continue;
             }
@@ -649,6 +780,12 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
 
     /** Rebuilds the chunk→zones lookup from each zone's bounding box and swaps it atomically. */
     private void rebuildIndex() {
+        published = new Published(Map.copyOf(territories), Map.copyOf(factionSpawns), buildIndex(territories), Map.copyOf(adjustmentReceipts));
+        loaded = true;
+        writeUncertain = false;
+    }
+
+    private static Map<String, List<Territory>> buildIndex(final Map<String, Territory> territories) {
         final Map<String, List<Territory>> fresh = new HashMap<>();
         for (final Territory territory : territories.values()) {
             final int minX;
@@ -683,7 +820,7 @@ public final class TerritoryManager implements PersistentStore, PlayerStateClean
             }
         }
         fresh.replaceAll((k, list) -> List.copyOf(list));
-        chunkIndex = Map.copyOf(fresh);
+        return Map.copyOf(fresh);
     }
 
     private static String chunkKey(final String world, final int chunkX, final int chunkZ) {

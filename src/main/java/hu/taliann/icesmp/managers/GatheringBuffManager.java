@@ -38,8 +38,30 @@ public final class GatheringBuffManager {
     private final ConfigManager configManager;
     private final MessageManager messageManager;
 
-    private volatile GatheringBuff active;
-    private volatile long activeUntil;
+    public record Window(java.util.UUID instanceId, GatheringBuff buff, long expiresAt, boolean sandbox) {
+        public Window { java.util.Objects.requireNonNull(instanceId); java.util.Objects.requireNonNull(buff); if (expiresAt < 1) throw new IllegalArgumentException("Invalid event expiry"); }
+        public boolean rewardsEnabled(long now) { return !sandbox && now < expiresAt; }
+    }
+    private volatile Window window;
+    public Window activeWindow() { return window; }
+    public java.util.Set<GatheringBuff> available() {
+        final java.util.Set<GatheringBuff> enabled = java.util.EnumSet.noneOf(GatheringBuff.class);
+        if (configManager.getBoolean("gathering-buffs.enabled", true)) for (GatheringBuff buff : GatheringBuff.values())
+            if (configManager.getBoolean("gathering-buffs.types." + buff.configKey(), true)) enabled.add(buff);
+        return java.util.Set.copyOf(enabled);
+    }
+    /** Native lifecycle admission; instance identity and reward policy publish atomically. */
+    public synchronized boolean startControlled(java.util.UUID instance, GatheringBuff buff, boolean sandbox) {
+        if (!Bukkit.isGlobalTickThread()) throw new IllegalStateException("Event lifecycle requires global owner");
+        if (window != null || !available().contains(buff)) return false;
+        start(buff, java.util.Objects.requireNonNull(instance), sandbox); return true;
+    }
+    public synchronized boolean stopExpected(java.util.UUID instance, boolean sandboxOnly) {
+        if (!Bukkit.isGlobalTickThread()) throw new IllegalStateException("Event lifecycle requires global owner");
+        final Window current = window;
+        if (current == null || !current.instanceId().equals(instance) || sandboxOnly && !current.sandbox()) return false;
+        end(); return true;
+    }
     private volatile long nextAttemptAt;
 
     public GatheringBuffManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -52,24 +74,26 @@ public final class GatheringBuffManager {
 
     /** The currently-open buff, or null if none. */
     public GatheringBuff getActive() {
-        return active;
+        final Window current = window; return current == null ? null : current.buff();
     }
 
     /** Milliseconds left in the current buff window, or -1 when none is open. */
     public long getRemainingMillis() {
-        return active != null ? Math.max(0L, activeUntil - System.currentTimeMillis()) : -1L;
+        final Window current = window; return current != null ? Math.max(0L, current.expiresAt() - System.currentTimeMillis()) : -1L;
     }
 
     /** XP multiplier to apply right now (1.0 unless an XP hour is open). */
     public double xpMultiplier() {
-        return active == GatheringBuff.XP_HOUR
+        final Window current = window;
+        return current != null && current.rewardsEnabled(System.currentTimeMillis()) && current.buff() == GatheringBuff.XP_HOUR
                 ? Math.max(1.0D, configManager.getDouble("gathering-buffs.xp-multiplier", 2.0D))
                 : 1.0D;
     }
 
     /** Chance (0–1) for a bonus drop while the given buff is open, else 0. */
     public double bonusDropChance(final GatheringBuff buff) {
-        if (active != buff) {
+        final Window current = window;
+        if (current == null || !current.rewardsEnabled(System.currentTimeMillis()) || current.buff() != buff) {
             return 0.0D;
         }
         final double percent = Math.max(0.0D, Math.min(100.0D,
@@ -78,17 +102,17 @@ public final class GatheringBuffManager {
     }
 
     /** Periodic driver on the global world-events tick. */
-    public void tick() {
+    public synchronized void tick() {
         if (!configManager.getBoolean("gathering-buffs.enabled", true)) {
-            if (active != null) {
+            if (window != null) {
                 end();
             }
             return;
         }
 
         final long now = System.currentTimeMillis();
-        if (active != null) {
-            if (now >= activeUntil) {
+        if (window != null) {
+            if (now >= window.expiresAt()) {
                 end();
             }
             return;
@@ -121,7 +145,7 @@ public final class GatheringBuffManager {
 
     /** Hungarian label of the active buff window (menu display), or null when none. */
     public String describeActive() {
-        final GatheringBuff current = active;
+        final GatheringBuff current = getActive();
         if (current == null) {
             return null;
         }
@@ -134,8 +158,8 @@ public final class GatheringBuffManager {
     }
 
     /** Admin override: opens a random enabled buff now. Returns false if none are enabled or one is open. */
-    public boolean forceRandom() {
-        if (active != null) {
+    public synchronized boolean forceRandom() {
+        if (window != null) {
             return false;
         }
         final GatheringBuff buff = pickRandomEnabled();
@@ -156,12 +180,13 @@ public final class GatheringBuffManager {
         return enabled.isEmpty() ? null : enabled.get(ThreadLocalRandom.current().nextInt(enabled.size()));
     }
 
-    private void start(final GatheringBuff buff) {
+    private void start(final GatheringBuff buff) { start(buff, java.util.UUID.randomUUID(), false); }
+    private void start(final GatheringBuff buff, final java.util.UUID instance, final boolean sandbox) {
         if (buff == null) {
             return;
         }
-        active = buff;
-        activeUntil = System.currentTimeMillis() + durationMillis();
+        window = new Window(instance, buff, System.currentTimeMillis() + (sandbox ? 120_000 : durationMillis()), sandbox);
+        if (sandbox) return;
         final long minutes = Math.max(1L, durationMillis() / 60_000L);
         Bukkit.getServer().broadcast(messageManager.getMessage(
                 startKey(buff), startDefault(buff),
@@ -169,9 +194,9 @@ public final class GatheringBuffManager {
     }
 
     private void end() {
-        final GatheringBuff ended = active;
-        active = null;
-        if (ended != null) {
+        final Window previous = window; window = null;
+        final GatheringBuff ended = previous == null ? null : previous.buff();
+        if (ended != null && !previous.sandbox()) {
             Bukkit.getServer().broadcast(messageManager.getMessage(endKey(ended), endDefault(ended)));
         }
     }

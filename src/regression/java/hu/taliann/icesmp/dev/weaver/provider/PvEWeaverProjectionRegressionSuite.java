@@ -95,7 +95,38 @@ public final class PvEWeaverProjectionRegressionSuite {
                 () -> CompletableFuture.completedFuture(new SubjectSnapshot(ref, System.currentTimeMillis(), "capture", captureFacts(ref)))), registry, types); }
         @Override public void close() throws Exception { execution.close(); if (journal.ready()) await(journal.close()); else fails(journal.close()); }
     }
+    private static void imprintReference() throws Exception {
+        try (final Fixture f = new Fixture()) {
+            f.abilities.set(Map.of("old_charge", ability("old_charge"), "source_charge", ability("source_charge")));
+            final EntityRef sourceMob = new EntityRef(UUID.randomUUID());
+            final var originalSource = profile(MobRank.BOSS, 20, "source_charge");
+            f.canonical.put(sourceMob.entityId(), originalSource);
+            final var originalTarget = f.canonical.get(f.target.entityId());
+            final var captured = f.provider.exportValue(f.context, f.snapshot(sourceMob), "pve.export_imprint").value().orElseThrow();
+            check(captured.payload().keySet().equals(Set.of("rank", "archetype", "template", "abilities")), "Imprint leaked noncombat state");
+            for (String forbidden : List.of("uuid", "owner", "history", "receipt", "profile_revision", "economy")) {
+                final Map<String, Object> corrupt = new HashMap<>(captured.payload()); corrupt.put(forbidden, "test");
+                check(!f.types.require(PvEImprintCodec.TYPE).validate(corrupt).valid(), "Imprint accepted " + forbidden);
+            }
+            final var session = new ProviderContext(f.context.authority(), f.types, Lifetime.SESSION, IntegrityMode.SANDBOX);
+            final var snapshot = f.snapshot();
+            check(f.provider.validateImport(session, snapshot, "pve.import_imprint", captured).compatible(), "Imprint importer rejected native recipe");
+            final var request = new ActionRequest("pve.apply_imprint", Map.of("value", captured), Lifetime.SESSION, IntegrityMode.SANDBOX);
+            final var prepared = f.provider.prepare(session, snapshot, request);
+            final var receipt = await(f.execution.execute("pve", session, snapshot, request, prepared, f.provider.prepareEffects(session, snapshot, request, prepared), session::authority));
+            final var effective = f.source.resolve(f.target.entityId(), originalTarget);
+            check(effective.rank() == MobRank.BOSS && effective.abilityIds().equals(List.of("source_charge")), "Imprint did not reach effective combat profile");
+            check(f.canonical.get(sourceMob.entityId()).equals(originalSource) && f.canonical.get(f.target.entityId()).equals(originalTarget), "Imprint changed canonical source/target");
+            check(f.snapshot().revisionFingerprint().equals(receipt.afterFingerprint()), "Imprint receipt differs from effective state");
+            f.remove("pve.clear_projection", Map.of());
+            check(f.kit().equals(List.of("old_charge")), "Clear did not restore original target kit");
+            check(new WeaverInfluenceLookup(f.journal, System::currentTimeMillis).source(new RewardSource.Entity(f.target.entityId())) == InfluenceRewardEligibilityPolicy.Evidence.QUARANTINED, "Clear laundered sandbox Imprint");
+            final var live = new ProviderContext(session.authority(), f.types, Lifetime.SESSION, IntegrityMode.LIVE_GM);
+            rejects(() -> f.provider.prepare(live, f.snapshot(), new ActionRequest("pve.apply_imprint", Map.of("value", captured), Lifetime.SESSION, IntegrityMode.LIVE_GM)));
+        }
+    }
     public static void main(final String[] args) throws Exception {
+        imprintReference();
         directProjectionControls();
         try (final Fixture f = new Fixture()) {
             final CanonicalMobProfile original = f.canonical.get(f.target.entityId());

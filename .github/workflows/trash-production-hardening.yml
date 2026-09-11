@@ -87,7 +87,11 @@ jobs:
           retention-days: 14
 
   paper-runtime:
-    name: Paper 1.21.11 Trash smoke runtime
+    name: Paper 1.21.11 Trash smoke runtime (${{ matrix.shutdown }})
+    strategy:
+      fail-fast: false
+      matrix:
+        shutdown: [direct, cooperative]
     runs-on: ubuntu-latest
     timeout-minutes: 16
     steps:
@@ -109,7 +113,9 @@ jobs:
 
       - name: Boot isolated Paper runtime and shut down through the probe
         env:
-          JAVA_TOOL_OPTIONS: -Dicesmp.trash-production-runtime=true
+          JAVA_TOOL_OPTIONS: >-
+            -Dicesmp.trash-production-runtime=true
+            -Dicesmp.trash-production-cooperative-shutdown=${{ matrix.shutdown == 'cooperative' }}
         shell: bash
         run: |
           set -o pipefail
@@ -125,11 +131,19 @@ jobs:
         run: |
           grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS' build/trash-paper-runtime.log
           grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_SHUTDOWN_PASS' build/trash-paper-runtime.log
+          grep -F 'ICESMP_COMMAND_RELOAD_RUNTIME_PASS' build/trash-paper-runtime.log
+          if [ '${{ matrix.shutdown }}' = cooperative ]; then
+            grep -F 'ICESMP_COOPERATIVE_DISABLE_RUNTIME_PASS' build/trash-paper-runtime.log
+          fi
           ! grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_FAIL' build/trash-paper-runtime.log
           ! grep -E '(^|\]) (SEVERE|ERROR)' build/trash-paper-runtime.log
 
   folia-runtime:
-    name: Folia 1.21.11 Trash smoke runtime
+    name: Folia 1.21.11 Trash smoke runtime (${{ matrix.shutdown }})
+    strategy:
+      fail-fast: false
+      matrix:
+        shutdown: [direct, cooperative]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -159,7 +173,9 @@ jobs:
 
       - name: Boot lock-pinned Folia runtime and shut down through the probe
         env:
-          JAVA_TOOL_OPTIONS: -Dicesmp.trash-production-runtime=true
+          JAVA_TOOL_OPTIONS: >-
+            -Dicesmp.trash-production-runtime=true
+            -Dicesmp.trash-production-cooperative-shutdown=${{ matrix.shutdown == 'cooperative' }}
         shell: bash
         run: |
           set -o pipefail
@@ -175,5 +191,9 @@ jobs:
         run: |
           grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS' build/trash-folia-runtime.log
           grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_SHUTDOWN_PASS' build/trash-folia-runtime.log
+          grep -F 'ICESMP_COMMAND_RELOAD_RUNTIME_PASS' build/trash-folia-runtime.log
+          if [ '${{ matrix.shutdown }}' = cooperative ]; then
+            grep -F 'ICESMP_COOPERATIVE_DISABLE_RUNTIME_PASS' build/trash-folia-runtime.log
+          fi
           ! grep -F 'ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_FAIL' build/trash-folia-runtime.log
           ! grep -E '(^|\]) (SEVERE|ERROR)' build/trash-folia-runtime.log

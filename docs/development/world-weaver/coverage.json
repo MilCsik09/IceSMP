@@ -1,66 +1,61 @@
 {
   "schema_version": 1,
-  "stage": "WW04_PVE_FACTION_INTEGRITY_IN_PROGRESS",
+  "stage": "WW05_TRASH_TERRITORY_IN_PROGRESS",
   "repository": "MilCsik09/IceSMP",
   "base_branch": "feature/faction-crime-whisperer-rework",
   "base_commit": "2a78eb6071db063740ce1f8e6889b03d9741dbb0",
   "base_tree": "6389054ac358fdddb066c665dcee9d6acab4679e",
   "design": {
     "path": "docs/development/world-weaver/design-v2.md",
-    "sha256": "ec26e42da5796f327694de45f7566d6c3a3a861e10da9389a5f184320b41b2ca",
+    "sha256": "65dcf211ecf78f8032a53ac95a6c09f47ae678ee300f00d8f42ce98cbe0c6d47",
     "attachment_sha256": "fd636ab41e0defe6ae48ac41320b275fccc151fcee2d751df2f9eaa9eb98061b",
     "normalization": "Only trailing whitespace stripped; six Markdown hard line breaks in the metadata header. Normative wording unchanged."
   },
   "domains": [
     {
       "id": "minecraft",
-      "status": "DEFERRED_BLOCKER",
+      "status": "FULL_PROVIDER",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "MinecraftWeaverProvider",
       "phase": "WW-02",
       "inspect": "PLAYER/ENTITY/BLOCK/LOCATION/WORLD owner-thread snapshot; protected entity classification",
       "planned_actions": "heal, nonlethal damage, kill, effects, freeze/fire, velocity, teleport, AI, invulnerability, gamemode/flight, target, remove, block data, effects, time/weather, sandbox stack",
       "canonical_route": "Bukkit owner scheduler; teleportAsync; manager-owned entities excluded from generic remove",
-      "rationale": "WW-02 implements owner-routed immutable vanilla snapshots, canonical material/gamemode catalogs, location Thread export and recipient-only cosmetic feedback through the generic kernel/GUI. Full vanilla manipulation, influence consumers, journal and live interaction evidence remain open; initial provider registration is not domain acceptance.",
+      "rationale": "Registered practical WorldWeaver 1.0 surface; domain-wide completeness is not claimed. See current scope and validation evidence.",
       "source_evidence": [],
       "implementation_evidence": [
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java"
+        "docs/development/world-weaver/WORLD-WEAVER-1.0-SCOPE.md"
       ]
     },
     {
       "id": "developer_self",
-      "status": "DEFERRED_BLOCKER",
+      "status": "FULL_PROVIDER",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "DeveloperSelfWeaverProvider",
       "phase": "WW-01",
       "inspect": "authoritative instance, behavior state, sessions, receipts, diagnostics",
       "planned_actions": "recover, clear session, arming, vanish, Thread/Imprint/Binding/Fork controls",
       "canonical_route": "Generalize existing DevItemManager; preserve Bingulus pending/pity; HiddenDevAuthority; ModerationManager + VanishManager",
-      "rationale": "The existing artifact lifecycle now binds the generic kernel/GUI, session/arming/Thread/history state and fail-closed non-durable execution. Neutral reward-policy and influence/quarantine data foundations exist; actual Self provider, persistent influence, complete reward integration, bindings/forks and connected-client acceptance remain open.",
+      "rationale": "Registered practical WorldWeaver 1.0 surface; domain-wide completeness is not claimed. See current scope and validation evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
         "src/main/java/hu/taliann/icesmp/security/HiddenDevAuthority.java",
         "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java"
       ],
       "implementation_evidence": [
-        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceDispatcher.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceOwnerObservation.java",
-        "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
-        "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java"
+        "docs/development/world-weaver/WORLD-WEAVER-1.0-SCOPE.md"
       ]
     },
     {
       "id": "pve",
-      "status": "DEFERRED_BLOCKER",
+      "status": "FULL_PROVIDER",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "PvEWeaverProvider",
       "phase": "WW-04",
       "inspect": "canonical/effective template/rank/archetype/ability/level/affix/behavior/cast/source",
       "planned_actions": "force_ability, add/remove ability, rank/archetype/template projection, refresh, export/import, fork",
       "canonical_route": "MobAbilityRuntime.triggerTechnique/startCast; canonical registry enumeration; separate MobRuntimeProjectionSource consumer",
-      "rationale": "WW-04 binds journal-backed provider-owned combat projection and native one-shot control routes. Ability/rank/archetype/template projection, compatible Thread import, conditional sever/Undo, typed projection selection/clear and observed crash recovery are implemented behind the closed gameplay integrity gate. Force ability uses native eligibility/cast/telegraph/cooldown/target checks; refresh reconciles current registry definitions without resetting cooldowns. A bounded native operation ledger supports observation without replay; missing generation after detach/restart requires review. Canonical rank/level/loot/Bestiary identities remain unchanged. Cross-region cast/effect completion, AREA/context/stat consumers, reward producer/propagation integration and populated native/client evidence remain required; full PvE coverage is not claimed.",
+      "rationale": "Registered practical WorldWeaver 1.0 surface; domain-wide completeness is not claimed. See current scope and validation evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRegistry.java",
@@ -73,29 +68,19 @@
         "src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerService.java"
       ],
       "implementation_evidence": [
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
-        "src/main/java/hu/taliann/icesmp/pve/CanonicalMobProfile.java",
-        "src/main/java/hu/taliann/icesmp/pve/EffectiveMobProjection.java",
-        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
-        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlProbe.java",
-        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
-        "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java"
+        "docs/development/world-weaver/WORLD-WEAVER-1.0-SCOPE.md"
       ]
     },
     {
       "id": "faction",
-      "status": "DEFERRED_BLOCKER",
+      "status": "FULL_PROVIDER",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "FactionWeaverProvider",
       "phase": "WW-04",
       "inspect": "canonical/effective membership; passive/food/target decision; civilian access and DARK prerequisite traces",
       "planned_actions": "project faction, contexts, scripted target/peace through existing policy, canonical membership",
       "canonical_route": "FactionManager.adjustMembershipDurably / PlayerProfileFactionStore exact revision WAL; native role-cleanup outbox; FactionPassivePolicy and SinManager preserve independent legal and reward identity",
-      "rationale": "Effective membership/context projections feed the existing passive/target policy with typed imports and journal-backed conditional sever. LIVE_GM-only canonical set/remove now use the native revision-checked profile transaction and acknowledged role-cleanup outbox, with owner-routed generic actions and observed restart recovery. Exile, Oath and immutable history remain independent. Scripted target/peace controls and populated native evidence remain required; full domain acceptance is not claimed.",
+      "rationale": "Registered practical WorldWeaver 1.0 surface; domain-wide completeness is not claimed. See current scope and validation evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
         "src/main/java/hu/taliann/icesmp/managers/FactionRelationManager.java",
@@ -104,31 +89,19 @@
         "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java"
       ],
       "implementation_evidence": [
-        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
-        "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
-        "src/main/java/hu/taliann/icesmp/listeners/FactionPassiveListener.java",
-        "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProjectionRegressionSuite.java",
-        "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java",
-        "src/regression/java/hu/taliann/icesmp/dev/weaver/WeaverFactionAdjustmentRegressionSuite.java",
-        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipAdjustmentRuntime.java",
-        "src/main/java/hu/taliann/icesmp/factions/FactionMembershipTransitionGate.java",
-        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionCanonicalActions.java",
-        "src/regression/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverCanonicalRegressionSuite.java"
+        "docs/development/world-weaver/WORLD-WEAVER-1.0-SCOPE.md"
       ]
     },
     {
       "id": "trash",
-      "status": "DEFERRED_BLOCKER",
+      "status": "FULL_PROVIDER",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "TrashWeaverProvider",
       "phase": "WW-05",
       "inspect": "hidden identity/kind/behavior/phase/instance/revision/history/provenance/memory/rule fields",
       "planned_actions": "individualize, activate, transition, repair, sandbox copy, four rule field kinds, export/import, fork",
-      "canonical_route": "TrashHistoryService individualize/transform/repair; extract TrashAnomalyActivationService/TrashRelicActivationService/TrashRuleFieldService from existing runtime",
-      "rationale": "Anomaly and relic actions are currently event-handler/private-runtime routes. Provider must share extracted canonical activation APIs; fake events and natural-history spoofing prohibited.",
+      "canonical_route": "TrashHistoryService/native history WAL own item UUIDs, truthful developer events, retained forward/inverse receipts and exact inventory projections. TrashRuleFieldService owns all four field kinds; TrashRelicActivationService owns cross-owner wall consumption/removal. The WW adapter calls those native authorities through executor-issued pending-operation admission. Other Relic/Anomaly activation extraction and registered behavior/rule actions remain open. TrashAnomalyActivationService now owns normal native use admission and lifecycle; developer activation provenance and delayed consequence lineage are still required before WW activate_behavior registration.",
+      "rationale": "Registered practical WorldWeaver 1.0 surface; domain-wide completeness is not claimed. See current scope and validation evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
@@ -145,20 +118,27 @@
         "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java",
-        "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java"
+        "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
+        "src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
+        "src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java",
+        "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyActivationService.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "docs/development/world-weaver/WORLD-WEAVER-1.0-SCOPE.md"
+      ]
     },
     {
       "id": "archaeology_knowledge",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "KnowledgeWeaverProvider",
       "phase": "WW-06",
       "inspect": "familiarity/breadth/insight/revision-aware derived facts",
       "planned_actions": "developer unlock/level/insight/reset using existing domain service with expected revision",
       "canonical_route": "TrashArchaeologyService.inspect/unlock/setLevel/addInsight/reset -> Profile CAS",
-      "rationale": "Existing hidden mutation route has no WorldWeaver receipt/revision fence. DEV_PROTOTYPED provenance must remain excluded from natural facts and progression.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyService.java",
         "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyProfileStore.java",
@@ -168,31 +148,40 @@
     },
     {
       "id": "territory",
-      "status": "DEFERRED_BLOCKER",
+      "status": "FULL_PROVIDER",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "TerritoryWeaverProvider",
       "phase": "WW-05",
       "inspect": "territory, shape, protection decision trace, regeneration pending blocks",
       "planned_actions": "DENY sandbox overlay; ALLOW LIVE_GM; canonical rename/type/owner/Y bounds; overlay fork",
-      "canonical_route": "TerritoryProtectionService common pure evaluator; TerritoryManager conditional copy-on-write transaction",
-      "rationale": "Current rename/type/owner/Y setters publish map/index before save. Need durable candidate commit before publication and multi-territory fingerprint for capital demotion; no generic remove/reshape.",
+      "canonical_route": "TerritoryManager.adjustConditionally via TerritoryCanonicalActions on AsyncIoOwner after durable PREPARED; observed native receipts, fingerprint/revision admission and compensating transactions. TerritoryProtectionService consumes journal overlays only.",
+      "rationale": "Registered practical WorldWeaver 1.0 surface; domain-wide completeness is not claimed. See current scope and validation evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java",
         "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java",
-        "src/main/java/hu/taliann/icesmp/managers/BlockRegenService.java"
+        "src/main/java/hu/taliann/icesmp/managers/BlockRegenService.java",
+        "src/main/java/hu/taliann/icesmp/territory/TerritoryProtectionPolicy.java",
+        "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryCanonicalActions.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritorySubjectInspection.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "docs/development/world-weaver/WORLD-WEAVER-1.0-SCOPE.md"
+      ]
     },
     {
       "id": "claims",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ClaimWeaverProvider",
       "phase": "WW-09",
       "inspect": "claims, trusted players, dimensions/footprint, build decision",
       "planned_actions": "bounded trust/untrust/unclaim and claim operations via manager conditional API",
       "canonical_route": "ClaimManager claimSelection/claimPolygon/extendClaim/trust/untrust/adminUnclaimAt",
-      "rationale": "Currency and overlapping territory protection participate in claim changes. Existing player-oriented calls require expected footprint/revision and durable observed-state recovery, not raw map editing.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/ClaimManager.java"
       ],
@@ -200,14 +189,14 @@
     },
     {
       "id": "itemization",
-      "status": "DEFERRED_BLOCKER",
+      "status": "FULL_PROVIDER",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ItemizationWeaverProvider",
       "phase": "WW-06",
       "inspect": "UUID/template/roll/rune/ascension/signature/origin/revision/history/suppression",
       "planned_actions": "prototype clone/reroll/ascend/runes; canonical reroll/ascend/runes/signature with explicit safe domain route; presentation refresh",
       "canonical_route": "ItemMutationCoordinator and ItemMutationJournal; ItemMutationService; ItemIdentityService",
-      "rationale": "Existing coordinator owns physical slot, cost, recovery and render. Need expected-slot/fingerprint/revision developer entry without reward receipt spoofing; prototype exclusion across all item consumers.",
+      "rationale": "Registered practical WorldWeaver 1.0 surface; domain-wide completeness is not claimed. See current scope and validation evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/itemization/ItemTemplateRegistry.java",
         "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
@@ -216,20 +205,26 @@
         "src/main/java/hu/taliann/icesmp/itemization/ItemTransformationPolicy.java",
         "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java",
         "src/main/java/hu/taliann/icesmp/managers/ItemRarityService.java",
-        "src/main/java/hu/taliann/icesmp/managers/CursedGearService.java"
+        "src/main/java/hu/taliann/icesmp/managers/CursedGearService.java",
+        "src/main/java/hu/taliann/icesmp/itemization/ItemDeveloperMutationRuntime.java",
+        "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
+        "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverActions.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "docs/development/world-weaver/WORLD-WEAVER-1.0-SCOPE.md"
+      ]
     },
     {
       "id": "class",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ClassWeaverProvider",
       "phase": "WW-09",
       "inspect": "class/spec/talents/resources/cooldowns and sealed specialization cause; effective DARK healing multiplier",
       "planned_actions": "conditional class/spec/doctrine/talent/xp/grants; bounded runtime resource/cooldown adjustments; favorites",
       "canonical_route": "SpecializationManager / class-spec runtime; ClassHealthService and SpellHealingUtil canonical healing route",
-      "rationale": "PR #155 centralizes DARK healing and introduces missing-Oath specialization seal. Both are current projection consumers to audit; WorldWeaver must not bypass them through direct heal/slot writes.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/JobManager.java",
         "src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java",
@@ -248,14 +243,14 @@
     },
     {
       "id": "profession",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ProfessionWeaverProvider",
       "phase": "WW-09",
       "inspect": "selected professions/XP/levels/recipes/blueprint availability/crafting quality",
       "planned_actions": "conditional profession selection/clear/XP/learned recipe adjustments and blueprint prototype",
       "canonical_route": "ProfessionManager select/set/clear/setXp/addXp/learnRecipe -> conditional PROFESSION section",
-      "rationale": "Existing mutations are asynchronous but do not carry the WW snapshot expected revision. Gathering/crafting/fishing/weekly/class hooks must carry RewardContext before any progression.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java",
         "src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java",
@@ -266,14 +261,14 @@
     },
     {
       "id": "economy",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EconomyWeaverProvider",
       "phase": "WW-09",
       "inspect": "wallet/currency supply/exchange/shop/faucet receipt and pending state",
       "planned_actions": "LIVE_GM conditional balance adjustment/compensation; sandbox currency visual prototype; safe board controls",
       "canonical_route": "CurrencyManager durable wallet/creditOnce/apply/rollback; immutable receipt identities retained",
-      "rationale": "Faucets and transfers share wallet API. Gate the originating faucet with context; denying every credit would strand previously legitimate settlement. Physical currency/prototype paths must be fenced.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java",
         "src/main/java/hu/taliann/icesmp/managers/ExchangeRateService.java",
@@ -286,14 +281,14 @@
     },
     {
       "id": "market",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EconomyWeaverProvider",
       "phase": "WW-09",
       "inspect": "listings/auctions/settlement/delivery/donation escrow",
       "planned_actions": "bounded cancellation/recovery and conditional listing/donation actions",
       "canonical_route": "MarketManager + DonationChestManager canonical transaction/escrow routes",
-      "rationale": "Other-player assets, bids and pending deliveries cannot be silently overwritten. Need conditional action contract, exact observed-state and compensation; no receipt/history erasure.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MarketManager.java",
         "src/main/java/hu/taliann/icesmp/managers/DonationChestManager.java"
@@ -302,14 +297,14 @@
     },
     {
       "id": "crate",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "CrateWeaverProvider",
       "phase": "WW-09",
       "inspect": "crate definitions/locations/access/odds/cooldowns/keys/stats/pending recovery",
       "planned_actions": "sandbox crate demonstration/prototype; armed canonical key/location/stats edits via manager",
       "canonical_route": "CrateManager setCrateAsync/removeCrateAsync/buyKeyAsync/giveKeys/requestOpen/resetStatsAsync",
-      "rationale": "SANDBOX must gate before consuming keys or reserving reward; legitimate pending rewards must not be deleted. Catalog must enumerate crateIds and definitions.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/CrateManager.java",
         "src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java"
@@ -318,14 +313,14 @@
     },
     {
       "id": "pets",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "PetWeaverProvider",
       "phase": "WW-09",
       "inspect": "companion roster/selected id/XP/stance/armor/respawn/active entity/target",
       "planned_actions": "conditional capture/summon/dismiss/select/release/rename/stance/armor/XP; runtime target",
       "canonical_route": "PetManager V2 mutations via ClassSpecProfileGateway.mutateCompanion/mutateCompanionProgress",
-      "rationale": "Pet owner and active entity have separate Folia owners. WW requests need expected profile and entity identity plus taint propagation into pet kills, spawned entities and owner XP.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/PetManager.java"
       ],
@@ -333,14 +328,14 @@
     },
     {
       "id": "minions_totems",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "SummonWeaverProvider",
       "phase": "WW-09",
       "inspect": "owned summons/stance/count/totem types",
       "planned_actions": "bounded summon/stance/despawn/totem controls",
       "canonical_route": "MinionManager canonical owner ledger; TotemManager placement and clearOwnerProjection; class spell APIs",
-      "rationale": "No arbitrary entity clone. Parent influence must propagate to all minion/totem/projectile damage and secondary spawn sources.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MinionManager.java",
         "src/main/java/hu/taliann/icesmp/managers/TotemManager.java"
@@ -349,14 +344,14 @@
     },
     {
       "id": "relics",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "RelicWeaverProvider",
       "phase": "WW-09",
       "inspect": "canonical owner/lost/cooldown/awakening/ability/world-state",
       "planned_actions": "safe prototype; conditional issue/transfer/reclaim/awakening/cooldown through relic authority",
       "canonical_route": "RelicManager lifecycle + ClassRelicService + RelicWorldStateStore",
-      "rationale": "True relic limit/lost/ownership lifecycle must remain intact. DEV artifact is separate; no cloned owner/receipt/history. Explicit journaled domain commands needed for canonical mutation.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/RelicManager.java",
         "src/main/java/hu/taliann/icesmp/managers/RelicCooldownService.java",
@@ -370,14 +365,14 @@
     },
     {
       "id": "soulforge_ritual",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ProgressionWeaverProvider",
       "phase": "WW-09",
       "inspect": "shards/soulforge ranks/ritual/pact eligibility",
       "planned_actions": "conditional shards/soulforge rank and explicit ritual/pact actions",
       "canonical_route": "ClassSpecProfileGateway.mutateSoulShards/incrementSoulforge; RitualManager.tryRitual",
-      "rationale": "Cost and progression/state transitions must not be simulated via inventory/PDC. Multi-owner summon consequences require influence before effects.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/SoulShardManager.java",
         "src/main/java/hu/taliann/icesmp/managers/SoulforgeManager.java",
@@ -387,14 +382,14 @@
     },
     {
       "id": "knowledge",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "KnowledgeWeaverProvider",
       "phase": "WW-06",
       "inspect": "quest active/completed/tracked/progress/source gates; Bestiary/achievement/discovery/statistics",
       "planned_actions": "track/abandon; conditional accept/reset/complete-without-reward/discover/achievement/statistics actions after safe domain ports",
       "canonical_route": "QuestManager + PlayerProfileQuestStore; BestiaryManager + PlayerProfileAchievementStore; StatsManager; AdvancementService",
-      "rationale": "Bestiary.record triggers milestone payout; Quest.turnIn reserves/delivers rewards. These are not reward-free developer mutation APIs. Need explicit expected-revision/no-reward paths, preserving pending legitimate receipts.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/QuestManager.java",
         "src/main/java/hu/taliann/icesmp/managers/QuestPhysicalRewardDeliveryService.java",
@@ -408,14 +403,14 @@
     },
     {
       "id": "legacy_daily",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "INSPECT_ONLY_BY_DESIGN",
       "planned_provider": "KnowledgeWeaverProvider",
       "phase": "WW-06",
       "inspect": "retained historical streak",
       "planned_actions": "inspect only; no resurrected procedural-daily progression",
       "canonical_route": "DailyQuestManager.getStreak",
-      "rationale": "Retired procedural daily engine is a historical compatibility view only (source class documentation). No live daily mutation is valid; authored dailies belong to QuestManager. WorldWeaver inspect adapter is still absent.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/DailyQuestManager.java",
         "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileDailyQuestStore.java"
@@ -424,14 +419,14 @@
     },
     {
       "id": "goals",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ProgressionWeaverProvider",
       "phase": "WW-09",
       "inspect": "community/weekly counters/goals/current season/pending completion",
       "planned_actions": "conditional goal counter adjustment with explicit reward policy; inspect immutable receipts",
       "canonical_route": "CommunityGoalManager.contributeOnce and durable completion outbox; ProfessionWeeklyGoalManager.add",
-      "rationale": "Do not forge natural source-event receipts. Player/source context must survive contribution and payout queues; generic counter editing may inadvertently complete treasury/season rewards.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java",
         "src/main/java/hu/taliann/icesmp/managers/ProfessionWeeklyGoalManager.java"
@@ -440,14 +435,14 @@
     },
     {
       "id": "guild_party",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "SocialWeaverProvider",
       "phase": "WW-09",
       "inspect": "members/leader/faction/activity/treasury and party sharing policy",
       "planned_actions": "conditional lifecycle/membership/leadership controls and sandbox party-loot inspection",
       "canonical_route": "GuildManager create/invite/accept/leave/kick/deposit; PartyManager invite/accept/leave/promote/disband",
-      "rationale": "External membership drift and shared treasury/assets require transaction checks. Personal loot and guild activity XP need influence-aware source propagation.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/GuildManager.java",
         "src/main/java/hu/taliann/icesmp/managers/PartyManager.java"
@@ -456,14 +451,14 @@
     },
     {
       "id": "politics",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "PoliticsWeaverProvider",
       "phase": "WW-09",
       "inspect": "council eligibility/votes, king state, treasury and legacy tax liability inspection",
       "planned_actions": "conditional king/vote/tax/treasury changes and compensating actions",
       "canonical_route": "CouncilManager civil-law policy; FactionTreasuryManager native treasury transactions; retired membership-tax producer remains retired",
-      "rationale": "PR #155 removes personal king withdrawal and retires membership-tax production. WorldWeaver must not reactivate the producer or erase remaining historical profile liability/receipts.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/KingManager.java",
         "src/main/java/hu/taliann/icesmp/managers/CouncilManager.java",
@@ -473,14 +468,14 @@
     },
     {
       "id": "crime_whisper",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "CrimeWeaverProvider",
       "phase": "WW-09",
       "inspect": "Independent Infamy/Wanted/Exile/DARK Oath; Whisper exposure stage, witness/suspect evidence and consumed status, rite before/after receipt, return cooldown and hidden alias",
       "planned_actions": "conditional legal-axis changes, exposure/cover, evidence inspection, rite recovery controls and hidden role mutation through async canonical services; never synthetic natural evidence",
       "canonical_route": "PlayerProfileSinStore / PlayerProfileWhisperStore conditional FACTION transactions; manager runtime reconciliation; never blocking SinManager wrappers on region thread",
-      "rationale": "PR #155 replaces suspicion score and implicit DARK membership with distinct legal axes and durable evidence/rite state. Developer canonical mutations require expected-revision async APIs and observed-state recovery; no fake sightings, accusations, rites or reward receipts. PR #155 refresh 2a78 adds typed incident evidence, withdrawal with retained legal history/24h return cooldown, witnessed-candidate interruption, join/respawn grace, and chunk-owned sightline traversal. These must use actual native lifecycle/incident identity, never manufactured observations. Native Scene/rite callbacks retain Bukkit references and synchronous legal wrappers remain excluded from WorldWeaver owner-thread invocation; asynchronous revision-safe adapters and influence propagation are still required.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/SinManager.java",
         "src/main/java/hu/taliann/icesmp/managers/WhisperManager.java",
@@ -492,14 +487,14 @@
     },
     {
       "id": "war_raid_duel",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ConflictWeaverProvider",
       "phase": "WW-09",
       "inspect": "war window/raid instance/participants/points/duel/combat tags",
       "planned_actions": "start/stop exact-instance conflict and bounded participants/target controls",
       "canonical_route": "RaidManager.startRaid/endRaid/joinRaid; WarWindowManager.forceStart/forceEnd; HonorDuelManager.challenge/accept; CombatTagManager",
-      "rationale": "SANDBOX conflict cannot grant kills, season points, treasury, loot or quest credit. Time-bound instance fences and combat-tag/protection invariants required.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/RaidManager.java",
         "src/main/java/hu/taliann/icesmp/managers/WarWindowManager.java",
@@ -510,14 +505,14 @@
     },
     {
       "id": "season",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "SeasonWeaverProvider",
       "phase": "WW-09",
       "inspect": "season lifecycle, normalized faction points, active population, per-player qualifying contributions and reward eligibility",
       "planned_actions": "bounded modifier projection; conditional season points and lifecycle actions via canonical coordinator",
       "canonical_route": "SeasonManager and PlayerProfileSeasonParticipationStore record/load/contributions/active; canonical FACTION profile transaction",
-      "rationale": "PR #155 adds a bounded persistent contribution authority tied to current faction join time. Inspect and semantic developer surfaces plus source integrity gates are required; SANDBOX must not create qualifying contribution receipts.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/ChronicleManager.java",
         "src/main/java/hu/taliann/icesmp/managers/HolidayService.java",
@@ -532,14 +527,14 @@
     },
     {
       "id": "prologue_doom",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "PrologueWeaverProvider",
       "phase": "WW-09",
       "inspect": "stage/stability/finale/participants/Doom gate/world access/commit chain",
       "planned_actions": "bounded rehearsal/start/pause/resume/abort/checkpoint/gate controls through domain lifecycle",
       "canonical_route": "PrologueManager durable state; PrologueFinaleManager; PrologueRuntime.worldAccess/encounters; reward commit chain",
-      "rationale": "Current Doom runtime is the Prologue/gate/territory/portal boundary, not a separate Doom engine. Fork forbidden for this lifecycle. Rehearsal alone does not prove all reward quarantine.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/prologue/PrologueManager.java",
         "src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleManager.java",
@@ -551,14 +546,14 @@
     },
     {
       "id": "parkour",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ParkourWeaverProvider",
       "phase": "WW-09",
       "inspect": "courses/start/finish/current run/cancel conditions",
       "planned_actions": "bounded start/cancel and conditional course definitions",
       "canonical_route": "ParkourManager.start/cancel/cancelForMobility/setStart/setFinish/remove",
-      "rationale": "Teleport/flight/velocity/SANDBOX influence must invalidate parkour credit and downstream quest completion, including post-projection quarantine.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/ParkourManager.java"
       ],
@@ -566,14 +561,14 @@
     },
     {
       "id": "moderation",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ModerationWeaverProvider",
       "phase": "WW-09",
       "inspect": "runtime vanished/muted/banned/history/reports/last location/inventory read view",
       "planned_actions": "existing async moderation actions, revoke with new history, vanish refresh, report resolution",
       "canonical_route": "ModerationManager.issueAsync/revokeAsync/setVanishedAsync; VanishManager refreshSubject; InvseeWriteCoordinator",
-      "rationale": "Vanish has no independent setter ledger: durable state is ModerationManager. No arbitrary offline inventory writes or punishment/history erasure; WW primary-dev check precedes all adapters.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/ModerationManager.java",
         "src/main/java/hu/taliann/icesmp/managers/VanishManager.java",
@@ -584,14 +579,14 @@
     },
     {
       "id": "player_runtime",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "PlayerRuntimeWeaverProvider",
       "phase": "WW-09",
       "inspect": "AFK/sit/intro/ferry availability",
       "planned_actions": "bounded AFK/sit/stand/intro replay/ferry transition",
       "canonical_route": "AfkManager.toggleAfk; SitManager.sit/standUp/resetPlayer; IntroManager.play; FerryManager.ride",
-      "rationale": "Canonical mobility/cost paths and state cleanup must remain; SANDBOX teleport or cinematic cannot earn progression or parkour credit.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/AfkManager.java",
         "src/main/java/hu/taliann/icesmp/managers/SitManager.java",
@@ -602,14 +597,14 @@
     },
     {
       "id": "presentation",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "PresentationWeaverProvider",
       "phase": "WW-09",
       "inspect": "HUD snapshots/preferences, NPC binding/availability, bard runtime",
       "planned_actions": "bounded preference/preview/refresh/binding/sound actions through owned APIs",
       "canonical_route": "HudManager snapshot/preference/editor API; NpcBindingManager.bind/unbind; BardManager.sing",
-      "rationale": "No permanent WorldWeaver HUD. Existing gameplay presentation surfaces can be inspected/manipulated without a second renderer or command wrapper; owner-thread GUI and NPC contracts apply.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/HudManager.java",
         "src/main/java/hu/taliann/icesmp/managers/TablistManager.java",
@@ -621,14 +616,14 @@
     },
     {
       "id": "configuration",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "ConfigurationWeaverProvider",
       "phase": "WW-09",
       "inspect": "immutable merged snapshot/authority/reload policy/operator-editable paths",
       "planned_actions": "bounded conditional operator override/revert through ConfigManager; content inspection only",
       "canonical_route": "ConfigManager.applyOverridesIfUnchanged/applyOverride/resetOverride; ConfigSnapshot",
-      "rationale": "No direct YAML editing. Restart-only canonical content is not runtime-mutated. A config-wide change with gameplay impact needs WORLD influence and explicit canonical arming.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java"
       ],
@@ -636,14 +631,14 @@
     },
     {
       "id": "event_support",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "spawn anchors/eligibility/orchestration/protected event entities/dungeon chest/boss state",
       "planned_actions": "conditional anchors/dungeon registrations and controlled ambient spawn/removal via authority",
       "canonical_route": "EventSpawnPointManager; EventSpawnGuard; canonical CityGuard/DarkUndead/Dungeon managers",
-      "rationale": "EventSpawner policies are shared infrastructure, not a replacement lifecycle; automatic spawns, dungeon payouts and natural DARK targeting need source identity/gates.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/EventSpawnPointManager.java",
         "src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java",
@@ -657,14 +652,14 @@
     },
     {
       "id": "event.blood_moon",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/getRemainingMillis",
       "planned_actions": "forceStart/forceEnd",
       "canonical_route": "BloodMoonManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/BloodMoonManager.java"
       ],
@@ -672,14 +667,14 @@
     },
     {
       "id": "event.world_boss",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isBossActive/encounterSnapshot/archetypeDisplayNames",
       "planned_actions": "forceSpawn; add stopExpectedInstance",
       "canonical_route": "WorldBossManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java"
       ],
@@ -687,14 +682,14 @@
     },
     {
       "id": "event.invasion",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/isInvasionMob",
       "planned_actions": "forceStart; add stopExpectedInstance",
       "canonical_route": "InvasionManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/InvasionManager.java"
       ],
@@ -702,14 +697,14 @@
     },
     {
       "id": "event.caravan",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/getStockSeed",
       "planned_actions": "forceArrive/forceDepart",
       "canonical_route": "CaravanManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/CaravanManager.java"
       ],
@@ -717,14 +712,14 @@
     },
     {
       "id": "event.ambient",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "current activity requires immutable snapshot port",
       "planned_actions": "forceRandom; add lifecycle instance/stop",
       "canonical_route": "AmbientEventManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/AmbientEventManager.java"
       ],
@@ -732,29 +727,31 @@
     },
     {
       "id": "event.gathering",
-      "status": "DEFERRED_BLOCKER",
+      "status": "FULL_PROVIDER",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "getActive/getRemainingMillis",
       "planned_actions": "forceRandom; add stopExpectedInstance",
       "canonical_route": "GatheringBuffManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Registered practical WorldWeaver 1.0 surface; domain-wide completeness is not claimed. See current scope and validation evidence.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/GatheringBuffManager.java"
       ],
-      "implementation_evidence": []
+      "implementation_evidence": [
+        "docs/development/world-weaver/WORLD-WEAVER-1.0-SCOPE.md"
+      ]
     },
     {
       "id": "event.treasure",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/isTreasureBlock",
       "planned_actions": "forceSpawn; add stopExpectedInstance",
       "canonical_route": "TreasureEventManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/TreasureEventManager.java"
       ],
@@ -762,14 +759,14 @@
     },
     {
       "id": "event.wild_hunt",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/isWildHunt",
       "planned_actions": "forceStart; add stopExpectedInstance",
       "canonical_route": "WildHuntManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/WildHuntManager.java"
       ],
@@ -777,14 +774,14 @@
     },
     {
       "id": "event.abundance",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/getRemainingMillis",
       "planned_actions": "forceStart; add stopExpectedInstance",
       "canonical_route": "AbundanceManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/AbundanceManager.java"
       ],
@@ -792,14 +789,14 @@
     },
     {
       "id": "event.server_challenge",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/getProgress/getTarget",
       "planned_actions": "forceStart; add stopExpectedInstance",
       "canonical_route": "ServerChallengeManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Native per-run UUID, source-gated progress, terminal lifecycle and final owner reward admission are implemented. Provider start still needs durable origin/instance before first effect and expected-instance stop; complete event adapter and real recipient runtime evidence remain required.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/ServerChallengeManager.java",
         "src/main/java/hu/taliann/icesmp/managers/ServerChallengeRun.java",
@@ -811,14 +808,14 @@
     },
     {
       "id": "event.escort",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/isConvoy/isWaveMob",
       "planned_actions": "forceStart; add stopExpectedInstance",
       "canonical_route": "EscortManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/EscortManager.java"
       ],
@@ -826,14 +823,14 @@
     },
     {
       "id": "event.meteor",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/getRemainingMillis",
       "planned_actions": "forceSpawn; add stopExpectedInstance",
       "canonical_route": "MeteorEventManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java"
       ],
@@ -841,14 +838,14 @@
     },
     {
       "id": "event.stranger",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isStranger; snapshot port",
       "planned_actions": "forceSpawn; add lifecycle stop",
       "canonical_route": "StrangerNpcManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/StrangerNpcManager.java"
       ],
@@ -856,14 +853,14 @@
     },
     {
       "id": "event.corruption",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/getPurgeKills/isCoreBlock",
       "planned_actions": "forceSpawn/forceSpawnAt/tryCleanse; add stopExpectedInstance",
       "canonical_route": "CorruptionManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java"
       ],
@@ -871,14 +868,14 @@
     },
     {
       "id": "event.archeology",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive",
       "planned_actions": "forceSpawn; add stopExpectedInstance",
       "canonical_route": "ArcheologyManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/ArcheologyManager.java"
       ],
@@ -886,14 +883,14 @@
     },
     {
       "id": "event.cultists",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "event lifecycle/variant, cultist membership, qualified offering supporters and reward source",
       "planned_actions": "forceStart; add stopExpectedInstance",
       "canonical_route": "CultistEventManager lifecycle and deliverOffering; WhisperManager.rewardFaithful only qualified participants",
-      "rationale": "PR #155 requires actual offering delivery for cover and loot. SANDBOX-origin event/offerings must be excluded from cover, loot and season credit; no synthetic supporter or reward receipt.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java"
       ],
@@ -901,14 +898,14 @@
     },
     {
       "id": "event.economy",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/isBoomActive/getMultiplier",
       "planned_actions": "startCouncilBoom; safe exact-instance stop",
       "canonical_route": "EconomyEventManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/EconomyEventManager.java"
       ],
@@ -916,14 +913,14 @@
     },
     {
       "id": "event.player_caravan",
-      "status": "DEFERRED_BLOCKER",
+      "status": "OPTIONAL_FUTURE",
       "target_level": "FULL_PROVIDER",
       "planned_provider": "EventWeaverProvider",
       "phase": "WW-06",
       "inspect": "isActive/isConvoy",
       "planned_actions": "send; exact-instance stop",
       "canonical_route": "PlayerCaravanManager existing lifecycle, using new typed WeaverEventAdapter",
-      "rationale": "Start needs durable origin/instance before first effect; stop must match expected instance; propagate source to spawned entities, spatial effects and reward/progress. Current API has no complete WW contract.",
+      "rationale": "Optional future WorldWeaver surface. Native gameplay authority remains inventoried; no current provider or release-completeness obligation.",
       "source_evidence": [
         "src/main/java/hu/taliann/icesmp/managers/PlayerCaravanManager.java"
       ],
@@ -1326,6 +1323,21 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/data/Territory.java",
+      "domain": "territory",
+      "public_methods": [
+        "Territory",
+        "capital",
+        "contains",
+        "equals",
+        "hasYBounds",
+        "hashCode",
+        "isPolygon",
+        "polygon"
+      ],
+      "source_sha256": "ee25c4011403e47ddcc40a719b8a494872493dbe38666609086d3716da4d0d56"
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/deathknight/DeathKnightGameplayService.java",
       "domain": "class",
       "source_sha256": "9d17f712d1ccf0a86a37220680e0ba6089d698e9fa46d8ca5f05004f5f674035",
@@ -1421,18 +1433,9 @@
       ]
     },
     {
-      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverCoverageRegistry.java",
-      "domain": "developer_self",
-      "source_sha256": "305a748ff1713ad6fcbcdac424a07626dd3ac48ee168e2aaa062a82785d68484",
-      "public_methods": [
-        "WorldWeaverCoverageRegistry",
-        "requireComplete"
-      ]
-    },
-    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
       "domain": "developer_self",
-      "source_sha256": "21a412bfec72e481934dac25bbeb8d0c6e195c9696b6859fafa6931a54d6c868",
+      "source_sha256": "2e81ce2c6911980b0b17646b6e20acb37b707a469bdc80df48b6bea451ac71c0",
       "public_methods": [
         "WorldWeaverKernel",
         "clearPlayerState",
@@ -1445,7 +1448,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverProviderRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "1c169083354d98ba774b1e1c774695b1a695d0bdd8f30cab9b10944df6bdabd6",
+      "source_sha256": "0e17af86ace4b9998d24034d77bb1760ae80348a66f79c08288a84906448d01f",
       "public_methods": [
         "Discovery",
         "WorldWeaverProviderRegistry",
@@ -1479,7 +1482,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "b36ef716bf42669a80bb74d7daad200f024098a2a0a59199e2499c9c0783c973",
+      "source_sha256": "ce82bd85b12fbe23e1237af183679b043e94ffca92bec01ed604fc223fb47e7a",
       "public_methods": [
         "WorldWeaverRuntime",
         "captureCausalSources",
@@ -1594,7 +1597,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverDurableExecutionCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "29ea97a6714ae9f1e35e10553a9387c337ff146f351b0ee1ea0e8646791751fa",
+      "source_sha256": "b7847c0a77a85f2a89448979eca6065539823d37a1c3e8e556f842ee00712fe3",
       "public_methods": [
         "WeaverDurableExecutionCoordinator",
         "close",
@@ -1613,6 +1616,19 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverNativeEffectAuthority.java",
+      "domain": "developer_self",
+      "source_sha256": "ccf6787d58ed06d7bd582effb395eb435264601d5ec2fbfdc5f7ab76a5c7dffa",
+      "public_methods": [
+        "pendingOperation",
+        "prepare",
+        "requireAction",
+        "requireFor",
+        "requireUndoReceipt",
+        "requireValid"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryAuthority.java",
       "domain": "developer_self",
       "source_sha256": "d8f419134f09d786dff8eb5bb3154cdba97d9c38d116972fde131b9abfdc1a55",
@@ -1623,11 +1639,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/execution/WeaverRecoveryCoordinator.java",
       "domain": "developer_self",
-      "source_sha256": "41be529538159ae38849525ba218b9437ee880ed13d5dac38917de43db8f33d5",
+      "source_sha256": "f823c3f78a0ded0c6e61ddd7bfd3ceb584177516e76d04b4851ce1c4be5eec08",
       "public_methods": [
         "WeaverRecoveryCoordinator",
         "close",
         "entityAvailable",
+        "nativeProjectionsAvailable",
         "pending",
         "profilesAvailable",
         "reconcile",
@@ -1663,13 +1680,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/integrity/WeaverInfluenceIndex.java",
       "domain": "developer_self",
-      "source_sha256": "7488f566aeaaff0164c4ad5eb28ccc5b275c03b1f352bea7fb1e526da810e0f5",
+      "source_sha256": "0e3a25ae47f225ea19445809c2a40b7f4fe55159b1d525b2a30ca4d0e4d5bcae",
       "public_methods": [
-        "WeaverInfluenceIndex",
         "SourceEvidence",
+        "WeaverInfluenceIndex",
         "clean",
         "quarantined",
-        "trace"
+        "trace",
+        "traceNativeEffect"
       ]
     },
     {
@@ -1683,7 +1701,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverJournal.java",
       "domain": "developer_self",
-      "source_sha256": "d17f1963f5d8d5e770ab6b0be41d651549deb165a844131b93b8517acce460e2",
+      "source_sha256": "d649ae8f5e4488b9c7815ce3770555f91e44d844ad7ac49fb6acd1044e1b51d4",
       "public_methods": [
         "WeaverJournal",
         "applied",
@@ -1695,6 +1713,7 @@
         "load",
         "prepare",
         "prepareDerivedEffect",
+        "prepareNativeEffect",
         "ready",
         "resolve",
         "snapshot"
@@ -1711,7 +1730,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/persistence/WeaverOperationScope.java",
       "domain": "developer_self",
-      "source_sha256": "5e9fbc0f8a12254bd59bc746022699af2511f07c374ec8d46ce490e102ec4678",
+      "source_sha256": "ef57cf954dc3178eea951adfc0c9d64869b0c7d779ca563dc781693ab2612c84",
       "public_methods": [
         "attach",
         "contains",
@@ -1724,7 +1743,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/projection/ProjectionConsumerRegistry.java",
       "domain": "developer_self",
-      "source_sha256": "c23c2b6c1f66ff5652e29da4509a51f586a25a13d3dbd006faf1f538b1613782",
+      "source_sha256": "bb2c7663d2381e741051279f7da555f7aa6bffeb25e667d51bbcb9d9e0e28f27",
       "public_methods": [
         "ProjectionConsumerRegistry",
         "freeze",
@@ -1771,7 +1790,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
       "domain": "faction",
-      "source_sha256": "ca8dc61428a03e5dcc4bf68822255c6b746871165bfec22c6f5bf7b865077c2e",
+      "source_sha256": "9d0efbdd27902dfd362bc266b66e11b213fb009ab19241700f3917693a3379c4",
       "public_methods": [
         "assessRecovery",
         "captureOnOwner",
@@ -1792,9 +1811,39 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverActions.java",
+      "domain": "itemization",
+      "source_sha256": "e927fbd01b4d2354f36663a19d0edd37b1592dbb8e1c70f48a5280c23c6c63e0",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
+      "domain": "itemization",
+      "source_sha256": "8cf4114b6a587110fa183e05ea0cb982c1680d537b74c87689cb451f1bb07d2f",
+      "public_methods": [
+        "ItemizationWeaverProvider",
+        "assessRecovery",
+        "captureOnOwner",
+        "captureRecoveryOnOwner",
+        "catalog",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareEffects",
+        "prepareUndo",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "domain": "minecraft",
-      "source_sha256": "72f36001e0f1df3338789bd4453838c91e5b00845cede241102e73e71b8fa2dd",
+      "source_sha256": "512b2901bb47d6ba2d9a8ac2776e9cb51df57eabe50324c7f490a29a4985643a",
       "public_methods": [
         "MinecraftWeaverProvider",
         "assessRecovery",
@@ -1827,7 +1876,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
       "domain": "pve",
-      "source_sha256": "700f4cdd6cea9d29243ba0670c97c17e92bc6faf2497464e30c202ad943005b2",
+      "source_sha256": "39c65c7c88de4c35666e7e1adb1e7d61916292161e356ba319a782303f66e3de",
       "public_methods": [
         "PvEMobProjectionSource",
         "active",
@@ -1838,7 +1887,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
       "domain": "pve",
-      "source_sha256": "4ac5d952c6c60dd68d4097b33812377790fec9243a372cc35f9632b5f9690622",
+      "source_sha256": "ea7f20c82c5d15808d4f03bf9882e6f768c722278aab6ad97d5a89f12e7f6fc7",
       "public_methods": []
     },
     {
@@ -1850,7 +1899,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
       "domain": "pve",
-      "source_sha256": "5541f23f7210f1be80896197ac855ef0f604f824a37de2e4c1f39ab602e88974",
+      "source_sha256": "9c60d4b0505de2391f4c1010c2cf42a1aa398821d827fef2deb38f15af369aab",
       "public_methods": [
         "PvEWeaverProvider",
         "assessRecovery",
@@ -1877,9 +1926,94 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryCanonicalActions.java",
+      "domain": "territory",
+      "public_methods": [],
+      "source_sha256": "2524f59bd4297d5070af1067f738a00aabba5e365b47fe7c00a5f430df682294"
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
+      "domain": "territory",
+      "source_sha256": "e5c46473c8d946b6f4114d79d03f84de4dd5426899a767fc631940665d5800d9",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
+      "domain": "territory",
+      "source_sha256": "79556ec2e1a5c8c6f847447075a3dd56a8f35c00a339d20302c715a50208be1a",
+      "public_methods": [
+        "canonicalBytes",
+        "resolve",
+        "type",
+        "validate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritorySubjectInspection.java",
+      "domain": "territory",
+      "public_methods": [],
+      "source_sha256": "b325041c6f9f5af97c92f8ec089b4fac220d66fb57ee03106ebc0a1db83ad86c"
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+      "domain": "territory",
+      "source_sha256": "84a01deee399b7ab4e0e6fada8fec4efdd5c0bcb1799a533e21e987b28884bcb",
+      "public_methods": [
+        "TerritoryWeaverProvider",
+        "assessRecovery",
+        "catalog",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "prepare",
+        "prepareEffects",
+        "prepareUndo",
+        "projectionConsumers",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverActions.java",
+      "domain": "trash",
+      "source_sha256": "d44496744fb97b2a2afc9f845f22d532c28089a2e896468dfcb89f663a8f28ba",
+      "public_methods": []
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
+      "domain": "trash",
+      "source_sha256": "8c422022c89576c993710e168f02a82233ab5c2b051aa8ed1c0f563e041c0bf5",
+      "public_methods": [
+        "TrashWeaverProvider",
+        "assessRecovery",
+        "captureCausalSources",
+        "captureOnOwner",
+        "captureRecoveryOnOwner",
+        "catalog",
+        "causalSourceKinds",
+        "contractVersion",
+        "contribution",
+        "coverage",
+        "discover",
+        "exportValue",
+        "id",
+        "inspect",
+        "maximumCausalSources",
+        "prepare",
+        "prepareEffects",
+        "prepareUndo",
+        "supportedKinds",
+        "validateImport"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
       "domain": "minecraft",
-      "source_sha256": "0b0c4e93a6aef98efbf2e92a9d51fcfd653dce956d438764d1f94372668639ba",
+      "source_sha256": "801937162a1c695738ab72f0c36c6fbb247fd419ddd3f8f0a6448bb19e346653",
       "public_methods": [
         "SubjectSnapshotFactory",
         "capture",
@@ -2161,11 +2295,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/GameplayEffectGate.java",
       "domain": "developer_self",
-      "source_sha256": "6b619dd1cc3b7aaf060f35995d1246d66a66d7e3e8923dd2e318f3e7ddd329c6",
+      "source_sha256": "bab039cce16cba414166122e445eb4b659ec9726cf63908fd7c67b7476865374",
       "public_methods": [
         "activeFor",
         "close",
         "fence",
+        "guardNativeAdmission",
         "install",
         "prepare"
       ]
@@ -2184,7 +2319,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/integrity/GameplaySourceCaptureGate.java",
       "domain": "developer_self",
-      "source_sha256": "799ab1bfe0a1c9927c204246e1cc1ab94a4c27e205117f6bd89f689647a9b94a",
+      "source_sha256": "751883d49a8ce6a0a95d3b459ce7fc8108b4c16076e5f6cd9757c7831ef0eaf2",
       "public_methods": [
         "capture",
         "close",
@@ -2248,7 +2383,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/EquipmentProficiencyService.java",
       "domain": "itemization",
-      "source_sha256": "43cc9d7bbc95469a3292fda687c3e79a10ab2d17c1d02401fa0f6489accdfc3f",
+      "source_sha256": "f213fb7775e12d2ca1530ed0d50494577d5845000ec1eea4af77a5c31ddb3836",
       "public_methods": [
         "Activity",
         "LevelDecision",
@@ -2273,9 +2408,26 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/itemization/ItemDeveloperMutationRuntime.java",
+      "domain": "itemization",
+      "source_sha256": "b7f43df71568cbb78477e83ffa82fbd6e7ecc43e199274d8b05a1d72bbbb6645",
+      "public_methods": [
+        "Plan",
+        "Result",
+        "actionId",
+        "executeOnOwner",
+        "inspect",
+        "matches",
+        "prepareOnOwner",
+        "prepareReversalOnOwner",
+        "receipt",
+        "subject"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
       "domain": "itemization",
-      "source_sha256": "f79fffc37bee8787a61ea372eef6111093e6632078f8f34cdd7a3267984d54f0",
+      "source_sha256": "27d0e4d870b8f1f8a636ddf75666fbfcf6abaa7cb4809d52961b255a76f3f4e9",
       "public_methods": [
         "DuplicateReport",
         "Inspection",
@@ -2312,7 +2464,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationCoordinator.java",
       "domain": "itemization",
-      "source_sha256": "3ba564de289541b1ba496d112c7e3e934d01d040a84b0643682befd58d6a13fa",
+      "source_sha256": "8384e13f6670532bc1db52b7e7ac719b751535dddc2390b798aec11808157baa",
       "public_methods": [
         "Options",
         "Outcome",
@@ -2320,7 +2472,9 @@
         "ResolutionOutcome",
         "RunePreview",
         "current",
+        "developerMutations",
         "execute",
+        "executeFromWorldWeaver",
         "executeRune",
         "executeRuneMutation",
         "onJoin",
@@ -2329,7 +2483,9 @@
         "preview",
         "previewRune",
         "resolveManual",
-        "setRuneFamilyCompatibility"
+        "setRuneFamilyCompatibility",
+        "startDeveloperRecovery",
+        "stopDeveloperRecovery"
       ]
     },
     {
@@ -2343,23 +2499,43 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationService.java",
       "domain": "itemization",
-      "source_sha256": "a1295656ecce6210cf9f16c527fac2f612ba54ef5f8102e4000f57dc6318d73e",
+      "source_sha256": "e5712c50ca4918c9ed88a876bf7c6e30b537b17e1c995fd93a3c54678e2ab215",
       "public_methods": [
         "AscensionRequest",
         "RerollRequest",
         "Result",
         "applied",
         "ascend",
+        "ascendFromDeveloper",
         "boundedGeometricCost",
         "changeRunes",
+        "changeRunesFromDeveloper",
+        "clonePrototype",
         "preserveRelativeQuality",
-        "reroll"
+        "reroll",
+        "rerollFromDeveloper",
+        "revertFromDeveloper"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/itemization/ItemPrototypePolicy.java",
+      "domain": "itemization",
+      "source_sha256": "a3f55ce0117f457a88149e63b85ef7ff683c61f3700d098526799e280fa992db",
+      "public_methods": [
+        "Identity",
+        "allowedCustody",
+        "direct",
+        "identity",
+        "isPrototype",
+        "mark",
+        "quarantinePlayer",
+        "scan"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemSalvageService.java",
       "domain": "itemization",
-      "source_sha256": "7e81f263acce8af0fed6cae41e8f05fd7c86edda5ee024077ff50ea84fb6cfe4",
+      "source_sha256": "fca9c47c0320e8a5bceb80ac9a1ff75f3792add376167c14776d3dbf0ad2e0e0",
       "public_methods": [
         "Preview",
         "Tuning",
@@ -2400,7 +2576,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemTransformationPolicy.java",
       "domain": "itemization",
-      "source_sha256": "66e9975c5fd88508aa17f3480e56679bb961050f4bcfbfc049da65e0a4ee0a65",
+      "source_sha256": "7ab758b41aa3a0ff32a1b9f2e27ff41a5cef303e7a3ca755520f1b9ad1398229",
       "public_methods": [
         "Classification",
         "Decision",
@@ -3068,7 +3244,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
       "domain": "developer_self",
-      "source_sha256": "a7bbd37e28331e0d54bf2c732b6bc9a8d5ef63723265eb017c5c630787e41c32",
+      "source_sha256": "ed9394fed2b93d3d9d1520f70f2761f166833b284cb5fb7475e0a617288c8720",
       "public_methods": [
         "DevItemManager",
         "Diagnostics",
@@ -3359,7 +3535,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/GatheringBuffManager.java",
       "domain": "event.gathering",
-      "source_sha256": "6606292a376864dc7b3422dca7f83d25809d2fabba06d72900ac5310de0c5496",
+      "source_sha256": "baf450fbbd247f14aafdedfb00a1601356482f86257c252b268dfb7415995483",
       "public_methods": [
         "bonusDropChance",
         "describeActive",
@@ -3435,12 +3611,13 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HudManager.java",
       "domain": "presentation",
-      "source_sha256": "bc2c3ba692e6b0df63f45cf1f34c7e3ef58c36dd01a9124a1a5948d134609ec6",
+      "source_sha256": "8888a58baca6404a44d5ebae30affe6eb43797faee73d7b691aac13eb8e4e41a",
       "public_methods": [
         "HudCurrency",
         "HudEditorSaveResult",
         "HudSnapshot",
         "beginHudEditor",
+        "beginShutdown",
         "cancelHudEditor",
         "changeHudEditorMargin",
         "changeHudEditorScale",
@@ -3518,7 +3695,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/InvseeManager.java",
       "domain": "moderation",
-      "source_sha256": "e1b0bb1f6d24889817d965bc37aad0f58eaad38af6a0d0c3ed30fbf59caaea79",
+      "source_sha256": "ac8742273d9f882ea34db002dc8e3ab147e81561e653b8fb44cecdb4a4c1c7fb",
       "public_methods": [
         "Snapshot",
         "beginSwap",
@@ -3617,7 +3794,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/MarketManager.java",
       "domain": "market",
-      "source_sha256": "2e4aab03002dcdfcadb8ccb37469ffddaba4ed7d23f77c74ad02827e739fc99a",
+      "source_sha256": "ffdb3d4a44023733c02e67f25aeedbd1145a11cec73e5478b2a6408d4345831b",
       "public_methods": [
         "BidOutcome",
         "BuyOutcome",
@@ -3735,7 +3912,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ModerationManager.java",
       "domain": "moderation",
-      "source_sha256": "0453ea137f1c63174959d616c1a30cba0414d03b513e09b317becb572f055007",
+      "source_sha256": "25a9cb5e8d82b6e25510f419f4de5f650ffe9bbe61d77c86e0b77c6f8a38bc43",
       "public_methods": [
         "KnownPlayer",
         "MuteEntry",
@@ -4661,8 +4838,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TablistManager.java",
       "domain": "presentation",
-      "source_sha256": "680d071be9099bfe3ff7dda1a275ff2ce90bf8d10e47aff5f5c5537fc070800f",
+      "source_sha256": "0f631092924da4c6a30805b22bf473b4a89ed09f715f10fce42a4ca266f44a01",
       "public_methods": [
+        "beginShutdown",
         "cleanup",
         "factionColor",
         "isEnabled",
@@ -4699,10 +4877,14 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java",
       "domain": "territory",
-      "source_sha256": "03329c6152fbaf0f5c86f8de47b0ea5e7f6cece227b96f694f51f03f1ccaf850",
+      "source_sha256": "99b2a1da53233791696bcaa318a0be732698cb43fadb3b7a9c403408fe6a3742",
       "public_methods": [
         "FactionSpawn",
+        "TerritoryManager",
         "addPoint",
+        "adjustConditionally",
+        "adjustmentReceipt",
+        "adjustmentStateAvailable",
         "all",
         "clearPlayerState",
         "clearPoints",
@@ -4735,12 +4917,15 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java",
       "domain": "territory",
-      "source_sha256": "813a8aceccefb65d2535abda9252c537f0992a8c00a080b8f3c8115ed7058589",
+      "source_sha256": "927d154d4b4635db7d2f68639de5d0a6bfad0694a168fd78eefd7bb471266fd1",
       "public_methods": [
+        "bindRuleProjection",
+        "buildDecision",
         "clearDoomGrace",
         "denyBuild",
         "denyCombat",
         "denyInteract",
+        "denyPlayerDamage",
         "denyPvp",
         "isExplosionBlockedAt",
         "isFireBlockedAt",
@@ -4750,6 +4935,9 @@
         "markDoomEntry",
         "setCombatTagManager",
         "setRaidManager",
+        "terrainDecision",
+        "traceAt",
+        "tracePlayerDamage",
         "zoneTypeKeyAt"
       ]
     },
@@ -5781,7 +5969,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
       "domain": "pve",
-      "source_sha256": "421a3de1b9d8e11a0f6ac2fde5ef9cb319900f69ee9a10ac0dcbdf09b0193851",
+      "source_sha256": "d9ccc21ad1927a3351e1bdf09b9b5fadd7078428020d2033522fdb8350a138ad",
       "public_methods": [
         "AuthoredCreatureSpawnService",
         "Request",
@@ -5927,7 +6115,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
       "domain": "pve",
-      "source_sha256": "72f0e12762f9490eee7ba1fd0d2623cddfa16232f7b850b025a185ac5c94014a",
+      "source_sha256": "6933c133c1fc373312f4618e0ac6b6a50e42716cd30ac60fa42e27dbecd826bf",
       "public_methods": [
         "MobAbilityRuntime",
         "activeAbilityIds",
@@ -6169,6 +6357,27 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java",
+      "domain": "itemization",
+      "source_sha256": "f7f56d135a988526f434fe0657e725c3330fc842402bc9a426b441aa10841ad6",
+      "public_methods": [
+        "Entry",
+        "complete",
+        "decodeInventory",
+        "encodeInventory",
+        "entriesFor",
+        "find",
+        "findDeveloper",
+        "hasPendingForDeveloper",
+        "isHealthy",
+        "load",
+        "pendingDeveloper",
+        "prepare",
+        "prepareDeveloper",
+        "resolveDeveloper"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/storage/PersistentStore.java",
       "domain": "storage_infrastructure",
       "source_sha256": "bef0fd016d2004acc1c7f65c3fb502dd6d4129bd3c46055cd0c4be62877cfe3c",
@@ -6203,6 +6412,57 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustment.java",
+      "domain": "territory",
+      "public_methods": [
+        "apply"
+      ],
+      "source_sha256": "74386ab9f51bd37de4c8853d856f3850716f85b766eeab41f38dd3d35ad0b7d7"
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentReceipt.java",
+      "domain": "territory",
+      "public_methods": [
+        "TerritoryAdjustmentReceipt"
+      ],
+      "source_sha256": "cb0a24bc84d12cea0dd451020ca3dfdffdf2830ea720a1b40ba9e9b2c3e6f482"
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentResult.java",
+      "domain": "territory",
+      "public_methods": [
+        "TerritoryAdjustmentResult",
+        "rejected"
+      ],
+      "source_sha256": "8e51b06e2e31b938d58a7d9261f0047126e918bba01d9a407f57ef5fa5dd2587"
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryProtectionPolicy.java",
+      "domain": "territory",
+      "source_sha256": "a1626a9b49615aaa4a36b00ab90aafc3efe1f1fb640ca83cb064434dadc9aa7c",
+      "public_methods": [
+        "Decision",
+        "Facts",
+        "Step",
+        "deniesRegeneration",
+        "evaluate"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryRevision.java",
+      "domain": "territory",
+      "public_methods": [
+        "fingerprint"
+      ],
+      "source_sha256": "bbd93bb61a55e56ba75d418b97d74558811ecbf355db36baf087d0d4ef09fc7d"
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
+      "domain": "territory",
+      "source_sha256": "2f3db52595bef4f6299300400f980afea2a1d44d1f75418d2a78fbdad20ffeb7",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/trash/TossableObjectRuntime.java",
       "domain": "trash",
       "source_sha256": "bf5fa9371cee62109a72d35974cf9308b0e564a420d0064fced2ec01a0b7534e",
@@ -6229,6 +6489,17 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyActivationService.java",
+      "domain": "trash",
+      "source_sha256": "d0b9218f6948c0f988c4c6ea869e83603045d1f17b2c6e470e5b922901d10c30",
+      "public_methods": [
+        "behaviorOf",
+        "cancel",
+        "denyItem",
+        "useOnOwner"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyPolicy.java",
       "domain": "trash",
       "source_sha256": "c10eda21a51bed1b2173e089802e0393c47e02ca889274b1d84c1d5de3464f6e",
@@ -6237,8 +6508,9 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyRuntime.java",
       "domain": "trash",
-      "source_sha256": "69994fa960f208c7c60019a77938eac407368acd02e390b7c7a85aedaa4a3aec",
+      "source_sha256": "e5eedbda1df507495b06813280e52324ff9b13f44f0ef14b92e8d33e4ede82a2",
       "public_methods": [
+        "activationService",
         "clearPlayerState",
         "onAutomationMove",
         "onAutomationPickup",
@@ -6270,20 +6542,21 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyStateStore.java",
       "domain": "trash",
-      "source_sha256": "7660932b5fa7a562df77f4238b068e4af07cbe97f79ea543d68b20cbe1c5325c",
+      "source_sha256": "0cb47861b0167dcbba1df3e8fd550ae6ba7770e67b71a24452c31f0b993c6659",
       "public_methods": [
         "add",
         "addDurably",
         "get",
         "load",
         "save",
-        "size"
+        "size",
+        "tryInspect"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
       "domain": "archaeology_knowledge",
-      "source_sha256": "edea96bd85b21dd9545f616addc56d869566ee70654a1f4bac6a8f4a4806348a",
+      "source_sha256": "cf938de6788b3d2bf0017af02b6de2cae8d941d7ef4fab6d08ffcc441b34c32f",
       "public_methods": [
         "Evaluation",
         "Fact",
@@ -6315,7 +6588,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyService.java",
       "domain": "archaeology_knowledge",
-      "source_sha256": "8f4ada4dd1354d06f2671b2ab2175e6ff384bec9da2fb15fed822432a024ab3e",
+      "source_sha256": "27210c8c93ffc3d513748f320734d18f29351c43b926bf04f01a88c0560818bf",
       "public_methods": [
         "Result",
         "addInsight",
@@ -6330,7 +6603,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
       "domain": "trash",
-      "source_sha256": "39b9c47ba504fadbfb1e8a379e5f3090fb92597b6867406f049ff0d974e5b611",
+      "source_sha256": "5a12c55e1b1fa1ba83ba0497f44c06a251195867c64fcb07fd277e92f7f6e868",
       "public_methods": [
         "find",
         "findPhase",
@@ -6355,9 +6628,11 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "fdb01f1efc922222dd96ebd2fcab744242ef6f81b3b3d7f7bb1d29a19e79f3a7",
+      "source_sha256": "148a29391bab05d120675349e85dbef3573273284dd4daa33199cf45bd8258d6",
       "public_methods": [
+        "ItemInspection",
         "SplitResult",
+        "TrashHistoryService",
         "clearPreparedRepair",
         "completePreparedRepair",
         "completeVendorOperation",
@@ -6365,12 +6640,15 @@
         "historyOf",
         "individualizeHandOnSuccess",
         "individualizeUnit",
+        "instanceId",
         "instanceIdOf",
         "isTrash",
         "isValidTracked",
         "markOrigin",
         "markPreparedRepair",
+        "matchesInventory",
         "observeOwnerIfTracked",
+        "operationId",
         "prepareVendorUnits",
         "preparedRepairToken",
         "recordIfTracked",
@@ -6383,17 +6661,41 @@
         "transformInventorySlotOnSuccess",
         "transformMainHandOnSuccess",
         "transformOnSuccess",
+        "tryCommitDeveloperMutation",
+        "tryConfirmDeveloperProjection",
+        "tryConfirmProjectileWallRemoval",
+        "tryConsumeProjectileWall",
+        "tryIndividualizeHandOnSuccess",
+        "tryIndividualizePlannedUnit",
+        "tryInspect",
+        "tryInspectDeveloperReceipt",
+        "tryInspectPendingDeveloperProjections",
+        "tryInspectPendingProjectileWalls",
+        "tryInspectWallRecoveryReceipts",
+        "tryObserveDeveloperBeforeProjection",
+        "tryObserveDeveloperProjection",
+        "tryPrepareDeveloperMutation",
+        "tryPrepareDeveloperReversal",
+        "tryPrepareUnit",
+        "tryRestoreAcknowledgedWallProjection",
+        "tryRestoreDeveloperProjection",
+        "tryTransformInventorySlotOnSuccess",
+        "tryTransformPlannedHandOnSuccess",
+        "tryTransformPlannedUnit",
         "validateVendorSale"
       ]
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
       "domain": "trash",
-      "source_sha256": "500049b545b78b954014270e6ef11718e5972cc3ecb884f720cced0006fa71e5",
+      "source_sha256": "ce2b00f4566572a7401adbac0f9a4cba48efd8d094f91fb4bdfe88fac3d28597",
       "public_methods": [
         "HistoryEntry",
+        "Inspection",
         "Snapshot",
+        "TrashHistoryStore",
         "VendorReceipt",
+        "WallReceipt",
         "createAndRecord",
         "find",
         "findVendorReceipt",
@@ -6401,12 +6703,23 @@
         "matches",
         "observeOwner",
         "putVendorReceipt",
+        "putWallReceipt",
         "record",
         "removeVendorReceipt",
         "save",
         "size",
         "transact",
-        "transform"
+        "transform",
+        "tryConfirmDeveloperProjection",
+        "tryConfirmWallRemoval",
+        "tryInspect",
+        "tryInspectDeveloperReceipt",
+        "tryInspectDeveloperReceipts",
+        "tryInspectObservedWallRemoval",
+        "tryInspectWallReceipts",
+        "tryInspectWallRecoveryReceipts",
+        "tryRestoreWallProjection",
+        "tryTransact"
       ]
     },
     {
@@ -6469,16 +6782,23 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java",
+      "domain": "trash",
+      "source_sha256": "82aa3596c572037dba14afc103b69c89592912f1ffef3c3a492dad858ed622d0",
+      "public_methods": []
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicPolicy.java",
       "domain": "trash",
-      "source_sha256": "fea602517b0f4da9ba90c140e97c299bb1386d17019dd784397bebb7954e284d",
+      "source_sha256": "28b5e73fda23977c462cbe20aa6e926ce4341a6da786c187552b67f3192d7bc4",
       "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "565a123046e00d044c16841dde64c0f2345984bc016cbc6e3ee8963c7186224e",
+      "source_sha256": "9efe0cf6509b013efebfc166021c810f5c172e0dcbe329cfc9df56212a4454cc",
       "public_methods": [
+        "TrashRelicRuntime",
         "blocksCombatAt",
         "claimBestBucket",
         "clearPlayerState",
@@ -6494,10 +6814,46 @@
         "onSpawn",
         "onUse",
         "onWorldLoad",
+        "onWorldUnload",
+        "ruleFields",
         "shutdown",
         "start",
         "suppressesAcousticsAt"
       ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuleFieldService.java",
+      "domain": "trash",
+      "public_methods": [
+        "Point",
+        "RuleField",
+        "Snapshot",
+        "TrashRuleFieldService",
+        "activateCreation",
+        "active",
+        "activeAt",
+        "add",
+        "cancelCreationsForOwner",
+        "cancelCreationsForWorld",
+        "claim",
+        "close",
+        "contains",
+        "expire",
+        "field",
+        "hasCapacity",
+        "hasKind",
+        "isClaimed",
+        "isPreparing",
+        "releaseClaim",
+        "releaseCreation",
+        "remove",
+        "removeClaimed",
+        "removeIdle",
+        "reserveCreation",
+        "snapshot",
+        "tryObserveClaimedEffect"
+      ],
+      "source_sha256": "9cba961273e8f8f2374ab668a6a64fb068eadc4308daac3ed706b6b8f2295d22"
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
@@ -6530,7 +6886,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java",
       "domain": "trash",
-      "source_sha256": "48f9d273538ea93b29622014a37843dd0c0af15dfae290856251d30f645e330a",
+      "source_sha256": "ec9094e66e22306c63e454e71263e8528c45b949c14e79e3082ea8a9087b0141",
       "public_methods": [
         "onJoin",
         "tryHandle"
@@ -6662,6 +7018,7 @@
     "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionMutationStoreAdapter.java",
     "src/main/java/hu/taliann/icesmp/classspec/persistence/ClassSpecSectionRepository.java",
     "src/main/java/hu/taliann/icesmp/classspec/persistence/PlayerProfileClassSpecSectionRepository.java",
+    "src/main/java/hu/taliann/icesmp/data/Territory.java",
     "src/main/java/hu/taliann/icesmp/dev/artifact/BingulusRewardBehavior.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverKernel.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/api/WeaverProviderServices.java",
@@ -6677,12 +7034,21 @@
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionRuntimeProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEInfluenceLifetimeObserver.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEMobProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEProjectionActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvERuntimeActions.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryCanonicalActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryProjectionActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryRuntimeProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritorySubjectInspection.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverActions.java",
+    "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
     "src/main/java/hu/taliann/icesmp/dev/weaver/subject/SubjectSnapshotFactory.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionContextProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/factions/FactionMembershipProjectionSource.java",
@@ -6707,6 +7073,12 @@
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeControlLedger.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java",
     "src/main/java/hu/taliann/icesmp/pve/MobRuntimeProjectionSource.java",
+    "src/main/java/hu/taliann/icesmp/storage/ItemMutationJournal.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustment.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentReceipt.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryAdjustmentResult.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryRevision.java",
+    "src/main/java/hu/taliann/icesmp/territory/TerritoryRuleProjectionSource.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",
@@ -6717,6 +7089,7 @@
   ],
   "bootstrap_components": {
     "src/main/java/hu/taliann/icesmp/IceSMP.java": [
+      "src/main/java/hu/taliann/icesmp/core/CommandLifecycle.java",
       "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
       "src/main/java/hu/taliann/icesmp/listeners/ResourcePackListener.java"
     ],
@@ -6794,9 +7167,14 @@
       "src/main/java/hu/taliann/icesmp/commands/VanishCommand.java",
       "src/main/java/hu/taliann/icesmp/commands/WhisperCommand.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/DeveloperWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/EventWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+      "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
       "src/main/java/hu/taliann/icesmp/factions/FactionPassivePolicy.java",
@@ -6865,6 +7243,7 @@
       "src/main/java/hu/taliann/icesmp/listeners/HudListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/IntroListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/InvseeGUIListener.java",
+      "src/main/java/hu/taliann/icesmp/listeners/ItemPrototypeProtectionListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/ItemProvenanceListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/JobCraftRestrictionListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/JobGUIListener.java",
@@ -7152,7 +7531,7 @@
       "domains": [
         "relics"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecProfileGateway.java",
@@ -7160,7 +7539,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ClassSpecSectionLifecycleService.java",
@@ -7168,7 +7547,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/DefaultClassSpecProfileGateway.java",
@@ -7176,7 +7555,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/application/ProfileSessionRegistry.java",
@@ -7184,7 +7563,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/classspec/compat/ClassSpecDependencyPreflight.java",
@@ -7795,6 +8174,14 @@
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/core/CommandLifecycle.java",
+      "role": "DOMAIN_ADAPTER",
+      "domains": [
+        "transport_infrastructure"
+      ],
+      "rationale": "Retained Paper command-node lifecycle admission and entered-callback drain; no gameplay state or competing provider authority."
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
       "role": "DOMAIN_ADAPTER",
       "domains": [
@@ -7864,6 +8251,12 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/ItemizationWeaverProvider.java",
+      "domains": [
+        "itemization"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/MinecraftWeaverProvider.java",
       "domains": [
         "minecraft"
@@ -7877,12 +8270,24 @@
       ]
     },
     {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TerritoryWeaverProvider.java",
+      "domains": [
+        "territory"
+      ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/TrashWeaverProvider.java",
+      "domains": [
+        "trash"
+      ]
+    },
+    {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionMobContextResolver.java",
       "role": "AUTHORITY",
       "domains": [
         "faction"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionPassiveConfig.java",
@@ -7890,7 +8295,7 @@
       "domains": [
         "faction"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionPassivePolicy.java",
@@ -7898,7 +8303,7 @@
       "domains": [
         "faction"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/factions/FactionPassiveService.java",
@@ -7906,7 +8311,7 @@
       "domains": [
         "faction"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/gui/CharacterMenuContext.java",
@@ -7971,7 +8376,7 @@
       "domains": [
         "itemization"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
@@ -7979,7 +8384,7 @@
       "domains": [
         "itemization"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemMutationCoordinator.java",
@@ -7987,7 +8392,7 @@
       "domains": [
         "itemization"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemTemplateRegistry.java",
@@ -7995,7 +8400,7 @@
       "domains": [
         "itemization"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/itemization/ItemTransformationPolicy.java",
@@ -8003,7 +8408,7 @@
       "domains": [
         "itemization"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/items/BlueprintItemFactory.java",
@@ -8035,7 +8440,7 @@
       "domains": [
         "crate"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/items/MoneyPouchItemFactory.java",
@@ -8043,7 +8448,7 @@
       "domains": [
         "economy"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/items/RarityPresentationService.java",
@@ -8051,7 +8456,7 @@
       "domains": [
         "itemization"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/items/SiegeWeaponFactory.java",
@@ -8474,6 +8879,16 @@
         "moderation"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/listeners/ItemPrototypeProtectionListener.java",
+      "role": "DOMAIN_ADAPTER",
+      "domains": [
+        "itemization",
+        "trash",
+        "developer_self"
+      ],
+      "rationale": "Native physical prototype custody/cleanup. Uses the primary developer identity and shared ItemPrototypePolicy; no issuance, synthetic event or full provider claim."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/listeners/ItemProvenanceListener.java",
@@ -9169,7 +9584,7 @@
       "domains": [
         "event.abundance"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/AchievementManager.java",
@@ -9177,7 +9592,7 @@
       "domains": [
         "knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java",
@@ -9185,7 +9600,7 @@
       "domains": [
         "knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/AfkManager.java",
@@ -9193,7 +9608,7 @@
       "domains": [
         "player_runtime"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/AmbientEventManager.java",
@@ -9201,7 +9616,7 @@
       "domains": [
         "event.ambient"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ArcheologyManager.java",
@@ -9209,7 +9624,7 @@
       "domains": [
         "event.archeology"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/BardManager.java",
@@ -9217,7 +9632,7 @@
       "domains": [
         "presentation"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/BestiaryManager.java",
@@ -9225,7 +9640,7 @@
       "domains": [
         "knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/BlockRegenService.java",
@@ -9233,7 +9648,7 @@
       "domains": [
         "territory"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/BloodMoonManager.java",
@@ -9241,7 +9656,7 @@
       "domains": [
         "event.blood_moon"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/BuyerService.java",
@@ -9249,7 +9664,7 @@
       "domains": [
         "economy"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CaravanManager.java",
@@ -9257,7 +9672,7 @@
       "domains": [
         "event.caravan"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ChronicleManager.java",
@@ -9265,7 +9680,7 @@
       "domains": [
         "season"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CityGuardManager.java",
@@ -9273,7 +9688,7 @@
       "domains": [
         "event_support"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ClaimManager.java",
@@ -9281,7 +9696,7 @@
       "domains": [
         "claims"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ClassHealthService.java",
@@ -9289,7 +9704,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CombatTagManager.java",
@@ -9297,7 +9712,7 @@
       "domains": [
         "war_raid_duel"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CommunityGoalManager.java",
@@ -9305,7 +9720,7 @@
       "domains": [
         "goals"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java",
@@ -9313,7 +9728,7 @@
       "domains": [
         "configuration"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CorruptionManager.java",
@@ -9321,7 +9736,7 @@
       "domains": [
         "event.corruption"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CouncilManager.java",
@@ -9329,7 +9744,7 @@
       "domains": [
         "politics"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CraftingRestrictionManager.java",
@@ -9337,7 +9752,7 @@
       "domains": [
         "profession"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CrateManager.java",
@@ -9345,7 +9760,7 @@
       "domains": [
         "crate"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CrownCurseManager.java",
@@ -9353,7 +9768,7 @@
       "domains": [
         "crime_whisper"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java",
@@ -9361,7 +9776,7 @@
       "domains": [
         "event.cultists"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CurrencyManager.java",
@@ -9369,7 +9784,7 @@
       "domains": [
         "economy"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/CursedGearService.java",
@@ -9377,7 +9792,7 @@
       "domains": [
         "itemization"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DailyQuestManager.java",
@@ -9385,7 +9800,7 @@
       "domains": [
         "legacy_daily"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DarkUndeadAmbienceManager.java",
@@ -9393,7 +9808,7 @@
       "domains": [
         "event_support"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
@@ -9401,7 +9816,7 @@
       "domains": [
         "developer_self"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DonationChestManager.java",
@@ -9409,7 +9824,7 @@
       "domains": [
         "market"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DungeonLootService.java",
@@ -9417,7 +9832,7 @@
       "domains": [
         "event_support"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/EconomyEventManager.java",
@@ -9425,7 +9840,7 @@
       "domains": [
         "event.economy"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/EscortManager.java",
@@ -9433,7 +9848,7 @@
       "domains": [
         "event.escort"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/EventSpawnGuard.java",
@@ -9441,7 +9856,7 @@
       "domains": [
         "event_support"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/EventSpawnPointManager.java",
@@ -9449,7 +9864,7 @@
       "domains": [
         "event_support"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ExchangeBoardManager.java",
@@ -9457,7 +9872,7 @@
       "domains": [
         "economy"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ExchangeRateService.java",
@@ -9465,7 +9880,7 @@
       "domains": [
         "economy"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionManager.java",
@@ -9473,7 +9888,7 @@
       "domains": [
         "faction"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionRelationManager.java",
@@ -9481,7 +9896,7 @@
       "domains": [
         "faction"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FactionTreasuryManager.java",
@@ -9489,7 +9904,7 @@
       "domains": [
         "politics"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/FerryManager.java",
@@ -9497,7 +9912,7 @@
       "domains": [
         "player_runtime"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/GatheringBuffManager.java",
@@ -9505,7 +9920,7 @@
       "domains": [
         "event.gathering"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/GuildManager.java",
@@ -9513,7 +9928,7 @@
       "domains": [
         "guild_party"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HiddenSpotManager.java",
@@ -9521,7 +9936,7 @@
       "domains": [
         "knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HolidayService.java",
@@ -9529,7 +9944,7 @@
       "domains": [
         "season"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HonorDuelManager.java",
@@ -9537,7 +9952,7 @@
       "domains": [
         "war_raid_duel"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/HudManager.java",
@@ -9545,7 +9960,7 @@
       "domains": [
         "presentation"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/IntroManager.java",
@@ -9553,7 +9968,7 @@
       "domains": [
         "player_runtime"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/InvasionManager.java",
@@ -9561,7 +9976,7 @@
       "domains": [
         "event.invasion"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/InvseeManager.java",
@@ -9569,7 +9984,7 @@
       "domains": [
         "moderation"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ItemRarityService.java",
@@ -9577,7 +9992,7 @@
       "domains": [
         "itemization"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/JobManager.java",
@@ -9585,7 +10000,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/KingManager.java",
@@ -9593,7 +10008,7 @@
       "domains": [
         "politics"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/MajorEventGate.java",
@@ -9601,7 +10016,7 @@
       "domains": [
         "event_support"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/MarketManager.java",
@@ -9609,7 +10024,7 @@
       "domains": [
         "market"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/MetelytepoManager.java",
@@ -9617,7 +10032,7 @@
       "domains": [
         "relics"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/MeteorEventManager.java",
@@ -9625,7 +10040,7 @@
       "domains": [
         "event.meteor"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/MinionManager.java",
@@ -9633,7 +10048,7 @@
       "domains": [
         "minions_totems"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
@@ -9641,7 +10056,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ModerationManager.java",
@@ -9649,7 +10064,7 @@
       "domains": [
         "moderation"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/NpcBindingManager.java",
@@ -9657,7 +10072,7 @@
       "domains": [
         "presentation"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ParkourManager.java",
@@ -9665,7 +10080,7 @@
       "domains": [
         "parkour"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/PartyManager.java",
@@ -9673,7 +10088,7 @@
       "domains": [
         "guild_party"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/PetManager.java",
@@ -9681,7 +10096,7 @@
       "domains": [
         "pets"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/PlayerCaravanManager.java",
@@ -9689,7 +10104,7 @@
       "domains": [
         "event.player_caravan"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ProfessionManager.java",
@@ -9697,7 +10112,7 @@
       "domains": [
         "profession"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeCatalog.java",
@@ -9705,7 +10120,7 @@
       "domains": [
         "profession"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ProfessionRecipeManager.java",
@@ -9713,7 +10128,7 @@
       "domains": [
         "profession"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ProfessionWeeklyGoalManager.java",
@@ -9721,7 +10136,7 @@
       "domains": [
         "goals"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/QuestManager.java",
@@ -9729,7 +10144,7 @@
       "domains": [
         "knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/RaidManager.java",
@@ -9737,7 +10152,7 @@
       "domains": [
         "war_raid_duel"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/RelicManager.java",
@@ -9745,7 +10160,7 @@
       "domains": [
         "relics"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ReportManager.java",
@@ -9753,7 +10168,7 @@
       "domains": [
         "moderation"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ResourceBonusService.java",
@@ -9761,7 +10176,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ResourceManager.java",
@@ -9769,7 +10184,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/RespecService.java",
@@ -9777,7 +10192,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/RitualManager.java",
@@ -9785,7 +10200,7 @@
       "domains": [
         "soulforge_ritual"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonFinaleManager.java",
@@ -9793,7 +10208,7 @@
       "domains": [
         "season"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonManager.java",
@@ -9801,7 +10216,7 @@
       "domains": [
         "season"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonMonumentManager.java",
@@ -9809,7 +10224,7 @@
       "domains": [
         "season"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonStoryTeller.java",
@@ -9817,7 +10232,7 @@
       "domains": [
         "season"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SeasonalModifierService.java",
@@ -9825,7 +10240,7 @@
       "domains": [
         "season"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ServerChallengeManager.java",
@@ -9833,7 +10248,7 @@
       "domains": [
         "event.server_challenge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ShopManager.java",
@@ -9841,7 +10256,7 @@
       "domains": [
         "economy"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SinManager.java",
@@ -9849,7 +10264,7 @@
       "domains": [
         "crime_whisper"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SitManager.java",
@@ -9857,7 +10272,7 @@
       "domains": [
         "player_runtime"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SoulShardManager.java",
@@ -9865,7 +10280,7 @@
       "domains": [
         "soulforge_ritual"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SoulforgeManager.java",
@@ -9873,7 +10288,7 @@
       "domains": [
         "soulforge_ritual"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SpecializationManager.java",
@@ -9881,7 +10296,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SpellFavoritesManager.java",
@@ -9889,7 +10304,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SpellMasteryManager.java",
@@ -9897,7 +10312,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SpellRegistry.java",
@@ -9905,7 +10320,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/SpyManager.java",
@@ -9913,7 +10328,7 @@
       "domains": [
         "crime_whisper"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/StatsManager.java",
@@ -9921,7 +10336,7 @@
       "domains": [
         "knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/StrangerNpcManager.java",
@@ -9929,7 +10344,7 @@
       "domains": [
         "event.stranger"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TablistManager.java",
@@ -9937,7 +10352,7 @@
       "domains": [
         "presentation"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TalentManager.java",
@@ -9945,7 +10360,7 @@
       "domains": [
         "class"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TerritoryManager.java",
@@ -9953,7 +10368,7 @@
       "domains": [
         "territory"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TerritoryProtectionService.java",
@@ -9961,7 +10376,7 @@
       "domains": [
         "territory"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TotemManager.java",
@@ -9969,7 +10384,7 @@
       "domains": [
         "minions_totems"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/TreasureEventManager.java",
@@ -9977,7 +10392,7 @@
       "domains": [
         "event.treasure"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/VanishManager.java",
@@ -9985,7 +10400,7 @@
       "domains": [
         "moderation"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WarWindowManager.java",
@@ -9993,7 +10408,7 @@
       "domains": [
         "war_raid_duel"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WhisperManager.java",
@@ -10001,7 +10416,7 @@
       "domains": [
         "crime_whisper"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WildHuntManager.java",
@@ -10009,7 +10424,7 @@
       "domains": [
         "event.wild_hunt"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java",
@@ -10017,7 +10432,7 @@
       "domains": [
         "event.world_boss"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileAuthority.java",
@@ -10025,7 +10440,7 @@
       "domains": [
         "profile_infrastructure"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/playerprofile/integration/PlayerProfilePlatform.java",
@@ -10060,7 +10475,7 @@
       "domains": [
         "prologue_doom"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/prologue/PrologueFinaleRunState.java",
@@ -10084,7 +10499,7 @@
       "domains": [
         "prologue_doom"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/prologue/PrologueParticipantTracker.java",
@@ -10100,7 +10515,7 @@
       "domains": [
         "prologue_doom"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java",
@@ -10108,7 +10523,7 @@
       "domains": [
         "prologue_doom"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/prologue/PrologueSeasonTransition.java",
@@ -10141,7 +10556,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java",
@@ -10149,7 +10564,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/CreatureSpeciesRegistry.java",
@@ -10157,7 +10572,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/EncounterRewardDeliveryService.java",
@@ -10165,7 +10580,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/EquippedCombatPowerService.java",
@@ -10173,7 +10588,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRegistry.java",
@@ -10181,7 +10596,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
@@ -10189,7 +10604,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/MobTemplateRegistry.java",
@@ -10197,7 +10612,7 @@
       "domains": [
         "pve"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/spells/AngryChickenSpell.java",
@@ -10541,7 +10956,7 @@
       "domains": [
         "storage_infrastructure"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TooltipPacketBridge_1_21_11.java",
@@ -10557,7 +10972,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAmbientManager.java",
@@ -10565,7 +10980,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyRuntime.java",
@@ -10573,7 +10988,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyStateStore.java",
@@ -10581,7 +10996,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
@@ -10589,7 +11004,7 @@
       "domains": [
         "archaeology_knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyListener.java",
@@ -10606,7 +11021,7 @@
       "domains": [
         "archaeology_knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyService.java",
@@ -10614,7 +11029,7 @@
       "domains": [
         "archaeology_knowledge"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
@@ -10622,7 +11037,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashContextResolver.java",
@@ -10630,7 +11045,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashDevCommand.java",
@@ -10666,7 +11081,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java",
@@ -10674,7 +11089,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",
@@ -10682,7 +11097,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java",
@@ -10690,7 +11105,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashLootService.java",
@@ -10698,7 +11113,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashMobDropListener.java",
@@ -10715,7 +11130,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
@@ -10723,7 +11138,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
@@ -10731,7 +11146,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashSpatialFractureStore.java",
@@ -10739,7 +11154,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java",
@@ -10747,7 +11162,7 @@
       "domains": [
         "trash"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/utils/MessageManager.java",
@@ -10755,7 +11170,7 @@
       "domains": [
         "transport_infrastructure"
       ],
-      "rationale": "Explicit authority row; provider route and blocker in domain matrix."
+      "rationale": "Explicit authority row; provider route and scope decision in domain matrix."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/utils/TextAnimator.java",
@@ -10764,6 +11179,20 @@
         "configuration"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/DeveloperWeaverProvider.java",
+      "domains": [
+        "developer_self"
+      ],
+      "rationale": "Practical 1.0 registered runtime consumer."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/EventWeaverProvider.java",
+      "domains": [
+        "event.gathering"
+      ],
+      "rationale": "Practical 1.0 registered runtime consumer."
     }
   ],
   "original_base": {

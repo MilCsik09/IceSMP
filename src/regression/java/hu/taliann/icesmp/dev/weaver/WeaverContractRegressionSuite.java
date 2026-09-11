@@ -72,7 +72,7 @@ public final class WeaverContractRegressionSuite {
         WeaverTypeCompatibilityRegressionSuite.check(inspected.facts().containsKey("fixture.fact"), "new subsystem inspect absent");
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry.register(first));
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry(first, first));
-        WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry(new FixtureProvider("blocked", safe("blocked"), CoverageLevel.DEFERRED_BLOCKER, Map.of())).freezeAndValidate());
+        registry(new FixtureProvider("optional", safe("optional"), CoverageLevel.OPTIONAL_FUTURE, Map.of())).freezeAndValidate();
         rejectAction(action("canon", RiskLevel.CANONICAL, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.TAINT_SUBJECT), false, 10), Map.of("canon.action", "canon.assess"));
         rejectAction(action("persist", RiskLevel.MUTATING, Set.of(Lifetime.PERSISTENT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.TAINT_SUBJECT), false, 1), Map.of("persist.action", "persist.assess"));
         rejectAction(action("leak", RiskLevel.MUTATING, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.NONE), true, 1), Map.of("leak.action", "leak.assess"));
@@ -132,7 +132,15 @@ public final class WeaverContractRegressionSuite {
         String refusal;
         boolean reserved;
         int captures;
+        int recoveryCaptures;
+        String recoveryValue;
         SnapshotProvider(String id) { super(id, safe(id), CoverageLevel.FULL_PROVIDER, Map.of()); }
+        @Override public Map<String, WeaverValue> captureRecoveryOnOwner(RecoveryContext context) {
+            context.authority().require(context.operation()); recoveryCaptures++;
+            if (recoveryValue == null) return WeaverSnapshotContributor.super.captureRecoveryOnOwner(context);
+            return Map.of(id + ".fact", new WeaverValue(WeaverTypeId.parse("weaver:text@1"),
+                    Map.of("value", recoveryValue), id, id, Set.of(), 1));
+        }
         @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef subject) {
             captures++;
             if (broken) throw new LinkageError("private provider detail");

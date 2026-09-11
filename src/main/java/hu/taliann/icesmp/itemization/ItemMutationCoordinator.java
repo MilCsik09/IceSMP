@@ -75,6 +75,7 @@ public final class ItemMutationCoordinator implements Listener {
     private final ItemSalvageService salvage = new ItemSalvageService();
     private final ItemMutationJournal journal;
     private final Set<UUID> inFlight = ConcurrentHashMap.newKeySet();
+    private final ItemDeveloperMutationRuntime developer;
     private volatile RuneMutationPolicy.FamilyCompatibility runeFamilyCompatibility =
             RuneMutationPolicy.unrestrictedFamilies();
 
@@ -90,7 +91,21 @@ public final class ItemMutationCoordinator implements Listener {
         this.journal = new ItemMutationJournal(plugin, new File(plugin.getDataFolder(),
                 "item-mutation-journal.yml"), plugin.getLogger());
         this.journal.load();
+        this.developer = new ItemDeveloperMutationRuntime(plugin, identity, materials, mutations, journal, inFlight,
+                () -> runeFamilyCompatibility, () -> activeInstance == this);
         activeInstance = this;
+    }
+
+    /** Shared native WW ingress; retains the normal coordinator's journal and in-flight reservation. */
+    public ItemDeveloperMutationRuntime developerMutations() { return developer; }
+
+    public void startDeveloperRecovery() { developer.start(); }
+    public void stopDeveloperRecovery() { developer.close(); }
+
+    public java.util.concurrent.CompletionStage<ItemDeveloperMutationRuntime.Result> executeFromWorldWeaver(
+            final ItemDeveloperMutationRuntime.Plan plan,
+            final hu.taliann.icesmp.dev.weaver.execution.WeaverNativeEffectAuthority authority) {
+        return developer.executeOnOwner(plan, authority);
     }
 
     /** Runtime wiring seam for the legacy listener constructor; the plugin owns exactly one coordinator. */
@@ -110,6 +125,9 @@ public final class ItemMutationCoordinator implements Listener {
                     Map.of(), "A korábbi művelet tartós recoveryre vár");
         }
         final ItemStack held = player.getInventory().getItemInMainHand();
+        if (ItemPrototypePolicy.scan(held) != ItemPrototypePolicy.Scan.CLEAN) {
+            return new Preview(false, "itemization-invalid-identity", null, null, Map.of(), "Fejlesztői prototípus");
+        }
         final ItemIdentityService.Inspection inspection = identity.inspect(held);
         if (inspection.status() != ItemIdentityService.Status.VALID) {
             return new Preview(false, inspection.status() == ItemIdentityService.Status.NOT_MANAGED
@@ -142,7 +160,7 @@ public final class ItemMutationCoordinator implements Listener {
             callback.accept(new Outcome(false, "itemization-rune-target-required", null));
             return;
         }
-        if (!inFlight.add(player.getUniqueId())) {
+        if (developer.hasInFlight(player.getUniqueId()) || !inFlight.add(player.getUniqueId())) {
             callback.accept(new Outcome(false, "itemization-operation-pending", null));
             return;
         }
@@ -190,7 +208,7 @@ public final class ItemMutationCoordinator implements Listener {
             callback.accept(new Outcome(false, "rune-managed-new-rune-required", null));
             return;
         }
-        if (!inFlight.add(player.getUniqueId())) {
+        if (developer.hasInFlight(player.getUniqueId()) || !inFlight.add(player.getUniqueId())) {
             callback.accept(new Outcome(false, "itemization-operation-pending", null));
             return;
         }
@@ -222,6 +240,9 @@ public final class ItemMutationCoordinator implements Listener {
         }
         final ItemStack[] contents = player.getInventory().getContents();
         if (targetSlot < 0 || targetSlot >= contents.length) {
+            return runeDenied("rune-managed-invalid", null, null, action, socketIndex);
+        }
+        if (ItemPrototypePolicy.scan(contents[targetSlot]) != ItemPrototypePolicy.Scan.CLEAN) {
             return runeDenied("rune-managed-invalid", null, null, action, socketIndex);
         }
         final ItemIdentityService.Inspection inspection = identity.inspect(contents[targetSlot]);
@@ -342,26 +363,33 @@ public final class ItemMutationCoordinator implements Listener {
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
+        if (developer.hasInFlight(player.getUniqueId())) return;
         inFlight.remove(player.getUniqueId());
         final List<ItemMutationJournal.Entry> entries = journal.entriesFor(player.getUniqueId());
         if (entries.isEmpty()) return;
         schedulePlayer(player, () -> recover(player, entries),
-                () -> inFlight.remove(player.getUniqueId()));
+                () -> { if (!developer.hasInFlight(player.getUniqueId())) inFlight.remove(player.getUniqueId()); });
     }
 
     @EventHandler
     public void onQuit(final PlayerQuitEvent event) {
+        if (developer.hasInFlight(event.getPlayer().getUniqueId())) return;
         inFlight.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onKick(final PlayerKickEvent event) {
+        if (developer.hasInFlight(event.getPlayer().getUniqueId())) return;
         inFlight.remove(event.getPlayer().getUniqueId());
     }
 
     private void recover(final Player player, final List<ItemMutationJournal.Entry> entries) {
         final List<String> current = ItemMutationJournal.encodeInventory(player.getInventory().getContents());
         for (final ItemMutationJournal.Entry entry : entries) {
+            if (entry.type().startsWith("DEV_")) {
+                developer.recoverOnOwner(player, entry);
+                continue;
+            }
             switch (ItemMutationRecoveryPolicy.decide(current, entry.beforeInventory(),
                     entry.afterInventory())) {
                 case ABORT_BEFORE, COMMIT_AFTER -> journal.complete(entry.operationId());
@@ -381,6 +409,10 @@ public final class ItemMutationCoordinator implements Listener {
                               final Consumer<ResolutionOutcome> callback) {
         if (player == null || operationId == null || witness == null || callback == null) return;
         final ItemMutationJournal.Entry entry = journal.find(operationId).orElse(null);
+        if (entry != null && entry.type().startsWith("DEV_")) {
+            callback.accept(new ResolutionOutcome(false, "itemization-recovery-witness-mismatch", false));
+            return;
+        }
         if (entry == null) {
             plugin.getLogger().info("Item mutation recovery resolution idempotent no-op: op="
                     + operationId + " actor=" + safeActor(actor));
@@ -393,7 +425,7 @@ public final class ItemMutationCoordinator implements Listener {
                     "itemization-recovery-wrong-player", false));
             return;
         }
-        if (!inFlight.add(player.getUniqueId())) {
+        if (developer.hasInFlight(player.getUniqueId()) || !inFlight.add(player.getUniqueId())) {
             callback.accept(new ResolutionOutcome(false,
                     "itemization-operation-pending", false));
             return;
@@ -656,7 +688,8 @@ public final class ItemMutationCoordinator implements Listener {
             int remaining = cost.getValue();
             for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
                 final ItemStack item = contents[slot];
-                if (item == null || !cost.getKey().equals(materials.idOf(item))) continue;
+                if (item == null || ItemPrototypePolicy.scan(item) != ItemPrototypePolicy.Scan.CLEAN
+                        || !cost.getKey().equals(materials.idOf(item))) continue;
                 final int take = Math.min(remaining, item.getAmount());
                 remaining -= take;
                 if (take == item.getAmount()) contents[slot] = null;
@@ -670,7 +703,8 @@ public final class ItemMutationCoordinator implements Listener {
         for (final Map.Entry<String, Integer> cost : costs.entrySet()) {
             int count = 0;
             for (final ItemStack item : contents) {
-                if (item != null && cost.getKey().equals(materials.idOf(item))) count += item.getAmount();
+                if (item != null && ItemPrototypePolicy.scan(item) == ItemPrototypePolicy.Scan.CLEAN
+                        && cost.getKey().equals(materials.idOf(item))) count += item.getAmount();
             }
             if (count < cost.getValue()) return false;
         }

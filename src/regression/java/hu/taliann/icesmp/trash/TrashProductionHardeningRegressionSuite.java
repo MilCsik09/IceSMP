@@ -63,9 +63,29 @@ public final class TrashProductionHardeningRegressionSuite {
         check(occurrences(anomaly, "catch (final RuntimeException rejected)")
                         == occurrences(anomaly, "telemetry.recordBehaviorRuntimeError()"),
                 "an Anomaly best-effort failure bypasses aggregate telemetry");
-        check(occurrences(relic, "catch (final RuntimeException rejected)")
-                        == occurrences(relic, "telemetry.recordBehaviorRuntimeError()"),
-                "a Relic best-effort failure bypasses aggregate telemetry");
+        requireCatchTelemetry(relic);
+        final int confirmation = relic.indexOf("private void confirmObservedWallRemoval(");
+        check(confirmation >= 0, "native observed-removal acknowledgement path is absent");
+        final String retry = blockAt(relic, relic.indexOf('{', confirmation));
+        final int exhausted = retry.indexOf("if (retries == 0)");
+        check(exhausted >= 0 && blockAt(retry, retry.indexOf('{', exhausted))
+                        .contains("telemetry.recordBehaviorRuntimeError()"),
+                "exhausted wall completion bypasses aggregate telemetry");
+        final String activation = source("TrashRelicActivationService.java");
+        require(relic, "receipt -> confirmObservedWallRemoval(receipt, 20), telemetry::recordBehaviorRuntimeError",
+                "shared native activation acknowledgement and aggregate telemetry binding");
+        require(activation, "fields.tryObserveClaimedEffect(claim,",
+                "serialized owner-local observation admission");
+        require(activation, "if (observed) acknowledge.accept(receipt);",
+                "positive removal observation before acknowledgement");
+        require(activation, "if (receipt != null && !observed) report();",
+                "unobserved removal telemetry");
+        require(activation, "if (reported.compareAndSet(false, true)) unresolved.run();",
+                "single aggregate report across racing cleanup callbacks");
+        require(retry, "!projectileTracking.snapshot().open()", "closed-runtime retry fence");
+        require(retry, "confirmObservedWallRemoval(receipt, retries - 1)", "bounded immutable receipt continuation");
+        check(!retry.contains("Bukkit.getPlayer(") && !retry.contains("projectile.")
+                        && !retry.contains("getInventory("), "async acknowledgement accesses a live entity");
         require(archaeology, "recordInspectionStarted()", "inspection start telemetry");
         require(archaeology, "recordInspectionCompleted()", "inspection completion telemetry");
         require(archaeology, "recordInspectionCancelled()", "inspection cancellation telemetry");
@@ -76,6 +96,28 @@ public final class TrashProductionHardeningRegressionSuite {
                 "single-pass Adventure legacy-color decoding");
         check(!factory.contains("TextUtil.color("),
                 "factory pre-expanded ampersand colors into literal section codes");
+    }
+
+    private static void requireCatchTelemetry(final String source) {
+        final String marker = "catch (final RuntimeException rejected)";
+        int start = 0, checked = 0;
+        while ((start = source.indexOf(marker, start)) >= 0) {
+            final int opening = source.indexOf('{', start + marker.length());
+            check(occurrences(blockAt(source, opening), "telemetry.recordBehaviorRuntimeError()") == 1,
+                    "a Relic best-effort catch bypasses aggregate telemetry");
+            checked++; start = opening + 1;
+        }
+        check(checked >= 3, "Relic failure telemetry checks found no native rejection paths");
+    }
+
+    private static String blockAt(final String source, final int opening) {
+        check(opening >= 0 && source.charAt(opening) == '{', "native failure branch has no body");
+        int depth = 1;
+        for (int end = opening + 1; end < source.length(); end++) {
+            if (source.charAt(end) == '{') depth++;
+            else if (source.charAt(end) == '}' && --depth == 0) return source.substring(opening + 1, end);
+        }
+        throw new AssertionError("unterminated native failure branch");
     }
 
     private static void preservesPerformanceHardCaps() throws Exception {
@@ -89,8 +131,11 @@ public final class TrashProductionHardeningRegressionSuite {
                 "Anomaly hot runtime gained a global world/entity scan");
 
         final String relic = source("TrashRelicRuntime.java");
-        require(relic, "MAX_FIELDS_PER_WORLD = 32", "temporary field world cap");
-        require(relic, "MAX_FIELDS_GLOBAL = 128", "temporary field global cap");
+        final String fields = source("TrashRuleFieldService.java");
+        require(fields, "MAX_FIELDS_PER_WORLD = 32", "temporary field world cap");
+        require(fields, "MAX_FIELDS_GLOBAL = 128", "temporary field global cap");
+        require(relic, "ruleFields.claim(point(location), kind)", "native wall claim shares field authority");
+        check(!relic.contains("record RuleField") && !fields.contains("org.bukkit"), "parallel field authority or live field handle");
         require(relic, "MAX_NEARBY_ENTITIES = 24", "Relic candidate scan cap");
         check(!relic.contains("Bukkit.getWorlds()")
                         && !relic.contains("getWorld().getEntities()"),
@@ -169,7 +214,18 @@ public final class TrashProductionHardeningRegressionSuite {
                 "runtime shutdown proof ran before Trash cleanup");
         require(probe, "SHUTDOWN_PASS_MARKER", "separate shutdown proof marker");
         require(probe, "activePhysics", "Anomaly shutdown-state proof");
-        require(probe, "trackedProjectiles", "Relic shutdown-state proof");
+        require(probe, "verifyProjectileTrackingState(relic.projectileTrackingState(), true)",
+                "native projectile startup lifecycle proof");
+        require(probe, "verifyProjectileTrackingState(relic.projectileTrackingState(), false)",
+                "native projectile shutdown lifecycle proof");
+        check(!probe.contains("\"trackedProjectiles\""), "probe depends on removed projectile permit registry");
+        require(probe, "verifyRuleFieldState(relic.ruleFields().snapshot(), true)",
+                "native field startup lifecycle proof");
+        require(probe, "verifyRuleFieldState(relic.ruleFields().snapshot(), false)",
+                "native field shutdown lifecycle proof");
+        check(!probe.contains("readField(relic, \"fields\"")
+                        && !probe.contains("\"claimedFields\""),
+                "probe depends on removed duplicate field registries");
         require(probe, "overlays", "tooltip shutdown-state proof");
         check(!probe.contains("failure.printStackTrace()")
                         && !probe.contains("failure.getMessage()"),

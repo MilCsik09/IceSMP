@@ -2,6 +2,11 @@ package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.Territory;
 import hu.taliann.icesmp.data.TerritoryType;
+import hu.taliann.icesmp.territory.TerritoryProtectionPolicy;
+import hu.taliann.icesmp.territory.TerritoryRuleProjectionSource;
+import org.bukkit.Bukkit;
+import java.util.UUID;
+import java.util.Objects;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -25,9 +30,9 @@ import java.util.Map;
  * bypass and the narrower builder bypass.
  *
  * <p>Threading (Folia): the zone lookup is a lock-free concurrent-map read and
- * all queries run on the calling event's region thread. The only cross-entity
- * touch is the PvP denial notice to the attacker, which is dispatched on the
- * attacker's own scheduler.
+ * live actor permissions are captured only on the actor owner. Unavailable
+ * permission capture is represented explicitly and fails closed for protected
+ * actions. Notices resolve UUIDs on the recipient owner; traces contain only values.
  */
 public final class TerritoryProtectionService {
 
@@ -55,6 +60,59 @@ public final class TerritoryProtectionService {
     }
 
     private volatile CombatTagManager combatTagManager;
+    private final java.util.concurrent.atomic.AtomicReference<TerritoryRuleProjectionSource> ruleProjection =
+            new java.util.concurrent.atomic.AtomicReference<>();
+
+    /** Single read-only composition port; territory storage, claims and ownership do not use it. */
+    public void bindRuleProjection(final TerritoryRuleProjectionSource source) {
+        if (!ruleProjection.compareAndSet(null, Objects.requireNonNull(source))) {
+            throw new IllegalStateException("Territory rule projection already bound");
+        }
+    }
+
+    private record Evaluation(Territory zone, TerritoryProtectionPolicy.Decision decision) { }
+
+    /** Inspection and native consumers share this evaluation, including hard bypass precedence. */
+    public TerritoryProtectionPolicy.Decision traceAt(final Location location, final Player actor,
+                                                      final TerritoryProtectionPolicy.Rule rule) {
+        return evaluateAt(location, actor, rule, false, null).decision();
+    }
+
+    public TerritoryProtectionPolicy.Decision tracePlayerDamage(final Player victim, final Player attacker) {
+        if (!Bukkit.isOwnedByCurrentRegion(victim)) throw new IllegalStateException("Victim owner unavailable");
+        return evaluateAt(victim.getLocation(), attacker, TerritoryProtectionPolicy.Rule.PVP,
+                false, victim.getUniqueId()).decision();
+    }
+
+    private Evaluation evaluateAt(final Location location, final Player actor,
+                                  final TerritoryProtectionPolicy.Rule rule, final boolean terrain,
+                                  final UUID victimId) {
+        final Territory zone = territoryManager.getTerritoryAt(location);
+        final boolean actorOwned = actor == null || Bukkit.isOwnedByCurrentRegion(actor);
+        final UUID actorId = actor == null ? null : actor.getUniqueId();
+        final RaidManager raids = raidManager;
+        final RaidManager.ActiveRaid raid = raids == null ? null : raids.getActiveRaid();
+        final boolean siege = rule == TerritoryProtectionPolicy.Rule.PVP && zone != null && actorId != null
+                && raid != null && zone.id().equals(raid.territoryId()) && raids.isParticipant(actorId);
+        final var facts = new TerritoryProtectionPolicy.Facts(rule, zone != null,
+                zone != null && zone.type().isProtectedZone(),
+                zone != null && ruleEnabled(zone.type(), rule.name().toLowerCase(Locale.ROOT)), terrain,
+                actor != null, actorOwned,
+                actor != null && actorOwned && actor.hasPermission(ADMIN_BYPASS),
+                actor != null && actorOwned && actor.hasPermission(BUILDER_BYPASS),
+                actorId != null && zone != null && factionManager.isMember(actorId, zone.faction()),
+                rule == TerritoryProtectionPolicy.Rule.PVP && actorId != null && victimId != null
+                        && zone != null && zone.type() == TerritoryType.DOOM_GATE && hasDoomGrace(victimId),
+                rule == TerritoryProtectionPolicy.Rule.PVP && victimId != null && isPvpUnprotected(victimId), siege);
+        TerritoryProtectionPolicy.Overlay overlay = TerritoryProtectionPolicy.Overlay.INHERIT;
+        boolean available = true;
+        final TerritoryRuleProjectionSource source = ruleProjection.get();
+        if (source != null && zone != null) {
+            try { overlay = Objects.requireNonNull(source.resolve(location.getWorld().getUID(), zone.id(), rule)); }
+            catch (final RuntimeException unavailable) { available = false; }
+        }
+        return new Evaluation(zone, TerritoryProtectionPolicy.evaluate(facts, overlay, available));
+    }
 
     public void setCombatTagManager(final CombatTagManager combatTagManager) {
         this.combatTagManager = combatTagManager;
@@ -145,31 +203,23 @@ public final class TerritoryProtectionService {
      * allowed. Bypass permissions and faction membership are applied here.
      */
     private Territory blockingZone(final Player player, final Location location, final String rule) {
-        final Territory zone = territoryManager.getTerritoryAt(location);
-        if (zone == null || !ruleEnabled(zone.type(), rule)) {
-            return null;
-        }
-        if (player.hasPermission(ADMIN_BYPASS) || player.hasPermission(BUILDER_BYPASS)) {
-            return null;
-        }
-        if (zone.type().isProtectedZone()) {
-            return zone; // protected: everyone denied
-        }
-        // Normal faction land: only non-members are denied.
-        return factionManager.isMember(player.getUniqueId(), zone.faction()) ? null : zone;
+        final Evaluation evaluation = evaluateAt(location, player,
+                TerritoryProtectionPolicy.Rule.valueOf(rule.toUpperCase(Locale.ROOT)), false, null);
+        return evaluation.decision().denied() ? evaluation.zone() : null;
     }
 
     /** True (and warns) when the player may not build/break at the location. */
     public boolean denyBuild(final Player player, final Location location) {
-        final Territory zone = blockingZone(player, location, BUILD);
-        if (zone == null) {
-            return false;
-        }
-        warn(player, zone, "territory-build-denied-protected",
+        return buildDecision(player, location).denied();
+    }
+
+    public TerritoryProtectionPolicy.Decision buildDecision(final Player player, final Location location) {
+        final Evaluation evaluation = evaluateAt(location, player, TerritoryProtectionPolicy.Rule.BUILD, false, null);
+        if (evaluation.decision().denied() && evaluation.zone() != null) warn(player, evaluation.zone(), "territory-build-denied-protected",
                 "<red>⛨ {name} — védett zóna, itt senki sem építhet.</red>",
                 "territory-build-denied",
                 "<red>Ez a(z) {faction} frakció területe — itt nem építhetsz.</red>");
-        return true;
+        return evaluation.decision();
     }
 
     /** True (and warns) when the player may not interact (containers, doors…) at the location. */
@@ -188,11 +238,30 @@ public final class TerritoryProtectionService {
     private void warn(final Player player, final Territory zone, final String protectedKey,
                       final String protectedDefault, final String factionKey, final String factionDefault) {
         if (zone.type().isProtectedZone()) {
-            player.sendActionBar(messageManager.getMessage(protectedKey, protectedDefault,
-                    Map.of("name", zone.name())));
+            notice(player.getUniqueId(), protectedKey, protectedDefault, Map.of("name", zone.name()));
         } else {
-            player.sendActionBar(messageManager.getMessage(factionKey, factionDefault,
-                    Map.of("faction", zone.faction().getDisplayName())));
+            notice(player.getUniqueId(), factionKey, factionDefault, Map.of("faction", zone.faction().getDisplayName()));
+        }
+    }
+
+    private void notice(final UUID playerId, final String key, final String fallback, final Map<String, String> arguments) {
+        final Player route = Bukkit.getPlayer(playerId);
+        if (route == null) return;
+        route.getScheduler().run(plugin, task -> {
+            final Player owner = Bukkit.getPlayer(playerId);
+            if (owner != null && Bukkit.isOwnedByCurrentRegion(owner)) {
+                owner.sendActionBar(messageManager.getMessage(key, fallback, arguments));
+            }
+        }, null);
+    }
+
+    private void notifyCombat(final UUID attackerId, final Evaluation evaluation) {
+        if (evaluation.decision().reason() == TerritoryProtectionPolicy.Reason.DOOM_GRACE) {
+            notice(attackerId, "territory-doom-grace",
+                    "<gray>⚔ A belépő még a Kapu árnyékának védelme alatt áll — pár pillanat, és szabad a préda.</gray>", Map.of());
+        } else {
+            notice(attackerId, "territory-pvp-denied", "<red>⛨ {name} — biztonságos zóna, itt tilos a PvP.</red>",
+                    Map.of("name", evaluation.zone() == null ? "Terület" : evaluation.zone().name()));
         }
     }
 
@@ -243,21 +312,19 @@ public final class TerritoryProtectionService {
      * grace the moment they swing first.
      */
     public boolean denyPvp(final Player victim, final Player attacker) {
-        final Territory zone = territoryManager.getTerritoryAt(victim.getLocation());
-        if (zone != null && zone.type() == TerritoryType.DOOM_GATE) {
-            // Attacking voids the attacker's own protection (no grace-abuse ganking).
+        return denyPlayerDamage(victim, attacker, true);
+    }
+
+    /** Native damage/potion ingress includes victim lifecycle gates before every overlay. */
+    public boolean denyPlayerDamage(final Player victim, final Player attacker, final boolean notify) {
+        if (!Bukkit.isOwnedByCurrentRegion(victim)) return true;
+        final Evaluation evaluation = evaluateAt(victim.getLocation(), attacker,
+                TerritoryProtectionPolicy.Rule.PVP, false, victim.getUniqueId());
+        if (attacker != null && evaluation.zone() != null && evaluation.zone().type() == TerritoryType.DOOM_GATE) {
             clearDoomGrace(attacker.getUniqueId());
-            if (hasDoomGrace(victim.getUniqueId())) {
-                attacker.getScheduler().run(plugin, task -> attacker.sendActionBar(messageManager.getMessage(
-                        "territory-doom-grace",
-                        "<gray>⚔ A belépő még a Kapu árnyékának védelme alatt áll — pár pillanat, és szabad a préda.</gray>")), null);
-                return true;
-            }
         }
-        if (isPvpUnprotected(victim.getUniqueId())) {
-            return false;
-        }
-        return denyCombat(victim.getLocation(), attacker, true);
+        if (evaluation.decision().denied() && notify && attacker != null) notifyCombat(attacker.getUniqueId(), evaluation);
+        return evaluation.decision().denied();
     }
 
     /**
@@ -269,30 +336,9 @@ public final class TerritoryProtectionService {
      * scheduler. Used for melee, projectiles, pets, TNT and harmful potions.
      */
     public boolean denyCombat(final Location victimLocation, final Player attacker, final boolean notify) {
-        final Territory zone = territoryManager.getTerritoryAt(victimLocation);
-        if (zone == null || !ruleEnabled(zone.type(), PVP)) {
-            return false;
-        }
-        if (attacker != null && attacker.hasPermission(ADMIN_BYPASS)) {
-            return false;
-        }
-        // Élő ostrom alatt a raid CÉLZÓNÁJA hadszíntér: regisztrált harcos támadása ott
-        // nem eshet a békeidős PvP-tiltás alá — enélkül a fővárosi raid (az alapértelmezett
-        // célpont védett zóna) soha nem termelhetne kill-pontot.
-        final RaidManager raids = this.raidManager;
-        if (raids != null && attacker != null) {
-            final RaidManager.ActiveRaid raid = raids.getActiveRaid();
-            if (raid != null && zone.id().equals(raid.territoryId())
-                    && raids.isParticipant(attacker.getUniqueId())) {
-                return false;
-            }
-        }
-        if (notify && attacker != null) {
-            attacker.getScheduler().run(plugin, task -> attacker.sendActionBar(messageManager.getMessage(
-                    "territory-pvp-denied", "<red>⛨ {name} — biztonságos zóna, itt tilos a PvP.</red>",
-                    Map.of("name", zone.name()))), null);
-        }
-        return true;
+        final Evaluation evaluation = evaluateAt(victimLocation, attacker, TerritoryProtectionPolicy.Rule.PVP, false, null);
+        if (evaluation.decision().denied() && notify && attacker != null) notifyCombat(attacker.getUniqueId(), evaluation);
+        return evaluation.decision().denied();
     }
 
     // ==================== environment (explosions / fire / terrain) ====================
@@ -303,19 +349,20 @@ public final class TerritoryProtectionService {
      * active. Normal faction land is left to ordinary survival mechanics.
      */
     public boolean isTerrainProtectedAt(final Location location) {
-        final Territory zone = territoryManager.getTerritoryAt(location);
-        return zone != null && zone.type().isProtectedZone() && ruleEnabled(zone.type(), BUILD);
+        return terrainDecision(location).denied();
+    }
+
+    public TerritoryProtectionPolicy.Decision terrainDecision(final Location location) {
+        return evaluateAt(location, null, TerritoryProtectionPolicy.Rule.BUILD, true, null).decision();
     }
 
     /** Whether an explosion may not damage the block at this location. */
     public boolean isExplosionBlockedAt(final Location location) {
-        final Territory zone = territoryManager.getTerritoryAt(location);
-        return zone != null && ruleEnabled(zone.type(), EXPLOSIONS);
+        return evaluateAt(location, null, TerritoryProtectionPolicy.Rule.EXPLOSIONS, false, null).decision().denied();
     }
 
     /** Whether fire (ignite/spread/burn) is forbidden at this location. */
     public boolean isFireBlockedAt(final Location location) {
-        final Territory zone = territoryManager.getTerritoryAt(location);
-        return zone != null && ruleEnabled(zone.type(), FIRE);
+        return evaluateAt(location, null, TerritoryProtectionPolicy.Rule.FIRE, false, null).decision().denied();
     }
 }

@@ -188,9 +188,32 @@ public final class TrashHistoryListener implements Listener {
     }
 
     private void scanPlayer(final Player player) {
+        if (!plugin.isEnabled() || !org.bukkit.Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return;
+        if (reconcileDeveloperProjections(player)) return;
         completePreparedRepairs(player);
         scanHeld(player, EquipmentSlot.HAND);
         scanHeld(player, EquipmentSlot.OFF_HAND);
+    }
+
+    /** Native pending projection recovery only. Never repeats a developer mutation or recreates an observed item. */
+    private boolean reconcileDeveloperProjections(final Player player) {
+        if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(player.getUniqueId())) return false;
+        return guardedValue(() -> {
+            boolean completed = false;
+            final var pending = history.tryInspectPendingDeveloperProjections(player.getUniqueId());
+            if (pending.isEmpty()) return false;
+            for (final var receipt : pending.orElseThrow()) {
+                final ItemStack[] before = java.util.Arrays.stream(player.getInventory().getContents())
+                        .map(item -> item == null ? null : item.clone()).toArray(ItemStack[]::new);
+                final var observed = history.tryObserveDeveloperProjection(receipt, before);
+                if (observed.isEmpty()) break;
+                if (!observed.orElseThrow() && !history.tryRestoreDeveloperProjection(receipt, player.getInventory()::getContents,
+                        player.getInventory()::setContents, () -> player.getInventory().setContents(before))) continue;
+                player.saveData();
+                completed |= history.tryConfirmDeveloperProjection(receipt, player.getInventory()::getContents);
+            }
+            return completed;
+        }, false);
     }
 
     private void scanHeld(final Player player, final EquipmentSlot slot) {

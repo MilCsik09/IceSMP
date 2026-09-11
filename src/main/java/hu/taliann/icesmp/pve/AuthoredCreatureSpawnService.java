@@ -159,6 +159,7 @@ public final class AuthoredCreatureSpawnService {
                 forget(entityId, parentId);
         }
         abilities.attach(mob);
+        if ("world_weaver".equals(request.sourceId())) abilities.pause(mob);
         // A creature may move before refresh; each continuation resolves its UUID on that entity's owner.
         if (mob.getScheduler().runDelayed(plugin, task -> {
             final Mob owned = ownedMob(entityId);
@@ -171,6 +172,7 @@ public final class AuthoredCreatureSpawnService {
     /** Spawn consumer runs before world activation, so causal/reward identity exists before spawn listeners. */
     private void stampOrigin(final Mob mob, final Request request) {
         if (request.transientEntity()) mob.setPersistent(false);
+        if ("world_weaver".equals(request.sourceId())) { mob.setAI(false); mob.setInvulnerable(true); }
         final var pdc = mob.getPersistentDataContainer();
         pdc.set(sourceKey, PersistentDataType.STRING, request.sourceId());
         pdc.set(encounterKey, PersistentDataType.STRING, request.encounterId());
@@ -179,6 +181,25 @@ public final class AuthoredCreatureSpawnService {
         if (request.summonOwner() != null) pdc.set(summonOwnerKey, PersistentDataType.STRING, request.summonOwner().toString());
     }
 
+    /** Expected native origin prevents a delayed cleanup from touching a replacement entity. */
+    public void cleanupSandboxFork(final UUID entityId, final UUID expectedOperation) {
+        if (!plugin.isEnabled()) { TransientEntities.removeOnShutdown(entityId); return; }
+        final Entity handle = Bukkit.getEntity(entityId);
+        if (handle == null) return;
+        try {
+            handle.getScheduler().run(plugin, task -> {
+                final Mob mob = ownedMob(entityId);
+                if (mob != null) cleanupSandboxForkOnOwner(mob, expectedOperation);
+            }, () -> { });
+        } catch (org.bukkit.plugin.IllegalPluginAccessException disabled) { TransientEntities.removeOnShutdown(entityId); }
+    }
+    /** An explicit WW removal receipt requires owner-local observation, not queued cleanup admission. */
+    public boolean cleanupSandboxForkOnOwner(final Mob mob, final UUID expectedOperation) {
+        if (mob == null || !Bukkit.isOwnedByCurrentRegion(mob)) throw new IllegalStateException("Fork cleanup owner required");
+        if (sandboxEventOrigin(mob).filter(origin -> origin.instanceId().equals(expectedOperation)).isEmpty()) return false;
+        abilities.detach(mob); remove(mob.getUniqueId(), null);
+        return !mob.isValid();
+    }
     public void cleanupSummons(final UUID owner) {
         final java.util.Set<UUID> ids = activeSummonIds.remove(owner);
         if (ids == null) return;
@@ -230,6 +251,14 @@ public final class AuthoredCreatureSpawnService {
         return java.util.Optional.of(id);
     }
 
+    /** Immutable native encounter provenance, captured before an async reward/effect handoff. */
+    public static java.util.Optional<hu.taliann.icesmp.integrity.RewardSource.Event> sandboxEventOrigin(final Entity entity) {
+        if (entity == null || !Bukkit.isOwnedByCurrentRegion(entity)) throw new IllegalStateException("Authored origin owner required");
+        final var pdc = entity.getPersistentDataContainer();
+        if (!"world_weaver".equals(pdc.get(NamespacedKey.fromString("icesmp:authored_spawn_source"), PersistentDataType.STRING))) return java.util.Optional.empty();
+        final String raw = pdc.get(NamespacedKey.fromString("icesmp:authored_encounter_id"), PersistentDataType.STRING);
+        return java.util.Optional.of(new hu.taliann.icesmp.integrity.RewardSource.Event("world_weaver", UUID.fromString(raw)));
+    }
     public static RewardOwner rewardOwner(final Entity entity) {
         if (entity == null) return RewardOwner.GENERIC;
         final String stored = entity.getPersistentDataContainer().get(

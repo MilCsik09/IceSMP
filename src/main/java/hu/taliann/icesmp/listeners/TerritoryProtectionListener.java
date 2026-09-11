@@ -45,9 +45,11 @@ public final class TerritoryProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onBreak(final BlockBreakEvent event) {
-        if (!protection.denyBuild(event.getPlayer(), event.getBlock().getLocation())) {
+        final var decision = protection.buildDecision(event.getPlayer(), event.getBlock().getLocation());
+        if (!decision.denied()) {
             return;
         }
+        if (decision.deniesRegeneration()) { event.setCancelled(true); return; }
         // Regen-rombolás: a tiltás helyett a blokk drop/XP nélkül törhető, és a
         // beállított késleltetés után PONTOSAN visszaépül. Ostrom alatt a célzónában
         // a regisztrált harcosnak jár; zónán kívüli ("always") módban config-kapcsolós.
@@ -150,13 +152,15 @@ public final class TerritoryProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityDamageByEntity(final EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player) && !org.bukkit.Bukkit.isOwnedByCurrentRegion(event.getDamager())) {
+            event.setCancelled(true); return;
+        }
         final Player attacker = resolveAttacker(event.getDamager());
         if (event.getEntity() instanceof Player victim) {
             // Safe-zone: block player-attributed AND unattributed (TNT/mob) damage.
             // Combat-taggelt áldozat kivétel: harc közben a zónába sétálás nem véd.
             if ((attacker != null || isHostileSource(event.getDamager()))
-                    && !protection.isPvpUnprotected(victim.getUniqueId())
-                    && protection.denyCombat(victim.getLocation(), attacker, attacker != null)) {
+                    && protection.denyPlayerDamage(victim, attacker, attacker != null)) {
                 event.setCancelled(true);
             }
             return;
@@ -244,6 +248,10 @@ public final class TerritoryProtectionListener implements Listener {
         final java.util.Iterator<org.bukkit.block.Block> it = blocks.iterator();
         while (it.hasNext()) {
             final org.bukkit.block.Block block = it.next();
+            if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(block)) { it.remove(); continue; }
+            final var decision = protection.traceAt(block.getLocation(), null,
+                    hu.taliann.icesmp.territory.TerritoryProtectionPolicy.Rule.EXPLOSIONS);
+            if (decision.deniesRegeneration()) { it.remove(); continue; }
             // Zóna-mátrix dönt: regen-es zónában (vadon is lehet!) gyógyuló rombolás;
             // regen nélküli védett zónában a régi teljes tiltás; máshol vanília.
             if (!regen.isZoneRegenEnabled(protection.zoneTypeKeyAt(block.getLocation()))) {
@@ -276,6 +284,10 @@ public final class TerritoryProtectionListener implements Listener {
      */
     @EventHandler(ignoreCancelled = true)
     public void onEntityChangeBlock(final org.bukkit.event.entity.EntityChangeBlockEvent event) {
+        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(event.getEntity())
+                || !org.bukkit.Bukkit.isOwnedByCurrentRegion(event.getBlock())) {
+            event.setCancelled(true); return;
+        }
         if (event.getEntity().getScoreboardTags().contains(
                 hu.taliann.icesmp.managers.BlockRegenService.DEBRIS_TAG)) {
             event.setCancelled(true);
@@ -295,6 +307,9 @@ public final class TerritoryProtectionListener implements Listener {
         }
         if (event.getEntity() instanceof Player) {
             return;
+        }
+        if (protection.terrainDecision(event.getBlock().getLocation()).deniesRegeneration()) {
+            event.setCancelled(true); return;
         }
         // Nem-romboló mob-változás (pl. enderman blokkot RAK): a régi terrain-tiltás él.
         if (!event.getTo().isAir()) {
@@ -459,7 +474,7 @@ public final class TerritoryProtectionListener implements Listener {
             if (!(affected instanceof Player victim) || victim.equals(thrower)) {
                 continue;
             }
-            if (protection.denyCombat(victim.getLocation(), thrower, !notified && thrower != null)) {
+            if (protection.denyPlayerDamage(victim, thrower, !notified && thrower != null)) {
                 event.setIntensity(affected, 0.0D);
                 notified = true;
             }
@@ -476,7 +491,7 @@ public final class TerritoryProtectionListener implements Listener {
         final Player owner = cloud.getSource() instanceof Player player ? player : null;
         event.getAffectedEntities().removeIf(affected ->
                 affected instanceof Player victim && !victim.equals(owner)
-                        && protection.denyCombat(victim.getLocation(), owner, false));
+                        && protection.denyPlayerDamage(victim, owner, false));
     }
 
     /** Harmful potion-effect keys (version-stable paths; covers old and 1.21 names). */

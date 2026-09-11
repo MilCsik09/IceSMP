@@ -27,6 +27,8 @@ public final class TrashArchaeologyService {
     public CompletionStage<Result> inspect(final UUID playerId, final ItemStack snapshot) {
         Objects.requireNonNull(playerId, "playerId");
         Objects.requireNonNull(snapshot, "snapshot");
+        if (hu.taliann.icesmp.itemization.ItemPrototypePolicy.scan(snapshot)
+                != hu.taliann.icesmp.itemization.ItemPrototypePolicy.Scan.CLEAN) return CompletableFuture.completedFuture(Result.rejected());
         final TrashArchaeologyProfileStore.Profile before;
         final TrashArchaeologyFactEngine.Evaluation evaluation;
         try {

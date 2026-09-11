@@ -22,6 +22,7 @@ public final class WorldWeaverProviderRegistry {
     private hu.taliann.icesmp.dev.weaver.projection.ProjectionConsumerRegistry projectionConsumers;
     private Map<WeaverTypeId, InfluenceLifetimeDescriptor> influenceLifetimes = Map.of();
     private Map<GameplaySourceSubject.Kind, List<Entry>> causalSources = Map.of();
+    private Map<String, Integer> causalSourceBudgets = Map.of();
     private final LongSupplier clock;
     private final Map<String, Entry> providers = new LinkedHashMap<>();
     private Map<String, FacetDescriptor> facets = Map.of();
@@ -33,6 +34,9 @@ public final class WorldWeaverProviderRegistry {
     private volatile boolean frozen;
     public WorldWeaverProviderRegistry(final WeaverTypeRegistry types, final LongSupplier monotonicMillis) {
         this.types = Objects.requireNonNull(types); clock = Objects.requireNonNull(monotonicMillis);
+    }
+    public void clearSessions() {
+        for (final Entry entry : providers.values()) entry.provider().clearSession();
     }
     public synchronized void register(final WorldWeaverProvider provider) {
         Objects.requireNonNull(provider);
@@ -54,7 +58,6 @@ public final class WorldWeaverProviderRegistry {
         final Map<String, String> ownerMap = new LinkedHashMap<>();
         final Set<String> ids = new HashSet<>(providers.keySet());
         for (final Entry entry : providers.values()) {
-            if (entry.coverage().level() == CoverageLevel.DEFERRED_BLOCKER) throw new IllegalArgumentException("Provider coverage blocker: " + entry.id());
             final ProviderContribution contribution = entry.contribution();
             add(entry, contribution.facets(), FacetDescriptor::id, facetMap, ownerMap, ids);
             add(entry, contribution.actions(), ActionDescriptor::id, actionMap, ownerMap, ids);
@@ -125,12 +128,17 @@ public final class WorldWeaverProviderRegistry {
             }
         }
         final Map<GameplaySourceSubject.Kind, List<Entry>> sourceConsumers = new EnumMap<>(GameplaySourceSubject.Kind.class);
+        final Map<String, Integer> sourceBudgets = new HashMap<>();
         for (final Entry entry : providers.values()) if (entry.provider() instanceof WeaverCausalSourceProvider sourceProvider) {
+            final int maximum = sourceProvider.maximumCausalSources();
+            if (maximum < 1 || maximum > 32) throw new IllegalArgumentException("Provider source provenance bound");
+            sourceBudgets.put(entry.id(), maximum);
             for (final var kind : Set.copyOf(sourceProvider.causalSourceKinds())) sourceConsumers.computeIfAbsent(kind, ignored -> new ArrayList<>()).add(entry);
         }
         final Map<GameplaySourceSubject.Kind, List<Entry>> immutableSources = new EnumMap<>(GameplaySourceSubject.Kind.class);
         sourceConsumers.forEach((kind, entries) -> immutableSources.put(kind, List.copyOf(entries)));
         causalSources = Map.copyOf(immutableSources);
+        causalSourceBudgets = Map.copyOf(sourceBudgets);
         influenceLifetimes = Map.copyOf(lifetimes);
         types.freeze(); facets = Map.copyOf(facetMap); actions = Map.copyOf(actionMap); catalogs = Map.copyOf(catalogMap);
         exports = Map.copyOf(exportMap); imports = Map.copyOf(importMap); owners = Map.copyOf(ownerMap); frozen = true;
@@ -244,16 +252,18 @@ public final class WorldWeaverProviderRegistry {
     /** The operation-scoped recovery token permits only its provider's owner-thread observation. */
     public Map<String, WeaverValue> captureRecoveryContributions(final RecoveryContext context) {
         context.authority().require(context.operation());
-        return captureContributions(context.operation().subject(), Optional.of(context.operation().providerId()));
+        return captureContributions(context.operation().subject(), Optional.of(context));
     }
-    private Map<String, WeaverValue> captureContributions(final hu.taliann.icesmp.dev.weaver.subject.SubjectRef subject, final Optional<String> recoveringProvider) {
+    private Map<String, WeaverValue> captureContributions(final hu.taliann.icesmp.dev.weaver.subject.SubjectRef subject, final Optional<RecoveryContext> recovery) {
         requireFrozen();
+        final Optional<String> recoveringProvider = recovery.map(context -> context.operation().providerId());
         final Map<String, WeaverValue> facts = new TreeMap<>();
         for (final Entry entry : providers.values()) {
             if (!entry.kinds().contains(subject.kind()) || !(entry.provider() instanceof WeaverSnapshotContributor contributor)) continue;
             try {
                 final Map<String, WeaverValue> captured = entry.breaker().call(() -> {
-                    final Map<String, WeaverValue> values = Map.copyOf(contributor.captureOnOwner(subject));
+                    final Map<String, WeaverValue> values = Map.copyOf(recoveringProvider.filter(entry.id()::equals).isPresent()
+                            ? contributor.captureRecoveryOnOwner(recovery.orElseThrow()) : contributor.captureOnOwner(subject));
                     if (values.size() > 128) throw new IllegalArgumentException("Provider snapshot fact cap");
                     values.forEach((key, value) -> {
                         if (!key.startsWith(entry.id() + ".") || !value.sourceProvider().equals(entry.id()) || key.endsWith(".snapshot_unavailable")) throw new IllegalArgumentException("Foreign/reserved snapshot fact");
@@ -330,11 +340,11 @@ public final class WorldWeaverProviderRegistry {
         for (final var entry : causalSources.getOrDefault(subject.kind(), List.of())) {
             final var contribution = entry.breaker().call(() -> {
                 final var values = List.copyOf(((WeaverCausalSourceProvider) entry.provider()).captureCausalSources(subject));
-                if (values.size() > 16) throw new IllegalArgumentException("Provider source provenance cap");
+                if (values.size() > causalSourceBudgets.get(entry.id())) throw new IllegalArgumentException("Provider source provenance cap");
                 return values;
             }, false);
             sources.addAll(contribution);
-            if (sources.size() > 32) throw new WeaverDomainRejection("SOURCE_PROVENANCE_CAPACITY");
+            if (sources.size() > hu.taliann.icesmp.integrity.GameplaySourceCaptureGate.MAX_SOURCES) throw new WeaverDomainRejection("SOURCE_PROVENANCE_CAPACITY");
         }
         return List.copyOf(sources);
     }
