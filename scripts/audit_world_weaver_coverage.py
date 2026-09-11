@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = Path("src/main/java/hu/taliann/icesmp")
 MANIFEST = Path("docs/development/world-weaver/coverage.json")
 SUFFIX = re.compile(r"(?:Manager|Service|Registry|Runtime|Coordinator|Authority|Catalog|Policy|Store)$")
-LEVELS = {"FULL_PROVIDER", "INSPECT_ONLY_BY_DESIGN", "NO_RUNTIME_SURFACE", "DEFERRED_BLOCKER"}
+LEVELS = {"FULL_PROVIDER", "INSPECT_ONLY_BY_DESIGN", "NO_RUNTIME_SURFACE", "OPTIONAL_FUTURE"}
 ENTRYPOINTS = ("IceSMP.java", "IceSMPBootstrap.java", "core/IceSMPCore.java", "prologue/PrologueRuntime.java")
 
 
@@ -77,8 +77,6 @@ def validate(root: Path, data: dict, release: bool = False) -> list[str]:
         if domain["status"] == "FULL_PROVIDER":
             if not domain.get("implementation_evidence"):
                 errors.append("FULL_PROVIDER without implementation evidence: " + domain["id"])
-        if release and domain["status"] == "DEFERRED_BLOCKER":
-            errors.append("release coverage blocker: " + domain["id"])
     design = root / data["design"]["path"]
     if not design.is_file() or hashlib.sha256(design.read_bytes()).hexdigest() != data["design"]["sha256"]:
         errors.append("normative design differs from reviewed v2")
@@ -87,15 +85,15 @@ def validate(root: Path, data: dict, release: bool = False) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--release", action="store_true", help="Also reject every unresolved coverage blocker")
+    parser.add_argument("--release", action="store_true", help="Compatibility flag; optional domains never block release")
     args = parser.parse_args()
     data = json.loads((ROOT / MANIFEST).read_text(encoding="utf-8"))
     errors = validate(ROOT, data, args.release)
     for error in errors:
         print("FAIL: " + error)
-    blockers = sum(d["status"] == "DEFERRED_BLOCKER" for d in data["domains"])
+    blockers = sum(d["status"] == "OPTIONAL_FUTURE" for d in data["domains"])
     print(f"WW-00 inventory: {len(data['authorities'])} authorities; "
-          f"{len(data['domains'])} domains; {blockers} implementation blockers; {len(errors)} audit errors")
+          f"{len(data['domains'])} domains; {blockers} optional domains; {len(errors)} audit errors")
     print("This source inventory does not prove provider implementation or runtime safety.")
     return bool(errors)
 

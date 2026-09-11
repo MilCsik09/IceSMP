@@ -22,7 +22,7 @@ public record ProviderCoverage(Map<String, Domain> domains) {
         this(Map.of(domain, new Domain(level, rationale, surfaces)));
     }
     public CoverageLevel level() {
-        for (final CoverageLevel level : new CoverageLevel[]{CoverageLevel.DEFERRED_BLOCKER, CoverageLevel.FULL_PROVIDER, CoverageLevel.INSPECT_ONLY_BY_DESIGN}) {
+        for (final CoverageLevel level : new CoverageLevel[]{CoverageLevel.OPTIONAL_FUTURE, CoverageLevel.FULL_PROVIDER, CoverageLevel.INSPECT_ONLY_BY_DESIGN}) {
             if (domains.values().stream().anyMatch(domain -> domain.level() == level)) return level;
         }
         return CoverageLevel.NO_RUNTIME_SURFACE;

@@ -9,6 +9,9 @@ import java.util.*;
 
 /** Projection targets and capacity are acknowledged before stages; legacy data cannot invent child revisions. */
 public final class WeaverOperationScope {
+    public static final String CREATED_ENTITY = "weaver.created_entity";
+    public static final String CREATED_OUTPUT = "weaver.created_output";
+    public static final String READ_ONLY_INPUT = "weaver.read_only_input";
     public static final String RESERVATIONS = "weaver.projection_reservations";
     private WeaverOperationScope() { }
     public static Map<SubjectRef, String> fingerprints(final SubjectRef subject, final String before, final OperationRecoveryPayload payload) {
@@ -42,7 +45,11 @@ public final class WeaverOperationScope {
     }
     public static OperationRecoveryPayload attach(final SubjectRef subject, final String before, final Lifetime lifetime, final OperationRecoveryPayload payload,
             final Optional<Map<SubjectRef, Integer>> requested) {
-        if (payload.fields().containsKey(RESERVATIONS)) throw new IllegalArgumentException("Provider supplied reserved projection evidence");
+        return attach(subject, before, lifetime, payload, requested, false, false);
+    }
+    public static OperationRecoveryPayload attach(final SubjectRef subject, final String before, final Lifetime lifetime, final OperationRecoveryPayload payload,
+            final Optional<Map<SubjectRef, Integer>> requested, final boolean readOnlyInput, final boolean createdOutput) {
+        if (payload.fields().containsKey(RESERVATIONS) || payload.fields().containsKey(READ_ONLY_INPUT) || payload.fields().containsKey(CREATED_OUTPUT)) throw new IllegalArgumentException("Provider supplied reserved operation evidence");
         final Map<SubjectRef, Integer> defaults = new HashMap<>();
         if (lifetime != Lifetime.ONE_SHOT) {
             if (subject instanceof AreaRef area && payload.fields().containsKey(WeaverAreaRecoveryEvidence.KEY)) {
@@ -54,6 +61,8 @@ public final class WeaverOperationScope {
         final Map<SubjectRef, Integer> selected = requested.orElse(defaults);
         validate(selected, fingerprints(subject, before, payload).keySet(), lifetime);
         final Map<String, Object> fields = new HashMap<>(payload.fields());
+        if (readOnlyInput) fields.put(READ_ONLY_INPUT, true);
+        if (createdOutput) fields.put(CREATED_OUTPUT, true);
         fields.put(RESERVATIONS, Map.of("schema", 1, "targets", selected.entrySet().stream().sorted(Comparator.comparing(entry -> SubjectKeyCodec.encode(entry.getKey())))
                 .map(entry -> Map.of("ref", SubjectKeyCodec.payload(entry.getKey()), "count", entry.getValue())).toList()));
         return new OperationRecoveryPayload(payload.schemaVersion(), fields);
@@ -61,12 +70,15 @@ public final class WeaverOperationScope {
     public static WeaverEffectIntent intent(final WeaverOperationRecord operation, final WeaverEffectIntent supplied) {
         final Set<WeaverInfluenceTarget> targets = new HashSet<>(supplied.targets());
         reservations(operation).keySet().forEach(ref -> targets.add(WeaverInfluenceTarget.subject(ref)));
-        if (operation.request().integrityMode() == IntegrityMode.SANDBOX) {
+        if (operation.request().integrityMode() == IntegrityMode.SANDBOX && !readOnlyInput(operation)) {
             targets.add(WeaverInfluenceTarget.subject(operation.subject()));
             fingerprints(operation.subject(), operation.beforeFingerprint(), operation.recoveryPayload()).keySet().stream()
                     .filter(ref -> ref instanceof EntityRef || ref instanceof PlayerRef).forEach(ref -> targets.add(WeaverInfluenceTarget.subject(ref)));
         }
         return new WeaverEffectIntent(targets);
+    }
+    public static boolean readOnlyInput(final WeaverOperationRecord operation) {
+        return Boolean.TRUE.equals(operation.recoveryPayload().fields().get(READ_ONLY_INPUT));
     }
     private static void validate(final Map<SubjectRef, Integer> reservations, final Set<SubjectRef> scope, final Lifetime lifetime) {
         if (reservations.size() > 128 || !scope.containsAll(reservations.keySet()) || lifetime == Lifetime.ONE_SHOT && !reservations.isEmpty()

@@ -235,7 +235,7 @@ public final class MobAbilityRuntime implements Listener {
         return effectiveDefinitions(effective, abilities::require);
     }
 
-    static List<MobAbilityDefinition> effectiveDefinitions(final EffectiveMobProjection effective,
+    public static List<MobAbilityDefinition> effectiveDefinitions(final EffectiveMobProjection effective,
             final java.util.function.Function<String, MobAbilityDefinition> registry) {
         final List<MobAbilityDefinition> definitions = new ArrayList<>();
         effective.abilityIds().forEach(id -> definitions.add(java.util.Objects.requireNonNull(registry.apply(id))));
@@ -260,8 +260,10 @@ public final class MobAbilityRuntime implements Listener {
     public void refreshProfile(final Mob mob) {
         if (mob == null || !mob.isValid()) return;
         final RuntimeState current = states.get(mob.getUniqueId());
+        final boolean paused = current != null && current.paused;
         if (current != null) detach(current);
         attach(mob);
+        if (paused) pause(mob);
     }
 
     /** Serialises producer admission so concurrent Folia regions cannot overshoot the hard cap. */

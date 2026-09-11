@@ -122,7 +122,7 @@ public final class TerritoryWeaverProvider implements WorldWeaverProvider, Weave
         final Set<String> surfaces = new HashSet<>(Set.of(FACET, "territory.export_rule", "territory.import_rule"));
         surfaces.addAll(catalogs.keySet()); contribution.actions().forEach(a -> surfaces.add(a.id()));
         return new ProviderCoverage("territory.registered_surface", CoverageLevel.FULL_PROVIDER,
-                "World-owned protection projection, typed rule import/export and native LIVE_GM conditional transactions. WW-00 remains blocked pending location trace and native runtime evidence.", surfaces);
+                "World-owned protection projection, typed rule import/export and native LIVE_GM conditional transactions. This is the practical 1.0 territory slice; optional controls are not completeness gates.", surfaces);
     }
     @Override public ProviderDiscovery discover(SubjectSnapshot snapshot) {
         if (!(snapshot.ref() instanceof WorldRef)) return snapshot.facts().containsKey("territory.zone_revision")

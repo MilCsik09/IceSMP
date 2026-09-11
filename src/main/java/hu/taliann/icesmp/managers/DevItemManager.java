@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 
 /** The single identity, recovery and persistence authority for registered developer artifacts. */
 public final class DevItemManager implements PersistentStore, PlayerStateCleanup {
-    private static final boolean WORLD_WEAVER_ENABLED = false;
+    private static final boolean WORLD_WEAVER_ENABLED = true;
     private static final class Entry {
         final DevArtifactRegistration registration;
         final AtomicBoolean tickQueued = new AtomicBoolean();

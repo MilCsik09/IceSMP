@@ -577,6 +577,7 @@ public final class IceSMPCore {
         this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
         this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager, currencyManager, factionManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
+        hu.taliann.icesmp.managers.GatheringWindowRuntimeProbe.install(plugin, gatheringBuffManager);
         this.partyManager = new PartyManager(plugin, configManager, messageManager);
         this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager, territoryManager);
         // Közös, esemény×védelem mátrixszal configolható spawn-hely szabályok (world-events.
@@ -925,11 +926,13 @@ public final class IceSMPCore {
         registerSpells();
         this.worldWeaverRuntime = new hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime(plugin, devItemManager, itemIdentityService,
                 java.util.List.of(services -> new hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider(services.types()),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.DeveloperWeaverProvider(services, plugin),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.EventWeaverProvider(services.types(), gatheringBuffManager),
                         services -> new hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProvider(services, mobAbilityRegistry, mobTemplateRegistry, mobScalingManager, mobAbilityRuntime),
                         services -> new hu.taliann.icesmp.dev.weaver.provider.FactionWeaverProvider(services, factionManager, factionMobContextResolver, factionPassiveConfig),
                         services -> new hu.taliann.icesmp.dev.weaver.provider.TerritoryWeaverProvider(services, territoryManager, territoryProtectionService),
                         services -> new hu.taliann.icesmp.dev.weaver.provider.TrashWeaverProvider(services, trashCatalog, trashHistoryService,
-                                trashAnomalyStateStore, trashRelicRuntime.ruleFields(), itemIdentityService),
+                                trashAnomalyStateStore, trashRelicRuntime.ruleFields(), itemIdentityService, trashAnomalyRuntime.activationService()),
                         services -> new hu.taliann.icesmp.dev.weaver.provider.ItemizationWeaverProvider(services, itemIdentityService,
                                 itemTemplateRegistry, uniqueMaterialFactory, itemMutationCoordinator)));
         rewardEligibilityBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(worldWeaverRuntime.rewardEligibility());

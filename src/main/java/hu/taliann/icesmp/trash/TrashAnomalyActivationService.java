@@ -61,6 +61,24 @@ public final class TrashAnomalyActivationService {
         if (definition.internalKind() != TrashKind.ANOMALY) return Optional.empty();
         return Optional.of(TrashAnomalyBehavior.parse(definition.behavior()));
     }
+    public static boolean sandboxPreviewable(String behavior) {
+        try { return switch (TrashAnomalyBehavior.parse(behavior)) {
+            case URES_CSONTZACSKO, JEGMEZOI_CSENGONYELV, FAGYOTT_TINTAS_CETLI, SZARAZ_GYUFA, SUTTOGO_CETLI -> true;
+            default -> false;
+        }; } catch (IllegalArgumentException unknown) { return false; }
+    }
+    /** Immediate presentation-only sandbox use; no consumption, history, delayed effect or synthetic event. */
+    public Result sandboxPreviewOnOwner(Player player, ItemStack expected, BooleanSupplier admission) {
+        final var active = lifecycle.lifetime();
+        if (!active.getAsBoolean() || !Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline() || player.isDead()
+                || !hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(player.getUniqueId())) return Result.REFUSED;
+        final var held = player.getInventory().getItemInOffHand();
+        if (expected == null || !expected.equals(held) || ItemPrototypePolicy.identity(held).filter(origin -> origin.owner().equals(player.getUniqueId())).isEmpty()) return Result.REFUSED;
+        final String id = items.idOf(held).orElse(null); if (id == null) return Result.REFUSED;
+        final var definition = catalog.require(id);
+        if (definition.internalKind() != TrashKind.ANOMALY || !sandboxPreviewable(definition.behavior()) || !admission.getAsBoolean()) return Result.REFUSED;
+        return nativeUse.apply(player, EquipmentSlot.OFF_HAND, Gesture.RIGHT, null, held, TrashAnomalyBehavior.parse(definition.behavior()), active);
+    }
     /** No event is synthesized. Live arguments are used only during this owner callback and never retained. */
     public Result useOnOwner(Player player, EquipmentSlot hand, Gesture gesture, Block target,
             ItemStack expected, BooleanSupplier admission) {

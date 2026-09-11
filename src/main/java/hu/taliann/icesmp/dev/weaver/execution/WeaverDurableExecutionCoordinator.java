@@ -41,12 +41,16 @@ public final class WeaverDurableExecutionCoordinator {
             if (value != null) parameter.validate(value, types).requireValid();
         }
         if (!parameters.containsAll(request.parameters().keySet())) return CompletableFuture.failedFuture(new WeaverDomainRejection("INVALID_PARAMETERS"));
+        if (prepared.descriptor().integrityImpacts().stream().anyMatch(impact -> impact == IntegrityImpact.TAINT_CREATED || impact == IntegrityImpact.EVENT_ORIGIN)
+                && effects.intent().targets().isEmpty()) return CompletableFuture.failedFuture(new WeaverDomainRejection("CREATED_SCOPE_REQUIRED"));
         if (!inFlight.compareAndSet(false, true)) return CompletableFuture.failedFuture(new WeaverDomainRejection("EXECUTION_BUSY"));
         final long now = System.currentTimeMillis();
         final WeaverOperationRecord operation;
         try {
             operation = new WeaverOperationRecord(prepared.operationId(), context.authority().actor(), providerId, request, snapshot.ref(), snapshot.revisionFingerprint(),
-                    Optional.empty(), WeaverOperationScope.attach(snapshot.ref(), snapshot.revisionFingerprint(), request.lifetime(), prepared.recoveryPayload(), effects.projectionReservations()),
+                    Optional.empty(), WeaverOperationScope.attach(snapshot.ref(), snapshot.revisionFingerprint(), request.lifetime(), prepared.recoveryPayload(), effects.projectionReservations(),
+                            !prepared.descriptor().integrityImpacts().contains(IntegrityImpact.TAINT_SUBJECT)
+                                    && (prepared.descriptor().integrityImpacts().contains(IntegrityImpact.TAINT_CREATED) && snapshot.ref() instanceof hu.taliann.icesmp.dev.weaver.subject.EntityRef || prepared.descriptor().integrityImpacts().contains(IntegrityImpact.EVENT_ORIGIN)), prepared.descriptor().integrityImpacts().contains(IntegrityImpact.TAINT_CREATED) && snapshot.ref() instanceof hu.taliann.icesmp.dev.weaver.subject.EntityRef),
                     OperationStatus.PREPARED, 0, now, now, Optional.empty(), false, undoClaim);
         } catch (final RuntimeException failure) { inFlight.set(false); return CompletableFuture.failedFuture(failure); }
         final List<StageResult> results = new ArrayList<>(); final AtomicBoolean entered = new AtomicBoolean(), preparedAcknowledged = new AtomicBoolean();
@@ -97,6 +101,13 @@ public final class WeaverDurableExecutionCoordinator {
                 || !receipt.beforeFingerprint().equals(operation.beforeFingerprint()) || !receipt.afterFingerprint().equals(results.getLast().afterFingerprint())
                 || receipt.undo().isPresent() && !prepared.descriptor().undoable()
                 || receipt.undo().isEmpty() && prepared.descriptor().undoable() && operation.undoClaim().isEmpty()) throw new IllegalArgumentException("Provider receipt manifest violation");
+        final var created = receipt.after().get(WeaverOperationScope.CREATED_ENTITY);
+        if (Boolean.TRUE.equals(operation.recoveryPayload().fields().get(WeaverOperationScope.CREATED_OUTPUT)) && created == null)
+            throw new IllegalArgumentException("Created entity receipt missing");
+        if (created != null && (!Boolean.TRUE.equals(operation.recoveryPayload().fields().get(WeaverOperationScope.CREATED_OUTPUT))
+                || operation.subject() instanceof hu.taliann.icesmp.dev.weaver.subject.EntityRef input && input.entityId().toString().equals(created.payload().get("value"))
+                || !created.equals(results.getLast().facts().get(WeaverOperationScope.CREATED_ENTITY)) || !created.type().equals(WeaverTypeId.parse("weaver:uuid@1"))))
+            throw new IllegalArgumentException("Created entity receipt lacks owner-stage evidence");
         receipt.before().values().forEach(types::validate); receipt.after().values().forEach(types::validate);
         receipt.undo().ifPresent(undo -> undo.parameters().values().forEach(types::validate));
     }

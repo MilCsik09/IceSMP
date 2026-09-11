@@ -604,14 +604,15 @@ val weaverContractRegressionTest = registerRegression(
     "weaverContractRegressionTest",
     "Runs WeaverContract contract and safety regressions.",
     "hu.taliann.icesmp.dev.weaver.WeaverContractRegressionSuite")
+val worldWeaverCompositionRegressionTest = registerRegression(
+    "worldWeaverCompositionRegressionTest",
+    "Runs practical composition and created-state quarantine regressions.",
+    "hu.taliann.icesmp.dev.weaver.provider.WorldWeaverCompositionRegressionSuite")
 val worldWeaverAuthorityRegressionTest = registerRegression(
     "worldWeaverAuthorityRegressionTest",
     "Runs WorldWeaverAuthority contract and safety regressions.",
     "hu.taliann.icesmp.dev.weaver.WorldWeaverAuthorityRegressionSuite")
-val worldWeaverCoverageRegressionTest = registerRegression(
-    "worldWeaverCoverageRegressionTest",
-    "Runs WorldWeaverCoverage contract and safety regressions.",
-    "hu.taliann.icesmp.dev.weaver.WorldWeaverCoverageRegressionSuite")
+
 val weaverFoliaOwnershipRegressionTest = registerRegression(
     "weaverFoliaOwnershipRegressionTest",
     "Runs WeaverFoliaOwnership contract and safety regressions.",
@@ -1308,7 +1309,7 @@ tasks.check {
         weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest, pveWeaverProjectionRegressionTest, weaverProjectionDispatchRegressionTest, weaverGameplayRewardGateRegressionTest, weaverProfileRewardAdmissionRegressionTest, weaverProfessionRewardRegressionTest, weaverKnowledgeRewardRegressionTest, weaverQuestRewardRegressionTest, questMutationQueueRegressionTest, weaverStatisticsRewardRegressionTest, serverChallengeIntegrityRegressionTest, weaverSeasonRewardRegressionTest, weaverStoredContentIsolationRegressionTest, factionWeaverProjectionRegressionTest, weaverFactionAdjustmentRegressionTest, factionWeaverCanonicalRegressionTest,
         weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
         worldWeaverArchitectureAudit,
-        weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCoverageRegressionTest, weaverFoliaOwnershipRegressionTest,
+        weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCompositionRegressionTest, weaverFoliaOwnershipRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
         configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,

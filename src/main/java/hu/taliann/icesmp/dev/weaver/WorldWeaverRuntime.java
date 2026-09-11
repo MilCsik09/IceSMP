@@ -51,7 +51,7 @@ public final class WorldWeaverRuntime {
         recovery = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryCoordinator(journal, snapshots, providers, types, areas);
         recoveryListener = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryListener(recovery);
         kernel = new WorldWeaverKernel(artifacts, providers, types, snapshots, slots,
-                new WorldWeaverGUI(), new WeaverExecutionCoordinator(router, types, journal, () -> false), new hu.taliann.icesmp.dev.weaver.execution.WeaverUndoCoordinator(journal, providers, areas), areas, () -> started && !closed && journal.ready());
+                new WorldWeaverGUI(), new WeaverExecutionCoordinator(router, types, journal, () -> started && !closed), new hu.taliann.icesmp.dev.weaver.execution.WeaverUndoCoordinator(journal, providers, areas), areas, () -> started && !closed && journal.ready());
         listener = new WorldWeaverGUIListener(kernel);
         hu.taliann.icesmp.dev.artifact.DevArtifactRuntimeProbe.registerReadinessCheck("world_weaver_journal", () -> started && !closed && journal.ready());
         artifacts.bindInteractions(WorldWeaverArtifactBehavior.ID, kernel::interact, this::clearSession);
@@ -67,6 +67,7 @@ public final class WorldWeaverRuntime {
         });
     }
     private void clearSession() {
+        providers.clearSessions();
         kernel.clearPlayerState(HiddenDevAuthority.PRIMARY_DEVELOPER);
         if (journal.ready()) journal.expireProjections(System.currentTimeMillis(), true).whenComplete((ignored, failure) -> {
             if (failure != null && !closed) plugin.getLogger().severe("Internal developer session cleanup requires recovery.");
@@ -99,7 +100,7 @@ public final class WorldWeaverRuntime {
     public void shutdown() {
         closed = true; started = false;
         final var task = maintenance; if (task != null) task.cancel();
-        kernel.shutdown(); recovery.close(); influenceDispatcher.close(); router.close();
+        providers.clearSessions(); kernel.shutdown(); recovery.close(); influenceDispatcher.close(); router.close();
         journal.expireProjections(System.currentTimeMillis(), true).handle((ignored, failure) -> null).thenCompose(ignored -> journal.close()).whenComplete((ignored, failure) -> {
             if (failure != null) plugin.getLogger().severe("Internal developer state shutdown requires recovery.");
         });

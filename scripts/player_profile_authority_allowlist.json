@@ -690,6 +690,16 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashHistoryStore.java|private final Map<UUID, UUID> unresolvedDeveloperByInstance = new java.util.HashMap<>();",
       "category": "RUNTIME",
       "reason": "Derived native instance-to-pending-operation index rebuilt exclusively from the existing Trash history developer receipts under the transaction/load/rollback lock. At most 1024 entries, removed only by observed projection or transaction rollback; no independently persisted identity or player authority."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/dev/weaver/provider/DeveloperWeaverProvider.java|private final Map<UUID, WeaverBindingBudget> budgets = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Binding projection UUID (not player UUID) indexes bounded 120-second VFX counters; no player progression or canonical profile state. Cleared on session end and projection removal."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEForkActions.java|private final Map<UUID, UUID> forkEntityByOperation = new ConcurrentHashMap<>();",
+      "category": "RUNTIME",
+      "reason": "Bounded operation UUID to transient entity UUID cleanup index; neither key nor value is player profile state. Native authored origin remains authoritative; session close clears the index."
     }
   ]
 }

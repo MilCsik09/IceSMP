@@ -137,6 +137,23 @@ public final class MobRuntimeControlProbe {
             check(AuthoredCreatureSpawnService.summonOrigin(mob).orElseThrow().equals(fixtureOwner), "FIXTURE_CANONICAL_SUMMON_ORIGIN");
             check(hu.taliann.icesmp.integrity.BukkitRewardSources.causal(mob).contains(new hu.taliann.icesmp.integrity.RewardSource.Entity(fixtureOwner)),
                     "FIXTURE_PROVIDER_CAUSAL_ORIGIN");
+            final UUID forkGroup = UUID.randomUUID();
+            final Mob fork = spawns.spawn(mob.getLocation().add(1, 0, 0), AuthoredCreatureSpawnService.Request.template("world_weaver", forkGroup.toString(), "fork",
+                    choice.template(), 10, AuthoredCreatureSpawnService.RewardOwner.NONE, true, 1, 1, 200));
+            check(fork != null && !fork.hasAI() && fork.isInvulnerable() && !fork.isPersistent(), "FORK_ENTERED_BEFORE_QUARANTINE");
+            check(AuthoredCreatureSpawnService.rewardOwner(fork) == AuthoredCreatureSpawnService.RewardOwner.NONE
+                    && AuthoredCreatureSpawnService.sandboxEventOrigin(fork).orElseThrow().instanceId().equals(forkGroup), "FORK_ORIGIN_MISSING");
+            check(runtime.canonicalProfile(mob).equals(canonical), "FORK_CHANGED_SOURCE");
+            final UUID forkId = fork.getUniqueId();
+            runtime.refreshProfile(fork);
+            check(runtime.activeStateSummary(fork).contains("paused=true"), "FORK_REFRESH_RELEASED_PENDING_COMBAT");
+            spawns.cleanupSandboxFork(forkId, forkGroup);
+            mob.getScheduler().runDelayed(plugin, task -> {
+                try {
+                    check(Bukkit.getEntity(forkId) == null, "FORK_CLEANUP_UNOBSERVED");
+                    plugin.getLogger().info("ICESMP_FORK_PORT_RUNTIME_PROBE_PASS scope=inert_native_spawn_origin_observed_cleanup players=0");
+                } catch (Throwable failure) { failed(failure); }
+            }, () -> failed(new IllegalStateException("FORK_PROBE_OWNER_RETIRED")), 4L);
             denied(mob, Kind.FORCE_ABILITY, choice.target());
             denied(mob, Kind.FORCE_ABILITY, "runtime_probe_not_in_kit");
             runtime.pause(mob); denied(mob, Kind.FORCE_ABILITY, choice.shield()); runtime.resume(mob);

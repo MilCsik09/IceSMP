@@ -17,18 +17,13 @@ import java.util.function.Supplier;
 /** Vanilla snapshots and recipient-only feedback have no canonical reward/progression side effect. */
 public final class MinecraftWeaverProvider implements WorldWeaverProvider {
     private static final String FACET = "minecraft.runtime";
-    private static final WeaverTypeId LOCATION = WeaverTypeId.parse("weaver:location@1");
-    private static final String LOCATION_EXPORT = "minecraft.location_thread";
     private final Map<String, WeaverValueCatalog> catalogs;
     private final ActionDescriptor pulse;
+    private final ActionDescriptor gamemode;
+    private static final WeaverRevisionScope MODE_SCOPE = new WeaverRevisionScope(1, Set.of("minecraft.gamemode"));
     private final ProviderContribution contribution;
     public MinecraftWeaverProvider(final WeaverTypeRegistry types) {
         final Map<String, WeaverValueCatalog> catalogs = new LinkedHashMap<>();
-        registerCatalog(types, catalogs, "minecraft.materials", WeaverTypeId.parse("minecraft:material@1"), () -> {
-            final Map<String, Material> values = new TreeMap<>();
-            for (final Material material : Material.values()) if (!material.isLegacy() && !material.isAir()) values.put(material.getKey().toString(), material);
-            return Map.copyOf(values);
-        });
         registerCatalog(types, catalogs, "minecraft.gamemodes", WeaverTypeId.parse("minecraft:gamemode@1"), () -> {
             final Map<String, GameMode> values = new TreeMap<>();
             for (final GameMode mode : GameMode.values()) values.put(mode.name().toLowerCase(Locale.ROOT), mode);
@@ -43,10 +38,15 @@ public final class MinecraftWeaverProvider implements WorldWeaverProvider {
                         new ActionParameter("pitch", Component.text("Hangmagasság"), WeaverTypeId.parse("weaver:double@1"), ActionParameter.InputKind.DECIMAL,
                                 true, Optional.of(scalar("double", 1.0D)), OptionalDouble.of(0.5), OptionalDouble.of(2), OptionalInt.empty(), Optional.empty(), Set.of())),
                 AreaSupport.NONE, Optional.empty(), false, Optional.empty(), 1);
+        gamemode = new ActionDescriptor("minecraft.set_gamemode", FACET, Component.text("Játékmód módosítása"), RiskLevel.CANONICAL,
+                Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.LIVE_GM), Set.of(IntegrityImpact.NONE), Set.of(WeaverSubjectKind.PLAYER),
+                List.of(new ActionParameter("mode", Component.text("Játékmód"), WeaverTypeId.parse("minecraft:gamemode@1"), ActionParameter.InputKind.CATALOG,
+                        true, Optional.empty(), OptionalDouble.empty(), OptionalDouble.empty(), OptionalInt.empty(), Optional.of("minecraft.gamemodes"), Set.of())),
+                AreaSupport.NONE, Optional.empty(), false, Optional.of("Az éles játékmód hatásai nem vonhatók vissza automatikusan."), 10, MODE_SCOPE);
         contribution = new ProviderContribution(List.of(new FacetDescriptor(FACET, Component.text("Minecraft"), Component.text("Natív runtime állapot"), 0)),
-                List.of(pulse), this.catalogs.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(entry ->
+                List.of(pulse, gamemode), this.catalogs.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(entry ->
                         new CatalogDescriptor(entry.getKey(), FACET, Component.text(entry.getKey()), entry.getValue().type())).toList(),
-                List.of(new ExportDescriptor(LOCATION_EXPORT, FACET, LOCATION, Set.of("minecraft.location"))), List.of(), Map.of());
+                List.of(), List.of(), Map.of(gamemode.id(), "minecraft.observed_gamemode"));
     }
     private static <T> void registerCatalog(final WeaverTypeRegistry types, final Map<String, WeaverValueCatalog> catalogs, final String id,
                                              final WeaverTypeId type, final Supplier<Map<String, T>> registry) {
@@ -62,12 +62,14 @@ public final class MinecraftWeaverProvider implements WorldWeaverProvider {
     @Override public ProviderContribution contribution() { return contribution; }
     @Override public ProviderCoverage coverage() {
         return new ProviderCoverage("minecraft", CoverageLevel.FULL_PROVIDER,
-                "Initial published snapshot/catalog/location export and recipient-only feedback surface. This declaration does not close the independent WW-00 full vanilla manipulation blocker; durable and influence-dependent actions remain gated by later implementation.",
-                Set.of(FACET, pulse.id(), LOCATION_EXPORT, "minecraft.materials", "minecraft.gamemodes"));
+                "Native subject inspection, recipient feedback and guarded LIVE_GM game mode control.",
+                Set.of(FACET, pulse.id(), gamemode.id(), "minecraft.gamemodes"));
     }
     @Override public ProviderDiscovery discover(final SubjectSnapshot snapshot) {
-        return new ProviderDiscovery(Set.of(FACET), pulse.subjects().contains(snapshot.ref().kind()) ? Set.of(pulse.id()) : Set.of(),
-                catalogs.keySet(), snapshot.facts().containsKey("minecraft.location") ? Set.of(LOCATION_EXPORT) : Set.of(), Set.of(), Map.of());
+        final Set<String> visible = new HashSet<>();
+        if (pulse.subjects().contains(snapshot.ref().kind())) visible.add(pulse.id());
+        if (snapshot.ref() instanceof PlayerRef) visible.add(gamemode.id());
+        return new ProviderDiscovery(Set.of(FACET), visible, snapshot.ref() instanceof PlayerRef ? catalogs.keySet() : Set.of(), Set.of(), Set.of(), Map.of());
     }
     @Override public InspectionResult inspect(final ProviderContext context, final SubjectSnapshot snapshot, final String facetId) {
         context.authority().requireValid();
@@ -77,6 +79,7 @@ public final class MinecraftWeaverProvider implements WorldWeaverProvider {
     }
     @Override public PreparedAction prepare(final ProviderContext context, final SubjectSnapshot snapshot, final ActionRequest request) {
         context.authority().requireValid();
+        if (gamemode.id().equals(request.actionId())) return prepareMode(context, snapshot, request);
         if (!pulse.id().equals(request.actionId()) || request.lifetime() != Lifetime.ONE_SHOT || !pulse.subjects().contains(snapshot.ref().kind())
                 || request.integrityMode() != context.integrityMode() || !request.parameters().keySet().equals(Set.of("count", "pitch"))) throw new WeaverDomainRejection("INVALID_ACTION_REQUEST");
         pulse.parameters().forEach(parameter -> parameter.validate(request.parameters().get(parameter.id()), context.types()).requireValid());
@@ -95,6 +98,29 @@ public final class MinecraftWeaverProvider implements WorldWeaverProvider {
                         snapshot.ref(), pulse.risk(), request.lifetime(), request.integrityMode(), snapshot.revisionFingerprint(),
                         results.getLast().afterFingerprint(), Map.of(), Map.of(), Optional.empty(), time, ReceiptStatus.COMMITTED));
     }
+    private PreparedAction prepareMode(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request) {
+        if (!(snapshot.ref() instanceof PlayerRef target) || request.integrityMode() != IntegrityMode.LIVE_GM || context.integrityMode() != IntegrityMode.LIVE_GM
+                || request.lifetime() != Lifetime.ONE_SHOT || context.lifetime() != Lifetime.ONE_SHOT || !request.parameters().keySet().equals(Set.of("mode"))) throw new WeaverDomainRejection("INVALID_ACTION_REQUEST");
+        gamemode.parameters().getFirst().validate(request.parameters().get("mode"), context.types()).requireValid();
+        final GameMode requested = GameMode.valueOf(((String) request.parameters().get("mode").payload().get("id")).toUpperCase(Locale.ROOT));
+        final String before = (String) snapshot.facts().get("minecraft.gamemode").payload().get("value");
+        final Map<String, WeaverValue> after = Map.of("minecraft.gamemode", scalar("text", requested.name()));
+        final String hash = MODE_SCOPE.apply(new SubjectSnapshot(target, snapshot.capturedAt(), snapshot.revisionFingerprint(), after)).revisionFingerprint();
+        final var stage = new ExecutionStage("minecraft.mode.native", new EntityOwner(target.playerId()), Map.of(), (execution, payload) -> {
+            execution.authority().requireValid(); final var player = Bukkit.getPlayer(target.playerId());
+            if (player == null || !Bukkit.isOwnedByCurrentRegion(player) || !player.getGameMode().name().equals(before)) throw new WeaverDomainRejection("STALE_SUBJECT");
+            player.setGameMode(requested);
+            if (player.getGameMode() != requested) throw new WeaverDomainRejection("GAME_MODE_CANCELLED");
+            return CompletableFuture.completedFuture(new StageResult(hash, after, Map.of()));
+        }, Optional.empty(), 5000);
+        return new PreparedAction(UUID.randomUUID(), gamemode, target, snapshot.revisionFingerprint(), List.of(stage), new OperationRecoveryPayload(1, Map.of()),
+                (prepared, results, time) -> new WeaverReceipt(UUID.randomUUID(), prepared.operationId(), id(), gamemode.id(), target, gamemode.risk(), request.lifetime(), request.integrityMode(),
+                        snapshot.revisionFingerprint(), hash, Map.of("minecraft.gamemode", snapshot.facts().get("minecraft.gamemode")), after, Optional.empty(), time, ReceiptStatus.COMMITTED));
+    }
+    @Override public PreparedEffects prepareEffects(ProviderContext context, SubjectSnapshot snapshot, ActionRequest request, PreparedAction prepared) {
+        if (!gamemode.id().equals(request.actionId())) throw new WeaverDomainRejection("UNKNOWN_ACTION");
+        return new PreparedEffects(hu.taliann.icesmp.dev.weaver.integrity.WeaverEffectIntent.none(), (action, results, receipt, sequence) -> WeaverEffectCommit.none());
+    }
     @Override public PreparedAction prepareUndo(final ProviderContext context, final SubjectSnapshot snapshot, final WeaverReceipt receipt) {
         context.authority().requireValid(); throw new WeaverDomainRejection("ACTION_NOT_UNDOABLE");
     }
@@ -103,15 +129,15 @@ public final class MinecraftWeaverProvider implements WorldWeaverProvider {
     }
     @Override public ValueExportResult exportValue(final ProviderContext context, final SubjectSnapshot snapshot, final String id) {
         context.authority().requireValid();
-        if (!LOCATION_EXPORT.equals(id)) return ValueExportResult.rejected("UNKNOWN_EXPORT");
-        final WeaverValue location = snapshot.facts().get("minecraft.location");
-        return location == null ? ValueExportResult.rejected("LOCATION_UNAVAILABLE") : ValueExportResult.exported(new WeaverValue(LOCATION, location.payload(),
-                id(), FACET, Set.of("minecraft.location"), snapshot.capturedAt()));
+        return ValueExportResult.rejected("UNKNOWN_EXPORT");
     }
     @Override public ImportValidation validateImport(final ProviderContext context, final SubjectSnapshot snapshot, final String id, final WeaverValue value) {
         context.authority().requireValid(); return ImportValidation.rejected("NO_REGISTERED_IMPORTER");
     }
     @Override public RecoveryAssessment assessRecovery(final RecoveryContext context, final SubjectSnapshot snapshot, final WeaverOperationRecord operation) {
-        return new RecoveryAssessment(ObservedOperationState.PARTIAL_OR_CONFLICT, false, Optional.empty(), "No journal action is registered by the initial adapter");
+        context.authority().require(operation);
+        return new RecoveryAssessment(snapshot.revisionFingerprint().equals(operation.beforeFingerprint()) ? ObservedOperationState.BEFORE
+                : operation.receipt().filter(r -> r.afterFingerprint().equals(snapshot.revisionFingerprint())).isPresent() ? ObservedOperationState.APPLIED : ObservedOperationState.PARTIAL_OR_CONFLICT,
+                false, Optional.empty(), "Observed native game mode; never replay an uncertain change.");
     }
 }

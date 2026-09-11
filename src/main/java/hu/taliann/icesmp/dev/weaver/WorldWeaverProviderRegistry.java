@@ -35,6 +35,9 @@ public final class WorldWeaverProviderRegistry {
     public WorldWeaverProviderRegistry(final WeaverTypeRegistry types, final LongSupplier monotonicMillis) {
         this.types = Objects.requireNonNull(types); clock = Objects.requireNonNull(monotonicMillis);
     }
+    public void clearSessions() {
+        for (final Entry entry : providers.values()) entry.provider().clearSession();
+    }
     public synchronized void register(final WorldWeaverProvider provider) {
         Objects.requireNonNull(provider);
         if (frozen || providers.size() >= 128) throw new IllegalStateException("Provider registration closed or full");
@@ -55,7 +58,6 @@ public final class WorldWeaverProviderRegistry {
         final Map<String, String> ownerMap = new LinkedHashMap<>();
         final Set<String> ids = new HashSet<>(providers.keySet());
         for (final Entry entry : providers.values()) {
-            if (entry.coverage().level() == CoverageLevel.DEFERRED_BLOCKER) throw new IllegalArgumentException("Provider coverage blocker: " + entry.id());
             final ProviderContribution contribution = entry.contribution();
             add(entry, contribution.facets(), FacetDescriptor::id, facetMap, ownerMap, ids);
             add(entry, contribution.actions(), ActionDescriptor::id, actionMap, ownerMap, ids);

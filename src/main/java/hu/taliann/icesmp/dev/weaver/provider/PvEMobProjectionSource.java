@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 public final class PvEMobProjectionSource implements MobRuntimeProjectionSource {
     public static final String CONSUMER = "pve.combat";
     public static final String ADD = "pve.ability_add", REMOVE = "pve.ability_remove", RANK = "pve.rank_override",
-            ARCHETYPE = "pve.archetype_override", TEMPLATE = "pve.template_override";
+            ARCHETYPE = "pve.archetype_override", TEMPLATE = "pve.template_override", IMPRINT = "pve.combat_imprint";
     private final WeaverProjectionSource projections;
     private final Supplier<Map<String, MobAbilityDefinition>> abilities;
     private final Supplier<Map<String, MobTemplate>> templates;
@@ -30,6 +30,15 @@ public final class PvEMobProjectionSource implements MobRuntimeProjectionSource 
         String templateId = canonical.templateId(); MobRank rank = canonical.rank(); Optional<MobArchetype> archetype = canonical.archetype();
         boolean templateOverride = false, archetypeOverride = false;
         for (final var projection : ordered) {
+            if (projection.values().containsKey(IMPRINT)) {
+                final Map<String, Object> recipe = projection.values().get(IMPRINT).payload();
+                rank = MobRank.valueOf(((String) recipe.get("rank")).toUpperCase(Locale.ROOT));
+                final String raw = (String) recipe.get("archetype");
+                archetype = raw.isEmpty() ? Optional.empty() : Optional.of(MobArchetype.valueOf(raw.toUpperCase(Locale.ROOT)));
+                archetypeOverride = true;
+                final String capturedTemplate = (String) recipe.get("template");
+                templateOverride = !capturedTemplate.isEmpty(); templateId = templateOverride ? capturedTemplate : canonical.templateId();
+            }
             if (projection.values().containsKey(TEMPLATE)) { templateId = id(projection.values().get(TEMPLATE)); templateOverride = true; }
             if (projection.values().containsKey(RANK)) rank = MobRank.valueOf(id(projection.values().get(RANK)).toUpperCase(Locale.ROOT));
             if (projection.values().containsKey(ARCHETYPE)) { archetype = Optional.of(MobArchetype.valueOf(id(projection.values().get(ARCHETYPE)).toUpperCase(Locale.ROOT))); archetypeOverride = true; }
@@ -38,19 +47,32 @@ public final class PvEMobProjectionSource implements MobRuntimeProjectionSource 
         if (templateOverride && template == null) throw new WeaverDomainRejection("PROJECTION_CONTENT_UNAVAILABLE");
         if (template != null && !archetypeOverride) archetype = Optional.of(template.archetype());
         final LinkedHashMap<String, Boolean> members = new LinkedHashMap<>();
-        for (final var projection : ordered) for (final String field : List.of(ADD, REMOVE)) if (projection.values().containsKey(field)) {
-            final String ability = id(projection.values().get(field)); members.remove(ability); members.put(ability, field.equals(ADD));
+        List<String> imprintKit = null;
+        for (final var projection : ordered) {
+            if (projection.values().containsKey(IMPRINT)) {
+                imprintKit = ((List<?>) projection.values().get(IMPRINT).payload().get("abilities")).stream().map(String.class::cast).toList();
+                members.clear();
+            }
+            for (final String field : List.of(ADD, REMOVE)) if (projection.values().containsKey(field)) {
+                final String ability = id(projection.values().get(field)); members.remove(ability); members.put(ability, field.equals(ADD));
+            }
         }
         final List<String> additions = new ArrayList<>(members.keySet()); Collections.reverse(additions);
         final LinkedHashSet<String> kit = new LinkedHashSet<>();
         for (final String ability : additions) if (members.get(ability)) kit.add(ability);
-        kit.addAll(template == null ? canonical.rankKits().get(rank) : template.abilityIdsFor(rank));
+        kit.addAll(imprintKit != null ? imprintKit : template == null ? canonical.rankKits().get(rank) : template.abilityIdsFor(rank));
         members.forEach((ability, present) -> { if (!present) kit.remove(ability); });
         if (kit.size() > 128) throw new WeaverDomainRejection("PROJECTION_KIT_CAPACITY");
         final Map<String, MobAbilityDefinition> definitions = abilities.get();
         for (final String ability : kit) if (!definitions.containsKey(ability)) throw new WeaverDomainRejection("PROJECTION_CONTENT_UNAVAILABLE");
         return new EffectiveMobProjection(templateId, rank, archetype, List.copyOf(kit), template == null ? canonical.behavior() : template.behavior(),
                 Set.copyOf(ordered.stream().map(WeaverProjection::projectionId).toList()));
+    }
+    Map<String, Object> imprintPayload(final EffectiveMobProjection effective) {
+        final Map<String, MobAbilityDefinition> definitions = abilities.get();
+        final List<String> kit = MobAbilityRuntime.effectiveDefinitions(effective, definitions::get).stream().map(MobAbilityDefinition::abilityId).toList();
+        return Map.of("rank", effective.rank().name().toLowerCase(Locale.ROOT), "archetype", effective.archetype().map(value -> value.name().toLowerCase(Locale.ROOT)).orElse(""),
+                "template", templates.get().containsKey(effective.templateId()) ? effective.templateId() : "", "abilities", kit);
     }
     public String canonicalRevision(final CanonicalMobProfile canonical) {
         final Map<String, Object> kits = new TreeMap<>(); canonical.rankKits().forEach((rank, kit) -> kits.put(rank.name(), kit));

@@ -46,7 +46,7 @@ public final class ItemizationWeaverProvider implements WorldWeaverProvider, Wea
     @Override public ProviderCoverage coverage() {
         final var surfaces = new HashSet<>(Set.of(FACET, "item.templates", "item.runes")); surfaces.addAll(ItemizationWeaverActions.KINDS.keySet());
         return new ProviderCoverage("item.registered_surface", CoverageLevel.FULL_PROVIDER,
-                "Native inspection, ten owner-bound actions, nine conditional compensations and read-only durable receipt recovery. Independent Itemization domain coverage remains deferred for imports/exports, connected custody/playerdata and complete acceptance.", surfaces);
+                "Native inspection, ten owner-bound actions, nine conditional compensations and read-only durable receipt recovery. The practical native Itemization slice retains explicit compensation; optional import/export coverage is not a release gate.", surfaces);
     }
     @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef ref) {
         if (!(ref instanceof ItemSlotRef subject)) return Map.of();

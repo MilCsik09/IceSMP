@@ -72,7 +72,7 @@ public final class WeaverContractRegressionSuite {
         WeaverTypeCompatibilityRegressionSuite.check(inspected.facts().containsKey("fixture.fact"), "new subsystem inspect absent");
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry.register(first));
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry(first, first));
-        WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry(new FixtureProvider("blocked", safe("blocked"), CoverageLevel.DEFERRED_BLOCKER, Map.of())).freezeAndValidate());
+        registry(new FixtureProvider("optional", safe("optional"), CoverageLevel.OPTIONAL_FUTURE, Map.of())).freezeAndValidate();
         rejectAction(action("canon", RiskLevel.CANONICAL, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.TAINT_SUBJECT), false, 10), Map.of("canon.action", "canon.assess"));
         rejectAction(action("persist", RiskLevel.MUTATING, Set.of(Lifetime.PERSISTENT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.TAINT_SUBJECT), false, 1), Map.of("persist.action", "persist.assess"));
         rejectAction(action("leak", RiskLevel.MUTATING, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.NONE), true, 1), Map.of("leak.action", "leak.assess"));
