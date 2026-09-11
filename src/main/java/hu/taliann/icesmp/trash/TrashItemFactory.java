@@ -96,6 +96,11 @@ public final class TrashItemFactory {
         // Data components must remain last; a subsequent ItemMeta round-trip would erase them.
         ItemDataFactory.applyItemModel(item, itemModel);
         ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+        if ("a_legbiztonsagosabb_sisak".equals(baseId) && BASE_PHASE.equals(phase)) {
+            item.setData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE,
+                    io.papermc.paper.datacomponent.item.Equippable.equippable(org.bukkit.inventory.EquipmentSlot.HEAD)
+                            .damageOnHurt(false).dispensable(false).build());
+        }
         return item;
     }
 
@@ -179,6 +184,9 @@ public final class TrashItemFactory {
         item.setItemMeta(meta);
         ItemDataFactory.applyItemModel(item, definition.itemModel());
         ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+        if ("a_legbiztonsagosabb_sisak".equals(id)) {
+            item.resetData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE);
+        }
     }
 
     /** Restores data-component presentation after a required ItemMeta/PDC write. */
@@ -200,6 +208,11 @@ public final class TrashItemFactory {
         final RarityPresentationService.Presentation rarity = rarityPresentations.require(playerRarity);
         ItemDataFactory.applyItemModel(item, itemModel);
         ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+        if ("a_legbiztonsagosabb_sisak".equals(id) && BASE_PHASE.equals(phase)) {
+            item.setData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE,
+                    io.papermc.paper.datacomponent.item.Equippable.equippable(org.bukkit.inventory.EquipmentSlot.HEAD)
+                            .damageOnHurt(false).dispensable(false).build());
+        }
     }
 
     private static String normalize(final String value) {

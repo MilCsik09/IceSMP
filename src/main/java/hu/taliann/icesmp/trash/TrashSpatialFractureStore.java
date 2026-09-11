@@ -70,6 +70,11 @@ public final class TrashSpatialFractureStore implements PersistentStore {
 
     public synchronized boolean open(final UUID ownerId, final Block base,
                                      final long durationTicks) {
+        return open(ownerId, base, durationTicks, () -> true);
+    }
+
+    public synchronized boolean open(final UUID ownerId, final Block base, final long durationTicks,
+                                     final java.util.function.BooleanSupplier consume) {
         Objects.requireNonNull(ownerId, "ownerId");
         Objects.requireNonNull(base, "base");
         final long owned = open.values().stream()
@@ -79,7 +84,7 @@ public final class TrashSpatialFractureStore implements PersistentStore {
         final List<BlockSnapshot> snapshots = new ArrayList<>(2);
         for (int dy = 0; dy < 2; dy++) {
             final Block block = base.getRelative(0, dy, 0);
-            if (block.getState() instanceof TileState || block.getType().isAir()
+            if (protects(block) || block.getType().getHardness() < 0 || block.getState() instanceof TileState || block.getType().isAir()
                     || block.getX() >> 4 != base.getX() >> 4
                     || block.getZ() >> 4 != base.getZ() >> 4) return false;
             snapshots.add(new BlockSnapshot(block.getX(), block.getY(), block.getZ(),
@@ -91,6 +96,11 @@ public final class TrashSpatialFractureStore implements PersistentStore {
         open.put(id, fracture);
         persistOrRestore(() -> open.remove(id));
         try {
+            if (!consume.getAsBoolean()) {
+                open.remove(id);
+                persistOrRestore(() -> open.put(id, fracture));
+                return false;
+            }
             for (final BlockSnapshot snapshot : snapshots) {
                 base.getWorld().getBlockAt(snapshot.x(), snapshot.y(), snapshot.z())
                         .setType(org.bukkit.Material.AIR, false);
@@ -133,8 +143,12 @@ public final class TrashSpatialFractureStore implements PersistentStore {
         if (world == null) return;
         final BlockSnapshot first = fracture.blocks().getFirst();
         final Location location = new Location(world, first.x(), first.y(), first.z());
-        Bukkit.getRegionScheduler().runDelayed(plugin, location,
-                ignored -> restoreNow(id, fracture), Math.max(1L, delay));
+        try {
+            Bukkit.getRegionScheduler().runDelayed(plugin, location,
+                    ignored -> restoreNow(id, fracture), Math.max(1L, delay));
+        } catch (final org.bukkit.plugin.IllegalPluginAccessException stopped) {
+            // The durable record remains available to the next startup.
+        }
     }
 
     private synchronized void restoreNow(final UUID id, final Fracture expected) {
@@ -143,11 +157,24 @@ public final class TrashSpatialFractureStore implements PersistentStore {
         final World world = Bukkit.getWorld(current.worldId());
         if (world == null) return;
         for (final BlockSnapshot snapshot : current.blocks()) {
+            final Block live = world.getBlockAt(snapshot.x(), snapshot.y(), snapshot.z());
+            if (!live.getType().isAir() && !live.getBlockData().getAsString().equals(snapshot.data())) {
+                scheduleRestore(id, current, 100L);
+                return;
+            }
+        }
+        for (final BlockSnapshot snapshot : current.blocks()) {
             final BlockData data = Bukkit.createBlockData(snapshot.data());
             world.getBlockAt(snapshot.x(), snapshot.y(), snapshot.z()).setBlockData(data, false);
         }
         open.remove(id);
         persistOrRestore(() -> open.put(id, current));
+    }
+
+    public synchronized boolean protects(final Block block) {
+        final UUID world = block.getWorld().getUID();
+        return open.values().stream().filter(f -> f.worldId().equals(world)).anyMatch(f ->
+                f.blocks().stream().anyMatch(b -> b.x() == block.getX() && b.y() == block.getY() && b.z() == block.getZ()));
     }
 
     @Override

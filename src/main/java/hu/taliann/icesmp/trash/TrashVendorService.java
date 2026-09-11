@@ -38,6 +38,7 @@ public final class TrashVendorService implements Listener {
     private final FactionManager factionManager;
     private final MessageManager messageManager;
     private final NamespacedKey saleMarker;
+    private final NamespacedKey removalReceipt;
 
     public TrashVendorService(final JavaPlugin plugin, final ConfigManager configManager,
                               final TrashItemFactory itemFactory,
@@ -54,6 +55,7 @@ public final class TrashVendorService implements Listener {
         this.factionManager = Objects.requireNonNull(factionManager, "factionManager");
         this.messageManager = Objects.requireNonNull(messageManager, "messageManager");
         this.saleMarker = new NamespacedKey(plugin, "trash_vendor_sale");
+        this.removalReceipt = new NamespacedKey(plugin, "trash_vendor_removed");
     }
 
     /** @return true when the held item was Trash and this service fully handled the interaction. */
@@ -109,10 +111,12 @@ public final class TrashVendorService implements Listener {
                     currency.name(), value, DailyBudget.dayIndex(), soldToday);
             markSale(hand, sale.operationId());
             player.getInventory().setItem(slot, hand);
+            player.saveData();
             if (!DailyBudget.tryConsumeDurablyOnOwnThread(
                     player, BUDGET_ID, dailyCap, value)) {
                 clearSaleMarker(hand, sale.operationId());
                 player.getInventory().setItem(slot, hand);
+                player.saveData();
                 recyclePool.cancelPrepared(sale.operationId());
                 player.sendMessage(messageManager.getMessage("buyer-cap-reached",
                         "<gray>🪙 „Mára kimerült a kasszám feléd — gyere vissza holnap!”</gray>"));
@@ -156,6 +160,7 @@ public final class TrashVendorService implements Listener {
                             && current >= Math.addExact(sale.budgetBefore(), sale.value());
                     if (!unlimited && !reservationVisible) {
                         clearSaleMarker(player, sale.operationId());
+                        player.saveData();
                         recyclePool.cancelPrepared(sale.operationId());
                         continue;
                     }
@@ -197,27 +202,68 @@ public final class TrashVendorService implements Listener {
 
     private void removeSoldUnits(final Player player,
                                  final TrashRecyclePool.SaleTransaction sale) {
-        final int markedSlot = findMarkedSlot(player, sale.operationId());
-        final int slot = markedSlot >= 0 ? markedSlot : sale.slot();
-        final ItemStack live = player.getInventory().getItem(slot);
-        if (live == null || live.getType().isAir()) return;
-        final boolean marked = sale.operationId().toString().equals(markerOf(live));
-        if (!sameSource(live, sale.source(), sale.operationId())) {
-            if (marked) throw new IllegalStateException("a vendor marker más Trash itemen maradt");
+        if (sale.operationId().toString().equals(player.getPersistentDataContainer().get(
+                removalReceipt, PersistentDataType.STRING))) {
+            // Re-acknowledge an uncertain save before advancing the separate sale journal.
+            player.saveData();
             return;
         }
-        final int expectedRemainder = sale.originalAmount() - sale.soldAmount();
-        if (live.getAmount() == sale.originalAmount()) {
-            live.setAmount(expectedRemainder);
-        } else if (live.getAmount() != expectedRemainder) {
-            throw new IllegalStateException("a Trash vendor source mennyisége nem recoverálható");
+        final int slot = findMarkedSlot(player, sale.operationId());
+        if (slot < 0) throw new IllegalStateException("a lefoglalt vendor tárgy nem található");
+        final ItemStack live = player.getInventory().getItem(slot);
+        if (!sameSource(live, sale.source(), sale.operationId())
+                || live.getAmount() != sale.originalAmount()) {
+            throw new IllegalStateException("a lefoglalt vendor tárgy megváltozott");
         }
-        if (live.getAmount() > 0) {
-            clearSaleMarker(live, sale.operationId());
-            player.getInventory().setItem(slot, live);
-        } else {
-            player.getInventory().setItem(slot, null);
+        final ItemStack remainder = live.clone();
+        remainder.setAmount(sale.originalAmount() - sale.soldAmount());
+        if (remainder.getAmount() > 0) clearSaleMarker(remainder, sale.operationId());
+        player.getInventory().setItem(slot, remainder.getAmount() > 0 ? remainder : null);
+        player.getPersistentDataContainer().set(removalReceipt, PersistentDataType.STRING,
+                sale.operationId().toString());
+        // Vanilla inventory and this receipt share one player-data write. Payout is still pending.
+        player.saveData();
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onInventoryClick(final org.bukkit.event.inventory.InventoryClickEvent event) {
+        if (event.getWhoClicked() instanceof Player player && pending(player)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onInventoryDrag(final org.bukkit.event.inventory.InventoryDragEvent event) {
+        if (event.getWhoClicked() instanceof Player player && pending(player)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onDrop(final org.bukkit.event.player.PlayerDropItemEvent event) {
+        if (pending(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onSwap(final org.bukkit.event.player.PlayerSwapHandItemsEvent event) {
+        if (pending(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onUse(final org.bukkit.event.player.PlayerInteractEvent event) {
+        if (markerOf(event.getItem()) != null) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onDeath(final org.bukkit.event.entity.PlayerDeathEvent event) {
+        if (event.getKeepInventory()) return;
+        final var iterator = event.getDrops().iterator();
+        while (iterator.hasNext()) {
+            final ItemStack item = iterator.next();
+            if (markerOf(item) == null) continue;
+            event.getItemsToKeep().add(item.clone());
+            iterator.remove();
         }
+    }
+
+    private boolean pending(final Player player) {
+        return !recyclePool.openSales(player.getUniqueId()).isEmpty();
     }
 
     private boolean sameSource(final ItemStack live, final ItemStack source,

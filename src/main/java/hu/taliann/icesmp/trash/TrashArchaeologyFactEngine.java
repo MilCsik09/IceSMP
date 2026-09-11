@@ -24,6 +24,8 @@ public final class TrashArchaeologyFactEngine {
         this.history = Objects.requireNonNull(history, "history");
     }
 
+    public boolean isCatalogued(final ItemStack item) { return items.isKnownItem(item); }
+
     public Optional<Evaluation> evaluate(final ItemStack item, final int archaeologyLevel) {
         if (archaeologyLevel < 0 || archaeologyLevel > 50 || !items.isKnownItem(item)) {
             return Optional.empty();
@@ -50,26 +52,24 @@ public final class TrashArchaeologyFactEngine {
         final TrashHistoryStore.Snapshot snapshot = history.orElse(null);
         if (snapshot != null && !snapshot.baseId().equals(id)) return Optional.empty();
         final long revision = snapshot == null ? 0L : snapshot.revision();
-        final String family = family(definition.material());
-        final String domain = domain(definition);
+        final TrashArchaeologyEvidence authored = definition.archaeology();
+        if (authored == null) return Optional.empty();
+        final String family = authored.family();
+        final String domain = authored.domain();
         final ArrayList<Fact> candidates = new ArrayList<>();
         candidates.add(new Fact("material", Category.MATERIAL, 0, 1, false, 0L,
-                materialObservation(definition.material(), family)));
-
-        if (definition.internalKind() == TrashKind.STORY) {
-            candidates.add(new Fact("cultural_trace", Category.ORIGIN, 0, 3, true, 0L,
-                    archaeologyLevel < 12
-                            ? "Talán ugyanabból a régi használati körből származik, mint néhány más lelet."
-                            : domainObservation(domain)));
-        } else if (archaeologyLevel >= 6 && !definition.sourceBias().affinities().isEmpty()) {
-            candidates.add(new Fact("wear_domain", Category.ORIGIN, 6, 2, false, 0L,
-                    domainObservation(domain)));
+                snapshot != null && !"base".equals(snapshot.phase())
+                        ? "A megváltozott alak mellett az eredeti tárgy megmunkálásának nyomai is felismerhetők."
+                        : authored.material()));
+        for (int index = 0; index < authored.facts().size(); index++) {
+            candidates.add(new Fact("authored_" + index, index == 0 ? Category.MATERIAL : Category.ORIGIN,
+                    index < 2 ? 0 : 8 + (index - 2) * 6, index == 0 ? 2 : 3, index > 0, 0L,
+                    authored.facts().get(index)));
         }
-
         if (snapshot != null) addHistoryFacts(snapshot, candidates);
-        if (archaeologyLevel >= 30 && isUnnaturalClueCandidate(definition)) {
+        if (archaeologyLevel >= 30 && !authored.discrepancy().isBlank()) {
             candidates.add(new Fact("material_discrepancy", Category.MATERIAL, 30, 4, true, 0L,
-                    "Az anyag öregedése több ponton nem egyezik a becsült használati korral."));
+                    authored.discrepancy()));
         }
 
         final List<Fact> visible = candidates.stream()
@@ -131,60 +131,6 @@ public final class TrashArchaeologyFactEngine {
         final java.util.Set<TrashHistoryEvent> accepted = java.util.Set.of(types);
         return snapshot.events().stream().filter(event -> accepted.contains(event.type()))
                 .mapToLong(TrashHistoryStore.HistoryEntry::revision).min().orElse(0L);
-    }
-
-    private static boolean isUnnaturalClueCandidate(final TrashDefinition definition) {
-        if (definition.internalKind() != TrashKind.ANOMALY
-                && definition.internalKind() != TrashKind.TRASH_RELIC) return false;
-        return Math.floorMod(definition.id().hashCode(), 3) == 0;
-    }
-
-    private static String materialObservation(final Material material, final String family) {
-        return switch (family) {
-            case "metal" -> "A korrózió és a felületi kopás több, eltérő használati időszakot jelez.";
-            case "wood" -> "A rostok kiszáradása alapján a tárgy hosszú ideig fedetlen helyen állhatott.";
-            case "textile" -> "A szálak közt többféle por- és koromréteg rakódott le.";
-            case "glass" -> "Az üveg apró zárványai kézi, egyenetlen hőkezelésre utalnak.";
-            case "stone" -> "Az élek lekerekedése ismételt szállításra és nedvességre utal.";
-            case "paper" -> "A rostok és a hajtásnyomok többszöri használatot mutatnak.";
-            default -> "Az anyag állapota hosszú és változatos használati múltra utal.";
-        };
-    }
-
-    private static String domainObservation(final String domain) {
-        return switch (domain) {
-            case "fish", "wet" -> "A lerakódások tartós vízközeli használatra utalnak.";
-            case "nether", "hot" -> "A felület rövid, ismétlődő szélsőséges hőterhelést kapott.";
-            case "deep", "underground" -> "A pórusokban mélyből származó ásványi por maradt.";
-            case "dark" -> "A felületi viasz és korom fénytől védett tárolásra utal.";
-            case "undead" -> "A szerves maradványok temetkezési környezetből származhatnak.";
-            case "humanoid" -> "A kopás rendszeres, kézben végzett használatra utal.";
-            case "ambient", "open_sky" -> "Az időjárási kopás hosszú, szabadtéri hányódást jelez.";
-            default -> "A készítési és használati nyomok nem köthetők biztosan egyetlen tájhoz.";
-        };
-    }
-
-    private static String family(final Material material) {
-        final String name = material.name();
-        if (containsAny(name, "IRON", "GOLD", "COPPER", "NETHERITE", "CHAIN", "BUCKET")) {
-            return "metal";
-        }
-        if (containsAny(name, "WOOD", "LOG", "PLANK", "STICK", "BAMBOO")) return "wood";
-        if (containsAny(name, "WOOL", "LEATHER", "STRING", "CARPET")) return "textile";
-        if (containsAny(name, "GLASS", "BOTTLE")) return "glass";
-        if (containsAny(name, "STONE", "BRICK", "DEEPSLATE", "COBBLE", "FLINT")) return "stone";
-        if (containsAny(name, "PAPER", "MAP", "BOOK")) return "paper";
-        return "organic";
-    }
-
-    private static boolean containsAny(final String value, final String... tokens) {
-        for (final String token : tokens) if (value.contains(token)) return true;
-        return false;
-    }
-
-    private static String domain(final TrashDefinition definition) {
-        return definition.sourceBias().affinities().stream().sorted().findFirst()
-                .orElse("global").toLowerCase(Locale.ROOT);
     }
 
     public enum Category { MATERIAL, ORIGIN, HISTORY, PROVENANCE }

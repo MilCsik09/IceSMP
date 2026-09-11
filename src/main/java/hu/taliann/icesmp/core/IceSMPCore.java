@@ -821,6 +821,8 @@ public final class IceSMPCore {
                 trashSpatialFractureStore, bloodMoonManager, claimManager,
                 territoryProtectionService, trashRuntimeTelemetry);
         mobAbilityRuntime.bindDisplacementPolicy(trashRelicRuntime::constrainDisplacement);
+        trashAmbientManager.bindItemRecovery(trashAnomalyRuntime::recoverAttachment);
+        trashAnomalyRuntime.bindTooltipVisibility(trashArchaeologyTooltipBridge::hasOverlay);
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);
@@ -868,7 +870,7 @@ public final class IceSMPCore {
                 devItemManager,
                 trashHistoryStore,
                 trashAnomalyStateStore,
-                trashSpatialFractureStore,
+                trashSpatialFractureStore, archeologyManager,
                 trashRecyclePool);
         this.storeCoordinator = new PersistentStoreCoordinator(persistentStores);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
@@ -2207,7 +2209,7 @@ public final class IceSMPCore {
         pluginManager.registerEvents(corruptionAuraListener, plugin);
         pluginManager.registerEvents(lowHealthBorderListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StrangerListener(strangerNpcManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager, trashRelicRuntime::claimBestBucket), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.trash.TrashFishingListener(
                 plugin, trashLootService, trashContextResolver, afkManager), plugin);
         pluginManager.registerEvents(trashAmbientManager, plugin);
@@ -2321,6 +2323,9 @@ public final class IceSMPCore {
                 plugin, trashHistoryService, kingManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonLootListener(afkManager, dungeonLootService, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ArcheologyShareListener(archeologyManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.TemporaryBlockProtection(
+                block -> trashSpatialFractureStore.protects(block) || archeologyManager.protects(block),
+                archeologyManager::allowsBrushing), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.HealthRegenListener(classHealthService), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SchoolCounterAnvilListener(), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);

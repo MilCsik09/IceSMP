@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Version-pinned single-packet bridge for a display-only offhand copy on Paper 1.21.11.
+ * Version-pinned single-packet bridge for a display-only held-slot copy on Paper 1.21.11.
  * Reflection keeps NMS out of the compile/runtime linkage boundary and fails closed on drift.
  */
 public final class TooltipPacketBridge_1_21_11
@@ -50,7 +50,15 @@ public final class TooltipPacketBridge_1_21_11
     @Override
     public boolean show(final Player player, final ItemStack canonicalSnapshot,
                         final List<String> observations) {
+        return show(player, org.bukkit.inventory.EquipmentSlot.OFF_HAND, canonicalSnapshot, observations);
+    }
+
+    @Override
+    public boolean show(final Player player, final org.bukkit.inventory.EquipmentSlot inspectedHand,
+                        final ItemStack canonicalSnapshot, final List<String> observations) {
         Objects.requireNonNull(player, "player");
+        final int menuSlot = inspectedHand == org.bukkit.inventory.EquipmentSlot.OFF_HAND
+                ? OFFHAND_MENU_SLOT : 36 + player.getInventory().getHeldItemSlot();
         Objects.requireNonNull(canonicalSnapshot, "canonicalSnapshot");
         if (access == null || observations == null || observations.isEmpty()) return false;
         final ItemStack display = canonicalSnapshot.clone();
@@ -66,22 +74,22 @@ public final class TooltipPacketBridge_1_21_11
                         .decoration(TextDecoration.ITALIC, false)));
         meta.lore(lore);
         display.setItemMeta(meta);
-        if (!sendDisplay(player, display)) return false;
-        final Overlay overlay = new Overlay();
+        if (!sendDisplay(player, display, menuSlot)) return false;
+        final Overlay overlay = new Overlay(menuSlot);
         final Overlay previous = overlays.put(player.getUniqueId(), overlay);
         if (previous != null) previous.cancel();
         try {
             final io.papermc.paper.threadedregions.scheduler.ScheduledTask expiry =
                     player.getScheduler().runDelayed(plugin, ignored -> {
-                        if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player);
+                        if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player, overlay.menuSlot);
                     }, () -> overlays.remove(player.getUniqueId(), overlay), OVERLAY_TICKS);
             overlay.setTask(expiry);
             if (expiry == null && overlays.remove(player.getUniqueId(), overlay)) {
-                sendCanonical(player);
+                sendCanonical(player, overlay.menuSlot);
                 return false;
             }
         } catch (final RuntimeException rejected) {
-            if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player);
+            if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player, overlay.menuSlot);
             return false;
         }
         return true;
@@ -93,7 +101,7 @@ public final class TooltipPacketBridge_1_21_11
         final Overlay overlay = overlays.remove(player.getUniqueId());
         if (overlay != null) {
             overlay.cancel();
-            sendCanonical(player);
+            sendCanonical(player, overlay.menuSlot);
         }
     }
 
@@ -109,16 +117,41 @@ public final class TooltipPacketBridge_1_21_11
             final Overlay overlay = overlays.remove(player.getUniqueId());
             if (overlay == null) continue;
             overlay.cancel();
-            player.getScheduler().run(plugin, ignored -> sendCanonical(player), null);
+            player.getScheduler().run(plugin, ignored -> sendCanonical(player, overlay.menuSlot), null);
         }
         overlays.clear();
     }
 
-    private void sendCanonical(final Player player) {
-        sendDisplay(player, player.getInventory().getItemInOffHand().clone());
+    public boolean hasOverlay(final UUID playerId, final int inventorySlot) {
+        final Overlay overlay = overlays.get(playerId);
+        return overlay != null && overlay.menuSlot == (inventorySlot == 40 ? OFFHAND_MENU_SLOT : 36 + inventorySlot);
     }
 
-    private boolean sendDisplay(final Player player, final ItemStack display) {
+    static boolean projectInventorySlot(final Player player, final int slot, final ItemStack display) {
+        if (slot != 40 && (slot < 0 || slot > 8)) return false;
+        return sendInventoryProjection(player, display, slot == 40 ? OFFHAND_MENU_SLOT : 36 + slot);
+    }
+
+    private void sendCanonical(final Player player, final int menuSlot) {
+        final ItemStack current = menuSlot == OFFHAND_MENU_SLOT ? player.getInventory().getItemInOffHand()
+                : player.getInventory().getItem(menuSlot - 36);
+        sendDisplay(player, current == null ? new ItemStack(org.bukkit.Material.AIR) : current.clone(), menuSlot);
+    }
+
+    private boolean sendDisplay(final Player player, final ItemStack display, final int menuSlot) {
+        return sendInventoryProjection(player, display, menuSlot);
+    }
+
+    static boolean projectHand(final Player player, final org.bukkit.inventory.EquipmentSlot hand,
+                               final ItemStack display) {
+        return sendInventoryProjection(player, display, hand == org.bukkit.inventory.EquipmentSlot.OFF_HAND
+                ? OFFHAND_MENU_SLOT : 36 + player.getInventory().getHeldItemSlot());
+    }
+
+    private static final class ProjectionAccess { private static final Access VALUE = Access.probe(); }
+
+    private static boolean sendInventoryProjection(final Player player, final ItemStack display, final int menuSlot) {
+        final Access access = ProjectionAccess.VALUE;
         if (access == null || !player.isOnline()) return false;
         try {
             final Object handle = access.getHandle().invoke(player);
@@ -126,7 +159,7 @@ public final class TooltipPacketBridge_1_21_11
             final int stateId = ((Number) access.getStateId().invoke(menu)).intValue();
             final Object nmsItem = access.asNmsCopy().invoke(null, display);
             final Object packet = access.packetConstructor().newInstance(
-                    PLAYER_INVENTORY_CONTAINER, stateId, OFFHAND_MENU_SLOT, nmsItem);
+                    PLAYER_INVENTORY_CONTAINER, stateId, menuSlot, nmsItem);
             final Object connection = access.connection().get(handle);
             access.send().invoke(connection, packet);
             return true;
@@ -176,7 +209,9 @@ public final class TooltipPacketBridge_1_21_11
         private io.papermc.paper.threadedregions.scheduler.ScheduledTask task;
         private boolean cancelled;
 
-        private Overlay() { }
+        private final int menuSlot;
+
+        private Overlay(final int menuSlot) { this.menuSlot = menuSlot; }
 
         private synchronized void setTask(
                 final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled) {

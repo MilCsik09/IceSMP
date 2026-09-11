@@ -86,6 +86,21 @@ def sync_models(item_id: str, check_only: bool) -> None:
         "parent": "minecraft:item/generated",
         "textures": {"layer0": f"icesmp:item/trash/{item_id}"},
     }
+    if item_id == "torott_iranytu":
+        entries = []
+        for angle in range(32):
+            model_id = f"trash/states/{item_id}_{angle:02d}"
+            entries.append({"threshold": angle / 32, "model": {
+                "type": "minecraft:model", "model": f"icesmp:item/{model_id}"}})
+            state = {"parent": f"icesmp:item/trash/{item_id}", "display": {
+                context: {"rotation": [0, 0, angle * 360 / 32]} for context in (
+                    "gui", "fixed", "ground", "firstperson_righthand", "firstperson_lefthand",
+                    "thirdperson_righthand", "thirdperson_lefthand")}}
+            sync_text(MODEL_ROOT / "states" / f"{item_id}_{angle:02d}.json",
+                      json.dumps(state, ensure_ascii=False, indent=2) + "\n", check_only)
+        item_definition["model"] = {"type": "minecraft:range_dispatch", "property": "minecraft:compass",
+                                    "target": "lodestone", "wobble": True, "entries": entries,
+                                    "fallback": item_definition["model"]}
     sync_text(ITEM_ROOT / f"{item_id}.json",
               json.dumps(item_definition, ensure_ascii=False, indent=2) + "\n", check_only)
     sync_text(MODEL_ROOT / f"{item_id}.json",

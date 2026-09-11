@@ -18,8 +18,21 @@ public record TrashDefinition(
         TrashSourceBias sourceBias,
         TrashKind internalKind,
         String behavior,
-        String successPhase
+        String successPhase,
+        TrashArchaeologyEvidence archaeology
 ) {
+    public TrashDefinition(String id, String displayName, String playerRarity, Material material,
+            String itemModel, String texture, int vendorValue, List<String> lore, TrashSourceBias sourceBias,
+            TrashKind internalKind, String behavior, String successPhase) {
+        this(id, displayName, playerRarity, material, itemModel, texture, vendorValue, lore, sourceBias,
+                internalKind, behavior, successPhase, null);
+    }
+
+    public TrashDefinition withArchaeology(final TrashArchaeologyEvidence evidence) {
+        return new TrashDefinition(id, displayName, playerRarity, material, itemModel, texture, vendorValue,
+                lore, sourceBias, internalKind, behavior, successPhase, Objects.requireNonNull(evidence));
+    }
+
     public TrashDefinition {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(displayName, "displayName");

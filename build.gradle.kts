@@ -1275,6 +1275,11 @@ val trashNativeInspectionRegressionTest = registerRegression(
     "trashNativeInspectionRegressionTest",
     "Runs native history and anomaly nonblocking inspection, rollback and disk acknowledgement checks.",
     "hu.taliann.icesmp.trash.TrashNativeInspectionRegressionSuite")
+val trashInteractionFixRegressionTest = registerRegression(
+    "trashInteractionFixRegressionTest",
+    "Runs both Brush hands through real event handlers, cancellation, authored evidence and vendor receipt recovery.",
+    "hu.taliann.icesmp.trash.TrashInteractionFixRegressionSuite")
+
 val trashProductionHardeningRegressionTest = registerRegression(
     "trashProductionHardeningRegressionTest",
     "Runs Phase G aggregate telemetry, hard-cap, cleanup, security and staging-evidence gates.",
@@ -1316,7 +1321,7 @@ tasks.check {
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
         trashAnomalyRegressionTest, trashRelicRegressionTest, trashRuleFieldRegressionTest, trashArchaeologyRegressionTest,
-        trashProductionHardeningRegressionTest, trashNativeInspectionRegressionTest,
+        trashProductionHardeningRegressionTest, trashInteractionFixRegressionTest, trashNativeInspectionRegressionTest,
         factionReworkRegressionTest, whisperIntegrityRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,

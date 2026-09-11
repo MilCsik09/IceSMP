@@ -61,6 +61,7 @@ jobs:
             trashAnomalyRegressionTest \
             trashRelicRegressionTest \
             trashArchaeologyRegressionTest \
+            trashInteractionFixRegressionTest \
             trashProductionHardeningRegressionTest \
             --no-daemon --console=plain --stacktrace \
             | tee build/trash-production-hardening.log
