@@ -30,6 +30,6 @@ public final class ArcheologyShareListener implements Listener {
         if (!(event.getPlayer() instanceof Player digger)) {
             return;
         }
-        archeologyManager.handleExcavated(digger, event.getBlock().getLocation());
+        archeologyManager.handleExcavated(digger, event.getBlock().getLocation(), event.getBlockState());
     }
 }

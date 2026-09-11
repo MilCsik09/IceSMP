@@ -567,6 +567,24 @@ public final class TrashHistoryService {
         return transformInventorySlotOnSuccess(player, slot, null, null);
     }
 
+    /** A persisted singleton fences old player snapshots before any consuming consequence. */
+    public boolean consumeInventorySlotDurably(final Player player, final int slot) {
+        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return false;
+        final ItemStack source = player.getInventory().getItem(slot);
+        if (source == null || itemFactory.successPhaseOf(source).isEmpty()
+                || source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        if (instanceIdOf(source).isEmpty()) {
+            final SplitResult split = splitAndRecord(source, TrashHistoryEvent.ACTIVATED, player.getUniqueId(), "");
+            player.getInventory().setItem(slot, split.singleton());
+            if (split.remainder() != null && !player.getInventory().addItem(split.remainder()).isEmpty())
+                throw new IllegalStateException("a lefoglalt Trash maradéka nem fér el");
+        }
+        player.saveData();
+        if (!transformInventorySlotOnSuccess(player, slot)) return false;
+        player.saveData();
+        return true;
+    }
+
     /** Caller owns the inventory; a busy history writer refuses before any projection or waiting. */
     public boolean tryTransformInventorySlotOnSuccess(final Player player, final int slot,
                                                        final java.util.function.BooleanSupplier admission) {

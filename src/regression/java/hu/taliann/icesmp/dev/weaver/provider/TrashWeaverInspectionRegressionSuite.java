@@ -21,7 +21,8 @@ public final class TrashWeaverInspectionRegressionSuite {
     }
     private static TrashDefinition definition(String id) {
         return new TrashDefinition(id, "Tesztlelet", "Trash", Material.STICK, "test:" + id, "test/" + id, 1,
-                List.of(), new TrashSourceBias("GLOBAL", Set.of()), TrashKind.STORY, "", "");
+                List.of(), new TrashSourceBias("GLOBAL", Set.of()), TrashKind.STORY, "", "", new TrashArchaeologyEvidence("wood", "records", "Farostok.",
+                        List.of("Kézzel rótt jel.", "Hivatali forma."), ""));
     }
     public static void main(String[] args) {
         TrashWeaverActionRegressionSuite.main(args);
@@ -38,7 +39,7 @@ public final class TrashWeaverInspectionRegressionSuite {
         check(views.size() == 1 && views.getFirst().catalogs().size() == 2, "generic frontend discovers native Trash facet/catalogs");
         check(views.getFirst().actions().isEmpty() && views.getFirst().imports().isEmpty() && views.getFirst().exports().isEmpty(), "unfinished mutation/clone paths are absent");
         final var inspection = provider.inspect(context, snapshot, FACET);
-        check(inspection.facts().containsKey("trash.archaeology.cultural_trace") && !inspection.facts().containsKey("trash.instance"), "fresh story evidence derives without inventing tracked identity");
+        check(inspection.facts().containsKey("trash.archaeology.authored_1") && !inspection.facts().containsKey("trash.instance"), "fresh story evidence derives without inventing tracked identity");
         final var catalog = provider.catalog(context, snapshot, "trash.identities").orElseThrow();
         check(catalog.resolve("first").isPresent(), "canonical identity discovered");
         definitions.set(Map.of("second", definition("second")));

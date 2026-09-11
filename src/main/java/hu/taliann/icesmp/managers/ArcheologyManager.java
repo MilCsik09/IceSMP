@@ -26,7 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>Folia: a blokk-műveletek a lelőhely régió-schedulerén futnak; a tick a
  * globális world-events tickről jön. Minden kulcs élőben olvasódik (archeology.*).
  */
-public final class ArcheologyManager {
+public final class ArcheologyManager implements hu.taliann.icesmp.storage.PersistentStore {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
@@ -35,7 +35,10 @@ public final class ArcheologyManager {
     private final MessageManager messageManager;
 
     private volatile Location site;
-    private volatile BlockState originalState;
+    private volatile SiteRecord activeSite;
+    private final java.io.File journal;
+    private final org.bukkit.NamespacedKey siteKey;
+    private final java.util.concurrent.atomic.AtomicBoolean restoring = new java.util.concurrent.atomic.AtomicBoolean();
     private volatile long expiresAt;
     private volatile long nextAttemptAt;
     private volatile long spawnGraceUntil;
@@ -45,6 +48,9 @@ public final class ArcheologyManager {
                              final hu.taliann.icesmp.items.UniqueMaterialFactory uniqueMaterials,
                              final MessageManager messageManager) {
         this.plugin = plugin;
+        this.journal = new java.io.File(plugin.getDataFolder(), "archeology-site.yml");
+        this.siteKey = new org.bukkit.NamespacedKey(plugin, "archeology_site");
+        hu.taliann.icesmp.storage.YamlStore.registerCriticalWrite(journal);
         this.configManager = configManager;
         this.spawnGuard = spawnGuard;
         this.uniqueMaterials = uniqueMaterials;
@@ -53,11 +59,15 @@ public final class ArcheologyManager {
     }
 
     public boolean isActive() {
-        return site != null;
+        return activeSite != null;
     }
 
     /** Periodikus driver a world-events tickről. */
     public void tick() {
+        if (activeSite != null && site == null) {
+            restoreViaRegion(false);
+            return;
+        }
         if (!configManager.getBoolean("archeology.enabled", true)) {
             if (site != null) {
                 restoreViaRegion(false);
@@ -84,7 +94,7 @@ public final class ArcheologyManager {
 
     /** Admin override: lelőhely most, a horgony közelébe. */
     public synchronized boolean forceSpawn(final Player anchor) {
-        if (site != null || System.currentTimeMillis() < spawnGraceUntil) {
+        if (activeSite != null || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
         return spawn(anchor);
@@ -93,7 +103,7 @@ public final class ArcheologyManager {
     private synchronized boolean spawn(final Player preferredAnchor) {
         // Zárt check-then-act: a synchronized belépés UTÁN is újraellenőrzünk — a tick
         // és egy egyidejű admin-hívás közül csak az első juthat át.
-        if (System.currentTimeMillis() < spawnGraceUntil) {
+        if (activeSite != null || System.currentTimeMillis() < spawnGraceUntil) {
             return false;
         }
         spawnGraceUntil = System.currentTimeMillis() + 10_000L;
@@ -122,19 +132,26 @@ public final class ArcheologyManager {
     }
 
     /** A lelőhely lehelyezése (régió-szálon): a felszíni blokk cseréje gyanús homokra/kavicsra. */
-    private void placeSite(final World world, final int x, final int z) {
+    private synchronized void placeSite(final World world, final int x, final int z) {
+        if (activeSite != null || !world.isChunkLoaded(x >> 4, z >> 4)) return;
         final int y = world.getHighestBlockYAt(x, z);
         final Location spot = new Location(world, x, y, z);
         if (spawnGuard.isBlocked("archeology", spot) || spawnGuard.isUnsafeSurface("archeology", world, x, z)) {
             return;
         }
         final Block block = world.getBlockAt(x, y, z);
-        originalState = block.getState();
+        if (block.getState() instanceof org.bukkit.block.TileState) return;
+        final SiteRecord prepared = new SiteRecord(java.util.UUID.randomUUID(), world.getUID(), x, y, z,
+                block.getBlockData().getAsString());
+        activeSite = prepared;
+        try { save(); } catch (final RuntimeException failure) { activeSite = null; throw failure; }
         block.setType(ThreadLocalRandom.current().nextBoolean()
                 ? Material.SUSPICIOUS_SAND : Material.SUSPICIOUS_GRAVEL, false);
         // A vanília cserép-loot helyett SZERVER-SAJÁT lelet a finds-táblából.
         final BlockState state = block.getState();
         if (state instanceof org.bukkit.block.BrushableBlock brushable) {
+            brushable.getPersistentDataContainer().set(siteKey, org.bukkit.persistence.PersistentDataType.STRING,
+                    prepared.id().toString());
             brushable.setItem(rollFind());
             brushable.update(true, false);
         }
@@ -159,15 +176,19 @@ public final class ArcheologyManager {
      * egy leletre — az "első kattintó visz mindent" fék. A hívó a LELŐHELY régió-szálán
      * fut (BlockDropItemEvent); az item-átadás a részesülő saját szálán történik.
      */
-    public void handleExcavated(final Player digger, final Location diggedAt) {
+    public synchronized void handleExcavated(final Player digger, final Location diggedAt, final BlockState previous) {
         final Location current = this.site;
         if (current == null || diggedAt.getWorld() == null
                 || !current.getWorld().equals(diggedAt.getWorld())
-                || current.distanceSquared(diggedAt) > 4.0D) {
+                || current.getBlockX() != diggedAt.getBlockX() || current.getBlockY() != diggedAt.getBlockY()
+                || current.getBlockZ() != diggedAt.getBlockZ() || activeSite == null
+                || !(previous instanceof org.bukkit.block.BrushableBlock brushable)
+                || !activeSite.id().toString().equals(brushable.getPersistentDataContainer().get(
+                        siteKey, org.bukkit.persistence.PersistentDataType.STRING))) {
             return;
         }
+        completeSite(activeSite);
         this.site = null;
-        this.originalState = null;
         final double shareRadius = Math.max(0.0D, configManager.getDouble("archeology.share-radius", 24.0D));
         final double shareChance = Math.max(0.0D, configManager.getDouble("archeology.share-chance", 0.5D));
         final int maxPlayers = Math.max(0, configManager.getInt("archeology.share-max-players", 3));
@@ -240,30 +261,94 @@ public final class ArcheologyManager {
 
     /** Lejárat/leállás: az eredeti blokk visszaáll (ha már kiásták, akkor is takarítunk). */
     private void restoreViaRegion(final boolean announce) {
-        final Location active = site;
-        final BlockState original = originalState;
-        site = null;
-        originalState = null;
-        if (active == null) {
-            return;
-        }
+        final SiteRecord expected = activeSite;
+        if (expected == null || !restoring.compareAndSet(false, true)) return;
+        final World world = Bukkit.getWorld(expected.world());
+        if (world == null) { restoring.set(false); return; }
+        final Location location = new Location(world, expected.x(), expected.y(), expected.z());
         try {
-            plugin.getServer().getRegionScheduler().run(plugin, active, task -> {
-                if (original != null) {
-                    original.update(true, false);
-                }
+            plugin.getServer().getRegionScheduler().run(plugin, location, task -> {
+                try {
+                    synchronized (this) {
+                        if (!expected.equals(activeSite)) return;
+                        final Block block = location.getBlock();
+                        final BlockState state = block.getState();
+                        if (state instanceof org.bukkit.block.BrushableBlock brushable
+                                && expected.id().toString().equals(brushable.getPersistentDataContainer().get(
+                                        siteKey, org.bukkit.persistence.PersistentDataType.STRING))) {
+                            block.setBlockData(Bukkit.createBlockData(expected.original()), false);
+                        }
+                        // A foreign replacement is preserved; it is never evidence of our brushable block.
+                        completeSite(expected);
+                        site = null;
+                    }
+                } finally { restoring.set(false); }
             });
-        } catch (final Exception ignored) {
-            // Scheduler nem elérhető (leállás) — a blokk marad; kozmetikai.
-        }
-        if (announce) {
-            // Broadcast-diéta: a lejárat is csak a környékbelieknek szól.
-            hu.taliann.icesmp.utils.LocalAnnounce.nearby(plugin, active,
-                    configManager.getDouble("archeology.announce-radius", 160.0D),
-                    messageManager.getMessage(
-                            "archeology-expired", "<gray>🏺 A homok visszavette, amit őrzött — a lelőhely eltűnt.</gray>"));
+        } catch (final RuntimeException rejected) {
+            restoring.set(false);
+            // Keep the journal and retry after startup instead of forgetting the footprint.
         }
     }
+
+    private synchronized void completeSite(final SiteRecord expected) {
+        if (!expected.equals(activeSite)) return;
+        activeSite = null;
+        try { save(); } catch (final RuntimeException failure) { activeSite = expected; throw failure; }
+    }
+
+    public boolean allowsBrushing(final org.bukkit.event.entity.EntityChangeBlockEvent event) {
+        if (!(event.getEntity() instanceof Player player) || !protects(event.getBlock())
+                || player.getInventory().getItemInMainHand().getType() != Material.BRUSH
+                && player.getInventory().getItemInOffHand().getType() != Material.BRUSH) return false;
+        final SiteRecord current = activeSite;
+        if (current == null || !(event.getBlock().getState() instanceof org.bukkit.block.BrushableBlock brushable)
+                || !current.id().toString().equals(brushable.getPersistentDataContainer().get(
+                        siteKey, org.bukkit.persistence.PersistentDataType.STRING))) return false;
+        final Material from = event.getBlock().getType(), to = event.getTo();
+        return from == Material.SUSPICIOUS_SAND && (to == from || to == Material.SAND)
+                || from == Material.SUSPICIOUS_GRAVEL && (to == from || to == Material.GRAVEL);
+    }
+
+    public boolean protects(final Block block) {
+        final SiteRecord current = activeSite;
+        return current != null && current.world().equals(block.getWorld().getUID())
+                && current.x() == block.getX() && current.y() == block.getY() && current.z() == block.getZ();
+    }
+
+    @Override
+    public synchronized void load() {
+        final var yaml = hu.taliann.icesmp.storage.YamlStore.loadTracked(journal, plugin.getLogger());
+        activeSite = null;
+        site = null;
+        restoring.set(false);
+        if (!journal.exists()) return;
+        try {
+            if (yaml.getInt("schema-version") != 1) throw new IllegalArgumentException("schema-version");
+            if (!yaml.contains("site.id")) return;
+            activeSite = new SiteRecord(java.util.UUID.fromString(yaml.getString("site.id")),
+                    java.util.UUID.fromString(yaml.getString("site.world")), yaml.getInt("site.x"),
+                    yaml.getInt("site.y"), yaml.getInt("site.z"), java.util.Objects.requireNonNull(yaml.getString("site.original")));
+        } catch (final RuntimeException corrupt) {
+            hu.taliann.icesmp.storage.YamlStore.failCorrupt(journal, plugin.getLogger(), "érvénytelen régészeti lelőhely");
+            throw corrupt;
+        }
+    }
+
+    @Override
+    public synchronized void save() {
+        final var yaml = new org.bukkit.configuration.file.YamlConfiguration();
+        yaml.set("schema-version", 1);
+        final SiteRecord record = activeSite;
+        if (record != null) {
+            yaml.set("site.id", record.id().toString()); yaml.set("site.world", record.world().toString());
+            yaml.set("site.x", record.x()); yaml.set("site.y", record.y()); yaml.set("site.z", record.z());
+            yaml.set("site.original", record.original());
+        }
+        try { hu.taliann.icesmp.storage.YamlStore.saveAtomic(journal, yaml); }
+        catch (final java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
+    }
+
+    private record SiteRecord(java.util.UUID id, java.util.UUID world, int x, int y, int z, String original) { }
 
     public void shutdown() {
         restoreViaRegion(false);

@@ -204,6 +204,8 @@ public final class TrashCatalog {
         if (!errors.isEmpty()) {
             throw new IllegalStateException("Hibás Trash catalog: " + String.join("; ", errors));
         }
+        final var evidence = TrashArchaeologyEvidence.parse(yaml.getConfigurationSection("archaeology"), parsed);
+        parsed.replaceAll((id, definition) -> definition.withArchaeology(evidence.get(id)));
         return new Parsed(Map.copyOf(parsed), Map.copyOf(parsedPhases), rarityLabel, lootTuning);
     }
 

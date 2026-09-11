@@ -130,7 +130,7 @@ public final class TrashRelicRegressionSuite {
                 "exact brick reservation consumption");
         require(runtime, "final String token = field.reservationToken();", "native field reservation token preserved");
         require(runtime, "findBrickReservation(player, token)", "exact reserved inventory slot selected");
-        require(runtime, "transformHelmetOnSuccess", "equipped helmet-only transform");
+        require(runtime, "history.consumeInventorySlotDurably(player, 39)", "equipped helmet-only transform");
         check(runtime.indexOf("consumeBrickReservation(owner, field, projectileId, admission, finalAdmission)")
                         < runtime.lastIndexOf("projectile.remove()"),
                 "projectile was removed before brick transformation committed");
@@ -171,7 +171,7 @@ public final class TrashRelicRegressionSuite {
         require(history, "store.transact(() ->", "durable history transaction");
         require(history, "player.getInventory().setContents(before)",
                 "inventory projection rollback");
-        require(runtime, "history.transformInventorySlotOnSuccess", "runtime transition path");
+        require(runtime, "history.consumeInventorySlotDurably", "runtime transition path");
         require(runtime, "dropTransformed", "pre-death self-drop and transfer path");
         require(runtime, "event.setDamage(Math.max(0.0D, player.getHealth() - 1.0D))",
                 "survive-at-one hook");

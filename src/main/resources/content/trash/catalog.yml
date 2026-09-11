@@ -1,5 +1,375 @@
 # Git-authored Trash identity authority. Internal fields must never reach player/admin surfaces.
 schema-version: 1
+
+# Physical evidence is identity-authored; carrier Materials and loot weights are not provenance.
+archaeology:
+  physical-families:
+    metal:
+      observation: "A fémfelület megmunkálási nyomai elkülöníthetők a későbbi sérülésektől."
+      items: [rozsdas_szog, gorbe_szog, rovid_satorszog, kormos_szog, repedt_szegecs, laposra_vert_szegecs, elhajlott_kapocsszog, tul_nagy_szog, rossz_menetu_csavar, lapos_feju_csavar, patinas_bronzcsavar, megszorult_csavar, kicsorbult_csavar, tul_vastag_csavar, ferde_csavar, elhasznalt_csavar, csorba_kanal, gorbe_kanal, kormos_kanal, foltos_kanal, kopott_kanal, gorbe_villa, haromfogu_villa, kormos_villa, rozsdafoltos_villa, tompa_kiskes, repedt_markolatu_kes, csorba_asztali_kes, rozsdas_kenokes, kifakult_jelveny, torott_jelveny, rozsdas_melljel, ures_cimerlap, gorbe_zaszlotu, torott_ovcsat, rozsdas_hamcsat, kormos_csat, tul_nagy_csat, elhajlott_csat, torott_fogaskerek, fel_fogaskerek, rozsdas_fogaskerek, megszorult_fogaskerek, tul_apro_fogaskerek, tompa_vesohegy, repedt_veso, letort_szerszamveg, kormos_vesohegy, tul_rovid_veso, repedt_alatet, tul_nagy_alatet, tul_kicsi_alatet, ovalis_alatet, kormos_alatet, rozsdas_csapagygolyo, ellapult_csapagygolyo, felrevert_garas, melynepi_csapagygolyo, tul_nehez_alatet, a_penztar_utolso_garasa, udvari_gomb, szakadt_hadijel, torott_hadisip, sarkanyistallo_csatja, jegmezoi_csengonyelv, csendverte_csengonyelv, balmenetes_csavar, melynepi_kiegett_biztositek, gorbe_satorszog, ezustozott_kanal, a_vilag_legelesebb_kese, szerencses_garas, koporsoszog, kormos_satorszog, rozsdas_horgaszhorog, kiegyenesedett_horog, torott_horog, horpadasos_fazek, ful_nelkuli_fazek, a_legbiztonsagosabb_sisak, torott_nyilhegy, rozsdas_nyilhegy, gorbe_nyilhegy, tompa_nyilhegy, kormos_nyilhegy, szakadt_dogcedula, ures_dogcedula, kifakult_nevtag, gorbe_femcimke, lyukas_cimke, nevtelen_dogcedula, jeloletlen_amulett, rozsdas_vodor, horpadasos_vodor, lyukas_vodor, rozsdas_lancdarab, nyitott_lancszem, bal_lancszem, jobb_lancszem, repedt_iranytu, beragadt_iranytu, torott_iranytu, torott_zsebora, rozsdas_kardcsonk, tompa_rovidpenge, a_kard_amely_minden_csatat_megnyer, hazug_merlegnyelv]
+    wood:
+      observation: "A fa rostiránya a vágott és a törött felületeken is követhető."
+      items: [fakanal_nyele, kopott_meropalca, torott_meropalca, jeloletlen_palca, gorbe_merovesszo, kormos_meropalca, szalkas_deszkadarab, festekes_deszkadarab, voroses_faszalka, elszenesedett_faszalka, gorbe_bot, keregtelen_bot, elszenesedett_verfaag, verfa_szalkaja, szaraz_gyufa, radicorai_arnyekszalka, csontszamvevo_ceruzacsonkja, bot, torott_pajzsdeszka, kifakult_uszo, repedt_uszo, tul_nehez_uszo, faek, fakocka]
+    paper:
+      observation: "A papír rostjai és a rákerült jelölések külön rétegként vizsgálhatók."
+      items: [elazott_nyugta, felbehajtott_nyugta, zsiros_kocsmai_szamla, tepett_szallitolevel, raktari_jegyzekdarab, teves_szamla, vamhazi_masolat, ures_konyvelolap, gyurott_cetli, szakadt_bevasarlolista, foltos_uzenet, elrontott_levelkezdet, tintaproba, ures_papirdarab, szamolocetli, kifakult_cimzes, bokicnak_ellentmondo_level, boterai_ne_vidd_cimke, caldesterai_sorszam_999, fagyott_tintas_cetli, suttogo_cetli, vissza_a_feladonak]
+    textile:
+      observation: "Az összefonódó szálak szerkezete a kopott széleken is felismerhető."
+      items: [hasznalt_kotesdarab, fel_tekercs_kotes, megkemenyedett_kotes, szakadt_kotes, regi_kotes, szakadt_rongy, olajos_rongy, iszapos_rongy, kormos_rongy, kifakult_rongy, foltozott_rongy, lyukas_zokni, foltozott_zokni, bal_zokni, jobb_zokni, rojtos_szalag, csomora_kotott_szalag, gubancos_damil, szakadt_damil, hinaros_zsinor, foszlo_koteldarab, tul_rovid_kotel, szakadt_feher_zaszlo, szakadt_kotel, kormos_kanoc, elszakadt_virrasztokanoc]
+    leather:
+      observation: "A bőr hajlított felülete és a varrás mellett maradt szélek megkülönböztethetők."
+      items: [kopott_papucs, elszakadt_papucs, fel_par_papucs, ures_erszeny, ures_csontzacsko, a_nagyon_rossz_otlet]
+    glass:
+      observation: "Az üveges anyag törési felülete eltér a külső, megmunkált felszíntől."
+      items: [repedt_palack, zoldes_uvegpalack, dugo_nelkuli_palack, palackozott_nem, repedt_virrasztouveg, melynepi_vaklencse, lila_fenyu_uvegszilank, obszidianforgacs, repedt_obszidianszilank, kormos_obszidian, tompa_obszidiandarab, kikopott_obszidianszilank, elkeso_visszhangdarab]
+    ceramic:
+      observation: "Az égetett edényanyag szemcséi a sérülések mentén láthatóvá válnak."
+      items: [csorba_bogre, ful_nelkuli_bogre, hajszalrepedt_bogre, kormos_bogre, tul_kicsi_bogre, repedt_tal, csorba_csesze, sofoltos_talka, fel_tanyer, kormos_tal, repedt_bogre, csorba_tegla, habarcsos_tegladarab, tegla]
+    stone:
+      observation: "A kő szemcsézete a lecsiszolt és a letört részeken is összevethető."
+      items: [lapos_folyami_kavics, lyukas_kavics, kobol_faragott_ek, hetpartos_kavics, koek, melynepi_selejtek, torott_imako, kormos_kavics]
+    bone:
+      observation: "A csontos anyag tömör külső rétege és belső szerkezete megkülönböztethető."
+      items: [ismeretlen_csontdarab, repedt_csontdarab, megfeketedett_csont, sima_csontdarab, ragott_csont, torott_fog, kopott_agyardarab, fekete_fog, repedt_orlofog, apro_agyar, kopott_csontkocka, hazudni_nem_tudo_dobokocka]
+    wax:
+      observation: "A viasz felületén az alakítás és a megszilárdulás határai vizsgálhatók."
+      items: [leegett_gyertyacsonk, megolvadt_viaszdarab, fekete_viaszdugo]
+    organic:
+      observation: "A szerves anyag maradványai önmagukban nem árulják el a tárgy származási helyét."
+      items: [kokemeny_kenyer, peneszes_kenyerhej, megegett_kenyerveg, kiszaradt_sajtdarab, peneszes_sajthej, tul_sos_sajt, megolvadt_sajtcsonk, kormos_sajt, torott_toll, kormos_toll, vizes_toll, kifakult_toll, fel_toll, a_krumpli_ami_nem_akar_elultetodni]
+    ash:
+      observation: "Az elszenesedett maradványok és a finom szemcsék külön vizsgálhatók."
+      items: [koromcsomo, hideg_hamucsomo, osszetapadt_hamu, egett_faszendarab, portalkorom]
+    ice:
+      observation: "A jégkristály elágazásai szabályos növekedési szerkezetet mutatnak."
+      items: [felfele_hullo_hopehely]
+  stories:
+    harom_udvar_kanala:
+      family: metal
+      domain: court
+      facts: ["A nyél karcolásai nem egyszerre keletkeztek; egyikük egy korábbi vonalat metsz át.", "A három leltárjel eltérő kéztől származik, de egyik sem készítőjegy."]
+    bokici_reveszgomb:
+      family: metal
+      domain: river
+      facts: ["A hullámjelet a gomb elkészülte után karcolták a hátoldalba.", "A fül kopása felvarrt ruhagomb használatához illik; önmagában nem azonosít révészt."]
+    caldesterai_vamcedula:
+      family: paper
+      domain: trade
+      facts: ["A szakadás az árufelirat mezőjét metszi, a pecsétet megkerüli.", "A pecsét és a megmaradt rovatvonalak egy vámházi nyomtatvány részei."]
+    boterai_hamis_pecset:
+      family: metal
+      domain: trade
+      facts: ["A körirat betűközei egyenetlenek, két jel a perembe szorult.", "A jel közepét gondosabban másolták, mint a hitelesítéshez használt külső gyűrűt."]
+    regi_kompjegy:
+      family: paper
+      domain: river
+      facts: ["A menetrendi számok halványabbak a jegy szélső kereténél.", "A megmaradt időpontok egy régi átkelési rendhez tartoznak; az utazó kiléte nem olvasható ki."]
+    radicorai_imaszalag:
+      family: textile
+      domain: sanctuary
+      facts: ["A gyökérmintát a szalag lezárt szegélyére hímezték.", "A korom a hímzés mélyedéseiben is megült; nem pusztán ráfestett sötétítés."]
+    botera_negyedi_kettos_nyugta:
+      family: paper
+      domain: trade
+      facts: ["A két összeg tintavonala eltérő vastagságú, a rovatuk azonban közös.", "Mindkét pecsét külön lenyomat; a lap nem egy átütött másodpéldány."]
+    caldesterai_ezustozott_villa:
+      family: metal
+      domain: household
+      facts: ["A fogak szélén kopott bevonat alatt vas látszik.", "Az ezüstözés a díszítést szolgálta; a villa teste olcsó, hétköznapi darab."]
+    bokic_parti_gyerekuszo:
+      family: wood
+      domain: river
+      facts: ["A szarvas vonalai többször visszafutnak ugyanabba a sekély vágásba.", "A faragás ügyetlensége kézi díszítésre utal, de a készítő korát nem bizonyítja."]
+    szovetsegi_merlegsuly_darabja:
+      family: metal
+      domain: trade
+      facts: ["A Liga-jel mélyedései élesebbek a súly külső éleinél.", "A jel formájának régies volta önmagában nem teszi a fémdarabot a Liga korának tárgyává."]
+    o_caldesterai_ajtogomb:
+      family: bone
+      domain: household
+      facts: ["A csontgomb furatainak több oldalán eltérő mélységű fonalkopás látszik.", "A nyomok összeillenek az ismételt felvarrással; a nemzedékek száma nem állapítható meg."]
+    boterai_rejtett_zseb_foszlanya:
+      family: textile
+      domain: trade
+      facts: ["A két bélésréteg között lapos, körülvarrt rész maradt.", "A belső varratot eltakarta a külső bélés; a benne tartott tárgy már nem azonosítható."]
+    caldesterai_piaci_sorszam_47:
+      family: metal
+      domain: trade
+      facts: ["A 47-es szám bevágásai mélyebbek a környező feliratnál.", "A boltjel töredéke nem elég az üzlet azonosítására, még ha a sorszám olvasható is."]
+    ryanorai_patkocsat:
+      family: metal
+      domain: travel
+      facts: ["A csat ívén a szíj mozgása keskeny kopási sávot hagyott.", "A kis szarvasmotívum díszítés; a könnyű hámhoz illő szerkezetét nem módosítja."]
+    bankarszovetsegi_tintazar:
+      family: wax
+      domain: records
+      facts: ["A viasz külső gyűrűje megtartotta a lenyomat egy részét.", "A hiányzó középrész nélkül az irat kibocsátója nem hitelesíthető."]
+    glatziendorfi_leveskanal:
+      family: metal
+      domain: household
+      facts: ["A hópehely vonalai préselésből származó, azonos mélységű mélyedések.", "A díszítés egyszerű sorozatmunka; nem utal udvari készletre."]
+    repedt_hopiher_veret:
+      family: metal
+      domain: mint
+      facts: ["A veret egyik körvonala a korong szélére fut.", "Az elcsúszás már a pénzveréskor létrejött, nem későbbi hajlítás okozta."]
+    sarkanyistallo_rezcsatja:
+      family: metal
+      domain: stable
+      facts: ["A szegecshelyek körül egymástól eltérő javítási peremek látszanak.", "A belső karcok a terhelt hám felőli oldalon sűrűbbek."]
+    kallan_unnepi_szalagdarab:
+      family: textile
+      domain: festival
+      facts: ["A kereskedői jel a szalag szélére került, nem része a szövésnek.", "Az ünnepi besorolást a jelölés támasztja alá; az anyag maga hétköznapi szövet."]
+    glatziendorfi_orsegi_sip:
+      family: metal
+      domain: guard
+      facts: ["A síp jelzéséből néhány egyenes vonal a kopott perem alatt is megmaradt.", "A jel a régi őrségi formátumhoz hasonlít, de a hiányos bélyeg nem nevez meg egy alakulatot."]
+    fagyott_postacimke:
+      family: paper
+      domain: courier
+      facts: ["A vörös szemcsék a címzés tintájától elkülönülő homokréteget alkotnak.", "A fennmaradt cryghalirisi címrész nem árulja el, hol került a lapra a homok."]
+    eszaki_szanszog:
+      family: metal
+      domain: workshop
+      facts: ["A hópehely ágai külön ütésekkel készültek a szög fejébe.", "A jel helyzete műhelyazonosítóhoz illik, nem a szög tulajdonosának nevéhez."]
+    v_miinus_korabol_valo_gomb:
+      family: metal
+      domain: inheritance
+      facts: ["A gombon nincs az uralkodóhoz köthető olvasható veret.", "A keltezési állítás a hagyatéki cetliből származik; a gomb anyaga ezt nem igazolja."]
+    sarkanypikkely_utanzat:
+      family: metal
+      domain: trade
+      facts: ["A lemez szélén a festék alól kivillan a vékony fém.", "A pikkelyrajz bevonat, nem egy élőlény természetes felületi mintája."]
+    jegmezoi_tabori_bogre:
+      family: ceramic
+      domain: camp
+      facts: ["A bögre fenekén három különböző vonalvezetésű monogram metsződik.", "A metszések sorrendje egymást követő jelöléseket mutat, a használók neve azonban hiányos."]
+    cryghalirisi_ezustozo_rongy:
+      family: textile
+      domain: workshop
+      facts: ["A finom fémszemcsék a szövet belső szálai közé is beágyazódtak.", "A fémes lerakódás műhelyhasználattal összeegyeztethető; pénzverőt és ötvöst nem különít el."]
+    eszaki_futar_fel_cimkeje:
+      family: paper
+      domain: courier
+      facts: ["Az útvonaljel a szakadt szél előtt megszakad.", "A déli irány még kiolvasható, de a megmaradt jel nem bizonyít megérkezést."]
+    pyralingradi_fuszerkanal:
+      family: metal
+      domain: household
+      facts: ["A vörös festék a nyél mélyedéseiben tovább megmaradt, mint a fogott részen.", "A fűszermaradvány a kanál öblében is felismerhető; a tárgyat élelmiszerhez használhatták."]
+    megolvadt_parals:
+      family: metal
+      domain: mint
+      facts: ["A korong peremén az eredeti körvonal folyási nyommá olvadt össze.", "A megmaradt veretrész Paralsra utal, de a deformált darab szabályos pénzként nem mérhető."]
+    verfa_metszokes_nyele:
+      family: wood
+      domain: garden
+      facts: ["A hiányzó penge illesztési helye a markolat végén még látszik.", "A vöröses gyanta a fa mélyedéseibe szívódott, nem kizárólag a felszínt festi."]
+    pyralingradi_kulacsdugo:
+      family: wood
+      domain: travel
+      facts: ["A fehér só a dugó külső oldalán összefüggőbb kérget alkot.", "A lerakódás párolgással összeegyeztethető, de önmagában nem nevez meg egy útvonalat."]
+    langmadar_istallo_tollsepru_darabja:
+      family: organic
+      domain: stable
+      facts: ["A megmaradt tollakat egyszerű kötéssel fogták a nyélhez.", "A tollak szerkezete közönséges madártollé; a seprű neve nem bizonyít főnixeredetet."]
+    verszavannai_orsegi_csat:
+      family: metal
+      domain: guard
+      facts: ["Az oldószerkezet mellett egy cserélt szegecs eltérő pereme látszik.", "A javítás a könnyű csat megtartását szolgálta, nem ünnepi díszítést adott hozzá."]
+    zhoris_kori_piaci_masolat:
+      family: metal
+      domain: trade
+      facts: ["A patina a mélyedésekben is feltűnően egyenletes réteget alkot.", "A régies veretforma és a felület állapota nem ad biztos alapot az I. Zhoris-kori keltezésre."]
+    fonix_tojashejkent_arult_darab:
+      family: organic
+      domain: trade
+      facts: ["A héj törött szélén a festett külső réteg elkülönül az alaptól.", "A festés nem bizonyít különleges madárfajt; az árusi állítást a töredék nem támasztja alá."]
+    pyralingradi_ostromkonyha_villaja:
+      family: metal
+      domain: camp
+      facts: ["A vastag nyél készletszámát mély ütésekkel jelölték.", "A durva kidolgozás és a leltárszám közös készletre utal, nem személyes díszfegyverre."]
+    verfa_ultetesi_cedula:
+      family: paper
+      domain: garden
+      facts: ["A névmezőben nem látszik kitörölt írás; üresen hagyták.", "A rovatok a nemesi kertészeti formátumot utánozzák, de kitöltött név nélkül nincs azonosítható megrendelő."]
+    parals_zacsko_foszlanya:
+      family: textile
+      domain: trade
+      facts: ["A vörösréz pora a zsák belső hajtásaiban gyűlt össze.", "Az elhelyezkedés fém tárgyak tárolásával összeillik, az egykori pénzösszeg nem állapítható meg."]
+    verszavannai_viharszalag:
+      family: textile
+      domain: courier
+      facts: ["A jelzőszalag külső szálai fakóbbak a belső hajtásnál.", "A forma egyszerű lovasjelző szalaghoz illik; egy konkrét futárt nem azonosít."]
+    hetedik_verhaborus_satorszog:
+      family: metal
+      domain: war
+      facts: ["A szög fején a készletjel mélyedéseiben maradt a legtöbb sötét lerakódás.", "A megmaradt hadikészlet-jelölés Hu. 698 körüli használathoz köthető, személyhez nem."]
+    asterobourghi_teglaresz:
+      family: ceramic
+      domain: ruins
+      facts: ["A téglához tapadt habarcs külön rétegként válik el az égetett anyagtól.", "A habarcs régi építési módhoz illik, de a töredéknek nincs épületet azonosító jele."]
+    arany_liga_merlegnyelve:
+      family: metal
+      domain: trade
+      facts: ["A jelölt mérlegnyelv csatlakozó vége hiányos.", "A jel kereskedőházi szabványra emlékeztet; a hiányzó mérleg pontossága nem ellenőrizhető."]
+    szabad_varosok_pecsetfoszlanya:
+      family: wax
+      domain: records
+      facts: ["A viasz felszínén több különálló címermező széle maradt meg.", "A töredék összetett pecsét része lehetett; a hiányzó részek miatt a városok sora nem fejthető vissza biztosan."]
+    hatodik_verhaborus_feher_szalag:
+      family: textile
+      domain: inheritance
+      facts: ["A fehér szövetben nincs az eseményt megnevező hímzés.", "A fegyverszünethez kapcsolás a családi feljegyzés állítása; a szalag nem keltezi önmagát."]
+    hu_698_as_tabori_kanal:
+      family: metal
+      domain: war
+      facts: ["A készletszám a kanál nyelébe került, személynévnek nincs külön mezője.", "A jelölési forma a Hetedik Vérháború készleteihez köthető, a katona kiléte nem maradt fenn."]
+    kettetort_hadiparancs:
+      family: paper
+      domain: war
+      facts: ["A szakadás a mondat elejét és a kapura utaló rész folytatását is eltüntette.", "Az északi irány olvasható, de a kapu neve nélkül a helyszín nem azonosítható."]
+    elveszett_futar_dogcedulaja:
+      family: metal
+      domain: courier
+      facts: ["A név helyén sekélyebb vonalmaradványok látszanak, mint a hadtestjelben.", "A megmaradt hadtestjel szolgálati besorolásra utal, nem a futár sorsára."]
+    asterobourghi_kocsmai_zseton:
+      family: metal
+      domain: trade
+      facts: ["A zseton jelölése egyszerűbb a hivatalos pénzveretekénél.", "A kereskedőnegyedi használat valószínű, de a hiányos jel nem nevezi meg a kocsmát."]
+    hetedik_verhaborus_nyilhegy:
+      family: metal
+      domain: war
+      facts: ["A nyílhegy megmunkálása sorozatban készített katonai darabéhoz illik.", "Nincs rajta olyan egyedi jel, amely az árusok utolsó nyílról szóló történetét igazolná."]
+    senkifoldi_hadisip:
+      family: metal
+      domain: war
+      facts: ["A síp két javításán eltérő illesztési technika látszik.", "A két hadsereghez köthető javítás gazdacserével összeegyeztethető, de annak módját nem rögzíti."]
+    fekete_villam_uveges_salakja:
+      family: glass
+      domain: battlefield
+      facts: ["A fekete üvegbe talajszemcsék záródtak a megolvadáskor.", "A szerkezet megolvadt csatatéri talajnak felel meg; legendás szilánkazonosságot nem bizonyít."]
+    asterobourghi_haztartasi_kulcs:
+      family: metal
+      domain: household
+      facts: ["A fogazat érintkező élei kopottabbak a kulcs száránál.", "A forma régi városi zárhoz illik, de az ajtó helye a kulcsból nem következik."]
+    verhaborus_kotenygomb:
+      family: metal
+      domain: camp
+      facts: ["A kis gomb hátoldalán felvarrásra szolgáló fül maradt.", "A jelölés hadikonyhai készletet jelöl; a tárgy nem kitüntetés rögzítésére készült."]
+    armageddon_ultimatum_kori_tintadugo:
+      family: wax
+      domain: records
+      facts: ["A dugó viasza mellett beszáradt tintaréteg is elkülöníthető.", "A maradványok Hu. 547 körüli hivatalnoki használattal összeillenek, az ultimátum iratával való kapcsolatot nem igazolják."]
+    thanaopolisi_konyvelogomb:
+      family: bone
+      domain: records
+      facts: ["A számrovások a csontgomb hátoldalába kerültek, nem a látható előlapra.", "A rovás kis készletjel lehetett; könyvelő személyneve nem maradt rajta."]
+    csontszamvevo_hivatalanak_ceruzavege:
+      family: wood
+      domain: records
+      facts: ["A készletjel a rövid ceruzavég oldalán csak részben fér el.", "A megmaradt jelölés a thanaopolisi hivatal készletéhez hasonlít, de nem azonosít egy írnokot."]
+    mortengradi_regi_kulcs:
+      family: metal
+      domain: household
+      facts: ["A fogak kiosztása egy régi zárszerkezethez igazodik.", "A kulcs nem hordoz ajtószámot; Mortengradon belüli használati helye ismeretlen."]
+    kitaszitott_gyaszszalag:
+      family: textile
+      domain: mourning
+      facts: ["A türkiz pigment a fekete szövet belsejében is megmaradt.", "A festék nem későbbi felszíni rákenés; a szalag viselőjét ettől még nem lehet azonosítani."]
+    csontveret_proba:
+      family: bone
+      domain: mint
+      facts: ["A korong szegélye kialakított, a számvevői jel helye viszont üres.", "A forma pénzpróbára vagy selejtre utalhat; hiteles Csontveret-jelölés nincs rajta."]
+    thanaopolisi_urnacimke:
+      family: paper
+      domain: mourning
+      facts: ["A névmező felülete kaparástól sérült, nem egyszerűen kifakult.", "A dátum helyét átvágó hosszú karcolás az azonosításhoz szükséges jeleket is eltüntette."]
+    mortengradi_kilincscsavar:
+      family: metal
+      domain: household
+      facts: ["A csavar fejének kopása szerszámos ki- és becsavarozással összeillik.", "A menet régi ajtóvasalás rögzítésére való; különleges szerkezeti jegy nem látszik."]
+    ejszaka_gyermekeinek_jelvenyekent_arult_korong:
+      family: metal
+      domain: trade
+      facts: ["A korongon díszítés látszik, olvasható hitelesítő jel nem.", "A Suttogókhoz kapcsolást az eladó állítása adta; a tárgyon nincs azt igazoló jel."]
+    thanaopolisi_gyertyakanoc:
+      family: textile
+      domain: mourning
+      facts: ["A kanócot övező viaszban apró türkiz pigmentszemcsék ülnek.", "A szín a gyertya anyagából származik; a kanóc nem nevez meg egy szertartást."]
+    nema_udvari_evovilla:
+      family: metal
+      domain: court
+      facts: ["A villa anyaga és kopása nem hordoz biztos uralkodói keltezést.", "Az Eleftheria udvarához kötött eredet késői hagyomány, amelyet ez a darab nem hitelesít."]
+    melynepi_selejtcsavar:
+      family: metal
+      domain: deepwork
+      facts: ["Az ELVETVE jel egyetlen fejoldalra került, a menet vágása ettől függetlenül egyenletes.", "A selejtjel a műhely döntését rögzíti, de az elutasítás okát nem nevezi meg."]
+    melynepi_fogaskerekfog:
+      family: metal
+      domain: deepwork
+      facts: ["A fog tövén törési felület maradt, a külső ív megmunkált.", "Az ötvözet egyenletessége gondos műhelymunkára utal; a teljes szerkezet rendeltetése ismeretlen."]
+    csillagfemmentes_salak:
+      family: ash
+      domain: deepwork
+      facts: ["A salakban hétköznapi fémes szemcsék különíthetők el.", "A csillagfémként árult eredetet a vizsgálható szemcsék nem támasztják alá."]
+    melynepi_merojel:
+      family: metal
+      domain: deepwork
+      facts: ["A rövid pálca rovátkái a szokásos kézi mérésekhez képest rendkívül sűrűk.", "A kiosztás pontos, de az elveszett mérési rendszer nélkül a jel értéke nem olvasható le."]
+    melynepi_csapagyhaz:
+      family: metal
+      domain: deepwork
+      facts: ["A hiányzó golyó helyén sima belső futófelület maradt.", "A felület csapágyház használatához illik, a körülötte működő gép nem rekonstruálható."]
+    torott_kristalyfoglalat:
+      family: metal
+      domain: deepwork
+      facts: ["A foglalat törött peremei egy valaha befogott darab köré hajlanak.", "A megmunkálás mélynépi munkára emlékeztet; a hiányzó kristály anyagát nem igazolja."]
+    negy_valutas_erszeny:
+      family: leather
+      domain: trade
+      facts: ["A négy belső rekeszt külön varratok választják el.", "A rekeszek eltérő fémpora elkülönítve tárolt pénzekkel összeillik; az egykori összegek nem maradtak fenn."]
+    haromnyelvu_bevasarlolista:
+      family: paper
+      domain: trade
+      facts: ["A három kéz eltérő betűformákat és sortávolságot használt.", "A három felsorolás ugyanazt a hat árut ismétli; nem három külön bevásárlást dokumentál."]
+    deli_csat_eszaki_javitassal:
+      family: metal
+      domain: travel
+      facts: ["A javító szegecs eltér a csat eredeti rögzítéseinek kialakításától.", "A pyralingradi forma és a cryghalirisi javítás két műhelyhagyomány találkozását mutatja."]
+    caldesterai_bogre_csontveret_karccal:
+      family: ceramic
+      domain: household
+      facts: ["Az alj karcolása átvágja a bögre korábbi felületi kopását.", "A Csontveretre emlékeztető jel későbbi használói jelölés, nem az edény készítőbélyege."]
+    ismeretlen_kiralyi_evovilla:
+      family: metal
+      domain: court
+      facts: ["A három gyűjteményi jel külön helyen, részben sérülten maradt meg.", "Udvari gyűjteményekhez kapcsolódhatott, de egyik töredék sem nevez meg biztosan egy királyt."]
+  discrepancies:
+    felrevert_garas: "A perem kopása és a veret mélyedéseinek öregedése feltűnően eltér egymástól."
+    torott_iranytu: "Az üveg alatti fémfelület patinája nem illik a burkolat becsülhető korához."
+    hetpartos_kavics: "A kő zárványai és a külső csiszoltság nehezen illeszthetők egyetlen kopási történetbe."
+    bokicnak_ellentmondo_level: "A papír rostjainak öregedése mellett a tinta kötőanyaga szokatlanul változatlan."
+    caldesterai_sorszam_999: "A számot hordozó réteg másként öregedett, mint az azonos vastagságú lap többi része."
+    melynepi_csapagygolyo: "A felületi sérülések között a polírozás olyan egyenletes, amit a használati kor nehezen magyaráz."
+    tul_nehez_alatet: "A törési perem és a külső oxidréteg alapján nem áll össze szokványos anyagszerkezet."
+    felfele_hullo_hopehely: "A kristály rétegei közt az öregedés szokásos rendje nem követhető biztosan."
+    a_penztar_utolso_garasa: "Az érme mélyedéseiben megőrződött rétegek kora nehezen egyeztethető a külső felülettel."
+    verfa_szalkaja: "A gyanta és a körülötte lévő farostok állapota szokatlanul eltérő öregedést mutat."
+    radicorai_arnyekszalka: "A szálka sötét belső rétege nem követi a külső fa öregedési mintáját."
+    udvari_gomb: "A gomb hátoldali ötvözete és a régi bevonat érintkezése szokatlan anyagi eltérést mutat."
+    melynepi_kiegett_biztositek: "Az elszenesedett és az ép részek határán a hőterhelés nyomai nem illenek szokásos kiégéshez."
+    melynepi_vaklencse: "A lencse belső zárványainak állapota nem egyezik a foglalat becsült korával."
+    portalkorom: "Az üveges szemcsék és a finom korom hőterhelési nyomai nehezen vezethetők vissza egyetlen égésre."
+    lyukas_vodor: "A lyuk szélén a fém öregedése eltér a vödör többi, hasonlóan kopott részétől."
+    bot: "A bot belső rostjainak állapota nem követi a külső felület becsülhető korát."
+    a_vilag_legelesebb_kese: "A penge peremének anyagszerkezete szokatlanul különbözik a tompának látszó felülettől."
+    a_legbiztonsagosabb_sisak: "A horpadások belső rétege és a külső fémfelület patinája között nehezen magyarázható eltérés van."
+    a_kard_amely_minden_csatat_megnyer: "A markolat alatti fém öregedése nem illik a penge több rétegű kopásához."
+    regi_kotes: "A szálak belső állapota szokatlanul ép a külső anyag becsülhető kora mellett."
+    palackozott_nem: "A palack apró zárványai és a felület öregedése nem illeszkednek egy szokásos üvegkészítési nyomhoz."
+    szerencses_garas: "A veret alatti fém és a külső elszíneződés eltérő anyagi korra utal."
+    koek: "A kő ékformára dolgozott része és belső szemcséi közt szokatlan öregedési különbség látszik."
+    melynepi_selejtek: "A darab belső rétegződése nem követi a szokványos kőanyag öregedését."
 player-presentation:
   rarity-id: ocska
   rarity-label: Ócska
