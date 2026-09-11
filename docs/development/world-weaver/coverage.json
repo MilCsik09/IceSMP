@@ -5969,7 +5969,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
       "domain": "pve",
-      "source_sha256": "11bf0ced136867682f79a7cf6bc373d3920ef14a58df74d654e42b57947da6cf",
+      "source_sha256": "d9ccc21ad1927a3351e1bdf09b9b5fadd7078428020d2033522fdb8350a138ad",
       "public_methods": [
         "AuthoredCreatureSpawnService",
         "Request",

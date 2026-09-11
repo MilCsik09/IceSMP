@@ -64,7 +64,8 @@ final class PvEForkActions {
             final AuthoredCreatureSpawnService nativeSpawns = Objects.requireNonNull(AuthoredCreatureSpawnService.current());
             if (cleanup) {
                 if (AuthoredCreatureSpawnService.sandboxEventOrigin(mob).filter(origin -> origin.instanceId().equals(group)).isEmpty()) throw new WeaverDomainRejection("FORK_ORIGIN_CONFLICT");
-                nativeSpawns.cleanupSandboxFork(ref.entityId(), group); admitted.remove(group); forkEntityByOperation.remove(group);
+                if (!nativeSpawns.cleanupSandboxForkOnOwner(mob, group)) throw new WeaverDomainRejection("FORK_CLEANUP_UNOBSERVED");
+                admitted.remove(group); forkEntityByOperation.remove(group);
                 return CompletableFuture.completedFuture(new StageResult(snapshot.revisionFingerprint(), Map.of(), Map.of()));
             }
             if (!admitted.contains(operation)) throw new WeaverDomainRejection("SESSION_ENDED");

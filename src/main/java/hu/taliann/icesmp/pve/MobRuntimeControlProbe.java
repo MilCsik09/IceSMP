@@ -147,7 +147,8 @@ public final class MobRuntimeControlProbe {
             final UUID forkId = fork.getUniqueId();
             runtime.refreshProfile(fork);
             check(runtime.activeStateSummary(fork).contains("paused=true"), "FORK_REFRESH_RELEASED_PENDING_COMBAT");
-            spawns.cleanupSandboxFork(forkId, forkGroup);
+            check(!spawns.cleanupSandboxForkOnOwner(fork, UUID.randomUUID()) && fork.isValid(), "FORK_STALE_CLEANUP_ACCEPTED");
+            check(spawns.cleanupSandboxForkOnOwner(fork, forkGroup) && !fork.isValid(), "FORK_OWNER_CLEANUP_UNOBSERVED");
             mob.getScheduler().runDelayed(plugin, task -> {
                 try {
                     check(Bukkit.getEntity(forkId) == null, "FORK_CLEANUP_UNOBSERVED");

@@ -189,10 +189,16 @@ public final class AuthoredCreatureSpawnService {
         try {
             handle.getScheduler().run(plugin, task -> {
                 final Mob mob = ownedMob(entityId);
-                if (mob == null || sandboxEventOrigin(mob).filter(origin -> origin.instanceId().equals(expectedOperation)).isEmpty()) return;
-                abilities.detach(mob); remove(entityId, null);
+                if (mob != null) cleanupSandboxForkOnOwner(mob, expectedOperation);
             }, () -> { });
         } catch (org.bukkit.plugin.IllegalPluginAccessException disabled) { TransientEntities.removeOnShutdown(entityId); }
+    }
+    /** An explicit WW removal receipt requires owner-local observation, not queued cleanup admission. */
+    public boolean cleanupSandboxForkOnOwner(final Mob mob, final UUID expectedOperation) {
+        if (mob == null || !Bukkit.isOwnedByCurrentRegion(mob)) throw new IllegalStateException("Fork cleanup owner required");
+        if (sandboxEventOrigin(mob).filter(origin -> origin.instanceId().equals(expectedOperation)).isEmpty()) return false;
+        abilities.detach(mob); remove(mob.getUniqueId(), null);
+        return !mob.isValid();
     }
     public void cleanupSummons(final UUID owner) {
         final java.util.Set<UUID> ids = activeSummonIds.remove(owner);
