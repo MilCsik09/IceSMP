@@ -1,10 +1,24 @@
 # Mi változott a július 12-i szerververzió óta?
 
+Az üzenetjavítások bekerültek az egyesített tesztváltozatba: pontosabb láda- és
+világboss-visszajelzések, külön játékos- és admin-specializációnézet, valamint
+érthetőbb recept- és küldetésfeltételek. A szakmai feltétel jelzése tiszteletben
+tartja a küldetés láthatóságát és az előző küldetés teljesítését. A csomagolt
+üzenetek ellenőrzése a teljes build kötelező része; a szerveres playtest még nyitott.
+
+A tárgyinterakciók és a felvásárlás mentési hibakezelése szigorodott: bizonytalan
+mentésből nem indulhat új hatás vagy kifizetés. Javult az ideiglenes
+blokkváltozások védelme, a kontextusfüggő tárgyszöveg és az újraindítás utáni
+állapot-helyreállítás. A valódi klienssel végzett kiadási átvétel továbbra is szükséges.
+
 A teljes build korábbi két sérült Trash-forráslapját új imagegen-változat váltja:
 `dev-assets/trash/source/phase-batch-001-v2.png` és `phase-batch-002-v2.png`.
 Az eredeti tárgy-ID-k és sorrend megmaradnak; 27 fázisikon újragenerált. A promptok,
 stílusreferencia és feldolgozás a `dev-assets/trash/source/manifest.json` részei.
 Ez új forrás, nem az elveszett eredeti bájtok helyreállításának állítása.
+
+A korábbi futásban időzített anomália-visszhangok és késleltetett síphangok a
+rendszer leállítása és újraindítása után már nem szólalnak meg.
 
 ## Frakció–Suttogó kiegészítések, 2026-09-07
 

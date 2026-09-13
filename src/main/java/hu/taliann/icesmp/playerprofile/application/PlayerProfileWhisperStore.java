@@ -91,6 +91,16 @@ public final class PlayerProfileWhisperStore {
         return mutate(playerId, current -> new State(false, Stage.CLEAN));
     }
 
+    /** Canonical membership transactions compose this rule before writing the faction section. */
+    public FactionSection reconcileMembership(final FactionSection current) {
+        Objects.requireNonNull(current, "current");
+        if (!current.membershipId().isBlank() && !current.membershipId().equalsIgnoreCase("DARK")) {
+            return current;
+        }
+        final State cleared = new State(false, Stage.CLEAN);
+        return decode(current).equals(cleared) ? current : withState(current, cleared);
+    }
+
     public CompletionStage<State> forceExpose(final UUID playerId) {
         return mutate(playerId, current -> new State(false, Stage.EXPOSED));
     }

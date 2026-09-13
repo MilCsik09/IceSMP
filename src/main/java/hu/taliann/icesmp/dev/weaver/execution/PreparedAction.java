@@ -10,7 +10,9 @@ public record PreparedAction(UUID operationId, ActionDescriptor descriptor, Subj
     public PreparedAction {
         java.util.Objects.requireNonNull(operationId); java.util.Objects.requireNonNull(descriptor); java.util.Objects.requireNonNull(subject);
         stages = List.copyOf(stages); java.util.Objects.requireNonNull(recoveryPayload); java.util.Objects.requireNonNull(receiptFactory);
-        if (stages.isEmpty() || stages.size() > 8 || stages.stream().map(ExecutionStage::id).distinct().count() != stages.size()
+        final int cap = !(subject instanceof hu.taliann.icesmp.dev.weaver.subject.AreaRef) ? 8 : descriptor.areaSupport() == hu.taliann.icesmp.dev.weaver.api.AreaSupport.ENTITY_FANOUT
+                ? descriptor.areaLimits().orElseThrow().maxEntities() + 1 : descriptor.areaSupport() == hu.taliann.icesmp.dev.weaver.api.AreaSupport.BLOCK_FANOUT ? descriptor.areaLimits().orElseThrow().maxBlocks() + 1 : 8;
+        if (stages.isEmpty() || stages.size() > cap || stages.stream().map(ExecutionStage::id).distinct().count() != stages.size()
                 || expectedBeforeFingerprint == null || expectedBeforeFingerprint.isBlank() || expectedBeforeFingerprint.length() > 256) {
             throw new IllegalArgumentException("Invalid prepared execution plan");
         }

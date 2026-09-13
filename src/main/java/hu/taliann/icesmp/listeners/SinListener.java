@@ -77,6 +77,12 @@ public final class SinListener implements Listener {
         this.warWindowManager = warWindowManager;
     }
 
+    private static hu.taliann.icesmp.integrity.RewardContext captureRaidStatistics(final Player victim, final java.util.UUID killerId) {
+        try { return hu.taliann.icesmp.integrity.BukkitRewardSources.death(
+                hu.taliann.icesmp.integrity.RewardChannel.TRACKING_PROGRESS, victim).forRecipient(killerId); }
+        catch (RuntimeException | LinkageError unavailable) { return null; }
+    }
+
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
         recoverPendingBounty(event.getPlayer(), 0);
@@ -96,11 +102,15 @@ public final class SinListener implements Listener {
                 victim.getUniqueId()).orElse(null);
 
         if (raidManager.isSanctionedKill(killer.getUniqueId(), victim.getUniqueId())) {
+            final java.util.UUID killerId = killer.getUniqueId();
+            final hu.taliann.icesmp.integrity.RewardContext raidStatistics = captureRaidStatistics(victim, killerId);
             final boolean scored = raidManager.recordKill(killerFaction, victim.getLocation());
             if (scored) raidManager.recordSeasonContribution(killer.getUniqueId(), killerFaction);
             killer.getScheduler().run(plugin, task -> {
-                statsManager.recordRaidKill(killer);
-                killer.sendMessage(messageManager.getMessage(
+                final Player owned = Bukkit.getPlayer(killerId);
+                if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned) || !owned.isOnline()) return;
+                if (raidStatistics != null) statsManager.recordRaidKill(owned, raidStatistics);
+                owned.sendMessage(messageManager.getMessage(
                         scored ? "faction-raid-kill" : "faction-raid-kill-outside-zone",
                         scored ? "<gold>⚔ Raid-ölés jóváírva a(z) {faction} oldalán!</gold>"
                                 : "<gray>⚔ Szentesített raid-ölés, de a raid-zónán kívül — nem ér pontot.</gray>",

@@ -13,9 +13,13 @@ public final class ClassSpecApplicationRegressionSuite {
     private static int assertions;
     private ClassSpecApplicationRegressionSuite(){}
     public static void main(String[] args){
+        try (final var rewardBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(context -> hu.taliann.icesmp.integrity.RewardDecision.allow())) {
+
         greenfieldClassAndSpec(); classProgressProjectionKeepsBothLoadouts(); classMechanicProjectionCoversEveryPath(); companionProgressProjectionExplainsEvolution(); activationReconcileBeforeReady(); allDarkSpecsRequireGates(); completeGateSetSealsAndUnseals(); runtimeFailureIsVisible(); staleSessionFencesRuntime(); atomicSessionCallbackFence(); concurrentMutationsSerialize(); operationReceiptsAreDurableAndParameterBound(); companionIsolation(); companionDeltaSerializationAndReceipts(); shutdownDrainsAndRejectsNewWork();
         System.out.println("Class/spec application regression suite passed. assertions="+assertions);
-    }
+
+        }
+}
     private static void greenfieldClassAndSpec(){
         Harness h=harness(ClassSpecSection.empty(0),ClassSpecRuntimePort.noop());
         var assigned=h.gateway.assignClass(PLAYER,new ClassSpecProfileGateway.ClassAssignmentRequest("wizard",1,0,"assign-1")).toCompletableFuture().join();
@@ -188,7 +192,14 @@ public final class ClassSpecApplicationRegressionSuite {
     private static GateSnapshot missingAll(){return new GateSnapshot(GateState.ofRequirements(true,false,true,false,true,false),Map.of(GateState.Gate.FACTION,"dark",GateState.Gate.OATH,"sinner",GateState.Gate.QUEST,"quest"));}
     private static GateSnapshot missingQuest(){return new GateSnapshot(GateState.ofRequirements(true,true,true,true,true,false),Map.of(GateState.Gate.FACTION,"dark",GateState.Gate.OATH,"sinner",GateState.Gate.QUEST,"quest"));}
     private record Harness(FakeStore store,ProfileSessionRegistry sessions,DefaultClassSpecProfileGateway gateway){}
-    private static class FakeStore implements ClassSpecSectionMutationStore{volatile ClassSpecSection profile;volatile String blockReason="";int saves;FakeStore(ClassSpecSection p){profile=p;}public Optional<ClassSpecSection> cached(UUID id){return Optional.ofNullable(profile);}public Optional<String> sessionBlockReason(UUID id){return blockReason.isBlank()?Optional.empty():Optional.of(blockReason);}public CompletionStage<SaveResult> save(UUID id,long expected,ClassSpecSection candidate){saves++;if(profile==null||profile.revision()!=expected)return CompletableFuture.completedFuture(SaveResult.conflict(profile,profile==null?-1:profile.revision()));profile=candidate;return CompletableFuture.completedFuture(SaveResult.committed(candidate));}public CompletionStage<ClassSpecSection> recover(UUID id,String e,String a){return CompletableFuture.failedFuture(new UnsupportedOperationException());}public void blockSession(UUID id,String reason){blockReason=reason;}}
+    private static class FakeStore implements ClassSpecSectionMutationStore{
+        @Override public CompletionStage<SaveResult> saveReward(UUID id, long revision, ClassSpecSection candidate,
+                hu.taliann.icesmp.integrity.RewardContext reward) {
+            return hu.taliann.icesmp.integrity.GameplayRewardGate.evaluate(reward).allowed()
+                    ? save(id, revision, candidate)
+                    : java.util.concurrent.CompletableFuture.completedFuture(SaveResult.rewardDenied(cached(id).orElse(null)));
+        }
+volatile ClassSpecSection profile;volatile String blockReason="";int saves;FakeStore(ClassSpecSection p){profile=p;}public Optional<ClassSpecSection> cached(UUID id){return Optional.ofNullable(profile);}public Optional<String> sessionBlockReason(UUID id){return blockReason.isBlank()?Optional.empty():Optional.of(blockReason);}public CompletionStage<SaveResult> save(UUID id,long expected,ClassSpecSection candidate){saves++;if(profile==null||profile.revision()!=expected)return CompletableFuture.completedFuture(SaveResult.conflict(profile,profile==null?-1:profile.revision()));profile=candidate;return CompletableFuture.completedFuture(SaveResult.committed(candidate));}public CompletionStage<ClassSpecSection> recover(UUID id,String e,String a){return CompletableFuture.failedFuture(new UnsupportedOperationException());}public void blockSession(UUID id,String reason){blockReason=reason;}}
     private static final class ControlledStore extends FakeStore{CompletableFuture<SaveResult> pending;ClassSpecSection candidate;long expected;int saveCalls;ControlledStore(ClassSpecSection p){super(p);}@Override public CompletionStage<SaveResult> save(UUID id,long e,ClassSpecSection c){saveCalls++;expected=e;candidate=c;pending=new CompletableFuture<>();return pending;}void commitPending(){CompletableFuture<SaveResult> future=pending;ClassSpecSection next=candidate;long expectedRevision=expected;check(future!=null,"pending save");pending=null;candidate=null;if(profile.revision()!=expectedRevision)future.complete(SaveResult.conflict(profile,profile.revision()));else{profile=next;future.complete(SaveResult.committed(next));}}void awaitSaveCalls(int count){long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(2);while(saveCalls<count&&System.nanoTime()<deadline)Thread.onSpinWait();check(saveCalls>=count,"timed out awaiting save call");}}
     private static void await(CountDownLatch latch){try{latch.await();}catch(InterruptedException x){Thread.currentThread().interrupt();throw new CompletionException(x);}}
     private static void check(boolean v,String m){assertions++;if(!v)throw new AssertionError(m);}private static void expect(Class<? extends Throwable> type,Throwing r){assertions++;try{r.run();throw new AssertionError("Expected "+type.getSimpleName());}catch(Throwable x){if(!type.isInstance(x))throw new AssertionError("Expected "+type.getSimpleName()+" got "+x,x);}}private interface Throwing{void run()throws Exception;}

@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.data.ProfessionType;
+import hu.taliann.icesmp.integrity.*;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.TalentManager;
@@ -27,6 +28,9 @@ import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.EnumSet;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.UUID;
 import java.util.Locale;
 import java.util.Set;
 
@@ -68,33 +72,37 @@ public final class ProfessionXpListener implements Listener {
         BlockRewardOriginTracker.markPlayerPlaced(event.getBlockPlaced());
     }
 
-    private void awardHarvestXp(final Player player, final String configPath, final int fallback) {
+    private void awardHarvestXp(final Player player, final String configPath, final int fallback, final List<RewardSource> sources) {
         final hu.taliann.icesmp.managers.AbundanceManager abundanceRef = abundanceManager;
         final double mult = abundanceRef != null && abundanceRef.isActive()
                 ? Math.max(1.0D, configManager.getDouble("professions.seasonal.abundance-multiplier", 1.5D))
                 : 1.0D;
         final int base = Math.max(0, configManager.getInt(configPath, fallback));
-        awardXpAmount(player, ProfessionType.HERBALIST, (int) Math.round(base * mult));
+        awardXpAmount(player, ProfessionType.HERBALIST, (int) Math.round(base * mult), sources);
     }
 
     private void awardXp(final Player player, final ProfessionType profession,
-                         final String configPath, final int fallback) {
+                         final String configPath, final int fallback, final List<RewardSource> sources) {
         if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
                 && afkManager.isAfk(player.getUniqueId())) return;
-        awardXpAmount(player, profession, Math.max(0, configManager.getInt(configPath, fallback)));
+        awardXpAmount(player, profession, Math.max(0, configManager.getInt(configPath, fallback)), sources);
     }
 
-    private void awardXpAmount(final Player player, final ProfessionType profession, final int baseXp) {
+    private void awardXpAmount(final Player player, final ProfessionType profession, final int baseXp, final List<RewardSource> sources) {
+        if (sources.isEmpty()) return;
+        final UUID playerId = player.getUniqueId();
+        final var reward = new RewardContext(RewardChannel.PROFESSION_XP, playerId, sources);
+        final var contribution = new RewardContext(RewardChannel.WEEKLY_GOAL, playerId, sources);
         if (afkManager != null && configManager.getBoolean("afk.block-rewards", true)
                 && afkManager.isAfk(player.getUniqueId())) return;
         final double bonusPercent = Math.max(0.0D,
                 talentManager.getEffectTotal(player, "profession-xp-bonus"));
         final int totalXp = (int) Math.round(baseXp * (1.0D + (bonusPercent / 100.0D)));
-        professionManager.addXpFor(player, profession, totalXp).whenComplete((change, failure) -> {
+        professionManager.addXpFor(player, profession, totalXp, reward).whenComplete((change, failure) -> {
             if (failure != null || change == null || !change.changed()) return;
-            professionManager.runOnOwnerThread(player, () -> {
+            professionManager.runOnOwnerThread(playerId, owned -> {
                 final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
-                if (weeklyRef != null && player.isOnline()) weeklyRef.add(player, profession, totalXp);
+                if (weeklyRef != null) weeklyRef.add(owned, profession, totalXp, contribution);
             });
         });
     }
@@ -107,29 +115,30 @@ public final class ProfessionXpListener implements Listener {
         final boolean rewardEligible = BlockRewardOriginTracker.isRewardEligible(block);
         BlockRewardOriginTracker.clearPlayerPlacedAfterBreak(block);
         if (!rewardEligible) return;
+        final List<RewardSource> sources = sources(player, block, null);
         final Material material = block.getType();
         if (isOre(material)) {
-            awardXp(player, ProfessionType.MINER, "professions.xp.mining-ore", 5);
+            awardXp(player, ProfessionType.MINER, "professions.xp.mining-ore", 5, sources);
             return;
         }
         if (Tag.LOGS.isTagged(material)) {
-            awardXp(player, ProfessionType.LUMBERJACK, "professions.xp.logging", 2);
+            awardXp(player, ProfessionType.LUMBERJACK, "professions.xp.logging", 2, sources);
             return;
         }
         if (Tag.FLOWERS.isTagged(material)) {
-            awardHarvestXp(player, "professions.xp.herbalism-harvest", 3);
+            awardHarvestXp(player, "professions.xp.herbalism-harvest", 3, sources);
             return;
         }
         if (CROPS.contains(material) && block.getBlockData() instanceof Ageable ageable
                 && ageable.getAge() >= ageable.getMaximumAge()) {
-            awardHarvestXp(player, "professions.xp.herbalism-harvest", 3);
+            awardHarvestXp(player, "professions.xp.herbalism-harvest", 3, sources);
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerHarvestBlock(final PlayerHarvestBlockEvent event) {
         if (!isSurvival(event.getPlayer())) return;
-        awardHarvestXp(event.getPlayer(), "professions.xp.herbalism-harvest", 3);
+        awardHarvestXp(event.getPlayer(), "professions.xp.herbalism-harvest", 3, sources(event.getPlayer(), event.getHarvestedBlock(), null));
     }
 
     private static boolean isSurvival(final Player player) {
@@ -143,7 +152,7 @@ public final class ProfessionXpListener implements Listener {
         if (isArmorerCraft(result.getType())) {
             awardXpAmount(player, ProfessionType.ARMORER,
                     Math.max(0, configManager.getInt("professions.xp.crafting-gear", 8))
-                            * craftedBatches(event));
+                            * craftedBatches(event), sources(player, null, null));
         }
     }
 
@@ -162,13 +171,13 @@ public final class ProfessionXpListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSmithItem(final SmithItemEvent event) {
         if (!(event.getWhoClicked() instanceof Player player) || !isSurvival(player)) return;
-        awardXp(player, ProfessionType.ARMORER, "professions.xp.smithing", 15);
+        awardXp(player, ProfessionType.ARMORER, "professions.xp.smithing", 15, sources(player, null, null));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEnchantItem(final EnchantItemEvent event) {
         if (!isSurvival(event.getEnchanter())) return;
-        awardXp(event.getEnchanter(), ProfessionType.ENCHANTER, "professions.xp.enchanting", 10);
+        awardXp(event.getEnchanter(), ProfessionType.ENCHANTER, "professions.xp.enchanting", 10, sources(event.getEnchanter(), event.getEnchantBlock(), null));
     }
 
     private static final java.util.Set<org.bukkit.event.inventory.InventoryAction> TAKE_ACTIONS =
@@ -192,14 +201,14 @@ public final class ProfessionXpListener implements Listener {
         final ItemStack clicked = event.getCurrentItem();
         if (clicked == null || !POTIONS.contains(clicked.getType())) return;
         if (!TAKE_ACTIONS.contains(event.getAction())) return;
-        awardXp(player, ProfessionType.ALCHEMIST, "professions.xp.brewing", 12);
+        awardXp(player, ProfessionType.ALCHEMIST, "professions.xp.brewing", 12, sources(player, null, null));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerFish(final PlayerFishEvent event) {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) return;
         if (!isSurvival(event.getPlayer())) return;
-        awardXp(event.getPlayer(), ProfessionType.FISHERMAN, "professions.xp.fishing", 4);
+        awardXp(event.getPlayer(), ProfessionType.FISHERMAN, "professions.xp.fishing", 4, sources(event.getPlayer(), null, event.getCaught()));
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -209,7 +218,16 @@ public final class ProfessionXpListener implements Listener {
         final int cap = Math.max(1, configManager.getInt("professions.xp.bulk-event-cap", 16));
         awardXpAmount(event.getPlayer(), ProfessionType.COOK,
                 Math.max(0, configManager.getInt("professions.xp.cooking", 3))
-                        * Math.min(cap, Math.max(1, event.getItemAmount())));
+                        * Math.min(cap, Math.max(1, event.getItemAmount())), sources(event.getPlayer(), event.getBlock(), null));
+    }
+
+    private static List<RewardSource> sources(final Player player, final Block block, final org.bukkit.entity.Entity entity) {
+        try {
+            final var sources = new LinkedHashSet<>(BukkitRewardSources.causal(player));
+            if (block != null) sources.addAll(BukkitRewardSources.block(block));
+            if (entity != null) sources.addAll(BukkitRewardSources.causal(entity));
+            return sources.size() <= 64 ? List.copyOf(sources) : List.of();
+        } catch (RuntimeException | LinkageError unavailable) { return List.of(); }
     }
 
     private boolean isOre(final Material material) {

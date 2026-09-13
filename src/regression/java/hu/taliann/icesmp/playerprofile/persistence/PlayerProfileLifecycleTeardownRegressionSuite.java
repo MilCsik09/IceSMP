@@ -90,11 +90,31 @@ public final class PlayerProfileLifecycleTeardownRegressionSuite {
 
     private static void coreDisableAlwaysClosesProfileResources() throws Exception {
         final String core = Files.readString(Path.of("src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
-        final int tryIndex = core.indexOf("disableStateful();");
-        final int finallyIndex = core.indexOf("closePlayerProfileResources();");
-        check(tryIndex > 0 && finallyIndex > tryIndex,
-                "disable() wraps the stateful path and always reaches the resource closer");
-        check(core.contains("} finally {"), "the resource closer runs from a finally block");
+        final String disable = core.substring(core.indexOf("public void disable()"),
+                core.indexOf("private void disableStateful()"));
+        final int preparation = disable.indexOf("prepareDisable();");
+        final int finallyIndex = disable.indexOf("} finally {");
+        final int closeIndex = disable.indexOf("closePlayerProfileResources();");
+        check(preparation > 0 && finallyIndex > preparation && closeIndex > finallyIndex,
+                "disable() always closes profile resources even when native preparation fails");
+        final String prepare = core.substring(core.indexOf("public java.util.concurrent.CompletableFuture<Void> prepareDisable()"),
+                core.indexOf("private void finishProfileShutdown()"));
+        check(prepare.contains("disableStateful();") && !prepare.contains("playerProfileAuthority.uninstall"),
+                "preparation retains the canonical stateful path without retiring the profile authority");
+        check(disable.contains("if (statefulShutdownPrepared) finishProfileShutdown();"),
+                "successful native preparation still drains Profile before unconditional resource closure");
+        check(!core.contains("ProfileGUI::closeAll"),
+                "final teardown must not inspect or close foreign player inventories from the global thread");
+        final String cleanup = core.substring(core.indexOf("private java.util.concurrent.CompletableFuture<Void> cleanupPlayerSessions()"),
+                core.indexOf("private void closePlayerProfileResources()"));
+        check(cleanup.contains("Bukkit.isOwnedByCurrentRegion(player)")
+                        && cleanup.contains("player.getScheduler().run(plugin")
+                        && cleanup.contains("playerSessionCleanupListener.cleanupPlayerState(id)"),
+                "existing per-player profile/menu cleanup is preserved on the player owner");
+        check(core.contains("cleanup.whenComplete((ignored, failure)")
+                        && core.contains("else playerShutdown.completeExceptionally(failure)")
+                        && prepare.contains("playerShutdown.completeExceptionally(failure)"),
+                "owner and preparation failures remain visible to the actual disable coordinator");
 
         final int closer = core.indexOf("private void closePlayerProfileResources()");
         check(closer > 0, "the resource closer exists");

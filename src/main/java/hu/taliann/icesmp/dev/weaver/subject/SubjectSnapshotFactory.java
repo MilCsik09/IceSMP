@@ -24,18 +24,31 @@ public final class SubjectSnapshotFactory implements SubjectSnapshotSource {
     @Override public CompletionStage<SubjectSnapshot> capture(final UUID actor, final SubjectRef ref) {
         return router.submit(SubjectRoute.owner(ref), actor, Duration.ofSeconds(5), () -> CompletableFuture.completedFuture(captureOnOwner(ref)));
     }
-    private SubjectSnapshot captureOnOwner(final SubjectRef ref) {
+    @Override public CompletionStage<SubjectSnapshot> captureRecovery(final RecoveryContext context) {
+        context.authority().require(context.operation());
+        final var ref = context.operation().subject();
+        return router.submit(SubjectRoute.owner(ref), context.operation().actorId(), Duration.ofSeconds(5), () -> {
+            context.authority().require(context.operation());
+            return CompletableFuture.completedFuture(captureOnOwner(ref, Optional.of(context)));
+        });
+    }
+    public SubjectSnapshot captureOnOwner(final SubjectRef ref) {
+        return captureOnOwner(ref, Optional.empty());
+    }
+    private SubjectSnapshot captureOnOwner(final SubjectRef ref, final Optional<RecoveryContext> recovery) {
         final long now = System.currentTimeMillis();
         final Map<String, WeaverValue> facts = new TreeMap<>();
         switch (ref) {
             case PlayerRef player -> entityFacts(requirePlayer(player.playerId()), facts, now);
             case EntityRef entity -> entityFacts(requireEntity(entity.entityId()), facts, now);
             case ItemSlotRef item -> {
-                final Player player = requirePlayer(item.holderId()); slots.verify(player, item);
-                final var stack = slots.require(player, item.slot());
-                scalar(facts, "material", "text", stack.getType().getKey().toString(), now);
-                scalar(facts, "amount", "int", stack.getAmount(), now);
-                scalar(facts, "item_fingerprint", "text", item.fingerprint(), now);
+                final Player player = requirePlayer(item.holderId());
+                // Recovery observes this recorded slot after a mutation; ordinary capture still requires the exact original item.
+                if (recovery.isEmpty()) slots.verify(player, item);
+                final var stack = slots.peek(player, item.slot());
+                scalar(facts, "material", "text", stack.map(value -> value.getType().getKey().toString()).orElse("minecraft:air"), now);
+                scalar(facts, "amount", "int", stack.map(org.bukkit.inventory.ItemStack::getAmount).orElse(0), now);
+                scalar(facts, "item_fingerprint", "text", stack.map(value -> WeaverItemSlots.fingerprint(value.serializeAsBytes())).orElse("EMPTY"), now);
             }
             case BlockRef block -> {
                 final World world = regionWorld(block.worldId(), block.x() >> 4, block.z() >> 4);
@@ -63,7 +76,7 @@ public final class SubjectSnapshotFactory implements SubjectSnapshotSource {
                 facts.put("minecraft.area", value("area", SubjectKeyCodec.payload(area), now));
             }
         }
-        final Map<String, WeaverValue> contributions = providers.captureContributions(ref);
+        final Map<String, WeaverValue> contributions = recovery.map(providers::captureRecoveryContributions).orElseGet(() -> providers.captureContributions(ref));
         for (final var entry : contributions.entrySet()) {
             if (facts.putIfAbsent(entry.getKey(), entry.getValue()) != null) throw new WeaverDomainRejection("DUPLICATE_SNAPSHOT_FACT");
         }

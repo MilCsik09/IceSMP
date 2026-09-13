@@ -4,6 +4,13 @@ import hu.taliann.icesmp.dev.weaver.subject.SubjectRef;
 import java.util.UUID;
 
 public sealed interface WeaverNavigation {
+    record Self() implements WeaverNavigation {}
+    record SetMode(hu.taliann.icesmp.dev.weaver.api.IntegrityMode mode) implements WeaverNavigation {}
+    record Arm(UUID draftId) implements WeaverNavigation {}
+    record AreaMembers() implements WeaverNavigation {}
+    record NearbyArea() implements WeaverNavigation {}
+    record CurrentWorld() implements WeaverNavigation {}
+    record CatalogThread(String catalogId, String stableId) implements WeaverNavigation {}
     record None() implements WeaverNavigation {}
     record Refresh() implements WeaverNavigation {}
     record Facet(String id) implements WeaverNavigation {}
@@ -22,7 +29,10 @@ public sealed interface WeaverNavigation {
     record ParameterCatalog(UUID draftId, String parameterId, int offset) implements WeaverNavigation {}
     record CatalogParameterValue(UUID draftId, String parameterId, String stableId) implements WeaverNavigation {}
     record Preview(UUID draftId) implements WeaverNavigation {}
+    record ConfirmFinal(UUID draftId) implements WeaverNavigation {}
     record Execute(UUID draftId) implements WeaverNavigation {}
+    record Receipt(UUID id) implements WeaverNavigation {}
+    record Undo(UUID receiptId) implements WeaverNavigation {}
     record History() implements WeaverNavigation {}
     record ImportThread(String importerId, UUID threadId) implements WeaverNavigation {}
 }

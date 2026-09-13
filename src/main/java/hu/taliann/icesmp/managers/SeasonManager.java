@@ -64,8 +64,8 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
         hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.current().repository().listPlayerIds()
                 .thenCompose(ids -> {
                     final var tasks = ids.stream().map(id -> participation.load(id).thenAccept(state -> {
-                        state.ifPresent(value -> participationProjection.merge(id, value, (old, loaded) ->
-                                old.lastActive() > loaded.lastActive() ? old : loaded));
+                        state.ifPresent(value -> participationProjection.merge(id, value,
+                                hu.taliann.icesmp.playerprofile.application.PlayerProfileSeasonParticipationStore.State::newest));
                     }).toCompletableFuture()).toArray(CompletableFuture[]::new);
                     return CompletableFuture.allOf(tasks);
                 }).whenComplete((ignored, failure) -> {
@@ -78,12 +78,23 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
     public int minimumContributions() { return Math.max(1, configManager.getInt("world-events.season.minimum-contributions", 3)); }
 
     public void recordContribution(final UUID playerId, final FactionType faction, final String source) {
+        recordContribution(playerId, faction, source, hu.taliann.icesmp.integrity.RewardContext.recipientOnly(
+                hu.taliann.icesmp.integrity.RewardChannel.SEASON_CREDIT, playerId));
+    }
+
+    public void recordContribution(final UUID playerId, final FactionType faction, final String source,
+            final hu.taliann.icesmp.integrity.RewardContext reward) {
+        java.util.Objects.requireNonNull(reward).require(hu.taliann.icesmp.integrity.RewardChannel.SEASON_CREDIT, playerId);
         final int season = getSeasonNumber();
         if (faction == null || source == null) return;
         if (faction == FactionType.NEUTRAL && java.util.Set.of("raid", "war", "spy").contains(source)) return;
-        participation.record(playerId, faction, season, source).thenCompose(recorded -> participation.load(playerId))
-                .thenAccept(state -> state.ifPresent(value -> participationProjection.put(playerId, value)))
+        participation.record(playerId, faction, season, source, reward).thenCompose(recorded -> participation.load(playerId))
+                .thenAccept(state -> state.ifPresent(value -> participationProjection.merge(playerId, value,
+                        hu.taliann.icesmp.playerprofile.application.PlayerProfileSeasonParticipationStore.State::newest)))
                 .exceptionally(failure -> {
+            Throwable cause = failure;
+            while (cause instanceof java.util.concurrent.CompletionException && cause.getCause() != null) cause = cause.getCause();
+            if (cause instanceof hu.taliann.icesmp.integrity.RewardEligibilityDeniedException) return null;
             plugin.getLogger().warning("Season participation save failed for " + playerId + ": " + failure.getMessage());
             return null;
         });
@@ -96,7 +107,8 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
             if (member.getValue() != faction) continue;
             final var state = participationProjection.get(member.getKey());
             if (!participationReady || state != null && state.season() == seasonNumber
-                    && state.faction().equals(faction.name()) && state.lastActive() > now - 7L * 86_400_000L) count++;
+                    && state.faction().equals(faction.name()) && state.lastActive() > now - 7L * 86_400_000L
+                    && participation.matchesCurrentMembership(member.getKey(), state)) count++;
         }
         return count;
     }
@@ -108,7 +120,7 @@ public final class SeasonManager implements PersistentStore, org.bukkit.event.Li
 
     private int contributionCount(final UUID playerId, final FactionType faction, final int season) {
         final var state = participationProjection.get(playerId);
-        return faction != null && state != null && state.season() == season && state.faction().equals(faction.name())
+        return faction != null && state != null && state.season() == season && state.faction().equals(faction.name()) && participation.matchesCurrentMembership(playerId, state)
                 ? state.activities().size() : 0;
     }
 
