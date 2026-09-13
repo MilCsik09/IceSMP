@@ -289,7 +289,7 @@ public final class ItemIdentityService {
                 template.itemModelAt(stageId), template.equipmentAssetAt(stageId));
         ItemDataFactory.hideAttributeTooltip(item);
         ItemDataFactory.applyRarity(item, ItemDataFactory.vanillaRarityOf(template.rarity().id()));
-        applySignatureEnchantProjection(item, template);
+        if (!ItemPrototypePolicy.direct(item)) applySignatureEnchantProjection(item, template);
     }
 
     /** Bootstrap enchant/glint is part of canonical identity, never a recipe-owned mutator. */
@@ -371,6 +371,17 @@ public final class ItemIdentityService {
                     "item identity index nem egyezik a payloaddal");
         }
         final Optional<ItemTemplate> resolved = templates.find(instance.templateId());
+        if (ItemPrototypePolicy.isPrototype(instance)) {
+            try {
+                if (!ItemPrototypePolicy.identity(item).filter(ItemPrototypePolicy.identity(instance)::equals).isPresent()) {
+                    return new Inspection(Status.INTEGRITY_MISMATCH, instance, null, "prototype restriction projection differs");
+                }
+            } catch (RuntimeException invalidPrototype) {
+                return new Inspection(Status.INTEGRITY_MISMATCH, instance, null, "invalid prototype identity");
+            }
+        } else if (ItemPrototypePolicy.direct(item)) {
+            return new Inspection(Status.INTEGRITY_MISMATCH, instance, null, "prototype marker lacks canonical origin");
+        }
         if (resolved.isEmpty()) {
             return new Inspection(Status.TEMPLATE_MISSING, instance, null, "hiányzó item template");
         }
@@ -542,6 +553,7 @@ public final class ItemIdentityService {
     }
 
     public List<String> runesOf(final ItemStack item) {
+        if (ItemPrototypePolicy.direct(item)) return List.of();
         final Inspection inspection = inspect(item);
         if (inspection.readable()) return inspection.instance().runes();
         if (inspection.status() != Status.NOT_MANAGED || item == null || !item.hasItemMeta()) {
@@ -631,6 +643,7 @@ public final class ItemIdentityService {
     }
 
     public double abilityPowerOf(final ItemStack item) {
+        if (ItemPrototypePolicy.direct(item)) return 0.0D;
         final Inspection inspection = inspect(item);
         if (inspection.status() != Status.VALID) return 0.0D;
         double value = inspection.template().fixedStatsAt(inspection.instance().ascension().stageId())
@@ -689,6 +702,9 @@ public final class ItemIdentityService {
     }
 
     private void applyStats(final ItemStack item, final ItemTemplate template, final ItemInstance instance) {
+        if (ItemPrototypePolicy.isPrototype(instance) || ItemPrototypePolicy.direct(item)) {
+            suppressManagedInvalid(item); return;
+        }
         final LinkedHashMap<String, Double> totals = new LinkedHashMap<>(
                 template.fixedStatsAt(instance.ascension().stageId()));
         instance.rolls().forEach((id, roll) -> totals.merge(id, roll.value(), Double::sum));
@@ -729,7 +745,7 @@ public final class ItemIdentityService {
     public void setEquipmentSuppressed(final ItemStack item, final ItemTemplate template,
                                        final ItemInstance instance, final boolean suppressed) {
         if (item == null || template == null || instance == null) return;
-        if (suppressed) {
+        if (suppressed || ItemPrototypePolicy.isPrototype(instance) || ItemPrototypePolicy.direct(item)) {
             suppressManagedInvalid(item);
             return;
         }
@@ -741,7 +757,7 @@ public final class ItemIdentityService {
     }
 
     public boolean isEquipmentSuppressed(final ItemStack item) {
-        return item != null && item.hasItemMeta()
+        return ItemPrototypePolicy.direct(item) || item != null && item.hasItemMeta()
                 && item.getItemMeta().getPersistentDataContainer().has(
                 equipmentSuppressedKey, PersistentDataType.BYTE);
     }
@@ -765,6 +781,7 @@ public final class ItemIdentityService {
         pdc.set(signatureTierProjectionKey, PersistentDataType.INTEGER,
                 template.signatureTierAt(instance.ascension().stageId()));
         item.setItemMeta(meta);
+        if (ItemPrototypePolicy.isPrototype(instance)) ItemPrototypePolicy.mark(item, ItemPrototypePolicy.identity(instance));
     }
 
     private static void requireMatching(final ItemTemplate template, final ItemInstance instance) {

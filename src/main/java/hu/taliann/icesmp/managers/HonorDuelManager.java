@@ -228,11 +228,8 @@ public final class HonorDuelManager implements PlayerStateCleanup {
                 < tags.minFightSeconds()) {
             killer.sendMessage(messageManager.getMessage(
                     "duel-too-quick",
-                    "<gray>⚔ A párbaj véget ért, de valódi összecsapás nélkül se bűn-tisztulás, se liga-pont nem jár.</gray>"));
+                    "<gray>⚔ A párbaj véget ért, de valódi összecsapás nélkül liga-pont nem jár.</gray>"));
             return true;
-        }
-        if (sinManager.getSinCount(killer) > 0) {
-            sinManager.reduceSin(killer, 1);
         }
         final FactionType killerFaction = factionManager.getChosenFaction(
                 killer.getUniqueId()).orElse(null);
@@ -240,6 +237,7 @@ public final class HonorDuelManager implements PlayerStateCleanup {
                 victim.getUniqueId()).orElse(null);
         if (killerFaction != null && victimFaction != null
                 && killerFaction != victimFaction) {
+            seasonManager.recordContribution(killer.getUniqueId(), killerFaction, "duel");
             seasonManager.addPoints(killerFaction,
                     Math.max(0, configManager.getInt(
                             "honor-duel.season-points", 2)), "duel");

@@ -34,18 +34,25 @@ public final class TrashCatalog {
             TrashKind.TRASH_RELIC, 23);
     private static final Set<String> FORBIDDEN_PLAYER_MARKERS = Set.of("anomália", "trash relic");
 
-    private final JavaPlugin plugin;
+    private final java.util.function.Supplier<InputStream> resource;
+    private final java.util.logging.Logger logger;
     private volatile Map<String, TrashDefinition> definitions = Map.of();
     private volatile Map<String, TrashLifecyclePhase> lifecyclePhases = Map.of();
     private volatile String rarityLabel = "";
     private volatile TrashLootTuning lootTuning;
 
     public TrashCatalog(final JavaPlugin plugin) {
-        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this(() -> plugin.getResource(RESOURCE), Objects.requireNonNull(plugin, "plugin").getLogger());
+    }
+
+    TrashCatalog(final java.util.function.Supplier<InputStream> resource,
+                 final java.util.logging.Logger logger) {
+        this.resource = Objects.requireNonNull(resource, "resource");
+        this.logger = Objects.requireNonNull(logger, "logger");
     }
 
     public synchronized void load() {
-        try (InputStream input = plugin.getResource(RESOURCE)) {
+        try (InputStream input = resource.get()) {
             if (input == null) {
                 throw new IllegalStateException("hiányzó packaged Trash catalog: " + RESOURCE);
             }
@@ -56,7 +63,7 @@ public final class TrashCatalog {
             lifecyclePhases = parsed.lifecyclePhases();
             rarityLabel = parsed.rarityLabel();
             lootTuning = parsed.lootTuning();
-            plugin.getLogger().info("Trash catalog ready: " + definitions.size() + " identities.");
+            logger.info("Trash catalog ready: " + definitions.size() + " identities.");
         } catch (final java.io.IOException impossibleForResourceStream) {
             throw new IllegalStateException("nem olvasható packaged Trash catalog: " + RESOURCE,
                     impossibleForResourceStream);
@@ -197,6 +204,8 @@ public final class TrashCatalog {
         if (!errors.isEmpty()) {
             throw new IllegalStateException("Hibás Trash catalog: " + String.join("; ", errors));
         }
+        final var evidence = TrashArchaeologyEvidence.parse(yaml.getConfigurationSection("archaeology"), parsed);
+        parsed.replaceAll((id, definition) -> definition.withArchaeology(evidence.get(id)));
         return new Parsed(Map.copyOf(parsed), Map.copyOf(parsedPhases), rarityLabel, lootTuning);
     }
 
@@ -241,12 +250,19 @@ public final class TrashCatalog {
         if (!kind.isInert() && !id.toUpperCase(Locale.ROOT).equals(behavior)) {
             throw new IllegalArgumentException("a special behavior kulcsnak identity-specifikusnak kell lennie");
         }
+        if (kind == TrashKind.ANOMALY) {
+            TrashAnomalyBehavior.parse(behavior);
+        } else if (kind == TrashKind.TRASH_RELIC) {
+            TrashRelicBehavior.parse(behavior);
+        }
         final String successPhase = normalize(section.getString("lifecycle.on-success-transform", ""));
         if (!successPhase.isBlank() && !ID_PATTERN.matcher(successPhase).matches()) {
             throw new IllegalArgumentException("a lifecycle.on-success-transform csak lower_snake_case lehet");
         }
         return new TrashDefinition(id, displayName, playerRarity, material, itemModel, texture,
-                vendorValue, lore, sourceBias, kind, behavior, successPhase);
+                vendorValue, lore, sourceBias, kind, behavior, successPhase, null,
+                section.getDouble("internal.losing-health-fraction", 0.0D),
+                section.getStringList("contextual-text"));
     }
 
     private static TrashLifecyclePhase parseLifecyclePhase(final String rawId,

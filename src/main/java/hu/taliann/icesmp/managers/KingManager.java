@@ -58,6 +58,20 @@ public final class KingManager implements PersistentStore {
         plugin.getDataFolder().mkdirs();
     }
 
+    private volatile java.util.function.ToIntFunction<FactionType> population = faction -> 0;
+
+    public void setActivePopulation(final java.util.function.ToIntFunction<FactionType> population) {
+        this.population = java.util.Objects.requireNonNull(population);
+    }
+
+    public static int electionQuorum(final int configuredMinimum, final int activeMembers) {
+        return Math.max(Math.max(2, configuredMinimum), (int) ((Math.max(0, activeMembers) + 2L) / 3));
+    }
+
+    public int requiredVotes(final FactionType faction) {
+        return electionQuorum(configManager.getInt("factions.kings.min-votes", 2), population.applyAsInt(faction));
+    }
+
     public void load() {
         kings.clear();
         votes.clear();
@@ -226,12 +240,19 @@ public final class KingManager implements PersistentStore {
         // tranzakció: két régió-szál küszöb-közeli egyidejű szavazata lock nélkül dupla
         // koronázást vagy a ballot-törléssel elvesző szavazatot adhatna.
         synchronized (electionLock) {
+            if (!factionManager.isMember(voter.getUniqueId(), faction)
+                    || !factionManager.isMember(candidate, faction)) return false;
             resetExpiredTerm(faction);
+            if (kings.containsKey(faction)) return false;
             votes.computeIfAbsent(faction, key -> new ConcurrentHashMap<>()).put(voter.getUniqueId(), candidate);
             recount(faction);
             save();
         }
         return true;
+    }
+
+    public void withMembershipAdmissionBarrier(final Runnable claim) {
+        synchronized (electionLock) { java.util.Objects.requireNonNull(claim).run(); }
     }
 
     /**
@@ -262,8 +283,8 @@ public final class KingManager implements PersistentStore {
      * @param faction the faction
      * @param king the new king, or null to clear the throne
      */
-    public void setKing(final FactionType faction, final UUID king) {
-        crown(faction, king);
+    public boolean setKing(final FactionType faction, final UUID king) {
+        return crown(faction, king);
     }
 
     /**
@@ -275,13 +296,14 @@ public final class KingManager implements PersistentStore {
      *
      * @param king the new king, or null to empty the throne
      */
-    private void crown(final FactionType faction, final UUID king) {
+    private boolean crown(final FactionType faction, final UUID king) {
         if (faction == null) {
-            return;
+            return false;
         }
 
         // Reentráns a vote() lockja alól; az admin setKing útján ez az egyetlen kapu.
         synchronized (electionLock) {
+            if (king != null && !factionManager.isMember(king, faction)) return false;
             final long now = System.currentTimeMillis();
             if (king == null) {
                 kings.remove(faction);
@@ -301,6 +323,7 @@ public final class KingManager implements PersistentStore {
                 AdvancementService.award(crowned, "crowned");
             }
         }
+        return true;
     }
 
     /**
@@ -344,7 +367,7 @@ public final class KingManager implements PersistentStore {
     }
 
     private void recount(final FactionType faction) {
-        final int minVotes = Math.max(1, configManager.getInt("factions.kings.min-votes", 2));
+        final int minVotes = requiredVotes(faction);
         UUID leader = null;
         int leaderVotes = 0;
         for (final Map.Entry<UUID, Integer> entry : getTally(faction).entrySet()) {
@@ -363,7 +386,7 @@ public final class KingManager implements PersistentStore {
             return;
         }
 
-        crown(faction, leader);
+        if (!crown(faction, leader)) return;
 
         // Folia: the server-wide broadcast and the (potentially blocking) offline-name lookup
         // must not run on the voting player's region thread — hop to the global region scheduler.

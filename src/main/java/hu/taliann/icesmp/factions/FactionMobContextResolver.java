@@ -54,6 +54,36 @@ public final class FactionMobContextResolver {
     private final WildHuntManager wildHuntManager;
     private final TerritoryManager territoryManager;
     private final BloodMoonManager bloodMoonManager;
+    private volatile FactionContextProjectionSource contextProjection = FactionContextProjectionSource.canonical();
+    private boolean contextProjectionBound;
+    private record EffectiveContexts(Set<FactionPassivePolicy.ContentContext> contexts, boolean available) { }
+
+    public synchronized void bindContextProjection(final FactionContextProjectionSource source) {
+        if (contextProjectionBound) throw new IllegalStateException("Faction context projection already bound");
+        contextProjection = java.util.Objects.requireNonNull(source); contextProjectionBound = true;
+    }
+
+    public Set<FactionPassivePolicy.ContentContext> effectiveContentContexts(final Entity entity,
+            final FactionPassiveSettings settings, final UUID playerId) {
+        requireOwner(entity);
+        return effective(entity.getUniqueId(), contentContexts(entity, settings, playerId)).contexts();
+    }
+
+    public Set<FactionPassivePolicy.ContentContext> effectiveExplicitCombatContexts(final Entity entity,
+            final FactionPassiveSettings settings) {
+        requireOwner(entity);
+        return effective(entity.getUniqueId(), explicitCombatContexts(entity, settings)).contexts();
+    }
+
+    private EffectiveContexts effective(final UUID id,
+            final Set<FactionPassivePolicy.ContentContext> canonical) {
+        try { return new EffectiveContexts(FactionContextProjectionSource.validate(canonical, contextProjection.resolve(id, Set.copyOf(canonical))), true); }
+        catch (final RuntimeException | LinkageError unavailable) { return new EffectiveContexts(FactionContextProjectionSource.unavailable(canonical), false); }
+    }
+
+    private static void requireOwner(final Entity entity) {
+        if (entity == null || !org.bukkit.Bukkit.isOwnedByCurrentRegion(entity)) throw new IllegalStateException("Faction entity owner required");
+    }
 
     public FactionMobContextResolver(
             final DarkUndeadAmbienceManager darkUndeadAmbienceManager,
@@ -85,11 +115,12 @@ public final class FactionMobContextResolver {
             final FactionPassiveService state,
             final FactionPassiveSettings settings) {
         final Entity entity = event.getEntity();
+        requireOwner(entity);
         final TargetReason reason = event.getReason();
         final UUID mobId = entity.getUniqueId();
         final boolean undead = isUndead(entity);
-        final EnumSet<FactionPassivePolicy.ContentContext> contexts =
-                contentContexts(entity, settings, playerId);
+        final EffectiveContexts projection = effective(entity.getUniqueId(), contentContexts(entity, settings, playerId));
+        final Set<FactionPassivePolicy.ContentContext> contexts = projection.contexts();
         final boolean timedRetaliation = state.isNeutralRetaliating(playerId, mobId)
                 || undead && state.isDarkRetaliating(playerId, mobId);
         // A timed lease carries provocation across later spontaneous reasons. A direct vanilla
@@ -101,7 +132,7 @@ public final class FactionMobContextResolver {
                 settings,
                 whisperer,
                 contexts,
-                EXPLICIT_FORCE_REASONS.contains(reason)
+                !projection.available() || EXPLICIT_FORCE_REASONS.contains(reason)
                         && !contexts.contains(FactionPassivePolicy.ContentContext.CROWN_CURSE),
                 retaliating,
                 entity instanceof Enderman && reason == TargetReason.CLOSEST_PLAYER,
@@ -123,13 +154,15 @@ public final class FactionMobContextResolver {
             final UUID playerId,
             final boolean whisperer,
             final FactionPassiveSettings settings) {
+        requireOwner(mob);
         final boolean enderman = mob instanceof Enderman;
+        final EffectiveContexts projection = effective(mob.getUniqueId(), contentContexts(mob, settings, playerId));
         return targetContext(
                 mob,
                 settings,
                 whisperer,
-                contentContexts(mob, settings, playerId),
-                false,
+                projection.contexts(),
+                !projection.available(),
                 false,
                 enderman,
                 true,
@@ -156,7 +189,7 @@ public final class FactionMobContextResolver {
                 time >= 13_000L && time <= 23_000L,
                 undead,
                 undead && darkUndeadAmbienceManager.isMarked(entity),
-                isNeutralMob(entity, settings),
+                isEffectivelyNeutralMob(entity, settings),
                 entity instanceof Enderman,
                 spontaneousEndermanStare,
                 spontaneousNeutralAggro,
@@ -256,10 +289,19 @@ public final class FactionMobContextResolver {
     }
 
     public boolean isNeutralMob(final Entity entity, final FactionPassiveSettings settings) {
+        return neutralMob(entity, settings, explicitCombatContexts(entity, settings));
+    }
+
+    public boolean isEffectivelyNeutralMob(final Entity entity, final FactionPassiveSettings settings) {
+        return neutralMob(entity, settings, effectiveExplicitCombatContexts(entity, settings));
+    }
+
+    private boolean neutralMob(final Entity entity, final FactionPassiveSettings settings,
+            final Set<FactionPassivePolicy.ContentContext> contexts) {
         if (entity instanceof Tameable tameable && tameable.getOwner() != null) {
             return false;
         }
-        if (!explicitCombatContexts(entity, settings).isEmpty()) {
+        if (!contexts.isEmpty()) {
             return false;
         }
         return settings.neutral().includeNonMonsters() && !(entity instanceof Monster)

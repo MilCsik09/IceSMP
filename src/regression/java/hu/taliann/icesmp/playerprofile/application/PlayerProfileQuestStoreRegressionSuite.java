@@ -30,7 +30,8 @@ public final class PlayerProfileQuestStoreRegressionSuite {
         final PlayerProfileService service = new PlayerProfileService(repository, transactions);
         final PlayerProfileAuthority authority = PlayerProfileAuthority.install(
                 service, repository, transactions);
-        try {
+        try (var rewards = hu.taliann.icesmp.integrity.GameplayRewardGate.install(
+                context -> hu.taliann.icesmp.integrity.RewardDecision.allow())) {
             final UUID player = UUID.fromString("00000000-0000-0000-0000-000000001092");
             repository.loadSnapshot(player).toCompletableFuture().join();
             final PlayerProfileQuestStore store = new PlayerProfileQuestStore();

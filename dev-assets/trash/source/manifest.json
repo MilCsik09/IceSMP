@@ -11,40 +11,82 @@
       "file": "batch-001.png",
       "rows": 1,
       "columns": 5,
-      "ids": ["rozsdas_szog", "gorbe_szog", "rovid_satorszog", "kormos_szog", "repedt_szegecs"]
+      "ids": [
+        "rozsdas_szog",
+        "gorbe_szog",
+        "rovid_satorszog",
+        "kormos_szog",
+        "repedt_szegecs"
+      ]
     },
     {
       "file": "batch-002.png",
       "rows": 1,
       "columns": 5,
-      "ids": ["laposra_vert_szegecs", "elhajlott_kapocsszog", "tul_nagy_szog", "rossz_menetu_csavar", "lapos_feju_csavar"]
+      "ids": [
+        "laposra_vert_szegecs",
+        "elhajlott_kapocsszog",
+        "tul_nagy_szog",
+        "rossz_menetu_csavar",
+        "lapos_feju_csavar"
+      ]
     },
     {
       "file": "batch-003.png",
       "rows": 1,
       "columns": 5,
-      "ids": ["patinas_bronzcsavar", "megszorult_csavar", "kicsorbult_csavar", "tul_vastag_csavar", "ferde_csavar"]
+      "ids": [
+        "patinas_bronzcsavar",
+        "megszorult_csavar",
+        "kicsorbult_csavar",
+        "tul_vastag_csavar",
+        "ferde_csavar"
+      ]
     },
     {
       "file": "batch-004.png",
       "rows": 1,
       "columns": 5,
-      "ids": ["elhasznalt_csavar", "csorba_kanal", "gorbe_kanal", "kormos_kanal", "foltos_kanal"]
+      "ids": [
+        "elhasznalt_csavar",
+        "csorba_kanal",
+        "gorbe_kanal",
+        "kormos_kanal",
+        "foltos_kanal"
+      ]
     },
     {
       "file": "batch-005.png",
       "rows": 1,
       "columns": 5,
-      "ids": ["kopott_kanal", "fakanal_nyele", "gorbe_villa", "haromfogu_villa", "kormos_villa"]
+      "ids": [
+        "kopott_kanal",
+        "fakanal_nyele",
+        "gorbe_villa",
+        "haromfogu_villa",
+        "kormos_villa"
+      ]
     },
     {
       "file": "batch-006-008.png",
       "rows": 3,
       "columns": 5,
       "ids": [
-        "rozsdafoltos_villa", "tompa_kiskes", "repedt_markolatu_kes", "csorba_asztali_kes", "rozsdas_kenokes",
-        "elazott_nyugta", "felbehajtott_nyugta", "zsiros_kocsmai_szamla", "tepett_szallitolevel", "raktari_jegyzekdarab",
-        "teves_szamla", "vamhazi_masolat", "ures_konyvelolap", "gyurott_cetli", "szakadt_bevasarlolista"
+        "rozsdafoltos_villa",
+        "tompa_kiskes",
+        "repedt_markolatu_kes",
+        "csorba_asztali_kes",
+        "rozsdas_kenokes",
+        "elazott_nyugta",
+        "felbehajtott_nyugta",
+        "zsiros_kocsmai_szamla",
+        "tepett_szallitolevel",
+        "raktari_jegyzekdarab",
+        "teves_szamla",
+        "vamhazi_masolat",
+        "ures_konyvelolap",
+        "gyurott_cetli",
+        "szakadt_bevasarlolista"
       ]
     },
     {
@@ -52,9 +94,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "foltos_uzenet", "elrontott_levelkezdet", "tintaproba", "ures_papirdarab", "szamolocetli",
-        "kifakult_cimzes", "szakadt_rongy", "olajos_rongy", "iszapos_rongy", "kormos_rongy",
-        "kifakult_rongy", "foltozott_rongy", "hasznalt_kotesdarab", "fel_tekercs_kotes", "megkemenyedett_kotes"
+        "foltos_uzenet",
+        "elrontott_levelkezdet",
+        "tintaproba",
+        "ures_papirdarab",
+        "szamolocetli",
+        "kifakult_cimzes",
+        "szakadt_rongy",
+        "olajos_rongy",
+        "iszapos_rongy",
+        "kormos_rongy",
+        "kifakult_rongy",
+        "foltozott_rongy",
+        "hasznalt_kotesdarab",
+        "fel_tekercs_kotes",
+        "megkemenyedett_kotes"
       ]
     },
     {
@@ -62,9 +116,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "szakadt_kotes", "rojtos_szalag", "csomora_kotott_szalag", "lyukas_zokni", "foltozott_zokni",
-        "rozsdas_horgaszhorog", "kiegyenesedett_horog", "torott_horog", "kifakult_uszo", "repedt_uszo",
-        "tul_nehez_uszo", "gubancos_damil", "szakadt_damil", "hinaros_zsinor", "repedt_palack"
+        "szakadt_kotes",
+        "rojtos_szalag",
+        "csomora_kotott_szalag",
+        "lyukas_zokni",
+        "foltozott_zokni",
+        "rozsdas_horgaszhorog",
+        "kiegyenesedett_horog",
+        "torott_horog",
+        "kifakult_uszo",
+        "repedt_uszo",
+        "tul_nehez_uszo",
+        "gubancos_damil",
+        "szakadt_damil",
+        "hinaros_zsinor",
+        "repedt_palack"
       ]
     },
     {
@@ -72,9 +138,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "zoldes_uvegpalack", "dugo_nelkuli_palack", "kokemeny_kenyer", "peneszes_kenyerhej", "megegett_kenyerveg",
-        "kiszaradt_sajtdarab", "peneszes_sajthej", "tul_sos_sajt", "megolvadt_sajtcsonk", "kormos_sajt",
-        "csorba_bogre", "ful_nelkuli_bogre", "hajszalrepedt_bogre", "kormos_bogre", "tul_kicsi_bogre"
+        "zoldes_uvegpalack",
+        "dugo_nelkuli_palack",
+        "kokemeny_kenyer",
+        "peneszes_kenyerhej",
+        "megegett_kenyerveg",
+        "kiszaradt_sajtdarab",
+        "peneszes_sajthej",
+        "tul_sos_sajt",
+        "megolvadt_sajtcsonk",
+        "kormos_sajt",
+        "csorba_bogre",
+        "ful_nelkuli_bogre",
+        "hajszalrepedt_bogre",
+        "kormos_bogre",
+        "tul_kicsi_bogre"
       ]
     },
     {
@@ -82,9 +160,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "repedt_tal", "csorba_csesze", "sofoltos_talka", "fel_tanyer", "kormos_tal",
-        "torott_nyilhegy", "rozsdas_nyilhegy", "gorbe_nyilhegy", "tompa_nyilhegy", "kormos_nyilhegy",
-        "kifakult_jelveny", "torott_jelveny", "rozsdas_melljel", "ures_cimerlap", "gorbe_zaszlotu"
+        "repedt_tal",
+        "csorba_csesze",
+        "sofoltos_talka",
+        "fel_tanyer",
+        "kormos_tal",
+        "torott_nyilhegy",
+        "rozsdas_nyilhegy",
+        "gorbe_nyilhegy",
+        "tompa_nyilhegy",
+        "kormos_nyilhegy",
+        "kifakult_jelveny",
+        "torott_jelveny",
+        "rozsdas_melljel",
+        "ures_cimerlap",
+        "gorbe_zaszlotu"
       ]
     },
     {
@@ -92,9 +182,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "torott_ovcsat", "rozsdas_hamcsat", "kormos_csat", "tul_nagy_csat", "elhajlott_csat",
-        "szakadt_dogcedula", "ures_dogcedula", "kifakult_nevtag", "gorbe_femcimke", "lyukas_cimke",
-        "torott_fogaskerek", "fel_fogaskerek", "rozsdas_fogaskerek", "megszorult_fogaskerek", "tul_apro_fogaskerek"
+        "torott_ovcsat",
+        "rozsdas_hamcsat",
+        "kormos_csat",
+        "tul_nagy_csat",
+        "elhajlott_csat",
+        "szakadt_dogcedula",
+        "ures_dogcedula",
+        "kifakult_nevtag",
+        "gorbe_femcimke",
+        "lyukas_cimke",
+        "torott_fogaskerek",
+        "fel_fogaskerek",
+        "rozsdas_fogaskerek",
+        "megszorult_fogaskerek",
+        "tul_apro_fogaskerek"
       ]
     },
     {
@@ -102,9 +204,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "tompa_vesohegy", "repedt_veso", "letort_szerszamveg", "kormos_vesohegy", "tul_rovid_veso",
-        "kopott_meropalca", "torott_meropalca", "jeloletlen_palca", "gorbe_merovesszo", "kormos_meropalca",
-        "repedt_alatet", "tul_nagy_alatet", "tul_kicsi_alatet", "ovalis_alatet", "kormos_alatet"
+        "tompa_vesohegy",
+        "repedt_veso",
+        "letort_szerszamveg",
+        "kormos_vesohegy",
+        "tul_rovid_veso",
+        "kopott_meropalca",
+        "torott_meropalca",
+        "jeloletlen_palca",
+        "gorbe_merovesszo",
+        "kormos_meropalca",
+        "repedt_alatet",
+        "tul_nagy_alatet",
+        "tul_kicsi_alatet",
+        "ovalis_alatet",
+        "kormos_alatet"
       ]
     },
     {
@@ -112,9 +226,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "ismeretlen_csontdarab", "repedt_csontdarab", "megfeketedett_csont", "sima_csontdarab", "ragott_csont",
-        "torott_fog", "kopott_agyardarab", "fekete_fog", "repedt_orlofog", "apro_agyar",
-        "leegett_gyertyacsonk", "kormos_kanoc", "megolvadt_viaszdarab", "torott_imako", "jeloletlen_amulett"
+        "ismeretlen_csontdarab",
+        "repedt_csontdarab",
+        "megfeketedett_csont",
+        "sima_csontdarab",
+        "ragott_csont",
+        "torott_fog",
+        "kopott_agyardarab",
+        "fekete_fog",
+        "repedt_orlofog",
+        "apro_agyar",
+        "leegett_gyertyacsonk",
+        "kormos_kanoc",
+        "megolvadt_viaszdarab",
+        "torott_imako",
+        "jeloletlen_amulett"
       ]
     },
     {
@@ -122,9 +248,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "obszidianforgacs", "repedt_obszidianszilank", "kormos_obszidian", "tompa_obszidiandarab", "lila_fenyu_uvegszilank",
-        "koromcsomo", "hideg_hamucsomo", "osszetapadt_hamu", "kormos_kavics", "egett_faszendarab",
-        "torott_toll", "kormos_toll", "vizes_toll", "kifakult_toll", "fel_toll"
+        "obszidianforgacs",
+        "repedt_obszidianszilank",
+        "kormos_obszidian",
+        "tompa_obszidiandarab",
+        "lila_fenyu_uvegszilank",
+        "koromcsomo",
+        "hideg_hamucsomo",
+        "osszetapadt_hamu",
+        "kormos_kavics",
+        "egett_faszendarab",
+        "torott_toll",
+        "kormos_toll",
+        "vizes_toll",
+        "kifakult_toll",
+        "fel_toll"
       ]
     },
     {
@@ -132,9 +270,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "rozsdas_csapagygolyo", "ellapult_csapagygolyo", "szalkas_deszkadarab", "festekes_deszkadarab", "csorba_tegla",
-        "habarcsos_tegladarab", "rozsdas_vodor", "horpadasos_vodor", "rozsdas_lancdarab", "nyitott_lancszem",
-        "repedt_iranytu", "beragadt_iranytu", "kopott_csontkocka", "fakocka", "horpadasos_fazek"
+        "rozsdas_csapagygolyo",
+        "ellapult_csapagygolyo",
+        "szalkas_deszkadarab",
+        "festekes_deszkadarab",
+        "csorba_tegla",
+        "habarcsos_tegladarab",
+        "rozsdas_vodor",
+        "horpadasos_vodor",
+        "rozsdas_lancdarab",
+        "nyitott_lancszem",
+        "repedt_iranytu",
+        "beragadt_iranytu",
+        "kopott_csontkocka",
+        "fakocka",
+        "horpadasos_fazek"
       ]
     },
     {
@@ -142,9 +292,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "ful_nelkuli_fazek", "lapos_folyami_kavics", "lyukas_kavics", "foszlo_koteldarab", "tul_rovid_kotel",
-        "kopott_papucs", "elszakadt_papucs", "voroses_faszalka", "elszenesedett_faszalka", "gorbe_bot",
-        "keregtelen_bot", "rozsdas_kardcsonk", "tompa_rovidpenge", "faek", "kobol_faragott_ek"
+        "ful_nelkuli_fazek",
+        "lapos_folyami_kavics",
+        "lyukas_kavics",
+        "foszlo_koteldarab",
+        "tul_rovid_kotel",
+        "kopott_papucs",
+        "elszakadt_papucs",
+        "voroses_faszalka",
+        "elszenesedett_faszalka",
+        "gorbe_bot",
+        "keregtelen_bot",
+        "rozsdas_kardcsonk",
+        "tompa_rovidpenge",
+        "faek",
+        "kobol_faragott_ek"
       ]
     },
     {
@@ -152,9 +314,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "harom_udvar_kanala", "bokici_reveszgomb", "caldesterai_vamcedula", "boterai_hamis_pecset", "regi_kompjegy",
-        "radicorai_imaszalag", "botera_negyedi_kettos_nyugta", "caldesterai_ezustozott_villa", "bokic_parti_gyerekuszo", "szovetsegi_merlegsuly_darabja",
-        "o_caldesterai_ajtogomb", "boterai_rejtett_zseb_foszlanya", "caldesterai_piaci_sorszam_47", "ryanorai_patkocsat", "bankarszovetsegi_tintazar"
+        "harom_udvar_kanala",
+        "bokici_reveszgomb",
+        "caldesterai_vamcedula",
+        "boterai_hamis_pecset",
+        "regi_kompjegy",
+        "radicorai_imaszalag",
+        "botera_negyedi_kettos_nyugta",
+        "caldesterai_ezustozott_villa",
+        "bokic_parti_gyerekuszo",
+        "szovetsegi_merlegsuly_darabja",
+        "o_caldesterai_ajtogomb",
+        "boterai_rejtett_zseb_foszlanya",
+        "caldesterai_piaci_sorszam_47",
+        "ryanorai_patkocsat",
+        "bankarszovetsegi_tintazar"
       ]
     },
     {
@@ -162,9 +336,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "glatziendorfi_leveskanal", "repedt_hopiher_veret", "sarkanyistallo_rezcsatja", "kallan_unnepi_szalagdarab", "glatziendorfi_orsegi_sip",
-        "fagyott_postacimke", "eszaki_szanszog", "v_miinus_korabol_valo_gomb", "sarkanypikkely_utanzat", "jegmezoi_tabori_bogre",
-        "cryghalirisi_ezustozo_rongy", "eszaki_futar_fel_cimkeje", "pyralingradi_fuszerkanal", "megolvadt_parals", "verfa_metszokes_nyele"
+        "glatziendorfi_leveskanal",
+        "repedt_hopiher_veret",
+        "sarkanyistallo_rezcsatja",
+        "kallan_unnepi_szalagdarab",
+        "glatziendorfi_orsegi_sip",
+        "fagyott_postacimke",
+        "eszaki_szanszog",
+        "v_miinus_korabol_valo_gomb",
+        "sarkanypikkely_utanzat",
+        "jegmezoi_tabori_bogre",
+        "cryghalirisi_ezustozo_rongy",
+        "eszaki_futar_fel_cimkeje",
+        "pyralingradi_fuszerkanal",
+        "megolvadt_parals",
+        "verfa_metszokes_nyele"
       ]
     },
     {
@@ -172,9 +358,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "pyralingradi_kulacsdugo", "langmadar_istallo_tollsepru_darabja", "verszavannai_orsegi_csat", "zhoris_kori_piaci_masolat", "fonix_tojashejkent_arult_darab",
-        "pyralingradi_ostromkonyha_villaja", "verfa_ultetesi_cedula", "parals_zacsko_foszlanya", "verszavannai_viharszalag", "hetedik_verhaborus_satorszog",
-        "asterobourghi_teglaresz", "arany_liga_merlegnyelve", "szabad_varosok_pecsetfoszlanya", "hatodik_verhaborus_feher_szalag", "hu_698_as_tabori_kanal"
+        "pyralingradi_kulacsdugo",
+        "langmadar_istallo_tollsepru_darabja",
+        "verszavannai_orsegi_csat",
+        "zhoris_kori_piaci_masolat",
+        "fonix_tojashejkent_arult_darab",
+        "pyralingradi_ostromkonyha_villaja",
+        "verfa_ultetesi_cedula",
+        "parals_zacsko_foszlanya",
+        "verszavannai_viharszalag",
+        "hetedik_verhaborus_satorszog",
+        "asterobourghi_teglaresz",
+        "arany_liga_merlegnyelve",
+        "szabad_varosok_pecsetfoszlanya",
+        "hatodik_verhaborus_feher_szalag",
+        "hu_698_as_tabori_kanal"
       ]
     },
     {
@@ -182,9 +380,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "kettetort_hadiparancs", "elveszett_futar_dogcedulaja", "asterobourghi_kocsmai_zseton", "hetedik_verhaborus_nyilhegy", "senkifoldi_hadisip",
-        "fekete_villam_uveges_salakja", "asterobourghi_haztartasi_kulcs", "verhaborus_kotenygomb", "armageddon_ultimatum_kori_tintadugo", "thanaopolisi_konyvelogomb",
-        "csontszamvevo_hivatalanak_ceruzavege", "mortengradi_regi_kulcs", "kitaszitott_gyaszszalag", "csontveret_proba", "thanaopolisi_urnacimke"
+        "kettetort_hadiparancs",
+        "elveszett_futar_dogcedulaja",
+        "asterobourghi_kocsmai_zseton",
+        "hetedik_verhaborus_nyilhegy",
+        "senkifoldi_hadisip",
+        "fekete_villam_uveges_salakja",
+        "asterobourghi_haztartasi_kulcs",
+        "verhaborus_kotenygomb",
+        "armageddon_ultimatum_kori_tintadugo",
+        "thanaopolisi_konyvelogomb",
+        "csontszamvevo_hivatalanak_ceruzavege",
+        "mortengradi_regi_kulcs",
+        "kitaszitott_gyaszszalag",
+        "csontveret_proba",
+        "thanaopolisi_urnacimke"
       ]
     },
     {
@@ -192,9 +402,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "mortengradi_kilincscsavar", "ejszaka_gyermekeinek_jelvenyekent_arult_korong", "thanaopolisi_gyertyakanoc", "nema_udvari_evovilla", "melynepi_selejtcsavar",
-        "melynepi_fogaskerekfog", "csillagfemmentes_salak", "melynepi_merojel", "melynepi_csapagyhaz", "torott_kristalyfoglalat",
-        "negy_valutas_erszeny", "haromnyelvu_bevasarlolista", "deli_csat_eszaki_javitassal", "caldesterai_bogre_csontveret_karccal", "ismeretlen_kiralyi_evovilla"
+        "mortengradi_kilincscsavar",
+        "ejszaka_gyermekeinek_jelvenyekent_arult_korong",
+        "thanaopolisi_gyertyakanoc",
+        "nema_udvari_evovilla",
+        "melynepi_selejtcsavar",
+        "melynepi_fogaskerekfog",
+        "csillagfemmentes_salak",
+        "melynepi_merojel",
+        "melynepi_csapagyhaz",
+        "torott_kristalyfoglalat",
+        "negy_valutas_erszeny",
+        "haromnyelvu_bevasarlolista",
+        "deli_csat_eszaki_javitassal",
+        "caldesterai_bogre_csontveret_karccal",
+        "ismeretlen_kiralyi_evovilla"
       ]
     },
     {
@@ -202,9 +424,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "felrevert_garas", "torott_iranytu", "hetpartos_kavics", "melynepi_csapagygolyo", "tul_nehez_alatet",
-        "felfele_hullo_hopehely", "bokicnak_ellentmondo_level", "kikopott_obszidianszilank", "a_penztar_utolso_garasa", "boterai_ne_vidd_cimke",
-        "caldesterai_sorszam_999", "ures_erszeny", "hazug_merlegnyelv", "elszenesedett_verfaag", "verfa_szalkaja"
+        "felrevert_garas",
+        "torott_iranytu",
+        "hetpartos_kavics",
+        "melynepi_csapagygolyo",
+        "tul_nehez_alatet",
+        "felfele_hullo_hopehely",
+        "bokicnak_ellentmondo_level",
+        "kikopott_obszidianszilank",
+        "a_penztar_utolso_garasa",
+        "boterai_ne_vidd_cimke",
+        "caldesterai_sorszam_999",
+        "ures_erszeny",
+        "hazug_merlegnyelv",
+        "elszenesedett_verfaag",
+        "verfa_szalkaja"
       ]
     },
     {
@@ -212,9 +446,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "fagyott_tintas_cetli", "szaraz_gyufa", "radicorai_arnyekszalka", "udvari_gomb", "szakadt_hadijel",
-        "torott_hadisip", "sarkanyistallo_csatja", "nevtelen_dogcedula", "ures_csontzacsko", "jegmezoi_csengonyelv",
-        "csendverte_csengonyelv", "elkeso_visszhangdarab", "balmenetes_csavar", "melynepi_kiegett_biztositek", "melynepi_vaklencse"
+        "fagyott_tintas_cetli",
+        "szaraz_gyufa",
+        "radicorai_arnyekszalka",
+        "udvari_gomb",
+        "szakadt_hadijel",
+        "torott_hadisip",
+        "sarkanyistallo_csatja",
+        "nevtelen_dogcedula",
+        "ures_csontzacsko",
+        "jegmezoi_csengonyelv",
+        "csendverte_csengonyelv",
+        "elkeso_visszhangdarab",
+        "balmenetes_csavar",
+        "melynepi_kiegett_biztositek",
+        "melynepi_vaklencse"
       ]
     },
     {
@@ -222,9 +468,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "gorbe_satorszog", "ezustozott_kanal", "csontszamvevo_ceruzacsonkja", "torott_zsebora", "bal_zokni",
-        "jobb_zokni", "bal_lancszem", "jobb_lancszem", "suttogo_cetli", "a_krumpli_ami_nem_akar_elultetodni",
-        "hazudni_nem_tudo_dobokocka", "portalkorom", "lyukas_vodor", "bot", "a_vilag_legelesebb_kese"
+        "gorbe_satorszog",
+        "ezustozott_kanal",
+        "csontszamvevo_ceruzacsonkja",
+        "torott_zsebora",
+        "bal_zokni",
+        "jobb_zokni",
+        "bal_lancszem",
+        "jobb_lancszem",
+        "suttogo_cetli",
+        "a_krumpli_ami_nem_akar_elultetodni",
+        "hazudni_nem_tudo_dobokocka",
+        "portalkorom",
+        "lyukas_vodor",
+        "bot",
+        "a_vilag_legelesebb_kese"
       ]
     },
     {
@@ -232,9 +490,21 @@
       "rows": 3,
       "columns": 5,
       "ids": [
-        "a_legbiztonsagosabb_sisak", "a_kard_amely_minden_csatat_megnyer", "regi_kotes", "torott_pajzsdeszka", "palackozott_nem",
-        "vissza_a_feladonak", "repedt_bogre", "szerencses_garas", "tegla", "fel_par_papucs",
-        "koporsoszog", "koek", "fekete_viaszdugo", "szakadt_feher_zaszlo", "kormos_satorszog"
+        "a_legbiztonsagosabb_sisak",
+        "a_kard_amely_minden_csatat_megnyer",
+        "regi_kotes",
+        "torott_pajzsdeszka",
+        "palackozott_nem",
+        "vissza_a_feladonak",
+        "repedt_bogre",
+        "szerencses_garas",
+        "tegla",
+        "fel_par_papucs",
+        "koporsoszog",
+        "koek",
+        "fekete_viaszdugo",
+        "szakadt_feher_zaszlo",
+        "kormos_satorszog"
       ]
     },
     {
@@ -242,28 +512,61 @@
       "rows": 1,
       "columns": 5,
       "ids": [
-        "melynepi_selejtek", "a_nagyon_rossz_otlet", "szakadt_kotel", "elszakadt_virrasztokanoc", "repedt_virrasztouveg"
+        "melynepi_selejtek",
+        "a_nagyon_rossz_otlet",
+        "szakadt_kotel",
+        "elszakadt_virrasztokanoc",
+        "repedt_virrasztouveg"
       ]
     },
     {
-      "file": "phase-batch-001.png",
+      "file": "phase-batch-001-v2.png",
       "rows": 3,
       "columns": 5,
       "ids": [
-        "kiegett_biztositek", "megrepedt_vaklencse", "par_zokni", "osszezart_lancszemek", "kilyukadt_vodor",
-        "megegett_bot", "eltort_kiskes", "horpadtabb_fazek", "gyoztes_oldal_kardja", "veres_kotes",
-        "szalkas_deszka", "torott_uveg", "leszakadt_cimke", "torott_bogre", "kopott_garas"
-      ]
+        "kiegett_biztositek",
+        "megrepedt_vaklencse",
+        "par_zokni",
+        "osszezart_lancszemek",
+        "kilyukadt_vodor",
+        "megegett_bot",
+        "eltort_kiskes",
+        "horpadtabb_fazek",
+        "gyoztes_oldal_kardja",
+        "veres_kotes",
+        "szalkas_deszka",
+        "torott_uveg",
+        "leszakadt_cimke",
+        "torott_bogre",
+        "kopott_garas"
+      ],
+      "regenerated": "2026-09-07: built-in imagegen, original ID order, existing edge-connected background extraction; corrupt original replaced, not recovered.",
+      "generation_prompt": "Generate a replacement production game inventory sprite sheet. Input image is STYLE REFERENCE only, not editing target. Match its chunky pixel art, dark outlines and worn medieval fantasy junk materials. Actual transparent RGBA background, no checkerboard baked in, no shadows outside objects, no text. EXACTLY 15 distinct icons in 3 equally sized rows and 5 equally sized columns, regular equal-cell grid, one object centered per cell with wide transparent margins. Row1 left-to-right: burned electrical fuse; cracked small optical lens; a mismatched pair of worn socks together; two closed interlocked rusty chain links; iron bucket with a hole. Row2: charred wooden stick; broken small knife; badly dented cooking pot; battered victorious sword; bloodstained cloth bandage. Row3: splintered plank; shards of broken green glass as a single grouped icon; torn paper parcel label; broken ceramic mug; worn copper coin. Distinct silhouettes at 64px; restrained 4-8 main tones per object. 1536x1024 landscape composition. No grid lines, labels or extra objects.",
+      "style_reference": "batch-060-062.png",
+      "postprocess": "Existing generate_equipment_rp2_pilot._background_alpha, neutral threshold 180, followed by standard Trash slicing/quantization."
     },
     {
-      "file": "phase-batch-002.png",
+      "file": "phase-batch-002-v2.png",
       "rows": 3,
       "columns": 4,
       "ids": [
-        "ket_fel_tegla", "elhasznalt_papucs", "elgorbult_koporsoszog", "morzsolodott_koek",
-        "szetmorzsolt_viasz", "szetfoszlott_feher_szalag", "megolvadt_satorszog", "repedt_selejtek",
-        "kormos_zsinor", "elszakadt_kotel", "kialudt_kanoc", "torott_virrasztouveg"
-      ]
+        "ket_fel_tegla",
+        "elhasznalt_papucs",
+        "elgorbult_koporsoszog",
+        "morzsolodott_koek",
+        "szetmorzsolt_viasz",
+        "szetfoszlott_feher_szalag",
+        "megolvadt_satorszog",
+        "repedt_selejtek",
+        "kormos_zsinor",
+        "elszakadt_kotel",
+        "kialudt_kanoc",
+        "torott_virrasztouveg"
+      ],
+      "regenerated": "2026-09-07: built-in imagegen, original ID order, existing edge-connected background extraction; corrupt original replaced, not recovered.",
+      "generation_prompt": "Generate a replacement production game inventory sprite sheet. Input image is STYLE REFERENCE only. Match chunky pixel art, dark outlines, worn medieval fantasy junk. Actual transparent RGBA background, no baked checkerboard, no text, no external shadows. EXACTLY 12 icons, 3 equally sized rows and 4 equally sized columns, equal-cell grid and ample transparent separation. Row1 left-to-right: broken red brick as two halves together; worn rag slipper; bent rusty coffin nail; crumbled stone wedge as grouped fragments. Row2: crumbled black sealing wax pieces; frayed white surrender ribbon; melted iron tent peg; cracked discarded brass mechanical scrap. Row3: short soot-covered cord; broken frayed rope; extinguished candle wick; shattered vigil lantern glass with rim. Each icon centered in its cell. Distinct silhouettes readable at 64px, restrained 4-8 main tones per object. 1536x1024 landscape composition, no grid lines, labels or extra objects.",
+      "style_reference": "batch-060-062.png",
+      "postprocess": "Existing generate_equipment_rp2_pilot._background_alpha, neutral threshold 180, followed by standard Trash slicing/quantization."
     }
   ]
 }
