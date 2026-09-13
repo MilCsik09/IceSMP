@@ -24,6 +24,7 @@ public final class QuestNpcValidationRegressionSuite {
         packagedQuestsReferenceTheExpectedNpcContract();
         bridgeReportsExactNamesCaseMismatchAndConfigProvenance();
         startupValidationDoesNotInventCoordinatesOrCommands();
+        missingBindingsDoNotDisableThePlugin();
         System.out.println("Quest NPC validation regression suite passed.");
     }
 
@@ -109,6 +110,27 @@ public final class QuestNpcValidationRegressionSuite {
                         && !bridge.contains("BasicCommand")
                         && !bridge.contains("questnpcs"),
                 "quest diagnostics must not add an undocumented root command");
+    }
+
+    private static void missingBindingsDoNotDisableThePlugin() throws Exception {
+        final String core = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"));
+        final String registration = core.substring(core.indexOf("private void registerNpcQuestBridge()"),
+                core.indexOf("private void scheduleQuestNpcMarkers()"));
+        check(registration.contains("bridgeRef.validateNpcs(questManager.getQuestNpcNames())")
+                        && registration.contains("20L * 60L"),
+                "delayed authored-NPC diagnostics must remain active");
+        check(!registration.contains("disablePlugin(") && !registration.contains("requestDisable("),
+                "missing authored bindings must not disable unrelated gameplay authorities");
+        check(registration.contains("required production dependency is not enabled")
+                        && registration.contains("required production bridge failed to initialize")
+                        && registration.contains("questManager.setNpcBridgeActive(true)"),
+                "missing bindings must not make the required bridge optional or deactivate valid NPCs");
+        final String bridge = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/integration/FancyNpcsQuestBridge.java"));
+        check(bridge.contains("Az IceSMP aktív marad")
+                        && bridge.contains("questManager.handleAuthorizedNpcInteract(player, npcName, questSurface)"),
+                "diagnostics must explain continued service while preserving actual interaction admission");
     }
 
     private static void check(final boolean condition, final String message) {

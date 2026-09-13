@@ -1,3 +1,5 @@
+> Current scope authority: [WorldWeaver 1.0](WORLD-WEAVER-1.0-SCOPE.md). Universal completeness and deferred-domain blockers below are historical, superseded requirements.
+
 # IceSMP — Világszövő
 ## V2 — Teljes, normatív és implementációra kész műszaki design
 ### Developer-Only Universal Runtime Manipulation Artifact / WorldWeaver Foundation
