@@ -164,6 +164,7 @@ public final class WarWindowManager {
                         killer, "war_points", cap, 1L);
         if (budgetAllowed) {
             pairCooldowns.put(pairKey, now);
+            seasonManager.recordContribution(killer.getUniqueId(), killerFaction, "war");
             seasonManager.addPoints(killerFaction, Math.max(0,
                     configManager.getInt("factions.war-window.points-per-kill", 1)), "war");
             killer.sendMessage(messageManager.getMessage("war-kill-scored",

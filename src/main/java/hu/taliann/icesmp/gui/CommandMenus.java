@@ -172,11 +172,25 @@ public final class CommandMenus {
         final UUID kingId = faction == null ? null : ctx.kingManager().getKing(faction);
         if (faction != null) {
             headerLore.add(label("Kassza", Component.text(ctx.currencyManager().formatBalance(ctx.treasuryManager().getBalance(faction)), NamedTextColor.WHITE)));
-            headerLore.add(label("Adókulcs", Component.text(ctx.treasuryManager().getTaxRate(faction) + "%", NamedTextColor.WHITE)));
             headerLore.add(label("Király", Component.text(kingId == null ? "nincs" : nameOf(kingId), NamedTextColor.WHITE)));
             headerLore.add(label("Raid", Component.text(ctx.raidManager().isRaidActive() ? "folyamatban" : "nincs", NamedTextColor.WHITE)));
         }
-        put(inv, holder, 4, GuiUtil.icon(Material.RED_BANNER, accent("Frakció"), headerLore), null);
+        headerLore.add(grey("Részletes állapot: /faction status"));
+        headerLore.add(click());
+        put(inv, holder, 4, GuiUtil.icon(Material.RED_BANNER, accent("Frakció"), headerLore),
+                "RUN:faction status");
+
+        try {
+            if (new hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperStore()
+                    .read(player.getUniqueId()).whisperer()) {
+                put(inv, holder, 24, GuiUtil.icon(Material.ECHO_SHARD, title("Suttogó állapot"),
+                        List.of(grey("Saját fokozat és visszatérési várakozás."), click())), "RUN:suttogas állapot");
+                put(inv, holder, 25, GuiUtil.icon(Material.AMETHYST_SHARD, title("Titkos megbízás"),
+                        List.of(grey("Kultista átadás: feladat és kockázat."), click())), "RUN:suttogas megbízás");
+                put(inv, holder, 23, GuiUtil.icon(Material.MILK_BUCKET, title("Kapcsolat megszakítása"),
+                        List.of(grey("Privát kilépés; külön megerősítést kér."), click())), "RUN:suttogas megtagadás");
+            }
+        } catch (final RuntimeException unavailable) { /* No secret UI from an unreadable profile. */ }
 
         if (faction == null) {
             putJoinButtons(inv, holder, player, ctx, null, "Csatlakozás");
@@ -195,8 +209,6 @@ public final class CommandMenus {
             put(inv, holder, 16, GuiUtil.icon(Material.COMPASS, title("Frakcióváltás"),
                     List.of(grey("Átlépés egy másik frakcióba."), click())), "MENU:FACTION_SWITCH");
             if (ctx.kingManager().isKing(player)) {
-                put(inv, holder, 15, GuiUtil.icon(Material.DIAMOND, title("Kassza-kivét: 100"),
-                        List.of(grey("Király: 100 érme kivétele."), click())), "RUN:faction treasury withdraw 100");
                 int raidSlot = 20;
                 for (final FactionType target : FactionType.values()) {
                     if (target == faction || target == FactionType.NEUTRAL) {

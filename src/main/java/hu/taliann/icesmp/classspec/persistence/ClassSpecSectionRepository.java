@@ -11,6 +11,11 @@ public interface ClassSpecSectionRepository {
     long MISSING_REVISION=-1L;
     CompletionStage<LoadResult> load(UUID playerId);
     CompletionStage<ClassSpecSection> save(UUID playerId,long expectedRevision,ClassSpecSection nextProfile);
+    default CompletionStage<ClassSpecSection> saveReward(UUID playerId, long expectedRevision,
+            ClassSpecSection nextProfile, hu.taliann.icesmp.integrity.RewardContext reward) {
+        return java.util.concurrent.CompletableFuture.failedFuture(
+                new hu.taliann.icesmp.integrity.RewardEligibilityDeniedException());
+    }
     CompletionStage<QuarantineRecord> quarantine(UUID playerId,byte[] originalPayload,String reason);
     CompletionStage<ClassSpecSection> recover(UUID playerId,String evidenceId,String auditId);
     CompletionStage<Void> flush(UUID playerId);

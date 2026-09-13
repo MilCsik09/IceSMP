@@ -15,7 +15,8 @@ import java.util.Map;
  * a kézbe — a SZÁMLÁRA pénz kizárólag banki befizetéssel kerülhet! A napi keret
  * ({@code buyer.daily-cap}, player-PDC-ben követve) fékezi az auto-farm inflációt — a
  * piac (játékos-játékos) marad a jobb ár, a Felvásárló a biztos alap. Egyedi (PDC-s)
- * tárgyat SOSEM vesz meg, hogy unique anyag/signature item ne váljon pénzzé nyomott áron.
+ * tárgyat a külön Ócska-route kivételével SOSEM vesz meg, hogy unique anyag/signature item
+ * ne váljon pénzzé nyomott áron.
  *
  * <p>Folia: a FancyNpcs interact-hook a játékos saját régió-szálán hívja — az
  * inventory-írás és a PDC ott biztonságos. Minden kulcs élőben olvasódik (buyer.*).
@@ -26,6 +27,7 @@ public final class BuyerService {
     private final CurrencyManager currencyManager;
     private final hu.taliann.icesmp.managers.FactionManager factionManager;
     private final MessageManager messageManager;
+    private volatile hu.taliann.icesmp.trash.TrashVendorService trashVendorService;
 
     public BuyerService(final ConfigManager configManager,
                         final CurrencyManager currencyManager,
@@ -46,6 +48,10 @@ public final class BuyerService {
         return configManager.getBoolean("buyer.enabled", true);
     }
 
+    public void setTrashVendorService(final hu.taliann.icesmp.trash.TrashVendorService trashVendorService) {
+        this.trashVendorService = trashVendorService;
+    }
+
     /** A kézben tartott stack felvásárlása (a játékos saját régió-szálán fut). */
     public void handle(final Player player) {
         if (!isEnabled()) {
@@ -55,6 +61,10 @@ public final class BuyerService {
         if (hand.getType().isAir()) {
             player.sendMessage(messageManager.getMessage("buyer-empty-hand",
                     "<gray>🪙 „Mutasd, mit hoztál — a kezedben tartsd, úgy alkuszunk.”</gray>"));
+            return;
+        }
+        final hu.taliann.icesmp.trash.TrashVendorService trashVendor = trashVendorService;
+        if (trashVendor != null && trashVendor.tryHandle(player, hand)) {
             return;
         }
         // Egyedi (PDC-adatos) tárgyat nem veszünk: unique anyag, signature, relikvia,
