@@ -56,10 +56,9 @@ public final class ClientFactionProjector {
         String kingName = "";
         final List<FactionStatePayload.Tally> tally = new ArrayList<>();
         String treasuryBalance = "";
-        double taxRate = 0.0D;
+        final double taxRate = 0.0D;
         if (faction != null) {
             treasuryBalance = currency.formatBalance(treasury.getBalance(faction));
-            taxRate = treasury.getTaxRate(faction);
             kingExcluded = kings.isFactionExcluded(faction);
             if (!kingExcluded) {
                 kingName = nameOf(kings.getKing(faction));

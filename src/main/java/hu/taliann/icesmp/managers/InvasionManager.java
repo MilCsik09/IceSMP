@@ -1,13 +1,11 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TransientEntities;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,37 +22,43 @@ public final class InvasionManager {
 
     private enum Horde {
         UNDEAD_TIDE("Élőhalott Áradat",
-                new EntityType[]{EntityType.ZOMBIE, EntityType.HUSK}, "invasion_undead_champion"),
+                new String[]{"frontier_shambler", "gallows_runner", "fen_plaguebearer"},
+                "invasion_undead_champion"),
         BONE_LEGION("Csontlégió",
-                new EntityType[]{EntityType.SKELETON, EntityType.STRAY}, "invasion_bone_champion"),
+                new String[]{"barrow_bulwark", "moonbone_archer", "gale_fletcher"},
+                "invasion_bone_champion"),
         SPIDER_NEST("Pókfészek",
-                new EntityType[]{EntityType.SPIDER, EntityType.CAVE_SPIDER}, "invasion_spider_champion"),
+                new String[]{"dusk_weaver", "moss_trapper", "broodneedle"},
+                "invasion_spider_champion"),
         CHAOS_HORDE("Káosz-horda",
-                new EntityType[]{EntityType.ZOMBIE, EntityType.SKELETON,
-                        EntityType.SPIDER, EntityType.PILLAGER}, "invasion_chaos_champion"),
+                new String[]{"gallows_runner", "gale_fletcher", "moss_trapper", "banner_marksman"},
+                "invasion_chaos_champion"),
         NETHER_RAID("Alvilági Roham",
-                new EntityType[]{EntityType.PIGLIN, EntityType.ZOMBIFIED_PIGLIN},
+                new String[]{"goldfang_raider", "grave_cohort", "blackiron_votary"},
                 "invasion_nether_champion"),
         ILLAGER_WARBAND("Zsivány Hadtest",
-                new EntityType[]{EntityType.PILLAGER, EntityType.VINDICATOR}, "invasion_illager_champion"),
+                new String[]{"banner_marksman", "rime_cultist", "barrow_bulwark"},
+                "invasion_illager_champion"),
         WITCH_COVEN("Boszorkány Gyülekezet",
-                new EntityType[]{EntityType.WITCH, EntityType.VEX}, "invasion_witch_champion"),
+                new String[]{"mire_hexer", "mire_apothecary", "coven_wisp"},
+                "invasion_witch_champion"),
         BLAZING_HOST("Lángoló Sereg",
-                new EntityType[]{EntityType.BLAZE, EntityType.MAGMA_CUBE}, "invasion_blazing_champion");
+                new String[]{"cinder_spitter", "ash_artillery", "slagheart"},
+                "invasion_blazing_champion");
 
         private final String displayName;
-        private final EntityType[] pool;
+        private final String[] waveTemplates;
         private final String championTemplate;
 
-        Horde(final String displayName, final EntityType[] pool,
+        Horde(final String displayName, final String[] waveTemplates,
               final String championTemplate) {
             this.displayName = displayName;
-            this.pool = pool;
+            this.waveTemplates = waveTemplates;
             this.championTemplate = championTemplate;
         }
 
-        private EntityType randomMob() {
-            return pool[ThreadLocalRandom.current().nextInt(pool.length)];
+        private String waveTemplate(final int formationIndex) {
+            return waveTemplates[Math.floorMod(formationIndex, waveTemplates.length)];
         }
     }
 
@@ -222,22 +226,19 @@ public final class InvasionManager {
                     + (int) Math.round(Math.cos(angle) * radius);
             final int z = center.getBlockZ()
                     + (int) Math.round(Math.sin(angle) * radius);
-            final EntityType type = horde.randomMob();
+            final String templateId = horde.waveTemplate(index);
             plugin.getServer().getRegionScheduler().run(
                     plugin, new Location(world, x, 0, z), task ->
-                            spawnAt(topOf(world, x, z), type, level, "invasion-wave",
-                                    MobRank.VETERAN, null, archetypeFor(type)));
+                            spawnAt(topOf(world, x, z), level, "invasion-wave",
+                                    "wave", templateId));
         }
 
         final int bossBonus = Math.max(0, configManager.getInt(
                 "world-events.invasion.mini-boss-level-bonus", 6));
         final Mob champion = spawnAt(topOf(world, center.getBlockX(),
-                center.getBlockZ()), null, level + bossBonus, "invasion",
-                MobRank.CHAMPION, horde.championTemplate, null);
+                center.getBlockZ()), level + bossBonus, "invasion",
+                "champion", horde.championTemplate);
         if (champion != null) {
-            champion.customName(net.kyori.adventure.text.Component.text(
-                    "☠ " + horde.displayName + " Bajnoka",
-                    net.kyori.adventure.text.format.NamedTextColor.DARK_PURPLE));
             champion.setCustomNameVisible(true);
         }
         launchGraceUntil = 0L;
@@ -253,9 +254,8 @@ public final class InvasionManager {
                 world.getHighestBlockYAt(x, z) + 1, z + 0.5D);
     }
 
-    private Mob spawnAt(final Location spot, final EntityType type,
-                        final int level, final String eventKey, final MobRank rank,
-                        final String templateId, final String archetypeId) {
+    private Mob spawnAt(final Location spot, final int level, final String eventKey,
+                        final String role, final String templateId) {
         if (spot.getWorld() == null) {
             return null;
         }
@@ -270,14 +270,9 @@ public final class InvasionManager {
         if (spawns == null) return null;
         final long lifespanTicks = Math.max(0L, configManager.getLong(
                 "world-events.invasion.mob-lifespan-seconds", 600L)) * 20L;
-        final var request = templateId == null
-                ? hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
-                "invasion", "invasion:active", rank == MobRank.CHAMPION ? "champion" : "wave",
-                type, level, rank, archetypeId,
-                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
-                true, lifespanTicks)
-                : hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
-                "invasion", "invasion:active", "champion", templateId, level,
+        final var request = hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                "invasion", "invasion:active", role,
+                templateId, level,
                 hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
                 true, 1.0D, 1.0D, lifespanTicks);
         final Mob mob = spawns.spawn(spot, request);
@@ -288,16 +283,6 @@ public final class InvasionManager {
         mob.setGlowing(true);
         activeMobs.add(mob.getUniqueId());
         return mob;
-    }
-
-    private static String archetypeFor(final EntityType type) {
-        return switch (type) {
-            case SKELETON, STRAY, PILLAGER, BLAZE -> "RANGED";
-            case SPIDER, CAVE_SPIDER, VEX -> "SKIRMISHER";
-            case WITCH, EVOKER -> "CONTROLLER";
-            case RAVAGER, PIGLIN_BRUTE -> "CHARGER";
-            default -> "BRUISER";
-        };
     }
 
     private static double parseOr(final String raw, final double fallback) {

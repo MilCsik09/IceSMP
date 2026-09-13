@@ -17,7 +17,14 @@ itemization:
       enchanting: false
       # Csak explicit canonical producer által felrakott, ismert enchant kerülhet ide.
       # Az enchanting table és az anvil ettől még nem kerülheti meg a mutation/WAL boundaryt.
-      allowed-enchantments: []
+      allowed-enchantments:
+        - "icesmp:jegfog"
+        - "icesmp:vihartuz"
+        - "icesmp:verszomj"
+        - "icesmp:fagypancel"
+        - "icesmp:fonixtoll"
+        - "icesmp:erc_erzek"
+        - "icesmp:bokic_kegye"
       durability: "vanilla"
 
 # ===== Legacy kaszt/szakma-alapú vanilla receptkapu =====
@@ -33,22 +40,8 @@ crafting-restrictions:
 signature:
   # Canonical ascension Signature-fokozatonkénti additív módosítása (nem multiplikatív power creep).
   itemization-tier-bonus: 0.03
-  # Bootstrap-regisztrált EGYEDI enchantok a signature itemeken (Jégfog, Vihartűz,
-  # Vérszomj, Fagypáncél, Főnixtoll, Érc-érzék, Bokic Kegye) — a magyar nevük valódi
-  # enchant-sorként jelenik meg a tooltipben (kliens-mod és resource pack nélkül).
-  # A Fagypáncél és a Főnixtoll NEM csak dísz: iskola-counterek (fagymágia-, ill.
-  # tűzmágia-ellenállás — spells.magic-resist.school-per-level). Itemenként kapcsolható:
-  # items.<signature-id>: false = arra az itemre a craft nem stampeli rá.
-  custom-enchants:
-    enabled: true
-    items:
-      kallan_szeletelo: true
-      pyralingradi_tuzkopo: true
-      verszavanna_agyara: true
-      glatziendorfi_jegvert: true
-      fonix_tollkopeny: true
-      vasmuvek_csakanya: true
-      bokic_horgaszbot: true
+  # A bootstrap-regisztrált signature enchantok/glint az ItemIdentityService
+  # canonical identity projection részei; operator config nem kapcsolhatja ki őket.
   # Az enchantok RIDER-effektjei (audit: egyik enchant sem puszta dísz — mindnek
   # lore-horgonyzott funkciója van; itt hangolhatók, 0 = az adott rider kikapcsol).
   # A Fagypáncél és a Főnixtoll SZÁNDÉKOSAN nem szerepel itt: ők passzív iskola-

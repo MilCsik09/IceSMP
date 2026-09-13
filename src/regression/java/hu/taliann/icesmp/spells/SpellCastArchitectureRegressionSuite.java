@@ -118,8 +118,10 @@ public final class SpellCastArchitectureRegressionSuite {
                 "damage must apply the semantic damage multiplier exactly in the shared primitive");
         require(healing.contains("baseAmount * effective.healingMultiplier()"),
                 "healing must apply the semantic healing multiplier exactly in the shared primitive");
-        require(damage.contains("markProjectile") && damage.contains("projectileDamageMultiplier"),
-                "projectiles must carry an immutable cast snapshot");
+        require(damage.contains("markProjectile") && damage.contains("projectileSnapshot")
+                        && damage.contains("damageByProjectile")
+                        && damage.contains("withDirectEntity(projectile)"),
+                "projectiles must carry an immutable cast snapshot into the canonical custom DamageType path");
 
         final String projectile = read(root, "src/main/java/hu/taliann/icesmp/spells/ProjectileBurstSpell.java");
         require(projectile.contains("SpellExecutionContext.capture()")
@@ -174,7 +176,7 @@ public final class SpellCastArchitectureRegressionSuite {
         require(!listener.contains("secondary.current()"),
                 "Assassin detection gating must not call a non-existent HUD metric accessor");
 
-        final String combos = read(root, "src/main/resources/config/spells.yml");
+        final String combos = read(root, "src/main/resources/content/progression/spells.yml");
         require(!combos.contains("soul-collapse:"),
                 "cross-spec Affliction/Destruction chain must stay removed");
         require(!combos.contains("way-of-hundred-fists:"),

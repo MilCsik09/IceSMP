@@ -12,6 +12,12 @@ public final class CombatTelemetry {
     private CombatTelemetry() { }
 
     public static void record(final String category, final String id) {
+        add(category, id, 1L);
+    }
+
+    /** Adds a bounded aggregate sample; callers keep only category/id totals, never entity history. */
+    public static void add(final String category, final String id, final long amount) {
+        if (amount < 0L || amount > 86_400L) return;
         final String key = normalize(category) + ':' + normalize(id);
         LongAdder counter = COUNTERS.get(key);
         if (counter == null) {
@@ -24,7 +30,7 @@ public final class CombatTelemetry {
                 }
             }
         }
-        counter.increment();
+        counter.add(amount);
     }
 
     public static Map<String, Long> snapshot() {

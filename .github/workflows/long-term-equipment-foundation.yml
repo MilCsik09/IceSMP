@@ -72,14 +72,8 @@ jobs:
           set -euo pipefail
           python3 scripts/audit_long_term_equipment_economy.py
           python3 scripts/test_professions_2_economy.py
-          if [[ -f src/main/resources/config/equipment-catalog-expansion.yml ]]; then
-            if [[ "${REF_NAME}" == "feature/reward-discoverability-closure" ]]; then
-              python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets
-              python3 scripts/audit_reward_discoverability_closure.py
-            else
-              python3 scripts/audit_long_term_equipment_catalog.py
-            fi
-          fi
+          python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets
+          python3 scripts/audit_reward_discoverability_closure.py
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4

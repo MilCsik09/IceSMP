@@ -1,6 +1,5 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.PartyRewardResolver;
 import org.bukkit.Bukkit;
@@ -9,7 +8,6 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -26,17 +24,17 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class WildHuntManager {
 
     private enum Beast {
-        ANCIENT_RAVAGER("Ősi Fenevad", EntityType.RAVAGER),
-        BONE_HUNTER("Csontvadász", EntityType.WITHER_SKELETON),
-        ELDER_MAGE("Vén Mágus", EntityType.EVOKER),
-        INFERNAL_BRUTE("Pokoli Behemót", EntityType.PIGLIN_BRUTE);
+        ANCIENT_RAVAGER("Agancstörő Ősvad", "hunt_ancient_ravager"),
+        BONE_HUNTER("Nyomcsont Vadász", "hunt_bone_hunter"),
+        ELDER_MAGE("Szarvasjel Remetéje", "hunt_elder_mage"),
+        INFERNAL_BRUTE("Perzselő Hajtó", "hunt_infernal_brute");
 
         private final String displayName;
-        private final EntityType type;
+        private final String templateId;
 
-        Beast(final String displayName, final EntityType type) {
+        Beast(final String displayName, final String templateId) {
             this.displayName = displayName;
-            this.type = type;
+            this.templateId = templateId;
         }
     }
 
@@ -325,19 +323,15 @@ public final class WildHuntManager {
                 hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
         if (spawns == null) { spawnGraceUntil = 0L; return; }
         final Mob mob = spawns.spawn(spot,
-                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
-                        "wild_hunt", "wild-hunt:active", "beast", beast.type,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                        "wild_hunt", "wild-hunt:active", "beast", beast.templateId,
                         Math.max(1, configManager.getInt("wild-hunt.beast-level", 8)),
-                        MobRank.ELITE, "ASSASSIN",
                         hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
-                        true, 0L));
+                        true, 1.0D, 1.0D, 0L));
         if (mob == null) { spawnGraceUntil = 0L; return; }
         mob.setGlowing(true);
         mob.setRemoveWhenFarAway(false);
         mob.setPersistent(false);
-        mob.customName(net.kyori.adventure.text.Component.text(
-                "🏹 " + beast.displayName,
-                net.kyori.adventure.text.format.NamedTextColor.DARK_RED));
         mob.setCustomNameVisible(true);
         hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);
         beastId = mob.getUniqueId();

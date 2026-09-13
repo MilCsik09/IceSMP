@@ -17,15 +17,36 @@ import java.util.Set;
 public final class ConfigGuiCoverageRegressionSuite {
     private static final List<String> MUST_EXPOSE_PREFIXES = List.of(
             "world-events.safety.", "moderation.vanish.", "territory.mob-rules.doom-gate.");
+    private static final List<String> CONTENT_TUNING_PREFIXES = List.of(
+            "health.", "itemization.stats.", "itemization.loot.", "relics.inactivity.",
+            "relics.passive-death.");
+    private static final Set<String> CONTENT_TUNING_KEYS = Set.of(
+            "relics.enabled", "relics.wings.faction-locked-pickup", "relics.pvp-transfer.enabled");
 
     private ConfigGuiCoverageRegressionSuite() { }
 
     public static void main(final String[] args) throws Exception {
         final YamlConfiguration merged = new YamlConfiguration();
+        final Set<String> operatorPaths = new HashSet<>();
         try (var stream = Files.list(Path.of("src/main/resources/config"))) {
+            stream.filter(path -> path.toString().endsWith(".yml")).sorted().forEach(path -> {
+                final YamlConfiguration loaded = YamlConfiguration.loadConfiguration(path.toFile());
+                merge(merged, loaded);
+                operatorPaths.addAll(leafPaths(loaded));
+            });
+        }
+        try (var stream = Files.walk(Path.of("src/main/resources/content"))) {
             stream.filter(path -> path.toString().endsWith(".yml")).sorted().forEach(path ->
                     merge(merged, YamlConfiguration.loadConfiguration(path.toFile())));
         }
+        final YamlConfiguration root = YamlConfiguration.loadConfiguration(
+                Path.of("src/main/resources/config.yml").toFile());
+        merge(merged, root);
+        operatorPaths.addAll(leafPaths(root));
+        leafPaths(merged).stream()
+                .filter(key -> CONTENT_TUNING_KEYS.contains(key)
+                        || CONTENT_TUNING_PREFIXES.stream().anyMatch(key::startsWith))
+                .forEach(operatorPaths::add);
         final Map<String, Object> scalar = new HashMap<>();
         for (final String key : merged.getKeys(true)) {
             if (!merged.isConfigurationSection(key) && isScalar(merged.get(key))) scalar.put(key, merged.get(key));
@@ -36,6 +57,7 @@ public final class ConfigGuiCoverageRegressionSuite {
         menuEntries.addAll(ClassGameplayConfigMenuGUI.entries());
         for (final ConfigMenuGUI.Entry entry : menuEntries) {
             if (entries.put(entry.key(), entry) != null) duplicates.add(entry.key());
+            check(operatorPaths.contains(entry.key()), "GUI exposes locked canonical content: " + entry.key());
             final Object value = scalar.get(entry.key());
             check(value != null, "unknown GUI path: " + entry.key());
             switch (entry.type()) {
@@ -64,14 +86,19 @@ public final class ConfigGuiCoverageRegressionSuite {
                 .filter(key -> !entries.containsKey(key)).sorted().toList();
         check(missingRequired.isEmpty(), "required schema entries missing from GUI: " + missingRequired);
         final int displayed = entries.size();
-        final int excluded = scalar.size() - displayed;
-        System.out.println("CONFIG_GUI_COVERAGE total=" + scalar.size() + " displayed=" + displayed
+        final int excluded = operatorPaths.size() - displayed;
+        System.out.println("CONFIG_GUI_COVERAGE total=" + operatorPaths.size() + " displayed=" + displayed
                 + " intentionally_excluded=" + excluded + " missing=0 stale=0 duplicate=0");
         System.out.println("Config GUI coverage regression suite passed.");
     }
 
     private static boolean isScalar(final Object value) {
         return value instanceof Boolean || value instanceof Number || value instanceof String;
+    }
+    private static Set<String> leafPaths(final ConfigurationSection source) {
+        return source.getKeys(true).stream()
+                .filter(key -> !source.isConfigurationSection(key))
+                .collect(java.util.stream.Collectors.toSet());
     }
     private static void merge(final YamlConfiguration target, final ConfigurationSection source) {
         for (final String key : source.getKeys(true)) if (!source.isConfigurationSection(key)) target.set(key, source.get(key));

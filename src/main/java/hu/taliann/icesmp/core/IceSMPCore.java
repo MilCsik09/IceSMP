@@ -46,7 +46,6 @@ import hu.taliann.icesmp.listeners.ClassXpListener;
 import hu.taliann.icesmp.listeners.HudListener;
 import hu.taliann.icesmp.listeners.CurrencyCraftListener;
 import hu.taliann.icesmp.listeners.CurrencyItemRefreshListener;
-import hu.taliann.icesmp.listeners.DailyQuestListener;
 import hu.taliann.icesmp.listeners.DonationChestListener;
 import hu.taliann.icesmp.listeners.ElytraRelicListener;
 import hu.taliann.icesmp.listeners.FactionPassiveListener;
@@ -234,6 +233,28 @@ public final class IceSMPCore {
     private final ProfessionManager professionManager;
     private final ProfessionRecipeManager professionRecipeManager;
     private final ItemRarityService itemRarityService;
+    private final hu.taliann.icesmp.items.RarityPresentationService rarityPresentationService;
+    private final hu.taliann.icesmp.trash.TrashCatalog trashCatalog;
+    private final hu.taliann.icesmp.trash.TrashItemFactory trashItemFactory;
+    private final hu.taliann.icesmp.trash.TrashHistoryStore trashHistoryStore;
+    private final hu.taliann.icesmp.trash.TrashHistoryService trashHistoryService;
+    private final hu.taliann.icesmp.trash.TrashRuntimeTelemetry trashRuntimeTelemetry;
+    private final hu.taliann.icesmp.trash.TrashAnomalyStateStore trashAnomalyStateStore;
+    private final hu.taliann.icesmp.trash.TrashSpatialFractureStore trashSpatialFractureStore;
+    private final hu.taliann.icesmp.trash.TossableObjectRuntime tossableObjectRuntime;
+    private final hu.taliann.icesmp.trash.TrashAnomalyRuntime trashAnomalyRuntime;
+    private final hu.taliann.icesmp.trash.TrashRelicRuntime trashRelicRuntime;
+    private final hu.taliann.icesmp.trash.TrashArchaeologyProfileStore trashArchaeologyProfileStore;
+    private final hu.taliann.icesmp.trash.TrashArchaeologyFactEngine trashArchaeologyFactEngine;
+    private final hu.taliann.icesmp.trash.TrashArchaeologyService trashArchaeologyService;
+    private final hu.taliann.icesmp.trash.TooltipPacketBridge_1_21_11 trashArchaeologyTooltipBridge;
+    private final hu.taliann.icesmp.trash.TrashArchaeologyListener trashArchaeologyListener;
+    private final hu.taliann.icesmp.trash.TrashRecyclePool trashRecyclePool;
+    private final hu.taliann.icesmp.trash.TrashLootSelector trashLootSelector;
+    private final hu.taliann.icesmp.trash.TrashLootService trashLootService;
+    private final hu.taliann.icesmp.trash.TrashContextResolver trashContextResolver;
+    private final hu.taliann.icesmp.trash.TrashAmbientManager trashAmbientManager;
+    private final hu.taliann.icesmp.trash.TrashVendorService trashVendorService;
     private final hu.taliann.icesmp.itemization.ItemTemplateRegistry itemTemplateRegistry;
     private final hu.taliann.icesmp.itemization.ItemIdentityService itemIdentityService;
     private final hu.taliann.icesmp.itemization.EquipmentProficiencyService equipmentProficiencyService;
@@ -247,6 +268,10 @@ public final class IceSMPCore {
     private final hu.taliann.icesmp.pve.EquippedCombatPowerService equippedCombatPowerService;
     private final hu.taliann.icesmp.items.MoneyPouchItemFactory moneyPouchItemFactory;
     private final hu.taliann.icesmp.managers.DevItemManager devItemManager;
+    private final hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime worldWeaverRuntime;
+    private final hu.taliann.icesmp.integrity.GameplayRewardGate.Binding rewardEligibilityBinding;
+    private final hu.taliann.icesmp.integrity.GameplayEffectGate.Binding effectEligibilityBinding;
+    private final hu.taliann.icesmp.integrity.GameplaySourceCaptureGate.Binding sourceCaptureBinding;
     private final hu.taliann.icesmp.managers.GuildManager guildManager;
     private final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager;
     private final hu.taliann.icesmp.managers.BestiaryManager bestiaryManager;
@@ -336,10 +361,17 @@ public final class IceSMPCore {
     private final List<PersistentStore> persistentStores;
     private final PersistentStoreCoordinator storeCoordinator;
     private volatile boolean enableCompleted;
+    private final java.util.concurrent.atomic.AtomicBoolean prepareDisableStarted =
+            new java.util.concurrent.atomic.AtomicBoolean();
+    private volatile boolean statefulShutdownPrepared;
+    private final java.util.concurrent.atomic.AtomicBoolean disableStarted =
+            new java.util.concurrent.atomic.AtomicBoolean();
+    private final java.util.concurrent.CompletableFuture<Void> playerShutdown =
+            new java.util.concurrent.CompletableFuture<>();
     private final StatsManager statsManager;
     private final AchievementManager achievementManager;
-    private io.papermc.paper.threadedregions.scheduler.ScheduledTask taxTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask questNpcMarkerTask;
+    private io.papermc.paper.threadedregions.scheduler.ScheduledTask questNpcValidationTask;
     private hu.taliann.icesmp.integration.FancyNpcsQuestBridge npcQuestBridge;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask economyEventTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask worldEventsTask;
@@ -393,13 +425,13 @@ public final class IceSMPCore {
         this.jobManager = new JobManager(plugin, configManager, messageManager, factionManager);
         this.spellRegistry = new SpellRegistry();
         // Statikus bekötés a spell-iskola feloldáshoz (SpellDamageUtil — minta: ProtectionBridge).
-        hu.taliann.icesmp.utils.SpellDamageUtil.init(configManager, jobManager);
+        hu.taliann.icesmp.utils.SpellDamageUtil.init(configManager, jobManager, spellRegistry);
         hu.taliann.icesmp.utils.CcDiminish.init(configManager);
         this.catalystItemFactory = new CatalystItemFactory(plugin);
         this.captureItemFactory = new CaptureItemFactory(plugin);
         this.spellMasteryManager = new SpellMasteryManager(plugin, configManager, currencyManager, factionManager);
         this.relicManager = new RelicManager(plugin, configManager);
-        this.sinManager = new SinManager(plugin, configManager, messageManager, factionManager);
+        this.sinManager = new SinManager(plugin, configManager, messageManager);
         this.whisperManager = new hu.taliann.icesmp.managers.WhisperManager(plugin, configManager, factionManager, sinManager, messageManager);
         this.metelytepoManager = new MetelytepoManager(plugin, sinManager);
         this.minionManager = new MinionManager(plugin);
@@ -408,6 +440,7 @@ public final class IceSMPCore {
         this.kingManager = new KingManager(plugin, configManager, factionManager, messageManager);
         this.bloodMoonManager = new BloodMoonManager(plugin, configManager, messageManager);
         this.seasonManager = new SeasonManager(plugin, configManager, messageManager, factionTreasuryManager, factionManager);
+        this.kingManager.setActivePopulation(seasonManager::activePopulation);
         factionManager.setSeasonManager(seasonManager);
 
         this.territoryManager = new TerritoryManager(plugin);
@@ -435,6 +468,37 @@ public final class IceSMPCore {
         this.professionManager = new ProfessionManager(plugin, configManager);
         this.professionRecipeManager = new ProfessionRecipeManager(plugin, configManager);
         this.itemRarityService = new ItemRarityService(plugin, configManager);
+        this.rarityPresentationService = new hu.taliann.icesmp.items.RarityPresentationService(configManager);
+        this.trashCatalog = new hu.taliann.icesmp.trash.TrashCatalog(plugin);
+        this.trashItemFactory = new hu.taliann.icesmp.trash.TrashItemFactory(
+                plugin, trashCatalog, rarityPresentationService);
+        this.trashHistoryStore = new hu.taliann.icesmp.trash.TrashHistoryStore(plugin, trashCatalog);
+        this.trashHistoryService = new hu.taliann.icesmp.trash.TrashHistoryService(
+                plugin, trashCatalog, trashItemFactory, trashHistoryStore);
+        this.trashRuntimeTelemetry = new hu.taliann.icesmp.trash.TrashRuntimeTelemetry();
+        this.trashArchaeologyProfileStore =
+                new hu.taliann.icesmp.trash.TrashArchaeologyProfileStore();
+        this.trashArchaeologyFactEngine = new hu.taliann.icesmp.trash.TrashArchaeologyFactEngine(
+                trashCatalog, trashItemFactory, trashHistoryService);
+        this.trashArchaeologyService = new hu.taliann.icesmp.trash.TrashArchaeologyService(
+                trashArchaeologyProfileStore, trashArchaeologyFactEngine);
+        this.trashArchaeologyTooltipBridge =
+                new hu.taliann.icesmp.trash.TooltipPacketBridge_1_21_11(
+                        plugin, trashItemFactory);
+        this.trashArchaeologyListener = new hu.taliann.icesmp.trash.TrashArchaeologyListener(
+                plugin, trashItemFactory, trashArchaeologyService,
+                trashArchaeologyTooltipBridge, trashRuntimeTelemetry);
+        this.trashAnomalyStateStore = new hu.taliann.icesmp.trash.TrashAnomalyStateStore(plugin);
+        this.trashSpatialFractureStore =
+                new hu.taliann.icesmp.trash.TrashSpatialFractureStore(plugin);
+        this.tossableObjectRuntime = new hu.taliann.icesmp.trash.TossableObjectRuntime(plugin);
+        this.trashRecyclePool = new hu.taliann.icesmp.trash.TrashRecyclePool(
+                plugin, trashCatalog, trashItemFactory, trashHistoryService);
+        this.trashLootSelector = new hu.taliann.icesmp.trash.TrashLootSelector(trashCatalog);
+        this.trashLootService = new hu.taliann.icesmp.trash.TrashLootService(
+                trashCatalog, trashLootSelector, trashItemFactory, trashHistoryService,
+                trashRecyclePool);
+        this.trashContextResolver = new hu.taliann.icesmp.trash.TrashContextResolver(territoryManager);
         this.itemTemplateRegistry = new hu.taliann.icesmp.itemization.ItemTemplateRegistry(plugin, configManager);
         this.itemIdentityService = new hu.taliann.icesmp.itemization.ItemIdentityService(plugin, itemTemplateRegistry);
         this.equipmentProficiencyService =
@@ -491,7 +555,8 @@ public final class IceSMPCore {
         professionRecipeBookListener.setItemIdentityService(itemIdentityService);
         this.devItemManager = new hu.taliann.icesmp.managers.DevItemManager(plugin, configManager, messageManager,
                 uniqueMaterialFactory, professionRecipeCatalog, blueprintItemFactory, professionRecipeBookListener);
-        this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(plugin, configManager, factionManager, messageManager);
+        this.factionFoodListener = new hu.taliann.icesmp.listeners.FactionFoodListener(
+                plugin, configManager, factionManager);
         this.craftingRestrictionManager = new CraftingRestrictionManager(plugin, configManager, jobManager, professionManager);
         this.economyEventManager = new EconomyEventManager(plugin, configManager, messageManager);
         this.exchangeRateService = new ExchangeRateService(configManager, currencyManager, economyEventManager);
@@ -505,11 +570,14 @@ public final class IceSMPCore {
                 factionTreasuryManager, messageManager, seasonManager);
         seasonManager.setSeasonTransitionCoordinator(communityGoalManager::commitSeasonTransition);
         this.shopManager = new ShopManager(configManager, currencyManager, factionManager, messageManager);
+        shopManager.setCivilLaw(sinManager);
+        councilManager.setCivilLaw(sinManager);
         shopManager.setWhisperManager(whisperManager); // Suttogó feketepiac-kedvezmény
         this.npcBindingManager = new NpcBindingManager(plugin);
         this.caravanManager = new CaravanManager(plugin, configManager, messageManager);
         this.ambientEventManager = new AmbientEventManager(plugin, configManager, messageManager, currencyManager, factionManager);
         this.gatheringBuffManager = new GatheringBuffManager(plugin, configManager, messageManager);
+        hu.taliann.icesmp.managers.GatheringWindowRuntimeProbe.install(plugin, gatheringBuffManager);
         this.partyManager = new PartyManager(plugin, configManager, messageManager);
         this.claimManager = new ClaimManager(plugin, configManager, currencyManager, factionManager, territoryManager);
         // Közös, esemény×védelem mátrixszal configolható spawn-hely szabályok (world-events.
@@ -522,6 +590,7 @@ public final class IceSMPCore {
         // PlayerCaravan + DarkUndead az EventSpawnGuardot igényli — az a ClaimManager után
         // épül, ezért itt (nem a saját blokkjukban) konstruáljuk őket.
         this.playerCaravanManager = new hu.taliann.icesmp.managers.PlayerCaravanManager(plugin, configManager, factionTreasuryManager, factionManager, eventSpawnGuard, messageManager);
+        playerCaravanManager.setCivilLaw(sinManager);
         this.darkUndeadAmbienceManager = new hu.taliann.icesmp.managers.DarkUndeadAmbienceManager(plugin, configManager, territoryManager, mobScalingManager, eventSpawnGuard);
         this.treasureEventManager = new TreasureEventManager(plugin, configManager, partyManager, eventSpawnGuard, messageManager);
         this.wildHuntManager = new WildHuntManager(plugin, configManager, mobScalingManager, partyManager, messageManager);
@@ -545,8 +614,10 @@ public final class IceSMPCore {
                 territoryManager, bloodMoonManager);
         this.factionPassiveListener = new FactionPassiveListener(
                 plugin, factionManager, whisperManager, factionPassiveConfig, factionPassivePolicy,
-                factionPassiveService, factionMobContextResolver);
+                factionPassiveService, factionMobContextResolver,
+                bloodMoonManager, territoryManager);
         factionManager.setMembershipChangeHook(playerId -> {
+            seasonManager.clearParticipationProjection(playerId);
             factionPassiveListener.clearPlayerState(playerId);
             raidManager.onMembershipChange(playerId);
             spyManager.clearPlayerState(playerId);
@@ -569,6 +640,7 @@ public final class IceSMPCore {
         majorEventGate.register("wild-hunt", wildHuntManager::isActive);
         majorEventGate.register("escort", escortManager::isActive);
         majorEventGate.register("cultists", cultistEventManager::isActive);
+        majorEventGate.register("blood-moon", bloodMoonManager::isActive);
         worldBossManager.setEventGate(majorEventGate);
         invasionManager.setEventGate(majorEventGate);
         wildHuntManager.setEventGate(majorEventGate);
@@ -579,6 +651,12 @@ public final class IceSMPCore {
         hu.taliann.icesmp.managers.LootTable.setUniqueFactory(uniqueMaterialFactory);
         professionManager.setMessageManager(messageManager); // szintlépés/fokozat üzenetek
         factionManager.setGuildManager(guildManager);
+        factionManager.bindMembershipRuntime(claim ->
+                guildManager.withMembershipAdmissionBarrier(() ->
+                        councilManager.withMembershipAdmissionBarrier(() ->
+                                kingManager.withMembershipAdmissionBarrier(() ->
+                                        raidManager.withMembershipAdmissionBarrier(claim)))),
+                () -> { councilManager.save(); kingManager.save(); });
         questManager.setGuildManager(guildManager); // quest-teljesítés céh-XP
         professionRecipeBookListener.setBestiaryManager(bestiaryManager); // recept-lajstrom
         professionRecipeBookListener.setJobManager(jobManager); // kaszt-zárt receptek
@@ -601,6 +679,7 @@ public final class IceSMPCore {
         // mert a finálé-manager náluk később épül (kölcsönös hivatkozás a DI-sorrendben).
         this.seasonFinaleManager = new hu.taliann.icesmp.managers.SeasonFinaleManager(plugin, configManager,
                 seasonManager, worldBossManager, territoryManager, messageManager);
+        majorEventGate.register("season-finale", seasonFinaleManager::isActive);
         seasonManager.setSeasonFinale(seasonFinaleManager);
         worldBossManager.setSeasonFinale(seasonFinaleManager);
         bloodMoonManager.setSeasonFinale(seasonFinaleManager);
@@ -617,6 +696,7 @@ public final class IceSMPCore {
         this.equipmentProficiencyService.setSpecializationManager(specializationManager);
         this.specializationManager.setWorldBossManager(worldBossManager);
         questManager.setSpecializationManager(specializationManager); // szezon-plafon + hajrá-zár a váltás-szabályokhoz
+        questManager.setProfessionManager(professionManager); // typed szakma- és szakmaszint-kapu
         this.resourceManager = new hu.taliann.icesmp.managers.ResourceManager(plugin, configManager, jobManager);
         this.talentManager = new TalentManager(plugin, configManager, jobManager, professionManager, specializationManager);
         this.spellFavoritesManager = new hu.taliann.icesmp.managers.SpellFavoritesManager(plugin);
@@ -632,7 +712,7 @@ public final class IceSMPCore {
         petManager.setJobManager(jobManager);
         petManager.setTalentManager(talentManager);
         jobManager.setFactionManager(factionManager);
-        this.dailyQuestManager = new DailyQuestManager(plugin, configManager, currencyManager, factionManager, messageManager);
+        this.dailyQuestManager = new DailyQuestManager();
         this.parkourManager = new ParkourManager(plugin, configManager, currencyManager, factionManager, messageManager);
         this.siegeWeaponFactory = new SiegeWeaponFactory(plugin);
         this.soulShardManager = new SoulShardManager(plugin, configManager, minionManager, messageManager);
@@ -690,7 +770,7 @@ public final class IceSMPCore {
         this.characterMenuContext = new CharacterMenuContext(messageManager, jobManager, specializationManager,
                 professionManager, talentManager, factionManager, currencyManager, sinManager,
                 catalystItemFactory, spellRegistry, petManager, resourceManager, classRelicService,
-                configManager, respecService);
+                trashArchaeologyService, configManager, respecService);
         this.statsManager = new StatsManager(plugin, jobManager, currencyManager);
         this.chronicleManager = new hu.taliann.icesmp.managers.ChronicleManager(plugin, configManager, statsManager, seasonManager, messageManager);
         // Korszakváltás-narratíva: a szezonzárás hookja (a StatsManager itt már él).
@@ -700,6 +780,10 @@ public final class IceSMPCore {
         this.bardManager = new hu.taliann.icesmp.managers.BardManager(configManager, statsManager, messageManager);
         // Felvásárló NPC: napi keretes nyersanyag-eladás (jövedelem-csap; szintén interact-hook).
         this.buyerService = new hu.taliann.icesmp.managers.BuyerService(configManager, currencyManager, factionManager, messageManager);
+        this.trashVendorService = new hu.taliann.icesmp.trash.TrashVendorService(
+                plugin, configManager, trashItemFactory, trashHistoryService, trashRecyclePool,
+                currencyManager, factionManager, messageManager);
+        buyerService.setTrashVendorService(trashVendorService);
         // Szezon-emlékmű: a bajnok kőbe vésése a szezonzárás-hookon.
         this.seasonMonumentManager = new hu.taliann.icesmp.managers.SeasonMonumentManager(plugin, configManager, statsManager);
         seasonManager.setMonumentManager(seasonMonumentManager);
@@ -717,18 +801,43 @@ public final class IceSMPCore {
         abilityCatalystListener.setStatsManager(statsManager);
         this.achievementManager = new AchievementManager(plugin, configManager, jobManager, currencyManager,
                 professionManager, factionManager, statsManager, dailyQuestManager, messageManager);
+        bestiaryManager.setRewardDelivery(achievementManager);
         this.commandMenuContext = new CommandMenuContext(messageManager, factionManager, currencyManager,
                 exchangeRateService, factionTreasuryManager, kingManager, raidManager, questManager,
                 seasonManager, bloodMoonManager, worldBossManager, caravanManager, escortManager,
                 abundanceManager, serverChallengeManager, gatheringBuffManager, meteorEventManager, soulShardManager,
                 specializationManager, relicManager, statsManager, achievementManager,
-                partyManager, claimManager, sinManager, dailyQuestManager, configManager);
+                partyManager, claimManager, sinManager, configManager);
         this.afkManager = new hu.taliann.icesmp.managers.AfkManager(configManager);
+        this.trashAmbientManager = new hu.taliann.icesmp.trash.TrashAmbientManager(
+                plugin, trashCatalog, trashLootService, trashContextResolver,
+                claimManager, territoryManager, afkManager);
+        this.trashAnomalyRuntime = new hu.taliann.icesmp.trash.TrashAnomalyRuntime(
+                plugin, trashCatalog, trashItemFactory, trashHistoryService,
+                trashAnomalyStateStore, tossableObjectRuntime, currencyManager, factionManager,
+                kingManager, claimManager, territoryProtectionService, trashRuntimeTelemetry);
+        this.trashRelicRuntime = new hu.taliann.icesmp.trash.TrashRelicRuntime(
+                plugin, trashCatalog, trashItemFactory, trashHistoryService,
+                trashSpatialFractureStore, bloodMoonManager, claimManager,
+                territoryProtectionService, trashRuntimeTelemetry);
+        mobAbilityRuntime.bindDisplacementPolicy(trashRelicRuntime::constrainDisplacement);
+        trashAmbientManager.bindItemRecovery(item -> {
+            trashAnomalyRuntime.recoverAttachment(item);
+            trashRelicRuntime.recoverDeathAnchor(item);
+        });
+        trashAnomalyRuntime.bindTooltipVisibility(trashArchaeologyTooltipBridge::hasOverlay);
+        trashAnomalyRuntime.bindHistoricalEligibility((entity, tag) -> {
+            final String id = MobScalingManager.templateIdOf(entity);
+            return id != null && mobTemplateRegistry.find(id)
+                    .filter(template -> template.entityType().equals(entity.getType().name()))
+                    .map(template -> template.sourceTags().contains(tag)).orElse(false);
+        });
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);
         this.reportManager = new hu.taliann.icesmp.managers.ReportManager(plugin, messageManager);
         this.moderationManager = new hu.taliann.icesmp.managers.ModerationManager(plugin, configManager, messageManager);
+        this.whisperManager.setVanishedPredicate(moderationManager::isVanished);
         this.vanishManager = new hu.taliann.icesmp.managers.VanishManager(plugin, moderationManager, configManager);
         this.eventSpawnGuard.setVanishedPredicate(moderationManager::isVanished);
         this.motdListener = new hu.taliann.icesmp.listeners.MotdListener(plugin, configManager,
@@ -746,7 +855,7 @@ public final class IceSMPCore {
         this.hudManager = new HudManager(plugin, configManager, factionManager, currencyManager, jobManager,
                 raidManager, bloodMoonManager, worldBossManager, resourceManager, partyManager,
                 caravanManager, escortManager, abundanceManager, serverChallengeManager,
-                meteorEventManager, gatheringBuffManager, textAnimator, seasonManager, dailyQuestManager,
+                meteorEventManager, gatheringBuffManager, textAnimator, seasonManager,
                 resourcePackReady);
         this.tablistManager = new hu.taliann.icesmp.managers.TablistManager(plugin, configManager,
                 factionManager, textAnimator, afkManager);
@@ -767,7 +876,11 @@ public final class IceSMPCore {
                 councilManager,
                 dungeonLootService,
                 raidManager,
-                devItemManager);
+                devItemManager,
+                trashHistoryStore,
+                trashAnomalyStateStore,
+                trashSpatialFractureStore, archeologyManager,
+                trashRecyclePool);
         this.storeCoordinator = new PersistentStoreCoordinator(persistentStores);
         parkourManager.setFinishHook(questManager::handleParkourFinish);
         raidManager.setWinHook(fighter -> {
@@ -798,6 +911,10 @@ public final class IceSMPCore {
                 ritualManager,
                 professionManager,
                 afkManager,
+                trashAmbientManager,
+                trashAnomalyRuntime,
+                trashRelicRuntime,
+                trashArchaeologyListener,
                 sitManager,
                 crateManager,
                 moderationManager,
@@ -813,10 +930,25 @@ public final class IceSMPCore {
                 soulforgeManager,
                 spellRegistry,
                 profileSessionBridge,
-                clientBridge
+                clientBridge,
+                devItemManager
         );
 
         registerSpells();
+        this.worldWeaverRuntime = new hu.taliann.icesmp.dev.weaver.WorldWeaverRuntime(plugin, devItemManager, itemIdentityService,
+                java.util.List.of(services -> new hu.taliann.icesmp.dev.weaver.provider.MinecraftWeaverProvider(services.types()),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.DeveloperWeaverProvider(services, plugin),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.EventWeaverProvider(services.types(), gatheringBuffManager),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProvider(services, mobAbilityRegistry, mobTemplateRegistry, mobScalingManager, mobAbilityRuntime),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.FactionWeaverProvider(services, factionManager, factionMobContextResolver, factionPassiveConfig),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.TerritoryWeaverProvider(services, territoryManager, territoryProtectionService),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.TrashWeaverProvider(services, trashCatalog, trashHistoryService,
+                                trashAnomalyStateStore, trashRelicRuntime.ruleFields(), itemIdentityService, trashAnomalyRuntime.activationService()),
+                        services -> new hu.taliann.icesmp.dev.weaver.provider.ItemizationWeaverProvider(services, itemIdentityService,
+                                itemTemplateRegistry, uniqueMaterialFactory, itemMutationCoordinator)));
+        rewardEligibilityBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(worldWeaverRuntime.rewardEligibility());
+        effectEligibilityBinding = hu.taliann.icesmp.integrity.GameplayEffectGate.install(worldWeaverRuntime::prepareEffect);
+        sourceCaptureBinding = hu.taliann.icesmp.integrity.GameplaySourceCaptureGate.install(worldWeaverRuntime::captureCausalSources);
     }
 
     /**
@@ -1040,6 +1172,7 @@ public final class IceSMPCore {
         mobScalingManager.load();
         craftingRestrictionManager.load();
         itemTemplateRegistry.load();
+        trashCatalog.load();
         professionRecipeCatalog.load();
         crateManager.reloadConfig();
         advancementService.load();
@@ -1048,6 +1181,7 @@ public final class IceSMPCore {
         // Authoritative state is fail-closed: one failed store aborts the whole enable instead of
         // letting later gameplay run against an empty/default manager and overwrite the evidence.
         storeCoordinator.loadAll();
+        factionManager.startMembershipRecovery();
         // A class-relic katalógus kereszt-validációja a generikus relic-registryt kérdezi,
         // ezért csak a RelicManager (persistent store) betöltése UTÁN futhat.
         classRelicService.reload();
@@ -1056,7 +1190,11 @@ public final class IceSMPCore {
         spellMasteryManager.recoverPendingOperations().toCompletableFuture().join();
         siegeWeaponFactory.registerRecipe();
         professionRecipeManager.registerRecipes();
+        worldWeaverRuntime.start();
+        itemMutationCoordinator.startDeveloperRecovery();
         registerListeners();
+        hu.taliann.icesmp.pve.MobRuntimeControlProbe.maybeRun(plugin, mobAbilityRuntime, authoredCreatureSpawns, mobTemplateRegistry, mobAbilityRegistry, achievementManager);
+        trashAmbientManager.start();
         // Hot plugin reloads may enable while players are already online and therefore do not emit
         // a new join event. Give those sessions a fresh generation before PM delivery can link them.
         for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -1067,7 +1205,6 @@ public final class IceSMPCore {
         }
         vanishManager.refreshAll();
         registerCommands();
-        scheduleTaxCollection();
         scheduleEconomyEvents();
         scheduleWorldEvents();
         scheduleHud();
@@ -1075,6 +1212,8 @@ public final class IceSMPCore {
         scheduleCorruptionAura();
         schedulePetCombat();
         devItemManager.start();
+        trashAnomalyRuntime.start();
+        trashRelicRuntime.start();
         scheduleAutosave();
         scheduleModerationExpiry();
         // A visszaépítés saját, sűrű ütemén fut (látványos, fokozatos gyógyulás) —
@@ -1162,20 +1301,11 @@ public final class IceSMPCore {
         }
     }
 
-    /**
-     * Registers the FancyNpcs quest bridge (TALK_TO_NPC objectives) if FancyNpcs is
-     * installed. The bridge is fully reflective, so the core has no compile-time
-     * dependency on the FancyNpcs API; without the plugin this is a no-op.
-     */
+    /** Bridge initialization is required; missing authored NPCs remain a deployment diagnostic. */
     private void registerNpcQuestBridge() {
         if (!plugin.getServer().getPluginManager().isPluginEnabled("FancyNpcs")) {
-            final java.util.Set<String> questNpcs = questManager.getQuestNpcNames();
-            if (!questNpcs.isEmpty()) {
-                plugin.getLogger().warning("FancyNpcs nincs telepítve, pedig " + questNpcs.size()
-                        + " quest-NPC-re épül a tartalom — a /quest talk <npc> tartalék-út aktív, "
-                        + "a dialógusok a parancsos úton is lejátszódnak.");
-            }
-            return;
+            throw new IllegalStateException("FancyNpcs required production dependency is not enabled; "
+                    + questManager.getQuestNpcNames().size() + " authored quest NPC is unreachable");
         }
         try {
             npcQuestBridge = hu.taliann.icesmp.integration.FancyNpcsQuestBridge.register(
@@ -1208,25 +1338,17 @@ public final class IceSMPCore {
                     hu.taliann.icesmp.gui.CommandMenus.openFaction(player, commandMenuContext));
             scheduleQuestNpcMarkers();
             questManager.setNpcBridgeActive(true);
-            // NPC-létezés ellenőrzés késleltetve (a FancyNpcs a saját NPC-it a világok
-            // betöltése után éleszti) — hiányzó NPC hangos figyelmeztetést kap.
+            // FancyNpcs loads authored NPCs after worlds. Missing bindings must not retire
+            // unrelated authorities; quest admission stays with the existing interaction authority.
             final hu.taliann.icesmp.integration.FancyNpcsQuestBridge bridgeRef = npcQuestBridge;
-            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task ->
-                    bridgeRef.validateNpcs(questManager.getQuestNpcNames()), 20L * 60L);
+            questNpcValidationTask = Bukkit.getGlobalRegionScheduler().runDelayed(plugin,
+                    task -> bridgeRef.validateNpcs(questManager.getQuestNpcNames()), 20L * 60L);
             plugin.getLogger().info("FancyNpcs quest-bridge bekapcsolva (TALK_TO_NPC próbák, giver-npc questek, NPC-markerek, frakció-boltok, /npcbind kötések).");
         } catch (final Throwable throwable) {
-            plugin.getLogger().warning("FancyNpcs jelen van, de a quest-bridge nem indult: "
-                    + throwable.getMessage());
+            throw new IllegalStateException("FancyNpcs required production bridge failed to initialize", throwable);
         }
-        // A sztori-gerinc NPC-ken lóg: híd nélkül a TALK_TO_NPC/giver-npc questek némán
-        // állnának — a /quest talk tartalék-út ilyenkor automatikusan él, és a log jelez.
         if (npcQuestBridge == null) {
-            final java.util.Set<String> questNpcs = questManager.getQuestNpcNames();
-            if (!questNpcs.isEmpty()) {
-                plugin.getLogger().warning("FancyNpcs-híd nem aktív, pedig " + questNpcs.size()
-                        + " quest-NPC-re épül a tartalom — a /quest talk <npc> tartalék-út aktív, "
-                        + "a dialógusok a parancsos úton is lejátszódnak.");
-            }
+            throw new IllegalStateException("FancyNpcs bridge returned no runtime authority");
         }
     }
 
@@ -1285,11 +1407,10 @@ public final class IceSMPCore {
      * Disables the plugin core by saving all manager data.
      */
     public void disable() {
-        // A passzívok per-player megtorlási/célzási állapota nem perzisztens. Sikertelen
-        // enable után is takarítani kell, különben hot-reloadnál régi célok maradhatnak.
-        factionPassiveListener.clearAllState();
+        if (!disableStarted.compareAndSet(false, true)) return;
         try {
-            disableStateful();
+            prepareDisable();
+            if (statefulShutdownPrepared) finishProfileShutdown();
         } finally {
             // A "nem merek state-et menteni" döntés nem jelentheti azt, hogy külső erőforrás
             // (repository executor, HTTP adapter, Bukkit service, statikus authority) nyitva
@@ -1305,6 +1426,13 @@ public final class IceSMPCore {
             // eldobott ConfigManager-példányt tartana életben a következő enable-ig.
             shutdownStep("NamedEntityDeathLogFilter.uninstall",
                     hu.taliann.icesmp.utils.NamedEntityDeathLogFilter::uninstall);
+            shutdownStep("AdvancementService.clearIfCurrent",
+                    () -> hu.taliann.icesmp.managers.AdvancementService.clearIfCurrent(advancementService));
+            shutdownStep("ItemTemplateRegistry.clearIfCurrent",
+                    () -> hu.taliann.icesmp.itemization.ItemTemplateRegistry.clearIfCurrent(itemTemplateRegistry));
+            shutdownStep("ConfigManager.clearIfCurrent",
+                    () -> hu.taliann.icesmp.managers.ConfigManager.clearIfCurrent(configManager));
+            plugin.getLogger().info("IceSMP core disabled.");
         }
     }
 
@@ -1314,6 +1442,8 @@ public final class IceSMPCore {
                     + "and persistent-store writes to protect the last durable state.");
             return;
         }
+        // Stop new quest work; already entered profile writes drain through the canonical repository.
+        shutdownStep("questManager", () -> questManager.shutdown());
         if (moderationExpiryTask != null) {
             moderationExpiryTask.cancel();
             moderationExpiryTask = null;
@@ -1339,13 +1469,13 @@ public final class IceSMPCore {
             return;
         }
         enableCompleted = false;
-        if (taxTask != null) {
-            taxTask.cancel();
-            taxTask = null;
-        }
         if (questNpcMarkerTask != null) {
             questNpcMarkerTask.cancel();
             questNpcMarkerTask = null;
+        }
+        if (questNpcValidationTask != null) {
+            questNpcValidationTask.cancel();
+            questNpcValidationTask = null;
         }
         shutdownStep("raidManager", raidManager::shutdown);
         if (economyEventTask != null) {
@@ -1397,6 +1527,10 @@ public final class IceSMPCore {
         shutdownStep("spyManager", spyManager::shutdown);
         shutdownStep("cultistEventManager", cultistEventManager::shutdown);
         shutdownStep("totemManager", totemManager::shutdown);
+        shutdownStep("rewardEligibility", rewardEligibilityBinding::close);
+        shutdownStep("effectEligibility", effectEligibilityBinding::close);
+        shutdownStep("sourceCapture", sourceCaptureBinding::close);
+        shutdownStep("worldWeaverRuntime", worldWeaverRuntime::shutdown);
         shutdownStep("devItemManager", devItemManager::shutdown);
         shutdownStep("sitManager", sitManager::shutdown);
         shutdownStep("professionRecipeManager", professionRecipeManager::shutdown);
@@ -1405,6 +1539,10 @@ public final class IceSMPCore {
         shutdownStep("motdListener", motdListener::shutdown);
         shutdownStep("vanishManager", vanishManager::shutdown);
         shutdownStep("eventSpawnGuard", eventSpawnGuard::clearReservations);
+        shutdownStep("trashRelicRuntime", trashRelicRuntime::shutdown);
+        shutdownStep("trashAnomalyRuntime", trashAnomalyRuntime::shutdown);
+        shutdownStep("trashArchaeologyListener", trashArchaeologyListener::shutdown);
+        shutdownStep("trashAmbientManager", trashAmbientManager::shutdown);
 
         // Save ALL persistent state FIRST, before any cleanup that could mutate in-memory state.
         // (mobScalingManager / craftingRestrictionManager are config-derived read-only — no save.)
@@ -1412,6 +1550,34 @@ public final class IceSMPCore {
                 storeCoordinator.saveForShutdown(failure -> plugin.getLogger().severe("Store save() hiba ("
                         + failure.store().getClass().getSimpleName() + "): " + failure.cause())));
 
+        // Then clean up live player session state (HUD teams, restored armor, caches).
+        final var cleanup = cleanupPlayerSessions();
+        statefulShutdownPrepared = true;
+        cleanup.whenComplete((ignored, failure) -> {
+            if (failure == null) playerShutdown.complete(null);
+            else playerShutdown.completeExceptionally(failure);
+        });
+    }
+
+    public java.util.concurrent.CompletableFuture<Void> prepareDisable() {
+        if (!prepareDisableStarted.compareAndSet(false, true)) return playerShutdown.copy();
+        shutdownStep("ItemMutationCoordinator.stopDeveloperRecovery", itemMutationCoordinator::stopDeveloperRecovery);
+        beginPresentationShutdown();
+        factionManager.stopMembershipRecovery();
+        factionPassiveListener.clearAllState();
+        hu.taliann.icesmp.utils.SpellHealingUtil.setReceivingMultiplier(target -> 1.0D);
+        try {
+            disableStateful();
+            if (!statefulShutdownPrepared) playerShutdown.completeExceptionally(
+                    new IllegalStateException("stateful shutdown preparation did not complete"));
+        } catch (final RuntimeException | Error failure) {
+            playerShutdown.completeExceptionally(failure);
+            throw failure;
+        }
+        return playerShutdown.copy();
+    }
+
+    private void finishProfileShutdown() {
         // Stateful consumers must finish rollback and final-save writes while Profile v2 remains
         // installed; only their completed durable boundary permits the authority teardown.
         final long profileDeadline = System.nanoTime()
@@ -1449,22 +1615,70 @@ public final class IceSMPCore {
                 .filter(installed -> installed == playerProfileAuthority).isPresent()) {
             playerProfileAuthority.uninstall();
         }
-        shutdownStep("ProfileGUI.closeAll", ProfileGUI::closeAll);
 
-        // Then clean up live player session state (HUD teams, restored armor, caches).
-        for (final Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            shutdownStep("player-cleanup " + onlinePlayer.getName(), () -> {
-                hudManager.cleanup(onlinePlayer);
-                tablistManager.cleanup(onlinePlayer);
-                playerSessionCleanupListener.cleanupPlayerState(onlinePlayer.getUniqueId());
-            });
-        }
-
-        plugin.getLogger().info("IceSMP core disabled.");
     }
 
     private static long remainingProfileShutdownNanos(final long deadline) {
         return Math.max(1L, deadline - System.nanoTime());
+    }
+
+    public void beginPresentationShutdown() {
+        hudManager.beginShutdown();
+        tablistManager.beginShutdown();
+    }
+
+    public void cleanupPresentation(final Player player) {
+        if (!Bukkit.isOwnedByCurrentRegion(player)) {
+            throw new IllegalStateException("presentation cleanup requires player ownership");
+        }
+        try {
+            hudManager.cleanup(player);
+        } finally {
+            tablistManager.cleanup(player);
+        }
+    }
+
+    public java.util.concurrent.CompletableFuture<Void> playerShutdownCompletion() {
+        return playerShutdown.copy();
+    }
+
+    private java.util.concurrent.CompletableFuture<Void> cleanupPlayerSessions() {
+        final var pending = new java.util.ArrayList<java.util.concurrent.CompletableFuture<Void>>();
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            final UUID id = player.getUniqueId();
+            final var completion = new java.util.concurrent.CompletableFuture<Void>();
+            pending.add(completion);
+            final Runnable cleanup = () -> {
+                try {
+                    try {
+                        cleanupPresentation(player);
+                    } finally {
+                        playerSessionCleanupListener.cleanupPlayerState(id);
+                    }
+                    completion.complete(null);
+                } catch (final RuntimeException | Error failure) {
+                    plugin.getLogger().severe("Player shutdown cleanup failed (" + id + "): " + failure);
+                    completion.completeExceptionally(failure);
+                }
+            };
+            if (Bukkit.isOwnedByCurrentRegion(player)) {
+                cleanup.run();
+            } else if (plugin.isEnabled()) {
+                try {
+                    if (player.getScheduler().run(plugin, ignored -> cleanup.run(),
+                            () -> completion.complete(null)) == null) completion.complete(null);
+                } catch (final RuntimeException failure) {
+                    completion.completeExceptionally(failure);
+                }
+            } else {
+                final var failure = new IllegalStateException(
+                        "external disable retired scheduling before player cleanup: " + id);
+                plugin.getLogger().warning(failure.getMessage());
+                completion.completeExceptionally(failure);
+            }
+        }
+        return java.util.concurrent.CompletableFuture.allOf(
+                pending.toArray(java.util.concurrent.CompletableFuture[]::new));
     }
 
     /**
@@ -1561,8 +1775,6 @@ public final class IceSMPCore {
                 serverChallengeManager::tick,
                 escortManager::tick,
                 meteorEventManager::tick,
-                factionFoodListener::tick,
-                whisperManager::tick,
                 chronicleManager::tick,
                 corruptionManager::tick,
                 archeologyManager::tick,
@@ -1653,27 +1865,6 @@ public final class IceSMPCore {
 
 
     /**
-     * Schedules the periodic faction tax on the global region scheduler,
-     * which runs on both Paper and Folia. Tax math touches only in-memory
-     * balances; player notices hop to each player's scheduler.
-     */
-    private void scheduleTaxCollection() {
-        if (!configManager.getBoolean("factions.tax.enabled", true)) {
-            return;
-        }
-
-        final long intervalTicks = Math.max(1L, configManager.getLong("factions.tax.interval-minutes", 60L)) * 60L * 20L;
-        taxTask = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
-                plugin,
-                task -> factionTreasuryManager.collectTaxes(),
-                intervalTicks,
-                intervalTicks
-        );
-        hu.taliann.icesmp.utils.StartupLog.info(plugin.getLogger(), configManager, "Faction tax scheduled every "
-                + configManager.getLong("factions.tax.interval-minutes", 60L) + " minute(s).");
-    }
-
-    /**
      * Schedules the periodic economy-event tick (demand shocks) on the global
      * region scheduler.
      */
@@ -1696,7 +1887,11 @@ public final class IceSMPCore {
     private void registerCommands() {
         final IceSMPCommand iceSMPCommand = new IceSMPCommand(plugin, configManager, messageManager,
                 jobManager, specializationManager, resourceManager, factionManager, currencyManager,
-                statsManager, claimManager, questManager, abilityCatalystListener, sinManager);
+                statsManager, claimManager, questManager, abilityCatalystListener, sinManager,
+                new hu.taliann.icesmp.trash.TrashDevCommand(
+                        plugin, trashCatalog, trashItemFactory, trashHistoryService,
+                        trashRecyclePool, trashLootService, trashArchaeologyService,
+                        trashArchaeologyListener, trashRuntimeTelemetry));
         iceSMPCommand.setClientBridge(clientBridge);
         // Native HUD routing: a HudManager csak a seam-interfészt látja, a bridge a
         // snapshot-forrást — a két réteg a core-ban találkozik, nem egymásban.
@@ -1727,6 +1922,7 @@ public final class IceSMPCore {
         iceSMPCommand.setReloadHook(() -> {
             factionPassiveConfig.reload();
             factionPassiveListener.clearAllState();
+        hu.taliann.icesmp.utils.SpellHealingUtil.setReceivingMultiplier(target -> 1.0D);
             relicManager.load();
             classRelicService.reload();
             mobAbilityRegistry.load();
@@ -1781,6 +1977,7 @@ public final class IceSMPCore {
             if (key.startsWith("factions.passives.") || key.startsWith("factions.whisper.")) {
                 factionPassiveConfig.reload();
                 factionPassiveListener.clearAllState();
+        hu.taliann.icesmp.utils.SpellHealingUtil.setReceivingMultiplier(target -> 1.0D);
             }
         };
         iceSMPCommand.setConfigChangeHook(configChangeHook);
@@ -1856,7 +2053,7 @@ public final class IceSMPCore {
                         "reply", true, Permissions.MESSAGE));
         plugin.registerCommand("currency", "Valuta parancsok", List.of("money", "eco"), new CurrencyCommand(currencyManager, configManager, exchangeRateService, territoryManager, messageManager));
         plugin.registerCommand("bank", "Bank parancsok", List.of("wallet", "vault"), new BankCommand(currencyManager, configManager, territoryManager, messageManager));
-        final FactionCommand factionCommand = new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, playerCaravanManager, warWindowManager, councilManager, messageManager);
+        final FactionCommand factionCommand = new FactionCommand(plugin, factionManager, sinManager, factionTreasuryManager, currencyManager, kingManager, raidManager, territoryManager, configManager, playerCaravanManager, warWindowManager, councilManager, whisperManager, messageManager);
         factionCommand.setSpecializationManager(specializationManager);
         plugin.registerCommand("faction", "Frakció parancsok", List.of("f"), factionCommand);
         plugin.registerCommand("class", "Kaszt (class): szint, Lélekkapocs, admin", List.of("kaszt", "job"), new JobCommand(plugin, jobManager, spellRegistry, catalystItemFactory, abilityCatalystListener, specializationManager, messageManager));
@@ -1868,7 +2065,7 @@ public final class IceSMPCore {
         plugin.registerCommand("bounty", "Körözési lista (fejpénzek)", List.of("fejvadasz", "korozes"), new BountyCommand(sinManager, currencyManager, configManager, messageManager));
         plugin.registerCommand("relic", "Relikvia parancsok (admin)", List.of("relics", "relikvia"), new RelicCommand(plugin, relicManager, messageManager));
         plugin.registerCommand("parkour", "Parkour-pályák (futás, admin beállítás)", List.of("trial", "palya"), new ParkourCommand(parkourManager, messageManager));
-        plugin.registerCommand("daily", "Napi küldetés", List.of("napi"), new DailyCommand(dailyQuestManager, messageManager));
+        plugin.registerCommand("daily", "Napi és heti megbízások", List.of("napi"), new DailyCommand(questManager, messageManager));
         plugin.registerCommand("pet", "Társ (befogó item, idézés, név, szint)", List.of("tars", "companion"), new PetCommand(petManager, captureItemFactory, messageManager));
         plugin.registerCommand("profession", "Szakma (profession) parancsok", List.of("prof", "szakma"),
                 new ProfessionCommand(plugin, professionManager, messageManager,
@@ -1909,7 +2106,7 @@ public final class IceSMPCore {
         plugin.registerCommand("emlek", "Emlékszilánk-beváltás (visszaemlékezés)", List.of("memory", "emlekek"),
                 new hu.taliann.icesmp.commands.MemoryCommand(configManager, jobManager, talentManager, specializationManager, uniqueMaterialFactory, messageManager));
         plugin.registerCommand("suttogas", "A Suttogók titkos csatornája és tanú-vád", List.of("sutt"),
-                new hu.taliann.icesmp.commands.WhisperCommand(plugin, configManager, whisperManager, messageManager));
+                new hu.taliann.icesmp.commands.WhisperCommand(plugin, whisperManager, messageManager));
         plugin.registerCommand("lore", "A kódex lapjai — frakciók és helyek története", List.of("kodex"),
                 new hu.taliann.icesmp.commands.LoreCommand(messageManager));
         plugin.registerCommand("kronika", "Az utolsó Heti Krónika visszaolvasása", List.of("chronicle"),
@@ -1995,6 +2192,8 @@ public final class IceSMPCore {
         mobLootListener.setCultistEventManager(cultistEventManager);
         mobLootListener.setAfkManager(afkManager);
         pluginManager.registerEvents(mobLootListener, plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.trash.TrashMobDropListener(
+                configManager, afkManager, trashLootService, trashContextResolver), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CursedGearListener(cursedGearService, messageManager), plugin);
         pluginManager.registerEvents(professionRecipeBookListener, plugin);
         pluginManager.registerEvents(itemMutationCoordinator, plugin);
@@ -2005,6 +2204,11 @@ public final class IceSMPCore {
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.BlueprintUseListener(blueprintItemFactory, professionRecipeCatalog, professionManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.UniqueMaterialProtectionListener(uniqueMaterialFactory), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DevItemProtectionListener(plugin, devItemManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ItemPrototypeProtectionListener(plugin,
+                () -> hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER), plugin);
+        pluginManager.registerEvents(worldWeaverRuntime.listener(), plugin);
+        pluginManager.registerEvents(worldWeaverRuntime.recoveryListener(), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.integrity.VanillaRewardIntegrityListener(), plugin);
         pluginManager.registerEvents(factionPassiveListener, plugin);
         pluginManager.registerEvents(factionFoodListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.WhisperListener(plugin, configManager, whisperManager, factionManager, raidManager, uniqueMaterialFactory, messageManager), plugin);
@@ -2014,7 +2218,14 @@ public final class IceSMPCore {
         pluginManager.registerEvents(corruptionAuraListener, plugin);
         pluginManager.registerEvents(lowHealthBorderListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.StrangerListener(strangerNpcManager), plugin);
-        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.FishingWindfallListener(configManager, moneyPouchItemFactory, afkManager, messageManager, trashRelicRuntime::claimBestBucket), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.trash.TrashFishingListener(
+                plugin, trashLootService, trashContextResolver, afkManager), plugin);
+        pluginManager.registerEvents(trashAmbientManager, plugin);
+        pluginManager.registerEvents(trashVendorService, plugin);
+        pluginManager.registerEvents(trashAnomalyRuntime, plugin);
+        pluginManager.registerEvents(trashRelicRuntime, plugin);
+        pluginManager.registerEvents(trashArchaeologyListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.MoneyPouchListener(moneyPouchItemFactory, currencyManager, messageManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SelectionWandListener(claimManager, territoryManager, currencyManager, messageManager), plugin);
         // Nether-portál világszabály: új portál nem gyújtható — csak a Kárhozat Kapuja él.
@@ -2034,6 +2245,14 @@ public final class IceSMPCore {
         // Az offline bajnok-tagok függő szezon-jutalma belépéskor jár.
         pluginManager.registerEvents(seasonManager, plugin);
         pluginManager.registerEvents(new org.bukkit.event.Listener() {
+            @org.bukkit.event.EventHandler(ignoreCancelled = true)
+            public void onCultistOffering(final org.bukkit.event.player.PlayerInteractEntityEvent event) {
+                if (event.getHand() == org.bukkit.inventory.EquipmentSlot.HAND && event.getPlayer().isSneaking()
+                        && cultistEventManager.deliverOffering(event.getPlayer(), event.getRightClicked().getUniqueId())) {
+                    event.setCancelled(true);
+                }
+            }
+
             // A szállítmány-konvoj halála: a rabló frakció kasszája kapja a rakományt.
             @org.bukkit.event.EventHandler
             public void onConvoyDeath(final org.bukkit.event.entity.EntityDeathEvent event) {
@@ -2101,16 +2320,21 @@ public final class IceSMPCore {
         pluginManager.registerEvents(petXpListener, plugin);
         pluginManager.registerEvents(new PetCaptureListener(petManager, captureItemFactory, messageManager), plugin);
         pluginManager.registerEvents(new PetCombatListener(plugin, petManager), plugin);
-        pluginManager.registerEvents(new DailyQuestListener(plugin, dailyQuestManager), plugin);
         pluginManager.registerEvents(new ParkourListener(parkourManager), plugin);
         final SinListener sinListener = new SinListener(plugin, sinManager, raidManager, factionManager, territoryManager, statsManager, currencyManager, configManager, messageManager);
+        sinListener.setCombatTagManager(combatTagManager);
         sinListener.setHonorDuelManager(honorDuelManager); // párbaj-kill kizárás
         sinListener.setWarWindowManager(warWindowManager); // hadi-ablak: RED↔BLUE kill nem bűn
         pluginManager.registerEvents(sinListener, plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.CombatTagListener(combatTagManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ItemProvenanceListener(plugin), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.trash.TrashHistoryListener(
+                plugin, trashHistoryService, kingManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.DungeonLootListener(afkManager, dungeonLootService, territoryManager, configManager), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.ArcheologyShareListener(archeologyManager), plugin);
+        pluginManager.registerEvents(new hu.taliann.icesmp.listeners.TemporaryBlockProtection(
+                block -> trashSpatialFractureStore.protects(block) || archeologyManager.protects(block),
+                archeologyManager::allowsBrushing), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.HealthRegenListener(classHealthService), plugin);
         pluginManager.registerEvents(new hu.taliann.icesmp.listeners.SchoolCounterAnvilListener(), plugin);
         pluginManager.registerEvents(new TheftListener(sinManager, territoryManager, factionManager, raidManager, configManager, messageManager), plugin);

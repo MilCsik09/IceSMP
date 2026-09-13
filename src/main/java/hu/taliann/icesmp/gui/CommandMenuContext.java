@@ -5,7 +5,6 @@ import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.CaravanManager;
 import hu.taliann.icesmp.managers.ClaimManager;
 import hu.taliann.icesmp.managers.ConfigManager;
-import hu.taliann.icesmp.managers.DailyQuestManager;
 import hu.taliann.icesmp.managers.EscortManager;
 import hu.taliann.icesmp.managers.GatheringBuffManager;
 import hu.taliann.icesmp.managers.MeteorEventManager;
@@ -59,6 +58,5 @@ public record CommandMenuContext(
         PartyManager partyManager,
         ClaimManager claimManager,
         SinManager sinManager,
-        DailyQuestManager dailyQuestManager,
         ConfigManager configManager) {
 }

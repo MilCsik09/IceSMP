@@ -27,9 +27,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * bind-then-save from the command thread never races (mirrors
  * {@link DonationChestManager}'s pattern).</p>
  *
- * <p>Works standalone — without FancyNpcs installed, binding/listing/persistence
- * all function normally; the bindings simply have no runtime effect until the
- * reflective {@link hu.taliann.icesmp.integration.FancyNpcsQuestBridge} is active.</p>
+ * <p>Binding/listing/persistence is independently testable, but production player-facing NPC
+ * interaction requires the mandatory reflective
+ * {@link hu.taliann.icesmp.integration.FancyNpcsQuestBridge}.</p>
  */
 public final class NpcBindingManager implements PersistentStore {
 

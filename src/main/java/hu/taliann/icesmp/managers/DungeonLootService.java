@@ -8,7 +8,6 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -193,26 +192,18 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
             if (recheck != null && hu.taliann.icesmp.utils.TransientEntities.isAlive(recheck)) {
                 return;
             }
-            final EntityType type;
-            try {
-                type = EntityType.valueOf(configManager.getString(
-                        "dungeon.minibosses." + id + ".type", "WITHER_SKELETON").toUpperCase(Locale.ROOT));
-            } catch (final IllegalArgumentException exception) {
-                return;
-            }
-            if (type.getEntityClass() == null || !Mob.class.isAssignableFrom(type.getEntityClass())) {
-                return;
-            }
+            final String templateId = configManager.getString(
+                    "dungeon.minibosses." + id + ".template", "").trim();
+            if (templateId.isBlank()) return;
             final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
                     hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
             if (spawns == null) return;
             final Mob boss = spawns.spawn(loc,
-                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
-                            "dungeon", "dungeon:" + id, "miniboss", type,
+                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                            "dungeon", "dungeon:" + id, "miniboss", templateId,
                             Math.max(1, configManager.getInt("dungeon.minibosses." + id + ".level", 12)),
-                            hu.taliann.icesmp.pve.MobRank.MINIBOSS, "BRUISER",
                             hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.EVENT,
-                            false, 0L));
+                            false, 1.0D, 1.0D, 0L));
             if (boss == null) return;
             boss.setPersistent(true);
             boss.setRemoveWhenFarAway(false);
@@ -220,10 +211,6 @@ public final class DungeonLootService implements hu.taliann.icesmp.storage.Persi
                     "dungeon.minibosses." + id + ".health-multiplier", 4.0D));
             spawns.applyParticipantModifier(boss, Math.min(16.0D, healthMult), 1.0D,
                     "dungeon:miniboss");
-            final String name = configManager.getString("dungeon.minibosses." + id + ".name",
-                    "A Mélység Őrzője");
-            boss.customName(net.kyori.adventure.text.Component.text(name,
-                    net.kyori.adventure.text.format.NamedTextColor.DARK_RED));
             boss.setCustomNameVisible(true);
             boss.getPersistentDataContainer().set(bossKey, PersistentDataType.STRING, id);
             hu.taliann.icesmp.utils.TransientEntities.register(plugin, boss);

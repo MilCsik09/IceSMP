@@ -147,6 +147,8 @@ faction-shops:
         lore:
           - "&7Úri bot a Bokic-part sétányairól."
           - "&7Az őrség botot lát. A penge nem ért egyet."
+          - "&eHasználat: a Menedék fővárosában közelharci találatkor"
+          - "&erejtett pengéje további sebzést okoz."
         signature: "botera_setapalca"
       2:
         material: "PAPER"

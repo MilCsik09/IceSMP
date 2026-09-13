@@ -20,7 +20,7 @@ MANIFEST = DOCS / "equipment-rp2-pilot-manifest.json"
 ART = DOCS / "equipment-rp2-art-bible.json"
 ARMOR = DOCS / "equipment-rp2-armor-matrix.json"
 FINAL = DOCS / "equipment-rp2-final-authority.json"
-CONFIG = ROOT / "src/main/resources/config/equipment-catalog-expansion.yml"
+CONFIG = ROOT / "src/main/resources/content/equipment/equipment.yml"
 REPORT_DIR = ROOT / "build/reports/equipment-rp2-b"
 EXPECTED_WORN_SIZE = (256, 128)
 

@@ -46,6 +46,7 @@ import java.util.function.Predicate;
  */
 public final class EventSpawnGuard {
     public static final String EVENT_NO_BURN_KEY = "event_no_daylight_burn";
+    public static final String DAYLIGHT_BURN_BASELINE_KEY = "territory_no_daylight_burn_baseline";
     public static final String EVENT_NO_ZOMBIFICATION_KEY = "event_no_zombification";
     private static final int MAX_SINGLE_REGION_PROBE_RADIUS = 7;
 
@@ -1469,6 +1470,16 @@ public final class EventSpawnGuard {
     }
 
     public static void prepare(final Mob mob) {
+        final Boolean burnBaseline = mob instanceof org.bukkit.entity.AbstractSkeleton skeleton
+                ? skeleton.shouldBurnInDay() : mob instanceof org.bukkit.entity.Zombie zombie
+                ? zombie.shouldBurnInDay() : mob instanceof org.bukkit.entity.Phantom phantom
+                ? phantom.shouldBurnInDay() : null;
+        if (burnBaseline != null && !mob.getPersistentDataContainer().has(
+                new NamespacedKey("icesmp", DAYLIGHT_BURN_BASELINE_KEY), PersistentDataType.BYTE)) {
+            mob.getPersistentDataContainer().set(
+                    new NamespacedKey("icesmp", DAYLIGHT_BURN_BASELINE_KEY),
+                    PersistentDataType.BYTE, (byte) (burnBaseline ? 1 : 0));
+        }
         mob.getPersistentDataContainer().set(new NamespacedKey("icesmp", EVENT_NO_BURN_KEY),
                 PersistentDataType.BYTE, (byte) 1);
         mob.getPersistentDataContainer().set(new NamespacedKey("icesmp", EVENT_NO_ZOMBIFICATION_KEY),

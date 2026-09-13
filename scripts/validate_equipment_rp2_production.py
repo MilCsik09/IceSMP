@@ -20,7 +20,7 @@ ART_BIBLE = DOCS / "equipment-rp2-art-bible.json"
 PILOT = DOCS / "equipment-rp2-pilot-manifest.json"
 MANIFEST = DOCS / "equipment-rp2-production-manifest.json"
 ASSET_GRAPH = DOCS / "equipment-rp2-production-asset-graph.json"
-CATALOG = ROOT / "src/main/resources/config/equipment-catalog-expansion.yml"
+CATALOG = ROOT / "src/main/resources/content/equipment/equipment.yml"
 FAMILIES = ("CLOTH", "LEATHER", "MAIL", "PLATE")
 SLOTS = ("HEAD", "CHEST", "LEGS", "FEET")
 

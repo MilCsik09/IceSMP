@@ -13,7 +13,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CATALOG = "src/main/resources/config/equipment-catalog-expansion.yml"
+CATALOG = "src/main/resources/content/equipment/equipment.yml"
 PRESENTATION_KEYS = {"item-model", "equipment-asset"}
 
 

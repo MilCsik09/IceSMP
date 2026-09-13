@@ -39,7 +39,7 @@ public final class BestiaryRegressionSuite {
         }
     }
 
-    /** The event roster owns only template ids; display identity comes from mob-templates.yml. */
+    /** The event roster owns only template ids; display identity comes from content/pve/enemies.yml. */
     private static void bossRosterExposesCanonicalIdsAndPlainNames() throws Exception {
         final String source = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/managers/WorldBossManager.java"));
@@ -54,15 +54,15 @@ public final class BestiaryRegressionSuite {
                         && "bone_king".equals(roster.get("bone_king")),
                 "archetype ids resolve to canonical template ids");
         final YamlConfiguration templates = YamlConfiguration.loadConfiguration(
-                new java.io.File("src/main/resources/config/mob-templates.yml"));
+                new java.io.File("src/main/resources/content/pve/enemies.yml"));
         final String ringName = templates.getString("mob-templates." + roster.get("ring_warden")
                 + ".display-name", "");
         final String warlordName = templates.getString("mob-templates." + roster.get("piglin_warlord")
                 + ".display-name", "");
         check(WorldBossManager.plainArchetypeName(ringName)
-                .equals("A Gyűrűk Őre"), "plain name strips codes, symbols and the tag");
+                .equals("Körzáró, a Törött Eskü"), "plain name strips codes, symbols and the tag");
         check(WorldBossManager.plainArchetypeName(warlordName)
-                .equals("Pokoli Hadúr"), "plain name canonical for the last roster row");
+                .equals("Varkhaz, a Kaputörő"), "plain name canonical for the last roster row");
         check(source.contains("archetypeDisplayNames()"),
                 "runtime roster accessor exists for the GUI/PAPI denominators");
     }

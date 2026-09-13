@@ -20,7 +20,7 @@ import java.util.Locale;
 /**
  * Builds and identifies unique profession materials — PDC-tagged intermediate items a profession
  * crafts and higher recipes consume (WoW "Spirit Dust" / Terraria intermediate bars). Definitions
- * live in {@code profession-materials.yml}; the tag lets the recipe engine match them by id rather
+ * live in {@code content/professions/materials.yml}; the tag lets the recipe engine match them by id rather
  * than by vanilla {@link Material}, so they never mix with ordinary items.
  */
 public final class UniqueMaterialFactory {

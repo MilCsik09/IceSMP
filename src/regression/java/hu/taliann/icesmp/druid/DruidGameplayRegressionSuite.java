@@ -192,8 +192,12 @@ public final class DruidGameplayRegressionSuite {
 
         final String gameplayConfig = Files.readString(Path.of(
                 "src/main/resources/config/class-gameplay.yml"));
-        check(gameplayConfig.contains("classes: []"),
-                "the melee-catalyst compatibility list stays empty once every class casts through its Lélekkapocs");
+        final String spellContent = Files.readString(Path.of(
+                "src/main/resources/content/progression/spells.yml"));
+        check(gameplayConfig.contains("melee-catalyst: {}")
+                        && spellContent.contains(
+                        "classes: [warrior, paladin, death_knight, monk, demon_hunter]"),
+                "the locked melee-catalyst roster must retain exact parent semantics without an operator duplicate");
         check(gameplayConfig.contains("ripen-millis") && gameplayConfig.contains("expiry-millis"),
                 "the seed ripening and withering windows are admin-tunable live config");
 
