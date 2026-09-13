@@ -165,12 +165,14 @@ public final class ShamanGameplayRegressionSuite {
 
         final String gameplay = Files.readString(Path.of(
                 "src/main/resources/config/class-gameplay.yml"));
-        final String enhancementKit = gameplay.substring(
-                gameplay.indexOf("      enhancement:", gameplay.indexOf("  shaman:")),
-                gameplay.indexOf("      tidal:", gameplay.indexOf("  shaman:")));
-        final String tidalKit = gameplay.substring(
-                gameplay.indexOf("      tidal:", gameplay.indexOf("  shaman:")),
-                gameplay.indexOf("\n\n    # 50+", gameplay.indexOf("  shaman:")));
+        final int shaman = gameplay.indexOf("  shaman:");
+        final int enhancement = gameplay.indexOf("      enhancement:", shaman);
+        final int tidal = gameplay.indexOf("      tidal:", enhancement);
+        final int mastery = gameplay.indexOf("    mastery:", tidal);
+        check(shaman >= 0 && enhancement > shaman && tidal > enhancement && mastery > tidal,
+                "Shaman active-kit boundaries remain structurally ordered");
+        final String enhancementKit = gameplay.substring(enhancement, tidal);
+        final String tidalKit = gameplay.substring(tidal, mastery);
         check(!enhancementKit.contains("earthbind_totem"),
                 "Enhancement defaults cannot reference the Elemental-only Earthbind Totem grant");
         check(!tidalKit.contains("windfury_totem"),

@@ -476,8 +476,15 @@ public final class ConfigMenuGUIListener implements Listener {
         ConfigChatInputGate.close(player.getUniqueId());
         player.closeInventory();
         plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
-            final ConfigManager.BatchApplyResult result = configManager.applyOverridesIfUnchanged(
-                    session.expectedGeneration(), session.expectedFingerprint(), changes);
+            ConfigManager.BatchApplyResult attempted;
+            try {
+                attempted = configManager.applyOverridesIfUnchanged(
+                        session.expectedGeneration(), session.expectedFingerprint(), changes);
+            } catch (final RuntimeException failure) {
+                plugin.getLogger().severe("Config GUI transaction rejected and rolled back: " + failure);
+                attempted = ConfigManager.BatchApplyResult.REJECTED;
+            }
+            final ConfigManager.BatchApplyResult result = attempted;
             plugin.getServer().getGlobalRegionScheduler().run(plugin, global -> {
                 if (result == ConfigManager.BatchApplyResult.APPLIED) applyHooks(changes.keySet());
                 player.getScheduler().run(plugin, playerTask -> finishSave(player, result, changes.size()), null);
@@ -506,6 +513,8 @@ public final class ConfigMenuGUIListener implements Listener {
                     "&a⚙ &f%s &akulcs mentve egy tranzakcióban.", count));
             case NO_CHANGES -> player.sendMessage("§7Nincs ténylegesen megváltozott config érték.");
             case STALE -> player.sendMessage("§cA config közben megváltozott. Nyisd meg újra; semmi nem lett felülírva.");
+            case LOCKED -> player.sendMessage("§cA staged módosítás locked canonical contentet érintett; semmi nem lett felülírva.");
+            case REJECTED -> player.sendMessage("§cA config érvénytelen volt; a korábbi fájl és aktív snapshot maradt érvényben.");
         }
     }
 

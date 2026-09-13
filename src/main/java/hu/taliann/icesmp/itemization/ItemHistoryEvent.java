@@ -16,10 +16,17 @@ public record ItemHistoryEvent(Type type, long occurredAt, String detail) {
         RUNE_REMOVED,
         RUNE_CHANGED,
         REROLLED,
+        TEMPLATE_MIGRATED,
         ASCENDED,
         SIGNATURE_UPGRADED,
         SALVAGED,
-        DESTROYED
+        DESTROYED,
+        DEV_PROTOTYPED,
+        DEV_REROLLED,
+        DEV_ASCENDED,
+        DEV_RUNE_CHANGED,
+        DEV_SIGNATURE_UPGRADED,
+        DEV_REVERTED
     }
 
     public ItemHistoryEvent {

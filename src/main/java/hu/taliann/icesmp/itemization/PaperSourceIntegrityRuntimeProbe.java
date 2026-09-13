@@ -12,14 +12,27 @@ import hu.taliann.icesmp.pve.AuthoredCreatureSpawnService;
 import hu.taliann.icesmp.pve.MobAbilityRuntime;
 import hu.taliann.icesmp.pve.CombatTelemetry;
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.managers.EventSpawnGuard;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Skeleton;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -44,7 +57,13 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class PaperSourceIntegrityRuntimeProbe {
     public static final String PROPERTY = "icesmp.source-integrity-runtime";
     public static final String AUTHORED_PVE_PROPERTY = "icesmp.authored-pve-runtime";
+    public static final String INTEGRITY_HARDENING_PROPERTY =
+            "icesmp.gameplay-bootstrap-integrity-runtime";
     public static final String PASS_MARKER = "ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_PASS";
+    public static final String HARDENING_PASS_MARKER =
+            "ICESMP_GAMEPLAY_BOOTSTRAP_INTEGRITY_RUNTIME_PROBE_PASS";
+    public static final String FACADE_TEARDOWN_MARKER =
+            "ICESMP_STATIC_FACADE_TEARDOWN_RUNTIME_PROBE_PASS";
 
     private PaperSourceIntegrityRuntimeProbe() { }
 
@@ -71,7 +90,18 @@ public final class PaperSourceIntegrityRuntimeProbe {
 
     public static void maybeRun(final JavaPlugin plugin, final Object assembledCore) {
         final boolean authoredPve = Boolean.getBoolean(AUTHORED_PVE_PROPERTY);
-        if (!Boolean.getBoolean(PROPERTY) && !authoredPve) return;
+        final boolean integrityHardening = Boolean.getBoolean(INTEGRITY_HARDENING_PROPERTY);
+        if (!Boolean.getBoolean(PROPERTY) && !authoredPve && !integrityHardening) return;
+        if (integrityHardening) {
+            final ItemIdentityService identity = readField(assembledCore,
+                    "itemIdentityService", ItemIdentityService.class);
+            final ItemTemplateRegistry templates = readField(assembledCore,
+                    "itemTemplateRegistry", ItemTemplateRegistry.class);
+            final hu.taliann.icesmp.managers.SpellRegistry spells = readField(assembledCore,
+                    "spellRegistry", hu.taliann.icesmp.managers.SpellRegistry.class);
+            startIntegrityHardeningRuntimeProof(plugin, identity, templates, spells);
+            return;
+        }
         final CreatureSpeciesRegistry creatureSpecies = readField(assembledCore,
                 "creatureSpeciesRegistry", CreatureSpeciesRegistry.class);
         final MobAbilityRegistry mobAbilities = readField(assembledCore,
@@ -110,8 +140,10 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 verifyRp2ProductionPresentation(identity);
                 verifyActualInventoryAtomicity();
                 verifyMutationPhysicalState(identity);
+                verifyPrototypeQuarantine(identity, readField(assembledCore, "itemTransformationPolicy", ItemTransformationPolicy.class));
                 verifyCatalogPositiveLoad(identity, catalog, templates);
                 verifyCreatureRuntime(creatureSpecies, mobAbilities);
+                verifyCommandRuntime();
                 plugin.getLogger().info(PASS_MARKER);
             } catch (final Throwable failure) {
                 plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -122,7 +154,303 @@ public final class PaperSourceIntegrityRuntimeProbe {
         }, 1L);
     }
 
-    /** Spawns three real authored roles and waits for a common timer technique to execute. */
+    /** Real Paper/Folia registry, identity, migration and projectile-hit proof for this PR. */
+    private static void startIntegrityHardeningRuntimeProof(
+            final JavaPlugin plugin, final ItemIdentityService identity,
+            final ItemTemplateRegistry templates,
+            final hu.taliann.icesmp.managers.SpellRegistry spells) {
+        final org.bukkit.World world = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst();
+        check(world != null, "integrity-hardening runtime world unavailable");
+        final Location at = world.getSpawnLocation().clone().add(0.5D, 2.0D, 0.5D);
+        final DamageRecorder recorder = new DamageRecorder();
+        plugin.getServer().getPluginManager().registerEvents(recorder, plugin);
+        plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
+            final java.util.ArrayList<org.bukkit.entity.Entity> spawned = new java.util.ArrayList<>();
+            try {
+                verifyBootstrapRegistries();
+                verifySignatureIdentityAndMigration(plugin, identity, templates);
+                verifyProjectileDamageRuntime(plugin, world, at, spells, recorder, spawned);
+                plugin.getLogger().info(HARDENING_PASS_MARKER + " platform="
+                        + Bukkit.getServer().getName() + " minecraft=" + Bukkit.getMinecraftVersion());
+            } catch (final Throwable failure) {
+                plugin.getLogger().severe("ICESMP_GAMEPLAY_BOOTSTRAP_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
+                failure.printStackTrace();
+            } finally {
+                HandlerList.unregisterAll(recorder);
+                spawned.forEach(entity -> {
+                    if (entity.isValid()) entity.remove();
+                });
+                Bukkit.shutdown();
+            }
+        }, 1L);
+    }
+
+    private static void verifyBootstrapRegistries() {
+        final var damageTypes = io.papermc.paper.registry.RegistryAccess.registryAccess()
+                .getRegistry(io.papermc.paper.registry.RegistryKey.DAMAGE_TYPE);
+        for (final hu.taliann.icesmp.data.SpellSchool school
+                : hu.taliann.icesmp.data.SpellSchool.values()) {
+            check(damageTypes.get(new NamespacedKey("icesmp", school.getTypeId())) != null,
+                    "missing custom DamageType: " + school.getTypeId());
+        }
+        check(damageTypes.get(new NamespacedKey("icesmp", "rontas")) != null,
+                "missing environmental custom DamageType: rontas");
+        final var enchants = io.papermc.paper.registry.RegistryAccess.registryAccess()
+                .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT);
+        final java.util.LinkedHashSet<String> keys = new java.util.LinkedHashSet<>();
+        hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE.values()
+                .forEach(key -> keys.add(key.value()));
+        keys.addAll(List.of("runavert", "ej_fatyol", "arnyuzo", "meregfojto",
+                "viharfogo", "kaosz_zabla"));
+        for (final String key : keys) {
+            check(enchants.get(new NamespacedKey("icesmp", key)) != null,
+                    "missing custom enchant: " + key);
+        }
+    }
+
+    private static void verifySignatureIdentityAndMigration(
+            final JavaPlugin plugin, final ItemIdentityService identity,
+            final ItemTemplateRegistry templates) {
+        int signatures = 0;
+        for (final ItemTemplate template : templates.snapshot().values()) {
+            if (template.signatureEffectId().isBlank()) continue;
+            signatures++;
+            final ItemStack canonical = identity.create(template.templateId(),
+                    "runtime:integrity-signature", "paper-folia", null);
+            final ItemIdentityService.Inspection canonicalInspection = identity.inspect(canonical);
+            check(canonical.getType().name().equals(template.material())
+                            && canonicalInspection.status() == ItemIdentityService.Status.VALID,
+                    "canonical signature render mismatch: " + template.templateId() + " status="
+                            + canonicalInspection.status() + " detail=" + canonicalInspection.diagnostic());
+            final net.kyori.adventure.key.Key enchantKey =
+                    hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE
+                            .get(template.signatureEffectId());
+            if (enchantKey != null) {
+                final org.bukkit.enchantments.Enchantment enchant =
+                        io.papermc.paper.registry.RegistryAccess.registryAccess()
+                                .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                                .get(NamespacedKey.fromString(enchantKey.asString()));
+                check(enchant != null && canonical.getEnchantmentLevel(enchant) == 1,
+                        "canonical signature enchant projection missing: " + template.templateId());
+            }
+
+            final ItemStack legacy = new ItemStack(Material.valueOf(template.material()));
+            final var legacyMeta = legacy.getItemMeta();
+            final String legacySignature = "napfogyatkozas_fokusz".equals(template.templateId())
+                    ? "napfogyatkozas" : template.signatureEffectId();
+            legacyMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, "signature_item"),
+                    org.bukkit.persistence.PersistentDataType.STRING, legacySignature);
+            legacy.setItemMeta(legacyMeta);
+            final ItemIdentityService.Inspection migrated =
+                    identity.migrateLegacySignature(legacy, null, 1_000L);
+            check(migrated.status() == ItemIdentityService.Status.VALID
+                            && template.templateId().equals(migrated.instance().templateId()),
+                    "legacy signature did not converge on canonical template: " + template.templateId());
+            final java.util.UUID migratedId = migrated.instance().itemId();
+            check(identity.migrateLegacySignature(legacy, null, 2_000L).instance().itemId()
+                            .equals(migratedId),
+                    "legacy signature migration was not idempotent: " + template.templateId());
+        }
+        check(signatures == 15, "signature template inventory drift: " + signatures);
+    }
+
+    private static void verifyProjectileDamageRuntime(
+            final JavaPlugin plugin, final org.bukkit.World world, final Location at,
+            final hu.taliann.icesmp.managers.SpellRegistry spells,
+            final DamageRecorder recorder,
+            final List<org.bukkit.entity.Entity> spawned) {
+        final Map<String, hu.taliann.icesmp.data.SpellSchool> expectedSchools = Map.of(
+                "piercing_bolt", hu.taliann.icesmp.data.SpellSchool.TERMESZET,
+                "arrow_storm", hu.taliann.icesmp.data.SpellSchool.TERMESZET,
+                "dagger_throw", hu.taliann.icesmp.data.SpellSchool.ARNYEK,
+                "fireball", hu.taliann.icesmp.data.SpellSchool.TUZ,
+                "gale_burst", hu.taliann.icesmp.data.SpellSchool.VIHAR,
+                "bone_spear", hu.taliann.icesmp.data.SpellSchool.ARNYEK,
+                "double_tap", hu.taliann.icesmp.data.SpellSchool.TERMESZET,
+                "spectral_volley", hu.taliann.icesmp.data.SpellSchool.TERMESZET);
+        final Map<String, Double> baseDamage = Map.of(
+                "piercing_bolt", 7.0D, "arrow_storm", 4.0D,
+                "dagger_throw", 6.0D, "fireball", 5.0D,
+                "gale_burst", 1.0D, "bone_spear", 6.0D,
+                "double_tap", 6.0D, "spectral_volley", 5.0D);
+        final Map<String, Class<? extends Projectile>> kinds = Map.of(
+                "piercing_bolt", org.bukkit.entity.Arrow.class,
+                "arrow_storm", org.bukkit.entity.Arrow.class,
+                "dagger_throw", org.bukkit.entity.Snowball.class,
+                "fireball", org.bukkit.entity.SmallFireball.class,
+                "gale_burst", org.bukkit.entity.WindCharge.class,
+                "bone_spear", org.bukkit.entity.Snowball.class,
+                "double_tap", org.bukkit.entity.Arrow.class,
+                "spectral_volley", org.bukkit.entity.SpectralArrow.class);
+        final Skeleton shooter = world.spawn(at.clone(), Skeleton.class, entity -> entity.setAI(false));
+        spawned.add(shooter);
+        final hu.taliann.icesmp.listeners.SpellProjectileListener hitAuthority =
+                new hu.taliann.icesmp.listeners.SpellProjectileListener(plugin);
+
+        final LivingEntity directTarget = world.spawn(at.clone().add(3.0D, 0.0D, 0.0D),
+                org.bukkit.entity.Zombie.class, entity -> entity.setAI(false));
+        spawned.add(directTarget);
+        check(spells.getById("living_flame") != null, "direct spell control is not registered");
+        recorder.arm(directTarget);
+        hu.taliann.icesmp.utils.SpellDamageUtil.damageBySpell(null, directTarget, 3.0D,
+                "living_flame", hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
+        check(recorder.events == 1 && "icesmp:tuz_magia".equals(recorder.damageType)
+                        && recorder.direct == null && recorder.causing == null,
+                "direct spell control bypassed its canonical custom DamageType");
+
+        for (final String spellId : expectedSchools.keySet().stream().sorted().toList()) {
+            check(spells.getById(spellId) instanceof hu.taliann.icesmp.spells.ProjectileBurstSpell,
+                    "projectile spell is not registered/reachable: " + spellId);
+            final LivingEntity target = world.spawn(at.clone().add(2.0D, 0.0D, 0.0D),
+                    org.bukkit.entity.Zombie.class, entity -> entity.setAI(false));
+            final Projectile projectile = world.spawn(at.clone().add(1.0D, 1.0D, 0.0D),
+                    kinds.get(spellId));
+            projectile.setShooter(shooter);
+            spawned.add(target);
+            spawned.add(projectile);
+            hu.taliann.icesmp.utils.SpellDamageUtil.markProjectile(projectile, spellId,
+                    baseDamage.get(spellId), hu.taliann.icesmp.spells.CastModifiers.standardPower(1.25D));
+            final var snapshot = hu.taliann.icesmp.utils.SpellDamageUtil
+                    .projectileSnapshot(projectile).orElseThrow();
+            check(snapshot.school() == expectedSchools.get(spellId)
+                            && close(snapshot.scaledDamage(), baseDamage.get(spellId) * 1.25D),
+                    "projectile snapshot school/multiplier mismatch: " + spellId);
+            recorder.arm(target);
+            final ProjectileHitEvent hit = new ProjectileHitEvent(projectile, target);
+            hitAuthority.onProjectileHit(hit);
+            check(hit.isCancelled(), "spell projectile did not suppress vanilla damage: " + spellId);
+            check(recorder.events == 1
+                            && recorder.direct == projectile
+                            && recorder.causing == shooter
+                            && ("icesmp:" + expectedSchools.get(spellId).getTypeId())
+                            .equals(recorder.damageType),
+                    "canonical projectile DamageSource/event attribution mismatch: " + spellId);
+        }
+
+        for (final Class<? extends Projectile> kind
+                : List.of(org.bukkit.entity.Arrow.class, org.bukkit.entity.SmallFireball.class)) {
+            final Projectile vanilla = world.spawn(at.clone(), kind);
+            final LivingEntity target = world.spawn(at.clone().add(2.0D, 0.0D, 0.0D),
+                    org.bukkit.entity.Zombie.class, entity -> entity.setAI(false));
+            spawned.add(vanilla); spawned.add(target);
+            recorder.arm(target);
+            final ProjectileHitEvent hit = new ProjectileHitEvent(vanilla, target);
+            hitAuthority.onProjectileHit(hit);
+            check(!hit.isCancelled() && recorder.events == 0,
+                    "ordinary vanilla projectile was intercepted: " + kind.getSimpleName());
+        }
+    }
+
+    private static final class DamageRecorder implements Listener {
+        private java.util.UUID target;
+        private int events;
+        private org.bukkit.entity.Entity direct;
+        private org.bukkit.entity.Entity causing;
+        private String damageType;
+
+        private void arm(final LivingEntity targetEntity) {
+            target = targetEntity.getUniqueId();
+            events = 0;
+            direct = null;
+            causing = null;
+            damageType = "";
+        }
+
+        @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+        public void onDamage(final EntityDamageEvent event) {
+            if (target == null || !target.equals(event.getEntity().getUniqueId())) return;
+            events++;
+            direct = event.getDamageSource().getDirectEntity();
+            causing = event.getDamageSource().getCausingEntity();
+            damageType = event.getDamageSource().getDamageType().getKey().toString();
+        }
+    }
+
+    /** Called after IceSMPCore.disable to prove that the discarded graph is unreachable. */
+    public static void verifyFacadesClearedAfterDisable(final JavaPlugin plugin) {
+        if (!Boolean.getBoolean(INTEGRITY_HARDENING_PROPERTY)) return;
+        try {
+            check(hu.taliann.icesmp.managers.ConfigManager.current() == null,
+                    "ConfigManager facade retained disabled graph");
+            check(ItemTemplateRegistry.current() == null,
+                    "ItemTemplateRegistry facade retained disabled graph");
+            final Field field = hu.taliann.icesmp.managers.AdvancementService.class
+                    .getDeclaredField("instance");
+            field.setAccessible(true);
+            check(field.get(null) == null, "AdvancementService facade retained disabled graph");
+            plugin.getLogger().info(FACADE_TEARDOWN_MARKER);
+        } catch (final Throwable failure) {
+            plugin.getLogger().severe("ICESMP_STATIC_FACADE_TEARDOWN_RUNTIME_PROBE_FAIL: " + failure);
+        }
+    }
+
+    /** Representative real-Paper dispatch proof for the permission-filtered admin surface. */
+    private static void verifyCommandRuntime() throws Exception {
+        final JavaPlugin owner = JavaPlugin.getProvidingPlugin(PaperSourceIntegrityRuntimeProbe.class);
+        final CommandSender allowed = Bukkit.getConsoleSender();
+        for (final String command : List.of(
+                "icesmp",
+                "icesmp reload status",
+                "icesmp inspect config resource-pack.enabled",
+                "icesmp config get resource-pack.enabled",
+                "icesmp config menu",
+                "icesmp invalid-subcommand",
+                "ismp reload status")) {
+            check(Bukkit.dispatchCommand(allowed, command),
+                    "Paper command dispatch rejected: /" + command);
+        }
+        final List<String> roots = commandCompletions(allowed, "icesmp ");
+        check(roots.containsAll(List.of("reload", "config", "inspect", "client")),
+                "permission-allowed root completion omitted /icesmp domains: " + roots);
+        final List<String> configActions = commandCompletions(allowed, "icesmp config ");
+        check(configActions.containsAll(List.of("menu", "get", "set", "unset", "list", "find")),
+                "Paper trailing-space completion did not enter config domain: " + configActions);
+        final org.bukkit.permissions.PermissionAttachment denied = allowed.addAttachment(owner);
+        for (final String permission : List.of(
+                hu.taliann.icesmp.core.Permissions.RELOAD,
+                hu.taliann.icesmp.core.Permissions.CONFIG,
+                hu.taliann.icesmp.core.Permissions.INSPECT,
+                hu.taliann.icesmp.core.Permissions.CLIENT)) {
+            denied.setPermission(permission, false);
+        }
+        check(!allowed.hasPermission(hu.taliann.icesmp.core.Permissions.RELOAD)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.CONFIG)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.INSPECT)
+                        && !allowed.hasPermission(hu.taliann.icesmp.core.Permissions.CLIENT),
+                "console permission overrides were not applied");
+        try {
+            check(Bukkit.dispatchCommand(allowed, "icesmp reload status"),
+                    "permission-denied /icesmp command did not route through Paper");
+            final List<String> deniedRoots = commandCompletions(allowed, "icesmp ");
+            check(deniedRoots.stream().noneMatch(List.of("reload", "config", "inspect", "client")::contains),
+                    "permission-denied root completion leaked /icesmp domains: " + deniedRoots);
+        } finally {
+            allowed.removeAttachment(denied);
+        }
+        final hu.taliann.icesmp.managers.ConfigManager manager =
+                hu.taliann.icesmp.managers.ConfigManager.current();
+        check(manager != null, "ConfigManager runtime singleton unavailable");
+        final hu.taliann.icesmp.managers.ConfigManager.ConfigSnapshot before = manager.snapshot();
+        final java.nio.file.Path general = owner.getDataFolder().toPath().resolve("config/general.yml");
+        final byte[] original = java.nio.file.Files.readAllBytes(general);
+        try {
+            java.nio.file.Files.writeString(general, "invalid: [\n", java.nio.charset.StandardCharsets.UTF_8);
+            check(Bukkit.dispatchCommand(allowed, "icesmp reload operator"),
+                    "invalid operator reload did not route through Paper");
+            check(manager.snapshot() == before,
+                    "invalid operator reload replaced the previously published snapshot");
+        } finally {
+            java.nio.file.Files.write(general, original);
+        }
+        Bukkit.getLogger().info("ICESMP_CONFIG_COMMAND_RUNTIME_PROBE_PASS");
+    }
+
+    private static List<String> commandCompletions(final CommandSender sender, final String line) {
+        final List<String> completions = Bukkit.getCommandMap().tabComplete(sender, line);
+        return completions == null ? List.of() : completions;
+    }
+
+    /** Spawns authored roles/carrier variants and waits for common-runtime techniques to execute. */
     private static void startAuthoredPveRuntimeProof(final JavaPlugin plugin,
                                                      final MobTemplateRegistry templates,
                                                      final MobAbilityRegistry abilities,
@@ -137,7 +465,11 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final org.bukkit.Location at = world.getSpawnLocation().clone().add(0.5D, 2.0D, 0.5D);
         final int probeChunkX = at.getBlockX() >> 4;
         final int probeChunkZ = at.getBlockZ() >> 4;
-        plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
+        Bukkit.getGlobalRegionScheduler().run(plugin, global -> {
+            world.setTime(6000L);
+            world.setStorm(false);
+            world.setThundering(false);
+            plugin.getServer().getRegionScheduler().runDelayed(plugin, at, task -> {
             world.setChunkForceLoaded(probeChunkX, probeChunkZ, true);
             plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_REGION_START");
             final java.util.ArrayList<Mob> spawned = new java.util.ArrayList<>();
@@ -166,6 +498,61 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 check(worldBoss != null && champion != null && prologue != null,
                         "authored PvE runtime spawn returned null");
                 spawned.add(worldBoss); spawned.add(champion); spawned.add(prologue);
+                final Location daylightSpot = at.clone().add(-3.0D, 0.0D, 0.0D);
+                daylightSpot.setY(world.getHighestBlockYAt(daylightSpot.getBlockX(),
+                        daylightSpot.getBlockZ()) + 2.0D);
+                final Mob daytimeUndead = spawns.spawn(daylightSpot,
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "day_undead",
+                                "sunscarred_wayfarer", 18,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                final Mob nightUndead = spawns.spawn(at.clone().add(-5.0D, 0.0D, 0.0D),
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "night_undead",
+                                "gallows_runner", 18,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                final Mob skeletonVariant = spawns.spawn(at.clone().add(-7.0D, 0.0D, 0.0D),
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "defender",
+                                "barrow_bulwark", 22,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                final Mob spiderVariant = spawns.spawn(at.clone().add(-9.0D, 0.0D, 0.0D),
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "controller",
+                                "moss_trapper", 20,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                final Mob casterVariant = spawns.spawn(at.clone().add(-11.0D, 0.0D, 0.0D),
+                        AuthoredCreatureSpawnService.Request.template(
+                                "runtime_probe", "runtime:natural", "caster",
+                                "mire_hexer", 24,
+                                AuthoredCreatureSpawnService.RewardOwner.NONE, true,
+                                1.0D, 1.0D, 240L));
+                check(daytimeUndead != null && nightUndead != null && skeletonVariant != null
+                                && spiderVariant != null && casterVariant != null,
+                        "representative carrier variant spawn returned null");
+                spawned.add(daytimeUndead); spawned.add(nightUndead); spawned.add(skeletonVariant);
+                spawned.add(spiderVariant); spawned.add(casterVariant);
+                daytimeUndead.getPersistentDataContainer().remove(new NamespacedKey(
+                        "icesmp", EventSpawnGuard.EVENT_NO_BURN_KEY));
+                nightUndead.getPersistentDataContainer().remove(new NamespacedKey(
+                        "icesmp", EventSpawnGuard.EVENT_NO_BURN_KEY));
+                scaling.reconcileTerritoryProtection(daytimeUndead);
+                scaling.reconcileTerritoryProtection(nightUndead);
+                check(daytimeUndead.getEquipment() != null,
+                        "daytime undead lacks equipment carrier");
+                daytimeUndead.getEquipment().setHelmet(null);
+                check(scaling.hasAuthoredDaylightProtection(daytimeUndead),
+                        "day-capable authored undead lacks authored daylight source");
+                check(!scaling.hasAuthoredDaylightProtection(nightUndead),
+                        "night-only undead received permanent authored daylight protection");
+                check(world.getHighestBlockYAt(daylightSpot.getBlockX(), daylightSpot.getBlockZ())
+                                < daytimeUndead.getLocation().getBlockY(),
+                        "daylight undead probe location is not open sky");
+                plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_VARIANTS");
                 controls.add((Mob) world.spawn(at.clone().add(3.0D, 0.0D, 0.0D),
                         EntityType.COW.getEntityClass().asSubclass(Mob.class)));
                 controls.add((Mob) world.spawn(at.clone().add(5.0D, 0.0D, 0.0D),
@@ -208,9 +595,9 @@ public final class PaperSourceIntegrityRuntimeProbe {
                         worldBoss.setHealth(maximumHealth.getValue() * 0.40D);
                         worldBoss.damage(maximumHealth.getValue() * 0.20D);
                         worldBoss.damage(1.0D);
-                        check(runtime.triggerTechnique(worldBoss, "boss_slam",
+                        check(runtime.triggerTechnique(worldBoss, "ring_lock",
                                         MobAbilityDefinition.Trigger.ON_TIMER),
-                                "typed timer trigger rejected the attached boss_slam technique");
+                                "typed timer trigger rejected the attached ring_lock technique");
                         plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_THRESHOLD_ARMED");
                     } catch (final Throwable failure) {
                         plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -223,10 +610,31 @@ public final class PaperSourceIntegrityRuntimeProbe {
                     try {
                         final Map<String, Long> telemetry = CombatTelemetry.snapshot();
                         plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_TELEMETRY " + telemetry);
-                        check(telemetry.getOrDefault("technique_execute:boss_slam", 0L) > 0L,
+                        check(telemetry.getOrDefault("technique_execute:ring_lock", 0L) > 0L,
                                 "real authored world-boss technique did not execute through MobAbilityRuntime");
-                        check(telemetry.getOrDefault("boss_phase_transition:boss_enrage", 0L) == 1L,
+                        check(telemetry.getOrDefault("boss_phase_transition:summon_frozen_adds", 0L) == 1L,
                                 "health threshold was not one-shot in the common runtime");
+                        plugin.getLogger().info("ICESMP_AUTHORED_PVE_RUNTIME_PROBE_DAYLIGHT_STATE "
+                                + "valid=" + daytimeUndead.isValid()
+                                + ",dead=" + daytimeUndead.isDead()
+                                + ",health=" + daytimeUndead.getHealth()
+                                + ",fire=" + daytimeUndead.getFireTicks()
+                                + ",helmet=" + (daytimeUndead.getEquipment() == null ? "none"
+                                : daytimeUndead.getEquipment().getHelmet())
+                                + ",ai=" + daytimeUndead.hasAI()
+                                + ",abilities=" + runtime.activeAbilityIds(daytimeUndead));
+                        check(daytimeUndead.isValid() && !daytimeUndead.isDead(),
+                                "open-sky noon undead did not survive the proof window");
+                        check(daytimeUndead.getFireTicks() <= 0,
+                                "authored daylight protection left the noon undead burning");
+                        check(hasNoHelmet(daytimeUndead),
+                                "authored daylight protection used an equipment workaround");
+                        check(daytimeUndead.hasAI(),
+                                "day-capable authored undead lost vanilla combat AI");
+                        check(!runtime.activeAbilityIds(daytimeUndead).isEmpty(),
+                                "day-capable authored undead lost its canonical technique kit");
+                        check(!scaling.hasAuthoredDaylightProtection(nightUndead),
+                                "night-only variant gained authored daylight protection");
                         check(controls.stream().allMatch(control -> scaling.getLevel(control) > 0),
                                 "Cow/Zombie/Skeleton controls lack canonical stable levels");
                         check(species.profile(EntityType.COW).disposition()
@@ -237,7 +645,8 @@ public final class PaperSourceIntegrityRuntimeProbe {
                                         == CreatureSpeciesPolicy.Disposition.HOSTILE
                                         && controls.getFirst().getTarget() == null,
                                 "#138 passive/hostile control policy regressed");
-                        writeAuthoredPveRuntimeReport(spawned, controls, telemetry, spawns, scaling);
+                        writeAuthoredPveRuntimeReport(spawned, controls, telemetry, spawns, scaling,
+                                daytimeUndead, nightUndead);
                         plugin.getLogger().info(PASS_MARKER);
                     } catch (final Throwable failure) {
                         plugin.getLogger().severe("ICESMP_SOURCE_INTEGRITY_RUNTIME_PROBE_FAIL: " + failure);
@@ -262,14 +671,17 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 failure.printStackTrace();
                 Bukkit.shutdown();
             }
-        }, 1L);
+            }, 1L);
+        });
     }
 
     private static void writeAuthoredPveRuntimeReport(final List<Mob> mobs,
                                                       final List<Mob> controls,
                                                       final Map<String, Long> telemetry,
                                                       final AuthoredCreatureSpawnService spawns,
-                                                      final MobScalingManager scaling)
+                                                      final MobScalingManager scaling,
+                                                      final Mob daytimeUndead,
+                                                      final Mob nightUndead)
             throws java.io.IOException {
         final Path output = Path.of(System.getProperty("icesmp.combat-evidence-dir",
                 "../build/reports/combat-foundation")).toAbsolutePath().normalize()
@@ -287,15 +699,29 @@ public final class PaperSourceIntegrityRuntimeProbe {
                 .map(String::valueOf).collect(java.util.stream.Collectors.joining(",")) + "],\n"
                 + "  \"passive_control_initial_target\": false,\n"
                 + "  \"common_runtime\": \"MobAbilityRuntime\",\n"
-                + "  \"boss_slam_executions\": "
-                + telemetry.getOrDefault("technique_execute:boss_slam", 0L) + ",\n"
+                + "  \"daylight_undead\": {\"open_sky_noon\":true,\"no_helmet\":"
+                + hasNoHelmet(daytimeUndead)
+                + ",\"no_fire\":" + (daytimeUndead.getFireTicks() <= 0)
+                + ",\"combat_ready\":" + (daytimeUndead.hasAI()
+                && !scaling.hasAuthoredDaylightProtection(nightUndead)) + "},\n"
+                + "  \"night_only_authored_protection\": "
+                + scaling.hasAuthoredDaylightProtection(nightUndead) + ",\n"
+                + "  \"signature_executions\": "
+                + telemetry.getOrDefault("technique_execute:ring_lock", 0L) + ",\n"
                 + "  \"threshold_transitions\": "
-                + telemetry.getOrDefault("boss_phase_transition:boss_enrage", 0L) + ",\n"
+                + telemetry.getOrDefault("boss_phase_transition:summon_frozen_adds", 0L) + ",\n"
                 + "  \"world_boss_stat_provenance\": \""
                 + String.valueOf(spawns.statProvenance(mobs.getFirst())) + "\",\n"
                 + "  \"duplicate_participant_modifier_rejected\": true,\n"
                 + "  \"pause_resume_exercised\": true,\n"
                 + "  \"status\": \"PAPER_RUNTIME_PROVED\"\n}\n");
+    }
+
+    /** Paper represents an empty equipment slot as either null or an AIR ItemStack. */
+    private static boolean hasNoHelmet(final Mob mob) {
+        if (mob == null || mob.getEquipment() == null) return false;
+        final org.bukkit.inventory.ItemStack helmet = mob.getEquipment().getHelmet();
+        return helmet == null || helmet.getType().isAir();
     }
 
     /**
@@ -464,6 +890,111 @@ public final class PaperSourceIntegrityRuntimeProbe {
         final var canonical = vanilla.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
         check(canonical != null && canonical.modifiers().isEmpty(),
                 "explicit empty canonical projection must suppress backing Material defaults");
+    }
+
+    /** Detached real Paper stacks/serialization; this does not assert connected player custody. */
+    private static void verifyDeveloperCompensation(ItemIdentityService identity, ItemStack canonical, ItemStack prototype) {
+        final var mutations = new ItemMutationService();
+        for (final var physical : List.of(canonical, prototype)) {
+            final var inspected = identity.inspect(physical); final var original = java.util.UUID.randomUUID();
+            check(!inspected.template().rolledStatsAt(inspected.instance().ascension().stageId()).isEmpty(), "native compensation probe needs actual authored rolls");
+            final var changed = mutations.rerollFromDeveloper(inspected.template(), inspected.instance(),
+                    new ItemMutationService.RerollRequest(original, "", 0.8, false, 100), () -> 0.5).candidate();
+            final var inverse = java.util.UUID.randomUUID();
+            final var restored = mutations.revertFromDeveloper(inspected.template(), changed, inspected.instance(), original, inverse, 101);
+            final var before = new ItemStack[41]; before[0] = identity.render(inspected.template(), changed);
+            final var after = before.clone(); after[0] = CanonicalPhysicalState.preserve(before[0], identity.render(inspected.template(), restored));
+            final var decoded = ItemStack.deserializeBytes(after[0].serializeAsBytes());
+            check(identity.inspect(decoded).status() == ItemIdentityService.Status.VALID && identity.inspect(decoded).instance().equals(restored),
+                    "native compensation rendering/serialization lost revision or DEV history");
+            check(restored.rolls().equals(inspected.instance().rolls()) && restored.origin().equals(inspected.instance().origin())
+                    && restored.mutation().hasReceipt(original) && restored.mutation().hasReceipt(inverse)
+                    && restored.history().getLast().type() == ItemHistoryEvent.Type.DEV_REVERTED,
+                    "native compensation washed original provenance or receipts");
+            check(ItemPrototypePolicy.isPrototype(restored) == ItemPrototypePolicy.isPrototype(inspected.instance()), "native compensation lost prototype quarantine");
+            final var entry = new hu.taliann.icesmp.storage.ItemMutationJournal.Entry(inverse,
+                    hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER,
+                    "DEV_REVERT_" + (ItemPrototypePolicy.isPrototype(restored) ? "REROLL_PROTOTYPE" : "REROLL_CANONICAL"), restored.itemId(),
+                    hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(before), hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(after), 101);
+            check(ItemDeveloperMutationRuntime.observedState(before, entry).orElseThrow() == hu.taliann.icesmp.storage.ItemDeveloperReceipt.State.ABORTED
+                    && ItemDeveloperMutationRuntime.observedState(after, entry).orElseThrow() == hu.taliann.icesmp.storage.ItemDeveloperReceipt.State.OBSERVED,
+                    "native compensation observation confused exact before and after");
+            final var conflict = after.clone(); conflict[0] = after[0].clone(); conflict[0].setAmount(2);
+            check(ItemDeveloperMutationRuntime.observedState(conflict, entry).isEmpty(), "native compensation accepted changed physical state");
+        }
+        Bukkit.getLogger().info("ICESMP_ITEM_COMPENSATION_RUNTIME_PROBE_PASS scope=detached_native_compensation_projection");
+    }
+
+    public static void verifyPrototypeQuarantine(final ItemIdentityService identity, final ItemTransformationPolicy transformations) {
+        final var canonical = identity.create("glatziendorfi_jegvert", "runtime:prototype-control", "paper", null);
+        final var beforeBytes = canonical.serializeAsBytes(); final var inspected = identity.inspect(canonical);
+        final var owner = hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER; final var operation = java.util.UUID.randomUUID();
+        final var copy = new ItemMutationService().clonePrototype(inspected.template(), inspected.instance(), java.util.UUID.randomUUID(), owner, operation, 100);
+        final var prototype = identity.render(inspected.template(), copy);
+        verifyDeveloperCompensation(identity, canonical, prototype);
+        check(ItemMutationCoordinator.current() != null && ItemMutationCoordinator.current().developerMutations() != null,
+                "assembled native developer item ingress missing");
+        final var inventory = new ItemStack[41]; inventory[0] = canonical; inventory[40] = prototype;
+        final var encoded = hu.taliann.icesmp.storage.ItemMutationJournal.encodeInventory(inventory);
+        check(ItemDeveloperMutationRuntime.matches(inventory, encoded)
+                && ItemDeveloperMutationRuntime.matches(hu.taliann.icesmp.storage.ItemMutationJournal.decodeInventory(encoded), encoded),
+                "native developer inventory comparison lost exact serialized state");
+        final var changedAmount = hu.taliann.icesmp.storage.ItemMutationJournal.decodeInventory(encoded);
+        changedAmount[40].setAmount(2);
+        check(!ItemDeveloperMutationRuntime.matches(changedAmount, encoded), "native developer comparison ignored item amount");
+        final var changedSlot = hu.taliann.icesmp.storage.ItemMutationJournal.decodeInventory(encoded);
+        changedSlot[39] = changedSlot[40]; changedSlot[40] = null;
+        check(!ItemDeveloperMutationRuntime.matches(changedSlot, encoded), "native developer comparison ignored physical slot");
+        check(java.util.Arrays.equals(beforeBytes, canonical.serializeAsBytes()), "prototype mutated original physical item");
+        check(identity.inspect(prototype).status() == ItemIdentityService.Status.VALID, "native prototype render is not inspectable");
+        check(ItemPrototypePolicy.allowedCustody(prototype, owner, owner)
+                && !ItemPrototypePolicy.allowedCustody(prototype, java.util.UUID.randomUUID(), owner)
+                && !ItemPrototypePolicy.allowedCustody(prototype, owner, java.util.UUID.randomUUID())
+                && !ItemPrototypePolicy.allowedCustody(prototype, owner, null), "native prototype custody accepted a foreign or unavailable primary developer");
+        final var restored = ItemStack.deserializeBytes(prototype.serializeAsBytes());
+        check(ItemPrototypePolicy.identity(restored).equals(ItemPrototypePolicy.identity(prototype)), "physical serialization lost prototype custody");
+        identity.setEquipmentSuppressed(restored, inspected.template(), copy, false);
+        identity.refreshPresentation(restored, inspected.template(), copy);
+        check(identity.isEquipmentSuppressed(restored) && identity.abilityPowerOf(restored) == 0 && identity.runesOf(restored).isEmpty()
+                && restored.getEnchantments().isEmpty() && restored.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS).modifiers().isEmpty(), "native reconciliation restored prototype equipment power");
+        final var missingMarker = prototype.clone(); final var missingMeta = missingMarker.getItemMeta();
+        for (final String key : List.of("dev_prototype", "dev_prototype_owner", "dev_prototype_operation")) missingMeta.getPersistentDataContainer().remove(new NamespacedKey("icesmp", key));
+        missingMarker.setItemMeta(missingMeta);
+        check(ItemPrototypePolicy.direct(missingMarker) && identity.inspect(missingMarker).status() == ItemIdentityService.Status.INTEGRITY_MISMATCH
+                && !ItemPrototypePolicy.allowedCustody(missingMarker, owner, owner), "removed markers washed intrinsic native prototype origin");
+        final var bundle = new ItemStack(Material.BUNDLE); final var bundleMeta = (org.bukkit.inventory.meta.BundleMeta) bundle.getItemMeta();
+        bundleMeta.addItem(prototype); bundle.setItemMeta(bundleMeta);
+        check(ItemPrototypePolicy.scan(bundle) == ItemPrototypePolicy.Scan.PROTOTYPE && !ItemPrototypePolicy.allowedCustody(bundle, owner, owner), "bundle concealed a prototype");
+        final var box = new ItemStack(Material.SHULKER_BOX); final var boxMeta = (org.bukkit.inventory.meta.BlockStateMeta) box.getItemMeta();
+        final var state = (org.bukkit.block.ShulkerBox) boxMeta.getBlockState(); state.getInventory().setItem(0, bundle); boxMeta.setBlockState(state); box.setItemMeta(boxMeta);
+        check(ItemPrototypePolicy.scan(ItemStack.deserializeBytes(box.serializeAsBytes())) == ItemPrototypePolicy.Scan.PROTOTYPE, "nested serialized container concealed a prototype");
+        final var malformed = new ItemStack(Material.STICK); final var malformedMeta = malformed.getItemMeta();
+        malformedMeta.getPersistentDataContainer().set(new NamespacedKey("icesmp", "dev_prototype"), org.bukkit.persistence.PersistentDataType.STRING, "wrong-type"); malformed.setItemMeta(malformedMeta);
+        check(ItemPrototypePolicy.direct(malformed) && !ItemPrototypePolicy.allowedCustody(malformed, owner, owner), "malformed native marker became ordinary item");
+        final var artifact = new ItemStack(Material.STICK); final var artifactMeta = artifact.getItemMeta();
+        artifactMeta.getPersistentDataContainer().set(new NamespacedKey("icesmp", "dev_item_id"), org.bukkit.persistence.PersistentDataType.STRING, "world_weaver"); artifact.setItemMeta(artifactMeta);
+        boolean refused = false;
+        try { ItemPrototypePolicy.mark(artifact, new ItemPrototypePolicy.Identity(owner, operation)); } catch (IllegalArgumentException expected) { refused = true; }
+        check(refused && !ItemPrototypePolicy.direct(artifact), "developer artifact was converted into prototype");
+        final var otherOwner = java.util.UUID.randomUUID(); final var foreign = new ItemStack(Material.STICK);
+        ItemPrototypePolicy.mark(foreign, new ItemPrototypePolicy.Identity(otherOwner, operation));
+        check(!ItemPrototypePolicy.allowedCustody(foreign, otherOwner, otherOwner), "caller-supplied/configurable owner became primary developer");
+        final var arrow = new ItemStack(Material.ARROW); ItemPrototypePolicy.mark(arrow, new ItemPrototypePolicy.Identity(owner, operation));
+        final var crossbow = new ItemStack(Material.CROSSBOW); final var charged = (org.bukkit.inventory.meta.CrossbowMeta) crossbow.getItemMeta();
+        charged.addChargedProjectile(arrow); crossbow.setItemMeta(charged);
+        check(ItemPrototypePolicy.scan(ItemStack.deserializeBytes(crossbow.serializeAsBytes())) == ItemPrototypePolicy.Scan.PROTOTYPE,
+                "charged crossbow concealed prototype ammunition");
+        check(ItemPrototypePolicy.scan(canonical) == ItemPrototypePolicy.Scan.CLEAN
+                && ItemPrototypePolicy.scan(new ItemStack(Material.STICK)) == ItemPrototypePolicy.Scan.CLEAN, "ordinary native items became prototypes");
+        for (final var item : List.of(prototype, restored, missingMarker, bundle, box, malformed, crossbow)) {
+            final var classification = transformations.classify(item);
+            check(classification.transformationProtected(), "prototype was skipped by actual native boundary classification");
+            for (final var operationType : ItemTransformationPolicy.Transformation.values()) {
+                check(transformations.decide(classification, operationType).action() == ItemTransformationPolicy.Action.DENY,
+                        "actual native prototype boundary allowed " + operationType);
+            }
+        }
+        Bukkit.getLogger().info("ICESMP_PROTOTYPE_RUNTIME_PROBE_PASS scope=detached_native_identity_custody_projection");
     }
 
     /** Final P1-009 matrix on real Paper ItemStacks. */

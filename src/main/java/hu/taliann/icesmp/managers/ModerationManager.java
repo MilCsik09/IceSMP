@@ -406,8 +406,7 @@ public final class ModerationManager implements PersistentStore, PlayerStateClea
         mutationGate.close();
         plugin.getLogger().severe("A moderációs autoritatív mentés meghiúsult; a plugin leáll: " + failure);
         try {
-            Bukkit.getGlobalRegionScheduler().run(plugin,
-                    task -> Bukkit.getPluginManager().disablePlugin(plugin));
+            hu.taliann.icesmp.IceSMP.requestDisable(plugin);
         } catch (final RuntimeException schedulingFailure) {
             // Preserve the original operation callback even when the scheduler is already retiring.
             // The admission gate above remains closed, so no later authoritative write can slip in.

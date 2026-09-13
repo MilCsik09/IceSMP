@@ -3,6 +3,10 @@ allprojects { project ->
         project.tasks.named('runServer') { task ->
             task.minecraftVersion('1.21.11')
             task.runDirectory.set(project.layout.projectDirectory.dir('run'))
+            task.downloadPlugins {
+                // Required production dependency pinned by class-spec-dependencies.lock.yml.
+                modrinth('fancynpcs', 'axfBJcKs')
+            }
         }
     }
 }

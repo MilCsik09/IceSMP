@@ -10,7 +10,6 @@ import hu.taliann.icesmp.core.Permissions;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.SpecializationType;
-import hu.taliann.icesmp.managers.DailyQuestManager;
 import hu.taliann.icesmp.managers.PartyManager;
 import hu.taliann.icesmp.managers.StatsManager;
 import hu.taliann.icesmp.relics.RelicDefinition;
@@ -153,28 +152,12 @@ public final class CommandMenus {
 
     /** The daily/weekly quest tile with live progress (main hub). */
     private static ItemStack dailyTile(final Player player, final CommandMenuContext ctx) {
-        if (!ctx.dailyQuestManager().isEnabled()) {
-            return GuiUtil.icon(Material.GRAY_DYE, title("Napi küldetés"), List.of(grey("A napi küldetések ki vannak kapcsolva.")));
-        }
-
         final List<Component> lore = new ArrayList<>();
-        final DailyQuestManager.Daily daily = ctx.dailyQuestManager().getActive();
-        if (daily != null) {
-            lore.add(label("Napi", Component.text(daily.name(), NamedTextColor.WHITE)));
-            lore.add(label("Állás", ctx.dailyQuestManager().isDone(player)
-                    ? Component.text("teljesítve ✔", NamedTextColor.GREEN)
-                    : Component.text(ctx.dailyQuestManager().getProgress(player) + "/" + daily.amount(), NamedTextColor.WHITE)));
-        }
-        final DailyQuestManager.Daily weekly = ctx.dailyQuestManager().getActiveWeekly();
-        if (weekly != null) {
-            lore.add(label("Heti", Component.text(weekly.name(), NamedTextColor.WHITE)));
-            lore.add(label("Állás", ctx.dailyQuestManager().isWeeklyDone(player)
-                    ? Component.text("teljesítve ✔", NamedTextColor.GREEN)
-                    : Component.text(ctx.dailyQuestManager().getWeeklyProgress(player) + "/" + weekly.amount(), NamedTextColor.WHITE)));
-        }
-        lore.add(label("Sorozat", Component.text(ctx.dailyQuestManager().getStreak(player) + " nap", NamedTextColor.WHITE)));
+        lore.add(grey("A napi és heti megbízások a"));
+        lore.add(grey("kanonikus Küldetésnaplóban vannak."));
+        lore.add(grey("A jutalmak felvétel előtt láthatók."));
         lore.add(click());
-        return GuiUtil.icon(Material.SUNFLOWER, title("Napi küldetés"), lore);
+        return GuiUtil.icon(Material.SUNFLOWER, title("Napi és heti megbízások"), lore);
     }
 
     // ===== FACTION =====
@@ -189,11 +172,25 @@ public final class CommandMenus {
         final UUID kingId = faction == null ? null : ctx.kingManager().getKing(faction);
         if (faction != null) {
             headerLore.add(label("Kassza", Component.text(ctx.currencyManager().formatBalance(ctx.treasuryManager().getBalance(faction)), NamedTextColor.WHITE)));
-            headerLore.add(label("Adókulcs", Component.text(ctx.treasuryManager().getTaxRate(faction) + "%", NamedTextColor.WHITE)));
             headerLore.add(label("Király", Component.text(kingId == null ? "nincs" : nameOf(kingId), NamedTextColor.WHITE)));
             headerLore.add(label("Raid", Component.text(ctx.raidManager().isRaidActive() ? "folyamatban" : "nincs", NamedTextColor.WHITE)));
         }
-        put(inv, holder, 4, GuiUtil.icon(Material.RED_BANNER, accent("Frakció"), headerLore), null);
+        headerLore.add(grey("Részletes állapot: /faction status"));
+        headerLore.add(click());
+        put(inv, holder, 4, GuiUtil.icon(Material.RED_BANNER, accent("Frakció"), headerLore),
+                "RUN:faction status");
+
+        try {
+            if (new hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperStore()
+                    .read(player.getUniqueId()).whisperer()) {
+                put(inv, holder, 24, GuiUtil.icon(Material.ECHO_SHARD, title("Suttogó állapot"),
+                        List.of(grey("Saját fokozat és visszatérési várakozás."), click())), "RUN:suttogas állapot");
+                put(inv, holder, 25, GuiUtil.icon(Material.AMETHYST_SHARD, title("Titkos megbízás"),
+                        List.of(grey("Kultista átadás: feladat és kockázat."), click())), "RUN:suttogas megbízás");
+                put(inv, holder, 23, GuiUtil.icon(Material.MILK_BUCKET, title("Kapcsolat megszakítása"),
+                        List.of(grey("Privát kilépés; külön megerősítést kér."), click())), "RUN:suttogas megtagadás");
+            }
+        } catch (final RuntimeException unavailable) { /* No secret UI from an unreadable profile. */ }
 
         if (faction == null) {
             putJoinButtons(inv, holder, player, ctx, null, "Csatlakozás");
@@ -212,8 +209,6 @@ public final class CommandMenus {
             put(inv, holder, 16, GuiUtil.icon(Material.COMPASS, title("Frakcióváltás"),
                     List.of(grey("Átlépés egy másik frakcióba."), click())), "MENU:FACTION_SWITCH");
             if (ctx.kingManager().isKing(player)) {
-                put(inv, holder, 15, GuiUtil.icon(Material.DIAMOND, title("Kassza-kivét: 100"),
-                        List.of(grey("Király: 100 érme kivétele."), click())), "RUN:faction treasury withdraw 100");
                 int raidSlot = 20;
                 for (final FactionType target : FactionType.values()) {
                     if (target == faction || target == FactionType.NEUTRAL) {

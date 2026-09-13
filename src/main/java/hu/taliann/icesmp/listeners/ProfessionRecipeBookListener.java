@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.gui.ProfessionRecipeGUI;
+import hu.taliann.icesmp.integrity.*;
 import hu.taliann.icesmp.gui.ProfessionRecipeHolder;
 import hu.taliann.icesmp.managers.FactionManager;
 import hu.taliann.icesmp.managers.ItemRarityService;
@@ -172,6 +173,12 @@ public final class ProfessionRecipeBookListener implements Listener {
             return;
         }
 
+        final java.util.UUID playerId = player.getUniqueId();
+        final RewardContext reward;
+        try { reward = BukkitRewardSources.entity(RewardChannel.PROFESSION_XP, player).forRecipient(playerId); }
+        catch (RuntimeException | LinkageError unavailable) { return; }
+        final var contribution = new RewardContext(RewardChannel.WEEKLY_GOAL, playerId, reward.sources());
+
         final java.util.UUID rootOperationId = java.util.UUID.randomUUID();
         final List<ItemStack> outputs = new ArrayList<>();
         int masterworkCount = 0;
@@ -220,23 +227,23 @@ public final class ProfessionRecipeBookListener implements Listener {
             final int bulkCap = Math.max(1,
                     configManager.getInt("professions.xp.bulk-event-cap", 16));
             final int durableCraftXp = Math.multiplyExact(craftXp, Math.min(batches, bulkCap));
-            professionManager.addXpFor(player, recipe.profession(), durableCraftXp)
+            professionManager.addXpFor(player, recipe.profession(), durableCraftXp, reward)
                     .whenComplete((change, failure) -> {
                         if (failure == null && change != null && change.changed()) {
-                            professionManager.runOnOwnerThread(player, () -> {
+                            professionManager.runOnOwnerThread(playerId, owned -> {
                                 final hu.taliann.icesmp.managers.ProfessionWeeklyGoalManager weeklyRef = weeklyGoal;
-                                if (weeklyRef != null && player.isOnline()) {
-                                    weeklyRef.add(player, recipe.profession(), durableCraftXp);
+                                if (weeklyRef != null) {
+                                    weeklyRef.add(owned, recipe.profession(), durableCraftXp, contribution);
                                 }
                             });
                         }
                         if (failure == null) return;
                         plugin.getLogger().severe("Craft XP PlayerProfile commit failed for "
-                                + player.getUniqueId() + " / " + recipe.id() + ": "
+                                + playerId + " / " + recipe.id() + ": "
                                 + failure.getMessage());
-                        professionManager.runOnOwnerThread(player, () -> {
-                            if (player.isOnline()) {
-                                player.sendMessage(messageManager.get(
+                        professionManager.runOnOwnerThread(playerId, owned -> {
+                            if (owned.isOnline()) {
+                                owned.sendMessage(messageManager.get(
                                         "profession-craft-xp-storage-failed",
                                         "&eA tárgy elkészült, de a szakma-XP mentése meghiúsult; az adminok értesítést kaptak."));
                             }
@@ -246,7 +253,8 @@ public final class ProfessionRecipeBookListener implements Listener {
         final hu.taliann.icesmp.managers.BestiaryManager bestiaryRef = bestiaryManager;
         if (bestiaryRef != null) {
             bestiaryRef.record(player,
-                    hu.taliann.icesmp.managers.BestiaryManager.Category.RECIPES, recipe.id());
+                    hu.taliann.icesmp.managers.BestiaryManager.Category.RECIPES, recipe.id(),
+                    new RewardContext(RewardChannel.BESTIARY, playerId, reward.sources()));
         }
         hu.taliann.icesmp.professions.ProfessionEconomyTelemetry.global().recordCraft(
                 recipe, batches, masterworkCount, recipe.level() >= 40 || recipe.blueprint());
@@ -348,17 +356,19 @@ public final class ProfessionRecipeBookListener implements Listener {
                 : new ItemStack(recipe.result(), recipe.resultAmount());
         if (result == null) return null;
 
-        if (recipe.uniqueResult() == null && recipe.lore() != null && !recipe.lore().isEmpty()) {
+        if (recipe.uniqueResult() == null) {
             final ItemMeta meta = result.getItemMeta();
             if (meta != null) {
                 meta.displayName(LEGACY.deserialize(recipe.displayName())
                         .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                final List<Component> loreLines = new ArrayList<>();
-                for (final String line : recipe.lore()) {
-                    loreLines.add(LEGACY.deserialize(line)
-                            .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                if (recipe.lore() != null && !recipe.lore().isEmpty()) {
+                    final List<Component> loreLines = new ArrayList<>();
+                    for (final String line : recipe.lore()) {
+                        loreLines.add(LEGACY.deserialize(line)
+                                .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    }
+                    meta.lore(loreLines);
                 }
-                meta.lore(loreLines);
                 result.setItemMeta(meta);
             }
         }
@@ -369,18 +379,6 @@ public final class ProfessionRecipeBookListener implements Listener {
                 final int level = Math.max(0, Math.min(3,
                         configManager.getInt("signature.tuzkopo.quick-charge-level", 2)));
                 if (level > 0) sigMeta.addEnchant(org.bukkit.enchantments.Enchantment.QUICK_CHARGE, level, true);
-            }
-            if (configManager.getBoolean("signature.custom-enchants.enabled", true)
-                    && configManager.getBoolean("signature.custom-enchants.items." + recipe.signature(), true)) {
-                final net.kyori.adventure.key.Key enchantKey =
-                        hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE.get(recipe.signature());
-                if (enchantKey != null) {
-                    final org.bukkit.enchantments.Enchantment enchant =
-                            io.papermc.paper.registry.RegistryAccess.registryAccess()
-                                    .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
-                                    .get(org.bukkit.NamespacedKey.fromString(enchantKey.asString()));
-                    if (enchant != null) sigMeta.addEnchant(enchant, 1, true);
-                }
             }
             result.setItemMeta(sigMeta);
         }

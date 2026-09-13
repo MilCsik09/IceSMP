@@ -107,7 +107,7 @@ Integrates final assets, validates resource-pack/runtime binding and performs st
 
 ## Validation contract
 
-Final CI runs the generated catalog check, full asset graph, final RP2 authority enforcement, committed-manifest drift check, resource-pack unit/validation tooling, equipment visual audit, repository consistency, Java 21 clean build and resource-pack regressions on the exact PR head. It also verifies the stacked parent merge-base and a clean tracked checkout.
+Final CI runs the authored catalog audit, full asset graph, final RP2 authority enforcement, committed-manifest drift check, resource-pack unit/validation tooling, equipment visual audit, repository consistency, Java 21 clean build and resource-pack regressions on the exact PR head. It also verifies the stacked parent merge-base and a clean tracked checkout.
 
 ## RP2-B readiness
 

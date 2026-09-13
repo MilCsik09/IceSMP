@@ -60,8 +60,8 @@ jobs:
       - name: Install audit dependencies
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
 
-      - name: Prove generated catalog authority
-        run: python3 scripts/generate_long_term_equipment_catalog.py --check
+      - name: Prove authored catalog authority
+        run: python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets
 
       - name: Build full RP2-A production asset graph
         run: python3 scripts/equipment_rp2_asset_audit.py

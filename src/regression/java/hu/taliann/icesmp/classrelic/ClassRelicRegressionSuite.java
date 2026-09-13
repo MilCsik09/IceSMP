@@ -950,7 +950,7 @@ public final class ClassRelicRegressionSuite {
 
     private static void packagedYamlContract() throws Exception {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(
-                new java.io.File("src/main/resources/config/relics.yml"));
+                new java.io.File("src/main/resources/content/equipment/relics.yml"));
         final ConfigurationSection root = yaml.getConfigurationSection("relics.class-relics");
         check(root != null, "packaged relics.yml carries the class-relics section");
         final ClassRelicCatalog catalog = ClassRelicCatalogLoader.load(toMap(root), false);
@@ -968,7 +968,7 @@ public final class ClassRelicRegressionSuite {
                 "packaged Awakening stays disabled with a whole-second cooldown");
 
         final String raw = java.nio.file.Files.readString(java.nio.file.Path.of(
-                "src/main/resources/config/relics.yml"));
+                "src/main/resources/content/equipment/relics.yml"));
         check(!raw.contains("dragon-relic-id") && !raw.contains("dragon-essence-bonus-percent"),
                 "stale legacy dragon keys are fully removed from the packaged config");
     }

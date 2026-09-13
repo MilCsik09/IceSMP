@@ -22,6 +22,10 @@ public interface ClassSpecSectionMutationStore {
     }
 
     CompletionStage<SaveResult> save(UUID playerId, long expectedRevision, ClassSpecSection candidate);
+    default CompletionStage<SaveResult> saveReward(UUID playerId, long expectedRevision,
+            ClassSpecSection candidate, hu.taliann.icesmp.integrity.RewardContext reward) {
+        return java.util.concurrent.CompletableFuture.completedFuture(SaveResult.rewardDenied(cached(playerId).orElse(null)));
+    }
 
     /** Explicit quarantine recovery. The evidence remains preserved and audit-linked. */
     CompletionStage<ClassSpecSection> recover(UUID playerId, String evidenceId, String auditId);
@@ -62,10 +66,16 @@ public interface ClassSpecSectionMutationStore {
                     durableProfile == null ? -1L : durableProfile.revision(), "repository stopped");
         }
 
+        public static SaveResult rewardDenied(final ClassSpecSection durableProfile) {
+            return new SaveResult(Status.REWARD_DENIED, durableProfile,
+                    durableProfile == null ? -1L : durableProfile.revision(), "Reward eligibility denied");
+        }
+
         public enum Status {
             COMMITTED,
             REVISION_CONFLICT,
             PERSISTENCE_FAILED,
+            REWARD_DENIED,
             LIFECYCLE_STOPPED
         }
     }

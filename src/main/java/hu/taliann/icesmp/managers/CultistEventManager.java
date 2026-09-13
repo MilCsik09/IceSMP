@@ -1,17 +1,13 @@
 package hu.taliann.icesmp.managers;
 
-import hu.taliann.icesmp.pve.MobRank;
 import hu.taliann.icesmp.utils.MessageManager;
 import hu.taliann.icesmp.utils.TransientEntities;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -38,6 +34,7 @@ public final class CultistEventManager {
     private final SeasonManager seasonManager;
     private final org.bukkit.NamespacedKey markKey;
     private final Set<UUID> cultists = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> supporters = ConcurrentHashMap.newKeySet();
 
     private volatile boolean active;
     private volatile String variant = "";
@@ -92,6 +89,32 @@ public final class CultistEventManager {
             }
         }
         return active;
+    }
+
+    /** One concrete covert delivery per event. Being online or standing nearby earns nothing. */
+    public synchronized boolean deliverOffering(final Player player, final UUID cultistId) {
+        if (!active || !("rite".equals(variant) || "courier".equals(variant))
+                || !cultists.contains(cultistId) || !whisperManager.isWhisperer(player)
+                || whisperManager.ritualPending(player.getUniqueId())) return false;
+        if (supporters.contains(player.getUniqueId())) {
+            player.sendMessage(messageManager.get("whisper-offering-already", "&7Az átadást feljegyeztük. A kultista esemény sikerét kell kivárnod."));
+            return true;
+        }
+        final var hand = player.getInventory().getItemInMainHand();
+        if (hand.getType() != org.bukkit.Material.AMETHYST_SHARD || hand.hasItemMeta()) {
+            player.sendMessage(messageManager.get("whisper-offering-item", "&7A titkos megbízáshoz egy közönséges ametisztszilánkot adj át főkézből, SHIFT + jobb kattintással."));
+            return true;
+        }
+        hand.setAmount(hand.getAmount() - 1);
+        supporters.add(player.getUniqueId());
+        player.sendMessage(messageManager.get("whisper-offering-delivered", "&5Átadtad a rituális szilánkot. Ha a kultisták célba érnek, egy gyanúfokozatot eltüntetnek és részesedsz a zsákmányból. Ha elbuknak, nincs jutalom."));
+        final var scene = whisperManager.capture(player,
+                hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperStore.EvidenceType.OFFERING);
+        for (final Entity nearby : player.getNearbyEntities(16, 16, 16)) {
+            if (nearby instanceof Player witness) whisperManager.observe(witness.getUniqueId(),
+                    scene, 16, "whisper-witness-offering");
+        }
+        return true;
     }
 
     public boolean isCultist(final Entity entity) {
@@ -258,8 +281,7 @@ public final class CultistEventManager {
                 spawnCultist(world, site.clone().add(
                                 Math.cos(angle) * 3.0D, 0.0D,
                                 Math.sin(angle) * 3.0D),
-                        index == 0 ? EntityType.WITCH : EntityType.VINDICATOR,
-                        index == 0 ? "Kultista főpap" : "Kultista őrző");
+                        index == 0 ? "cultist_ritualist" : "cultist_blade");
             }
             world.playSound(site, Sound.AMBIENT_SOUL_SAND_VALLEY_MOOD,
                     1.5F, 0.6F);
@@ -284,8 +306,7 @@ public final class CultistEventManager {
                                 ThreadLocalRandom.current().nextDouble(-3.0D, 3.0D),
                                 0.0D,
                                 ThreadLocalRandom.current().nextDouble(-3.0D, 3.0D)),
-                        index == 0 ? EntityType.WITCH : EntityType.VINDICATOR,
-                        index == 0 ? "Kultista akolitus" : "Kultista penge");
+                        index == 0 ? "cultist_ritualist" : "cultist_blade");
             }
             world.playSound(site, Sound.ENTITY_VINDICATOR_CELEBRATE,
                     1.2F, 0.7F);
@@ -302,46 +323,43 @@ public final class CultistEventManager {
     }
 
     private void spawnCultist(final World world, final Location requested,
-                              final EntityType type, final String name) {
+                              final String templateId) {
         final Location where = spawnGuard.resolveSafeStandingLocation(
                 "cultists", world, requested.getBlockX(), requested.getBlockZ());
         if (where == null || spawnGuard.isBlocked("cultists", where)) {
             return;
         }
-        final Mob mob = spawnCultistMob(where, type);
+        final Mob mob = spawnCultistMob(where, templateId);
         if (mob == null) return;
-        prepareCultist(mob, name);
+        prepareCultist(mob);
     }
 
-    private Mob spawnCultistMob(final Location where, final EntityType type) {
+    private Mob spawnCultistMob(final Location where, final String templateId) {
         final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
                 hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
         return spawns == null ? null : spawns.spawn(where,
-                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
-                        "cultists", "cultists:active", "cultist", type,
+                hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                        "cultists", "cultists:active", "cultist", templateId,
                         Math.max(1, configManager.getInt("cultists.mob-level", 5)),
-                        MobRank.VETERAN, "SKIRMISHER",
                         hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
-                        true, 0L));
+                        true, 1.0D, 1.0D, 0L));
     }
 
-    private void prepareCultist(final Mob mob, final String name) {
+    private void prepareCultist(final Mob mob) {
         EventSpawnGuard.prepare(mob);
         mob.getPersistentDataContainer().set(
                 markKey, PersistentDataType.BYTE, (byte) 1);
         mob.setPersistent(false);
         mob.setRemoveWhenFarAway(false);
-        mob.customName(Component.text("🕯 " + name,
-                NamedTextColor.DARK_PURPLE));
         mob.setCustomNameVisible(true);
         TransientEntities.register(plugin, mob);
         cultists.add(mob.getUniqueId());
     }
 
     private void spawnCourier(final World world, final Location site) {
-        final Mob courier = spawnCultistMob(site, EntityType.VINDICATOR);
+        final Mob courier = spawnCultistMob(site, "cultist_courier");
         if (courier == null) return;
-        prepareCultist(courier, "Kultista hírvivő");
+        prepareCultist(courier);
         Location goal = null;
         double best = Double.MAX_VALUE;
         for (final hu.taliann.icesmp.data.Territory territory : territoryManager.all()) {
@@ -374,7 +392,7 @@ public final class CultistEventManager {
                     || courier.getLocation().distanceSquared(target) < 25.0D) {
                 final UUID id = courier.getUniqueId();
                 cultists.remove(id);
-                claimClose();
+                if (!claimClose()) { task.cancel(); return; }
                 courier.getWorld().playSound(courier.getLocation(),
                         Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 0.6F);
                 hu.taliann.icesmp.utils.ParticleUtil.spawn(
@@ -419,8 +437,9 @@ public final class CultistEventManager {
     }
 
     private void rewardCultSuccess() {
-        whisperManager.rewardFaithful(Math.max(0.0D,
-                configManager.getDouble("cultists.whisper-suspicion-relief", 15.0D)));
+        final Set<UUID> qualified = Set.copyOf(supporters);
+        if (qualified.isEmpty()) return;
+        whisperManager.rewardFaithful(qualified);
         seasonManager.addPoints(hu.taliann.icesmp.data.FactionType.DARK,
                 Math.max(0, configManager.getInt("cultists.success-season-points", 3)), "cult");
     }
@@ -432,6 +451,7 @@ public final class CultistEventManager {
     }
 
     private void resetTransientState() {
+        supporters.clear();
         riteEndsAt = 0L;
         riteSite = null;
         variant = "";

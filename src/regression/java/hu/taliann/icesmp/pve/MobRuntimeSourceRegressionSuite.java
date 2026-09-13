@@ -18,7 +18,7 @@ public final class MobRuntimeSourceRegressionSuite {
         final String cultists = read("src/main/java/hu/taliann/icesmp/managers/CultistEventManager.java");
         final String wildHunt = read("src/main/java/hu/taliann/icesmp/managers/WildHuntManager.java");
         final String authoredSpawns = read("src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java");
-        final String content = read("src/main/resources/config/mob-templates.yml");
+        final String content = read("src/main/resources/content/pve/enemies.yml");
         final String profiles = read("src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java");
         final String species = read("src/main/java/hu/taliann/icesmp/pve/CreatureSpeciesRegistry.java");
         final String loot = read("src/main/java/hu/taliann/icesmp/listeners/MobLootListener.java");
@@ -61,9 +61,41 @@ public final class MobRuntimeSourceRegressionSuite {
                         && runtime.contains("states.remove"),
                 "ability/summon lifecycle is not bounded or cleaned");
         check(runtime.contains("projectile.setPickupStatus")
-                        && runtime.contains("player.getScheduler().run")
+                        && runtime.contains("final LivingEntity entity = ownedLiving(id, player)")
+                        && runtime.contains("permit.claim(currentSources)")
+                        && runtime.contains("currentSources = BukkitRewardSources.causal(entity)")
                         && !runtime.contains("createExplosion"),
                 "ability/affix runtime can leak projectiles, cross-region mutation or terrain damage");
+
+        final String affixDamage = runtime.substring(runtime.indexOf("public void onAffixDamage"), runtime.indexOf("public void onAffixHurt"));
+        check(affixDamage.indexOf("attacker.getScheduler().run") < affixDamage.indexOf("scaling.getAffixes(owned)")
+                        && affixDamage.indexOf("Bukkit.isOwnedByCurrentRegion(resolved)") < affixDamage.indexOf("scaling.getAffixes(owned)")
+                        && !affixDamage.contains("scaling.getAffixes(attacker)"),
+                "affix reads crossed from victim owner to foreign attacker state");
+        check(affixDamage.contains("BukkitRewardSources.causal(player)") && affixDamage.contains("BukkitRewardSources.causal(owned)")
+                        && affixDamage.contains("potionLifetime(PotionEffectType.SLOWNESS)") && affixDamage.contains("affectLiving(attackerId"),
+                "affix potion/heal bypassed source propagation or observed lifetime");
+        final String volatileEffect = runtime.substring(runtime.indexOf("private void armVolatile"), runtime.indexOf("public void onDeath"));
+        check(volatileEffect.contains("RewardSource.Location center") && volatileEffect.contains("List<RewardSource> sources")
+                        && volatileEffect.contains("!owned.isChunkLoaded(chunkX, chunkZ)") && volatileEffect.contains("affectPlayer(player.getUniqueId(), sources")
+                        && volatileEffect.contains("affected >= 32") && !volatileEffect.contains("player.damage("),
+                "delayed volatile lost lineage, owner/chunk checks or bounded effect admission");
+
+        final String creation = runtime.substring(runtime.indexOf("private void prepareCreation"), runtime.indexOf("private void launchBurst"));
+        check(creation.contains("GameplayEffectGate.prepare(context)") && creation.contains("new RewardSource.Entity(id)")
+                        && creation.contains("if (!permit.claim(currentSources)) return")
+                        && creation.indexOf("!permit.claim(currentSources)") < creation.indexOf("creation.accept(owned)")
+                        && creation.contains("current.castEpoch != epoch") && creation.contains("Bukkit.isOwnedByCurrentRegion(resolved)"),
+                "native child creation bypassed durable parent admission or final owner/generation");
+        check(authoredSpawns.contains("created -> stampOrigin(created, request)") && authoredSpawns.contains("public static java.util.Optional<UUID> summonOrigin")
+                        && runtime.contains("minion.setPersistent(false)") && runtime.contains("projectile.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED)"),
+                "summon origin is not pre-activation canonical metadata or transient/projectile safety regressed");
+
+        final String retiredCleanup = authoredSpawns.substring(authoredSpawns.indexOf("private void forget("), authoredSpawns.indexOf("private static String id("));
+        check(!authoredSpawns.contains("ConcurrentHashMap<UUID, Mob>") && !retiredCleanup.contains("getPersistentDataContainer")
+                        && !retiredCleanup.contains("Bukkit.") && authoredSpawns.contains("() -> forget(entityId, parentId)")
+                        && authoredSpawns.contains("Bukkit.isOwnedByCurrentRegion(entity)"),
+                "summon retirement retained or read a live entity without its owner");
 
         check(boss.contains("EncounterScalingPolicy.snapshot")
                         && boss.contains("ContributionLedger")
@@ -93,17 +125,20 @@ public final class MobRuntimeSourceRegressionSuite {
                         && delivery.contains("ELIGIBILITY_TYPE")
                         && delivery.contains("operations.rollback("),
                 "restart does not abort exact-before contribution candidates");
-        check(invasion.contains("MobRank.CHAMPION")
-                        && invasion.contains("Request.generic(")&&invasion.contains("Request.template(")
-                        && cultists.contains("MobRank.VETERAN")&&cultists.contains("Request.generic(")
-                        && wildHunt.contains("MobRank.ELITE")&&wildHunt.contains("Request.generic(")
+        check(invasion.contains("Request.template(")
+                        && cultists.contains("Request.template(")
+                        && wildHunt.contains("Request.template(")
+                        && !invasion.contains("Request.generic(")
+                        && !cultists.contains("Request.generic(")
+                        && !wildHunt.contains("Request.generic(")
+                        && authoredSpawns.contains("scaling.forceTemplate")
                         && authoredSpawns.contains("scaling.forceRankedLevel")
                         && !invasion.contains("forceRankedLevel")&&!cultists.contains("forceRankedLevel")
                         && !wildHunt.contains("forceRankedLevel"),
                 "existing invasion, cultist and wild-hunt events bypass the common canonical rank authority");
 
-        final int templateCount = occurrences(content, "schema-version: 1");
-        check(templateCount >= 40 && templateCount <= 64,
+        final int templateCount = occurrences(content, "schema-version: 2");
+        check(templateCount >= 55 && templateCount <= 100,
                 "canonical creature and authored PvE content escaped the reviewed bounded template scope");
         check(occurrences(content, "kind:") >= 6
                         && content.contains("rank: VETERAN")

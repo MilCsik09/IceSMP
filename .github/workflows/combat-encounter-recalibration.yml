@@ -52,11 +52,10 @@ jobs:
       - name: Install report dependencies
         run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
 
-      - name: Validate generated catalogs and deterministic balance evidence
+      - name: Validate authored catalog and deterministic balance evidence
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/generate_long_term_equipment_catalog.py --check
           python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets \
             --output build/reports/combat-foundation/equipment-catalog.json
           python3 scripts/audit_combat_encounter_foundation.py --check \
@@ -138,7 +137,8 @@ jobs:
           printf '{"child":"%s","parent":"%s","merge_base":"%s","behind":0,"ahead":%s}\n' \
             "${child_sha}" "${COMBAT_PARENT_SHA}" "${merge_base}" "${ahead}" \
             > build/reports/combat-foundation/final-topology.json
-          python3 scripts/generate_long_term_equipment_catalog.py --check
+          python3 scripts/audit_long_term_equipment_catalog.py --require-eight-sets \
+            --output build/reports/combat-foundation/equipment-catalog-final.json
           python3 scripts/audit_combat_encounter_foundation.py --check \
             --output build/reports/combat-foundation
           python3 scripts/test_resource_pack.py

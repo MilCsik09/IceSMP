@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.classspec.application;
 
 import hu.taliann.icesmp.classspec.domain.*;
+import hu.taliann.icesmp.integrity.RewardContext;
 import hu.taliann.icesmp.playerprofile.domain.section.ClassSpecSection;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -50,8 +51,9 @@ public interface ClassSpecProfileGateway {
         public ClassAssignmentRequest{classId=requireId(classId,"classId");operationId=requireId(operationId,"operationId");if(classLevel<1)throw new IllegalArgumentException("classLevel must be positive");if(classExperience<0)throw new IllegalArgumentException("classExperience cannot be negative");}
         public ClassAssignmentRequest(String classId,int classLevel,String operationId){this(classId,classLevel,0,operationId);}
     }
-    record ClassExperienceRequest(Mode mode,int value,int baseXp,int incrementPerLevel,int secondSpecUnlockLevel,String operationId){
-        public ClassExperienceRequest{Objects.requireNonNull(mode);operationId=requireId(operationId,"operationId");if(value<0)throw new IllegalArgumentException("class experience value cannot be negative");if(baseXp<1||incrementPerLevel<0)throw new IllegalArgumentException("invalid class level curve");if(secondSpecUnlockLevel<1)throw new IllegalArgumentException("secondSpecUnlockLevel must be positive");}
+    record ClassExperienceRequest(Mode mode,int value,int baseXp,int incrementPerLevel,int secondSpecUnlockLevel,String operationId,Optional<RewardContext> reward){
+        public ClassExperienceRequest(Mode mode,int value,int baseXp,int incrementPerLevel,int secondSpecUnlockLevel,String operationId){this(mode,value,baseXp,incrementPerLevel,secondSpecUnlockLevel,operationId,Optional.empty());}
+        public ClassExperienceRequest{Objects.requireNonNull(mode);Objects.requireNonNull(reward);operationId=requireId(operationId,"operationId");if(value<0)throw new IllegalArgumentException("class experience value cannot be negative");if(baseXp<1||incrementPerLevel<0)throw new IllegalArgumentException("invalid class level curve");if(secondSpecUnlockLevel<1)throw new IllegalArgumentException("secondSpecUnlockLevel must be positive");}
         public ClassExperienceRequest(Mode mode,int value,int baseXp,int incrementPerLevel,String operationId){this(mode,value,baseXp,incrementPerLevel,Integer.MAX_VALUE,operationId);}
         public enum Mode{ADD,SET}
     }
@@ -77,8 +79,9 @@ public interface ClassSpecProfileGateway {
         public enum Kind{ADD,REMOVE,RENAME,STANCE,PROGRESS,EQUIPMENT,STATE,RESPAWN_AT,SET_ACTIVE,DISMISS}
     }
     record CompanionProgressRequest(LoadoutSlot slot,UUID companionId,long deltaExperience,
-                                    int baseXp,int incrementPerLevel,int maxLevel,String operationId){
-        public CompanionProgressRequest{Objects.requireNonNull(slot);Objects.requireNonNull(companionId);operationId=requireId(operationId,"operationId");if(deltaExperience<=0L)throw new IllegalArgumentException("companion XP delta must be positive");if(baseXp<1||incrementPerLevel<0)throw new IllegalArgumentException("invalid companion level curve");if(maxLevel<1||maxLevel>CompanionProfile.MAX_LEVEL)throw new IllegalArgumentException("invalid companion max level");}
+                                    int baseXp,int incrementPerLevel,int maxLevel,String operationId,Optional<RewardContext> reward){
+        public CompanionProgressRequest(LoadoutSlot slot,UUID companionId,long deltaExperience,int baseXp,int incrementPerLevel,int maxLevel,String operationId){this(slot,companionId,deltaExperience,baseXp,incrementPerLevel,maxLevel,operationId,Optional.empty());}
+        public CompanionProgressRequest{Objects.requireNonNull(reward);Objects.requireNonNull(slot);Objects.requireNonNull(companionId);operationId=requireId(operationId,"operationId");if(deltaExperience<=0L)throw new IllegalArgumentException("companion XP delta must be positive");if(baseXp<1||incrementPerLevel<0)throw new IllegalArgumentException("invalid companion level curve");if(maxLevel<1||maxLevel>CompanionProfile.MAX_LEVEL)throw new IllegalArgumentException("invalid companion max level");}
     }
 
     record RecoveryResult(ClassSpecSection profile,String evidenceId,String auditId,boolean idempotent){

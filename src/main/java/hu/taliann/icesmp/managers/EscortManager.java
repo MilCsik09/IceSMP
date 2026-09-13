@@ -12,7 +12,6 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -29,9 +28,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /** Caravan escort world event with distant, fully guarded route placement. */
 public final class EscortManager {
-    private static final EntityType[] WAVE_POOL = {
-            EntityType.ZOMBIE, EntityType.SKELETON, EntityType.PILLAGER,
-            EntityType.VINDICATOR, EntityType.SPIDER
+    private static final String[] DEFAULT_WAVE_TEMPLATES = {
+            "tollblade", "road_raider", "gallows_runner", "moss_trapper"
     };
     /** Search + atmospheric arrival + route validation may legitimately take a few seconds. */
     private static final long SPAWN_GRACE_MILLIS = 30_000L;
@@ -349,6 +347,7 @@ public final class EscortManager {
         final Location center = convoy.getLocation();
         final int count = Math.max(1, configManager.getInt("escort.wave-size", 4));
         final int level = Math.max(1, configManager.getInt("escort.wave-level", 3));
+        final List<String> configured = configManager.getStringList("escort.wave-templates");
         waveMobs.removeIf(id -> !hu.taliann.icesmp.utils.TransientEntities.isAlive(id));
 
         for (int i = 0; i < count; i++) {
@@ -361,16 +360,17 @@ public final class EscortManager {
             if (waveSpot == null || spawnGuard.isBlocked("escort-wave", waveSpot)) {
                 continue;
             }
-            final EntityType type = WAVE_POOL[ThreadLocalRandom.current().nextInt(WAVE_POOL.length)];
+            final String templateId = configured.isEmpty()
+                    ? DEFAULT_WAVE_TEMPLATES[i % DEFAULT_WAVE_TEMPLATES.length]
+                    : configured.get(i % configured.size());
             final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
                     hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
             if (spawns == null) continue;
             final Mob mob = spawns.spawn(waveSpot,
-                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.generic(
-                            "escort", "escort:active", "wave", type, level,
-                            hu.taliann.icesmp.pve.MobRank.NORMAL, "SKIRMISHER",
+                    hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.Request.template(
+                            "escort", "escort:active", "wave", templateId, level,
                             hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
-                            true, 0L));
+                            true, 1.0D, 1.0D, 0L));
             if (mob == null) continue;
             mob.setTarget(convoy);
             hu.taliann.icesmp.utils.TransientEntities.register(plugin, mob);

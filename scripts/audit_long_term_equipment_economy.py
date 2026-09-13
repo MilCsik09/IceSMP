@@ -11,21 +11,23 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-CFG = ROOT / "src/main/resources/config"
+RESOURCES = ROOT / "src/main/resources"
 REPORT = ROOT / "build/reports/long-term-equipment/material-economy.json"
 
 FILES = [
-    "profession-materials.yml",
-    "profession-recipes.yml",
-    "professions-2.yml",
-    "material-economy-expansion.yml",
-    "equipment-catalog-expansion.yml",
-    "reward-discoverability-closure.yml",
+    "content/professions/materials.yml",
+    "content/professions/recipes.yml",
+    "content/equipment/equipment.yml",
 ]
+ECONOMY_EXPANSION_IDS = {
+    "holdlen_fonal", "cserle", "fenyves_gyanta", "kotogyanta", "halolaj",
+    "gyongyhaz_hej", "vizbor", "in_kotelez", "kitin_lemez", "konnyu_otvozet",
+    "szivfa_mag", "bokic_gyongy", "melyvizi_esszencia", "szorny_szerv",
+}
 
 
 def load_file(name: str) -> dict[str, Any]:
-    path = CFG / name
+    path = RESOURCES / name
     if not path.exists():
         return {}
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -242,10 +244,9 @@ def main() -> None:
     config = effective_tree()
     materials = merge_named("profession-materials")
     recipes = merge_named("profession-recipes")
-    overlay_materials = load_file("material-economy-expansion.yml").get("profession-materials", {}) or {}
-
     managed = {mid: value for mid, value in materials.items() if bool(value.get("economy-managed", False))}
-    introduced = {str(mid): materials[str(mid)] for mid in overlay_materials}
+    introduced = {mid: managed[mid] for mid in ECONOMY_EXPANSION_IDS if mid in managed}
+    assert set(introduced) == ECONOMY_EXPANSION_IDS, "handcrafted economy expansion ID drift"
 
     for mid, material in introduced.items():
         assert material.get("source-types"), f"{mid}: managed material requires a faucet/source declaration"

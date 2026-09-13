@@ -12,8 +12,8 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ITEMS = ROOT / "src/main/resources/config/item-templates.yml"
-RECIPES = ROOT / "src/main/resources/config/profession-recipes.yml"
+ITEMS = ROOT / "src/main/resources/content/equipment/equipment.yml"
+RECIPES = ROOT / "src/main/resources/content/professions/recipes.yml"
 OUTPUT = ROOT / "docs/development/equipment-2-handoff.json"
 ARMOR_SLOTS = {"head", "chest", "legs", "feet"}
 CLASS_FAMILIES = {
@@ -29,6 +29,7 @@ STAT_WEIGHTS = {
     "max_health": 0.70,
     "armor": 2.0,
     "armor_toughness": 2.5,
+    "knockback_resistance": 30.0,
     "movement_speed": 120.0,
 }
 STAT_GROUPS = {
@@ -38,6 +39,7 @@ STAT_GROUPS = {
     "max_health": "defensive",
     "armor": "defensive",
     "armor_toughness": "defensive",
+    "knockback_resistance": "defensive",
     "movement_speed": "utility",
 }
 SLOT_SHARE = {"chest": 1.0, "legs": 0.82, "head": 0.62, "feet": 0.56}
@@ -96,8 +98,8 @@ def build_report() -> dict[str, Any]:
     templates = item_config["item-templates"]
     profiles = item_config["itemization"]["equipment"]["family-profiles"]
     recipes = load_yaml(RECIPES)["profession-recipes"]
-    if len(templates) != 48:
-        raise ValueError(f"expected 48 authored templates, found {len(templates)}")
+    if len(templates) != 190:
+        raise ValueError(f"expected 190 handcrafted templates, found {len(templates)}")
     for template_id, template in templates.items():
         has_family = bool(template.get("armor-family"))
         if (template.get("slot") in ARMOR_SLOTS) != has_family:
@@ -163,13 +165,13 @@ def build_report() -> dict[str, Any]:
             "future_processing_chain_needed": bool(output.get("armor-family")),
             "migration_complexity": "HIGH" if output.get("armor-family") else "MEDIUM",
         })
-    if len(canonical_recipes) != 15:
-        raise ValueError(f"expected 15 canonical gear recipes, found {len(canonical_recipes)}")
+    if len(canonical_recipes) != 85:
+        raise ValueError(f"expected 85 canonical template recipes, found {len(canonical_recipes)}")
 
     ascension = [template_id for template_id, template in templates.items()
                  if template.get("ascension-path")]
-    if len(ascension) != 7:
-        raise ValueError(f"expected 7 ascendable templates, found {len(ascension)}")
+    if len(ascension) != 11:
+        raise ValueError(f"expected 11 ascendable templates, found {len(ascension)}")
     armor_count = sum(distribution.values())
     asset_coverage = sum(1 for row in visual
                          if row["armor_family"] and not row["missing_equipment_asset"])

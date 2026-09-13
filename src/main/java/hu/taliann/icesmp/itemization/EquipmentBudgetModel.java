@@ -22,6 +22,7 @@ public final class EquipmentBudgetModel {
             "max_health", 0.70D,
             "armor", 2.0D,
             "armor_toughness", 2.5D,
+            "knockback_resistance", 30.0D,
             "movement_speed", 120.0D);
 
     private EquipmentBudgetModel() {

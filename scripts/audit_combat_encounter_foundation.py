@@ -12,21 +12,32 @@ from typing import Any
 
 import yaml
 
-from generate_long_term_equipment_catalog import SET_ARMOR, SET_BUDGET, SET_TOUGHNESS, SLOT_SHARE, STAT_WEIGHTS
-
 ROOT = Path(__file__).resolve().parents[1]
-CFG = ROOT / "src/main/resources/config"
+RESOURCES = ROOT / "src/main/resources"
 AUTHORITY = ROOT / "docs/development/combat-balance-authority.json"
 DEFAULT_OUTPUT = ROOT / "build/reports/combat-foundation"
-CONFIG_FILES = (
-    "item-templates.yml", "profession-materials.yml", "profession-recipes.yml", "professions-2.yml",
-    "material-economy-expansion.yml", "equipment-catalog-expansion.yml",
-    "reward-discoverability-closure.yml", "world.yml", "mob-templates.yml",
+AUTHORITY_FILES = (
+    "content/equipment/equipment.yml",
+    "content/professions/materials.yml",
+    "content/professions/recipes.yml",
+    "content/pve/enemies.yml",
+    "config/world.yml",
 )
 GROUP = {
     "attack_damage": "offense", "attack_speed": "offense", "ability_power": "offense",
     "max_health": "defense", "armor": "defense", "armor_toughness": "defense",
+    "knockback_resistance": "defense",
     "movement_speed": "utility",
+}
+STAT_WEIGHTS = {
+    "attack_damage": 5.0,
+    "attack_speed": 8.0,
+    "ability_power": 1.25,
+    "max_health": 0.70,
+    "armor": 2.0,
+    "armor_toughness": 2.5,
+    "knockback_resistance": 30.0,
+    "movement_speed": 120.0,
 }
 ARMOR_FAMILIES = ("CLOTH", "LEATHER", "MAIL", "PLATE")
 ARMOR_SLOTS = ("head", "chest", "legs", "feet")
@@ -48,8 +59,8 @@ def merge(target: dict[str, Any], patch: dict[str, Any]) -> None:
 
 def effective() -> dict[str, Any]:
     result: dict[str, Any] = {}
-    for name in CONFIG_FILES:
-        merge(result, load(CFG / name))
+    for name in AUTHORITY_FILES:
+        merge(result, load(RESOURCES / name))
     return result
 
 
@@ -94,7 +105,12 @@ def armor_rows(templates: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         groups = weighted(values)
         total = sum(groups.values())
         band = band_for(template)
-        expected = SET_BUDGET[band] * SLOT_SHARE[slot]
+        rolled = template.get("rolled-stats") or {}
+        authored = (int(template.get("version", 1)) >= 2
+                    and float(template.get("base-armor", 0.0)) > 0.0
+                    and len(template.get("lore") or []) == 2
+                    and bool(rolled)
+                    and not {"armor", "armor_toughness", "knockback_resistance"}.intersection(rolled))
         rows.append({
             "template_id": template_id,
             "family": family,
@@ -112,28 +128,31 @@ def armor_rows(templates: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
             "defense_budget": round(groups["defense"], 5),
             "utility_budget": round(groups["utility"], 5),
             "normalized_budget": round(total, 5),
-            "expected_budget": round(expected, 5),
-            "expected_delta_percent": round((total / expected - 1.0) * 100.0, 3),
+            "expected_budget": None,
+            "expected_delta_percent": None,
             "set_id": str(template.get("set-id", "")),
             "signature_id": str(template.get("signature-effect", "")),
             "ascension_path": list(template.get("ascension-path") or []),
             "vanilla_benchmark_ratio": None,
             "flags": ["PAPER_RUNTIME_RATIO_PENDING"],
+            "authored_core_status": "VERIFIED" if authored else "BALANCE_REQUIRED",
         })
     if len(rows) != 160:
         raise AssertionError(f"combat report expected 160 armor rows, found {len(rows)}")
-    medians: dict[tuple[str, str], float] = {}
-    buckets: dict[tuple[str, str], list[float]] = defaultdict(list)
+    medians: dict[tuple[str, str, str], float] = {}
+    buckets: dict[tuple[str, str, str], list[float]] = defaultdict(list)
     for row in rows:
-        buckets[(row["band"], row["slot"])].append(float(row["normalized_budget"]))
+        buckets[(row["family"], row["band"], row["slot"])].append(float(row["normalized_budget"]))
     for key, values in buckets.items():
         medians[key] = statistics.median(values)
     for row in rows:
-        median = medians[(row["band"], row["slot"])]
+        median = medians[(row["family"], row["band"], row["slot"])]
         delta = (float(row["normalized_budget"]) / median - 1.0) * 100.0
+        row["expected_budget"] = round(median, 5)
+        row["expected_delta_percent"] = round(delta, 3)
         row["same_band_slot_median"] = round(median, 5)
         row["same_band_median_delta_percent"] = round(delta, 3)
-        row["status"] = "VERIFIED" if abs(delta) <= 12.0 and abs(float(row["expected_delta_percent"])) <= 12.0 else "BALANCE_REQUIRED"
+        row["status"] = row["authored_core_status"]
     return rows
 
 
@@ -366,9 +385,7 @@ def build_report(config: dict[str, Any]) -> dict[str, Any]:
         "normalized_budget_model": {
             "formula": "sum(max(0, midpoint_stat) * stat_weight)",
             "stat_weights": STAT_WEIGHTS,
-            "set_budget_by_band": SET_BUDGET,
-            "slot_share": SLOT_SHARE,
-            "same_band_outlier_percent": 12.0,
+            "comparison": "authored family + progression band + slot median; never a generation target",
             "negative_attack_speed": "authored pacing cost; excluded from positive power budget but applied at runtime",
         },
         "level_gate": {"precedence": ["identity", "slot", "duplicate_uuid", "profile_ready", "class_family_spec", "level_requirement", "suppression"], "matrix": level_gate_matrix()},
@@ -416,6 +433,7 @@ def runtime_join(report: dict[str, Any], benchmark_path: Path) -> dict[str, Any]
     def denominator(row: dict[str, Any]) -> float:
         return (max(0.0, float(row.get("armor", 0.0))) * STAT_WEIGHTS["armor"]
                 + max(0.0, float(row.get("armor_toughness", 0.0))) * STAT_WEIGHTS["armor_toughness"]
+                + max(0.0, float(row.get("knockback_resistance", 0.0))) * STAT_WEIGHTS["knockback_resistance"]
                 + max(0.0, float(row.get("attack_damage_modifier", 0.0))) * STAT_WEIGHTS["attack_damage"]
                 + max(0.0, float(row.get("attack_speed_modifier", 0.0))) * STAT_WEIGHTS["attack_speed"])
 

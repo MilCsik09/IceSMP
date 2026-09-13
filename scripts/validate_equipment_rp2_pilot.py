@@ -20,7 +20,7 @@ MANIFEST = DOCS / "equipment-rp2-pilot-manifest.json"
 ART = DOCS / "equipment-rp2-art-bible.json"
 ARMOR = DOCS / "equipment-rp2-armor-matrix.json"
 FINAL = DOCS / "equipment-rp2-final-authority.json"
-CONFIG = ROOT / "src/main/resources/config/equipment-catalog-expansion.yml"
+CONFIG = ROOT / "src/main/resources/content/equipment/equipment.yml"
 REPORT_DIR = ROOT / "build/reports/equipment-rp2-b"
 EXPECTED_WORN_SIZE = (256, 128)
 
@@ -190,9 +190,9 @@ def main() -> None:
                 errors.append(f"pilot checksum drift: {path_name}")
         template = templates.get(piece["template_id"])
         if not template:
-            errors.append(f"pilot template missing from generated catalog: {piece['template_id']}")
+            errors.append(f"pilot template missing from authored catalog: {piece['template_id']}")
         elif template.get("item-model") != piece["item_model"] or template.get("equipment-asset") != piece["equipment_asset"]:
-            errors.append(f"pilot generated config binding drift: {piece['template_id']}")
+            errors.append(f"pilot authored config binding drift: {piece['template_id']}")
         equipment = load(ROOT / piece["equipment_definition"])
         layers = equipment.get("layers", {})
         if set(layers) != {"humanoid", "humanoid_leggings"}:

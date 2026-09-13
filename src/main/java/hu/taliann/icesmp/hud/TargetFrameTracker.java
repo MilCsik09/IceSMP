@@ -39,10 +39,12 @@ public final class TargetFrameTracker {
     }
 
     private record Selection(long generation, UUID targetId) { }
+    private record MissWindow(long firstMissAt, int consecutiveMisses) { }
 
     private final AtomicLong generations = new AtomicLong();
     private final Map<UUID, Selection> selections = new ConcurrentHashMap<>();
     private final Map<UUID, Snapshot> snapshots = new ConcurrentHashMap<>();
+    private final Map<UUID, MissWindow> misses = new ConcurrentHashMap<>();
 
     public long begin(final UUID viewerId, final UUID targetId) {
         Objects.requireNonNull(viewerId, "viewerId");
@@ -52,7 +54,7 @@ public final class TargetFrameTracker {
         if (current == null && selections.size() >= MAX_VIEWERS) return -1L;
         final long generation = generations.incrementAndGet();
         selections.put(viewerId, new Selection(generation, targetId));
-        snapshots.remove(viewerId);
+        misses.remove(viewerId);
         return generation;
     }
 
@@ -61,7 +63,6 @@ public final class TargetFrameTracker {
         if (!selections.containsKey(viewerId) && selections.size() >= MAX_VIEWERS) return -1L;
         final long generation = generations.incrementAndGet();
         selections.put(viewerId, new Selection(generation, null));
-        snapshots.remove(viewerId);
         return generation;
     }
 
@@ -77,7 +78,20 @@ public final class TargetFrameTracker {
                     new Selection(generation, snapshot.targetId()))) return false;
         }
         snapshots.put(viewerId, snapshot);
+        misses.remove(viewerId);
         return true;
+    }
+
+    public boolean retainOnMiss(final UUID viewerId, final long now,
+                                final long graceMillis, final int allowedMisses) {
+        if (viewerId == null || now < 0L || snapshots.get(viewerId) == null) return false;
+        final MissWindow window = misses.compute(viewerId, (ignored, current) -> current == null
+                ? new MissWindow(now, 1)
+                : new MissWindow(current.firstMissAt(), current.consecutiveMisses() + 1));
+        final boolean retain = window.consecutiveMisses() <= Math.max(1, allowedMisses)
+                && now - window.firstMissAt() <= Math.max(1L, graceMillis);
+        if (!retain) clear(viewerId);
+        return retain;
     }
 
     public Snapshot current(final UUID viewerId, final UUID viewerWorldId,
@@ -99,6 +113,7 @@ public final class TargetFrameTracker {
         generations.incrementAndGet();
         selections.remove(viewerId);
         snapshots.remove(viewerId);
+        misses.remove(viewerId);
     }
 
     public void clearIfSelected(final UUID viewerId, final long generation) {

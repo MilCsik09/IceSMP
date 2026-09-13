@@ -1,0 +1,1497 @@
+{
+  "advancement_inventory": {
+    "degraded_readiness": "persistent tree fail-closed; missing toast explicitly presentation-degraded",
+    "level_50": {
+      "canonical_business_authority": "achievement:legend",
+      "duplicate_advancement_removed": "class_max",
+      "durability": "PlayerProfileAchievementStore exact-once receipt",
+      "economic_reward": 1000,
+      "threshold": 50
+    },
+    "orphan_nodes": [],
+    "persistent_count": 21,
+    "persistent_ids": [
+      "capstone",
+      "cleanse",
+      "crowned",
+      "cursed_crown",
+      "exiled",
+      "faction_join",
+      "first_class",
+      "first_relic",
+      "first_ritual",
+      "first_spec",
+      "hidden_spot",
+      "masterwork",
+      "parkour",
+      "pet_bond",
+      "profession_master",
+      "profession_pick",
+      "raid_win",
+      "redeemed",
+      "root",
+      "whisperer",
+      "world_boss"
+    ],
+    "reusable_toast_count": 1,
+    "toast_ids": [
+      "toast_quest"
+    ],
+    "total_authored_json_count": 22
+  },
+  "bootstrap_reachability": {
+    "custom_damage_types": 9,
+    "custom_enchants": 13,
+    "duplicate_registry_authority": 0,
+    "orphan_gameplay_content": 0,
+    "reachable_spell_bypassing_damage_authority": 0,
+    "unresolved_entries": 0
+  },
+  "ci": {
+    "exact_head": true,
+    "status": "EXACT_HEAD_CI_REQUIRED",
+    "workflow": ".github/workflows/gameplay-bootstrap-integrity-hardening.yml"
+  },
+  "composition_root": {
+    "constructed_but_unused": 0,
+    "dead_command_route": 0,
+    "duplicate_listener_registration": 0,
+    "duplicate_stateful_authority": 0,
+    "raw_bukkit_scheduler": 0,
+    "unmanaged_scheduler": 0
+  },
+  "dependency_policy": [
+    {
+      "classification": "REQUIRED_PRODUCTION_GAMEPLAY_DEPENDENCY",
+      "dependency": "FancyNpcs",
+      "required": true,
+      "runtime_declared": true
+    },
+    {
+      "classification": "OPTIONAL_CURRENT_INTEGRATION",
+      "dependency": "LibsDisguises",
+      "required": false,
+      "runtime_declared": true
+    },
+    {
+      "classification": "OPTIONAL_CURRENT_INTEGRATION",
+      "dependency": "PlaceholderAPI",
+      "required": false,
+      "runtime_declared": true
+    },
+    {
+      "classification": "OPTIONAL_CURRENT_INTEGRATION",
+      "dependency": "WorldEdit",
+      "required": false,
+      "runtime_declared": true
+    },
+    {
+      "classification": "OPTIONAL_CURRENT_INTEGRATION",
+      "dependency": "WorldGuard",
+      "required": false,
+      "runtime_declared": true
+    },
+    {
+      "classification": "OPTIONAL_CURRENT_INTEGRATION",
+      "dependency": "LuckPerms",
+      "required": false,
+      "runtime_declared": true
+    },
+    {
+      "classification": "NOT_PLANNED / NOT_RUNTIME_DECLARED",
+      "dependency": "MythicMobs",
+      "required": false,
+      "runtime_declared": false
+    },
+    {
+      "classification": "FUTURE_CANDIDATE / NOT_RUNTIME_DECLARED",
+      "dependency": "PacketEvents",
+      "required": false,
+      "runtime_declared": false
+    },
+    {
+      "classification": "FUTURE_CANDIDATE / NOT_RUNTIME_DECLARED",
+      "dependency": "FancyDialogs",
+      "required": false,
+      "runtime_declared": false
+    }
+  ],
+  "direct_spell_control": {
+    "damage_type": "icesmp:tuz_magia",
+    "event_count": 1,
+    "school": "TUZ",
+    "spell_id": "living_flame"
+  },
+  "final_head": {
+    "authority": "git commit containing this evidence",
+    "resolution": "git rev-parse HEAD in exact-head CI and final report",
+    "self_reference_note": "a commit cannot contain its own SHA"
+  },
+  "final_readiness": "HUMAN_GAMEPLAY_STAGING_REQUIRED_AFTER_EXACT_HEAD_GATES",
+  "finding_closure": [
+    {
+      "changed_files": [
+        "src/main/resources/paper-plugin.yml",
+        "src/main/resources/class-spec-dependencies.lock.yml",
+        "src/main/java/hu/taliann/icesmp/classspec/compat/ClassSpecDependencyPreflight.java",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java",
+        "src/main/java/hu/taliann/icesmp/integration/FancyNpcsQuestBridge.java"
+      ],
+      "exact_implementation": "required Paper/lock dependency; fail-closed preflight and bridge",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P1-DEP-001",
+      "original_root_cause": "FancyNpcs was optional while canonical onboarding required it",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P1",
+      "status": "CLOSED",
+      "tests": [
+        "dependency metadata",
+        "bridge runtime"
+      ]
+    },
+    {
+      "changed_files": [
+        "src/main/resources/content/progression/quests.yml",
+        "src/main/java/hu/taliann/icesmp/listeners/QuestProgressListener.java",
+        "src/main/java/hu/taliann/icesmp/progression/ItemAcquisitionPolicy.java",
+        "src/main/java/hu/taliann/icesmp/utils/ItemProvenance.java"
+      ],
+      "exact_implementation": "23 acquisition producers plus 2 craft and 1 block-break semantic migrations",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P1-QST-001",
+      "original_root_cause": "26 COLLECT_ITEMS objectives lacked player-semantic producers",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P1",
+      "status": "CLOSED",
+      "tests": [
+        "26-row producer matrix",
+        "pickup behavior regression"
+      ]
+    },
+    {
+      "changed_files": [
+        "src/main/resources/content/progression/spells.yml",
+        "src/main/java/hu/taliann/icesmp/spells/ProjectileBurstSpell.java",
+        "src/main/java/hu/taliann/icesmp/utils/SpellDamageUtil.java",
+        "src/main/java/hu/taliann/icesmp/listeners/SpellDamageListener.java",
+        "src/main/java/hu/taliann/icesmp/listeners/SpellProjectileListener.java"
+      ],
+      "exact_implementation": "immutable projectile snapshot and one custom DamageSource hit authority",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P1-SPL-001",
+      "original_root_cause": "projectile PDC spell ID never reached SpellSchool/DamageType",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P1",
+      "status": "CLOSED",
+      "tests": [
+        "8-row spell matrix",
+        "Paper/Folia runtime probe"
+      ]
+    },
+    {
+      "changed_files": [
+        "src/main/resources/content/equipment/equipment.yml",
+        "src/main/resources/content/professions/recipes.yml",
+        "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
+        "src/main/java/hu/taliann/icesmp/itemization/SignatureEffectRegistry.java",
+        "src/main/java/hu/taliann/icesmp/listeners/SignatureItemListener.java"
+      ],
+      "exact_implementation": "source-evidenced BOW identity and idempotent legacy migration",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P1-EQP-001",
+      "original_root_cause": "Kallan/Nap canonical material could not activate ON_SHOOT",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P1",
+      "status": "CLOSED",
+      "tests": [
+        "15-row signature matrix",
+        "Paper/Folia migration probe"
+      ]
+    },
+    {
+      "changed_files": [
+        "src/main/resources/config/crafting.yml",
+        "src/main/resources/config/professions-2.yml",
+        "src/main/resources/content/professions/recipes.yml",
+        "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java",
+        "src/main/java/hu/taliann/icesmp/items/SignatureEnchantKeys.java"
+      ],
+      "exact_implementation": "identity render owns signature enchant; mapped recipes request templates",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P2-EQP-002",
+      "original_root_cause": "template render returned before recipe-owned enchant stamping",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P2",
+      "status": "CLOSED",
+      "tests": [
+        "all-signature render probe"
+      ]
+    },
+    {
+      "changed_files": [
+        "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java",
+        "src/main/java/hu/taliann/icesmp/utils/ToastUtil.java",
+        "src/main/resources/datapack/data/icesmp/advancement/toast_discovery.json",
+        "src/main/resources/datapack/data/icesmp/advancement/toast_milestone.json"
+      ],
+      "exact_implementation": "orphan toast removal and explicit one-toast readiness",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P2-ADV-001",
+      "original_root_cause": "two authored toast nodes had no consumer",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P2",
+      "status": "CLOSED",
+      "tests": [
+        "advancement inventory regression"
+      ]
+    },
+    {
+      "changed_files": [
+        "src/main/resources/datapack/data/icesmp/advancement/class_max.json",
+        "docs/development/gameplay-bootstrap-integrity-hardening.json"
+      ],
+      "exact_implementation": "durable legend achievement is sole threshold/reward authority",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P2-UX-001",
+      "original_root_cause": "level 50 appeared as two business milestones",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P2",
+      "status": "CLOSED",
+      "tests": [
+        "level-50 inventory",
+        "reward-ledger regressions"
+      ]
+    },
+    {
+      "changed_files": [
+        "src/main/resources/paper-plugin.yml",
+        "src/main/resources/class-spec-dependencies.lock.yml",
+        "docs/ARCHITECTURE.md",
+        "docs/ADMIN_GUIDE.md"
+      ],
+      "exact_implementation": "removed MythicMobs/PacketEvents/FancyDialogs runtime declarations",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P3-DEP-001",
+      "original_root_cause": "three dependencies were declared without consumers",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P3",
+      "status": "CLOSED",
+      "tests": [
+        "dependency metadata regression"
+      ]
+    },
+    {
+      "changed_files": [
+        "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java",
+        "src/main/java/hu/taliann/icesmp/managers/AdvancementService.java",
+        "src/main/java/hu/taliann/icesmp/itemization/ItemTemplateRegistry.java",
+        "src/main/java/hu/taliann/icesmp/core/IceSMPCore.java"
+      ],
+      "exact_implementation": "synchronized identity-safe clearIfCurrent teardown",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P3-LIF-001",
+      "original_root_cause": "three static facades retained disabled core graphs",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P3",
+      "status": "CLOSED",
+      "tests": [
+        "A/B/stale-A regression",
+        "disable runtime marker"
+      ]
+    },
+    {
+      "changed_files": [
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURES.md",
+        "docs/QUESTS.md",
+        "docs/development/gameplay-bootstrap-integrity-hardening.json"
+      ],
+      "exact_implementation": "21 persistent + 1 reusable toast + 22 total documented",
+      "folia_proof": "exact-head hardening workflow",
+      "id": "P3-DOC-001",
+      "original_root_cause": "advancement counts drifted",
+      "paper_proof": "exact-head hardening workflow",
+      "severity": "P3",
+      "status": "CLOSED",
+      "tests": [
+        "docs/evidence inventory"
+      ]
+    }
+  ],
+  "folia": {
+    "marker": "ICESMP_GAMEPLAY_BOOTSTRAP_INTEGRITY_RUNTIME_PROBE_PASS",
+    "profile": "FancyNpcs present+compatible",
+    "status": "EXACT_HEAD_RUNTIME_REQUIRED",
+    "version": "1.21.11 build 14"
+  },
+  "java21": {
+    "status": "EXACT_HEAD_CI_REQUIRED",
+    "task": "./gradlew clean build"
+  },
+  "lifecycle_facades": [
+    {
+      "facade": "ConfigManager.active",
+      "identity_safe": true,
+      "teardown": "clearIfCurrent"
+    },
+    {
+      "facade": "AdvancementService.instance",
+      "identity_safe": true,
+      "teardown": "clearIfCurrent"
+    },
+    {
+      "facade": "ItemTemplateRegistry.activeInstance",
+      "identity_safe": true,
+      "teardown": "clearIfCurrent"
+    }
+  ],
+  "paper": {
+    "marker": "ICESMP_GAMEPLAY_BOOTSTRAP_INTEGRITY_RUNTIME_PROBE_PASS",
+    "profile": "FancyNpcs present+compatible",
+    "status": "EXACT_HEAD_RUNTIME_REQUIRED",
+    "version": "1.21.11"
+  },
+  "parent": {
+    "branch": "feature/config-content-command-surface-2",
+    "commit": "e5e0f3ee15d3b06b4636084f0aab4f0924ab6bf2",
+    "tree": "ce5950ea27d6738ea8b5027bc0ff570e7fd6c8d6"
+  },
+  "projectile_spell_matrix": [
+    {
+      "base_value": 7.0,
+      "causing_entity": "projectile shooter Entity snapshot",
+      "death_presentation": "SpellDamageListener#onMagicDeath",
+      "direct_entity": "projectile",
+      "event_count": 1,
+      "expected_school": "TERMESZET",
+      "final_damage": "EntityDamageEvent final value after one resistance projection",
+      "generic_resistance": "SpellDamageListener/Rúnavért",
+      "multiplier": "immutable cast-time CastModifiers.damageMultiplier",
+      "reachable": true,
+      "registered": true,
+      "resistance_cap": 0.6,
+      "resolved_damage_type": "icesmp:termeszet_magia",
+      "school_resistance": "SpellDamageListener/SpellSchool.resistEnchantId",
+      "spell_id": "piercing_bolt",
+      "vanilla_plus_custom_double_hit": false
+    },
+    {
+      "base_value": 4.0,
+      "causing_entity": "projectile shooter Entity snapshot",
+      "death_presentation": "SpellDamageListener#onMagicDeath",
+      "direct_entity": "projectile",
+      "event_count": 1,
+      "expected_school": "TERMESZET",
+      "final_damage": "EntityDamageEvent final value after one resistance projection",
+      "generic_resistance": "SpellDamageListener/Rúnavért",
+      "multiplier": "immutable cast-time CastModifiers.damageMultiplier",
+      "reachable": true,
+      "registered": true,
+      "resistance_cap": 0.6,
+      "resolved_damage_type": "icesmp:termeszet_magia",
+      "school_resistance": "SpellDamageListener/SpellSchool.resistEnchantId",
+      "spell_id": "arrow_storm",
+      "vanilla_plus_custom_double_hit": false
+    },
+    {
+      "base_value": 6.0,
+      "causing_entity": "projectile shooter Entity snapshot",
+      "death_presentation": "SpellDamageListener#onMagicDeath",
+      "direct_entity": "projectile",
+      "event_count": 1,
+      "expected_school": "ARNYEK",
+      "final_damage": "EntityDamageEvent final value after one resistance projection",
+      "generic_resistance": "SpellDamageListener/Rúnavért",
+      "multiplier": "immutable cast-time CastModifiers.damageMultiplier",
+      "reachable": true,
+      "registered": true,
+      "resistance_cap": 0.6,
+      "resolved_damage_type": "icesmp:arnyek_magia",
+      "school_resistance": "SpellDamageListener/SpellSchool.resistEnchantId",
+      "spell_id": "dagger_throw",
+      "vanilla_plus_custom_double_hit": false
+    },
+    {
+      "base_value": 5.0,
+      "causing_entity": "projectile shooter Entity snapshot",
+      "death_presentation": "SpellDamageListener#onMagicDeath",
+      "direct_entity": "projectile",
+      "event_count": 1,
+      "expected_school": "TUZ",
+      "final_damage": "EntityDamageEvent final value after one resistance projection",
+      "generic_resistance": "SpellDamageListener/Rúnavért",
+      "multiplier": "immutable cast-time CastModifiers.damageMultiplier",
+      "reachable": true,
+      "registered": true,
+      "resistance_cap": 0.6,
+      "resolved_damage_type": "icesmp:tuz_magia",
+      "school_resistance": "SpellDamageListener/SpellSchool.resistEnchantId",
+      "spell_id": "fireball",
+      "vanilla_plus_custom_double_hit": false
+    },
+    {
+      "base_value": 1.0,
+      "causing_entity": "projectile shooter Entity snapshot",
+      "death_presentation": "SpellDamageListener#onMagicDeath",
+      "direct_entity": "projectile",
+      "event_count": 1,
+      "expected_school": "VIHAR",
+      "final_damage": "EntityDamageEvent final value after one resistance projection",
+      "generic_resistance": "SpellDamageListener/Rúnavért",
+      "multiplier": "immutable cast-time CastModifiers.damageMultiplier",
+      "reachable": true,
+      "registered": true,
+      "resistance_cap": 0.6,
+      "resolved_damage_type": "icesmp:vihar_magia",
+      "school_resistance": "SpellDamageListener/SpellSchool.resistEnchantId",
+      "spell_id": "gale_burst",
+      "vanilla_plus_custom_double_hit": false
+    },
+    {
+      "base_value": 6.0,
+      "causing_entity": "projectile shooter Entity snapshot",
+      "death_presentation": "SpellDamageListener#onMagicDeath",
+      "direct_entity": "projectile",
+      "event_count": 1,
+      "expected_school": "ARNYEK",
+      "final_damage": "EntityDamageEvent final value after one resistance projection",
+      "generic_resistance": "SpellDamageListener/Rúnavért",
+      "multiplier": "immutable cast-time CastModifiers.damageMultiplier",
+      "reachable": true,
+      "registered": true,
+      "resistance_cap": 0.6,
+      "resolved_damage_type": "icesmp:arnyek_magia",
+      "school_resistance": "SpellDamageListener/SpellSchool.resistEnchantId",
+      "spell_id": "bone_spear",
+      "vanilla_plus_custom_double_hit": false
+    },
+    {
+      "base_value": 6.0,
+      "causing_entity": "projectile shooter Entity snapshot",
+      "death_presentation": "SpellDamageListener#onMagicDeath",
+      "direct_entity": "projectile",
+      "event_count": 1,
+      "expected_school": "TERMESZET",
+      "final_damage": "EntityDamageEvent final value after one resistance projection",
+      "generic_resistance": "SpellDamageListener/Rúnavért",
+      "multiplier": "immutable cast-time CastModifiers.damageMultiplier",
+      "reachable": true,
+      "registered": true,
+      "resistance_cap": 0.6,
+      "resolved_damage_type": "icesmp:termeszet_magia",
+      "school_resistance": "SpellDamageListener/SpellSchool.resistEnchantId",
+      "spell_id": "double_tap",
+      "vanilla_plus_custom_double_hit": false
+    },
+    {
+      "base_value": 5.0,
+      "causing_entity": "projectile shooter Entity snapshot",
+      "death_presentation": "SpellDamageListener#onMagicDeath",
+      "direct_entity": "projectile",
+      "event_count": 1,
+      "expected_school": "TERMESZET",
+      "final_damage": "EntityDamageEvent final value after one resistance projection",
+      "generic_resistance": "SpellDamageListener/Rúnavért",
+      "multiplier": "immutable cast-time CastModifiers.damageMultiplier",
+      "reachable": true,
+      "registered": true,
+      "resistance_cap": 0.6,
+      "resolved_damage_type": "icesmp:termeszet_magia",
+      "school_resistance": "SpellDamageListener/SpellSchool.resistEnchantId",
+      "spell_id": "spectral_volley",
+      "vanilla_plus_custom_double_hit": false
+    }
+  ],
+  "protected_foundations": {
+    "armor_catalog": {
+      "count": 160,
+      "sha256": "d1fa7c6711d929ed44c9724f15169818f1a46c3190d1a9686de3b1393a75a158",
+      "unchanged_from_parent": true
+    },
+    "generated_gameplay_authority": 0,
+    "pve_techniques": 61,
+    "pve_templates": 89
+  },
+  "quest_producer_matrix": [
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "WHEAT"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_zold_arany",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 32
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "DIAMOND"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_csillag_konnye",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 3
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "QUARTZ"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_feher_arany",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 16
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "SWEET_BERRIES"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_tuz_gyumolcse",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 16
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "LAPIS_LAZULI"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_eg_kove",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 24
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "GLOW_INK_SAC"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_vilagito_ejfel",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 4
+    },
+    {
+      "actual_producer": [
+        "CraftItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual recipe result amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "CRAFT",
+      "materials": [
+        "SUGAR"
+      ],
+      "objective_type": "CRAFT_ITEMS",
+      "quest_id": "rejtveny_edes_ho",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 16
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "CRYING_OBSIDIAN"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_siro_ko",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 1
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "SEA_LANTERN"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_lampas_nep",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 4
+    },
+    {
+      "actual_producer": [
+        "PlayerBucketFillEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "LAVA_BUCKET"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_fold_vere",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 1
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "ECHO_SHARD"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "rejtveny_hangtalan_dal",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 1
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "GUNPOWDER"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "fejezet1_bizonyitek",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 24
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "AMETHYST_SHARD"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "fejezet2_szilankok",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 16
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "ECHO_SHARD"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "fejezet3_visszhang",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 2
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "SOUL_SAND"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "warlock_master_trial",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 16
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "AMETHYST_SHARD"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "evoker_master_trial",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 24
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "WHEAT",
+        "CARROT",
+        "POTATO",
+        "BEETROOT"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "farmer_harvest",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 96
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "SHORT_GRASS",
+        "FERN",
+        "DANDELION",
+        "POPPY",
+        "OXEYE_DAISY",
+        "CORNFLOWER"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "venek_gyogyfu_szuret",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 24
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent",
+        "FurnaceExtractEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "IRON_INGOT"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "red_supply_run",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 40
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "CORNFLOWER"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "jegvirag_szuret",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 12
+    },
+    {
+      "actual_producer": [
+        "CraftItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual recipe result amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "CRAFT",
+      "materials": [
+        "BLAZE_POWDER"
+      ],
+      "objective_type": "CRAFT_ITEMS",
+      "quest_id": "parazs_gyujtes",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 8
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "RAW_GOLD"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "borostyan_kutatas",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 6
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "QUARTZ"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "viharkvarc_fejto",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 24
+    },
+    {
+      "actual_producer": [
+        "BlockBreakEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "1 per eligible non-player-placed matching block",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "BREAK_BLOCK",
+      "materials": [
+        "OAK_LOG",
+        "BIRCH_LOG",
+        "SPRUCE_LOG",
+        "JUNGLE_LOG",
+        "ACACIA_LOG",
+        "DARK_OAK_LOG",
+        "MANGROVE_LOG",
+        "CHERRY_LOG"
+      ],
+      "objective_type": "BREAK_BLOCKS",
+      "quest_id": "onboarding_gather",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 10
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "DANDELION",
+        "POPPY",
+        "CORNFLOWER",
+        "OXEYE_DAISY",
+        "AZURE_BLUET",
+        "ALLIUM"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "napi_fuvesasszony",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 16
+    },
+    {
+      "actual_producer": [
+        "EntityPickupItemEvent"
+      ],
+      "cancelled_event_control": 0,
+      "duplicate_acquisition_control": "listener-owned bounded receipt rejects same logical event",
+      "expected_increment": "actual successful inventory transfer amount",
+      "exploit_policy": {
+        "container_move": "NO_PRODUCER",
+        "creative_admin_injection": "REJECT",
+        "death_drop_repickup": "REJECT",
+        "hopper": "NO_PRODUCER",
+        "own_inventory_move": "NO_PRODUCER",
+        "player_to_player_drop": "REJECT",
+        "stack_merge": "COUNT_TRANSFERRED_DELTA_ONCE"
+      },
+      "intent": "ACQUIRE_ITEM",
+      "materials": [
+        "MANGROVE_ROOTS"
+      ],
+      "objective_type": "COLLECT_ITEMS",
+      "quest_id": "gyokerek_1",
+      "reachable": true,
+      "replay_repickup_control": "player/death-drop PDC provenance rejects pickup",
+      "required_count": 8
+    }
+  ],
+  "schema": 1,
+  "scope": "ten verified findings only; no Gameplay/Equipment/PvE 3.0",
+  "signature_matrix": [
+    {
+      "acquisition_paths": [
+        "profession:item2_bokic_horgaszbot",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": "icesmp:bokic_kegye",
+      "canonical_id": "bokic_horgaszbot",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "FISHING_ROD",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "bokic_horgaszbot",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onFish",
+      "trigger": "ON_FISH"
+    },
+    {
+      "acquisition_paths": [
+        "profession:p2_fonixpihe_kopeny",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": "icesmp:fonixtoll",
+      "canonical_id": "fonixpihe_kopeny",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "ELYTRA",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "fonix_tollkopeny",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onPlayerDamaged",
+      "trigger": "WHILE_EQUIPPED"
+    },
+    {
+      "acquisition_paths": [
+        "profession:glatziendorfi_jegtoro",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": null,
+      "canonical_id": "glatziendorfi_jegtoro",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "NETHERITE_AXE",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "glatziendorfi_jegtoro",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onMelee",
+      "trigger": "ON_HIT"
+    },
+    {
+      "acquisition_paths": [
+        "profession:glatziendorfi_jegvert",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": "icesmp:fagypancel",
+      "canonical_id": "glatziendorfi_jegvert",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "NETHERITE_CHESTPLATE",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "glatziendorfi_jegvert",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onPlayerDamaged",
+      "trigger": "WHILE_EQUIPPED"
+    },
+    {
+      "acquisition_paths": [
+        "profession:jegsarkany_kantar",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": null,
+      "canonical_id": "jegsarkany_kantar",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "SADDLE",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "jegsarkany_kantar",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onKantarUse",
+      "trigger": "ON_USE"
+    },
+    {
+      "acquisition_paths": [
+        "profession:kallan_szeletelo",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": "icesmp:jegfog",
+      "canonical_id": "kallan_szeletelo",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "BOW",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "kallan_szeletelo",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onShoot",
+      "trigger": "ON_SHOOT"
+    },
+    {
+      "acquisition_paths": [
+        "profession:miinus_haragja",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": null,
+      "canonical_id": "miinus_haragja",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "NETHERITE_AXE",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "miinus_haragja",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onMelee",
+      "trigger": "ON_HIT"
+    },
+    {
+      "acquisition_paths": [
+        "profession:napfogyatkozas",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": null,
+      "canonical_id": "napfogyatkozas_fokusz",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "BOW",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "napfogyatkozas_fokusz",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onShoot",
+      "trigger": "ON_SHOOT"
+    },
+    {
+      "acquisition_paths": [
+        "profession:pyralingradi_tuzkopo",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": "icesmp:vihartuz",
+      "canonical_id": "pyralingradi_tuzkopo",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "CROSSBOW",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "pyralingradi_tuzkopo",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onShoot",
+      "trigger": "ON_SHOOT"
+    },
+    {
+      "acquisition_paths": [
+        "profession:item2_sarkanycsont_ij",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": null,
+      "canonical_id": "sarkanycsont_ij",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "BOW",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "sarkanycsont_ij",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onShoot",
+      "trigger": "ON_SHOOT"
+    },
+    {
+      "acquisition_paths": [
+        "profession:smaragdko_bankbetet",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": null,
+      "canonical_id": "smaragdko_bankbetet",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "EMERALD",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "smaragdko_bankbetet",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onUse",
+      "trigger": "ON_USE"
+    },
+    {
+      "acquisition_paths": [
+        "profession:szellemszarvas_bubaj",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": null,
+      "canonical_id": "szellemszarvas_bubaj",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "RABBIT_FOOT",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "szellemszarvas_bubaj",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onUse",
+      "trigger": "ON_USE"
+    },
+    {
+      "acquisition_paths": [
+        "profession:item2_vasmuvek_csakanya",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": "icesmp:erc_erzek",
+      "canonical_id": "vasmuvek_csakanya",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "NETHERITE_PICKAXE",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "vasmuvek_csakanya",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onMine",
+      "trigger": "ON_BLOCK_BREAK"
+    },
+    {
+      "acquisition_paths": [
+        "profession:verszavanna_agyara",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": "icesmp:verszomj",
+      "canonical_id": "verszavanna_agyara",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "NETHERITE_SWORD",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "verszavanna_agyara",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onMelee",
+      "trigger": "ON_HIT"
+    },
+    {
+      "acquisition_paths": [
+        "profession:zhoris_langnyelve",
+        "loot/template",
+        "admin:/iceitem",
+        "legacy migration"
+      ],
+      "bootstrap_enchant": null,
+      "canonical_id": "zhoris_langnyelve",
+      "legacy_equivalent": "legacy signature_item PDC",
+      "material": "BLAZE_ROD",
+      "migration_state": "IDEMPOTENT_CANONICAL_TEMPLATE_MIGRATION",
+      "pdc_signature": "zhoris_langnyelve",
+      "perk_reachable": true,
+      "recipe_semantic_projection": "ItemIdentityService.render",
+      "runtime_consumer": "SignatureItemListener#onMelee",
+      "trigger": "ON_HIT"
+    }
+  ],
+  "starting_topology": {
+    "ancestry_verified": true,
+    "master": "61b05cfa98604877c495c5296204bd1e11f3d088",
+    "pr_140": "4a24ee49949b99d410455a990e59a59025d2242b",
+    "pr_141": "f061e78946962414502ebe365ee812edd8c2fadb",
+    "pr_142": "e5e0f3ee15d3b06b4636084f0aab4f0924ab6bf2",
+    "sha_changes_from_review": [],
+    "staging": "042f72fb405e38b6306c45f30a26074e11322fd5"
+  }
+}
