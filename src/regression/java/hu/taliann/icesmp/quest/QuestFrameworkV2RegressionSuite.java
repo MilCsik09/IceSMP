@@ -43,6 +43,7 @@ public final class QuestFrameworkV2RegressionSuite {
         profileStoreExtensions();
         packagedQuestMigrationContract();
         bypassSourceContracts();
+        professionHintVisibility();
         System.out.println("Quest framework v2 regression suite passed. assertions=" + assertions);
     }
 
@@ -468,7 +469,8 @@ public final class QuestFrameworkV2RegressionSuite {
         final PlayerProfileAuthority authority = PlayerProfileAuthority.install(
                 service, repository, transactions);
         boolean firstUninstalled = false;
-        try {
+        try (var rewards = hu.taliann.icesmp.integrity.GameplayRewardGate.install(
+                context -> hu.taliann.icesmp.integrity.RewardDecision.allow())) {
             repository.loadSnapshot(PLAYER).toCompletableFuture().join();
             final PlayerProfileQuestStore store = new PlayerProfileQuestStore();
 
@@ -537,8 +539,8 @@ public final class QuestFrameworkV2RegressionSuite {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(
                 new java.io.File("src/main/resources/content/progression/quests.yml"));
         final ConfigurationSection quests = yaml.getConfigurationSection("quests");
-        check(quests != null && quests.getKeys(false).size() == 195,
-                "packaged catalog carries the 160 world quests plus 35 capstone trials");
+        check(quests != null && quests.getKeys(false).size() == 196,
+                "packaged catalog carries the 160 world quests plus 35 capstone trials and civil penance");
 
         final List<String> errors = QuestGraphValidator.validate(quests);
         check(errors.isEmpty(), "the full packaged quest graph validates: " + errors);
@@ -639,7 +641,7 @@ public final class QuestFrameworkV2RegressionSuite {
                         && manager.contains("Failed to load versioned custom-quests.yml"),
                 "extensible custom quest content is versioned and fails closed");
         check(manager.contains("handleSpellCast(final Player player, final String spellId)")
-                        && manager.contains("forEachActive(player, \"CAST_SPELLS\"")
+                        && manager.contains("forEachActive(player, reward, \"CAST_SPELLS\"")
                         && manager.contains("quest-requires-specialization"),
                 "capstone trial progress and specialization gate share the central QuestManager");
 
@@ -667,6 +669,42 @@ public final class QuestFrameworkV2RegressionSuite {
                         && !bridge.contains("acceptFromNpc")
                         && !bridge.contains("acceptBoundQuest"),
                 "the NPC bridge is an adapter: all decisions flow through the central authority");
+    }
+
+    private static void professionHintVisibility() throws Exception {
+        final Class<?> managerType = hu.taliann.icesmp.managers.QuestManager.class;
+        final Class<?> unsafeType = Class.forName("sun.misc.Unsafe");
+        final var singleton = unsafeType.getDeclaredField("theUnsafe");
+        singleton.setAccessible(true);
+        final Object manager = unsafeType.getMethod("allocateInstance", Class.class)
+                .invoke(singleton.get(null), managerType);
+        final Class<?> registryType = Class.forName(managerType.getName() + "$QuestRegistry");
+        final var constructor = registryType.getDeclaredConstructor(YamlConfiguration.class, java.util.Map.class);
+        constructor.setAccessible(true);
+        final var registry = managerType.getDeclaredField("registry");
+        registry.setAccessible(true);
+        final var hint = hu.taliann.icesmp.gui.QuestLogGUI.class.getDeclaredMethod(
+                "isPrerequisiteVisibleQuest", org.bukkit.entity.Player.class, managerType, String.class);
+        hint.setAccessible(true);
+        final YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("quests.probe.visibility.mode", "HIDDEN");
+        for (final QuestVisibility visibility : QuestVisibility.values()) {
+            yaml.set("quests.probe.visibility.mode", visibility.name());
+            final var meta = new hu.taliann.icesmp.managers.QuestManager.QuestMeta(
+                    null, QuestCategory.SIDE, visibility);
+            registry.set(manager, constructor.newInstance(yaml, java.util.Map.of("probe", meta)));
+            check((boolean) hint.invoke(null, null, manager, "probe")
+                            == (visibility == QuestVisibility.PREREQUISITES_MET),
+                    "profession hint honors canonical nested visibility: " + visibility);
+        }
+        registry.set(manager, constructor.newInstance(yaml, java.util.Map.of("probe",
+                new hu.taliann.icesmp.managers.QuestManager.QuestMeta(
+                        null, QuestCategory.SIDE, QuestVisibility.PREREQUISITES_MET))));
+        yaml.set("quests.probe.requires-quest", "uncompleted_previous_chapter");
+        check(!(boolean) hint.invoke(null, null, manager, "probe"),
+                "profession guidance does not reveal a locked quest-chain step");
+        check(!(boolean) hint.invoke(null, null, manager, "missing"),
+                "unknown quest is never revealed by profession guidance");
     }
 
     // ---------- fixtures ----------

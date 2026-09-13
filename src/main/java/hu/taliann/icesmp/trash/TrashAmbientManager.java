@@ -53,6 +53,11 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
     private final Map<UUID, AmbientRecord> active = new ConcurrentHashMap<>();
     private final Map<ChunkKey, Integer> chunkCounts = new ConcurrentHashMap<>();
     private final Object densityLock = new Object();
+    private java.util.function.Consumer<Item> itemRecovery = ignored -> { };
+
+    public void bindItemRecovery(final java.util.function.Consumer<Item> recovery) {
+        this.itemRecovery = java.util.Objects.requireNonNull(recovery);
+    }
 
     public TrashAmbientManager(final JavaPlugin plugin, final TrashCatalog catalog,
                                final TrashLootService loot,
@@ -154,6 +159,7 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
     }
 
     private void recoverLoaded(final Item item) {
+        item.getScheduler().run(plugin, ignored -> itemRecovery.accept(item), null);
         if (!isAmbient(item)) return;
         final Long expiresAt = item.getPersistentDataContainer().get(
                 ambientExpiresAt, PersistentDataType.LONG);

@@ -9,7 +9,8 @@ import java.util.function.BooleanSupplier;
 public final class MajorEventGate {
 
     private static final List<String> DEFAULT_MAJORS =
-            List.of("world-boss", "invasion", "wild-hunt", "escort", "cultists", "prologue");
+            List.of("world-boss", "invasion", "wild-hunt", "escort", "cultists", "prologue",
+                    "blood-moon", "season-finale");
     private static volatile MajorEventGate active;
 
     private final ConfigManager configManager;

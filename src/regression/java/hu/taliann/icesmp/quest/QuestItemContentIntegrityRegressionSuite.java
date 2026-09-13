@@ -66,7 +66,7 @@ public final class QuestItemContentIntegrityRegressionSuite {
     private static void fullQuestCatalogHasRewardPreviewParity() throws Exception {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(QUESTS.toFile());
         final ConfigurationSection quests = required(yaml, "quests");
-        check(quests.getKeys(false).size() == 195, "the exhaustive quest denominator remains 195");
+        check(quests.getKeys(false).size() == 196, "the exhaustive quest denominator includes 196 quests");
         int ownWithoutFaction = 0;
         int withRewards = 0;
         final Set<String> supportedRewardKeys = Set.of(
@@ -83,8 +83,8 @@ public final class QuestItemContentIntegrityRegressionSuite {
                 ownWithoutFaction++;
             }
         }
-        check(withRewards == 160,
-                "all 160 reward-bearing quests are covered while the 35 rewardless capstones omit the category");
+        check(withRewards == 161,
+                "all 161 reward-bearing quests are covered while the 35 rewardless capstones omit the category");
         check(ownWithoutFaction == 96,
                 "the exact reviewed set of 96 guest-reachable OWN rewards is covered");
 

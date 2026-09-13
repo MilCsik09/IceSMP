@@ -83,7 +83,8 @@ jobs:
       - name: Checkout tested commit
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          # Full-build migration audits compare content with historical stack commits.
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Python 3.12
