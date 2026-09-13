@@ -171,10 +171,21 @@ def main() -> None:
     require("applyEncounterModifier" in scaling and "encounter_stat_modifier" in scaling
             and "already applied" in scaling,
             "participant scaling lacks single-application provenance")
-    require("consumedThresholds" in runtime and "pendingThresholds" in runtime
+    history = (ROOT / "src/main/java/hu/taliann/icesmp/pve/MobRuntimeHistory.java").read_text()
+    require("state.history.consumed(definition.abilityId())" in runtime
+            and "state.history.consume(definition.abilityId())" in runtime
+            and "consumed.size() < LIMIT && consumed.add(ability)" in history
+            and "pendingThresholds" in runtime
             and "castEpoch" in runtime and "state.paused" in runtime,
             "threshold/pause/cast-epoch lifecycle proof missing")
-    require("player.getScheduler().run" in runtime and "Bukkit.getScheduler" not in runtime,
+    effect_admission = runtime[runtime.index("    private void affectLiving("):runtime.index("    private static boolean survivor(")]
+    require("handle.getScheduler().run" in effect_admission and "current.getScheduler().run" in effect_admission
+            and "final LivingEntity entity = ownedLiving(id, player)" in effect_admission
+            and "if (entity == null) return" in effect_admission
+            and "currentSources = BukkitRewardSources.causal(entity)" in effect_admission
+            and "if (permit.claim(currentSources)) effect.accept(entity)" in effect_admission
+            and "Bukkit.isOwnedByCurrentRegion(entity)" in effect_admission
+            and "Bukkit.getScheduler" not in runtime,
             "area/effect action is not remote-player ownership safe")
     require("maximum-summons-per-cast" in runtime and "cleanupSummons" in runtime,
             "summon cap/owner cleanup proof missing")

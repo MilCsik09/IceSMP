@@ -83,7 +83,7 @@ Minden helyszínhez legyen egy rövid átadólap:
 | Komp | Igen, ha használni akarjátok | Két configolt végpont | Nincs bundled útvonal | Mindkét part, biztonságos érkezés, közeli beszállási pont |
 | Parkour | Igen | Tartós start- és célpont | Nincs bundled pálya | Start, cél, sugár, kizuhanás és jutalom teszt |
 | Quest: területlátogatás | Igen | Quest által hivatkozott territory ID | Három terület-ID-hivatkozás van | A zóna-ID-t pontosan egyeztesd a questtel |
-| Quest: NPC-beszélgetés/átadás | Igen, canonical FancyNpcs út | NPC belső neve és opcionális tartós `/npcbind` | Nincs bundled élő binding | NPC-hely, belső név, kattintási hozzáférés és fail-closed readiness teszt |
+| Quest: NPC-beszélgetés/átadás | Igen, canonical FancyNpcs út | NPC belső neve és opcionális tartós `/npcbind` | Nincs bundled élő binding | NPC-hely, belső név, kattintási hozzáférés; hiányzó binding naplóhibát okoz, az IceSMP aktív marad |
 | Quest: parkour | Igen | Quest által hivatkozott pálya-ID | Egy pálya-ID-hivatkozás van | A persistent pálya ID-je egyezzen |
 | Dungeon | Igen | `DUNGEON` zóna + opcionális láda- és bosspontok | Nincs bundled zónapéldány | Belépés, loot, boss, reset és védelmi határ teszt |
 | Dungeon lootláda | Igen | Nézett chest/trapped chest/barrel koordinátája | Runtime tartós adat | `/territory dungeonchest [tábla]`, majd játékosonkénti loot teszt |

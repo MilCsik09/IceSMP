@@ -216,9 +216,11 @@ public final class ItemGiveCommand implements BasicCommand {
                     return;
                 }
                 target.getScheduler().run(plugin, task -> {
-                    if (devItemManager.giveToOwner(target)) confirm(sender, target, "Csodálatos Bingulus", 1);
-                    else sendFromTargetThread(sender, target, messageManager.get("dev-item.give-failed",
-                            "&cA Csodálatos Bingulus nem adható át: a tulajdonos inventoryja tele van."));
+                    devItemManager.giveToOwner(target, (online, delivered) -> {
+                        if (delivered) confirm(sender, online, "Csodálatos Bingulus", 1);
+                        else sendFromTargetThread(sender, online, messageManager.get("dev-item.give-failed",
+                                "&cA Csodálatos Bingulus nem adható át: a tulajdonos inventoryja tele van."));
+                    });
                 }, null);
             }
             case "tervrajz" -> {

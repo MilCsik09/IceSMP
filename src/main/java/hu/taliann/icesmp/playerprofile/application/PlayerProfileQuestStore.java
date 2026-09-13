@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.playerprofile.application;
 
+import hu.taliann.icesmp.integrity.RewardChannel;
+import hu.taliann.icesmp.integrity.RewardContext;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.QuestSection;
 
@@ -95,10 +97,17 @@ public final class PlayerProfileQuestStore {
     /** A felvétel a start-forrás auditjával EGY commitban rögzül. */
     public CompletionStage<Boolean> accept(final UUID playerId, final String questId,
                                            final String startSource) {
+        return accept(playerId, questId, startSource, RewardContext.recipientOnly(RewardChannel.QUEST_PROGRESS, playerId));
+    }
+
+    public CompletionStage<Boolean> accept(final UUID playerId, final String questId,
+                                           final String startSource,
+                                                      final RewardContext reward) {
+        reward.require(RewardChannel.QUEST_PROGRESS, playerId);
         final String id = questId(questId);
         final String source = startSource == null ? "" : startSource.trim().toLowerCase(Locale.ROOT);
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, reward, current -> {
                     if (current.active().containsKey(id)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
                     }
@@ -127,10 +136,17 @@ public final class PlayerProfileQuestStore {
     /** Tartós quest-felfedezés; {@code true}, ha ez volt az első felfedezés. */
     public CompletionStage<Boolean> discover(final UUID playerId, final String questId,
                                              final String source) {
+        return discover(playerId, questId, source, RewardContext.recipientOnly(RewardChannel.DISCOVERY, playerId));
+    }
+
+    public CompletionStage<Boolean> discover(final UUID playerId, final String questId,
+                                             final String source,
+                                                      final RewardContext reward) {
+        reward.require(RewardChannel.DISCOVERY, playerId);
         final String id = questId(questId);
         final String from = source == null ? "" : source.trim().toLowerCase(Locale.ROOT);
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, reward, current -> {
                     if (metadata(current.extensions()).getOrDefault(id, Map.of())
                             .containsKey(DISCOVERED_FIELD)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(false);
@@ -217,10 +233,17 @@ public final class PlayerProfileQuestStore {
 
     public CompletionStage<Integer> setProgress(final UUID playerId, final String questId,
                                                 final int objective, final int value) {
+        return setProgress(playerId, questId, objective, value, RewardContext.recipientOnly(RewardChannel.QUEST_PROGRESS, playerId));
+    }
+
+    public CompletionStage<Integer> setProgress(final UUID playerId, final String questId,
+                                                final int objective, final int value,
+                                                      final RewardContext reward) {
+        reward.require(RewardChannel.QUEST_PROGRESS, playerId);
         final String id = questId(questId);
         if (objective < 0 || value < 0) throw new IllegalArgumentException("invalid progress");
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, reward, current -> {
                     final Map<String, Long> existing = current.active().get(id);
                     if (existing == null) {
                         return PlayerProfileService.ConditionalMutation.unchanged(0);
@@ -244,12 +267,20 @@ public final class PlayerProfileQuestStore {
     public CompletionStage<Integer> incrementProgress(final UUID playerId, final String questId,
                                                       final int objective, final int amount,
                                                       final int maximum) {
+        return incrementProgress(playerId, questId, objective, amount, maximum, RewardContext.recipientOnly(RewardChannel.QUEST_PROGRESS, playerId));
+    }
+
+    public CompletionStage<Integer> incrementProgress(final UUID playerId, final String questId,
+                                                      final int objective, final int amount,
+                                                      final int maximum,
+                                                      final RewardContext reward) {
+        reward.require(RewardChannel.QUEST_PROGRESS, playerId);
         final String id = questId(questId);
         if (objective < 0 || amount <= 0 || maximum < 0) {
             throw new IllegalArgumentException("invalid progress increment");
         }
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, reward, current -> {
                     final Map<String, Long> existing = current.active().get(id);
                     if (existing == null) {
                         return PlayerProfileService.ConditionalMutation.unchanged(0);
@@ -281,13 +312,49 @@ public final class PlayerProfileQuestStore {
                                                        final String questId,
                                                        final long completedAt,
                                                        final long seasonId) {
+        return complete(playerId, questId, completedAt, seasonId,
+                RewardContext.recipientOnly(RewardChannel.QUEST_REWARD, playerId));
+    }
+
+    /** Trusted canonical completion route; the native manager separately authorizes ADMIN override. */
+    public CompletionStage<CompletionReceipt> complete(final UUID playerId, final String questId,
+                                                       final long completedAt, final long seasonId,
+                                                       final RewardContext reward) {
+        return completeAdmitted(playerId, questId, completedAt, seasonId, Map.of(), reward);
+    }
+
+    /** Checks durable objective state in the same CAS that creates the entitlement. */
+    public CompletionStage<CompletionReceipt> completeIfReady(final UUID playerId, final String questId,
+                                                              final long completedAt, final long seasonId,
+                                                              final Map<Integer, Integer> requiredObjectives,
+                                                              final RewardContext reward) {
+        if (requiredObjectives.isEmpty()) throw new IllegalArgumentException("quest objectives required");
+        return completeAdmitted(playerId, questId, completedAt, seasonId, requiredObjectives, reward);
+    }
+
+    private CompletionStage<CompletionReceipt> completeAdmitted(final UUID playerId, final String questId,
+                                                               final long completedAt, final long seasonId,
+                                                               final Map<Integer, Integer> requiredObjectives,
+                                                               final RewardContext reward) {
+        reward.require(RewardChannel.QUEST_REWARD, playerId);
+        final Map<Integer, Integer> requirements = Map.copyOf(requiredObjectives);
+        if (requirements.size() > 512 || requirements.entrySet().stream()
+                .anyMatch(entry -> entry.getKey() < 0 || entry.getValue() <= 0)) {
+            throw new IllegalArgumentException("invalid quest completion requirements");
+        }
         final String id = questId(questId);
         if (completedAt <= 0L || seasonId < 0L) {
             throw new IllegalArgumentException("invalid completion metadata");
         }
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.QUESTS, QuestSection.class, reward, current -> {
                     if (!current.active().containsKey(id)) {
+                        return PlayerProfileService.ConditionalMutation.unchanged(
+                                new CompletionReceipt(false, "", id, completedAt, seasonId));
+                    }
+                    final Map<String, Long> durableProgress = current.active().get(id);
+                    if (requirements.entrySet().stream().anyMatch(entry ->
+                            durableProgress.getOrDefault(objectiveKey(entry.getKey()), 0L) < entry.getValue())) {
                         return PlayerProfileService.ConditionalMutation.unchanged(
                                 new CompletionReceipt(false, "", id, completedAt, seasonId));
                     }
@@ -421,10 +488,14 @@ public final class PlayerProfileQuestStore {
     /** Parent receipt may settle only after every prepared physical component is durable DELIVERED. */
     public CompletionStage<Boolean> settleReward(final UUID playerId, final String receipt) {
         final String rewardReceipt = rewardReceipt(receipt);
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.QUESTS, QuestSection.class, current -> {
+        return settleReward(playerId, rewardReceipt, 4);
+    }
+
+    private CompletionStage<Boolean> settleReward(final UUID playerId, final String rewardReceipt, final int attempts) {
+        return PlayerProfileAuthority.current().transact(playerId, snapshot -> {
+                    final QuestSection current = snapshot.quests().value();
                     if (current.rewardReceipts().contains(rewardReceipt)) {
-                        return PlayerProfileService.ConditionalMutation.unchanged(false);
+                        throw new AlreadySettled();
                     }
                     if (!current.claimableRewards().contains(rewardReceipt)) {
                         throw new IllegalStateException("unknown claimable quest reward");
@@ -447,10 +518,43 @@ public final class PlayerProfileQuestStore {
                     }
                     settled.add(rewardReceipt);
                     ledger.remove(rewardReceipt);
-                    return PlayerProfileService.ConditionalMutation.changed(
-                            copyWithDeliveryLedger(current, current.active(), current.completed(),
-                                    settled, current.cooldowns(), claimable, ledger), true);
+                    final QuestSection next = copyWithDeliveryLedger(current, current.active(), current.completed(),
+                            settled, current.cooldowns(), claimable, ledger);
+                    final var statistics = snapshot.statistics().value();
+                    final Map<String, Long> counters = new LinkedHashMap<>(statistics.lifetime());
+                    counters.merge(PlayerProfileStatisticsStore.QUESTS_COMPLETED, 1L, Math::addExact);
+                    final var nextStatistics = new hu.taliann.icesmp.playerprofile.domain.section.StatisticsSection(
+                            counters, statistics.season(), statistics.claimedMilestones(), statistics.extensions());
+                    final String operation = settlementOperation(rewardReceipt);
+                    if (snapshot.operations().value().operations().containsKey(operation))
+                        throw new IllegalStateException("Quest settlement requires reconciliation");
+                    return new hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager.TransactionPlan<>(
+                            operation, "quest-reward-settlement", operation,
+                            List.of(new hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager.SectionUpdate(
+                                            ProfileSectionId.QUESTS, snapshot.quests().revision(), next),
+                                    new hu.taliann.icesmp.playerprofile.transaction.PlayerProfileTransactionManager.SectionUpdate(
+                                            ProfileSectionId.STATISTICS, snapshot.statistics().revision(), nextStatistics)),
+                            true, () -> { }, Map.of("quest-receipt", rewardReceipt));
+                }).exceptionallyCompose(failure -> {
+                    Throwable root = failure;
+                    while (root instanceof java.util.concurrent.CompletionException && root.getCause() != null) root = root.getCause();
+                    if (root instanceof AlreadySettled) return CompletableFuture.completedFuture(false);
+                    if (root instanceof hu.taliann.icesmp.playerprofile.persistence.PlayerProfileRepositoryException.RevisionConflict && attempts > 1)
+                        return settleReward(playerId, rewardReceipt, attempts - 1);
+                    return CompletableFuture.failedFuture(root);
                 });
+    }
+
+    private static String settlementOperation(final String receipt) {
+        try {
+            return "quest-settle:" + java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(receipt.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException impossible) { throw new AssertionError(impossible); }
+    }
+
+    private static final class AlreadySettled extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+        AlreadySettled() { super(null, null, false, false); }
     }
 
     private static State state(final QuestSection section) {

@@ -1,6 +1,238 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "icesmp:item/trash/torott_iranytu"
+    "type": "minecraft:range_dispatch",
+    "property": "minecraft:compass",
+    "target": "lodestone",
+    "wobble": true,
+    "entries": [
+      {
+        "threshold": 0.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_00"
+        }
+      },
+      {
+        "threshold": 0.03125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_01"
+        }
+      },
+      {
+        "threshold": 0.0625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_02"
+        }
+      },
+      {
+        "threshold": 0.09375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_03"
+        }
+      },
+      {
+        "threshold": 0.125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_04"
+        }
+      },
+      {
+        "threshold": 0.15625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_05"
+        }
+      },
+      {
+        "threshold": 0.1875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_06"
+        }
+      },
+      {
+        "threshold": 0.21875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_07"
+        }
+      },
+      {
+        "threshold": 0.25,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_08"
+        }
+      },
+      {
+        "threshold": 0.28125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_09"
+        }
+      },
+      {
+        "threshold": 0.3125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_10"
+        }
+      },
+      {
+        "threshold": 0.34375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_11"
+        }
+      },
+      {
+        "threshold": 0.375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_12"
+        }
+      },
+      {
+        "threshold": 0.40625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_13"
+        }
+      },
+      {
+        "threshold": 0.4375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_14"
+        }
+      },
+      {
+        "threshold": 0.46875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_15"
+        }
+      },
+      {
+        "threshold": 0.5,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_16"
+        }
+      },
+      {
+        "threshold": 0.53125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_17"
+        }
+      },
+      {
+        "threshold": 0.5625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_18"
+        }
+      },
+      {
+        "threshold": 0.59375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_19"
+        }
+      },
+      {
+        "threshold": 0.625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_20"
+        }
+      },
+      {
+        "threshold": 0.65625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_21"
+        }
+      },
+      {
+        "threshold": 0.6875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_22"
+        }
+      },
+      {
+        "threshold": 0.71875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_23"
+        }
+      },
+      {
+        "threshold": 0.75,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_24"
+        }
+      },
+      {
+        "threshold": 0.78125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_25"
+        }
+      },
+      {
+        "threshold": 0.8125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_26"
+        }
+      },
+      {
+        "threshold": 0.84375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_27"
+        }
+      },
+      {
+        "threshold": 0.875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_28"
+        }
+      },
+      {
+        "threshold": 0.90625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_29"
+        }
+      },
+      {
+        "threshold": 0.9375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_30"
+        }
+      },
+      {
+        "threshold": 0.96875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "icesmp:item/trash/states/torott_iranytu_31"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "icesmp:item/trash/torott_iranytu"
+    }
   }
 }

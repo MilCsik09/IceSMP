@@ -5,6 +5,12 @@ import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.items.CrateKeyFactory;
+import hu.taliann.icesmp.integrity.BukkitRewardSources;
+import hu.taliann.icesmp.integrity.GameplayRewardGate;
+import hu.taliann.icesmp.integrity.RewardChannel;
+import hu.taliann.icesmp.integrity.RewardContext;
+import hu.taliann.icesmp.integrity.RewardEligibilityDeniedException;
+import org.bukkit.Bukkit;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileQuestStore;
 import hu.taliann.icesmp.quest.QuestCategory;
 import hu.taliann.icesmp.quest.QuestCurrencyResolver;
@@ -96,9 +102,8 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
     /** Rebuildable online projection; durable truth remains QuestSection. */
     private final ConcurrentMap<UUID, QuestMirror> mirrors = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, CompletableFuture<Void>> mutationTails =
-            new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, Object> playerLocks = new ConcurrentHashMap<>();
+    private final hu.taliann.icesmp.quest.QuestMutationQueue mutations = new hu.taliann.icesmp.quest.QuestMutationQueue();
+    private final Object[] playerLocks = java.util.stream.IntStream.range(0, 64).mapToObj(i -> new Object()).toArray();
     private final QuestChoiceRegistry choiceRegistry = new QuestChoiceRegistry();
     /**
      * Validált definíció-pillanatkép: minden definíció-olvasás ezen megy át, és a csere
@@ -621,6 +626,8 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
     private boolean acceptInternal(final Player player, final String questId,
                                    final QuestSourceContext context) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward == null) return false;
         final String id = normalizeQuestId(questId);
         final UUID playerId = player.getUniqueId();
         final String source = context.type().name().toLowerCase(Locale.ROOT)
@@ -633,9 +640,9 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             active.put(id, Map.of());
             mirrors.put(playerId, new QuestMirror(active, before.completed(),
                     before.localDoneAt(), before.localSeason()));
-            enqueue(playerId, () -> questStore.accept(playerId, id, source)
+            enqueue(playerId, () -> questStore.accept(playerId, id, source, reward)
                     .thenApply(ignored -> null));
-            enqueue(playerId, () -> questStore.discover(playerId, id, source)
+            enqueue(playerId, () -> questStore.discover(playerId, id, source, forChannel(reward, RewardChannel.DISCOVERY))
                     .thenApply(ignored -> null));
         }
         handleLevelChange(player);
@@ -644,11 +651,13 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
     /** Durable felfedezés-jelölés (láthatóság DISCOVERED módhoz); idempotens. */
     public void markDiscovered(final Player player, final String questId, final String source) {
-        if (player == null || questId == null) return;
-        final UUID playerId = player.getUniqueId();
+        if (questId == null) return;
+        final RewardContext reward = captureReward(player, RewardChannel.DISCOVERY);
+        if (reward == null) return;
+        final UUID playerId = reward.recipient();
         final String id = normalizeQuestId(questId);
         enqueue(playerId, () -> questStore.discover(playerId, id,
-                source == null ? "" : source).thenApply(ignored -> null));
+                source == null ? "" : source, reward).thenApply(ignored -> null));
     }
 
     public boolean isDiscovered(final Player player, final String questId) {
@@ -692,37 +701,127 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     public void handleKill(final Player player, final EntityType type, final int level) {
-        forEachActive(player, "KILL_MOBS", (id, objective) -> {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleKill(player, type, level, reward);
+    }
+
+    public void handleKill(final Player player, final EntityType type, final int level, final RewardContext reward) {
+        forEachActive(player, reward, "KILL_MOBS", (id, objective) -> {
             final String required = objective.getString("entity-type");
             return (required == null || required.isBlank() || required.equalsIgnoreCase(type.name()))
                     && level >= objective.getInt("min-mob-level", 0);
         });
     }
-    public void handleBlockBreak(final Player player, final Material material) { forEachActive(player, "BREAK_BLOCKS", (id, obj) -> materialMatches(obj, material)); }
-    public void handleCraft(final Player player, final Material material, final int amount) { forEachActive(player, "CRAFT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
-    public void handleFish(final Player player) { forEachActive(player, "CATCH_FISH", (id, obj) -> true); }
-    public void handlePlaceBlock(final Player player, final Material material) { forEachActive(player, "PLACE_BLOCKS", (id, obj) -> materialMatches(obj, material)); }
-    public void handleCollect(final Player player, final Material material, final int amount) { forEachActive(player, "COLLECT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
-    public void handlePlayerKill(final Player player) { forEachActive(player, "KILL_PLAYERS", (id, obj) -> true); }
-    public void handleBreed(final Player player, final EntityType type) { forEachActive(player, "BREED_ANIMALS", (id, obj) -> entityMatches(obj, type)); }
-    public void handleEnchant(final Player player) { forEachActive(player, "ENCHANT_ITEMS", (id, obj) -> true); }
-    public void handleConsume(final Player player, final Material material) { forEachActive(player, "CONSUME_ITEMS", (id, obj) -> materialMatches(obj, material)); }
-    public void handleSmelt(final Player player, final Material material, final int amount) { forEachActive(player, "SMELT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
-    public void handleTame(final Player player, final EntityType type) { forEachActive(player, "TAME_ANIMALS", (id, obj) -> entityMatches(obj, type)); }
-    public void handleVillagerTrade(final Player player) { forEachActive(player, "TRADE_WITH_VILLAGER", (id, obj) -> true); }
-    public void handleRaidWin(final Player player) { forEachActive(player, "WIN_RAID", (id, obj) -> true); }
-    public void handleBossKill(final Player player) { forEachActive(player, "KILL_WORLDBOSS", (id, obj) -> true); }
+    public void handleBlockBreak(final Player player, final Material material) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleBlockBreak(player, material, reward);
+    }
+
+    public void handleBlockBreak(final Player player, final Material material, final RewardContext reward) { forEachActive(player, reward, "BREAK_BLOCKS", (id, obj) -> materialMatches(obj, material)); }
+    public void handleCraft(final Player player, final Material material, final int amount) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleCraft(player, material, amount, reward);
+    }
+
+    public void handleCraft(final Player player, final Material material, final int amount, final RewardContext reward) { forEachActive(player, reward, "CRAFT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
+    public void handleFish(final Player player) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleFish(player, reward);
+    }
+
+    public void handleFish(final Player player, final RewardContext reward) { forEachActive(player, reward, "CATCH_FISH", (id, obj) -> true); }
+    public void handlePlaceBlock(final Player player, final Material material) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handlePlaceBlock(player, material, reward);
+    }
+
+    public void handlePlaceBlock(final Player player, final Material material, final RewardContext reward) { forEachActive(player, reward, "PLACE_BLOCKS", (id, obj) -> materialMatches(obj, material)); }
+    public void handleCollect(final Player player, final Material material, final int amount) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleCollect(player, material, amount, reward);
+    }
+
+    public void handleCollect(final Player player, final Material material, final int amount, final RewardContext reward) { forEachActive(player, reward, "COLLECT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
+    public void handlePlayerKill(final Player player) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handlePlayerKill(player, reward);
+    }
+
+    public void handlePlayerKill(final Player player, final RewardContext reward) { forEachActive(player, reward, "KILL_PLAYERS", (id, obj) -> true); }
+    public void handleBreed(final Player player, final EntityType type) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleBreed(player, type, reward);
+    }
+
+    public void handleBreed(final Player player, final EntityType type, final RewardContext reward) { forEachActive(player, reward, "BREED_ANIMALS", (id, obj) -> entityMatches(obj, type)); }
+    public void handleEnchant(final Player player) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleEnchant(player, reward);
+    }
+
+    public void handleEnchant(final Player player, final RewardContext reward) { forEachActive(player, reward, "ENCHANT_ITEMS", (id, obj) -> true); }
+    public void handleConsume(final Player player, final Material material) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleConsume(player, material, reward);
+    }
+
+    public void handleConsume(final Player player, final Material material, final RewardContext reward) { forEachActive(player, reward, "CONSUME_ITEMS", (id, obj) -> materialMatches(obj, material)); }
+    public void handleSmelt(final Player player, final Material material, final int amount) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleSmelt(player, material, amount, reward);
+    }
+
+    public void handleSmelt(final Player player, final Material material, final int amount, final RewardContext reward) { forEachActive(player, reward, "SMELT_ITEMS", Math.max(1, amount), (id, obj) -> materialMatches(obj, material)); }
+    public void handleTame(final Player player, final EntityType type) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleTame(player, type, reward);
+    }
+
+    public void handleTame(final Player player, final EntityType type, final RewardContext reward) { forEachActive(player, reward, "TAME_ANIMALS", (id, obj) -> entityMatches(obj, type)); }
+    public void handleVillagerTrade(final Player player) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleVillagerTrade(player, reward);
+    }
+
+    public void handleVillagerTrade(final Player player, final RewardContext reward) { forEachActive(player, reward, "TRADE_WITH_VILLAGER", (id, obj) -> true); }
+    public void handleRaidWin(final Player player) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleRaidWin(player, reward);
+    }
+
+    public void handleRaidWin(final Player player, final RewardContext reward) { forEachActive(player, reward, "WIN_RAID", (id, obj) -> true); }
+    public void handleBossKill(final Player player) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleBossKill(player, reward);
+    }
+
+    public void handleBossKill(final Player player, final RewardContext reward) { forEachActive(player, reward, "KILL_WORLDBOSS", (id, obj) -> true); }
     public void handleSpellCast(final Player player, final String spellId) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleSpellCast(player, spellId, reward);
+    }
+
+    public void handleSpellCast(final Player player, final String spellId, final RewardContext reward) {
         final String normalized = spellId == null ? "" : spellId.trim().toLowerCase(Locale.ROOT);
         if (normalized.isEmpty()) return;
-        forEachActive(player, "CAST_SPELLS", (id, objective) -> objective.getStringList("spells")
+        forEachActive(player, reward, "CAST_SPELLS", (id, objective) -> objective.getStringList("spells")
                 .stream().map(value -> value.trim().toLowerCase(Locale.ROOT))
                 .anyMatch(normalized::equals));
     }
-    public void handleParkourFinish(final Player player, final String courseId) { forEachActive(player, "PARKOUR_TRIAL", (id, obj) -> courseId != null && courseId.equalsIgnoreCase(obj.getString("course", ""))); }
+    public void handleParkourFinish(final Player player, final String courseId) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleParkourFinish(player, courseId, reward);
+    }
+
+    public void handleParkourFinish(final Player player, final String courseId, final RewardContext reward) { forEachActive(player, reward, "PARKOUR_TRIAL", (id, obj) -> courseId != null && courseId.equalsIgnoreCase(obj.getString("course", ""))); }
 
     public void handleBiomeVisit(final Player player, final String biomeKey) {
-        forEachActive(player, "EXPLORE_BIOME", (id, objective) -> {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) handleBiomeVisit(player, biomeKey, reward);
+    }
+
+    public void handleBiomeVisit(final Player player, final String biomeKey, final RewardContext reward) {
+        forEachActive(player, reward, "EXPLORE_BIOME", (id, objective) -> {
             final String required = objective.getString("biome", "");
             if (required.isBlank() || biomeKey == null) return false;
             final String shortKey = biomeKey.contains(":")
@@ -732,7 +831,9 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     public void handleTerritoryEnter(final Player player, final String territoryId) {
-        forEachActive(player, "VISIT_TERRITORY", (id, objective) ->
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward == null) return;
+        forEachActive(player, reward, "VISIT_TERRITORY", (id, objective) ->
                 territoryId != null && territoryId.equalsIgnoreCase(
                         objective.getString("territory", "")));
         if (territoryId == null || player == null) return;
@@ -833,6 +934,8 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     private NpcProgress progressNpcObjectives(final Player player, final String npcName) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward == null) return new NpcProgress(false, List.of());
         boolean anyChanged = false;
         final List<String> completed = new ArrayList<>();
         for (final String questId : List.copyOf(getActiveQuests(player))) {
@@ -849,10 +952,10 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                 final String type = objective.getString("type", "");
                 if ("TALK_TO_NPC".equalsIgnoreCase(type)) {
                     setObjectiveProgress(player, questId, index,
-                            Math.max(1, objective.getInt("count", 1)));
+                            Math.max(1, objective.getInt("count", 1)), reward);
                     changed = true;
                 } else if ("DELIVER_ITEMS".equalsIgnoreCase(type)
-                        && tryDeliver(player, questId, objective, index)) changed = true;
+                        && tryDeliver(player, questId, objective, index, reward)) changed = true;
             }
             if (changed) {
                 anyChanged = true;
@@ -928,7 +1031,8 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     private boolean tryDeliver(final Player player, final String questId,
-                               final ConfigurationSection objective, final int index) {
+                               final ConfigurationSection objective, final int index, final RewardContext reward) {
+        if (!admitted(player, reward, RewardChannel.QUEST_PROGRESS)) return false;
         final List<String> materials = objective.getStringList("materials");
         if (materials.isEmpty()) return false;
         final int target = Math.max(1, objective.getInt("count", 1));
@@ -953,11 +1057,13 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             item.setAmount(item.getAmount() - take);
             remaining -= take;
         }
-        setObjectiveProgress(player, questId, index, target);
+        setObjectiveProgress(player, questId, index, target, reward);
         return true;
     }
 
     public void handleLevelChange(final Player player) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward == null) return ;
         if (player == null) return;
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
@@ -972,20 +1078,20 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                         || sequence && !isCurrentStep(player, questId, objectives, index)) continue;
                 if (jobManager.getPrimaryLevel(player) >= Math.max(1, objective.getInt("level", 1))) {
                     setObjectiveProgress(player, questId, index,
-                            Math.max(1, objective.getInt("count", 1)));
+                            Math.max(1, objective.getInt("count", 1)), reward);
                     changed = true;
                 }
             }
-            if (changed && allObjectivesComplete(player, questId, objectives)) onObjectivesComplete(player, questId);
+            if (changed && allObjectivesComplete(player, questId, objectives)) onObjectivesComplete(player, questId, reward);
         }
     }
 
     private interface ObjectiveMatcher { boolean matches(String questId, ConfigurationSection objective); }
-    private void forEachActive(final Player player, final String type, final ObjectiveMatcher matcher) { forEachActive(player, type, 1, matcher); }
+    private void forEachActive(final Player player, final RewardContext reward, final String type, final ObjectiveMatcher matcher) { forEachActive(player, reward, type, 1, matcher); }
 
-    private void forEachActive(final Player player, final String objectiveType, final int amount,
+    private void forEachActive(final Player player, final RewardContext reward, final String objectiveType, final int amount,
                                final ObjectiveMatcher matcher) {
-        if (player == null) return;
+        if (!admitted(player, reward, RewardChannel.QUEST_PROGRESS)) return;
         for (final String questId : List.copyOf(getActiveQuests(player))) {
             final ConfigurationSection quest = getQuestSection(questId);
             if (quest == null || !isStillEligible(player, quest)) continue;
@@ -1000,14 +1106,14 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
                         || !matcher.matches(questId, objective)) continue;
                 final int target = Math.max(1, objective.getInt("count", 1));
                 final int old = getObjectiveProgress(player, questId, index);
-                final int next = incrementObjectiveProgress(player, questId, index, amount, target);
+                final int next = incrementObjectiveProgress(player, questId, index, amount, target, reward);
                 if (next > old) {
                     changed = true;
                     announceObjective(player, questId, objectives, index, objective, next, target);
                 }
                 if (sequence) break;
             }
-            if (changed && allObjectivesComplete(player, questId, objectives)) onObjectivesComplete(player, questId);
+            if (changed && allObjectivesComplete(player, questId, objectives)) onObjectivesComplete(player, questId, reward);
         }
     }
 
@@ -1080,8 +1186,8 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     private void setObjectiveProgress(final Player player, final String questId,
-                                      final int index, final int value) {
-        if (player == null || index < 0 || value < 0) return;
+                                      final int index, final int value, final RewardContext reward) {
+        if (index < 0 || value < 0 || !admitted(player, reward, RewardChannel.QUEST_PROGRESS)) return;
         final UUID playerId = player.getUniqueId();
         final String id = normalizeQuestId(questId);
         synchronized (lock(playerId)) {
@@ -1095,13 +1201,14 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             active.put(id, Map.copyOf(progress));
             mirrors.put(playerId, new QuestMirror(active, before.completed(),
                     before.localDoneAt(), before.localSeason()));
-            enqueue(playerId, () -> questStore.setProgress(playerId, id, index, value)
+            enqueue(playerId, () -> questStore.setProgress(playerId, id, index, value, reward)
                     .thenApply(ignored -> null));
         }
     }
 
     private int incrementObjectiveProgress(final Player player, final String questId,
-                                           final int index, final int amount, final int target) {
+                                           final int index, final int amount, final int target, final RewardContext reward) {
+        if (!admitted(player, reward, RewardChannel.QUEST_PROGRESS)) return 0;
         final UUID playerId = player.getUniqueId();
         final String id = normalizeQuestId(questId);
         synchronized (lock(playerId)) {
@@ -1117,7 +1224,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             active.put(id, Map.copyOf(progress));
             mirrors.put(playerId, new QuestMirror(active, before.completed(),
                     before.localDoneAt(), before.localSeason()));
-            enqueue(playerId, () -> questStore.incrementProgress(playerId, id, index, amount, target)
+            enqueue(playerId, () -> questStore.incrementProgress(playerId, id, index, amount, target, reward)
                     .thenApply(ignored -> null));
             return Math.toIntExact(next);
         }
@@ -1171,7 +1278,9 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         final boolean admin = context.type() == QuestSourceContext.Type.ADMIN;
         if (!admin && !isReadyToTurnIn(player, questId)) return "quest-not-ready";
         if (!policy.turnInAuthorized(context)) return "quest-source-unauthorized";
-        commitCompletion(player, questId);
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_REWARD);
+        if (reward == null) return "quest-not-ready";
+        commitCompletion(player, questId, reward, admin);
         return null;
     }
 
@@ -1181,9 +1290,14 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
      * a lezárás CSAK a jogosult forrásnál történhet meg.
      */
     private void onObjectivesComplete(final Player player, final String questId) {
+        final RewardContext reward = captureReward(player, RewardChannel.QUEST_PROGRESS);
+        if (reward != null) onObjectivesComplete(player, questId, reward);
+    }
+
+    private void onObjectivesComplete(final Player player, final String questId, final RewardContext reward) {
         final QuestSourcePolicy policy = getSourcePolicy(questId);
         if (policy == null || policy.autoTurnIn()) {
-            commitCompletion(player, questId);
+            commitCompletion(player, questId, forChannel(reward, RewardChannel.QUEST_REWARD), false);
             return;
         }
         player.playSound(player.getLocation(), Sound.UI_TOAST_IN, 1.0F, 1.4F);
@@ -1204,14 +1318,21 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         };
     }
 
-    private void commitCompletion(final Player player, final String questId) {
-        if (player == null) return;
+    private void commitCompletion(final Player player, final String questId,
+                                  final RewardContext reward, final boolean authorizedAdmin) {
+        if (!admitted(player, reward, RewardChannel.QUEST_REWARD)) return;
         final ConfigurationSection quest = getQuestSection(questId);
         if (quest == null || !isStillEligible(player, quest)) return;
         final UUID playerId = player.getUniqueId();
         final String id = normalizeQuestId(questId);
         final long completedAt = System.currentTimeMillis();
         final long seasonId = currentSeasonId();
+        final Map<Integer, Integer> requiredObjectives = new LinkedHashMap<>();
+        final List<ConfigurationSection> objectives = getObjectiveSections(quest);
+        for (int index = 0; index < objectives.size(); index++)
+            requiredObjectives.put(index, Math.max(1, objectives.get(index).getInt("count", 1)));
+        if (!authorizedAdmin && requiredObjectives.isEmpty()) return;
+        final Map<Integer, Integer> requirements = Map.copyOf(requiredObjectives);
         synchronized (lock(playerId)) {
             final QuestMirror before = mirror(playerId);
             if (!before.active().containsKey(id)) return;
@@ -1224,14 +1345,25 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             done.put(id, completedAt);
             seasons.put(id, seasonId);
             mirrors.put(playerId, new QuestMirror(active, completed, done, seasons));
-            enqueue(playerId, () -> questStore.complete(playerId, id, completedAt, seasonId)
+            enqueue(playerId, () -> (authorizedAdmin
+                    ? questStore.complete(playerId, id, completedAt, seasonId, reward)
+                    : questStore.completeIfReady(playerId, id, completedAt, seasonId, requirements, reward))
                     .thenCompose(receipt -> {
-                        if (!receipt.committed()) return CompletableFuture.completedFuture(null);
+                        if (!receipt.committed()) {
+                            mirrors.remove(playerId);
+                            return CompletableFuture.completedFuture(null);
+                        }
                         final CompletableFuture<Void> result = new CompletableFuture<>();
-                        player.getScheduler().run(plugin, task -> finishCompletion(
-                                player, quest, receipt, false, result),
-                                () -> result.completeExceptionally(new IllegalStateException(
-                                        "player scheduler rejected quest completion")));
+                        final Player handle = Bukkit.getPlayer(playerId);
+                        if (handle == null) return CompletableFuture.completedFuture(null);
+                        final var scheduled = handle.getScheduler().run(plugin, task -> {
+                            final Player owned = Bukkit.getPlayer(playerId);
+                            final ConfigurationSection definition = getQuestSection(id);
+                            if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned)
+                                    || !owned.isOnline() || definition == null) result.complete(null);
+                            else finishCompletion(owned, definition, receipt, false, result);
+                        }, () -> result.complete(null));
+                        if (scheduled == null) result.complete(null);
                         return result;
                     }));
         }
@@ -1239,7 +1371,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
     /** Replays unacknowledged reward receipts after a reconnect/restart. */
     public void recoverPendingRewards(final Player player) {
-        if (player == null) return;
+        if (player == null || !Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return;
         final Set<String> pending;
         try { pending = questStore.pendingRewards(player.getUniqueId()); }
         catch (final RuntimeException notReady) { return; }
@@ -1258,50 +1390,65 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             final var receipt = new PlayerProfileQuestStore.CompletionReceipt(
                     true, receiptId, questId, 0L, 0L);
             final CompletableFuture<Void> result = new CompletableFuture<>();
-            player.getScheduler().run(plugin,
-                    task -> finishCompletion(player, quest, receipt, true, result),
-                    () -> result.completeExceptionally(new IllegalStateException(
-                            "player scheduler rejected quest reward recovery")));
+            finishCompletion(player, quest, receipt, true, result);
+        }
+        // Logout can discard an unentered auto-completion after its progress already committed.
+        // Re-assess canonical readiness; do not synthesize a completion or an earned receipt.
+        for (final String questId : getReadyQuests(player)) {
+            final QuestSourcePolicy policy = getSourcePolicy(questId);
+            if (policy != null && policy.autoTurnIn()) onObjectivesComplete(player, questId);
         }
     }
 
     private void finishCompletion(final Player player, final ConfigurationSection quest,
                                   final PlayerProfileQuestStore.CompletionReceipt receipt,
                                   final boolean recovery, final CompletableFuture<Void> result) {
+        final UUID playerId = player.getUniqueId();
+        if (!Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) { result.complete(null); return; }
         if (!recovery) sendDialogue(player, receipt.questId(), "complete", dialogueSpeakerFallback(quest));
-        applyRewards(player, quest, receipt.receiptId()).whenComplete((ignored, failure) -> {
+        final CompletionStage<Void> rewards;
+        try { rewards = applyRewards(player, quest, receipt.receiptId()); }
+        catch (final Throwable failure) { result.completeExceptionally(failure); return; }
+        rewards.whenComplete((ignored, failure) -> {
             if (failure != null) {
-                plugin.getLogger().severe("Quest reward remains pending for " + player.getUniqueId()
-                        + "/" + receipt.receiptId() + ": " + rootMessage(failure));
+                if (!(unwrap(failure) instanceof RewardEligibilityDeniedException))
+                    plugin.getLogger().severe("Quest reward remains pending for " + playerId
+                            + "/" + receipt.receiptId() + ": " + rootMessage(failure));
                 result.completeExceptionally(unwrap(failure));
                 return;
             }
-            questStore.settleReward(player.getUniqueId(), receipt.receiptId())
-                    .whenComplete((settled, settleFailure) -> player.getScheduler().run(plugin, task -> {
-                        if (settleFailure != null) {
-                            result.completeExceptionally(unwrap(settleFailure));
-                            return;
-                        }
+            questStore.settleReward(playerId, receipt.receiptId()).whenComplete((settled, settleFailure) -> {
+                if (settleFailure != null) { result.completeExceptionally(unwrap(settleFailure)); return; }
+                try {
+                final Player handle = Bukkit.getPlayer(playerId);
+                if (handle == null || !Boolean.TRUE.equals(settled)) { result.complete(null); return; }
+                final var scheduled = handle.getScheduler().run(plugin, task -> {
+                    final Player owned = Bukkit.getPlayer(playerId);
+                    if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned) || !owned.isOnline()) { result.complete(null); return; }
+                    try {
                         if (!recovery) {
-                            if (statsManager != null) statsManager.recordQuestComplete(player.getUniqueId());
-                            if (guildManager != null) guildManager.addActivityXp(player,
+                            if (guildManager != null) guildManager.addActivityXp(owned,
                                     Math.max(0, configManager.getInt("guilds.xp-per-quest", 10)));
-                            player.playSound(player.getLocation(),
-                                    Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
-                            player.sendMessage(messageManager.getMessage("quest.completed",
+                            owned.playSound(owned.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
+                            owned.sendMessage(messageManager.getMessage("quest.completed",
                                     "<gold>✔ Küldetés teljesítve: <white>{quest}</white>!</gold>",
                                     Map.of("quest", getDisplayName(receipt.questId()))));
                             if (configManager.getBoolean("quest-toast.enabled", true))
-                                hu.taliann.icesmp.utils.ToastUtil.show(plugin, player,
+                                hu.taliann.icesmp.utils.ToastUtil.show(plugin, owned,
                                         hu.taliann.icesmp.utils.ToastUtil.Kind.QUEST);
-                            unlockNextQuests(player, quest);
+                            final ConfigurationSection definition = getQuestSection(receipt.questId());
+                            if (definition != null) unlockNextQuests(owned, definition);
                         } else {
-                            player.sendMessage(messageManager.getMessage("quest.reward-recovered",
+                            owned.sendMessage(messageManager.getMessage("quest.reward-recovered",
                                     "<gold>A korábban függő küldetésjutalmad helyreállt: <white>{quest}</white>.</gold>",
                                     Map.of("quest", getDisplayName(receipt.questId()))));
                         }
                         result.complete(null);
-                    }, null));
+                    } catch (final Throwable invalid) { result.completeExceptionally(invalid); }
+                }, () -> result.complete(null));
+                if (scheduled == null) result.complete(null);
+                } catch (final Throwable unavailable) { result.completeExceptionally(unavailable); }
+            });
         });
     }
 
@@ -1311,8 +1458,13 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         final List<CompletionStage<?>> stages = new ArrayList<>();
         final int classXp = quest.getInt("rewards.class-xp", 0);
         if (classXp > 0 && jobManager.hasPrimaryJob(player)) {
-            stages.add(jobManager.addXpToJobV2(player, classXp,
-                    "quest-xp:" + receiptId));
+            stages.add(jobManager.addXpToJobResultV2(player, classXp, "quest-xp:" + receiptId)
+                    .thenCompose(result -> switch (result.status()) {
+                        case COMMITTED, NO_CHANGE -> CompletableFuture.<Void>completedFuture(null);
+                        case REJECTED -> CompletableFuture.<Void>failedFuture(new RewardEligibilityDeniedException());
+                        default -> CompletableFuture.<Void>failedFuture(
+                                new IllegalStateException("Quest class XP delivery deferred: " + result.status()));
+                    }));
         }
         stages.add(new QuestPhysicalRewardDeliveryService(plugin, questStore,
                 currencyManager, factionManager).deliver(player, quest, receiptId,
@@ -1701,28 +1853,41 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     private Object lock(final UUID playerId) {
-        return playerLocks.computeIfAbsent(playerId, ignored -> new Object());
+        return playerLocks[Math.floorMod(playerId.hashCode(), playerLocks.length)];
     }
 
     private void enqueue(final UUID playerId, final Supplier<CompletionStage<Void>> work) {
-        mutationTails.compute(playerId, (ignored, previous) -> {
-            final CompletableFuture<Void> start = previous == null
-                    ? CompletableFuture.completedFuture(null)
-                    : previous.handle((value, failure) -> null);
-            final CompletableFuture<Void> next = start.thenCompose(nothing -> {
-                try { return Objects.requireNonNull(work.get()).toCompletableFuture(); }
-                catch (final Throwable failure) { return CompletableFuture.failedFuture(failure); }
-            });
-            next.whenComplete((value, failure) -> {
-                mutationTails.remove(playerId, next);
-                if (failure != null) {
-                    mirrors.remove(playerId);
-                    plugin.getLogger().severe("PlayerProfile quest mutation failed for "
-                            + playerId + ": " + rootMessage(failure));
-                }
-            });
-            return next;
+        final QuestMirror speculative = mirrors.get(playerId);
+        mutations.submit(playerId, work).whenComplete((value, failure) -> {
+            if (failure == null) return;
+            if (speculative != null) mirrors.remove(playerId, speculative);
+            final Throwable root = unwrap(failure);
+            if (!(root instanceof RewardEligibilityDeniedException)
+                    && !(root instanceof java.util.concurrent.RejectedExecutionException)) {
+                plugin.getLogger().severe("PlayerProfile quest mutation failed for "
+                        + playerId + ": " + rootMessage(failure));
+            }
         });
+    }
+
+    private static RewardContext captureReward(final Player player, final RewardChannel channel) {
+        try {
+            if (player == null || !Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return null;
+            final RewardContext reward = new RewardContext(channel, player.getUniqueId(), BukkitRewardSources.causal(player));
+            return GameplayRewardGate.evaluate(reward).allowed() ? reward : null;
+        } catch (final RuntimeException | LinkageError unavailable) { return null; }
+    }
+
+    private static RewardContext forChannel(final RewardContext reward, final RewardChannel channel) {
+        return new RewardContext(channel, reward.recipient(), reward.sources());
+    }
+
+    private static boolean admitted(final Player player, final RewardContext reward, final RewardChannel channel) {
+        try {
+            return player != null && Bukkit.isOwnedByCurrentRegion(player) && player.isOnline()
+                    && GameplayRewardGate.evaluate(reward.require(channel, player.getUniqueId())).allowed()
+                    && captureReward(player, channel) != null;
+        } catch (final RuntimeException | LinkageError unavailable) { return false; }
     }
 
     private static boolean materialMatches(final ConfigurationSection objective,
@@ -1821,15 +1986,16 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     @Override
     public void clearPlayerState(final UUID playerId) {
         choiceRegistry.invalidate(playerId);
-        final CompletableFuture<Void> tail = mutationTails.get(playerId);
-        if (tail == null) {
-            mirrors.remove(playerId);
-            playerLocks.remove(playerId);
-        } else {
-            tail.whenComplete((ignored, failure) -> {
-                mirrors.remove(playerId);
-                playerLocks.remove(playerId);
-            });
-        }
+        final QuestMirror retired = mirrors.get(playerId);
+        mutations.retire(playerId).whenComplete((ignored, failure) -> {
+            if (retired != null) mirrors.remove(playerId, retired);
+        });
+    }
+
+    /** Close admission without blocking an owner thread or cancelling an entered profile write. */
+    public CompletionStage<Void> shutdown() {
+        final CompletionStage<Void> drained = mutations.close();
+        drained.whenComplete((ignored, failure) -> mirrors.clear());
+        return drained;
     }
 }

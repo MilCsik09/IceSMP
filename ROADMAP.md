@@ -185,7 +185,8 @@ A kód és a csomagolt config önmagában nem építi meg a szezont. A következ
 tételek a szervercsapat feladatai:
 
 - ◇ **18 NPC-szerep** fizikai kihelyezése és `/npcbind` kötése a
-  [teljes quest- és NPC-leltár](docs/QUESTS.md) alapján;
+  [teljes quest- és NPC-leltár](docs/QUESTS.md) alapján. Hiányuk naplózott
+  tartalomhiány, nem pluginleállítás; az érintett NPC-útvonalak ettől még nem készek;
 - ◇ a szükséges **4 territory ID** kijelölése, majd a **4 frakcióspawn**
   pontos állóhelyének és nézési irányának mentése;
 - ◇ a `kezdo_parkour` pálya megépítése és bekötése;
@@ -203,6 +204,20 @@ tételek a szervercsapat feladatai:
 koordinátája, pozitív és negatív próbája, valamint visszaállítható mentése.
 
 ## 3. Runtime- és balanszkapuk
+
+- ◇ A plugin által kezdeményezett védelmi leállítás új parancsbelépést elutasít,
+  a HUD/pack takarítását aktív tulajdonosi ütemezőn kéri, és csak ezután tiltja le
+  a plugint. A két külön Folia-régiós klienssel, más plugin packjával, kilépéssel
+  és külső azonnali letiltással végzett átvételi próba még szükséges
+  (`docs/ADMIN_GUIDE.md`, „Readiness és fallback”). A kliens nélküli smoke nem
+  bizonyítja a vanilla HUD tényleges visszaállását.
+- ◇ A 18 hiányzó canonical quest-NPC miatti readiness-hiba builder-kapu marad;
+  a pontos belső nevekkel authorált NPC-k és a valódi world-kötések nélkül a
+  plugin védelmi letiltása szándékos. Playerdata törlése ezt nem pótolja.
+- ◇ A beküldött `Missing packaged authority: content/progression/classes.yml`
+  reload-hibához a ténylegesen futtatott JAR hashének és bejegyzésének vizsgálata
+  szükséges. A letiltott példány új parancsot már nem fogad; a hiányzó packaged
+  authority továbbra is elutasítást és snapshot-visszaállítást okoz.
 
 - ◇ Az A17 kaszt-HP rendszer alapból aktív. Kiadás előtt egységes
   pajzs/abszorpció-szabály, PvP TTK- és PvE sebzésteszt kell.

@@ -188,6 +188,60 @@ public final class Core { void r(){ plugin.registerCommand(COMMAND_NAME, "x", al
         self.assertIn("DYNAMIC_COMMAND_NAME", codes)
         self.assertIn("COMMAND_IMPLEMENTATION_UNRESOLVED", codes)
 
+    def test_registration_override_is_an_adapter_not_two_extra_roots(self) -> None:
+        self.base_sources()
+        self.write("src/main/java/example/Entry.java", """package example;
+public class Entry extends JavaPlugin {
+  @Override
+  public void registerCommand(final String label, final String description,
+                              final java.util.Collection<String> aliases,
+                              final io.papermc.paper.command.brigadier.BasicCommand command) {
+    super.registerCommand(label, description, aliases, lifecycle.wrap(command));
+    super.registerCommand("extra", "Extra", List.of(), new example.commands.OtherCommand());
+  }
+  void ordinary() { super.registerCommand(DYNAMIC_ROOT, "Dynamic", aliases(), factory()); }
+}
+""")
+        self.write("src/main/java/example/CommandLifecycle.java", """package example;
+public final class CommandLifecycle {
+  private static final class GuardedCommand implements BasicCommand {
+    public void execute(CommandSourceStack source, String[] args) { }
+  }
+}
+""")
+        self.manifest(); self.commit()
+        inventory = generate_inventory(self.root)
+        roots = inventory["commands"]
+        self.assertEqual(5, len(roots))
+        self.assertEqual({"root", "dispatch", "other", "extra"},
+                         {r["name"] for r in roots if not r["name"].startswith("review-")})
+        dynamic = [f for f in inventory["findings"] if f["code"] == "DYNAMIC_COMMAND_NAME"]
+        self.assertEqual(1, len(dynamic))
+        self.assertIn("DYNAMIC_ROOT", dynamic[0]["message"])
+        self.assertFalse(any(f["code"] == "COMMAND_REGISTRATION_PARSE_ERROR" for f in inventory["findings"]))
+        self.assertFalse(any("CommandLifecycle" in f["message"]
+                             and f["code"] == "UNREGISTERED_COMMAND_IMPLEMENTATION"
+                             for f in inventory["findings"]))
+
+    def test_registration_adapter_cannot_hide_changed_name_or_aliases(self) -> None:
+        self.base_sources()
+        self.write("src/main/java/example/Entry.java", """package example;
+public class Entry extends JavaPlugin {
+  public void registerCommand(String label, String description, Collection<String> aliases, BasicCommand command) {
+    super.registerCommand(label, description, aliases, command);
+    super.registerCommand("root", description, aliases, new example.commands.OtherCommand());
+    super.registerCommand(label, description, List.of("hidden"), command);
+  }
+}
+""")
+        self.manifest(); self.commit()
+        inventory = generate_inventory(self.root)
+        self.assertEqual(5, len(inventory["commands"]))
+        codes = {f["code"] for f in inventory["findings"]}
+        self.assertIn("COMMAND_OR_ALIAS_COLLISION", codes)
+        self.assertIn("DYNAMIC_COMMAND_NAME", codes)
+        self.assertIn("COMMAND_IMPLEMENTATION_UNRESOLVED", codes)
+
     def test_stale_manifest_and_missing_marker_are_reported(self) -> None:
         self.base_sources()
         self.write("docs/commands.md", "# Commands\n")

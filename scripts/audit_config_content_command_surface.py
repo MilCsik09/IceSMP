@@ -64,6 +64,8 @@ REMOVED_GAMEPLAY_GENERATORS = (
 # to close the verified quest, spell and signature-identity findings.  Keeping
 # the paths explicit makes any neighbouring gameplay drift fail closed.
 INTEGRITY_HARDENING_ALLOWED_DRIFT = {
+    # Authored archaeological encounter provenance; values are checked below.
+    "mob-templates.invasion_bone_champion.source-tags",
     # Fresh-start faction closure: explicit civil atonement and the existing escort false fallback.
     "escort.force-use-player-anchor",
     "quests.civil_penance.category",
@@ -658,6 +660,23 @@ def build_report(baseline: str) -> dict[str, Any]:
     old_leaves, new_leaves = leaves(old), leaves(current)
     drift = {key for key in set(old_leaves) | set(new_leaves)
              if old_leaves.get(key) != new_leaves.get(key)}
+    for template, original, authored in (
+        ("bone_king", ["event:world_boss"], ["history:chaos_age", "event:world_boss"]),
+        ("invasion_bone_champion", ["event:invasion"],
+         ["history:chaos_age", "history:seventh_blood_war", "event:invasion"]),
+    ):
+        path = f"mob-templates.{template}.source-tags"
+        if old_leaves.get(path) != original or new_leaves.get(path) != authored:
+            raise AssertionError(f"unexpected archaeological encounter provenance drift: {path}")
+    # 3013ba9c extended the existing major-event gate to these three managed lifecycles.
+    # Accept precisely that cumulative change, retaining comparison of every other leaf.
+    major_event_path = "world-events.orchestration.major-events"
+    major_events_before = ["world-boss", "invasion", "wild-hunt", "escort", "cultists"]
+    major_events_after = major_events_before + ["prologue", "blood-moon", "season-finale"]
+    if major_event_path in drift:
+        if (old_leaves.get(major_event_path) != major_events_before
+                or new_leaves.get(major_event_path) != major_events_after):
+            raise AssertionError("unexpected cumulative major-event lifecycle drift")
     unexpected_drift = sorted(key for key in drift
                               if key not in INTEGRITY_HARDENING_ALLOWED_DRIFT
                               and not key.startswith(INTEGRITY_HARDENING_ALLOWED_DRIFT_PREFIXES))
