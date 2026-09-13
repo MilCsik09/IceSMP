@@ -76,6 +76,7 @@ public final class WeaverExecutionCoordinator {
                         || !receipt.afterFingerprint().equals(results.getLast().afterFingerprint())
                         || receipt.undo().isPresent() != prepared.descriptor().undoable()) throw new IllegalArgumentException("Provider receipt manifest violation");
                 receipt.before().values().forEach(types::validate); receipt.after().values().forEach(types::validate);
+                receipt.undo().ifPresent(undo -> undo.parameters().values().forEach(types::validate));
                 return receipt;
             }).whenComplete((ignored, failure) -> inFlight.set(false));
         } catch (final RuntimeException failure) {

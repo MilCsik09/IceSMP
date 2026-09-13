@@ -56,6 +56,7 @@ public final class WeaverContractRegressionSuite {
         return registry;
     }
     public static void main(final String[] args) {
+        snapshotFailureIsolation();
         catalogFailureIsolation();
         final FixtureProvider first = new FixtureProvider("first", safe("first"), CoverageLevel.FULL_PROVIDER, Map.of());
         final FixtureProvider added = new FixtureProvider("added", safe("added"), CoverageLevel.FULL_PROVIDER, Map.of());
@@ -71,7 +72,7 @@ public final class WeaverContractRegressionSuite {
         WeaverTypeCompatibilityRegressionSuite.check(inspected.facts().containsKey("fixture.fact"), "new subsystem inspect absent");
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry.register(first));
         WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry(first, first));
-        WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry(new FixtureProvider("blocked", safe("blocked"), CoverageLevel.DEFERRED_BLOCKER, Map.of())).freezeAndValidate());
+        registry(new FixtureProvider("optional", safe("optional"), CoverageLevel.OPTIONAL_FUTURE, Map.of())).freezeAndValidate();
         rejectAction(action("canon", RiskLevel.CANONICAL, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.TAINT_SUBJECT), false, 10), Map.of("canon.action", "canon.assess"));
         rejectAction(action("persist", RiskLevel.MUTATING, Set.of(Lifetime.PERSISTENT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.TAINT_SUBJECT), false, 1), Map.of("persist.action", "persist.assess"));
         rejectAction(action("leak", RiskLevel.MUTATING, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.NONE), true, 1), Map.of("leak.action", "leak.assess"));
@@ -126,6 +127,53 @@ public final class WeaverContractRegressionSuite {
         failure[0] = 2; WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry.catalogPage(context, snapshot, "catalog.values", new CatalogQuery("", 0, 1)));
         failure[0] = 3; WeaverTypeCompatibilityRegressionSuite.rejects(() -> registry.resolveCatalog(context, snapshot, "catalog.values", "value"));
         WeaverTypeCompatibilityRegressionSuite.check(registry.quarantined("catalog"), "catalog metadata/page/value failures bypassed circuit breaker");
+    }
+    static final class SnapshotProvider extends FixtureProvider implements WeaverSnapshotContributor {
+        String refusal;
+        boolean reserved;
+        int captures;
+        int recoveryCaptures;
+        String recoveryValue;
+        SnapshotProvider(String id) { super(id, safe(id), CoverageLevel.FULL_PROVIDER, Map.of()); }
+        @Override public Map<String, WeaverValue> captureRecoveryOnOwner(RecoveryContext context) {
+            context.authority().require(context.operation()); recoveryCaptures++;
+            if (recoveryValue == null) return WeaverSnapshotContributor.super.captureRecoveryOnOwner(context);
+            return Map.of(id + ".fact", new WeaverValue(WeaverTypeId.parse("weaver:text@1"),
+                    Map.of("value", recoveryValue), id, id, Set.of(), 1));
+        }
+        @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef subject) {
+            captures++;
+            if (broken) throw new LinkageError("private provider detail");
+            if (refusal != null) throw new WeaverDomainRejection(refusal);
+            return Map.of(id + (reserved ? ".snapshot_unavailable" : ".fact"),
+                    new WeaverValue(WeaverTypeId.parse("weaver:text@1"), Map.of("value", "visible"), id, id, Set.of(), 1));
+        }
+    }
+    private static void snapshotFailureIsolation() {
+        final SnapshotProvider healthy = new SnapshotProvider("healthy"), delayed = new SnapshotProvider("a".repeat(88));
+        final var registry = registry(healthy, delayed); registry.freezeAndValidate();
+        final var ref = new PlayerRef(UUID.randomUUID()); delayed.refusal = "PROFILE_UNAVAILABLE";
+        for (int i = 0; i < 4; i++) {
+            final var snapshot = new SubjectSnapshot(ref, 1, "snapshot", registry.captureContributions(ref));
+            WeaverTypeCompatibilityRegressionSuite.check(snapshot.facts().containsKey("healthy.fact") && snapshot.facts().size() == 2, "unavailable provider lost healthy facts or exceeded bounded marker");
+            WorldWeaverProviderRegistry.requireSnapshotAvailable(snapshot, "healthy");
+            final var discovery = registry.discover(snapshot);
+            WeaverTypeCompatibilityRegressionSuite.check(discovery.providers().containsKey("healthy") && !discovery.providers().containsKey(delayed.id)
+                    && discovery.errors().get(delayed.id).equals("PROFILE_UNAVAILABLE"), "snapshot refusal still exposed provider actions");
+            try { WorldWeaverProviderRegistry.requireSnapshotAvailable(snapshot, delayed.id); throw new AssertionError("profile refusal was discarded"); }
+            catch (WeaverDomainRejection expected) { WeaverTypeCompatibilityRegressionSuite.check(expected.code().equals("PROFILE_UNAVAILABLE"), "profile refusal changed"); }
+        }
+        WeaverTypeCompatibilityRegressionSuite.check(!registry.quarantined(delayed.id), "expected unavailable profile quarantined provider");
+        delayed.refusal = null; delayed.broken = true;
+        for (int i = 0; i < 3; i++) registry.captureContributions(ref);
+        WeaverTypeCompatibilityRegressionSuite.check(registry.quarantined(delayed.id), "snapshot LinkageError bypassed circuit breaker");
+        final int captures = delayed.captures;
+        final var unavailable = new SubjectSnapshot(ref, 1, "snapshot", registry.captureContributions(ref));
+        WeaverTypeCompatibilityRegressionSuite.check(delayed.captures == captures && unavailable.facts().containsKey("healthy.fact"), "quarantined snapshot was invoked or lost healthy provider");
+        healthy.reserved = true;
+        final var spoofed = new SubjectSnapshot(ref, 1, "snapshot", registry.captureContributions(ref));
+        try { WorldWeaverProviderRegistry.requireSnapshotAvailable(spoofed, healthy.id); throw new AssertionError("provider forged availability marker"); }
+        catch (WeaverDomainRejection expected) { WeaverTypeCompatibilityRegressionSuite.check(expected.code().equals("PROVIDER_ERROR"), "forged marker was trusted"); }
     }
     private static void rejectAction(final ActionDescriptor action, final Map<String, String> recovery) {
         final String id = action.id().substring(0, action.id().indexOf('.'));

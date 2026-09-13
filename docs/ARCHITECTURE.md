@@ -47,20 +47,20 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 
 | Csomag | Fájlok | Szerep |
 |--------|-------:|--------|
-| `core/` | 4 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`). |
-| `managers/` | 125 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
-| `listeners/` | 123 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug); a procedural daily listenert az authored quest authority kiváltotta. |
+| `core/` | 5 | `IceSMPCore` — összeszerelés, életciklus, ütemezés — + az élő config-apply hidak (`ConfigRuntimeReloadBridge`, `AdvancedConfigRuntimeBridge`) és a megőrzött Paper-parancsok életcikluskapuja (`CommandLifecycle`). |
+| `managers/` | 127 | Üzleti logika és állapot (gazdaság, frakciók, kasztok, szakmák, loot/raritás, recept-katalógus, pet, territórium-védelem, stb.). |
+| `listeners/` | 125 | Bukkit eseménykezelők (gameplay + GUI-klikk + loot/craft/védelem + esemény-spawn debug); a procedural daily listenert az authored quest authority kiváltotta. |
 | `spells/` | 61 | Spell-rendszer: `Spell` SPI, `BaseSpell`, `ConfiguredSpell` builder, `SpellCatalog`, egyedi spellek. |
 | `commands/` | 96 (65 + al-csomagok) | Parancsok. A `commands/<terület>/` al-csomagok a dispatch-stílusú alparancsokat tartják. |
 | `classrelic/` | 14 | Class Relic Framework: pure resolver/katalógus/jelzések + Paper homlokzat (`ClassRelicService`). |
-| `quest/` | 10 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, közös quest-valuta resolver, az izolált content-integrity runtime probe, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
+| `quest/` | 11 | Quest Framework v2 pure magja: forrás-policy + kontextus, kategória/láthatóság szótárak, gráf-validátor, választó-token registry, marker-paletta, közös quest-valuta resolver, az izolált content-integrity runtime probe, valamint az első belépés üdvözlő-szövegének egyetlen szabálya (`OnboardingWelcomeCopy`: canonical copy + elavult stock-config felismerése, custom szöveg érintetlenül). |
 | `gui/` | 72 | Inventory-menük + `GuiUtil` közös helperek + adat-vezérelt `CommandMenu` rendszer + staged config-editor lapok (root/kategória/operational/world/crate + reward-editor). |
 | `crates/` | 14 | Dependency-free crate domain: strict validáció, selector/key plan, atomi opening lifecycle, recovery/kompenzáció, scheduler gate, audit és thread-safe formázás. |
-| `factions/` | 14 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta; a tartós tagság és bűnállapot a PlayerProfile faction szekciójában él. |
+| `factions/` | 18 | Immutable passzív-config snapshot, tiszta damage/exhaustion/target policy, központi combat-marker katalógus, mobkontextus-resolver, mulandó retaliation state és a központi frakció-névszín paletta; a tartós tagság és bűnállapot a PlayerProfile faction szekciójában él. |
 | `data/` | 15 | Enumok és értékobjektumok (`CurrencyType`, `FactionType`, `JobType`, `SpecializationType`, `Territory`/`TerritoryType`, `BlockCuboid`…). |
 | `relics/` | 12 (9 + `ability/`) | Relikvia-keret: `RelicRegistry`, `RelicDefinition`, triggerek, transfer-elvárás, immutable világ-pillanatkép + single-writer store. |
 | `items/` | 14 | Item-gyárak (katalizátor/Lélekkapocs, befogó item, tervrajz, egyedi alapanyag…), viselhető és közös ritkaság-prezentáció. |
-| `trash/` | 41 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, bounded delta-journalos history authority, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, identity-mentes aggregált runtime telemetry, opt-in Paper/Folia smoke probe, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
+| `trash/` | 46 | A 330 elemű Ócska katalógus és 27 lifecycle phase, item factory, kategória-első/context-súlyozott loot-választó, fishing/mob/ambient források, singleton history/state split, bounded delta-journalos history authority, a 42 zárt anomaly behavior és a 23 zárt consuming behavior bounded Folia runtime-ja, crash-safe spatial-fracture journal, a Profile v2-backed rejtett régészeti tudásrendszer és player-only tooltip bridge, identity-mentes aggregált runtime telemetry, opt-in Paper/Folia smoke probe, Felvásárló- és tartós recycle-integráció, valamint a rejtett diagnosztika. |
 | `security/` | 1 | Immutable, permissiontől és OP-státusztól független fejlesztői authority a rejtett tartalomfelületekhez. |
 | `warrior/` | 2 | Harcos gameplay vertical slice: transiens harci állapot + konkrét runtime (Csatatempó, Berserker, Guardian). |
 | `evoker/` | 2 | Sárkányidéző gameplay vertical slice: transiens állapot + konkrét runtime (Felerősítés, Vörös–Kék Eszencia, Visszhang/Időlenyomat). |
@@ -75,7 +75,7 @@ IceSMP (JavaPlugin)            ← Bukkit/Paper belépő (onEnable/onDisable)
 | `assassin/` | 2 | Orgyilkos gameplay vertical slice: transiens állapot + konkrét runtime (Lehetőség négy nyitányból, háromhelyes Toxinkészlet + Dózis, Észleltség/időkorlátos rejtőzés, korlátos Járvány-nyilvántartás). |
 | `warlock/` | 2 | Boszorkánymester gameplay vertical slice: transiens állapot + konkrét runtime (Paktum/Lélekadósság, háromhelyes Átokgrimoár + Lélekfonal, Izzó Parázs/Túlhevülés). A Demonológus paktum NEM transziens: egyetlen authorityja a durable `demonologist.roster` companion névsor, amit a runtime csak a közös `ClassSpecCatalog.companionProjection` szabállyal olvas, és a `PetManager` companion-gatewayen keresztül, durable-first módon mutál. |
 | `wizard/` | 2 | Varázsló gameplay vertical slice: transiens állapot + konkrét runtime (Rúnaszövés öt tételes párral, három ráhangolódás Konvergenciával/Elemi Koronával; a lecsengés rögzített horgonyból számol, ezért lekérdezés-gyakoriságtól független). A Holtak Udvara NEM transziens: egyetlen authorityja a durable `necromancer.court` companion névsor, és ugyanaz a felvételi szabály (`ClassSpecCatalog.admitsCompanion`) dönt a cast előtt és a commitban. |
-| `storage/` | 8 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
+| `storage/` | 10 | `YamlStore` (atomikus írás) + `PersistentStore` SPI + fail-closed életciklus-koordinátor. |
 | `session/` | 1 | `PlayerStateCleanup` SPI (per-player állapot takarítása). |
 | `utils/` | 28 | `MessageManager`, `ExperienceUtil`, `TerritoryDestination`, `PlatformCapabilities`, egyebek. |
 | `integration/` | 6 | Soft-depend reflexiós hidak: PlaceholderAPI, LibsDisguises, FancyNpcs, WorldGuard, LuckPerms. |
@@ -258,9 +258,14 @@ formátum-tudatos — **MiniMessage** ha a szövegben `<...>` tag van ÉS nincs 
 egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generikus API-t.
 
 ### 3.3 Perzisztencia — atomikus írás + életciklus SPI
+- **`storage/PlayerInventoryCommit`**: a vanilla inventoryval együtt tárolt technikai
+  nyugtát a tényleges playerdata-fájlból visszaolvassa, majd a fájlt és könyvtárát
+  tartósítja. A `saveData()` visszatérése önmagában nem commit-igazolás; bizonytalan
+  fizikai mentés után nem indulhat külső tárgyhatás vagy kifizetés. A személyes
+  fejlődés és egyenleg továbbra is a PlayerProfile authorityjához tartozik.
 - **`storage/YamlStore.saveAtomic(file, yaml)`**: egyedi temp-fájl + atomikus rename (konkurens-biztos).
   **Minden** YAML-mentés ezen át megy — soha ne `yaml.save(file)` közvetlenül.
-- **`storage/PersistentStore { load(); save(); }`**: a 38 fájlt-író store implementálja. Az
+- **`storage/PersistentStore { load(); save(); }`**: a 39 fájlt-író store implementálja. Az
   `IceSMPCore` egy `List<PersistentStore>`-t iterál: `load()` az enable-ben, `save()` a disable-ben
   (a player-cleanup ELŐTT, hogy ne vesszen adat).
 - **`storage/PersistentStoreCoordinator`**: az enable során **fail-closed** tölti be a teljes
@@ -279,12 +284,13 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
     több-store atomicitás vagy exactly-once bizonyítás; a globális currency gate külön
     egyszerűsítési és runtime-validációs scope.
   - **`storage/ItemMutationJournal`** (`item-mutation-journal.yml`): kizárólag a
-    reroll/ascension/salvage egy-játékosos inventory-határára szolgáló szűk WAL, nem
+    reroll/rúna/ascension/salvage egy-játékosos inventory-határára szolgáló szűk WAL, nem
     általános transaction framework. A domain előbb immutable candidate-et épít; a WAL
     exact teljes before/after inventory snapshotot ír, majd ugyanazon owner threaden
     payment+item publish és `player.saveData()` történik. Boot/join recovery csak a két
     exact állapotot fogadja el; mixed snapshot kézi review. Az itembe írt bounded operation
-    receipt és revision védi a retry/double-click utat.
+    receipt és revision védi a retry/double-click utat. Bizonytalan írás után a napló
+    további módosítást nem fogad el; a tényleges lemezállapot újraolvasása szükséges.
   - **Encounter reward receipt/outbox** (PlayerProfile v2 `OPERATIONS`): a világboss
     meaningful-contribution küszöbénél először bounded eligibility receipt készül.
     Settlementkor ez COMMITTED állapotba kerül, majd a személyes delivery külön PREPARED
@@ -378,17 +384,24 @@ egyébként legacy. Sose feltételezd egyik formátumot sem; használd a generik
   a seek sugár legfeljebb 12 blokk és iterációnként legfeljebb 24 entity; delayed echo-ból globálisan
   legfeljebb 256 lehet. Nincs chunk load, globális entity/inventory scan vagy legacy Bukkit scheduler.
   A mechanizmus-attachment claim- és territory-preflight után singleton instance-ként kerül a világba,
-  a következő authored rising edge-et egyszer nyeli el, majd a catalog success phase-ébe transzformálódik.
+  a pontos fogadó blokk következő authored rising edge-jét egyszer nyeli el, majd a catalog success
+  phase-ébe transzformálódik. Legfeljebb 128 attachment élhet, a tartós lejárat 5 perc; fogadócsere,
+  lejárat vagy shutdown feloldja a rögzítést, chunk-visszatéréskor ugyanaz a korlát érvényes.
   A stopper és a lokális death counter bounded, atomi `trash-anomaly-state.yml` authorityban él.
 - **Rejtett régészeti tudás:** a `HiddenDiscipline.ARCHAEOLOGY` nem `ProfessionType`, nem foglal
   profession slotot és nem kapcsolódik combat/craft/loot/vendor bónuszhoz. A 30 tickes Brush-session
-  egy inspectable offhand snapshotot vizsgál; korai item-use release, kéz/slot/inventory változás,
-  drop, halál vagy session-teardown megszakítja. A family/domain/familiarity/insight és a bounded
+  a Brush-sal ellentétes kézben tartott tárgy snapshotját vizsgálja, mindkét kézelrendezésben; korai item-use release, kéz/slot/inventory változás,
+  drop, halál vagy session-teardown megszakítja. A nyomva tartott jobb gomb ismétlődő interakciója
+  frissíti a sessiont; 8 tick inputhiány megszakítja, a befejezéshez a 30. tick utáni friss input kell.
+  Natív Brush-use nem indul, így a vizsgálat nem kefél világblokkot. A katalógus kézzel írt anyagi
+  megfigyeléseket, 75 történeti tárgyhoz 2–2 egyedi tényt és 25 finom anyagi ellentmondást tartalmaz;
+  nem a technikai hordozóanyagból vagy loot-súlyokból következtet. Ismeretlen tárgy vizsgálható,
+  de nem ad kitalált történeti tényt vagy insightot. A family/domain/familiarity/insight és a bounded
   knowledge-signature ledger a canonical Profile v2 `AchievementSection.extensions` CAS-írásán él.
   Duplicate signature nem ad insightot, az unlock a már korábban teljesült breadth után érkező új,
   magasabb rendű facthez kötött, a szint küszöbe `round(0.55*l² + 4.5*l)` és legfeljebb 50.
 - **Régészeti prezentáció:** a canonical item lore-ja nem változik. A verzió-pinnelt
-  `TooltipPacketBridge_1_21_11` kizárólag az offhand menüslot player-only display copyját küldi;
+  `TooltipPacketBridge_1_21_11` a vizsgált kéz eredeti menüslotjának player-only display copyját küldi;
   inventory transaction előtt canonical resync történik, runtime probe-hibánál pedig szöveges
   fallback működik. Disconnect, reload és slot change takarítja az overlay/session állapotot.
 - **Hardening telemetry:** a runtime kizárólag összesített behavior-error, inspection
@@ -919,7 +932,7 @@ a `SimpleRelicDefinition` a deklaratív eset. A triggerek a `relics/RelicTrigger
   `minecraft:impossible` triggert és a valódi award-hívást.
 - **Loader-szint (`IceSMPLoader`):** runtime Maven-függőségek helye (`MavenLibraryResolver`) —
   jelenleg üres, új külső lib igényekor ide, ne a shadowJar-ba.
-- **Méret:** 1195 Java-fájl, ~180 000 sor; 96 `*Manager` osztály (a `managers/` csomag 125 fájl).
+- **Méret:** 1240 Java-fájl, ~180 000 sor; 96 `*Manager` osztály (a `managers/` csomag 126 fájl).
   Csomag-megoszlás: listeners 123, managers 125, commands 95, spells 61, gui 72, crates 14, utils 28, data 15, classrelic 14,
   items 14, relics 12, quest 10, trash 31, integration 6.
 - **Build:** `./gradlew clean build --no-daemon --stacktrace` futtatja a fordítást, a
@@ -2305,6 +2318,7 @@ vagy szerveres teszteredmény. A működési szerződést az adott kaszt-, PvE-,
 | `TrashMobDropListener` | `LISTENER` | `feature.trash-mob-drop` | [TrashMobDropListener.java](../src/main/java/hu/taliann/icesmp/trash/TrashMobDropListener.java) |
 | `TrashProductionRuntimeProbe` | `COMPONENT` | `` | [TrashProductionRuntimeProbe.java](../src/main/java/hu/taliann/icesmp/trash/TrashProductionRuntimeProbe.java) |
 | `TrashRecyclePool` | `COMPONENT` | `` | [TrashRecyclePool.java](../src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java) |
+| `TrashRelicActivationService` | `SERVICE` | `feature.trash-history` | [TrashRelicActivationService.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicActivationService.java) |
 | `TrashRelicBehavior` | `COMPONENT` | `` | [TrashRelicBehavior.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicBehavior.java) |
 | `TrashRelicPolicy` | `COMPONENT` | `` | [TrashRelicPolicy.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicPolicy.java) |
 | `TrashRelicRuntime` | `COMPONENT` | `` | [TrashRelicRuntime.java](../src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java) |

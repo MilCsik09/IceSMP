@@ -20,6 +20,9 @@ public final class WeaverCrashRecoveryRegressionSuite {
         @Override public PreparedAction prepare(final ProviderContext context, final SubjectSnapshot snapshot, final ActionRequest request) { throw new AssertionError("Recovery replayed mutation"); }
     }
     public static void main(final String[] args) throws Exception {
+        snapshotRecoveryIsolation();
+        profileMaintenanceAdmission(false);
+        profileMaintenanceAdmission(true);
         for (final boolean applied : List.of(false, true)) {
             for (final ObservedOperationState observed : ObservedOperationState.values()) {
                 for (final boolean exact : List.of(false, true)) {
@@ -77,4 +80,67 @@ public final class WeaverCrashRecoveryRegressionSuite {
         racing.close(); await(racedJournal.close());
         System.out.println("Weaver crash recovery passed: observed-state matrix, quarantined-provider recovery, no replay, pending entity load and idempotent restart.");
     }
+    private static void snapshotRecoveryIsolation() throws Exception {
+        final var target = new WeaverContractRegressionSuite.SnapshotProvider("fixture");
+        final var other = new WeaverContractRegressionSuite.SnapshotProvider("other");
+        final var providers = WeaverContractRegressionSuite.registry(target, other); providers.freezeAndValidate();
+        final var types = new WeaverTypeRegistry(); ScalarTypeCodec.registerBuiltins(types);
+        final var journal = new WeaverJournal(new Storage()); await(journal.load());
+        final var original = prepared(); final var subject = new PlayerRef(UUID.randomUUID());
+        final var operation = new WeaverOperationRecord(original.operationId(), original.actorId(), original.providerId(), original.request(), subject,
+                original.beforeFingerprint(), original.afterFingerprint(), original.recoveryPayload(), original.status(), original.revision(),
+                System.currentTimeMillis(), System.currentTimeMillis(), original.receipt(), false);
+        await(journal.prepare(operation)); target.broken = true; other.broken = true;
+        for (int i = 0; i < 3; i++) providers.captureContributions(subject);
+        check(providers.quarantined(target.id) && providers.quarantined(other.id), "snapshot quarantine fixture missing");
+        target.broken = false; other.broken = false;
+        target.recoveryValue = "native-operation-observation";
+        final int otherCaptures = other.captures;
+        final java.util.concurrent.atomic.AtomicReference<RecoveryContext> observed = new java.util.concurrent.atomic.AtomicReference<>();
+        final SubjectSnapshotSource source = new SubjectSnapshotSource() {
+            public CompletionStage<SubjectSnapshot> capture(UUID actor, SubjectRef ref) { throw new AssertionError("recovery did not request scoped snapshot authority"); }
+            public CompletionStage<SubjectSnapshot> captureRecovery(RecoveryContext context) {
+                observed.set(context);
+                final var facts = providers.captureRecoveryContributions(context);
+                check(facts.get("fixture.fact").payload().get("value").equals("native-operation-observation"),
+                        "operation recovery was routed through ordinary stale-item inspection");
+                return CompletableFuture.completedFuture(new SubjectSnapshot(context.operation().subject(), 1, "before", facts));
+            }
+        };
+        final var recovery = new WeaverRecoveryCoordinator(journal, source, providers, types); await(recovery.start());
+        check(journal.snapshot().operations().get(operation.operationId()).status() == OperationStatus.ABORTED && other.captures == otherCaptures,
+                "scoped recovery failed to observe its provider or bypassed another provider's quarantine");
+        check(providers.quarantined(target.id), "read-only recovery re-enabled interactive provider actions");
+        check(target.recoveryCaptures == 1 && other.recoveryCaptures == 0, "recovery capability escaped its own provider");
+        WeaverTypeCompatibilityRegressionSuite.rejects(() -> providers.captureRecoveryContributions(observed.get()));
+        check(target.recoveryCaptures == 1, "stale operation token entered a native recovery callback");
+        recovery.close(); await(journal.close());
+    }
+    private static void profileMaintenanceAdmission(boolean nativeProjection) throws Exception {
+        final var journal = new WeaverJournal(new Storage()); await(journal.load());
+        for (int i = 0; i < 8; i++) {
+            final var original = prepared(); final long now = System.currentTimeMillis();
+            await(journal.prepare(new WeaverOperationRecord(original.operationId(), original.actorId(), original.providerId(), original.request(), original.subject(),
+                    original.beforeFingerprint(), original.afterFingerprint(), original.recoveryPayload(), original.status(), original.revision(), now, now, original.receipt(), false)));
+        }
+        final Provider provider = new Provider(); provider.assessment = new RecoveryAssessment(ObservedOperationState.BEFORE, false, Optional.empty(), "PROFILE_BEFORE");
+        final var providers = WeaverContractRegressionSuite.registry(provider); providers.freezeAndValidate();
+        final var types = new WeaverTypeRegistry(); ScalarTypeCodec.registerBuiltins(types);
+        final AtomicBoolean ready = new AtomicBoolean(); final var barrier = new CompletableFuture<Void>();
+        final var captures = new java.util.concurrent.atomic.AtomicInteger();
+        final var recovery = new WeaverRecoveryCoordinator(journal, (actor, ref) -> {
+            if (!ready.get()) return CompletableFuture.failedFuture(new WeaverDomainRejection(nativeProjection ? "NATIVE_PROJECTION_PENDING" : "PROFILE_UNAVAILABLE"));
+            captures.incrementAndGet(); return barrier.thenApply(ignored -> new SubjectSnapshot(ref, 1, "before", Map.of()));
+        }, providers, types);
+        await(recovery.start()); check(recovery.pending().size() == 8, "pending profile batch was lost"); ready.set(true);
+        final var pulse = maintenance(recovery, nativeProjection); await(maintenance(recovery, nativeProjection));
+        check(captures.get() == 1, "overlapping maintenance duplicated work or started unbounded parallel profile reads"); barrier.complete(null); await(pulse);
+        check(captures.get() == 8 && provider.reads == 8 && recovery.pending().isEmpty(), "bounded maintenance failed to visit every pending profile");
+        await(maintenance(recovery, nativeProjection)); recovery.close(); await(maintenance(recovery, nativeProjection));
+        check(captures.get() == 8, "settled or closed maintenance repeated profile reads"); await(journal.close());
+    }
+    private static java.util.concurrent.CompletionStage<Void> maintenance(WeaverRecoveryCoordinator recovery, boolean nativeProjection) {
+        return nativeProjection ? recovery.nativeProjectionsAvailable() : recovery.profilesAvailable();
+    }
+
 }

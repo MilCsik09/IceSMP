@@ -17,8 +17,9 @@ public final class ProjectionConsumerRegistry {
             consumer.fields().values().forEach(types::require);
             for (final String id : consumer.actions()) {
                 final ActionDescriptor action = actions.get(id);
-                if (action == null || action.lifetimes().equals(Set.of(Lifetime.ONE_SHOT)) || !action.undoable()
-                        || Collections.disjoint(consumer.subjects(), targetKinds(action))) throw new IllegalArgumentException("Projection action lacks a compatible reversible manifest");
+                if (action == null || action.lifetimes().equals(Set.of(Lifetime.ONE_SHOT)) || !action.requiresJournal()
+                        || action.lifetimes().contains(Lifetime.PERSISTENT) && !action.undoable()
+                        || Collections.disjoint(consumer.subjects(), targetKinds(action))) throw new IllegalArgumentException("Projection action lacks a compatible durable manifest");
             }
         }
         this.actions = Map.copyOf(actions); frozen = true;
@@ -49,11 +50,14 @@ public final class ProjectionConsumerRegistry {
             final ActionDescriptor action = actions.get(projection.actionId());
             if (action == null || !action.lifetimes().contains(projection.lifetime()) || !action.integrityModes().contains(projection.influence().mode())
                     || !targetKinds(action).contains(projection.subject().kind())) throw new WeaverDomainRejection("PROJECTION_MANIFEST_MISMATCH");
+            if (!action.undoable() && (projection.lifetime() != Lifetime.SESSION || projection.expiresAt().isEmpty()
+                    || projection.expiresAt().getAsLong() - projection.createdAt() > 120_000)) throw new WeaverDomainRejection("BOUNDED_PROJECTION_EXPIRY_REQUIRED");
             matching = consumers.values().stream().filter(consumer -> consumer.providerId().equals(projection.providerId())
                     && consumer.actions().contains(projection.actionId()) && consumer.subjects().contains(projection.subject().kind())).toList();
         }
         for (final var entry : projection.values().entrySet()) {
-            types.validate(entry.getValue());
+            try { types.validate(entry.getValue()); }
+            catch (final IllegalArgumentException unavailable) { throw new WeaverDomainRejection("PROJECTION_CONTENT_UNAVAILABLE"); }
             if (matching.stream().noneMatch(consumer -> entry.getValue().type().equals(consumer.fields().get(entry.getKey())))) throw new WeaverDomainRejection("PROJECTION_WITHOUT_CONSUMER");
         }
     }

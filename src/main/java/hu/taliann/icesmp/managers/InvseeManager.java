@@ -412,8 +412,7 @@ public final class InvseeManager implements PersistentStore, PlayerStateCleanup 
                 + "megtagadva (target=" + session.targetId + ", view=" + holder.view()
                 + ", slot=" + rawSlot + "): " + writeFailure);
         try {
-            Bukkit.getGlobalRegionScheduler().run(plugin,
-                    task -> Bukkit.getPluginManager().disablePlugin(plugin));
+            hu.taliann.icesmp.IceSMP.requestDisable(plugin);
         } catch (final RuntimeException schedulingFailure) {
             plugin.getLogger().severe("Invsee fail-closed plugin-disable ütemezése sikertelen: "
                     + schedulingFailure);

@@ -1,0 +1,54 @@
+{
+  "parent": "icesmp:item/trash/torott_iranytu",
+  "display": {
+    "gui": {
+      "rotation": [
+        0,
+        0,
+        101.25
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        101.25
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        101.25
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        101.25
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        101.25
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        101.25
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        101.25
+      ]
+    }
+  }
+}

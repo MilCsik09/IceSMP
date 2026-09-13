@@ -16,6 +16,10 @@ public final class WeaverItemSlots {
     private final ItemIdentityService identity;
     public WeaverItemSlots(final ItemIdentityService identity) { this.identity = java.util.Objects.requireNonNull(identity); }
     public ItemStack require(final Player player, final WeaverSlot slot) {
+        return peek(player, slot).orElseThrow(() -> new WeaverDomainRejection("ITEM_SLOT_EMPTY"));
+    }
+    /** Current owner-local slot state, including assessed emptiness; it is not an identity rebind. */
+    public Optional<ItemStack> peek(final Player player, final WeaverSlot slot) {
         if (!Bukkit.isOwnedByCurrentRegion(player)) throw new IllegalStateException("Foreign item-slot access");
         final ItemStack item = switch (slot.kind()) {
             case INVENTORY -> player.getInventory().getItem(slot.index());
@@ -27,8 +31,7 @@ public final class WeaverItemSlots {
             case LEGGINGS -> player.getInventory().getLeggings();
             case BOOTS -> player.getInventory().getBoots();
         };
-        if (item == null || item.isEmpty()) throw new WeaverDomainRejection("ITEM_SLOT_EMPTY");
-        return item;
+        return item == null || item.isEmpty() ? Optional.empty() : Optional.of(item);
     }
     public ItemSlotRef capture(final Player player, final WeaverSlot slot) {
         final ItemStack item = require(player, slot);

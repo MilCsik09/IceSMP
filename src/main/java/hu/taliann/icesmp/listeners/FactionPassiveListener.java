@@ -110,7 +110,7 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
             return;
         }
         final double multiplier = policy.damageMultiplier(
-                factionManager.getMembership(player.getUniqueId()), channel, settings);
+                factionManager.getEffectiveMembership(player.getUniqueId()), channel, settings);
         applyDamageMultiplier(event, multiplier);
     }
 
@@ -125,7 +125,7 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         final Territory territory = territoryManager.getTerritoryAt(player.getLocation());
         final boolean exempt = bloodMoonManager.isActive()
                 || territory != null && territory.type() == TerritoryType.DUNGEON;
-        return policy.healingMultiplier(factionManager.getMembership(player.getUniqueId()), exempt);
+        return policy.healingMultiplier(factionManager.getEffectiveMembership(player.getUniqueId()), exempt);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -150,7 +150,7 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onProjectileLaunch(final ProjectileLaunchEvent event) {
         if (!(event.getEntity().getShooter() instanceof Mob shooter)
-                || !hasMarkedCombatEntity(shooter, config.snapshot())) {
+                || !hasCanonicalCombatEntity(shooter, config.snapshot())) {
             return;
         }
         event.getEntity().getPersistentDataContainer().set(
@@ -174,7 +174,7 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
             return;
         }
         final double chance = policy.blueExhaustionSaveChance(
-                factionManager.getMembership(player.getUniqueId()),
+                factionManager.getEffectiveMembership(player.getUniqueId()),
                 event.getExhaustionReason().name(), config.snapshot());
         if (chance > 0.0D && ThreadLocalRandom.current().nextDouble() < chance) {
             event.setCancelled(true);
@@ -193,7 +193,7 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
             return;
         }
         final double multiplier = policy.witherDurationMultiplier(
-                factionManager.getMembership(player.getUniqueId()), config.snapshot());
+                factionManager.getEffectiveMembership(player.getUniqueId()), config.snapshot());
         if (multiplier == 1.0D) {
             return;
         }
@@ -238,9 +238,9 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         if (!settings.enabled()) {
             return;
         }
-        final FactionMembership membership = factionManager.getMembership(playerId);
+        final FactionMembership membership = factionManager.getEffectiveMembership(playerId);
         final UUID victimId = victim.getUniqueId();
-        final boolean neutralCreature = mobContexts.isNeutralMob(victim, settings) || victim instanceof Enderman;
+        final boolean neutralCreature = mobContexts.isEffectivelyNeutralMob(victim, settings) || victim instanceof Enderman;
         if (settings.neutral().enabled() && settings.neutral().passiveMobTruceEnabled()
                 && membership.isMember(FactionType.NEUTRAL) && neutralCreature
                 && settings.neutral().breakOnDamage()) {
@@ -277,7 +277,7 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         final FactionPassivePolicy.TargetContext context = mobContexts.resolve(
                 event, playerId, whisperManager.isWhispererCached(playerId), state, settings);
         final FactionPassivePolicy.TargetDecision decision = policy.resolveTarget(
-                factionManager.getMembership(playerId), context, settings,
+                factionManager.getEffectiveMembership(playerId), context, settings,
                 ThreadLocalRandom.current().nextDouble());
         if (decision == FactionPassivePolicy.TargetDecision.ALLOW) {
             if (context.adminOrScriptedForce() || !context.contentContexts().isEmpty()) {
@@ -334,9 +334,9 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
                             }
                             final FactionPassiveSettings liveSettings = config.snapshot();
                             if (!policy.canAlertDarkUndead(
-                                    factionManager.getMembership(playerId),
+                                    factionManager.getEffectiveMembership(playerId),
                                     true,
-                                    mobContexts.contentContexts(mob, liveSettings, playerId),
+                                    mobContexts.effectiveContentContexts(mob, liveSettings, playerId),
                                     liveSettings)) {
                                 return;
                             }
@@ -428,6 +428,11 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
 
     private boolean hasMarkedCombatEntity(final Entity source,
                                           final FactionPassiveSettings settings) {
+        return source != null && Bukkit.isOwnedByCurrentRegion(source)
+                && !mobContexts.effectiveExplicitCombatContexts(source, settings).isEmpty();
+    }
+
+    private boolean hasCanonicalCombatEntity(final Entity source, final FactionPassiveSettings settings) {
         return source != null && Bukkit.isOwnedByCurrentRegion(source)
                 && !mobContexts.explicitCombatContexts(source, settings).isEmpty();
     }
@@ -524,7 +529,7 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         final FactionPassivePolicy.TargetContext liveContext = mobContexts.resolveCurrentTruce(
                 mob, playerId, whisperManager.isWhispererCached(playerId), liveSettings);
         final FactionPassivePolicy.TargetDecision liveDecision = policy.resolveTarget(
-                factionManager.getMembership(playerId), liveContext, liveSettings,
+                factionManager.getEffectiveMembership(playerId), liveContext, liveSettings,
                 ThreadLocalRandom.current().nextDouble());
         if (liveDecision != FactionPassivePolicy.TargetDecision.ALLOW) {
             mob.setTarget(null);

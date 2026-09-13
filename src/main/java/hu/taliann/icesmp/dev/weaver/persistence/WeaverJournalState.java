@@ -44,7 +44,7 @@ public record WeaverJournalState(long revision, Map<UUID, WeaverOperationRecord>
         }
         for (final WeaverOperationRecord operation : operations.values()) {
             if (operation.receipt().isPresent() && !operation.receipt().get().equals(receipts.get(operation.receipt().get().receiptId()))) throw new IllegalArgumentException("Operation receipt differs from durable receipt");
-            if (operation.request().integrityMode() == IntegrityMode.SANDBOX) {
+            if (operation.request().integrityMode() == IntegrityMode.SANDBOX && !WeaverOperationScope.readOnlyInput(operation)) {
                 final WeaverInfluenceTarget target = WeaverInfluenceTarget.subject(operation.subject());
                 if ((operation.status() == OperationStatus.PREPARED || operation.status() == OperationStatus.NEEDS_REVIEW && operation.receipt().isEmpty())
                         && !intents.getOrDefault(operation.operationId(), WeaverEffectIntent.none()).targets().contains(target)) throw new IllegalArgumentException("Sandbox uncertainty lacks durable subject quarantine");

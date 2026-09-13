@@ -7,10 +7,15 @@ import java.util.*;
 import hu.taliann.icesmp.dev.weaver.integrity.*;
 import hu.taliann.icesmp.dev.weaver.projection.WeaverProjection;
 
-/** Explicit schema decoding rejects unknown fields, lossy numbers and arbitrary object deserialization. */
+/**
+ * Decodes the bounded durable envelope without executing provider or live catalog code.
+ * Unknown value schemas remain opaque history. Admission and consumers validate current semantics.
+ * Unknown journal fields, lossy numbers and arbitrary object deserialization are still rejected.
+ */
 public final class WeaverJournalCodec {
-    private final WeaverTypeRegistry types;
-    public WeaverJournalCodec(final WeaverTypeRegistry types) { this.types = Objects.requireNonNull(types); }
+    public WeaverJournalCodec() { }
+    /** Source compatibility for the original codec wiring; registry availability is not storage validity. */
+    public WeaverJournalCodec(final WeaverTypeRegistry types) { Objects.requireNonNull(types); }
     public Map<String, Object> encodeState(final WeaverJournalState state) {
         final Map<String, Object> operations = new TreeMap<>();
         state.operations().forEach((id, record) -> operations.put(id.toString(), operation(record)));
@@ -20,14 +25,14 @@ public final class WeaverJournalCodec {
         state.projections().forEach((id, value) -> projections.put(id.toString(), effects.projection(value)));
         state.influences().forEach((id, value) -> influences.put(id.toString(), effects.influence(value)));
         state.effectDeltas().forEach((id, value) -> deltas.put(id.toString(), effects.delta(value)));
-        return Map.of("schema-version", 3, "revision", state.revision(), "operations", operations, "projection-sequence", state.projectionSequence(),
+        return Map.of("schema-version", 4, "revision", state.revision(), "operations", operations, "projection-sequence", state.projectionSequence(),
                 "intents", intents, "projections", projections, "influences", influences, "effect-deltas", deltas);
     }
     public WeaverJournalState decodeState(final Map<String, Object> data) {
         final long version = number(data, "schema-version");
         if (version == 1) keys(data, "schema-version", "revision", "operations");
         else if (version == 2) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences");
-        else if (version == 3) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences", "effect-deltas");
+        else if (version == 3 || version == 4) keys(data, "schema-version", "revision", "operations", "projection-sequence", "intents", "projections", "influences", "effect-deltas");
         else throw new IllegalArgumentException("Unknown journal schema");
         final Map<UUID, WeaverOperationRecord> operations = new HashMap<>(); final Map<UUID, WeaverReceipt> receipts = new HashMap<>();
         final Map<String, Object> values = map(data.get("operations"));
@@ -56,7 +61,7 @@ public final class WeaverJournalCodec {
                 }
             }
         } else {
-            final WeaverEffectCodec effects = new WeaverEffectCodec(this);
+            final WeaverEffectCodec effects = new WeaverEffectCodec(this, version >= 4);
             final Map<String, Object> intentRows = map(data.get("intents")), projectionRows = map(data.get("projections")), influenceRows = map(data.get("influences"));
             if (intentRows.size() > WeaverJournalState.MAX_OPERATIONS || projectionRows.size() > 1280 || influenceRows.size() > WeaverJournalState.MAX_INFLUENCES) throw new IllegalArgumentException("Effect capacity exceeded");
             intentRows.forEach((id, value) -> { final UUID decoded = uuid(Map.of("id", id), "id"); intents.put(decoded, effects.intent(value)); });
@@ -66,7 +71,7 @@ public final class WeaverJournalCodec {
         final Map<UUID, WeaverEffectDelta> deltas = new HashMap<>();
         if (version >= 3) {
             final Map<String, Object> encoded = map(data.get("effect-deltas")); if (encoded.size() > WeaverJournalState.MAX_RECEIPTS) throw new IllegalArgumentException("Effect delta cap");
-            final WeaverEffectCodec effects = new WeaverEffectCodec(this);
+            final WeaverEffectCodec effects = new WeaverEffectCodec(this, version >= 4);
             encoded.forEach((id, value) -> deltas.put(uuid(Map.of("id", id), "id"), effects.delta(map(value))));
         } else operations.forEach((id, operation) -> { if (operation.receipt().isPresent()) deltas.put(id, WeaverEffectDelta.unavailable()); });
         return new WeaverJournalState(number(data, "revision"), operations, receipts, version == 1 ? 0 : number(data, "projection-sequence"), intents, projections, influences, deltas);
@@ -139,7 +144,7 @@ public final class WeaverJournalCodec {
     }
     Map<String, Object> values(final Map<String, WeaverValue> values) {
         final Map<String, Object> result = new TreeMap<>();
-        values.forEach((id, value) -> { types.validate(value); result.put(id, Map.of("type", value.type().canonical(), "payload", value.payload(), "provider", value.sourceProvider(),
+        values.forEach((id, value) -> { result.put(id, Map.of("type", value.type().canonical(), "payload", value.payload(), "provider", value.sourceProvider(),
                 "facet", value.sourceFacet(), "capabilities", value.sourceCapabilities().stream().sorted().toList(), "captured", value.capturedAt())); });
         return Map.copyOf(result);
     }
@@ -152,7 +157,7 @@ public final class WeaverJournalCodec {
             if (!(value.get("capabilities") instanceof List<?> list) || list.size() > 32) throw new IllegalArgumentException("Capability encoding");
             for (final Object capability : list) if (!(capability instanceof String text) || !capabilities.add(text)) throw new IllegalArgumentException("Capability encoding");
             final WeaverValue decoded = new WeaverValue(WeaverTypeId.parse(text(value, "type")), map(value.get("payload")), text(value, "provider"), text(value, "facet"), capabilities, number(value, "captured"));
-            types.validate(decoded); result.put(id, decoded);
+            result.put(id, decoded);
         });
         return Map.copyOf(result);
     }

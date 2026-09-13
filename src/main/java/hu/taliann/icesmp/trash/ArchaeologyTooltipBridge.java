@@ -12,6 +12,12 @@ public interface ArchaeologyTooltipBridge {
 
     boolean show(Player player, ItemStack canonicalSnapshot, List<String> observations);
 
+    default boolean show(Player player, org.bukkit.inventory.EquipmentSlot inspectedHand,
+                         ItemStack canonicalSnapshot, List<String> observations) {
+        return inspectedHand == org.bukkit.inventory.EquipmentSlot.OFF_HAND
+                && show(player, canonicalSnapshot, observations);
+    }
+
     void clear(Player player);
 
     void clearPlayerState(java.util.UUID playerId);

@@ -572,6 +572,7 @@ def classify_assets(armor: list[dict[str, Any]], materials: list[dict[str, Any]]
 
     records: list[dict[str, Any]] = []
     safe_delete: list[dict[str, Any]] = []
+    docs_text_lower = docs_text.lower()
     for path in files:
         relative = rel(path)
         basename = path.stem.lower()
@@ -580,7 +581,7 @@ def classify_assets(armor: list[dict[str, Any]], materials: list[dict[str, Any]]
         is_active = relative in active
         is_focus = (relative in legacy_worn_paths or "/equipment/" in relative or
                     "/textures/entity/equipment/" in relative or basename in managed_ids)
-        doc_reference = basename in docs_text.lower() or relative in docs_text
+        doc_reference = basename in docs_text_lower or relative in docs_text
         duplicate_peers = duplicate_lookup.get(relative, [])
         if is_active:
             state = "ACTIVE_SHARED" if len(consumers) + len(indirect) > 1 else "ACTIVE"

@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.playerprofile.application;
 
 import hu.taliann.icesmp.data.ProfessionType;
+import hu.taliann.icesmp.integrity.RewardChannel;
+import hu.taliann.icesmp.integrity.RewardContext;
 import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.ProfessionProfileState;
 import hu.taliann.icesmp.playerprofile.domain.section.ProfessionSection;
@@ -30,12 +32,18 @@ public final class PlayerProfileWeeklyGoalStore {
                                                     final ProfessionType profession,
                                                     final long units,
                                                     final long week) {
+        return recordContribution(playerId, profession, units, week, RewardContext.recipientOnly(RewardChannel.WEEKLY_GOAL, playerId));
+    }
+
+    public CompletionStage<Long> recordContribution(final UUID playerId, final ProfessionType profession,
+                                                    final long units, final long week, final RewardContext reward) {
+        Objects.requireNonNull(reward).require(RewardChannel.WEEKLY_GOAL, playerId);
         Objects.requireNonNull(playerId, "playerId");
         Objects.requireNonNull(profession, "profession");
         if (units <= 0L) throw new IllegalArgumentException("weekly contribution must be positive");
         if (week < 0L) throw new IllegalArgumentException("negative week index");
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                playerId, ProfileSectionId.PROFESSIONS, ProfessionSection.class, current -> {
+        return PlayerProfileAuthority.current().mutateRewardSectionConditional(
+                playerId, ProfileSectionId.PROFESSIONS, ProfessionSection.class, reward, current -> {
                     final long storedWeek = longValue(current.extensions().get(WEEK_KEY), -1L);
                     final Map<String, Long> progress = storedWeek == week
                             ? new LinkedHashMap<>(current.weeklyProgress())
@@ -63,6 +71,8 @@ public final class PlayerProfileWeeklyGoalStore {
         if (evaluatedWeek < 0L) throw new IllegalArgumentException("negative week index");
         if (minContribution < 1L) throw new IllegalArgumentException("minContribution must be at least 1");
         final Map<String, Integer> rewards = Map.copyOf(rewardXpByProfession);
+        // Only already-admitted durable contributions can produce an award. Later quarantine
+        // does not revoke that earned credit or its existing pending payout.
         return PlayerProfileAuthority.current().mutateSectionConditional(
                 playerId, ProfileSectionId.PROFESSIONS, ProfessionSection.class, current -> {
                     if (longValue(current.extensions().get(REWARDED_WEEK_KEY), -1L) == evaluatedWeek) {
