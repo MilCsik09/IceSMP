@@ -12,12 +12,12 @@ import java.util.Set;
  */
 public record GateState(
         Condition faction,
-        Condition sinner,
+        Condition oath,
         Condition quest) {
 
     public GateState {
         Objects.requireNonNull(faction, "faction");
-        Objects.requireNonNull(sinner, "sinner");
+        Objects.requireNonNull(oath, "oath");
         Objects.requireNonNull(quest, "quest");
     }
 
@@ -28,19 +28,19 @@ public record GateState(
     public static GateState ofRequirements(
             final boolean factionRequired,
             final boolean factionSatisfied,
-            final boolean sinnerRequired,
-            final boolean sinnerSatisfied,
+            final boolean oathRequired,
+            final boolean oathSatisfied,
             final boolean questRequired,
             final boolean questSatisfied) {
         return new GateState(
                 Condition.of(factionRequired, factionSatisfied),
-                Condition.of(sinnerRequired, sinnerSatisfied),
+                Condition.of(oathRequired, oathSatisfied),
                 Condition.of(questRequired, questSatisfied));
     }
 
     public boolean allSatisfied() {
         return faction != Condition.MISSING
-                && sinner != Condition.MISSING
+                && oath != Condition.MISSING
                 && quest != Condition.MISSING;
     }
 
@@ -65,14 +65,14 @@ public record GateState(
     private Condition condition(final Gate gate) {
         return switch (Objects.requireNonNull(gate, "gate")) {
             case FACTION -> faction;
-            case SINNER -> sinner;
+            case OATH -> oath;
             case QUEST -> quest;
         };
     }
 
     public enum Gate {
         FACTION,
-        SINNER,
+        OATH,
         QUEST
     }
 

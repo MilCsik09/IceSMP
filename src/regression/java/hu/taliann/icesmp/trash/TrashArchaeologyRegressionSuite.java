@@ -121,9 +121,9 @@ public final class TrashArchaeologyRegressionSuite {
     private static void preservesThirtyTickCancelableBrushGesture() throws Exception {
         final String listener = Files.readString(LISTENER);
         require(listener, "INSPECTION_TICKS = 30", "1.5 second inspection duration");
-        require(listener, "Material.BRUSH", "vanilla Brush main-hand gate");
-        require(listener, "getItemInOffHand()", "offhand inspected item gate");
-        require(listener, "startUsingItem(EquipmentSlot.HAND)", "Paper item-use state");
+        require(listener, "Material.BRUSH", "vanilla Brush hand gate");
+        require(listener, "getItemInOffHand()", "offhand participation");
+        require(listener, "active.idleTicks = 0", "held-button pulse refresh");
         require(listener, "PlayerStopUsingItemEvent", "early release cancellation");
         for (final String cancellation : List.of("InventoryClickEvent", "InventoryDragEvent",
                 "PlayerItemHeldEvent", "PlayerSwapHandItemsEvent", "PlayerDropItemEvent",
@@ -165,7 +165,7 @@ public final class TrashArchaeologyRegressionSuite {
         require(bridge, "OFFHAND_MENU_SLOT = 45", "offhand display slot");
         require(bridge, "OVERLAY_TICKS = 1_200L", "60 second overlay expiry");
         require(bridge, "canonicalSnapshot.clone()", "display-only clone");
-        require(bridge, "sendCanonical(player)", "canonical resync");
+        require(bridge, "sendCanonical(player, overlay.menuSlot)", "canonical resync");
         require(bridge, "if (access == null", "runtime probe fail-closed boundary");
         require(bridge, "if (previous != null) previous.cancel()",
                 "single overlay-expiry task per player");

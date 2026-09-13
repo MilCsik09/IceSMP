@@ -64,6 +64,75 @@ REMOVED_GAMEPLAY_GENERATORS = (
 # to close the verified quest, spell and signature-identity findings.  Keeping
 # the paths explicit makes any neighbouring gameplay drift fail closed.
 INTEGRITY_HARDENING_ALLOWED_DRIFT = {
+    # Authored archaeological encounter provenance; values are checked below.
+    "mob-templates.invasion_bone_champion.source-tags",
+    # Fresh-start faction closure: explicit civil atonement and the existing escort false fallback.
+    "escort.force-use-player-anchor",
+    "quests.civil_penance.category",
+    "quests.civil_penance.description",
+    "quests.civil_penance.display-name",
+    "quests.civil_penance.forbids-faction",
+    "quests.civil_penance.objective.count",
+    "quests.civil_penance.objective.min-mob-level",
+    "quests.civil_penance.objective.type",
+    "quests.civil_penance.repeatable",
+    "quests.civil_penance.requires-atonement",
+    "quests.civil_penance.rewards.cleanse-sins",
+    "quests.civil_penance.start.type",
+    "quests.civil_penance.turn-in.type",
+    "quests.civil_penance.visibility.mode",
+    # Already present in cumulative a335b3b5: major-event orchestration covers the authored prologue/finales.
+    "world-events.orchestration.major-events",
+    # Meter-free faction/Whisper contract: retired loops, unchanged food buffs, explicit season gates.
+    'cultists.whisper-suspicion-relief',
+    'factions.dark.blackmarket-npc',
+    'factions.food-duty.check-minutes',
+    'factions.food-duty.debuff-seconds',
+    'factions.food-duty.enabled',
+    'factions.food-duty.grace-hours',
+    'factions.food-duty.hamukenyer-buff-seconds',
+    'factions.food-duty.hamulakoma-buff-seconds',
+    'factions.food-duty.lepeny-buff-seconds',
+    'factions.food-duty.pisztrang-buff-seconds',
+    'factions.food-duty.porkolt-buff-seconds',
+    'factions.food-duty.rantotta-buff-seconds',
+    'factions.food-duty.suti-launch-y',
+    'factions.food-duty.suti-speed-seconds',
+    'factions.food-duty.vadlakoma-buff-seconds',
+    'factions.signature-food.hamukenyer-buff-seconds',
+    'factions.signature-food.hamulakoma-buff-seconds',
+    'factions.signature-food.lepeny-buff-seconds',
+    'factions.signature-food.pisztrang-buff-seconds',
+    'factions.signature-food.porkolt-buff-seconds',
+    'factions.signature-food.rantotta-buff-seconds',
+    'factions.signature-food.suti-launch-y',
+    'factions.signature-food.suti-speed-seconds',
+    'factions.signature-food.vadlakoma-buff-seconds',
+    'factions.tax.enabled',
+    'factions.tax.evasion-strikes',
+    'factions.tax.exempt',
+    'factions.tax.interval-minutes',
+    'factions.tax.max-arrears',
+    'factions.tax.max-rate-percent',
+    'factions.tax.minimum-amount',
+    'factions.tax.rate-percent',
+    'factions.whisper.accuse-suspicion',
+    'factions.whisper.betrayal-suspicion',
+    'factions.whisper.blackmarket-npc',
+    'factions.whisper.caught-rite-suspicion',
+    'factions.whisper.decay-amount',
+    'factions.whisper.decay-minutes',
+    'factions.whisper.exposure-sins',
+    'factions.whisper.rite-alone-radius',
+    'factions.whisper.rite-witness-radius',
+    'factions.whisper.suspicion-threshold',
+    'factions.whisper.truce-witness-chance',
+    'factions.whisper.truce-witness-suspicion',
+    'profession-materials.suttogas_meghivo.lore',
+    'world-events.season.minimum-contributions',
+    'world-events.season.population-reference',
+    'world-events.season.source-weights.raid.neutral',
+
     "item-templates.kallan_szeletelo.item-model",
     "item-templates.kallan_szeletelo.material",
     "item-templates.kallan_szeletelo.version",
@@ -591,6 +660,23 @@ def build_report(baseline: str) -> dict[str, Any]:
     old_leaves, new_leaves = leaves(old), leaves(current)
     drift = {key for key in set(old_leaves) | set(new_leaves)
              if old_leaves.get(key) != new_leaves.get(key)}
+    for template, original, authored in (
+        ("bone_king", ["event:world_boss"], ["history:chaos_age", "event:world_boss"]),
+        ("invasion_bone_champion", ["event:invasion"],
+         ["history:chaos_age", "history:seventh_blood_war", "event:invasion"]),
+    ):
+        path = f"mob-templates.{template}.source-tags"
+        if old_leaves.get(path) != original or new_leaves.get(path) != authored:
+            raise AssertionError(f"unexpected archaeological encounter provenance drift: {path}")
+    # 3013ba9c extended the existing major-event gate to these three managed lifecycles.
+    # Accept precisely that cumulative change, retaining comparison of every other leaf.
+    major_event_path = "world-events.orchestration.major-events"
+    major_events_before = ["world-boss", "invasion", "wild-hunt", "escort", "cultists"]
+    major_events_after = major_events_before + ["prologue", "blood-moon", "season-finale"]
+    if major_event_path in drift:
+        if (old_leaves.get(major_event_path) != major_events_before
+                or new_leaves.get(major_event_path) != major_events_after):
+            raise AssertionError("unexpected cumulative major-event lifecycle drift")
     unexpected_drift = sorted(key for key in drift
                               if key not in INTEGRITY_HARDENING_ALLOWED_DRIFT
                               and not key.startswith(INTEGRITY_HARDENING_ALLOWED_DRIFT_PREFIXES))

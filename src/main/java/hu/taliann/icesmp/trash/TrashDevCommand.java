@@ -24,13 +24,15 @@ public final class TrashDevCommand {
     private final TrashLootService lootService;
     private final TrashArchaeologyService archaeology;
     private final TrashArchaeologyListener archaeologyListener;
+    private final TrashRuntimeTelemetry runtimeTelemetry;
 
     public TrashDevCommand(final JavaPlugin plugin, final TrashCatalog catalog,
                            final TrashItemFactory itemFactory,
                            final TrashHistoryService historyService,
                            final TrashRecyclePool recyclePool, final TrashLootService lootService,
                            final TrashArchaeologyService archaeology,
-                           final TrashArchaeologyListener archaeologyListener) {
+                           final TrashArchaeologyListener archaeologyListener,
+                           final TrashRuntimeTelemetry runtimeTelemetry) {
         this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
         this.catalog = java.util.Objects.requireNonNull(catalog, "catalog");
         this.itemFactory = java.util.Objects.requireNonNull(itemFactory, "itemFactory");
@@ -40,6 +42,8 @@ public final class TrashDevCommand {
         this.archaeology = java.util.Objects.requireNonNull(archaeology, "archaeology");
         this.archaeologyListener = java.util.Objects.requireNonNull(
                 archaeologyListener, "archaeologyListener");
+        this.runtimeTelemetry = java.util.Objects.requireNonNull(
+                runtimeTelemetry, "runtimeTelemetry");
     }
 
     public void execute(final CommandSender sender, final String[] args) {
@@ -62,6 +66,16 @@ public final class TrashDevCommand {
                     + " validált base identity; loot ecology aktív. generated="
                     + telemetry.generated() + ", recycled=" + telemetry.recycled()
                     + ", pool=" + telemetry.recyclePoolSize(), NamedTextColor.GRAY));
+            return;
+        }
+        if (args.length >= 2 && "telemetry".equalsIgnoreCase(args[1])) {
+            final TrashRuntimeTelemetry.Snapshot snapshot = runtimeTelemetry.snapshot();
+            sender.sendMessage(Component.text("Trash aggregate telemetry: behavior-errors="
+                    + snapshot.behaviorRuntimeErrors() + ", inspections="
+                    + snapshot.inspectionsCompleted() + "/" + snapshot.inspectionsStarted()
+                    + ", cancelled=" + snapshot.inspectionsCancelled() + ", unlocks="
+                    + snapshot.archaeologyUnlocks() + ", text-fallbacks="
+                    + snapshot.tooltipTextFallbacks(), NamedTextColor.DARK_GRAY));
             return;
         }
         if (args.length >= 2 && "inspect".equalsIgnoreCase(args[1])) {
@@ -109,7 +123,8 @@ public final class TrashDevCommand {
         }
         if (!"trash".equalsIgnoreCase(args[0])) return List.of();
         if (args.length == 2) {
-            return matching(List.of("catalog", "inspect", "give", "pool", "history", "state"), args[1]);
+            return matching(List.of("catalog", "telemetry", "inspect", "give", "pool",
+                    "history", "state"), args[1]);
         }
         if (args.length == 3 && ("inspect".equalsIgnoreCase(args[1])
                 || "give".equalsIgnoreCase(args[1]))) {
@@ -357,7 +372,7 @@ public final class TrashDevCommand {
     }
 
     private static void sendUsage(final CommandSender sender) {
-        sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|inspect [id]|give <id> [amount]|pool|history|state [transform]>",
+        sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|telemetry|inspect [id]|give <id> [amount]|pool|history|state [transform]>",
                 NamedTextColor.RED));
         sendArchaeologyUsage(sender);
     }

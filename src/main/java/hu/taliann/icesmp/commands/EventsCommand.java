@@ -425,6 +425,11 @@ public final class EventsCommand implements BasicCommand {
         final long remainingDays = Math.max(0L,
                 (seasonManager.getSeasonEndMillis() - System.currentTimeMillis()) / (24L * 60L * 60L * 1000L));
         sender.sendMessage(messageManager.get("events-status-season", "&6Szezon: &7még ~%s nap", String.valueOf(remainingDays)));
+        if (sender instanceof Player player) sender.sendMessage(messageManager.get("events-personal-contribution",
+                "&7Személyes szezonjutalom feltétele: &f%s/%s &7igazolt teljesítés (kategóriánként naponta egy).",
+                String.valueOf(seasonManager.personalContributions(player.getUniqueId())),
+                String.valueOf(seasonManager.minimumContributions())));
+
         for (final FactionType faction : FactionType.values()) {
             sender.sendMessage(messageManager.get(
                     "events-season-line", "&e%s&7: &f%s pont", faction.getDisplayName(), seasonManager.getPoints(faction)));

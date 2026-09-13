@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.utils;
 
 import hu.taliann.icesmp.managers.AfkManager;
+import hu.taliann.icesmp.integrity.*;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.MinionManager;
 import org.bukkit.Bukkit;
@@ -68,8 +69,9 @@ public final class MobKillUtil {
         private final double victimY;
         private final double victimZ;
         private final long dropSeed;
+        private final RewardSourceContext rewardSource;
 
-        private KillContext(final UUID killerId, final LivingEntity victim) {
+        private KillContext(final UUID killerId, final LivingEntity victim, final RewardChannel channel) {
             this.killerId = killerId;
             this.victimId = victim.getUniqueId();
             this.victimType = victim.getType();
@@ -79,9 +81,14 @@ public final class MobKillUtil {
             this.victimX = location.getX();
             this.victimY = location.getY();
             this.victimZ = location.getZ();
+            this.rewardSource = BukkitRewardSources.death(channel, victim);
             this.dropSeed = victimId.getMostSignificantBits()
                     ^ victimId.getLeastSignificantBits();
         }
+
+        public RewardContext rewardContext(final RewardChannel channel) { return new RewardContext(channel, killerId, rewardSource.sources()); }
+
+        public boolean eligibleFor(final RewardChannel channel) { return GameplayRewardGate.evaluate(rewardContext(channel)).allowed(); }
 
         public UUID killerId() {
             return killerId;
@@ -133,6 +140,7 @@ public final class MobKillUtil {
          * clearing live locks and reopening every current kill for duplicate rewards.
          */
         public boolean claimOnce(final String channel) {
+            if (!eligibleFor(rewardSource.channel())) return false;
             final long now = System.currentTimeMillis();
             pruneClaims(now);
             if (CLAIMED.size() >= CLAIM_CAP) {
@@ -146,17 +154,18 @@ public final class MobKillUtil {
             return true;
         }
 
-        public void runOnKiller(final JavaPlugin plugin,
-                                final Consumer<Player> action) {
-            if (plugin == null || action == null) {
-                return;
-            }
+        public void runOnKiller(final JavaPlugin plugin, final Consumer<Player> action) {
+            runOnKiller(plugin, rewardSource.channel(), action);
+        }
+
+        public void runOnKiller(final JavaPlugin plugin, final RewardChannel channel, final Consumer<Player> action) {
+            if (plugin == null || action == null || !eligibleFor(channel)) return;
             final Player killer = Bukkit.getPlayer(killerId);
-            if (killer == null) {
-                return;
-            }
-            killer.getScheduler().run(plugin,
-                    task -> action.accept(killer), null);
+            if (killer == null) return;
+            killer.getScheduler().run(plugin, task -> {
+                final Player current = Bukkit.getPlayer(killerId);
+                if (current != null && Bukkit.isOwnedByCurrentRegion(current) && current.isOnline() && eligibleFor(channel)) action.accept(current);
+            }, null);
         }
     }
 
@@ -164,7 +173,7 @@ public final class MobKillUtil {
                                            final RewardKind kind,
                                            final ConfigManager configManager,
                                            final AfkManager afkManager) {
-        if (victim == null || kind == null) {
+        if (victim == null || kind == null || !Bukkit.isOwnedByCurrentRegion(victim)) {
             return null;
         }
         final Player killer = victim.getKiller();
@@ -180,7 +189,7 @@ public final class MobKillUtil {
                                                      final RewardKind kind,
                                                      final ConfigManager configManager,
                                                      final AfkManager afkManager) {
-        if (victim == null || killerId == null || kind == null) {
+        if (victim == null || killerId == null || kind == null || !Bukkit.isOwnedByCurrentRegion(victim)) {
             return null;
         }
         final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner rewardOwner =
@@ -215,17 +224,20 @@ public final class MobKillUtil {
                 && isSpawnerSpawned(victim)) {
             return null;
         }
-        return new KillContext(killerId, victim);
+        final KillContext context = new KillContext(killerId, victim, kind == RewardKind.TRACKING ? RewardChannel.TRACKING_PROGRESS
+                : kind == RewardKind.FLAVOR ? RewardChannel.CUSTOM_LOOT : RewardChannel.KILL_REWARD);
+        return context.eligibleFor(context.rewardSource.channel()) ? context : null;
     }
 
     /** Tracking snapshot without leaking a live killer Player across region threads. */
     public static KillContext eligibleTrackingKill(final LivingEntity victim) {
-        if (victim == null || MinionManager.isMinionTagged(victim)) {
+        if (victim == null || !Bukkit.isOwnedByCurrentRegion(victim) || MinionManager.isMinionTagged(victim)) {
             return null;
         }
         final Player killer = victim.getKiller();
-        return killer == null ? null
-                : new KillContext(killer.getUniqueId(), victim);
+        if (killer == null) return null;
+        final KillContext context = new KillContext(killer.getUniqueId(), victim, RewardChannel.TRACKING_PROGRESS);
+        return context.eligibleFor(RewardChannel.TRACKING_PROGRESS) ? context : null;
     }
 
     public static boolean isSpawnerSpawned(final Entity entity) {
