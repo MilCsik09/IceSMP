@@ -136,7 +136,17 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
         return configManager.getBoolean("guilds.enabled", true);
     }
 
+    /** Holds the existing role/cost admission lock while the faction authority claims a transition. */
+    public synchronized void withMembershipAdmissionBarrier(final Runnable claim) {
+        java.util.Objects.requireNonNull(claim).run();
+    }
+
     public Guild getGuild(final UUID playerId) {
+        if (factionManager.hasPendingMembershipTransition(playerId)) return null;
+        return canonicalGuild(playerId);
+    }
+
+    private Guild canonicalGuild(final UUID playerId) {
         final String id = memberGuild.get(playerId);
         return id == null ? null : guilds.get(id);
     }
@@ -182,7 +192,7 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
             return "guild-already-member";
         }
         final FactionType faction = factionManager.getChosenFaction(founder.getUniqueId()).orElse(null);
-        if (faction == null) {
+        if (faction == null || !factionManager.isMember(founder.getUniqueId(), faction)) {
             return "guild-needs-faction";
         }
         final String trimmed = name.trim();
@@ -281,7 +291,7 @@ public final class GuildManager implements PersistentStore, PlayerStateCleanup {
      * @return a céh neve, amiből a játékos kilépett, vagy {@code null}, ha nem volt mit egyeztetni
      */
     public synchronized String reconcileFaction(final UUID playerId, final FactionType newFaction) {
-        final Guild guild = getGuild(playerId);
+        final Guild guild = canonicalGuild(playerId);
         if (guild == null || guild.faction == newFaction) {
             return null;
         }

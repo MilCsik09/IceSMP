@@ -42,6 +42,13 @@ public final class CouncilManager implements PersistentStore {
     private final Map<UUID, UUID> votes = new ConcurrentHashMap<>();
     private volatile long weekKey = -1L;
 
+    private volatile SinManager civilLaw;
+    public void setCivilLaw(final SinManager law) { civilLaw = java.util.Objects.requireNonNull(law); }
+    private boolean civilAccess(final java.util.UUID id) {
+        final SinManager law = civilLaw;
+        return law != null && law.hasCivilAccess(id);
+    }
+
     public CouncilManager(final JavaPlugin plugin, final ConfigManager configManager,
                           final FactionManager factionManager, final MessageManager messageManager) {
         this.plugin = plugin;
@@ -81,19 +88,23 @@ public final class CouncilManager implements PersistentStore {
      *
      * @return üzenet-kulcs hibára, vagy null sikerre
      */
-    public String vote(final Player voter, final Player target) {
+    public synchronized String vote(final Player voter, final Player target) {
         if (!isEnabled()) {
             return "council-disabled";
         }
-        if (!factionManager.isMember(voter.getUniqueId(), FactionType.NEUTRAL)) {
+        if (!(factionManager.isMember(voter.getUniqueId(), FactionType.NEUTRAL) && civilAccess(voter.getUniqueId()))) {
             return "council-neutral-only";
         }
-        if (!factionManager.isMember(target.getUniqueId(), FactionType.NEUTRAL)) {
+        if (!(factionManager.isMember(target.getUniqueId(), FactionType.NEUTRAL) && civilAccess(target.getUniqueId()))) {
             return "council-target-not-neutral";
         }
         votes.put(voter.getUniqueId(), target.getUniqueId());
         save();
         return null;
+    }
+
+    public synchronized void withMembershipAdmissionBarrier(final Runnable claim) {
+        java.util.Objects.requireNonNull(claim).run();
     }
 
     /** A futó hét tanácsa: a legtöbb szavazatot kapott NEUTRAL játékosok (top-seats). */
@@ -103,14 +114,14 @@ public final class CouncilManager implements PersistentStore {
         }
         final Map<UUID, Integer> tally = new ConcurrentHashMap<>();
         for (final Map.Entry<UUID, UUID> vote : votes.entrySet()) {
-            if (factionManager.isMember(vote.getKey(), FactionType.NEUTRAL)
-                    && factionManager.isMember(vote.getValue(), FactionType.NEUTRAL)) {
+            if ((factionManager.isMember(vote.getKey(), FactionType.NEUTRAL) && civilAccess(vote.getKey()))
+                    && (factionManager.isMember(vote.getValue(), FactionType.NEUTRAL) && civilAccess(vote.getValue()))) {
                 tally.merge(vote.getValue(), 1, Integer::sum);
             }
         }
         final int seats = Math.max(1, configManager.getInt("factions.council.seats", 3));
         return tally.entrySet().stream()
-                .filter(entry -> factionManager.isMember(entry.getKey(), FactionType.NEUTRAL))
+                .filter(entry -> (factionManager.isMember(entry.getKey(), FactionType.NEUTRAL) && civilAccess(entry.getKey())))
                 .sorted(Comparator.<Map.Entry<UUID, Integer>>comparingInt(Map.Entry::getValue).reversed()
                         .thenComparing(entry -> entry.getKey().toString()))
                 .limit(seats)
@@ -128,8 +139,8 @@ public final class CouncilManager implements PersistentStore {
         int count = 0;
         for (final Map.Entry<UUID, UUID> vote : votes.entrySet()) {
             if (vote.getValue().equals(playerId)
-                    && factionManager.isMember(vote.getKey(), FactionType.NEUTRAL)
-                    && factionManager.isMember(playerId, FactionType.NEUTRAL)) {
+                    && (factionManager.isMember(vote.getKey(), FactionType.NEUTRAL) && civilAccess(vote.getKey()))
+                    && (factionManager.isMember(playerId, FactionType.NEUTRAL) && civilAccess(playerId))) {
                 count++;
             }
         }
@@ -188,6 +199,7 @@ public final class CouncilManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Nem sikerült menteni a council.yml-t: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save council.yml", exception);
         }
     }
 
