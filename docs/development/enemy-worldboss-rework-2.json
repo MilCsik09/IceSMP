@@ -2305,7 +2305,7 @@
     "new_gear": false,
     "persistent_ecology": false,
     "static_forbidden_authority_scan": {
-      "files_scanned": 995,
+      "files_scanned": 996,
       "matches": [],
       "status": "PASS",
       "tokens": [

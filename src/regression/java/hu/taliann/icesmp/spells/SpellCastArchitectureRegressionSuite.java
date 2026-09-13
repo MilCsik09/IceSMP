@@ -118,8 +118,10 @@ public final class SpellCastArchitectureRegressionSuite {
                 "damage must apply the semantic damage multiplier exactly in the shared primitive");
         require(healing.contains("baseAmount * effective.healingMultiplier()"),
                 "healing must apply the semantic healing multiplier exactly in the shared primitive");
-        require(damage.contains("markProjectile") && damage.contains("projectileDamageMultiplier"),
-                "projectiles must carry an immutable cast snapshot");
+        require(damage.contains("markProjectile") && damage.contains("projectileSnapshot")
+                        && damage.contains("damageByProjectile")
+                        && damage.contains("withDirectEntity(projectile)"),
+                "projectiles must carry an immutable cast snapshot into the canonical custom DamageType path");
 
         final String projectile = read(root, "src/main/java/hu/taliann/icesmp/spells/ProjectileBurstSpell.java");
         require(projectile.contains("SpellExecutionContext.capture()")

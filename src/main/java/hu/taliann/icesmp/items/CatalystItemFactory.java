@@ -210,7 +210,7 @@ public final class CatalystItemFactory {
                 .decoration(TextDecoration.ITALIC, false));
 
         final List<Component> lore = new ArrayList<>();
-        lore.add(line("<dark_gray>Lélekkapocs — személyes class spellbook</dark_gray>"));
+        lore.add(line("<dark_gray>Lélekkapocs — személyes kaszt-varázskönyv</dark_gray>"));
         lore.add(line("<gray>Állapot: <white>" + evolution + "</white></gray>"));
         if (!spec.isBlank()) {
             lore.add(line("<gray>Aktív út: <white>" + specDisplay(spec) + "</white></gray>"));
@@ -258,9 +258,9 @@ public final class CatalystItemFactory {
                     : "<aqua>✧ Mesterség V — a tárgy formája kiforrott.</aqua>"));
         }
         lore.add(Component.empty());
-        lore.add(line("<gray>Jobb katt: <white>aktív spell</white></gray>"));
-        lore.add(line("<gray>Shift + jobb katt: <white>spellbook</white></gray>"));
-        lore.add(line("<gray>Shift + görgetés/ütés: <white>spellváltás</white></gray>"));
+        lore.add(line("<gray>Jobb katt: <white>aktív varázslat</white></gray>"));
+        lore.add(line("<gray>Shift + jobb katt: <white>varázskönyv</white></gray>"));
+        lore.add(line("<gray>Shift + görgetés/ütés: <white>varázslatváltás</white></gray>"));
         lore.add(line("<dark_gray>Nem cserélhető • elvesztéskor újragenerálható.</dark_gray>"));
         meta.lore(lore);
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();

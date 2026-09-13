@@ -100,6 +100,8 @@ public final class ItemIdentityService {
     private final NamespacedKey legacyRarityKey;
     private final NamespacedKey legacyRuneKey;
     private final NamespacedKey relicKey;
+    private final NamespacedKey legacyCraftedByKey;
+    private final NamespacedKey legacyCraftedAtKey;
     private volatile Function<ItemStack, String> canonicalStateValidator = item -> "";
     private volatile EquipmentProficiencyService equipmentProficiencyService;
 
@@ -118,6 +120,8 @@ public final class ItemIdentityService {
         this.legacyRarityKey = new NamespacedKey(plugin, "masterwork_quality");
         this.legacyRuneKey = new NamespacedKey(plugin, "rune_effect");
         this.relicKey = new NamespacedKey(plugin, "relic_id");
+        this.legacyCraftedByKey = new NamespacedKey(plugin, "crafted_by");
+        this.legacyCraftedAtKey = new NamespacedKey(plugin, "crafted_at");
     }
 
     public ItemStack create(final String templateId, final String sourceTag, final String sourceId,
@@ -285,6 +289,30 @@ public final class ItemIdentityService {
                 template.itemModelAt(stageId), template.equipmentAssetAt(stageId));
         ItemDataFactory.hideAttributeTooltip(item);
         ItemDataFactory.applyRarity(item, ItemDataFactory.vanillaRarityOf(template.rarity().id()));
+        if (!ItemPrototypePolicy.direct(item)) applySignatureEnchantProjection(item, template);
+    }
+
+    /** Bootstrap enchant/glint is part of canonical identity, never a recipe-owned mutator. */
+    private static void applySignatureEnchantProjection(final ItemStack item,
+                                                        final ItemTemplate template) {
+        final net.kyori.adventure.key.Key key =
+                hu.taliann.icesmp.items.SignatureEnchantKeys.BY_SIGNATURE
+                        .get(template.signatureEffectId());
+        if (key == null) return;
+        final org.bukkit.enchantments.Enchantment enchant;
+        try {
+            enchant = io.papermc.paper.registry.RegistryAccess.registryAccess()
+                    .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                    .get(NamespacedKey.fromString(key.asString()));
+        } catch (final RuntimeException unavailable) {
+            throw new IllegalStateException("signature enchant registry unavailable: " + key.asString(), unavailable);
+        }
+        if (enchant == null) {
+            throw new IllegalStateException("missing bootstrap signature enchant: " + key.asString());
+        }
+        final ItemMeta meta = item.getItemMeta();
+        meta.addEnchant(enchant, 1, true);
+        item.setItemMeta(meta);
     }
 
     public void setCanonicalStateValidator(final Function<ItemStack, String> validator) {
@@ -343,14 +371,21 @@ public final class ItemIdentityService {
                     "item identity index nem egyezik a payloaddal");
         }
         final Optional<ItemTemplate> resolved = templates.find(instance.templateId());
+        if (ItemPrototypePolicy.isPrototype(instance)) {
+            try {
+                if (!ItemPrototypePolicy.identity(item).filter(ItemPrototypePolicy.identity(instance)::equals).isPresent()) {
+                    return new Inspection(Status.INTEGRITY_MISMATCH, instance, null, "prototype restriction projection differs");
+                }
+            } catch (RuntimeException invalidPrototype) {
+                return new Inspection(Status.INTEGRITY_MISMATCH, instance, null, "invalid prototype identity");
+            }
+        } else if (ItemPrototypePolicy.direct(item)) {
+            return new Inspection(Status.INTEGRITY_MISMATCH, instance, null, "prototype marker lacks canonical origin");
+        }
         if (resolved.isEmpty()) {
             return new Inspection(Status.TEMPLATE_MISSING, instance, null, "hiányzó item template");
         }
         final ItemTemplate template = resolved.orElseThrow();
-        if (item.getAmount() != 1 || !item.getType().name().equals(template.material())) {
-            return new Inspection(Status.TEMPLATE_MISMATCH, instance, template,
-                    "material vagy stackméret eltér a templatetől");
-        }
         if (instance.templateVersion() > template.templateVersion()) {
             return new Inspection(Status.TEMPLATE_MISMATCH, instance, template,
                     "az item újabb, mint a szerver template-verziója");
@@ -358,6 +393,10 @@ public final class ItemIdentityService {
         if (instance.templateVersion() < template.templateVersion()) {
             return new Inspection(Status.TEMPLATE_VERSION_STALE, instance, template,
                     "migrálandó template-verzió");
+        }
+        if (item.getAmount() != 1 || !item.getType().name().equals(template.material())) {
+            return new Inspection(Status.TEMPLATE_MISMATCH, instance, template,
+                    "material vagy stackméret eltér a templatetől");
         }
         final String signatureProjection = pdc.get(signatureProjectionKey, PersistentDataType.STRING);
         final Integer signatureTierProjection = pdc.get(signatureTierProjectionKey, PersistentDataType.INTEGER);
@@ -415,11 +454,87 @@ public final class ItemIdentityService {
                 template.itemLevelAt(before.ascension().stageId()), migratedRolls,
                 new ItemHistoryEvent(ItemHistoryEvent.Type.TEMPLATE_MIGRATED, occurredAt,
                         "template:" + before.templateVersion() + "->" + template.templateVersion()));
+        final Map<org.bukkit.enchantments.Enchantment, Integer> retainedEnchants =
+                Map.copyOf(item.getEnchantments());
         final ItemStack rendered = render(template, migrated);
+        retainedEnchants.forEach((enchantment, level) -> rendered.addUnsafeEnchantment(
+                enchantment, Math.max(level, rendered.getEnchantmentLevel(enchantment))));
         item.setType(rendered.getType());
         item.setAmount(1);
         item.setItemMeta(rendered.getItemMeta());
         return inspect(item);
+    }
+
+    /**
+     * Deterministic, idempotent conversion of every historical signature-PDC form that now has
+     * a canonical template. The legacy signature ID and crafted provenance become immutable
+     * origin/history, while existing enchantments survive the canonical projection.
+     */
+    public Inspection migrateLegacySignature(final ItemStack item, final Player owner,
+                                             final long occurredAt) {
+        final Inspection inspection = inspectIdentity(item);
+        if (inspection.status() != Status.NOT_MANAGED || item == null || !item.hasItemMeta()) {
+            return inspection;
+        }
+        final ItemMeta legacyMeta = item.getItemMeta();
+        final String legacyId = legacyMeta.getPersistentDataContainer()
+                .get(signatureProjectionKey, PersistentDataType.STRING);
+        if (legacyId == null || legacyId.isBlank()) return inspection;
+        final String normalizedLegacy = "napfogyatkozas".equals(legacyId)
+                ? "napfogyatkozas_fokusz" : ItemStatCatalog.normalizeId(legacyId);
+        final String templateId = templates.snapshot().values().stream()
+                .filter(template -> normalizedLegacy.equals(template.signatureEffectId()))
+                .map(ItemTemplate::templateId)
+                .findFirst().orElse(null);
+        if (templateId == null) return inspection;
+        final ItemTemplate template = templates.require(templateId);
+        final UUID itemId = UUID.randomUUID();
+        final Long craftedAt = legacyMeta.getPersistentDataContainer()
+                .get(legacyCraftedAtKey, PersistentDataType.LONG);
+        final String craftedBy = legacyMeta.getPersistentDataContainer()
+                .get(legacyCraftedByKey, PersistentDataType.STRING);
+        final long createdAt = craftedAt == null || craftedAt < 0L ? occurredAt : craftedAt;
+        final UUID ownerId = owner == null ? null : owner.getUniqueId();
+        final String ownerName = craftedBy == null || craftedBy.isBlank()
+                ? owner == null ? "" : owner.getName() : craftedBy;
+        final String location = owner == null || owner.getWorld() == null ? ""
+                : owner.getWorld().getName() + ':' + owner.getLocation().getBlockX() + ','
+                + owner.getLocation().getBlockY() + ',' + owner.getLocation().getBlockZ();
+        final ItemInstance rolled = rollInstance(template, itemId, "migration:legacy-signature",
+                legacyId, ownerId, location, createdAt,
+                () -> stableMigrationQuality(itemId, templateId));
+        final ItemInstance migrated = new ItemInstance(rolled.itemId(), rolled.schemaVersion(),
+                rolled.templateId(), rolled.templateVersion(), rolled.itemLevel(), rolled.rolls(),
+                rolled.runes(), rolled.ascension(), new ItemInstance.Origin(
+                rolled.origin().sourceTag(), rolled.origin().sourceId(), ownerId, ownerName, "",
+                location, false, createdAt), rolled.states(), rolled.mutationRevision(), rolled.history())
+                .appendHistory(new ItemHistoryEvent(ItemHistoryEvent.Type.TEMPLATE_MIGRATED,
+                        occurredAt, "legacy-signature:" + legacyId));
+        final Map<org.bukkit.enchantments.Enchantment, Integer> retainedEnchants =
+                Map.copyOf(item.getEnchantments());
+        final ItemStack rendered = render(template, migrated);
+        retainedEnchants.forEach((enchantment, level) -> rendered.addUnsafeEnchantment(
+                enchantment, Math.max(level, rendered.getEnchantmentLevel(enchantment))));
+        item.setType(rendered.getType());
+        item.setAmount(1);
+        item.setItemMeta(rendered.getItemMeta());
+        return inspect(item);
+    }
+
+    /** Owner-thread inventory reconciliation for both legacy and authored-version migrations. */
+    public void reconcileOwnedInventory(final Player owner, final long occurredAt) {
+        if (owner == null) return;
+        for (final ItemStack item : owner.getInventory().getContents()) {
+            if (item == null || item.getType().isAir()) continue;
+            Inspection state = migrateLegacySignature(item, owner, occurredAt);
+            if (state.status() == Status.TEMPLATE_VERSION_STALE) {
+                state = migrateStaleTemplate(item, occurredAt);
+            }
+            if (state.status() == Status.TEMPLATE_VERSION_STALE) {
+                throw new IllegalStateException("item template migration remained stale: "
+                        + state.instance().templateId());
+            }
+        }
     }
 
     private static double stableMigrationQuality(final UUID itemId, final String statId) {
@@ -438,6 +553,7 @@ public final class ItemIdentityService {
     }
 
     public List<String> runesOf(final ItemStack item) {
+        if (ItemPrototypePolicy.direct(item)) return List.of();
         final Inspection inspection = inspect(item);
         if (inspection.readable()) return inspection.instance().runes();
         if (inspection.status() != Status.NOT_MANAGED || item == null || !item.hasItemMeta()) {
@@ -527,6 +643,7 @@ public final class ItemIdentityService {
     }
 
     public double abilityPowerOf(final ItemStack item) {
+        if (ItemPrototypePolicy.direct(item)) return 0.0D;
         final Inspection inspection = inspect(item);
         if (inspection.status() != Status.VALID) return 0.0D;
         double value = inspection.template().fixedStatsAt(inspection.instance().ascension().stageId())
@@ -585,6 +702,9 @@ public final class ItemIdentityService {
     }
 
     private void applyStats(final ItemStack item, final ItemTemplate template, final ItemInstance instance) {
+        if (ItemPrototypePolicy.isPrototype(instance) || ItemPrototypePolicy.direct(item)) {
+            suppressManagedInvalid(item); return;
+        }
         final LinkedHashMap<String, Double> totals = new LinkedHashMap<>(
                 template.fixedStatsAt(instance.ascension().stageId()));
         instance.rolls().forEach((id, roll) -> totals.merge(id, roll.value(), Double::sum));
@@ -625,7 +745,7 @@ public final class ItemIdentityService {
     public void setEquipmentSuppressed(final ItemStack item, final ItemTemplate template,
                                        final ItemInstance instance, final boolean suppressed) {
         if (item == null || template == null || instance == null) return;
-        if (suppressed) {
+        if (suppressed || ItemPrototypePolicy.isPrototype(instance) || ItemPrototypePolicy.direct(item)) {
             suppressManagedInvalid(item);
             return;
         }
@@ -637,7 +757,7 @@ public final class ItemIdentityService {
     }
 
     public boolean isEquipmentSuppressed(final ItemStack item) {
-        return item != null && item.hasItemMeta()
+        return ItemPrototypePolicy.direct(item) || item != null && item.hasItemMeta()
                 && item.getItemMeta().getPersistentDataContainer().has(
                 equipmentSuppressedKey, PersistentDataType.BYTE);
     }
@@ -661,6 +781,7 @@ public final class ItemIdentityService {
         pdc.set(signatureTierProjectionKey, PersistentDataType.INTEGER,
                 template.signatureTierAt(instance.ascension().stageId()));
         item.setItemMeta(meta);
+        if (ItemPrototypePolicy.isPrototype(instance)) ItemPrototypePolicy.mark(item, ItemPrototypePolicy.identity(instance));
     }
 
     private static void requireMatching(final ItemTemplate template, final ItemInstance instance) {

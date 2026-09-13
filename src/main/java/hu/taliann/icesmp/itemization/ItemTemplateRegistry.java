@@ -35,12 +35,21 @@ public final class ItemTemplateRegistry {
     public ItemTemplateRegistry(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
         this.configManager = java.util.Objects.requireNonNull(configManager, "configManager");
-        activeInstance = this;
+        synchronized (ItemTemplateRegistry.class) {
+            activeInstance = this;
+        }
     }
 
     /** Runtime read-only registry seam for owner-thread set-bonus projection. */
     public static ItemTemplateRegistry current() {
         return activeInstance;
+    }
+
+    /** Identity-safe lifecycle teardown: a stale core may never clear a newer registry. */
+    public static void clearIfCurrent(final ItemTemplateRegistry candidate) {
+        synchronized (ItemTemplateRegistry.class) {
+            if (activeInstance == candidate) activeInstance = null;
+        }
     }
 
     public synchronized void load() {

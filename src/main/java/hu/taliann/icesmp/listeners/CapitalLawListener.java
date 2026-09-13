@@ -75,17 +75,20 @@ public final class CapitalLawListener implements Listener {
             return;
         }
         if (!configManager.getBoolean("territory.capital-law.enabled", true)
-                || !configManager.getBoolean("territory.capital-law.wanted-ban", true)
-                || !isNeutralCapital(to) || isNeutralCapital(from)) {
-            return;
-        }
+                || !isCivilCapital(to) || sameCapital(from, to)) return;
         for (final org.bukkit.entity.Entity passenger : event.getVehicle().getPassengers()) {
-            if (passenger instanceof Player player && isWanted(player) && !hasMenlevel(player)) {
-                event.getVehicle().eject();
-                player.teleportAsync(from);
-                player.sendActionBar(messageManager.getMessage("capital-law-wanted",
-                        "<red>⛨ Az őrség felismert — körözötteknek tilos a belépés Caldesterába. <gray>(Egy menlevél… segíthetne.)</gray></red>"));
-            }
+            if (!(passenger instanceof Player player)) continue;
+            player.getScheduler().run(plugin, task -> {
+                if (!isCivilCapital(player.getLocation())) return;
+                final boolean banned = sinManager.isCivilOutcast(player.getUniqueId())
+                        || isNeutralCapital(to) && configManager.getBoolean("territory.capital-law.wanted-ban", true)
+                        && isWanted(player) && !hasMenlevel(player);
+                if (banned) {
+                    player.leaveVehicle();
+                    player.teleportAsync(from);
+                    outcastNotice(player);
+                }
+            }, null);
         }
     }
 
@@ -93,10 +96,50 @@ public final class CapitalLawListener implements Listener {
     @EventHandler
     public void onJoin(final org.bukkit.event.player.PlayerJoinEvent event) {
         final Player player = event.getPlayer();
+        enforceOutcastOnJoin(player, 0);
         if (configManager.getBoolean("territory.capital-law.enabled", true)
                 && isNeutralCapital(player.getLocation())) {
             enforceWeaponBan(player);
         }
+    }
+
+    /** Respawn does not fire the teleport border handler. Recheck on the owning scheduler. */
+    @EventHandler
+    public void onRespawn(final org.bukkit.event.player.PlayerRespawnEvent event) {
+        enforceOutcastOnJoin(event.getPlayer(), 0);
+    }
+
+    private void enforceOutcastOnJoin(final Player player, final int attempt) {
+        player.getScheduler().runDelayed(plugin, task -> {
+            if (!isCivilCapital(player.getLocation()) || !configManager.getBoolean("territory.capital-law.enabled", true)) return;
+            try {
+                hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.current().requireSection(
+                        player.getUniqueId(), hu.taliann.icesmp.playerprofile.domain.ProfileSectionId.FACTION,
+                        hu.taliann.icesmp.playerprofile.domain.section.FactionSection.class);
+                if (!sinManager.isCivilOutcast(player.getUniqueId())) return;
+                outcastNotice(player);
+                final Location refuge = territoryManager.getFactionSpawn(FactionType.DARK);
+                if (refuge != null && !isCivilCapital(refuge)) player.teleportAsync(refuge);
+            } catch (final RuntimeException unavailable) {
+                if (attempt < 12) enforceOutcastOnJoin(player, attempt + 1);
+            }
+        }, null, 10L);
+    }
+
+    private void outcastNotice(final Player player) {
+        player.sendActionBar(messageManager.getMessage("capital-law-outcast",
+                "<red>⛨ A civil őrség nem enged be: száműzetés vagy DARK-tagság alatt a civil fővárosok zárva vannak.</red>"));
+    }
+
+    private boolean isCivilCapital(final Location location) {
+        final Territory zone = territoryManager.getTerritoryAt(location);
+        return zone != null && zone.capital() && zone.faction() != FactionType.DARK;
+    }
+
+    private boolean sameCapital(final Location from, final Location to) {
+        final Territory a = territoryManager.getTerritoryAt(from);
+        final Territory b = territoryManager.getTerritoryAt(to);
+        return a != null && b != null && a.id().equals(b.id());
     }
 
     /** Láda-zárás után: shift-kattal az aktív slotba került fegyvert is elrakatja az őrség. */
@@ -115,10 +158,16 @@ public final class CapitalLawListener implements Listener {
         if (sameBlock(from, to)) {
             return;
         }
-        if (!configManager.getBoolean("territory.capital-law.enabled", true) || !isNeutralCapital(to)) {
+        if (!configManager.getBoolean("territory.capital-law.enabled", true) || !isCivilCapital(to)) {
             return;
         }
         final Player player = event.getPlayer();
+        if (!sameCapital(from, to) && !sinManager.hasCivilAccess(player.getUniqueId())) {
+            event.setCancelled(true);
+            outcastNotice(player);
+            return;
+        }
+        if (!isNeutralCapital(to)) return;
 
         // Körözött-kapu: csak a HATÁRÁTLÉPÉSKOR ellenőrzünk (bent lévőt nem rángatunk).
         if (configManager.getBoolean("territory.capital-law.wanted-ban", true)
@@ -229,12 +278,12 @@ public final class CapitalLawListener implements Listener {
         return zone != null && zone.type() == TerritoryType.CAPITAL && zone.faction() == FactionType.NEUTRAL;
     }
 
-    /** Körözött: elérte a vérdíj-küszöböt (factions.sins.bounty.min-sins). */
+    /** Körözött: a bűn-authority tartós Wanted tengelye aktív. */
     private boolean isWanted(final Player player) {
         if (!configManager.getBoolean("factions.sins.bounty.enabled", true)) {
             return false;
         }
-        return sinManager.getSinCount(player) >= Math.max(1, configManager.getInt("factions.sins.bounty.min-sins", 3));
+        return sinManager.isWanted(player);
     }
 
     /** Van-e nála Hamisított Menlevél (signature-tagelt feketepiac-áru). */

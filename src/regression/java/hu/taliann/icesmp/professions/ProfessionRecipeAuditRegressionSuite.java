@@ -27,8 +27,8 @@ public final class ProfessionRecipeAuditRegressionSuite {
     private static final List<String> FUNCTIONAL_KEYS =
             List.of("template", "affix-tier", "enchant", "attributes", "consumable", "signature", "potion-effects");
     private static final int GYAKORLO_MAX_LEVEL = 15;
-    private static final int EXPECTED_RECIPE_COUNT = 475;
-    private static final int EXPECTED_CANONICAL_GEAR_COUNT = 76;
+    private static final int EXPECTED_RECIPE_COUNT = 471;
+    private static final int EXPECTED_CANONICAL_GEAR_COUNT = 85;
     /** A vanília MAGA is ugyanígy duplikálja ezt a tárgyat — a katalógusból ez nem látszik. */
     private static final Set<String> VANILLA_DUPLICATION = Set.of("kovacsmesteri_sablon");
 
@@ -141,9 +141,9 @@ public final class ProfessionRecipeAuditRegressionSuite {
             }
         }
         check(ids.size() == EXPECTED_RECIPE_COUNT,
-                "authored profession recipe count remains " + EXPECTED_RECIPE_COUNT + ", got " + ids.size());
+                "active authored recipe count is " + EXPECTED_RECIPE_COUNT + ", got " + ids.size());
         check(canonicalGearCount == EXPECTED_CANONICAL_GEAR_COUNT,
-                "canonical profession gear recipe count remains " + EXPECTED_CANONICAL_GEAR_COUNT
+                "canonical template recipe count is " + EXPECTED_CANONICAL_GEAR_COUNT
                         + ", got " + canonicalGearCount);
         check(new ArrayList<>(ids).equals(ids.stream().sorted().toList()), "deterministic recipe order");
 

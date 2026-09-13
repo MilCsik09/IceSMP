@@ -35,6 +35,13 @@ public final class PlayerCaravanManager {
     private volatile Location site;
     private final Map<FactionType, Long> cooldownUntil = new java.util.concurrent.ConcurrentHashMap<>();
 
+    private volatile SinManager civilLaw;
+    public void setCivilLaw(final SinManager law) { civilLaw = java.util.Objects.requireNonNull(law); }
+    private boolean civilAccess(final java.util.UUID id) {
+        final SinManager law = civilLaw;
+        return law != null && law.hasCivilAccess(id);
+    }
+
     public PlayerCaravanManager(final JavaPlugin plugin, final ConfigManager configManager,
                                 final FactionTreasuryManager treasuryManager,
                                 final FactionManager factionManager,
@@ -68,6 +75,9 @@ public final class PlayerCaravanManager {
         final FactionType faction = factionManager.getChosenFaction(king.getUniqueId()).orElse(null);
         if (faction == null) {
             return "pcaravan-no-faction";
+        }
+        if (faction == FactionType.DARK || !civilAccess(king.getUniqueId())) {
+            return "pcaravan-dark-exiled";
         }
         final long now = System.currentTimeMillis();
         if (cooldownUntil.getOrDefault(faction, 0L) > now) {

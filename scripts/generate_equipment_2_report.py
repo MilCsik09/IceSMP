@@ -165,8 +165,8 @@ def build_report() -> dict[str, Any]:
             "future_processing_chain_needed": bool(output.get("armor-family")),
             "migration_complexity": "HIGH" if output.get("armor-family") else "MEDIUM",
         })
-    if len(canonical_recipes) != 76:
-        raise ValueError(f"expected 76 handcrafted gear recipes, found {len(canonical_recipes)}")
+    if len(canonical_recipes) != 85:
+        raise ValueError(f"expected 85 canonical template recipes, found {len(canonical_recipes)}")
 
     ascension = [template_id for template_id, template in templates.items()
                  if template.get("ascension-path")]

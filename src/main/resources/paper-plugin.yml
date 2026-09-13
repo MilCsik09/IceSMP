@@ -12,12 +12,13 @@ folia-supported: true
 
 authors: [ Taliann ]
 
-# Opcionális integrációk (mind soft-depend, required: false — nélkülük is fut):
+# Aktuális production dependency contract:
 #  - LibsDisguises: a Druida formák és a kém-álca vizuális átalakulása. A reflexiós hidak
 #    join-classpath-tal érik el az osztályait futásidőben.
 #  - PlaceholderAPI: a %icesmp_...% placeholderek külső, csak olvasó integrációkhoz.
-#  - FancyNpcs: a TALK_TO_NPC quest-objektívák (kaszt-mester próbák). A reflexiós híd
-#    join-classpath-tal éri el az API-ját futásidőben.
+#  - FancyNpcs: KÖTELEZŐ production gameplay dependency. A canonical TALK_TO_NPC,
+#    onboarding és giver-NPC tartalom a reflexiós hídján keresztül fut; hiánya vagy
+#    inkompatibilitása fail-closed startupot okoz.
 #  - WorldEdit/FastAsyncWorldEdit: a WorldGuard-híd Bukkit-adapterét és vektortípusait
 #    adja. A FAWE a WorldEdit nevet provides-aliasként biztosítja.
 #  - WorldGuard: a blokkot helyező események (meteor, kincs) kerülik a WG-régiókat, a
@@ -25,10 +26,8 @@ authors: [ Taliann ]
 #    plugint opcionális, csatlakoztatott classpathon éri el.
 #  - LuckPerms: a natív chat-formázó a LP prefix/suffix-et jeleníti meg. A reflexiós híd
 #    join-classpath-tal éri el az API-ját futásidőben; LP nélkül is fut.
-#  - MythicMobs, FancyDialogs és PacketEvents kizárólag a hozzájuk tartozó opcionális
-#    integrációs utakhoz használhatók. A class-spec-dependencies.lock.yml verzió-pin és
-#    dev-provisioning authority; a runtime preflight kizárólag explicit `required-runtime`
-#    lock-bejegyzést tehet startup-fatalra.
+# MythicMobs nem tervezett runtime dependency; PacketEvents és FancyDialogs csak jövőbeli
+# jelöltek. Consumer nélkül egyik sem része ennek az executable metadata contractnak.
 #  - Production induláskor az IceSMP soha nem tölt le plugint; az automatikus provisioning
 #    kizárólag a Gradle runFolia fejlesztői feladata.
 dependencies:
@@ -42,7 +41,7 @@ dependencies:
       required: false
     FancyNpcs:
       load: BEFORE
-      required: false
+      required: true
       join-classpath: true
     WorldEdit:
       load: BEFORE
@@ -53,18 +52,6 @@ dependencies:
       required: false
       join-classpath: true
     LuckPerms:
-      load: BEFORE
-      required: false
-      join-classpath: true
-    MythicMobs:
-      load: BEFORE
-      required: false
-      join-classpath: true
-    FancyDialogs:
-      load: BEFORE
-      required: false
-      join-classpath: true
-    packetevents:
       load: BEFORE
       required: false
       join-classpath: true

@@ -72,6 +72,7 @@ public final class ShopListener implements Listener {
             case "shop-wrong-faction" -> "&cEbben a boltban csak a bolt frakciójának tagjai vásárolhatnak.";
             case "shop-item-gone" -> "&cEz a tétel már nem elérhető.";
             case "shop-insufficient" -> "&cNincs elég fedezet a bankodban ehhez a vásárláshoz.";
+            case "shop-dark-exiled" -> "&5A Kitaszítottakat a polgári kereskedők nem szolgálják ki.";
             default -> "&cA vásárlás nem sikerült.";
         };
     }

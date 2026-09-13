@@ -1,5 +1,33 @@
 # IceSMP — a világ rendszerei
 
+## Frakció–Suttogó kiegészítések, 2026-09-07
+
+Tiszta indulás: a korábbi tagságiadó- és profilmigráció nem követelmény. Elkészült
+a magányos, normál világbeli éjszakai rítus, a ritka privát discovery-hint, az
+eseményazonos bizonyíték, a vanish/invisibility/respawn kizárás és a régiónkénti
+rálátás. `/suttogas megtagadás`: kétszer megerősített kilépés, 24 órás várakozás,
+bűntisztítás nélkül. `/faction status`: következő jogi küszöb, vérdíj és a vezeklés
+helye. A civil jóvátétel DARK-belépés nélkül is elérhető a `/quest log` Megbízások
+fülén. A választás aktív létszámhoz igazodik, és megtartja az élő mandátumot.
+Részletes szabályok és korlátok: [FACTION_REWORK](FACTION_REWORK.md).
+
+
+## Frakció–Suttogó javítás, 2026-09-06
+
+A részletes szabályok: [FACTION_REWORK.md](FACTION_REWORK.md). Nincs új HUD vagy
+frakciómérő. A DARK 70%-os normál gyógyítása a saját kasztgyógyításokra is érvényes;
+civil boltok, Tanács, karavánok és fővárosok a száműzetést is figyelembe veszik.
+A sötét specializációk feltétele DARK + Sötét Eskü, a párbaj nem bűntisztítás, és a
+NEUTRAL frakcióváltásnak azonos ára van. A személyes kasszakivét csak adminművelet.
+
+A Suttogó-bizonyíték tartós és pontos; beváltása, a harmadik fokozat, száműzetés és
+24 órás visszatérési várakozás egy mentés. A rítus mentési sorrendje javítva, a tárgy
+lore-ja misztikus utalásokat ad; helyes körülményeknél percenként legfeljebb egy privát hint segít. A chat álneves. `/suttogas állapot` és
+`/suttogas megbízás` ad részletes tájékoztatást. Kultista jutalom csak az átadással
+minősített résztvevőnek jár. A ligapont csökkenő létszámhozamot kap, a személyes
+bajnoki jutalom alapból három igazolt kategória/nap hozzájárulást igényel.
+
+
 <!-- icesmp-doc-id: reference.feature-catalogue -->
 
 > *A Fa visszahívott, de nem mondta meg, mivé kell válnod.*
@@ -26,7 +54,7 @@ Ez az oldal az **egyetlen általános funkciótérkép**. A használat részlete
 > referenciáját a `Repository Docs Inventory` CI-artifact generálja. Itt csak az marad,
 > ami egy játékosnak vagy csapattagnak valóban segít megérteni a rendszert.
 
-A katalógus **48 implementált rendszercsoportot** és **1 tudatos planning-határt** ír le.
+A katalógus **49 implementált rendszercsoportot** és **1 tudatos planning-határt** ír le.
 A release forrásállapota `4643ab53586f0c1ee7352df16dcd477013e6fad4`; az üzemeltető által
 futóként átadott JAR nagy bizonyossággal a 2026. július 12-i `775d9e247…` állapothoz tartozik.
 
@@ -563,7 +591,7 @@ Regisztrált spellkatalógus, célzás, költség, cooldown, projectile/state ke
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
 Nyolc profession, szakmai specializációk, XP, heti cél, gyűjtési bónusz és szakmai GUI.
-A receptkatalógus 475 receptet tartalmaz, és minden recept kimondja a **fajtáját**
+A receptkatalógus 471 aktív receptet tartalmaz (plusz 4 történelmi signature recept-alias), és minden recept kimondja a **fajtáját**
 (gyakorló / hozam / egyedi / lánc / ritkaság); a fajta szabja meg, mit adhat a
 vanília fölé, és ezt gépi kapu tartja fenn.
 
@@ -733,6 +761,11 @@ Egyedi relikviák, ownership/transfer, triggerelt képességek, cooldown, soul s
 
 Mérföldkövek és jutalmak, datapack advancementek, harci statisztika és ranglisták.
 
+Az 50. kasztszint üzleti mérföldköve egyetlen durable achievement (`legend`): ez adja egyszer az
+economic rewardot. A korábbi külön `class_max` advancement-projekció megszűnt, így nincs második
+threshold vagy jutalmazási authority. A datapack jelenleg 21 persistent node-ot és 1 reusable
+quest-toastot szállít (22 authored JSON összesen).
+
 - **Így találkozol vele:** `/achievements`, `/stats`, `/leaderboard`; főmenü. Parancs: /achievements (alias: /ach, /eleresek); /leaderboard (alias: /lb, /rangsor, /top); /stats.
 - **Kinek szól:** Játékos, Admin, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Játékmeneti progress, harci esemény, jutalomátvétel és lekérdezés.
@@ -755,7 +788,7 @@ Mérföldkövek és jutalmak, datapack advancementek, harci statisztika és rang
 
 > **Aktív, builder-előkészítést igényel** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit forrás-keret (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény / auto / admin), a felvétel és a leadás KIZÁRÓLAG a jogosult forrásnál történhet; NPC-forrású questnél a feladatok teljesítése után KÉSZ állapot jön, és a leadási pontnál (alapból az adó NPC-nél) zárul a küldetés. Kategóriák (story/mellék/kaszt/specializáció/frakció/napi/heti/titok…), kaszt-, specializáció- és szintkapuk, láthatóság (a rejtett quest felfedezésig sehol nem látszik), tartós felfedezés és küldetés-követés, öt-füles napló, objective progress — köztük sikeres, engedélyezett kasztolást számláló `CAST_SPELLS` —, napi feladatok és admin/builder questkészítő.
+Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit forrás-keret (NPC / Megbízások-tábla / lánc / helyszín / tárgy / esemény / auto / admin), a felvétel és a leadás KIZÁRÓLAG a jogosult forrásnál történhet; NPC-forrású questnél a feladatok teljesítése után KÉSZ állapot jön, és a leadási pontnál (alapból az adó NPC-nél) zárul a küldetés. Kategóriák (story/mellék/kaszt/specializáció/frakció/napi/heti/titok…), kaszt-, specializáció-, szakma-, szakmaszint- és karakterszint-kapuk, láthatóság (a rejtett quest felfedezésig sehol nem látszik), tartós felfedezés és küldetés-követés, öt-füles napló, felvétel előtti jutalom-előnézet és objective progress — köztük sikeres, engedélyezett kasztolást számláló `CAST_SPELLS` —, authored napi feladatok és admin/builder questkészítő. A `/daily` nem külön generátor: ugyanebbe a naplóba vezet.
 
 - **Így találkozol vele:** `/quest`, `/daily`; questlog (öt fül: Aktív/Kész/Megbízások/Elérhető/Teljesített) és quest builder GUI. Parancs: /quest (alias: /kuldetes, /quests); /daily. GUI: Küldetésnapló; Quest builder.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
@@ -767,8 +800,8 @@ Adatvezérelt küldetések MMO-életciklussal (Quest Framework v2): explicit for
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.quest` (a `/quest accept` és `/quest talk` is admin-parancs — a forrás-authority parancsból nem kerülhető meg).
-- Config: `quests.*` (start/turn-in/category/visibility séma), napi küldetés-, NPC- és rewarddefiníciók.
-- Tartós állapot: Aktív quest, objective progress, forrás-audit, felfedezés, követett quest, napi állapot és builder által mentett definíció tartós (PlayerProfile QuestSection az egyetlen player-authority).
+- Config: `quests.*` (start/turn-in/category/visibility/szakmakapu séma), authored napi küldetés-, NPC- és rewarddefiníciók.
+- Tartós állapot: Aktív quest, objective progress, forrás-audit, felfedezés, követett quest, reward receipt és builder által mentett definíció tartós (PlayerProfile QuestSection az egyetlen player-authority); a retired procedural streak csak történeti/achievement olvasási adat.
 - Reload: a quest-registry csere atomikus és teljes gráf-validációval kapuzott — érvénytelen candidate a korábbi definíciókat hagyja élőben; az admin-szerkesztő ugyanezen a validátoron megy át mentés előtt.
 
 </details>
@@ -921,17 +954,17 @@ Nyolc permission nélküli alapláda, fizikai crate-helyek, kulcsvásárlás/-fe
 
 </details>
 
-### Napi jutalmak, bounty és jutalomforrások
+### Megbízásjutalmak, bounty és jutalomforrások
 
 <!-- icesmp-doc-id: feature.economy.rewards_bounty -->
 
 > **Aktív, configgal engedélyezhető** · A futó JAR-hoz képest: **Jelentősen megváltozott**
 
-Napi átvétel, bounty, pénzeszsák, mobpénz, reward-budget és party-kompatibilis jutalomfeloldás.
+Authored napi/heti megbízásjutalom, bounty, pénzeszsák, mobpénz, reward-budget és party-kompatibilis jutalomfeloldás.
 
 - **Így találkozol vele:** `/daily`, `/bounty`; loot-, kill- és event-triggerek. Parancs: /bounty (alias: /fejvadasz, /korozes); /daily (alias: /napi).
 - **Kinek szól:** Játékos, Admin, Eventes, Tesztelő.
-- **Mitől mozdul meg:** Napi ciklus, kill, bounty teljesítés, itemhasználat és reward trigger.
+- **Mitől mozdul meg:** Authored quest objective/leadás, kill, bounty teljesítés, itemhasználat és reward trigger.
 - **Ami még kellhet hozzá:** Bounty/event célpontok és jutalomforrások biztonságát ellenőrizni kell.
 - **Fontos határ:** AFK-blokkolás, full inventory és economy-storage hiba esetén runtime teszt szükséges.
 
@@ -939,9 +972,9 @@ Napi átvétel, bounty, pénzeszsák, mobpénz, reward-budget és party-kompatib
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: —
-- Config: Daily-, bounty-, loot-, money-pouch- és rewardbeállítások.
-- Tartós állapot: Napi átvétel, bounty és egyes budgetállapotok tartósak.
-- Reload: Jutalomtáblák reloadolhatók; periodikus reset task restarthoz kötött lehet.
+- Config: Authored `quests.*`, bounty-, loot-, money-pouch- és rewardbeállítások.
+- Tartós állapot: Quest reward receipt, bounty és egyes budgetállapotok tartósak.
+- Reload: Jutalomtáblák reloadolhatók; a quest-registry atomikusan, teljes gráfvalidáció után cserélődik.
 
 </details>
 
@@ -960,9 +993,9 @@ Belépés/kilépés/váltás, frakciókapcsolatok, étel/passzív/spawn hatások
 - **Így találkozol vele:** `/faction`; főmenü frakciónézete. Parancs: /faction (alias: /f).
 - **Kinek szól:** Játékos, Admin, Builder, Tesztelő, Eventes.
 - **Mitől mozdul meg:** Tagságváltás, join/quit, combat, fogyasztás, spawn és passzív esemény.
-- **Passzív defaultok:** RED környezeti hőnél `0.25/0.25/0.50/0.25` megtartott FIRE/FIRE_TICK/LAVA/HOT_FLOOR sebzés, entitás-tűznél `0.75`; a `TUZ` spelliskola változatlan. BLUE: fagyás `0`, fulladás `0.50`, a konfigurált természetes exhaustion okoknál `25%` megtakarítás. NEUTRAL: zuhanás `0.50`, csak spontán békés/semleges aggró és Enderman-szemkontaktus szűrhető. DARK: Wither sebzés/idő `0.50/0.50`, markerelt ambient undead-béke `60 s` megtorlással és `16` blokkos riadóval, vad undeadnél éjszakai `50%` target-cancel.
+- **Passzív defaultok:** RED környezeti hőnél `0.25/0.25/0.50/0.25` megtartott FIRE/FIRE_TICK/LAVA/HOT_FLOOR sebzés, entitás-tűznél `0.75`; a `TUZ` spelliskola változatlan. BLUE: fagyás `0`, fulladás `0.50`, a konfigurált természetes exhaustion okoknál `25%` megtakarítás. NEUTRAL: zuhanás `0.50`, csak spontán békés/semleges aggró és Enderman-szemkontaktus szűrhető. DARK: Wither sebzés/idő `0.50/0.50`, markerelt ambient undead-béke `60 s` megtorlással és `16` blokkos riadóval, vad undeadnél éjszakai `50%` target-cancel; normál gyógyítás `0.70` (Vérhold/DUNGEON kivétel), polgári bolt és karaván tiltás, kijelölt feketepiac és `2×` kompár.
 - **Harci precedencia:** admin/scriptelt célzás → markerelt boss/dungeon/rontás/invázió/event/quest → koronaátok → provokáció/megtorlás → Vérhold → ambient polgárjog → vad passzív → vanilla. Vérhold alatt az ambient és a vad DARK truce alapból egyaránt megszűnik. A passzív nem támadhatatlanság.
-- **Jogosultság és tartósság:** a signature-food buff fogyasztáskor élő tagságot kér; a frakcióváltás assignment+history snapshotot és wallet-WAL-t használ. Sikertelen tartós írás nem publikál sikeres váltást és nem indít lifecycle jutalmat.
+- **Jogosultság és tartósság:** a signature-food buff fogyasztáskor élő tagságot kér; nincs food-duty állapot vagy periodikus adó. A frakcióváltás assignment+history snapshotot és wallet-WAL-t használ. Infamy, Wanted, Exile, Oath és Membership külön tengely; a DARK útja Exile → eskü → megerősített join. Sikertelen tartós írás nem publikál sikeres váltást és nem indít lifecycle jutalmat.
 - **Ami még kellhet hozzá:** Frakcióspawnokat, védett területeket és váltási feltételeket elő kell készíteni.
 - **Fontos határ:** Az automatizált policy- és regressziós tesztek nem bizonyítják a productionközeli mob-AI-t, többjátékos viselkedést vagy szezonbalanszt; ehhez az admin acceptance mátrix szerinti staging playtest kell.
 
@@ -970,8 +1003,8 @@ Belépés/kilépés/váltás, frakciókapcsolatok, étel/passzív/spawn hatások
 <summary>Admin- és technikai jegyzet</summary>
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.faction`; `icesmp.admin.war`; `icesmp.faction.admin`; `király`; `király vagy icesmp.admin.faction`; `király vagy tanácstag`
-- Config: `factions.*`, különösen `factions.passives.*`, továbbá relation-, food- és spawn-definíciók.
-- Tartós állapot: Az explicit tagság és utolsó választás egy durable generáció; fizetős váltás exact wallet/membership WAL-lal recoveryzhető. A vendégállapot assignment hiánya. A provokációs/truce-state játékos–mob páronként mulandó és lifecycle cleanupot kap.
+- Config: `factions.*`, különösen `factions.passives.*`, továbbá relation-, signature-food- és spawn-definíciók.
+- Tartós állapot: Az explicit tagság és utolsó választás egy durable generáció; fizetős váltás exact wallet/membership WAL-lal recoveryzhető. Az Infamy, Wanted, Exile és DARK-eskü külön állapot, a vendégállapot pedig assignment hiánya. A provokációs/truce-state és a provokációs cache mulandó; a célhoz és eseményhez kötött Suttogó-bizonyíték tartós és lejáró.
 - Reload: Minden frakciópasszív gameplay-érték ugyanabból az atomikusan publikált config-generationből frissül; restart nem kell. Ez nem helyettesíti az aktív combat alatti staging reloadtesztet.
 
 </details>
@@ -995,7 +1028,7 @@ Céhkezelés, vezetői/királyi műveletek, tanács, treasury és közösségi p
 
 - Permission: Kapcsolódó/ágankénti követelmény: `icesmp.admin.faction`
 - Config: `factions.*`, guild-, king-, council- és treasury-definíciók.
-- Tartós állapot: Céh, vezetés és tanács tartós; a treasury, az eredet-frakciós adósság és a walletet is érintő adóbeszedés write-ahead journallal, startup recoveryvel és fail-closed kritikus írási körrel védett. Ismeretlen eredetű fejlesztői legacy adósság karanténban marad, és nem kötődik automatikusan későbbi frakcióhoz.
+- Tartós állapot: Céh, vezetés, tanács és treasury tartós. A periodikus adóbeszedés és a királyi adókulcs-parancs megszűnt; tiszta telepítés készül, régi tagságiadó-migráció és pénzügyi utófeldolgozás nélkül.
 - Reload: Policy reloadolható; vezetői állapotváltozás staging- és permissiontesztet igényel.
 
 </details>
@@ -1247,7 +1280,7 @@ Komp/utazás, NPC-binding, Stranger NPC és FancyNpcs-quest/shop kapcsolatok.
 - **Kinek szól:** Játékos, Admin, Builder, Eventes, Tesztelő.
 - **Mitől mozdul meg:** NPC click/dialog, teleport/komp és binding adminművelet.
 - **Ami még kellhet hozzá:** Biztonságos célpontok, NPC-k, kompállomások és világnevek előkészítendők.
-- **Fontos határ:** A külső FancyNpcs és élő világ nélkül csak capability bizonyítható.
+- **Fontos határ:** FancyNpcs kötelező production dependency; az élő NPC snapshot és világ nélkül csak a bridge capability bizonyítható, a production readiness nem.
 
 <details>
 <summary>Admin- és technikai jegyzet</summary>
@@ -1547,3 +1580,98 @@ a saját tesztcsomagjának sikeres lezárása után távolítható el.
 
 ### Professions 2.0 family crafting
 A négy Equipment 2.0 family mind rendelkezik profession craft végponttal: CLOTH, LEATHER, MAIL és PLATE. A salvage-family maradékoknak valós, veszteséges visszanyerési sinkjük van; boss-komponens nem állítható vissza salvage-ből.
+
+<!-- icesmp-doc-id: feature.archer-gameplay -->
+<!-- icesmp-doc-id: feature.assassin-gameplay -->
+<!-- icesmp-doc-id: feature.authored-creature-spawn -->
+<!-- icesmp-doc-id: feature.build-aware-loot -->
+<!-- icesmp-doc-id: feature.class-gameplay-config-menu -->
+<!-- icesmp-doc-id: feature.creature-profile -->
+<!-- icesmp-doc-id: feature.death-knight-gameplay -->
+<!-- icesmp-doc-id: feature.demon-hunter-gameplay -->
+<!-- icesmp-doc-id: feature.druid-gameplay -->
+<!-- icesmp-doc-id: feature.durable-companion-call -->
+<!-- icesmp-doc-id: feature.encounter-reward-delivery -->
+<!-- icesmp-doc-id: feature.equipment-proficiency -->
+<!-- icesmp-doc-id: feature.equipped-combat-power -->
+<!-- icesmp-doc-id: feature.evoker-gameplay -->
+<!-- icesmp-doc-id: feature.item-forge -->
+<!-- icesmp-doc-id: feature.item-identity -->
+<!-- icesmp-doc-id: feature.item-mutation -->
+<!-- icesmp-doc-id: feature.item-salvage -->
+<!-- icesmp-doc-id: feature.monk-gameplay -->
+<!-- icesmp-doc-id: feature.paladin-gameplay -->
+<!-- icesmp-doc-id: feature.priest-gameplay -->
+<!-- icesmp-doc-id: feature.prologue -->
+<!-- icesmp-doc-id: feature.prologue-ceasefire -->
+<!-- icesmp-doc-id: feature.prologue-finale -->
+<!-- icesmp-doc-id: feature.prologue-reward -->
+<!-- icesmp-doc-id: feature.quest-physical-reward-delivery -->
+<!-- icesmp-doc-id: feature.rare-gathering -->
+<!-- icesmp-doc-id: feature.rarity-presentation -->
+<!-- icesmp-doc-id: feature.shaman-gameplay -->
+<!-- icesmp-doc-id: feature.trash-ambient -->
+<!-- icesmp-doc-id: feature.trash-archaeology -->
+<!-- icesmp-doc-id: feature.trash-dev -->
+<!-- icesmp-doc-id: feature.trash-fishing -->
+<!-- icesmp-doc-id: feature.trash-history -->
+<!-- icesmp-doc-id: feature.trash-item -->
+<!-- icesmp-doc-id: feature.trash-loot -->
+<!-- icesmp-doc-id: feature.trash-mob-drop -->
+<!-- icesmp-doc-id: feature.trash-vendor -->
+<!-- icesmp-doc-id: feature.vanilla-crafting-boundary -->
+<!-- icesmp-doc-id: feature.warlock-gameplay -->
+<!-- icesmp-doc-id: feature.warrior-gameplay -->
+<!-- icesmp-doc-id: feature.wearable-presentation -->
+<!-- icesmp-doc-id: feature.wizard-gameplay -->
+
+## Komponenscsoportok nyilvántartási kiegészítése
+
+Ezek meglévő kódcsoportok, amelyek az előző leltárból kimaradtak. A táblázat az
+implementáció gazdáját nevezi meg; a játékosút a fenti tematikus fejezetekben található.
+
+| Leltári azonosító | Feladat | Implementáció |
+| --- | --- | --- |
+| `feature.archer-gameplay` | A archer kaszt eseményei és saját játékszabályai. | `ArcherGameplayService` |
+| `feature.assassin-gameplay` | A assassin kaszt eseményei és saját játékszabályai. | `AssassinGameplayService` |
+| `feature.authored-creature-spawn` | Technikai felelősség: authored creature spawn. | `AuthoredCreatureSpawnService` |
+| `feature.build-aware-loot` | Technikai felelősség: build aware loot. | `BuildAwareLootService` |
+| `feature.class-gameplay-config-menu` | Technikai felelősség: class gameplay config menu. | `ClassGameplayConfigMenuGUI` |
+| `feature.creature-profile` | Technikai felelősség: creature profile. | `CreatureProfileService` |
+| `feature.death-knight-gameplay` | A death-knight kaszt eseményei és saját játékszabályai. | `DeathKnightGameplayService` |
+| `feature.demon-hunter-gameplay` | A demon-hunter kaszt eseményei és saját játékszabályai. | `DemonHunterGameplayService` |
+| `feature.druid-gameplay` | A druid kaszt eseményei és saját játékszabályai. | `DruidGameplayService` |
+| `feature.durable-companion-call` | Technikai felelősség: durable companion call. | `DurableCompanionCallSpell` |
+| `feature.encounter-reward-delivery` | Technikai felelősség: encounter reward delivery. | `EncounterRewardDeliveryService` |
+| `feature.equipment-proficiency` | Technikai felelősség: equipment proficiency. | `EquipmentProficiencyService`, `EquipmentProficiencyListener` |
+| `feature.equipped-combat-power` | Technikai felelősség: equipped combat power. | `EquippedCombatPowerService` |
+| `feature.evoker-gameplay` | A evoker kaszt eseményei és saját játékszabályai. | `EvokerGameplayService` |
+| `feature.item-forge` | Technikai felelősség: item forge. | `ItemForgeGUI`, `ItemForgeHolder` |
+| `feature.item-identity` | Technikai felelősség: item identity. | `ItemIdentityService` |
+| `feature.item-mutation` | Technikai felelősség: item mutation. | `ItemMutationService` |
+| `feature.item-salvage` | Technikai felelősség: item salvage. | `ItemSalvageService` |
+| `feature.monk-gameplay` | A monk kaszt eseményei és saját játékszabályai. | `MonkGameplayService` |
+| `feature.paladin-gameplay` | A paladin kaszt eseményei és saját játékszabályai. | `PaladinGameplayService` |
+| `feature.priest-gameplay` | A priest kaszt eseményei és saját játékszabályai. | `PriestGameplayService` |
+| `feature.prologue` | Technikai felelősség: prologue. | `PrologueCommand`, `PrologueManager` |
+| `feature.prologue-ceasefire` | Technikai felelősség: prologue ceasefire. | `PrologueCeasefireListener` |
+| `feature.prologue-finale` | Technikai felelősség: prologue finale. | `PrologueFinaleManager` |
+| `feature.prologue-reward` | Technikai felelősség: prologue reward. | `PrologueRewardService` |
+| `feature.quest-physical-reward-delivery` | Technikai felelősség: quest physical reward delivery. | `QuestPhysicalRewardDeliveryService` |
+| `feature.rare-gathering` | Technikai felelősség: rare gathering. | `RareGatheringListener` |
+| `feature.rarity-presentation` | Technikai felelősség: rarity presentation. | `RarityPresentationService` |
+| `feature.shaman-gameplay` | A shaman kaszt eseményei és saját játékszabályai. | `ShamanGameplayService` |
+| `feature.trash-ambient` | Trash tartalom: ambient. | `TrashAmbientManager` |
+| `feature.trash-archaeology` | Trash tartalom: archaeology. | `TrashArchaeologyListener`, `TrashArchaeologyService` |
+| `feature.trash-dev` | Trash tartalom: dev. | `TrashDevCommand` |
+| `feature.trash-fishing` | Trash tartalom: fishing. | `TrashFishingListener` |
+| `feature.trash-history` | Trash tartalom: history. | `TrashHistoryListener`, `TrashHistoryService`, `TrashHistoryStore` |
+| `feature.trash-item` | Trash tartalom: item. | `TrashItemFactory` |
+| `feature.trash-loot` | Trash tartalom: loot. | `TrashLootService` |
+| `feature.trash-mob-drop` | Trash tartalom: mob drop. | `TrashMobDropListener` |
+| `feature.trash-vendor` | Trash tartalom: vendor. | `TrashVendorService` |
+| `feature.vanilla-crafting-boundary` | Technikai felelősség: vanilla crafting boundary. | `VanillaCraftingBoundaryListener` |
+| `feature.warlock-gameplay` | A warlock kaszt eseményei és saját játékszabályai. | `WarlockGameplayService` |
+| `feature.warrior-gameplay` | A warrior kaszt eseményei és saját játékszabályai. | `WarriorGameplayService` |
+| `feature.wearable-presentation` | Technikai felelősség: wearable presentation. | `WearablePresentation` |
+| `feature.wizard-gameplay` | A wizard kaszt eseményei és saját játékszabályai. | `WizardGameplayService` |

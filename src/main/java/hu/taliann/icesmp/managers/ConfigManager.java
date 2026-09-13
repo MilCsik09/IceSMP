@@ -139,12 +139,21 @@ public final class ConfigManager {
 
     public ConfigManager(final JavaPlugin plugin) {
         this.plugin = plugin;
-        active = this;
+        synchronized (ConfigManager.class) {
+            active = this;
+        }
     }
 
     /** Runtime singleton bridge for late-bound systems installed after the manual core DI graph. */
     public static ConfigManager current() {
         return active;
+    }
+
+    /** Identity-safe lifecycle teardown: a stale core may never clear a newer installation. */
+    public static void clearIfCurrent(final ConfigManager candidate) {
+        synchronized (ConfigManager.class) {
+            if (active == candidate) active = null;
+        }
     }
 
     /**

@@ -1,5 +1,13 @@
 # IceSMP builder kézikönyv
 
+A frakció–Suttogó rendszer tiszta világra készül. A rítushoz a normál világban sculk
+vagy sculk catalyst, éjszaka és szemtanú nélküli hely kell; Nether/End nem belépési
+hely. A civil `CAPITAL` zónák, DARK-spawn és feketepiac felépítését a világban kell
+befejezni. A `civil_penance` forrása `QUEST_BOARD`, leadása `AUTO`; a `/quest log`
+Megbízások fülén elérhető, ezért civil fővárosba bejutás nélkül is lehet vezekelni.
+Küldetésszerkesztő mezők: `requires-atonement` (logikai), `forbids-faction` (frakció).
+
+
 <!-- icesmp-doc-id: guide.builder-and-world-designer -->
 
 <details>
@@ -75,7 +83,7 @@ Minden helyszínhez legyen egy rövid átadólap:
 | Komp | Igen, ha használni akarjátok | Két configolt végpont | Nincs bundled útvonal | Mindkét part, biztonságos érkezés, közeli beszállási pont |
 | Parkour | Igen | Tartós start- és célpont | Nincs bundled pálya | Start, cél, sugár, kizuhanás és jutalom teszt |
 | Quest: területlátogatás | Igen | Quest által hivatkozott territory ID | Három terület-ID-hivatkozás van | A zóna-ID-t pontosan egyeztesd a questtel |
-| Quest: NPC-beszélgetés/átadás | Igen, ha FancyNpcs útvonalat használtok | NPC belső neve és opcionális tartós `/npcbind` | Nincs bundled élő binding | NPC-hely, belső név, kattintási hozzáférés és fallback teszt |
+| Quest: NPC-beszélgetés/átadás | Igen, canonical FancyNpcs út | NPC belső neve és opcionális tartós `/npcbind` | Nincs bundled élő binding | NPC-hely, belső név, kattintási hozzáférés; hiányzó binding naplóhibát okoz, az IceSMP aktív marad |
 | Quest: parkour | Igen | Quest által hivatkozott pálya-ID | Egy pálya-ID-hivatkozás van | A persistent pálya ID-je egyezzen |
 | Dungeon | Igen | `DUNGEON` zóna + opcionális láda- és bosspontok | Nincs bundled zónapéldány | Belépés, loot, boss, reset és védelmi határ teszt |
 | Dungeon lootláda | Igen | Nézett chest/trapped chest/barrel koordinátája | Runtime tartós adat | `/territory dungeonchest [tábla]`, majd játékosonkénti loot teszt |
@@ -85,7 +93,7 @@ Minden helyszínhez legyen egy rövid átadólap:
 | Szezon-emlékmű | Opcionális | Egy configolt hely | Bundled location üres | Tartósan szabad terület a bannernek és hologramnak |
 | Városi őrjárat | Opcionális | Világ + legalább két waypoint | Bundled guard map üres | Járható útvonal, talaj- és szűkületteszt |
 | Árfolyamtábla | Igen | Admin aktuális állóhelye | Runtime elhelyezés | Látható, nem torlaszoló hely és eltávolítási hozzáférés |
-| Profession craft | Nem kötelező | `/profession recipes` GUI közvetlenül a játékos inventoryjából craftol | 475 receptdefiníció | A műhely csak tematikus; ne állítsd technikai követelménynek |
+| Profession craft | Nem kötelező | `/profession recipes` GUI közvetlenül a játékos inventoryjából craftol | 471 aktív recept + 4 történelmi signature alias | A műhely csak tematikus; ne állítsd technikai követelménynek |
 | Resource-packes tárgymegjelenés | Nem helykoordináta, de vizuális előfeltétel | Namespaced `item-model` kulcsok | Számos aktív modellhivatkozás | A packben legyen megfelelő modell, és teszteld pack nélkül is |
 | Globális AFK | Nem | Aktivitás és globális állapot | Nincs builderkötés | Ne építs jutalmazó AFK-zónát; ilyen deployment scope nincs |
 
@@ -612,9 +620,10 @@ szerkeszti; a bundled configquestekhez forrás/config release-folyamat kell.
 
 ### 8.2. NPC-integráció
 
-Az IceSMP FancyNpcs-integrációja soft dependency. FancyNpcs nélkül a plugin
-elindul, a `/npcbind` rekordok megmaradnak, de a fizikai NPC-kattintásnak
-nincs runtime hatása. A `/quest talk <npc-név>` fallback tesztelhető.
+Az IceSMP FancyNpcs-integrációja kötelező production gameplay dependency. Hiányzó vagy a
+lockkal inkompatibilis plugin esetén az IceSMP fail-closed módon nem áll fel; aktív, de hibás
+reflexiós híd szintén startup-hiba. A `/quest talk <npc-név>` kizárólag jogosultság-védett
+admin/debug felület, nem player fallback.
 
 Aktív kötések:
 
@@ -1079,7 +1088,7 @@ rituáléstruktúrákat és rejtett helyeket.
   állapotát.
 - Nincs csomagolt kész territory-, frakcióspawn-, parkour-, NPC-binding-,
   ferry-, caravan-, guard- vagy hidden-spot készlet.
-- A FancyNpcs és WorldGuard soft dependency; az élő világ igénye dönt a
+- A FancyNpcs kötelező production gameplay dependency, a WorldGuard opcionális; az élő világ igénye dönt a
   használatukról.
 - A profession craft GUI-alapú, nem követel fizikai műhelyblokkot.
 - A crate recovery kritikus ágai admin/üzemeltetői folyamatok.
@@ -1131,3 +1140,17 @@ játékosos hozzáférés megfelel a Season 0 policynek. Külön próbáld ki:
 A world-hook acceptance kézi stagingkapu. A source-level Folia és regression
 tesztek nem helyettesítik a tényleges aréna-, collision-, spawn- és
 játékosforgalmi próbát.
+
+## Frakciórework: belépési és rítushelyek
+
+A civil fővárosok legyenek valóban `CAPITAL` zónaként, helyes frakcióval bekötve.
+A DARK-tagság és a száműzetés önálló belépési tiltás; a Wanted-menlevél nem kerüli meg.
+A sötét menedék biztonságos érkezőhelyét `/territory setspawn dark` rögzíti.
+Ez a civil városban bejelentkező vagy újraéledő száműzött visszairányításához is kell;
+hiányzó pontnál az üzenet megjelenik, de a teleport nem hajtható végre.
+
+A rítushoz nem kell új NPC vagy új területazonosító: sötétben, sculk/sculk catalyst
+felületen állva a meghívó főkézben, SHIFT + jobb kattintással használható. A meghívó
+lore-ja közli a feltételeket. Az aktív kultista rítus/hírvivő a titkos ametisztátadás
+célpontja. A takarás számít: fal mögül vagy bizonytalan Folia-régióhatáron át nem jár
+bizonyíték. A világkialakítás próbái a [ROADMAP](../ROADMAP.md) kiadási kapui.

@@ -45,18 +45,39 @@ public final class SpellDamageUtil {
             new NamespacedKey("icesmp", "cast_damage_multiplier");
     private static final NamespacedKey PROJECTILE_SPELL_ID =
             new NamespacedKey("icesmp", "cast_spell_id");
+    private static final NamespacedKey PROJECTILE_BASE_DAMAGE =
+            new NamespacedKey("icesmp", "cast_base_damage");
+    private static final NamespacedKey PROJECTILE_SCHOOL =
+            new NamespacedKey("icesmp", "cast_spell_school");
+    private static final NamespacedKey PROJECTILE_CASTER =
+            new NamespacedKey("icesmp", "cast_caster_uuid");
+    private static final NamespacedKey PROJECTILE_HIT_TARGETS =
+            new NamespacedKey("icesmp", "cast_hit_targets");
 
     private static volatile hu.taliann.icesmp.managers.ConfigManager configManager;
     private static volatile hu.taliann.icesmp.managers.JobManager jobManager;
+    private static volatile hu.taliann.icesmp.managers.SpellRegistry spellRegistry;
+    private static final ThreadLocal<java.util.Set<java.util.UUID>> CANONICAL_PROJECTILE_DAMAGE =
+            new ThreadLocal<>();
+
+    public record ProjectileSnapshot(String spellId, SpellSchool school, java.util.UUID casterId,
+                                     double baseDamage, double multiplier) {
+        public double scaledDamage() {
+            final double value = baseDamage * multiplier;
+            return Double.isFinite(value) && value > 0.0D ? value : 0.0D;
+        }
+    }
 
     private SpellDamageUtil() {
     }
 
     /** Egyszeri bekötés az IceSMPCore-ból (a statikus út miatt — minta: ProtectionBridge). */
     public static void init(final hu.taliann.icesmp.managers.ConfigManager config,
-                            final hu.taliann.icesmp.managers.JobManager jobs) {
+                            final hu.taliann.icesmp.managers.JobManager jobs,
+                            final hu.taliann.icesmp.managers.SpellRegistry spells) {
         configManager = config;
         jobManager = jobs;
+        spellRegistry = spells;
     }
 
     /** Spell-sebzés a jelenlegi szinkron cast-contexttel. */
@@ -77,14 +98,6 @@ public final class SpellDamageUtil {
             return;
         }
         final DamageType type = resolveType(schoolFor(caster, spellId));
-        if (type == null) {
-            if (caster != null) {
-                victim.damage(scaledAmount, caster);
-            } else {
-                victim.damage(scaledAmount);
-            }
-            return;
-        }
         final DamageSource.Builder builder = DamageSource.builder(type);
         if (caster != null) {
             builder.withCausingEntity(caster).withDirectEntity(caster);
@@ -109,28 +122,27 @@ public final class SpellDamageUtil {
 
     /** Stores the immutable cast snapshot on a launched projectile. */
     public static void markProjectile(final Projectile projectile, final String spellId,
-                                      final CastModifiers modifiers) {
+                                      final double baseDamage, final CastModifiers modifiers) {
         if (projectile == null) {
             return;
         }
         final CastModifiers effective = modifiers == null ? CastModifiers.IDENTITY : modifiers;
         final PersistentDataContainer pdc = projectile.getPersistentDataContainer();
         pdc.set(PROJECTILE_DAMAGE_MULTIPLIER, PersistentDataType.DOUBLE, effective.damageMultiplier());
+        pdc.set(PROJECTILE_BASE_DAMAGE, PersistentDataType.DOUBLE, baseDamage);
+        final Player caster = projectile.getShooter() instanceof Player player ? player : null;
+        final SpellSchool school = schoolFor(caster, spellId);
+        pdc.set(PROJECTILE_SCHOOL, PersistentDataType.STRING, school.name());
+        if (caster != null) {
+            pdc.set(PROJECTILE_CASTER, PersistentDataType.STRING, caster.getUniqueId().toString());
+        } else {
+            pdc.remove(PROJECTILE_CASTER);
+        }
         if (spellId == null || spellId.isBlank()) {
             pdc.remove(PROJECTILE_SPELL_ID);
         } else {
             pdc.set(PROJECTILE_SPELL_ID, PersistentDataType.STRING, spellId.trim().toLowerCase(java.util.Locale.ROOT));
         }
-    }
-
-    /** Returns the projectile snapshot multiplier, or identity for non-spell damage. */
-    public static double projectileDamageMultiplier(final Entity damager) {
-        if (!(damager instanceof Projectile projectile)) {
-            return 1.0D;
-        }
-        final Double value = projectile.getPersistentDataContainer()
-                .get(PROJECTILE_DAMAGE_MULTIPLIER, PersistentDataType.DOUBLE);
-        return value == null || !Double.isFinite(value) || value < 0.0D ? 1.0D : value;
     }
 
     /** Returns the spell id carried by a marked projectile, or null. */
@@ -139,6 +151,77 @@ public final class SpellDamageUtil {
             return null;
         }
         return projectile.getPersistentDataContainer().get(PROJECTILE_SPELL_ID, PersistentDataType.STRING);
+    }
+
+    /** Complete, fail-closed cast snapshot; partial/unknown PDC is ordinary vanilla projectile state. */
+    public static java.util.Optional<ProjectileSnapshot> projectileSnapshot(final Entity damager) {
+        if (!(damager instanceof Projectile projectile)) return java.util.Optional.empty();
+        final PersistentDataContainer pdc = projectile.getPersistentDataContainer();
+        final String spellId = pdc.get(PROJECTILE_SPELL_ID, PersistentDataType.STRING);
+        final Double base = pdc.get(PROJECTILE_BASE_DAMAGE, PersistentDataType.DOUBLE);
+        final Double multiplier = pdc.get(PROJECTILE_DAMAGE_MULTIPLIER, PersistentDataType.DOUBLE);
+        final String schoolName = pdc.get(PROJECTILE_SCHOOL, PersistentDataType.STRING);
+        final String casterText = pdc.get(PROJECTILE_CASTER, PersistentDataType.STRING);
+        final var registry = spellRegistry;
+        if (spellId == null || registry == null
+                || !(registry.getById(spellId) instanceof hu.taliann.icesmp.spells.ProjectileBurstSpell)
+                || base == null || !Double.isFinite(base) || base <= 0.0D
+                || multiplier == null || !Double.isFinite(multiplier) || multiplier < 0.0D
+                || schoolName == null) return java.util.Optional.empty();
+        final SpellSchool school;
+        final java.util.UUID casterId;
+        try {
+            school = SpellSchool.valueOf(schoolName);
+            casterId = casterText == null ? null : java.util.UUID.fromString(casterText);
+        } catch (final IllegalArgumentException invalid) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(new ProjectileSnapshot(spellId, school, casterId, base, multiplier));
+    }
+
+    /** PDC-backed per-target receipt; piercing projectiles may hit many targets, each at most once. */
+    public static boolean claimProjectileTarget(final Projectile projectile, final java.util.UUID targetId) {
+        if (projectile == null || targetId == null) return false;
+        final PersistentDataContainer pdc = projectile.getPersistentDataContainer();
+        final String token = targetId.toString();
+        final String current = pdc.getOrDefault(PROJECTILE_HIT_TARGETS, PersistentDataType.STRING, "");
+        final java.util.Set<String> claimed = new java.util.LinkedHashSet<>();
+        if (!current.isBlank()) claimed.addAll(java.util.List.of(current.split(";")));
+        if (!claimed.add(token)) return false;
+        pdc.set(PROJECTILE_HIT_TARGETS, PersistentDataType.STRING, String.join(";", claimed));
+        return true;
+    }
+
+    /** Applies one canonical custom DamageType hit with projectile direct-entity attribution. */
+    public static boolean damageByProjectile(final Projectile projectile, final LivingEntity victim,
+                                             final ProjectileSnapshot snapshot) {
+        if (projectile == null || victim == null || snapshot == null) return false;
+        final double amount = snapshot.scaledDamage();
+        if (amount <= 0.0D) return true;
+        final DamageType type = resolveType(snapshot.school());
+        final DamageSource.Builder builder = DamageSource.builder(type).withDirectEntity(projectile);
+        if (projectile.getShooter() instanceof Entity causing) builder.withCausingEntity(causing);
+        java.util.Set<java.util.UUID> active = CANONICAL_PROJECTILE_DAMAGE.get();
+        if (active == null) {
+            active = new java.util.HashSet<>();
+            CANONICAL_PROJECTILE_DAMAGE.set(active);
+        }
+        if (!active.add(projectile.getUniqueId())) {
+            throw new IllegalStateException("recursive canonical projectile damage: " + snapshot.spellId());
+        }
+        try {
+            victim.damage(amount, builder.build());
+        } finally {
+            active.remove(projectile.getUniqueId());
+            if (active.isEmpty()) CANONICAL_PROJECTILE_DAMAGE.remove();
+        }
+        return true;
+    }
+
+    /** Distinguishes the one custom DamageSource event from a later vanilla projectile hit. */
+    public static boolean isCanonicalProjectileDamage(final Entity damager) {
+        final java.util.Set<java.util.UUID> active = CANONICAL_PROJECTILE_DAMAGE.get();
+        return damager != null && active != null && active.contains(damager.getUniqueId());
     }
 
     /** A spell iskolája: by-spell felülírás → a caster kasztjának by-class defaultja → ŐSMÁGIA. */
@@ -165,15 +248,18 @@ public final class SpellDamageUtil {
         return SpellSchool.OSMAGIA;
     }
 
-    /** Az iskola damage-type-ja a registryből, vagy null (bootstrap-hiba → vanília fallback). */
+    /** Az iskola kötelező damage-type-ja; hiányzó bootstrap authority esetén fail-closed. */
     private static DamageType resolveType(final SpellSchool school) {
+        final DamageType type;
         try {
-            return io.papermc.paper.registry.RegistryAccess.registryAccess()
+            type = io.papermc.paper.registry.RegistryAccess.registryAccess()
                     .getRegistry(io.papermc.paper.registry.RegistryKey.DAMAGE_TYPE)
                     .get(NamespacedKey.fromString("icesmp:" + school.getTypeId()));
         } catch (final Exception exception) {
-            return null;
+            throw new IllegalStateException("custom DamageType registry unavailable for " + school, exception);
         }
+        if (type == null) throw new IllegalStateException("missing custom DamageType for " + school);
+        return type;
     }
 
     /** A forrás valamelyik icesmp mágia-iskola típusa-e (a resist-listener szűrője). */

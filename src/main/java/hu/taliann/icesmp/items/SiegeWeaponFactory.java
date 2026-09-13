@@ -38,8 +38,8 @@ public final class SiegeWeaponFactory {
         final ItemMeta meta = itemStack.getItemMeta();
         meta.displayName(MINI_MESSAGE.deserialize("<red><bold>Ostromágyú</bold></red>").decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
-                MINI_MESSAGE.deserialize("<dark_gray>A Hét Vérháború öröksége — csak háborúban szólal meg.</dark_gray>").decoration(TextDecoration.ITALIC, false),
-                MINI_MESSAGE.deserialize("<gray>Csak raid alatt működik.</gray>").decoration(TextDecoration.ITALIC, false),
+                MINI_MESSAGE.deserialize("<dark_gray>A Hetedik Vérháború öröksége — csak háborúban szólal meg.</dark_gray>").decoration(TextDecoration.ITALIC, false),
+                MINI_MESSAGE.deserialize("<gray>Csak ostrom alatt működik.</gray>").decoration(TextDecoration.ITALIC, false),
                 MINI_MESSAGE.deserialize("<gray>Jobb katt: <white>pusztító lövés a célpontra</white></gray>").decoration(TextDecoration.ITALIC, false)
         ));
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);

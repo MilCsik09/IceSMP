@@ -12,6 +12,7 @@ public record MobTemplate(String mobId, int schemaVersion, String displayName, S
                           String modelId, int minimumLevel, int maximumLevel, MobRank rank,
                           MobArchetype archetype, StatProfile stats, List<String> abilityIds,
                           Set<String> resistances, Set<String> weaknesses, String lootProfile,
+                          String bossSpecificReward,
                           Set<String> sourceTags, String spawnPolicy, String bestiaryId,
                           List<EliteAffix> affixPool, MobBehaviorProfile behavior,
                           MobNaturalContext naturalContext,
@@ -59,6 +60,8 @@ public record MobTemplate(String mobId, int schemaVersion, String displayName, S
             throw new IllegalArgumentException("mob resistance and weakness overlap");
         }
         lootProfile = MobAbilityDefinition.id(lootProfile, "loot profile");
+        bossSpecificReward = bossSpecificReward == null || bossSpecificReward.isBlank()
+                ? "" : MobAbilityDefinition.id(bossSpecificReward, "boss specific reward");
         sourceTags = idSet(sourceTags, 16, "source tag");
         spawnPolicy = MobAbilityDefinition.id(spawnPolicy, "spawn policy");
         bestiaryId = MobAbilityDefinition.id(bestiaryId, "bestiary id");
@@ -94,7 +97,7 @@ public record MobTemplate(String mobId, int schemaVersion, String displayName, S
                        final List<EliteAffix> affixPool) {
         this(mobId, schemaVersion, displayName, entityType, modelId, minimumLevel,
                 maximumLevel, rank, archetype, stats, abilityIds, resistances, weaknesses,
-                lootProfile, sourceTags, spawnPolicy, bestiaryId, affixPool,
+                lootProfile, "", sourceTags, spawnPolicy, bestiaryId, affixPool,
                 MobBehaviorProfile.defaults(archetype), MobNaturalContext.none(), Map.of(),
                 displayName, "Figyeld a támadás előjelét.");
     }

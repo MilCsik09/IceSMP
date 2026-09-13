@@ -12,8 +12,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -33,11 +33,13 @@ public final class SpellDamageListener implements Listener {
         this.messageManager = messageManager;
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onSpellProjectileDamage(final EntityDamageByEntityEvent event) {
-        final double multiplier = SpellDamageUtil.projectileDamageMultiplier(event.getDamager());
-        if (multiplier == 1.0D) return;
-        event.setDamage(Math.max(0.0D, event.getDamage() * multiplier));
+    /** Suppresses the ordinary vanilla hit/explosion damage after the one canonical custom hit. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onVanillaSpellProjectileDamage(final EntityDamageByEntityEvent event) {
+        if (SpellDamageUtil.projectileSnapshot(event.getDamager()).isPresent()
+                && !SpellDamageUtil.isCanonicalProjectileDamage(event.getDamager())) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
