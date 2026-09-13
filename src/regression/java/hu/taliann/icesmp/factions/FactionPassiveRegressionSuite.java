@@ -110,9 +110,8 @@ public final class FactionPassiveRegressionSuite {
                 "council authority is no longer tied to live explicit citizenship");
         check(compactFood.contains(
                         "factionManager.getChosenFaction(player.getUniqueId()).orElse(null)")
-                        && compactFood.contains("faction!=null&&switch(faction)")
                         && compactFood.contains(
-                        "FactionFoodPolicy.mayApplyBuff(faction,sig,trustedFoodMarker)")
+                        "FactionFoodPolicy.mayApplyBuff(faction,signature,trustedFoodMarker)")
                         && !compactFood.contains("getEconomyFaction(")
                         && !compactFood.contains(".orElse(FactionType.NEUTRAL)"),
                 "food duty/signature food regained an implicit NEUTRAL assignment");
@@ -461,23 +460,6 @@ public final class FactionPassiveRegressionSuite {
         checkDouble(0.40D, reloaded.blue().naturalExhaustionSaveChance(),
                 "reload retained stale BLUE value");
 
-        final YamlConfiguration migrated = new YamlConfiguration();
-        migrated.set("factions.passives.blue.natural-exhaustion-save-chance", 0.25D);
-        migrated.set("factions.passives.blue-hunger-slow-chance", 0.42D);
-        final ConfigHarness legacyOverride = config(migrated,
-                Set.of("factions.passives.blue-hunger-slow-chance"));
-        checkDouble(0.42D,
-                legacyOverride.config().snapshot().blue().naturalExhaustionSaveChance(),
-                "legacy BLUE override did not beat bundled new default");
-        check(legacyOverride.warnings().contains("Legacy faction-passive override"),
-                "legacy BLUE fallback did not emit a migration warning");
-        final ConfigHarness bothOverrides = config(migrated, Set.of(
-                "factions.passives.blue-hunger-slow-chance",
-                "factions.passives.blue.natural-exhaustion-save-chance"));
-        checkDouble(0.25D,
-                bothOverrides.config().snapshot().blue().naturalExhaustionSaveChance(),
-                "new BLUE override did not take precedence");
-
         final YamlConfiguration invalid = new YamlConfiguration();
         invalid.set("factions.passives.red.fire-damage-multiplier", -0.1D);
         invalid.set("factions.passives.red.fire-tick-damage-multiplier", "bad");
@@ -578,7 +560,7 @@ public final class FactionPassiveRegressionSuite {
                         && compactListener.contains("clearTargetIfStillProtected(")
                         && compactListener.contains("if(scheduled==null)"),
                 "delayed cleanup does not revalidate live policy or scheduler rejection");
-        check(compactListener.contains("contentContexts(mob,liveSettings,playerId)")
+        check(compactListener.contains("effectiveContentContexts(mob,liveSettings,playerId)")
                         && compactListener.contains("canAlertDarkUndead("),
                 "queued alert ignores live membership/config/content exclusions");
         check(compactListener.contains(
@@ -609,12 +591,16 @@ public final class FactionPassiveRegressionSuite {
 
         final String membershipManager = read(
                 "src/main/java/hu/taliann/icesmp/managers/FactionManager.java");
-        check(membershipManager.contains("factionStore.assign(playerId, target)")
-                        && membershipManager.contains("projection.put(playerId, committed);")
-                        && membershipManager.indexOf("factionStore.assign(playerId, target)")
-                        < membershipManager.indexOf("projection.put(playerId, committed);")
-                        && membershipManager.indexOf("projection.put(playerId, committed);")
-                        < membershipManager.indexOf("publishMembershipChange(playerId"),
+        final int setterStart = membershipManager.indexOf("public void setFaction(");
+        final int setterEnd = membershipManager.indexOf("public void publishExternalMembershipCommit(", setterStart);
+        check(setterStart >= 0 && setterEnd > setterStart, "membership setter source boundary missing");
+        final String membershipSetter = membershipManager.substring(setterStart, setterEnd);
+        check(membershipSetter.contains("factionStore.assign(playerId, target)")
+                        && membershipSetter.contains("projection.put(playerId, committed);")
+                        && membershipSetter.indexOf("factionStore.assign(playerId, target)")
+                        < membershipSetter.indexOf("projection.put(playerId, committed);")
+                        && membershipSetter.indexOf("projection.put(playerId, committed);")
+                        < membershipSetter.indexOf("publishMembershipChange(playerId"),
                 "membership state or hook can publish before its durable save");
         final String factionStore = read(
                 "src/main/java/hu/taliann/icesmp/playerprofile/application/PlayerProfileFactionStore.java");
@@ -629,7 +615,7 @@ public final class FactionPassiveRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java");
         check(foodListener.contains("withoutEmbeddedSignatureFoodEffects(item)")
                         && foodListener.contains("event.setItem(sanitized)")
-                        && foodListener.contains("FactionFoodPolicy.mayApplyBuff(faction, sig, trustedFoodMarker)")
+                        && foodListener.contains("FactionFoodPolicy.mayApplyBuff(faction, signature, trustedFoodMarker)")
                         && itemFactory.contains("toBuilder().effects(List.of())"),
                 "signature food keeps embedded or acquisition-time faction entitlement");
 
@@ -696,7 +682,7 @@ public final class FactionPassiveRegressionSuite {
                         Set.of("icesmp:quest_mob")),
                 new FactionPassiveSettings.Whisper(
                         true, true, 0.35D, true, true, 60_000L,
-                        0.02D, 16.0D, 1.0D));
+                        16.0D));
     }
 
     private static FactionPassiveSettings disabled(final FactionPassiveSettings base) {

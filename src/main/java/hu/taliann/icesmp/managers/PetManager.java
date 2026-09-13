@@ -709,23 +709,39 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     }
 
     public CompletionStage<Boolean> addXpV2(final Player player, final int amount, final String operationId) {
-        if(amount<=0||!canOwnPet(player))return CompletableFuture.completedFuture(false);
+        return addXpV2(player, amount, operationId, petRewardContext(player));
+    }
+
+    public CompletionStage<Boolean> addXpV2(final Player player, final int amount, final String operationId,
+            final hu.taliann.icesmp.integrity.RewardContext reward) {
+        if (amount <= 0 || !canOwnPet(player)) return CompletableFuture.completedFuture(false);
         final ActiveCompanionRef active = activeCompanionRef(player).orElse(null);
         if (active == null) return CompletableFuture.completedFuture(false);
-        return addXpV2(player, active, amount, operationId);
+        return addXpV2(player, active, amount, operationId, reward);
     }
 
     /** Credits a kill to the exact durable companion represented by the killing entity. */
     public CompletionStage<Boolean> addXpV2(final Player player, final UUID companionId,
-                                             final int amount, final String operationId) {
+            final int amount, final String operationId) {
+        return addXpV2(player, companionId, amount, operationId, petRewardContext(player));
+    }
+
+    public CompletionStage<Boolean> addXpV2(final Player player, final UUID companionId,
+            final int amount, final String operationId, final hu.taliann.icesmp.integrity.RewardContext reward) {
         if (amount <= 0 || !canOwnPet(player)) return CompletableFuture.completedFuture(false);
         final ActiveCompanionRef companion = companionRefById(player, companionId).orElse(null);
         if (companion == null) return CompletableFuture.completedFuture(false);
-        return addXpV2(player, companion, amount, operationId);
+        return addXpV2(player, companion, amount, operationId, reward);
+    }
+
+    private static hu.taliann.icesmp.integrity.RewardContext petRewardContext(final Player player) {
+        return hu.taliann.icesmp.integrity.BukkitRewardSources.entity(
+                hu.taliann.icesmp.integrity.RewardChannel.PET_XP, player).forRecipient(player.getUniqueId());
     }
 
     private CompletionStage<Boolean> addXpV2(final Player player, final ActiveCompanionRef active,
-                                              final int amount, final String operationId) {
+            final int amount, final String operationId, final hu.taliann.icesmp.integrity.RewardContext reward) {
+        reward.require(hu.taliann.icesmp.integrity.RewardChannel.PET_XP, player.getUniqueId());
         final CompanionProfile before = active.companion();
         final LoadoutSlot slot = active.slot();
         final int maxLevel=Math.max(1,Math.min(CompanionProfile.MAX_LEVEL,
@@ -734,7 +750,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
         final int increment=Math.max(0,configManager.getInt("pets.companion.increment-per-level",5));
         return gateway().mutateCompanionProgress(player.getUniqueId(),
                         new ClassSpecProfileGateway.CompanionProgressRequest(slot,
-                                before.companionId(),amount,baseXp,increment,maxLevel,operationId))
+                                before.companionId(),amount,baseXp,increment,maxLevel,operationId,Optional.of(reward)))
                 .thenCompose(result->{
                     if(!result.durableOutcomeAccepted())return CompletableFuture.completedFuture(false);
                     // Replay, stale generation and runtime-failed commits are already durable; never

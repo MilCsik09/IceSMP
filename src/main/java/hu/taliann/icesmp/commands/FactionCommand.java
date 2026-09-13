@@ -6,6 +6,7 @@ import hu.taliann.icesmp.commands.faction.FactionKingSubcommand;
 import hu.taliann.icesmp.commands.faction.FactionLeaveSubcommand;
 import hu.taliann.icesmp.commands.faction.FactionRaidSubcommand;
 import hu.taliann.icesmp.commands.faction.FactionSetSubcommand;
+import hu.taliann.icesmp.commands.faction.FactionStatusSubcommand;
 import hu.taliann.icesmp.commands.faction.FactionTreasurySubcommand;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CurrencyManager;
@@ -15,6 +16,7 @@ import hu.taliann.icesmp.managers.KingManager;
 import hu.taliann.icesmp.managers.SinManager;
 import hu.taliann.icesmp.managers.RaidManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
+import hu.taliann.icesmp.managers.WhisperManager;
 import hu.taliann.icesmp.utils.MessageManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -43,6 +45,7 @@ public final class FactionCommand extends AbstractDispatchCommand {
                           final hu.taliann.icesmp.managers.PlayerCaravanManager playerCaravanManager,
                           final hu.taliann.icesmp.managers.WarWindowManager warWindowManager,
                           final hu.taliann.icesmp.managers.CouncilManager councilManager,
+                          final WhisperManager whisperManager,
                           final MessageManager messageManager) {
         super(messageManager, "faction", "&6/faction &7- elérhető parancsok:");
         final FactionJoinSubcommand joinSubcommand = new FactionJoinSubcommand(plugin, factionManager, sinManager,
@@ -61,7 +64,9 @@ public final class FactionCommand extends AbstractDispatchCommand {
         treasurySubcommand.setCouncilManager(councilManager); // Menedék: Vének Tanácsa jog
         register(treasurySubcommand);
         register(new FactionDonateSubcommand(treasuryManager, factionManager, currencyManager, messageManager));
-        register(new FactionKingSubcommand(kingManager, factionManager, treasuryManager, messageManager));
+        register(new FactionKingSubcommand(kingManager, factionManager, messageManager));
+        register(new FactionStatusSubcommand(factionManager, sinManager,
+                whisperManager, messageManager));
         register(new FactionRaidSubcommand(raidManager, kingManager, factionManager, territoryManager, messageManager));
         final hu.taliann.icesmp.commands.faction.FactionCaravanSubcommand caravanSubcommand =
                 new hu.taliann.icesmp.commands.faction.FactionCaravanSubcommand(playerCaravanManager, kingManager, messageManager);

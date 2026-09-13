@@ -31,6 +31,7 @@ public final class TrashSpatialFractureStore implements PersistentStore {
     private final JavaPlugin plugin;
     private final File file;
     private final Map<UUID, Fracture> open = new LinkedHashMap<>();
+    private final Map<UUID, Fracture> conflicts = new LinkedHashMap<>();
 
     public TrashSpatialFractureStore(final JavaPlugin plugin) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -41,45 +42,54 @@ public final class TrashSpatialFractureStore implements PersistentStore {
     @Override
     public synchronized void load() {
         open.clear();
+        conflicts.clear();
         final YamlConfiguration yaml = YamlStore.loadTracked(file, plugin.getLogger());
         if (!file.exists()) return;
         if (yaml.getInt("schema-version", 0) != SCHEMA_VERSION) corrupt("schema-version");
-        final ConfigurationSection root = yaml.getConfigurationSection("open");
-        if (root == null) return;
-        if (root.getKeys(false).size() > MAX_OPEN) corrupt("túl sok nyitott fracture");
-        for (final String rawId : root.getKeys(false)) {
-            try {
-                final UUID id = UUID.fromString(rawId);
-                final UUID ownerId = UUID.fromString(root.getString(rawId + ".owner", ""));
-                final UUID worldId = UUID.fromString(root.getString(rawId + ".world", ""));
-                final long expiresAt = root.getLong(rawId + ".expires-at", 0L);
-                final List<BlockSnapshot> blocks = new ArrayList<>();
-                for (final Map<?, ?> raw : root.getMapList(rawId + ".blocks")) {
-                    blocks.add(new BlockSnapshot(number(raw.get("x")), number(raw.get("y")),
-                            number(raw.get("z")), String.valueOf(raw.get("data"))));
-                }
-                if (expiresAt < 1L || blocks.isEmpty() || blocks.size() > 2) {
+        for (final String section : List.of("open", "conflicts")) {
+            final ConfigurationSection root = yaml.getConfigurationSection(section);
+            if (root == null) continue;
+            if (root.getKeys(false).size() > (section.equals("open") ? MAX_OPEN : 256 + MAX_OPEN))
+                corrupt("túl sok fracture bejegyzés");
+            for (final String rawId : root.getKeys(false)) {
+                try {
+                    final UUID id = UUID.fromString(rawId);
+                    final UUID ownerId = UUID.fromString(root.getString(rawId + ".owner", ""));
+                    final UUID worldId = UUID.fromString(root.getString(rawId + ".world", ""));
+                    final long expiresAt = root.getLong(rawId + ".expires-at", 0L);
+                    final List<BlockSnapshot> blocks = new ArrayList<>();
+                    for (final Map<?, ?> raw : root.getMapList(rawId + ".blocks")) {
+                        blocks.add(new BlockSnapshot(number(raw.get("x")), number(raw.get("y")),
+                                number(raw.get("z")), String.valueOf(raw.get("data"))));
+                    }
+                    if (expiresAt < 1L || blocks.isEmpty() || blocks.size() > 2) {
+                        corrupt("érvénytelen fracture: " + rawId);
+                    }
+                    (section.equals("open") ? open : conflicts).put(id, new Fracture(ownerId, worldId, expiresAt, blocks));
+                } catch (final RuntimeException malformed) {
                     corrupt("érvénytelen fracture: " + rawId);
                 }
-                open.put(id, new Fracture(ownerId, worldId, expiresAt, blocks));
-            } catch (final RuntimeException malformed) {
-                corrupt("érvénytelen fracture: " + rawId);
             }
         }
     }
 
     public synchronized boolean open(final UUID ownerId, final Block base,
                                      final long durationTicks) {
+        return open(ownerId, base, durationTicks, () -> true);
+    }
+
+    public synchronized boolean open(final UUID ownerId, final Block base, final long durationTicks,
+                                     final java.util.function.BooleanSupplier consume) {
         Objects.requireNonNull(ownerId, "ownerId");
         Objects.requireNonNull(base, "base");
         final long owned = open.values().stream()
                 .filter(fracture -> fracture.ownerId().equals(ownerId)).count();
-        if (open.size() >= MAX_OPEN || owned >= MAX_OPEN_PER_PLAYER
+        if (open.size() >= MAX_OPEN || conflicts.size() >= 256 || owned >= MAX_OPEN_PER_PLAYER
                 || durationTicks < 20L || durationTicks > 600L) return false;
         final List<BlockSnapshot> snapshots = new ArrayList<>(2);
         for (int dy = 0; dy < 2; dy++) {
             final Block block = base.getRelative(0, dy, 0);
-            if (block.getState() instanceof TileState || block.getType().isAir()
+            if (protects(block) || block.getType().getHardness() < 0 || block.getState() instanceof TileState || block.isEmpty()
                     || block.getX() >> 4 != base.getX() >> 4
                     || block.getZ() >> 4 != base.getZ() >> 4) return false;
             snapshots.add(new BlockSnapshot(block.getX(), block.getY(), block.getZ(),
@@ -91,6 +101,11 @@ public final class TrashSpatialFractureStore implements PersistentStore {
         open.put(id, fracture);
         persistOrRestore(() -> open.remove(id));
         try {
+            if (!consume.getAsBoolean()) {
+                open.remove(id);
+                persistOrRestore(() -> open.put(id, fracture));
+                return false;
+            }
             for (final BlockSnapshot snapshot : snapshots) {
                 base.getWorld().getBlockAt(snapshot.x(), snapshot.y(), snapshot.z())
                         .setType(org.bukkit.Material.AIR, false);
@@ -133,8 +148,12 @@ public final class TrashSpatialFractureStore implements PersistentStore {
         if (world == null) return;
         final BlockSnapshot first = fracture.blocks().getFirst();
         final Location location = new Location(world, first.x(), first.y(), first.z());
-        Bukkit.getRegionScheduler().runDelayed(plugin, location,
-                ignored -> restoreNow(id, fracture), Math.max(1L, delay));
+        try {
+            Bukkit.getRegionScheduler().runDelayed(plugin, location,
+                    ignored -> restoreNow(id, fracture), Math.max(1L, delay));
+        } catch (final org.bukkit.plugin.IllegalPluginAccessException stopped) {
+            // The durable record remains available to the next startup.
+        }
     }
 
     private synchronized void restoreNow(final UUID id, final Fracture expected) {
@@ -142,12 +161,33 @@ public final class TrashSpatialFractureStore implements PersistentStore {
         if (current == null || !current.equals(expected)) return;
         final World world = Bukkit.getWorld(current.worldId());
         if (world == null) return;
+        boolean conflict = false;
         for (final BlockSnapshot snapshot : current.blocks()) {
+            final Block live = world.getBlockAt(snapshot.x(), snapshot.y(), snapshot.z());
+            if (!live.isEmpty() && !live.getBlockData().getAsString().equals(snapshot.data())) {
+                if (System.currentTimeMillis() - current.expiresAt() < 300_000L) {
+                    scheduleRestore(id, current, 100L);
+                    return;
+                }
+                conflict = true;
+            }
+        }
+        for (final BlockSnapshot snapshot : current.blocks()) {
+            final Block live = world.getBlockAt(snapshot.x(), snapshot.y(), snapshot.z());
+            if (!live.isEmpty() && !live.getBlockData().getAsString().equals(snapshot.data())) continue;
             final BlockData data = Bukkit.createBlockData(snapshot.data());
-            world.getBlockAt(snapshot.x(), snapshot.y(), snapshot.z()).setBlockData(data, false);
+            live.setBlockData(data, false);
         }
         open.remove(id);
-        persistOrRestore(() -> open.put(id, current));
+        if (conflict) conflicts.put(id, current);
+        persistOrRestore(() -> { open.put(id, current); conflicts.remove(id); });
+        if (conflict) plugin.getLogger().warning("Temporary footprint conflict archived for " + id);
+    }
+
+    public synchronized boolean protects(final Block block) {
+        final UUID world = block.getWorld().getUID();
+        return open.values().stream().filter(f -> f.worldId().equals(world)).anyMatch(f ->
+                f.blocks().stream().anyMatch(b -> b.x() == block.getX() && b.y() == block.getY() && b.z() == block.getZ()));
     }
 
     @Override
@@ -167,17 +207,19 @@ public final class TrashSpatialFractureStore implements PersistentStore {
     private void persist() {
         final YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("schema-version", SCHEMA_VERSION);
-        for (final Map.Entry<UUID, Fracture> entry : open.entrySet()) {
-            final String path = "open." + entry.getKey();
-            yaml.set(path + ".owner", entry.getValue().ownerId().toString());
-            yaml.set(path + ".world", entry.getValue().worldId().toString());
-            yaml.set(path + ".expires-at", entry.getValue().expiresAt());
-            final List<Map<String, Object>> blocks = new ArrayList<>();
-            for (final BlockSnapshot snapshot : entry.getValue().blocks()) {
-                blocks.add(Map.of("x", snapshot.x(), "y", snapshot.y(), "z", snapshot.z(),
-                        "data", snapshot.data()));
+        for (final String section : List.of("open", "conflicts")) {
+            for (final Map.Entry<UUID, Fracture> entry : (section.equals("open") ? open : conflicts).entrySet()) {
+                final String path = section + "." + entry.getKey();
+                yaml.set(path + ".owner", entry.getValue().ownerId().toString());
+                yaml.set(path + ".world", entry.getValue().worldId().toString());
+                yaml.set(path + ".expires-at", entry.getValue().expiresAt());
+                final List<Map<String, Object>> blocks = new ArrayList<>();
+                for (final BlockSnapshot snapshot : entry.getValue().blocks()) {
+                    blocks.add(Map.of("x", snapshot.x(), "y", snapshot.y(), "z", snapshot.z(),
+                            "data", snapshot.data()));
+                }
+                yaml.set(path + ".blocks", blocks);
             }
-            yaml.set(path + ".blocks", blocks);
         }
         try {
             YamlStore.saveAtomic(file, yaml);

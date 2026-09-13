@@ -100,6 +100,8 @@ messages:
   season-ended: '<gold>🏆 A szezon bajnoka: <white>{champion}</white> ({points} pont)! A frakciókassza <white>{reward}</white> jutalmat kap. Új szezon kezdődik!</gold>'
   season-ended-no-champion: <gold>🏁 A szezon véget ért bajnok nélkül — új szezon kezdődik!</gold>
   season-champion-member: <gold>🏆 A frakciód lett a szezon bajnoka — fogadd a győzelmi jutalmadat!</gold>
-  world-boss-despawned: <gray>👹 A világboss elvonult — senki sem merte legyőzni.</gray>
-  world-boss-slain: <gold>⚔ {player} legyőzte a világbosst! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot nyert!</gold>
-  world-boss-spawned: '<dark_red>👹 Világboss jelent meg: <white>{x}, {z}</white> környékén — {minutes} perc múlva elvonul! Aki legyőzi, frakciója dicsőséget és kincset nyer.</dark_red>'
+  encounter-reward-delivered: '<gold>✦ Személyes világboss-jutalom: <white>{amount}× {item}</white>.</gold>'
+  world-boss-despawned: <gray>👹 A világboss elvonult — senki sem tudta időben legyőzni.</gray>
+  world-boss-slain: <gold>⚔ {player} vezette a világboss elleni győzelmet! A(z) {faction} kasszája <white>{reward}</white> kincset és <white>{points}</white> liga-pontot kapott; minden érdemi résztvevő személyes jutalomra jogosult.</gold>
+  world-boss-slain-guest: <gold>⚔ {player} vezette a világboss elleni győzelmet! Minden érdemi résztvevő személyes jutalomra jogosult.</gold>
+  world-boss-spawned: '<dark_red>👹 Világboss jelent meg: <white>{x}, {z}</white> környékén — {minutes} perc múlva elvonul! Az érdemi hozzájárulás személyes jutalmat ér; a győzelmet vezető hős frakciója kasszajutalmat és liga-pontot szerezhet.</dark_red>'

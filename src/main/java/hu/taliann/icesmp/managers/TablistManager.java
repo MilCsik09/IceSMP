@@ -100,7 +100,14 @@ public final class TablistManager {
         }
     }
 
+    private volatile boolean closing;
+
+    public void beginShutdown() {
+        closing = true;
+    }
+
     public boolean isEnabled() {
+        if (closing) return false;
         return configManager.getBoolean("tablist.enabled", true);
     }
 
@@ -113,6 +120,7 @@ public final class TablistManager {
     private int sweepCounter;
 
     public void tick() {
+        if (closing) return;
         if (!isEnabled()) {
             if (nativeOutputActive) {
                 nativeOutputActive = false;
@@ -137,6 +145,7 @@ public final class TablistManager {
         }
         for (final Player player : Bukkit.getOnlinePlayers()) {
             player.getScheduler().run(plugin, task -> {
+                if (closing) return;
                 publishSnapshot(player);
                 updateHeaderFooter(player);
                 updateTabName(player);
