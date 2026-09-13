@@ -86,6 +86,21 @@ def sync_models(item_id: str, check_only: bool) -> None:
         "parent": "minecraft:item/generated",
         "textures": {"layer0": f"icesmp:item/trash/{item_id}"},
     }
+    if item_id == "torott_iranytu":
+        entries = []
+        for angle in range(32):
+            model_id = f"trash/states/{item_id}_{angle:02d}"
+            entries.append({"threshold": angle / 32, "model": {
+                "type": "minecraft:model", "model": f"icesmp:item/{model_id}"}})
+            state = {"parent": f"icesmp:item/trash/{item_id}", "display": {
+                context: {"rotation": [0, 0, angle * 360 / 32]} for context in (
+                    "gui", "fixed", "ground", "firstperson_righthand", "firstperson_lefthand",
+                    "thirdperson_righthand", "thirdperson_lefthand")}}
+            sync_text(MODEL_ROOT / "states" / f"{item_id}_{angle:02d}.json",
+                      json.dumps(state, ensure_ascii=False, indent=2) + "\n", check_only)
+        item_definition["model"] = {"type": "minecraft:range_dispatch", "property": "minecraft:compass",
+                                    "target": "lodestone", "wobble": True, "entries": entries,
+                                    "fallback": item_definition["model"]}
     sync_text(ITEM_ROOT / f"{item_id}.json",
               json.dumps(item_definition, ensure_ascii=False, indent=2) + "\n", check_only)
     sync_text(MODEL_ROOT / f"{item_id}.json",
@@ -154,15 +169,17 @@ def validate(require_complete: bool, check_only: bool) -> None:
         raise ValueError("production Trash asset gate requires 330/330 base identities and "
                          f"27/27 phases, found {base_count}/330 and {phase_count}/27")
     for path in TEXTURE_ROOT.glob("*.png"):
-        image = Image.open(path)
-        if image.size != (64, 64) or image.mode != "RGBA":
-            raise ValueError(f"invalid final Trash sprite: {path}")
-        alpha_values = set(image.getchannel("A").get_flattened_data())
-        if not alpha_values.issubset({0, 255}) or 0 not in alpha_values or 255 not in alpha_values:
-            raise ValueError(f"Trash sprite must use non-empty binary alpha: {path}")
-        colours = {pixel[:3] for pixel in image.get_flattened_data() if pixel[3] == 255}
-        if not 1 <= len(colours) <= 8:
-            raise ValueError(f"Trash sprite tone budget must be 1..8: {path} has {len(colours)}")
+        with Image.open(path) as image:
+            if image.size != (64, 64) or image.mode != "RGBA":
+                raise ValueError(f"invalid final Trash sprite: {path}")
+            alpha_values = {value for value, count in enumerate(image.getchannel("A").histogram()) if count}
+            if not alpha_values.issubset({0, 255}) or 0 not in alpha_values or 255 not in alpha_values:
+                raise ValueError(f"Trash sprite must use non-empty binary alpha: {path}")
+            # A 64x64 image has at most 4096 colours. These APIs are available in
+            # the CI-pinned Pillow 11.3 as well as newer authoring environments.
+            colours = {pixel[:3] for count, pixel in image.getcolors(maxcolors=4096) if pixel[3] == 255}
+            if not 1 <= len(colours) <= 8:
+                raise ValueError(f"Trash sprite tone budget must be 1..8: {path} has {len(colours)}")
 
 
 def main() -> None:

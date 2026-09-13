@@ -1,6 +1,8 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.integrity.*;
+import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -16,8 +18,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Collective server challenge: periodically the whole
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * terrain and mints no money.
  *
  * <p>Counting comes from {@link hu.taliann.icesmp.listeners.ServerChallengeListener}
- * on each acting region thread (an atomic counter); the manager flips the window
+ * on each acting region thread; one monitor guards admission, counting and window changes. The manager
  * and settles success/failure exactly once.
  */
 public final class ServerChallengeManager {
@@ -48,13 +48,9 @@ public final class ServerChallengeManager {
 
     private final BossBar bar = BossBar.bossBar(Component.empty(), 0.0F, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
 
-    private volatile boolean active;
-    private volatile long activeUntil;
+    private volatile ServerChallengeRun run;
     private volatile long nextAttemptAt;
-    private volatile ChallengeType type;
-    private volatile long target;
-    private final AtomicLong progress = new AtomicLong();
-    private final AtomicBoolean settled = new AtomicBoolean(true);
+    private volatile boolean closed;
 
     public ServerChallengeManager(final JavaPlugin plugin, final ConfigManager configManager,
                                   final MessageManager messageManager) {
@@ -66,17 +62,21 @@ public final class ServerChallengeManager {
 
     /** Whether a challenge is currently running (for the join listener). */
     public boolean isActive() {
-        return active;
+        final var current = run;
+        return !closed && current != null && current.snapshot().status() == ServerChallengeRun.Status.ACTIVE;
     }
 
     /** Milliseconds left in the current challenge window, or -1 when none is running. */
     public long getRemainingMillis() {
-        return active ? Math.max(0L, activeUntil - System.currentTimeMillis()) : -1L;
+        final var current = run;
+        if (closed || current == null) return -1L;
+        final var snapshot = current.snapshot();
+        return snapshot.status() == ServerChallengeRun.Status.ACTIVE ? Math.max(0L, snapshot.activeUntil() - System.currentTimeMillis()) : -1L;
     }
 
     /** Shows the boss bar to a (joining) player if a challenge is live. */
     public void showTo(final Player player) {
-        if (active) {
+        if (isActive()) {
             player.showBossBar(bar);
         }
     }
@@ -87,30 +87,27 @@ public final class ServerChallengeManager {
      *
      * @param kind the progress kind that just happened
      */
-    public void record(final ChallengeType kind) {
-        if (!active || kind != type) {
-            return;
-        }
-        final long now = progress.incrementAndGet();
-        updateBar(now);
-        if (now >= target && settled.compareAndSet(false, true)) {
-            succeed();
-        }
+    public synchronized void record(final ChallengeType kind, final RewardContext contribution) {
+        if (closed || run == null || !run.record(kind, contribution, System.currentTimeMillis())) return;
+        final var current = run.snapshot();
+        updateBar(current);
+        if (current.status() == ServerChallengeRun.Status.SUCCEEDED) succeed(current);
     }
 
     /** Periodic driver on the global world-events tick. */
-    public void tick() {
+    public synchronized void tick() {
+        if (closed) return;
         if (!configManager.getBoolean("server-challenge.enabled", true)) {
-            if (active) {
+            if (isActive()) {
                 stop();
             }
             return;
         }
 
         final long nowMillis = System.currentTimeMillis();
-        if (active) {
-            if (nowMillis >= activeUntil && settled.compareAndSet(false, true)) {
-                fail();
+        if (isActive()) {
+            if (run.expire(nowMillis)) {
+                fail(run.snapshot());
             }
             return;
         }
@@ -132,22 +129,29 @@ public final class ServerChallengeManager {
 
     /** Live progress of the running challenge (menu display). */
     public long getProgress() {
-        return progress.get();
+        final var current = run;
+        return current == null ? 0L : current.snapshot().progress();
     }
 
     /** The running challenge's goal count (menu display; 0 when inactive). */
     public long getTarget() {
-        return active ? target : 0L;
+        final var current = run;
+        if (closed || current == null) return 0L;
+        final var snapshot = current.snapshot();
+        return snapshot.status() == ServerChallengeRun.Status.ACTIVE ? snapshot.target() : 0L;
     }
 
     /** Hungarian goal text of the running challenge (menu display), or null when inactive. */
     public String describeGoal() {
-        return active ? goalText(type, target) : null;
+        final var current = run;
+        if (closed || current == null) return null;
+        final var snapshot = current.snapshot();
+        return snapshot.status() == ServerChallengeRun.Status.ACTIVE ? goalText(snapshot.type(), snapshot.target()) : null;
     }
 
     /** Admin override: starts a random enabled challenge now. Returns false if one runs or none enabled. */
-    public boolean forceStart() {
-        if (active) {
+    public synchronized boolean forceStart() {
+        if (closed || isActive()) {
             return false;
         }
         final ChallengeType picked = pickRandomEnabled();
@@ -172,81 +176,81 @@ public final class ServerChallengeManager {
         if (picked == null) {
             return;
         }
-        type = picked;
         // Népesség-skálázás: a cél = per-player érték × online létszám,
         // ha a per-player mód él — így 3 és 30 fősen is elérhető marad a közös cél.
         final long baseTarget = Math.max(1L, configManager.getLong(
                 "server-challenge.targets." + picked.configKey(), defaultTarget(picked)));
-        target = configManager.getBoolean("server-challenge.per-player-targets", true)
+        final long target = configManager.getBoolean("server-challenge.per-player-targets", true)
                 ? Math.max(1L, configManager.getLong("server-challenge.targets-per-player." + picked.configKey(),
                         Math.max(1L, baseTarget / 10L)) * Bukkit.getOnlinePlayers().size())
                 : baseTarget;
-        progress.set(0L);
-        active = true;
-        settled.set(false);
-        activeUntil = System.currentTimeMillis() + durationMillis();
-
-        updateBar(0L);
+        run = new ServerChallengeRun(picked, target, System.currentTimeMillis(), durationMillis());
+        updateBar(run.snapshot());
         for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
-            player.getScheduler().run(plugin, task -> player.showBossBar(bar), null);
+            final UUID id = player.getUniqueId();
+            player.getScheduler().run(plugin, task -> {
+                final Player current = Bukkit.getPlayer(id);
+                if (current != null && Bukkit.isOwnedByCurrentRegion(current) && current.isOnline() && isActive()) current.showBossBar(bar);
+            }, null);
         }
-        Bukkit.getServer().broadcast(messageManager.getMessage(
+        announce(messageManager.getMessage(
                 "server-challenge-start",
                 "&6⚔ SZERVER-KIHÍVÁS: {goal} — {minutes} perc! Teljesítsétek együtt, és mindenki jutalmat kap!",
                 Map.of(
-                        "goal", goalText(type, target),
+                        "goal", goalText(picked, target),
                         "minutes", String.valueOf(Math.max(1L, durationMillis() / 60_000L))
                 )
         ));
     }
 
-    private void succeed() {
-        active = false;
+    private void succeed(final ServerChallengeRun.Snapshot completed) {
         hideBarFromAll();
-        Bukkit.getServer().broadcast(messageManager.getMessage(
+        announce(messageManager.getMessage(
                 "server-challenge-success",
                 "&a✔ SZERVER-KIHÍVÁS teljesítve! Mindenki jutalmat kap — szép munka!"));
-        rewardAll();
+        rewardAll(completed);
     }
 
-    private void fail() {
-        active = false;
+    private void fail(final ServerChallengeRun.Snapshot completed) {
         hideBarFromAll();
-        Bukkit.getServer().broadcast(messageManager.getMessage(
+        announce(messageManager.getMessage(
                 "server-challenge-fail",
                 "&7✘ A szerver-kihívás lejárt — {progress}/{target}. Legközelebb összekapjuk magunkat!",
-                Map.of("progress", String.valueOf(progress.get()), "target", String.valueOf(target))
+                Map.of("progress", String.valueOf(completed.progress()), "target", String.valueOf(completed.target()))
         ));
     }
 
     /** Hides the live boss bar on plugin disable so no frozen bar lingers on clients. */
-    public void shutdown() {
-        if (active) {
-            stop();
-        }
+    public synchronized void shutdown() {
+        if (isActive()) stop();
+        closed = true;
     }
 
     /** Silent stop (feature disabled): just clear the window and bar. */
     private void stop() {
-        active = false;
-        settled.set(true);
+        if (run != null) run.stop();
         hideBarFromAll();
     }
 
-    private void rewardAll() {
+    private void rewardAll(final ServerChallengeRun.Snapshot completed) {
         final int rolls = Math.max(1, configManager.getInt("server-challenge.reward-rolls", 2));
         final int xp = Math.max(0, configManager.getInt("server-challenge.reward-xp", 300));
         final int hasteSeconds = Math.max(0, configManager.getInt("server-challenge.reward-haste-seconds", 45));
-        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
-            player.getScheduler().run(plugin, task -> {
-                for (final ItemStack loot : LootTable.roll(configManager, "server-challenge.reward-loot", rolls)) {
-                    player.getInventory().addItem(loot).values()
-                            .forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
+        for (final Player candidate : List.copyOf(Bukkit.getOnlinePlayers())) {
+            final UUID recipient = candidate.getUniqueId();
+            candidate.getScheduler().run(plugin, task -> {
+                final Player player = Bukkit.getPlayer(recipient);
+                if (closed || player == null || !Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return;
+                if (!rewardAllowed(completed, player, RewardChannel.SERVER_CHALLENGE)) return;
+                if (rewardAllowed(completed, player, RewardChannel.ITEM_ACQUISITION)) {
+                    for (final ItemStack loot : LootTable.roll(configManager, "server-challenge.reward-loot", rolls)) {
+                        if (!rewardAllowed(completed, player, RewardChannel.ITEM_ACQUISITION)) return;
+                        player.getInventory().addItem(loot).values()
+                                .forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
+                    }
                 }
-                if (xp > 0) {
-                    player.giveExp(xp);
-                }
-                if (hasteSeconds > 0) {
+                if (xp > 0 && rewardAllowed(completed, player, RewardChannel.VANILLA_XP)) player.giveExp(xp);
+                if (hasteSeconds > 0 && rewardAllowed(completed, player, RewardChannel.EVENT_REWARD)) {
                     player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, hasteSeconds * 20, 0, true, false, true));
                 }
                 player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
@@ -254,18 +258,32 @@ public final class ServerChallengeManager {
         }
     }
 
-    // synchronized: a record() bármely régió-szálról hívja — a megosztott BossBar
-    // progress/name mutációja verseny nélkül fusson.
-    private synchronized void updateBar(final long current) {
-        final float fraction = target <= 0L ? 0.0F : (float) Math.max(0.0D, Math.min(1.0D, (double) current / target));
+    private boolean rewardAllowed(final ServerChallengeRun.Snapshot completed, final Player player, final RewardChannel channel) {
+        try { return !closed && ServerChallengeRun.rewardAllowed(completed,
+                new RewardContext(channel, player.getUniqueId(), BukkitRewardSources.causal(player))); }
+        catch (final RuntimeException | LinkageError unavailable) { return false; }
+    }
+
+    private synchronized void updateBar(final ServerChallengeRun.Snapshot current) {
+        final float fraction = (float) Math.max(0.0D, Math.min(1.0D, (double) current.progress() / current.target()));
         bar.progress(fraction);
-        bar.name(Component.text("⚔ " + goalText(type, target) + " — " + current + " / " + target, NamedTextColor.GOLD));
+        bar.name(Component.text("⚔ " + goalText(current.type(), current.target()) + " — " + current.progress() + " / " + current.target(), NamedTextColor.GOLD));
     }
 
     private void hideBarFromAll() {
-        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
-            player.getScheduler().run(plugin, task -> player.hideBossBar(bar), null);
+        for (final Player candidate : List.copyOf(Bukkit.getOnlinePlayers())) {
+            final UUID id = candidate.getUniqueId();
+            candidate.getScheduler().run(plugin, task -> {
+                final Player player = Bukkit.getPlayer(id);
+                if (player != null && Bukkit.isOwnedByCurrentRegion(player) && player.isOnline() && !isActive()) player.hideBossBar(bar);
+            }, null);
         }
+    }
+
+    private void announce(final Component message) {
+        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+            if (!closed) Bukkit.getServer().broadcast(message);
+        });
     }
 
     private String goalText(final ChallengeType kind, final long amount) {

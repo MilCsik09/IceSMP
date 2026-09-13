@@ -679,6 +679,8 @@ public final class WorldBossManager {
             return;
         }
 
+        for (final var contributor : qualified) factionManager.getChosenFaction(contributor.getKey()).ifPresent(
+                side -> seasonManager.recordContribution(contributor.getKey(), side, "world-boss"));
         final UUID leaderId = qualified.getFirst().getKey();
         final Player leader = Bukkit.getPlayer(leaderId);
         final String leaderName = leader == null ? "Ismeretlen hős" : leader.getName();

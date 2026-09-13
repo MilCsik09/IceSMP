@@ -57,6 +57,7 @@ def _command_contract(
     root_path: Path,
     manifest: dict[str, Any],
     commands: list[dict[str, Any]],
+    adapter_sources: set[str],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[Finding]]:
     """Resolve the repository's complete command surface from an exact evidence contract.
 
@@ -323,7 +324,7 @@ def _command_contract(
         item["registration_file"] for item in commands
     } | {
         route["source"] for route in routes
-    }
+    } | adapter_sources
     for relative in sorted(required_sources - set(source_hashes)):
         findings.append(Finding(
             "FAIL", "COMMAND_CONTRACT_SOURCE_MISSING",
@@ -585,6 +586,51 @@ def _dispatch_subcommands(root: str, src: JavaSource, index: JavaIndex) -> tuple
     return sorted(result, key=lambda item: item["path"]), findings
 
 
+
+def _registration_adapters(source: str) -> tuple[set[int], list[tuple[int, int, list[str]]]]:
+    """Separate Java declarations and unchanged JavaPlugin forwarding from root call sites."""
+    clean = java_without_comments(source)
+    declarations: set[int] = set()
+    forwards: list[tuple[int, int, list[str]]] = []
+    pattern = re.compile(r"\b(?:public|protected|private)\s+(?:(?:static|final|synchronized)\s+)*"
+                         r"void\s+(registerCommand)\s*\(")
+    for match in pattern.finditer(clean):
+        opening = clean.index("(", match.start(1))
+        closing = find_matching(source, opening)
+        if closing < 0:
+            continue
+        declarations.add(match.start(1))
+        parameters = split_top_level(clean[opening + 1:closing])
+        parsed = [re.fullmatch(r"(?:final\s+)?([\w.<>? ,]+)\s+([\w$]+)", p.strip())
+                  for p in parameters]
+        if len(parsed) != 4 or any(p is None for p in parsed):
+            continue
+        types = [re.sub(r"\s+", "", p.group(1)) for p in parsed]
+        if (types[0] not in ("String", "java.lang.String")
+                or types[1] not in ("String", "java.lang.String")
+                or types[2] not in ("Collection<String>", "java.util.Collection<String>")
+                or types[3] not in ("BasicCommand", "io.papermc.paper.command.brigadier.BasicCommand")):
+            continue
+        if not re.search(r"\bextends\s+(?:org\.bukkit\.plugin\.java\.)?JavaPlugin\b", clean):
+            continue
+        tail = re.match(r"\s*\{", clean[closing + 1:])
+        if tail is None:
+            continue
+        body_start = closing + 1 + tail.end() - 1
+        body_end = find_matching(source, body_start, "{", "}")
+        if body_end >= 0:
+            forwards.append((body_start, body_end, [p.group(2) for p in parsed]))
+    return declarations, forwards
+
+
+def _is_forwarded_registration(source: str, offset: int, args: list[str],
+                               forwards: list[tuple[int, int, list[str]]]) -> bool:
+    if not forwards or len(args) != 4 or not re.search(r"\bsuper\s*\.\s*$", java_without_comments(source[:offset])):
+        return False
+    return any(start < offset < end and args[:3] == names[:3]
+               for start, end, names in forwards)
+
+
 def scan_commands(
     root_path: Path,
     index: JavaIndex,
@@ -600,11 +646,18 @@ def scan_commands(
     subcommands: list[dict[str, Any]] = []
     findings: list[Finding] = []
     registered_impls: set[str] = set()
+    adapter_sources: set[str] = set()
     names: dict[str, str] = {}
 
     for registration_source in index.sources:
+        declarations, forwards = _registration_adapters(registration_source.source)
+        if forwards:
+            adapter_sources.add(registration_source.relative)
         for offset, call in scan_calls(registration_source.source, "registerCommand"):
             args = split_top_level(call)
+            if offset in declarations or _is_forwarded_registration(
+                    registration_source.source, offset, args, forwards):
+                continue
             if len(args) < 4:
                 findings.append(Finding("FAIL", "COMMAND_REGISTRATION_PARSE_ERROR",
                                         "registerCommand call has fewer than four arguments.", "",
@@ -671,7 +724,10 @@ def scan_commands(
     ignores = manifest.get("explicit-ignores", {})
     for src in index.sources:
         clean = java_without_comments(src.source)
-        is_command = "implements BasicCommand" in clean or "extends AbstractDispatchCommand" in clean
+        header = re.search(r"\b(?:class|record)\s+" + re.escape(src.class_name) + r"\b([^{}]*)\{", clean)
+        declaration = header.group(1) if header else ""
+        is_command = bool(re.search(r"\bimplements\b[^{}]*\bBasicCommand\b", declaration)
+                          or re.search(r"\bextends\s+AbstractDispatchCommand\b", declaration))
         if not is_command or re.search(r"\babstract\s+class\b", clean) or src.class_name in ("AbstractDispatchCommand",):
             continue
         component_id = f"component.{src.package}.{src.class_name}" if src.package else f"component.{src.class_name}"
@@ -687,7 +743,7 @@ def scan_commands(
 
     commands = sorted(commands, key=lambda item: item["path"])
     contract_routes, root_aliases, routing_aliases, contract_findings = _command_contract(
-        root_path, manifest, commands
+        root_path, manifest, commands, adapter_sources
     )
     if isinstance(manifest.get("commands", {}).get("_contract"), dict):
         # The exhaustive, hash-bound contract replaces deliberately incomplete Java

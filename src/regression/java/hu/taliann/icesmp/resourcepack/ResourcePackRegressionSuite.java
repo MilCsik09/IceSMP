@@ -13,6 +13,7 @@ public final class ResourcePackRegressionSuite {
     }
 
     public static void main(final String[] args) throws Exception {
+        hu.taliann.icesmp.listeners.ResourcePackDeliveryRegressionSuite.main(args);
         listenerUsesAdditiveApiAndStableId();
         reloadOnlyResendsEffectiveChanges();
         developmentCompositeSurvivesReloads();

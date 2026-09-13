@@ -3576,6 +3576,7 @@ mob-templates:
     loot-profile: world_boss
     boss-specific-reward: csontenyv
     source-tags:
+    - history:chaos_age
     - event:world_boss
     spawn-policy: boss
     bestiary-id: bone_king
@@ -4012,6 +4013,8 @@ mob-templates:
     - holy
     loot-profile: champion
     source-tags:
+    - history:chaos_age
+    - history:seventh_blood_war
     - event:invasion
     spawn-policy: event
     bestiary-id: invasion_bone_champion
