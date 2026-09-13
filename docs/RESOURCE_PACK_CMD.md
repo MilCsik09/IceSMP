@@ -8,8 +8,8 @@ Minden tétel négy fogódzót ad a művésznek: **Alap-item** (a vanilla szilue
 
 ## Ócska leletek — AI-authored teljes katalógus
 
-A `content/trash/catalog.yml` 330 stable identityjének mind saját, AI-generált
-inventory-sprite-ja van. A committed authoring forráslapok a
+A `content/trash/catalog.yml` 330 stable base identityjének és 27 authored lifecycle
+phase-ének mind saját, AI-generált inventory-sprite-ja van. A committed authoring forráslapok a
 `dev-assets/trash/source/` könyvtárban, a hozzájuk tartozó sorrend és cellakiosztás
 a `manifest.json` fájlban található. Az imagegen nem runtime dependency: a build a
 forráslapokból determinisztikusan állítja elő a tényleges pack-asseteket.
@@ -23,15 +23,15 @@ Kimeneti szerződés identitynként:
 
 Nem használható közös placeholder, kategóriánként újrahasznált sprite, glint,
 emissive réteg, aura vagy ritkaságkeret. A vizuál nem árulhatja el a tárgy belső
-besorolását; a játékos minden alaptárgyat az egységes **Ócska** prezentációval lát.
+besorolását; a játékos minden base és lifecycle tárgyat az egységes **Ócska** prezentációval lát.
 
 Kötelező ellenőrzés:
 
 1. `python3 scripts/process_trash_sprite_sheets.py --check --require-complete`
 2. `python3 scripts/resource_pack.py validate --source resource-pack`
-3. `./gradlew trashSpriteAssetAudit trashCatalogRegressionTest resourcePackRegressionTest`
+3. `./gradlew trashSpriteAssetAudit trashCatalogRegressionTest trashHistoryRegressionTest resourcePackRegressionTest`
 
-A processzor pontosan a katalógus 330 texture/item/model hármasát engedi, ellenőrzi
+A processzor pontosan a katalógus 330 base + 27 lifecycle texture/item/model hármasát engedi, ellenőrzi
 a fájlhalmazt, felbontást, alfát, palettát és SHA-256 alapján a képi egyediséget.
 Az offline audit nem helyettesíti a valódi Minecraft kliensben végzett teljes vizuális QA-t.
 

@@ -77,7 +77,7 @@ public final class MobMoneyDropListener implements Listener {
 
         final World world = kill.victimWorld();
         if (world == null) return;
-        kill.runOnKiller(plugin, killer -> {
+        kill.runOnKiller(plugin, hu.taliann.icesmp.integrity.RewardChannel.CURRENCY_FAUCET, killer -> {
             final ItemStack hand = killer.getInventory().getItemInMainHand();
             if (!hu.taliann.icesmp.itemization.EquipmentProficiencyService.allowsGameplayContribution(
                     killer, hand, hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND)

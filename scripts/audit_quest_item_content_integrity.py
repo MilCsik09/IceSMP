@@ -524,7 +524,7 @@ def build_evidence(review_path: Path) -> dict[str, Any]:
             {"step": 4, "quest": "onboarding_utmutatas", "intent": "/menu + /profile progression handoff"},
         ],
         "reward_preview_matrix": {
-            "coverage": "195/195", "riddle_objectives_revealed": False,
+            "coverage": "196/196", "riddle_objectives_revealed": False,
             "cases": ["no reward category", "currency", "class XP", "currency + XP", "item",
                       "crate key", "unlock", "multi reward", "OWN factioned", "OWN guest",
                       "riddle", "locked", "completed", "daily", "repeatable", "story final"],
@@ -560,7 +560,7 @@ def build_evidence(review_path: Path) -> dict[str, Any]:
         "money_pouch": {"content_leak": 0, "creation_roll_stored": True,
                         "unopened_hidden": True, "opening_physical_tokens": True},
         "final_quest_review": {
-            "coverage": "195/195", "count": len(quest_review),
+            "coverage": "196/196", "count": len(quest_review),
             "category_distribution": Counter(row["category"] for row in quest_review),
             "objective_distribution": Counter(
                 objective.get("type", "UNKNOWN")
@@ -609,7 +609,7 @@ def build_evidence(review_path: Path) -> dict[str, Any]:
         "verdicts": {
             "C0_FINDING_CLOSURE": "3/3", "C1_FINDING_CLOSURE": "12/12",
             "C2_FINDING_CLOSURE": "6/7", "C3_FINDING_CLOSURE": "0/1",
-            "QUEST_REVIEW_COVERAGE": "195/195", "PLAYER_FACING_ITEM_REVIEW_COVERAGE": "724/724",
+            "QUEST_REVIEW_COVERAGE": "196/196", "PLAYER_FACING_ITEM_REVIEW_COVERAGE": "724/724",
             "QUEST_CONTENT_INTEGRITY": "PASS", "ITEM_LORE_MECHANIC_INTEGRITY": "PASS",
             "NARRATIVE_COHERENCE": "CONDITIONAL_PASS",
             "JAVA21_REGRESSION": "PENDING", "PAPER_1_21_11_RUNTIME": "PENDING",
@@ -632,10 +632,10 @@ def check_evidence(evidence: dict[str, Any]) -> None:
     require(evidence["exact_parent"] == PARENT, "exact parent drift")
     require({row["sha256"] for row in evidence["review_artifacts"]}
             == {REVIEW_MD_SHA256, REVIEW_JSON_SHA256}, "review artifact hash drift")
-    require(len(quests) == 195, "quest count drift")
-    require(evidence["final_quest_review"]["count"] == 195
-            and len(evidence["final_quest_review"]["quests"]) == 195
-            and len(evidence["final_quest_review"]["scorecards"]) == 195,
+    require(len(quests) == 196, "quest count drift")
+    require(evidence["final_quest_review"]["count"] == 196
+            and len(evidence["final_quest_review"]["quests"]) == 196
+            and len(evidence["final_quest_review"]["scorecards"]) == 196,
             "quest review is not exhaustive")
     require(set(row["id"] for row in evidence["final_quest_review"]["quests"]) == set(quests),
             "quest review IDs do not match canonical registry")
@@ -756,7 +756,7 @@ def main() -> None:
         EVIDENCE.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     require(EVIDENCE.exists(), "machine-readable evidence missing")
     check_evidence(json.loads(EVIDENCE.read_text(encoding="utf-8")))
-    print("Quest/item content-integrity audit passed: quests=195 items=724 C0=3/3 C1=12/12 C2=6/7")
+    print("Quest/item content-integrity audit passed: quests=196 items=724 C0=3/3 C1=12/12 C2=6/7")
 
 
 if __name__ == "__main__":

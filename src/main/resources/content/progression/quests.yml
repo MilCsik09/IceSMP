@@ -2566,6 +2566,26 @@ quests:
       territory: "dark-capital"
     rewards:
       class-xp: 100
+  civil_penance:
+    category: FACTION
+    display-name: "Civil vezeklés — Jóvátétel"
+    description: "Védd meg a civil világot: győzz le 30 erős szörnyet (min. Lvl 3). Feloldozás DARK eskü nélkül."
+    start:
+      type: QUEST_BOARD
+    turn-in:
+      type: AUTO
+    visibility:
+      mode: PREREQUISITES_MET
+    requires-atonement: true
+    forbids-faction: "DARK"
+    repeatable: true
+    objective:
+      type: "KILL_MOBS"
+      count: 30
+      min-mob-level: 3
+    rewards:
+      cleanse-sins: true
+
   # --- Vezeklés-lánc: az egyetlen visszaút a sötét paktumból ---
   penance_1:
     category: FACTION

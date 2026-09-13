@@ -1,6 +1,10 @@
 package hu.taliann.icesmp.listeners;
 
-import hu.taliann.icesmp.gui.BestiaryHolder;
+import hu.taliann.icesmp.integrity.*;
+import org.bukkit.Bukkit;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.function.BiConsumer;
 import hu.taliann.icesmp.managers.CommunityGoalManager;
 import hu.taliann.icesmp.managers.MobScalingManager;
 import hu.taliann.icesmp.managers.QuestManager;
@@ -70,25 +74,22 @@ public final class QuestProgressListener implements Listener {
 
     @EventHandler
     public void onJoin(final PlayerJoinEvent event) {
-        scheduleRewardRecovery(event.getPlayer(), 0);
+        scheduleRewardRecovery(event.getPlayer().getUniqueId(), 0);
     }
 
-    private void scheduleRewardRecovery(final Player player, final int attempt) {
-        player.getScheduler().runDelayed(plugin, task -> {
-            if (!player.isOnline()) return;
+    private void scheduleRewardRecovery(final UUID playerId, final int attempt) {
+        final Player handle = Bukkit.getPlayer(playerId);
+        if (handle == null) return;
+        handle.getScheduler().runDelayed(plugin, task -> {
+            final Player owned = Bukkit.getPlayer(playerId);
+            if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned) || !owned.isOnline()) return;
             final boolean ready = hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority
-                    .installed().flatMap(authority -> authority.repository()
-                            .cached(player.getUniqueId())).isPresent();
+                    .installed().flatMap(authority -> authority.repository().cached(playerId)).isPresent();
             if (ready) {
-                questManager.recoverPendingRewards(player);
-                return;
-            }
-            if (attempt + 1 < PROFILE_READY_RETRIES) {
-                scheduleRewardRecovery(player, attempt + 1);
-            } else {
-                plugin.getLogger().severe("PlayerProfile quest reward recovery timed out for "
-                        + player.getUniqueId());
-            }
+                questManager.recoverPendingRewards(owned);
+            } else if (attempt + 1 < PROFILE_READY_RETRIES) {
+                scheduleRewardRecovery(playerId, attempt + 1);
+            } else plugin.getLogger().severe("PlayerProfile quest reward recovery timed out for " + playerId);
         }, null, 5L);
     }
 
@@ -166,6 +167,10 @@ public final class QuestProgressListener implements Listener {
         }
     }
 
+    private static RewardContext communityContext(final RewardContext reward) {
+        return new RewardContext(RewardChannel.COMMUNITY_GOAL, reward.recipient(), reward.sources());
+    }
+
     private boolean pendingReward(final ItemStack item) {
         return QuestPhysicalRewardDeliveryService.isPendingRewardItem(plugin, item);
     }
@@ -179,12 +184,12 @@ public final class QuestProgressListener implements Listener {
         final var entityType = event.getEntityType();
         final int level = mobScalingManager.getLevel(event.getEntity());
         final boolean worldBoss = worldBossManager.isWorldBoss(event.getEntity());
-        kill.runOnKiller(plugin, killer -> {
-            questManager.handleKill(killer, entityType, level);
-            communityGoalManager.contribute(killer, "KILL_MOBS", entityType.name(), 1);
+        kill.runOnKiller(plugin, hu.taliann.icesmp.integrity.RewardChannel.QUEST_PROGRESS, killer -> {
+            questManager.handleKill(killer, entityType, level, kill.rewardContext(RewardChannel.QUEST_PROGRESS));
+            if (kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.COMMUNITY_GOAL)) communityGoalManager.contribute(killer, "KILL_MOBS", entityType.name(), 1, kill.rewardContext(RewardChannel.COMMUNITY_GOAL));
             if (worldBoss) {
-                questManager.handleBossKill(killer);
-                communityGoalManager.contribute(killer, "KILL_WORLDBOSS", null, 1);
+                questManager.handleBossKill(killer, kill.rewardContext(RewardChannel.QUEST_PROGRESS));
+                if (kill.eligibleFor(hu.taliann.icesmp.integrity.RewardChannel.COMMUNITY_GOAL)) communityGoalManager.contribute(killer, "KILL_WORLDBOSS", null, 1, kill.rewardContext(RewardChannel.COMMUNITY_GOAL));
             }
         });
     }
@@ -194,23 +199,29 @@ public final class QuestProgressListener implements Listener {
         final org.bukkit.GameMode mode = event.getPlayer().getGameMode();
         if (mode != org.bukkit.GameMode.SURVIVAL && mode != org.bukkit.GameMode.ADVENTURE) return;
         if (!BlockRewardOriginTracker.isRewardEligible(event.getBlock())) return;
-        questManager.handleBlockBreak(event.getPlayer(), event.getBlock().getType());
+        final RewardContext reward = capture(event.getPlayer(), () -> BukkitRewardSources.block(event.getBlock()));
+        if (reward == null) return;
+        questManager.handleBlockBreak(event.getPlayer(), event.getBlock().getType(), reward);
         communityGoalManager.contribute(event.getPlayer(), "BREAK_BLOCKS",
-                event.getBlock().getType().name(), 1);
+                event.getBlock().getType().name(), 1, communityContext(reward));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraftItem(final CraftItemEvent event) {
         if (event.getWhoClicked() instanceof Player player) {
             final var result = event.getRecipe().getResult();
-            questManager.handleCraft(player, result.getType(), result.getAmount());
+            final RewardContext reward = capture(player, () -> List.of());
+            if (reward == null) return;
+            questManager.handleCraft(player, result.getType(), result.getAmount(), reward);
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerFish(final PlayerFishEvent event) {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) return;
-        questManager.handleFish(event.getPlayer());
+        final RewardContext reward = capture(event.getPlayer(), () -> event.getCaught() == null ? List.of() : BukkitRewardSources.causal(event.getCaught()));
+        if (reward == null) return;
+        questManager.handleFish(event.getPlayer(), reward);
         // A kifogott tárgy csak a későbbi, sikeres EntityPickupItemEventben acquisition.
         // Így ugyanaz a logical item nem számít a horogra kerüléskor és a felvételkor is.
     }
@@ -228,8 +239,10 @@ public final class QuestProgressListener implements Listener {
                 + '|' + stack.getAmount() + '|' + event.getRemaining();
         final UUID receipt = UUID.nameUUIDFromBytes(logicalEvent.getBytes(StandardCharsets.UTF_8));
         if (!acquisitionReceipts.claim(receipt)) return;
-        questManager.handleCollect(player, stack.getType(), acquired);
-        communityGoalManager.contribute(player, "COLLECT_ITEMS", stack.getType().name(), acquired);
+        final RewardContext reward = capture(player, () -> BukkitRewardSources.causal(item));
+        if (reward == null) return;
+        questManager.handleCollect(player, stack.getType(), acquired, reward);
+        communityGoalManager.contribute(player, "COLLECT_ITEMS", stack.getType().name(), acquired, communityContext(reward));
     }
 
     /** Buckets enter the player's inventory directly and therefore have no pickup event. */
@@ -246,49 +259,69 @@ public final class QuestProgressListener implements Listener {
                 + result.getType().name() + '|' + System.identityHashCode(event);
         final UUID receipt = UUID.nameUUIDFromBytes(logicalEvent.getBytes(StandardCharsets.UTF_8));
         if (!acquisitionReceipts.claim(receipt)) return;
-        questManager.handleCollect(player, result.getType(), result.getAmount());
+        final RewardContext reward = capture(player, () -> BukkitRewardSources.block(event.getBlock()));
+        if (reward == null) return;
+        questManager.handleCollect(player, result.getType(), result.getAmount(), reward);
         communityGoalManager.contribute(player, "COLLECT_ITEMS",
-                result.getType().name(), result.getAmount());
+                result.getType().name(), result.getAmount(), communityContext(reward));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(final BlockPlaceEvent event) {
-        questManager.handlePlaceBlock(event.getPlayer(), event.getBlock().getType());
+        final RewardContext reward = capture(event.getPlayer(), () -> BukkitRewardSources.block(event.getBlock()));
+        if (reward == null) return;
+        questManager.handlePlaceBlock(event.getPlayer(), event.getBlock().getType(), reward);
     }
 
     @EventHandler
     public void onPlayerKill(final PlayerDeathEvent event) {
         final Player killer = event.getEntity().getKiller();
         if (killer == null || killer.getUniqueId().equals(event.getEntity().getUniqueId())) return;
-        final Player online = org.bukkit.Bukkit.getPlayer(killer.getUniqueId());
-        if (online == null) return;
-        online.getScheduler().run(plugin, task -> {
-            questManager.handlePlayerKill(online);
-            communityGoalManager.contribute(online, "KILL_PLAYERS", null, 1);
-        }, null);
+        final UUID playerId = killer.getUniqueId();
+        final List<RewardSource> sources;
+        try { sources = BukkitRewardSources.death(RewardChannel.QUEST_PROGRESS, event.getEntity()).sources(); }
+        catch (final RuntimeException | LinkageError unavailable) { return; }
+        onPlayerOwner(playerId, sources, (owned, reward) -> {
+            questManager.handlePlayerKill(owned, reward);
+            if (GameplayRewardGate.evaluate(new RewardContext(RewardChannel.COMMUNITY_GOAL, playerId, reward.sources())).allowed())
+                communityGoalManager.contribute(owned, "KILL_PLAYERS", null, 1, communityContext(reward));
+        });
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBreed(final EntityBreedEvent event) {
         if (!(event.getBreeder() instanceof Player breeder)) return;
+        final UUID playerId = breeder.getUniqueId();
         final var entityType = event.getEntityType();
-        breeder.getScheduler().run(plugin,
-                task -> questManager.handleBreed(breeder, entityType), null);
+        final List<RewardSource> sources;
+        try {
+            final var lineage = new LinkedHashSet<>(BukkitRewardSources.causal(event.getEntity()));
+            lineage.addAll(BukkitRewardSources.causal(event.getMother()));
+            lineage.addAll(BukkitRewardSources.causal(event.getFather()));
+            sources = List.copyOf(lineage);
+        } catch (final RuntimeException | LinkageError unavailable) { return; }
+        onPlayerOwner(playerId, sources, (owned, reward) -> questManager.handleBreed(owned, entityType, reward));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEnchant(final EnchantItemEvent event) {
-        questManager.handleEnchant(event.getEnchanter());
+        final RewardContext reward = capture(event.getEnchanter(), () -> BukkitRewardSources.block(event.getEnchantBlock()));
+        if (reward == null) return;
+        questManager.handleEnchant(event.getEnchanter(), reward);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onConsume(final PlayerItemConsumeEvent event) {
-        questManager.handleConsume(event.getPlayer(), event.getItem().getType());
+        final RewardContext reward = capture(event.getPlayer(), () -> List.of());
+        if (reward == null) return;
+        questManager.handleConsume(event.getPlayer(), event.getItem().getType(), reward);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSmelt(final FurnaceExtractEvent event) {
-        questManager.handleSmelt(event.getPlayer(), event.getItemType(), event.getItemAmount());
+        final RewardContext reward = capture(event.getPlayer(), () -> BukkitRewardSources.block(event.getBlock()));
+        if (reward == null) return;
+        questManager.handleSmelt(event.getPlayer(), event.getItemType(), event.getItemAmount(), reward);
         if (event.getItemAmount() <= 0) return;
         final String identity = event.getPlayer().getUniqueId() + "|smelt|"
                 + event.getBlock().getWorld().getUID() + '|'
@@ -297,22 +330,27 @@ public final class QuestProgressListener implements Listener {
                 + event.getItemAmount() + '|' + System.identityHashCode(event);
         final UUID contributionId = UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8));
         if (!acquisitionReceipts.claim(contributionId)) return;
-        questManager.handleCollect(event.getPlayer(), event.getItemType(), event.getItemAmount());
+        questManager.handleCollect(event.getPlayer(), event.getItemType(), event.getItemAmount(), reward);
         communityGoalManager.contribute(event.getPlayer(), "COLLECT_ITEMS",
-                event.getItemType().name(), event.getItemAmount());
+                event.getItemType().name(), event.getItemAmount(), communityContext(reward));
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onTame(final EntityTameEvent event) {
         if (!(event.getOwner() instanceof Player tamer)) return;
+        final UUID playerId = tamer.getUniqueId();
         final var entityType = event.getEntityType();
-        tamer.getScheduler().run(plugin,
-                task -> questManager.handleTame(tamer, entityType), null);
+        final List<RewardSource> sources;
+        try { sources = BukkitRewardSources.causal(event.getEntity()); }
+        catch (final RuntimeException | LinkageError unavailable) { return; }
+        onPlayerOwner(playerId, sources, (owned, reward) -> questManager.handleTame(owned, entityType, reward));
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onVillagerTrade(final PlayerTradeEvent event) {
-        questManager.handleVillagerTrade(event.getPlayer());
+        final RewardContext reward = capture(event.getPlayer(), () -> BukkitRewardSources.causal(event.getVillager()));
+        if (reward == null) return;
+        questManager.handleVillagerTrade(event.getPlayer(), reward);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -322,7 +360,32 @@ public final class QuestProgressListener implements Listener {
         if (to == null || (from.getBlockX() == to.getBlockX()
                 && from.getBlockZ() == to.getBlockZ()
                 && from.getBlockY() == to.getBlockY())) return;
+        if (!Bukkit.isOwnedByCurrentRegion(to)) return;
+        final RewardContext reward = capture(event.getPlayer(), () -> BukkitRewardSources.block(to.getBlock()));
+        if (reward == null) return;
         questManager.handleBiomeVisit(event.getPlayer(),
-                to.getBlock().getBiome().getKey().toString());
+                to.getBlock().getBiome().getKey().toString(), reward);
     }
+    private static RewardContext capture(final Player player, final java.util.function.Supplier<List<RewardSource>> original) {
+        try {
+            if (!Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()) return null;
+            final var sources = new LinkedHashSet<>(original.get());
+            sources.addAll(BukkitRewardSources.causal(player));
+            final var reward = new RewardContext(RewardChannel.QUEST_PROGRESS, player.getUniqueId(), List.copyOf(sources));
+            return GameplayRewardGate.evaluate(reward).allowed() ? reward : null;
+        } catch (final RuntimeException | LinkageError unavailable) { return null; }
+    }
+
+    private void onPlayerOwner(final UUID playerId, final List<RewardSource> sources,
+                               final BiConsumer<Player, RewardContext> action) {
+        final Player handle = Bukkit.getPlayer(playerId);
+        if (handle == null) return;
+        handle.getScheduler().run(plugin, task -> {
+            final Player owned = Bukkit.getPlayer(playerId);
+            if (owned == null || !Bukkit.isOwnedByCurrentRegion(owned) || !owned.isOnline()) return;
+            final RewardContext reward = capture(owned, () -> sources);
+            if (reward != null) action.accept(owned, reward);
+        }, null);
+    }
+
 }

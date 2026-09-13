@@ -69,7 +69,9 @@ public record TrashLootTuning(
                 requiredInt(section, "ambient.distance-min-blocks"),
                 requiredInt(section, "ambient.distance-max-blocks"),
                 requiredInt(section, "ambient.ttl-min-seconds"),
-                requiredInt(section, "ambient.ttl-max-seconds"));
+                requiredInt(section, "ambient.ttl-max-seconds"),
+                requiredInt(section, "ambient.max-per-chunk"),
+                requiredInt(section, "ambient.max-per-neighborhood"));
         return new TrashLootTuning(sourceChances, categoryWeights,
                 requiredDouble(section, "source-affinity-multiplier"),
                 requiredDouble(section, "context-affinity-multiplier"),
@@ -97,7 +99,8 @@ public record TrashLootTuning(
 
     public record Ambient(int attemptMinSeconds, int attemptMaxSeconds,
                           int distanceMinBlocks,
-                          int distanceMaxBlocks, int ttlMinSeconds, int ttlMaxSeconds) {
+                          int distanceMaxBlocks, int ttlMinSeconds, int ttlMaxSeconds,
+                          int maxPerChunk, int maxPerNeighborhood) {
         public Ambient {
             if (attemptMinSeconds < 1 || attemptMaxSeconds < attemptMinSeconds) {
                 throw new IllegalArgumentException("hibás ambient attempt intervallum");
@@ -107,6 +110,10 @@ public record TrashLootTuning(
             }
             if (ttlMinSeconds < 1 || ttlMaxSeconds < ttlMinSeconds) {
                 throw new IllegalArgumentException("hibás ambient TTL tartomány");
+            }
+            if (maxPerChunk < 1 || maxPerChunk > 16
+                    || maxPerNeighborhood < maxPerChunk || maxPerNeighborhood > 32) {
+                throw new IllegalArgumentException("hibás ambient density cap");
             }
         }
     }

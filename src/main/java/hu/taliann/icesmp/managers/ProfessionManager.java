@@ -8,6 +8,8 @@ import hu.taliann.icesmp.playerprofile.domain.ProfileSectionId;
 import hu.taliann.icesmp.playerprofile.domain.section.ProfessionProfileState;
 import hu.taliann.icesmp.playerprofile.domain.section.ProfessionSection;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
+import hu.taliann.icesmp.integrity.*;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -145,9 +147,10 @@ public final class ProfessionManager implements PlayerStateCleanup {
             return CompletableFuture.completedFuture(XpChange.rejected());
         }
         final int normalized = Math.max(0, xp);
+        final int base = baseXp(), increment = incrementPerLevel();
         return mutateXp(player, professionType,
                 current -> ProfessionProfileState.setExperience(current, professionType,
-                        normalized, baseXp(), incrementPerLevel(), MAX_PROFESSION_LEVEL));
+                        normalized, base, increment, MAX_PROFESSION_LEVEL), null);
     }
 
     public CompletionStage<XpChange> addXp(final Player player,
@@ -156,21 +159,42 @@ public final class ProfessionManager implements PlayerStateCleanup {
         if (amount <= 0 || professionType == null) {
             return CompletableFuture.completedFuture(XpChange.rejected());
         }
+        final RewardContext reward;
+        try { reward = BukkitRewardSources.entity(RewardChannel.PROFESSION_XP, player).forRecipient(player.getUniqueId()); }
+        catch (RuntimeException | LinkageError unavailable) { return CompletableFuture.completedFuture(XpChange.rejected()); }
+        return addXp(player, professionType, amount, reward);
+    }
+
+    public CompletionStage<XpChange> addXp(final Player player, final ProfessionType professionType,
+                                           final int amount, final RewardContext reward) {
+        Objects.requireNonNull(reward).require(RewardChannel.PROFESSION_XP, player.getUniqueId());
+        if (amount <= 0 || professionType == null) return CompletableFuture.completedFuture(XpChange.rejected());
+        final int base = baseXp(), increment = incrementPerLevel();
         return mutateXp(player, professionType,
                 current -> ProfessionProfileState.addExperience(current, professionType,
-                        amount, baseXp(), incrementPerLevel(), MAX_PROFESSION_LEVEL));
+                        amount, base, increment, MAX_PROFESSION_LEVEL), reward);
     }
 
     /** Awards activity XP only when the player actively practices the profession. */
     public CompletionStage<XpChange> addXpFor(final Player player,
                                               final ProfessionType professionType,
                                               final int amount) {
+        final RewardContext reward;
+        try { reward = BukkitRewardSources.entity(RewardChannel.PROFESSION_XP, player).forRecipient(player.getUniqueId()); }
+        catch (RuntimeException | LinkageError unavailable) { return CompletableFuture.completedFuture(XpChange.rejected()); }
+        return addXpFor(player, professionType, amount, reward);
+    }
+
+    public CompletionStage<XpChange> addXpFor(final Player player, final ProfessionType professionType,
+                                              final int amount, final RewardContext reward) {
+        Objects.requireNonNull(reward).require(RewardChannel.PROFESSION_XP, player.getUniqueId());
         if (!hasProfession(player, professionType)) {
             return CompletableFuture.completedFuture(XpChange.rejected());
         }
-        return addXp(player, professionType, amount).thenApply(change -> {
+        final UUID playerId = player.getUniqueId();
+        return addXp(player, professionType, amount, reward).thenApply(change -> {
             if (change.changed() && change.level() > change.previousLevel()) {
-                runOnOwnerThread(player, () -> applyLevelUpFeedback(player, professionType, change));
+                runOnOwnerThread(playerId, owned -> applyLevelUpFeedback(owned, professionType, change));
             }
             return change;
         });
@@ -258,6 +282,17 @@ public final class ProfessionManager implements PlayerStateCleanup {
         player.getScheduler().run(plugin, ignored -> action.run(), null);
     }
 
+    /** Queued feedback retains an immutable identity; live state is resolved only on its owner. */
+    public void runOnOwnerThread(final UUID playerId, final java.util.function.Consumer<Player> action) {
+        Objects.requireNonNull(playerId); Objects.requireNonNull(action);
+        final Player handle = Bukkit.getPlayer(playerId);
+        if (handle == null) return;
+        handle.getScheduler().run(plugin, ignored -> {
+            final Player owned = Bukkit.getPlayer(playerId);
+            if (owned != null && Bukkit.isOwnedByCurrentRegion(owned) && owned.isOnline()) action.accept(owned);
+        }, null);
+    }
+
     public void cleanup(final UUID playerId) {
         // PlayerProfile lifecycle owns durable state and cache invalidation.
     }
@@ -271,17 +306,26 @@ public final class ProfessionManager implements PlayerStateCleanup {
             final Player player,
             final ProfessionType professionType,
             final java.util.function.Function<ProfessionSection,
-                    ProfessionProfileState.ExperienceMutation> mutation) {
-        return PlayerProfileAuthority.current().mutateSectionConditional(
-                player.getUniqueId(), ProfileSectionId.PROFESSIONS, ProfessionSection.class,
-                current -> {
-                    final ProfessionProfileState.ExperienceMutation result = mutation.apply(current);
-                    final XpChange change = new XpChange(result.changed(), result.previousExperience(),
-                            result.experience(), result.previousLevel(), result.level());
-                    return result.changed()
-                            ? PlayerProfileService.ConditionalMutation.changed(result.section(), change)
-                            : PlayerProfileService.ConditionalMutation.unchanged(change);
-                });
+                    ProfessionProfileState.ExperienceMutation> mutation,
+            final RewardContext reward) {
+        final java.util.function.Function<ProfessionSection, PlayerProfileService.ConditionalMutation<ProfessionSection, XpChange>> planner = current -> {
+            final ProfessionProfileState.ExperienceMutation result = mutation.apply(current);
+            final XpChange change = new XpChange(result.changed(), result.previousExperience(),
+                    result.experience(), result.previousLevel(), result.level());
+            return result.changed()
+                    ? PlayerProfileService.ConditionalMutation.changed(result.section(), change)
+                    : PlayerProfileService.ConditionalMutation.unchanged(change);
+        };
+        final var authority = PlayerProfileAuthority.current();
+        final CompletionStage<XpChange> result = reward == null
+                ? authority.mutateSectionConditional(player.getUniqueId(), ProfileSectionId.PROFESSIONS, ProfessionSection.class, planner)
+                : authority.mutateRewardSectionConditional(player.getUniqueId(), ProfileSectionId.PROFESSIONS, ProfessionSection.class, reward, planner);
+        return result.exceptionally(failure -> {
+            Throwable cause = failure;
+            while (cause instanceof java.util.concurrent.CompletionException && cause.getCause() != null) cause = cause.getCause();
+            if (cause instanceof RewardEligibilityDeniedException) return XpChange.rejected();
+            throw new java.util.concurrent.CompletionException(cause);
+        });
     }
 
     private ProfessionSection section(final UUID playerId) {
