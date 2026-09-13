@@ -106,7 +106,7 @@ creature regressions and Paper 1.21.11 runtime proof to the immutable artifact.
 
 ## Tuning and future boundary
 
-Combat content belongs in `config/mob-templates.yml`. Event timing, probability, participant
+Combat content belongs in `content/pve/enemies.yml`. Event timing, probability, participant
 coefficients, placement and settlement stay in world/Prologue config. Human staging must tune
 telegraphs, counterplay, participant scaling and reward feel before merge.
 

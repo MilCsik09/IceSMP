@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.quest;
 
 import hu.taliann.icesmp.classspec.domain.ClassSpecCatalog;
+import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.managers.QuestManager;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -93,6 +94,17 @@ public final class QuestGraphValidator {
         if (!requiredSpecialization.isBlank()
                 && !ClassSpecCatalog.isKnownSpecialization(requiredSpecialization)) {
             errors.add(id + ": unknown requires-specialization: " + requiredSpecialization);
+        }
+        final String requiredProfession = quest.getString("requires-profession", "");
+        if (!requiredProfession.isBlank()
+                && ProfessionType.fromId(requiredProfession) == null) {
+            errors.add(id + ": unknown requires-profession: " + requiredProfession);
+        }
+        if (quest.getInt("requires-profession-level", 1) < 1) {
+            errors.add(id + ": requires-profession-level must be positive");
+        }
+        if (quest.isSet("requires-profession-level") && requiredProfession.isBlank()) {
+            errors.add(id + ": requires-profession-level requires requires-profession");
         }
     }
 

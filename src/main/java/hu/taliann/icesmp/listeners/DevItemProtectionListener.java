@@ -1,6 +1,10 @@
 package hu.taliann.icesmp.listeners;
 
 import hu.taliann.icesmp.items.DevItemFactory;
+import hu.taliann.icesmp.dev.artifact.DevArtifactInteraction;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.event.block.Action;
 import hu.taliann.icesmp.managers.DevItemManager;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -64,6 +68,8 @@ public final class DevItemProtectionListener implements Listener {
     @EventHandler
     public void onDeath(final PlayerDeathEvent event) {
         event.getDrops().removeIf(factory::isDevItem);
+        event.getItemsToKeep().removeIf(factory::isDevItem);
+        manager.clearPlayerState(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
@@ -71,12 +77,8 @@ public final class DevItemProtectionListener implements Listener {
         if (!factory.isDevItem(event.getItem().getItemStack())) {
             return;
         }
-        final java.util.UUID itemOwner = factory.ownerOf(event.getItem().getItemStack());
-        if (!(event.getEntity() instanceof Player player)
-                || itemOwner == null || !itemOwner.equals(player.getUniqueId())) {
-            event.setCancelled(true);
-            event.getItem().remove();
-        }
+        event.setCancelled(true);
+        event.getItem().remove();
     }
 
     /**
@@ -90,9 +92,14 @@ public final class DevItemProtectionListener implements Listener {
             return;
         }
         event.setUseItemInHand(Event.Result.DENY);
-        if (event.getClickedBlock() != null && event.getClickedBlock().getType() == Material.DECORATED_POT) {
-            event.setCancelled(true);
-        }
+        if (manager.mainHandOnly(event.getItem())) event.setCancelled(true);
+        if (event.getClickedBlock() != null && event.getClickedBlock().getType() == Material.DECORATED_POT) event.setCancelled(true);
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        final org.bukkit.block.Block block = event.getClickedBlock();
+        manager.interact(event.getPlayer(), block == null ? DevArtifactInteraction.Kind.RIGHT_CLICK_AIR
+                : DevArtifactInteraction.Kind.RIGHT_CLICK_BLOCK, null,
+                block == null ? null : new DevArtifactInteraction.BlockPosition(block.getWorld().getUID(), block.getX(), block.getY(), block.getZ()));
     }
 
     @EventHandler
@@ -117,6 +124,8 @@ public final class DevItemProtectionListener implements Listener {
     public void onEntityInteract(final PlayerInteractEntityEvent event) {
         if (factory.isDevItem(itemInHand(event.getPlayer(), event.getHand()))) {
             event.setCancelled(true);
+            if (event.getHand() == EquipmentSlot.HAND) manager.interact(event.getPlayer(),
+                    DevArtifactInteraction.Kind.RIGHT_CLICK_ENTITY, event.getRightClicked().getUniqueId(), null);
         }
     }
 
@@ -125,6 +134,19 @@ public final class DevItemProtectionListener implements Listener {
     public void onEntityInteractAt(final PlayerInteractAtEntityEvent event) {
         if (factory.isDevItem(itemInHand(event.getPlayer(), event.getHand()))) {
             event.setCancelled(true);
+            if (event.getHand() == EquipmentSlot.HAND) manager.interact(event.getPlayer(),
+                    DevArtifactInteraction.Kind.RIGHT_CLICK_ENTITY, event.getRightClicked().getUniqueId(), null);
+        }
+    }
+
+    @EventHandler
+    public void onSwap(final PlayerSwapHandItemsEvent event) {
+        final ItemStack main = event.getPlayer().getInventory().getItemInMainHand();
+        final ItemStack off = event.getPlayer().getInventory().getItemInOffHand();
+        if ((factory.isDevItem(main) && manager.mainHandOnly(main))
+                || (factory.isDevItem(off) && manager.mainHandOnly(off))) {
+            event.setCancelled(true);
+            if (factory.isDevItem(main)) manager.interact(event.getPlayer(), DevArtifactInteraction.Kind.SWAP_HAND, null, null);
         }
     }
 
@@ -155,7 +177,8 @@ public final class DevItemProtectionListener implements Listener {
             return;
         }
         final int topSize = event.getView().getTopInventory().getSize();
-        if (event.getRawSlots().stream().anyMatch(slot -> slot < topSize)) {
+        if (event.getRawSlots().stream().anyMatch(slot -> slot < topSize
+                || (manager.mainHandOnly(event.getOldCursor()) && event.getView().convertSlot(slot) == 40))) {
             event.setCancelled(true);
         }
     }
@@ -177,6 +200,14 @@ public final class DevItemProtectionListener implements Listener {
                 && factory.isDevItem(player.getInventory().getItemInOffHand());
         if (!factory.isDevItem(current) && !factory.isDevItem(cursor)
                 && !factory.isDevItem(hotbar) && !offhandSwap) {
+            return;
+        }
+
+        if ((factory.isDevItem(current) && manager.mainHandOnly(current)
+                && "SWAP_OFFHAND".equals(event.getClick().name()))
+                || (event.getSlot() == 40 && ((factory.isDevItem(cursor) && manager.mainHandOnly(cursor))
+                || (factory.isDevItem(hotbar) && manager.mainHandOnly(hotbar))))) {
+            event.setCancelled(true);
             return;
         }
 

@@ -21,6 +21,8 @@ public final class CombatTagManager implements hu.taliann.icesmp.session.PlayerS
     private final ConfigManager configManager;
     private final MessageManager messageManager;
     /** játékos → epoch ms, ameddig a jelölés él (lejárt bejegyzés = nem jelölt). */
+    private record Aggression(UUID attacker, long until) { }
+    private final Map<String, Aggression> aggressors = new ConcurrentHashMap<>();
     private final Map<UUID, Long> taggedUntil = new ConcurrentHashMap<>();
 
     public CombatTagManager(final JavaPlugin plugin, final ConfigManager configManager,
@@ -46,6 +48,13 @@ public final class CombatTagManager implements hu.taliann.icesmp.session.PlayerS
         return true;
     }
 
+    /** Only the defender of the first uncancelled hit has a self-defence exemption. */
+    public boolean isSelfDefense(final UUID defender, final UUID aggressor) {
+        final Aggression contact = aggressors.get(pairKey(defender, aggressor));
+        return contact != null && contact.until() > System.currentTimeMillis()
+                && contact.attacker().equals(aggressor);
+    }
+
     public long remainingSeconds(final UUID playerId) {
         final Long until = taggedUntil.get(playerId);
         return until == null ? 0L : Math.max(0L, (until - System.currentTimeMillis() + 999L) / 1000L);
@@ -67,6 +76,10 @@ public final class CombatTagManager implements hu.taliann.icesmp.session.PlayerS
         taggedUntil.put(victim.getUniqueId(), until);
         taggedUntil.put(attacker.getUniqueId(), until);
         recordPairContact(victim.getUniqueId(), attacker.getUniqueId());
+        final long now = System.currentTimeMillis();
+        aggressors.entrySet().removeIf(entry -> entry.getValue().until() <= now);
+        aggressors.compute(pairKey(victim.getUniqueId(), attacker.getUniqueId()), (key, old) ->
+                new Aggression(old == null || old.until() <= now ? attacker.getUniqueId() : old.attacker(), until));
         if (!victimWasTagged) {
             victim.sendActionBar(messageManager.getMessage("combat-tagged",
                     "<red>⚔ Harcban vagy — a zónák most nem védenek, és a komp sem indul.</red>"));

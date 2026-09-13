@@ -18,6 +18,15 @@ public interface Subcommand {
 
     String usage();
 
+    /** Permission required to discover and execute this action; {@code null} means public. */
+    default String permission() {
+        return null;
+    }
+
+    default boolean isVisibleTo(final CommandSender sender) {
+        return permission() == null || permission().isBlank() || sender.hasPermission(permission());
+    }
+
     boolean execute(CommandSender sender, String[] args);
 
     default List<String> tabComplete(final CommandSender sender, final String[] args) {

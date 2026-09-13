@@ -117,7 +117,7 @@ public final class OnboardingDialogRegressionSuite {
     /** The packaged default and the compiled fallback must not drift apart. */
     private static void packagedConfigAndFallbackAgree() throws Exception {
         final List<String> packaged = configuredWelcomeLines(
-                Path.of("src/main/resources/config/quests.yml"));
+                Path.of("src/main/resources/content/progression/quests.yml"));
         check(packaged.equals(OnboardingWelcomeCopy.CURRENT_LINES),
                 "the packaged quests.yml ships exactly the current copy");
         check(OnboardingWelcomeCopy.resolve(packaged).equals(OnboardingWelcomeCopy.CURRENT_LINES),

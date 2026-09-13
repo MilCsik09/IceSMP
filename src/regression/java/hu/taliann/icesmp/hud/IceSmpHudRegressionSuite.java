@@ -520,7 +520,7 @@ public final class IceSmpHudRegressionSuite {
                             .toLowerCase(Locale.ROOT).contains("hardcore")),
                     "hardcore heart sprites must remain untouched on the non-hardcore server");
         }
-        final String classesConfig = read("src/main/resources/config/classes.yml");
+        final String classesConfig = read("src/main/resources/content/progression/classes.yml");
         final int healthSection = classesConfig.indexOf("\nhealth:\n");
         final int healthDisplay = classesConfig.indexOf("\n  display:\n", healthSection);
         check(healthSection >= 0 && healthDisplay > healthSection

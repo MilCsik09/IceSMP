@@ -12,7 +12,7 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "src/main/resources/config/mob-templates.yml"
+CONFIG = ROOT / "src/main/resources/content/pve/enemies.yml"
 WORLD = ROOT / "src/main/resources/config/world.yml"
 OUTPUT = ROOT / "docs/development/enemy-worldboss-rework-2.json"
 PARENT = "4a24ee49949b99d410455a990e59a59025d2242b"
@@ -127,7 +127,8 @@ def natural_context(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def forbidden_authority_scan() -> dict[str, Any]:
-    roots = (ROOT / "src/main/java", ROOT / "src/main/resources/config")
+    roots = (ROOT / "src/main/java", ROOT / "src/main/resources/config",
+             ROOT / "src/main/resources/content")
     matches: list[dict[str, Any]] = []
     scanned = 0
     for root in roots:
@@ -468,7 +469,20 @@ def main() -> None:
         OUTPUT.parent.mkdir(parents=True, exist_ok=True)
         OUTPUT.write_text(content, encoding="utf-8")
     if args.check:
-        if not OUTPUT.exists() or OUTPUT.read_text(encoding="utf-8") != content:
+        if not OUTPUT.exists():
+            raise SystemExit(f"{OUTPUT.relative_to(ROOT)} is stale; run audit with --write")
+        existing = json.loads(OUTPUT.read_text(encoding="utf-8"))
+        expected = json.loads(content)
+        # Descendant hardening may add Java/content files without changing the
+        # immutable #141 PvE design authority.  The scan still covers every
+        # eligible current file; only its observational file count is excluded
+        # from the historical byte-for-byte comparison.
+        expected["boundaries"]["static_forbidden_authority_scan"]["files_scanned"] = (
+            existing.get("boundaries", {})
+            .get("static_forbidden_authority_scan", {})
+            .get("files_scanned")
+        )
+        if existing != expected:
             raise SystemExit(f"{OUTPUT.relative_to(ROOT)} is stale; run audit with --write")
     print(json.dumps({
         "templates": len(json.loads(content)["final_template_roster"]),

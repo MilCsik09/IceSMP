@@ -55,6 +55,9 @@ public final class JobAdminSubcommand implements JobSubcommand {
     }
 
     @Override
+    public String permission() { return PERMISSION; }
+
+    @Override
     public boolean execute(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
             sender.sendMessage(messageManager.get("messages.permission-denied", "&cNincs jogod ehhez a parancshoz."));

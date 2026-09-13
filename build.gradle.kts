@@ -70,15 +70,30 @@ val auditEquipmentAssets by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_equipment_assets.py")
 }
 
+val trashSpriteAssetAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates all 330 base and 27 lifecycle Trash sprites and modern item models without writing."
+    inputs.files(
+        "scripts/process_trash_sprite_sheets.py",
+        "dev-assets/trash/source/manifest.json",
+        "src/main/resources/content/trash/catalog.yml",
+    )
+    inputs.dir(layout.projectDirectory.dir("dev-assets/trash/source"))
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/items/trash"))
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/models/item/trash"))
+    inputs.dir(layout.projectDirectory.dir("resource-pack/assets/icesmp/textures/item/trash"))
+    commandLine(pythonCommand, "scripts/process_trash_sprite_sheets.py", "--check", "--require-complete")
+}
+
 val progressionBalanceRegressionTest by tasks.registering(Exec::class) {
     group = "verification"
     description = "Runs the Itemization/Mob 2.0 economy, Monte Carlo and bounded-load gate."
     inputs.files(
         "scripts/test_progression_balance.py",
-        "src/main/resources/config/item-templates.yml",
+        "src/main/resources/content/equipment/equipment.yml",
         "src/main/resources/config/crafting.yml",
-        "src/main/resources/config/profession-recipes.yml",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/professions/recipes.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/resources/config/world.yml",
     )
     commandLine(pythonCommand, "scripts/test_progression_balance.py")
@@ -89,9 +104,8 @@ val equipment2ReportRegressionTest by tasks.registering(Exec::class) {
     description = "Validates the deterministic Equipment 2.0 migration, budget and handoff report."
     inputs.files(
         "scripts/generate_equipment_2_report.py",
-        "src/main/resources/config/item-templates.yml",
-        "src/main/resources/config/equipment-catalog-expansion.yml",
-        "src/main/resources/config/profession-recipes.yml",
+        "src/main/resources/content/equipment/equipment.yml",
+        "src/main/resources/content/professions/recipes.yml",
         "docs/development/equipment-2-handoff.json",
     )
     commandLine(pythonCommand, "scripts/generate_equipment_2_report.py", "--check")
@@ -103,9 +117,8 @@ val combatEncounterFoundationAudit by tasks.registering(Exec::class) {
     inputs.files(
         "scripts/audit_combat_encounter_foundation.py",
         "scripts/audit_long_term_equipment_catalog.py",
-        "src/main/resources/config/item-templates.yml",
-        "src/main/resources/config/equipment-catalog-expansion.yml",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/equipment/equipment.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/resources/config/world.yml",
         "docs/development/combat-balance-authority.json",
     )
@@ -117,7 +130,7 @@ val unifiedCreatureCombatAudit by tasks.registering(Exec::class) {
     description = "Validates the bounded creature species, technique, reaction, reward and social authority."
     inputs.files(
         "scripts/audit_unified_creature_combat.py",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/java/hu/taliann/icesmp/pve/CreatureProfileService.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
         "src/main/java/hu/taliann/icesmp/managers/MobScalingManager.java",
@@ -131,7 +144,7 @@ val authoredPveConsolidationAudit by tasks.registering(Exec::class) {
     inputs.files(
         "scripts/audit_authored_pve_consolidation.py",
         "src/main/resources/config.yml",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/resources/config/world.yml",
         "src/main/java/hu/taliann/icesmp/pve/AuthoredCreatureSpawnService.java",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
@@ -149,12 +162,68 @@ val enemyWorldBossReworkAudit by tasks.registering(Exec::class) {
     description = "Validates enemy inventory, variants, behavior, context, daylight, FX and boss diversity."
     inputs.files(
         "scripts/audit_enemy_worldboss_rework.py",
-        "src/main/resources/config/mob-templates.yml",
+        "src/main/resources/content/pve/enemies.yml",
         "src/main/resources/config/world.yml",
         "src/main/java/hu/taliann/icesmp/pve/MobAbilityRuntime.java",
         "docs/development/enemy-worldboss-rework-2.json",
     )
     commandLine(pythonCommand, "scripts/audit_enemy_worldboss_rework.py", "--check")
+}
+
+val configContentCommandSurfaceAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates canonical config/content ownership, semantic parity and command permissions."
+    inputs.files(
+        "scripts/audit_config_content_command_surface.py",
+        "docs/development/config-content-command-surface-2.json",
+        "src/main/java/hu/taliann/icesmp/managers/ConfigManager.java",
+        "src/main/java/hu/taliann/icesmp/commands/IceSMPCommand.java",
+        "src/main/java/hu/taliann/icesmp/commands/AbstractDispatchCommand.java",
+        "src/main/java/hu/taliann/icesmp/commands/Subcommand.java",
+    )
+    inputs.dir("src/main/resources/config")
+    inputs.dir("src/main/resources/content")
+    commandLine(pythonCommand, "scripts/audit_config_content_command_surface.py", "--check")
+}
+
+val gameplayBootstrapIntegrityAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates the ten bounded gameplay/bootstrap finding closures and evidence matrices."
+    inputs.files(
+        "scripts/audit_gameplay_bootstrap_integrity.py",
+        "docs/development/gameplay-bootstrap-integrity-hardening.json",
+        "src/main/resources/paper-plugin.yml",
+        "src/main/resources/class-spec-dependencies.lock.yml",
+    )
+    inputs.dir("src/main/resources/content")
+    inputs.dir("src/main/resources/datapack")
+    inputs.dir("src/main/java")
+    commandLine(pythonCommand, "scripts/audit_gameplay_bootstrap_integrity.py", "--check")
+}
+
+val questItemContentIntegrityAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Exhaustively validates quest, reward, item-lore and boss-reward finding closure."
+    inputs.files(
+        "scripts/audit_quest_item_content_integrity.py",
+        "docs/development/quest-item-content-integrity-hardening.json",
+    )
+    inputs.dir("src/main/resources/content")
+    inputs.dir("src/main/java")
+    commandLine(pythonCommand, "scripts/audit_quest_item_content_integrity.py", "--check")
+}
+
+val playerFacingMessagingAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates bundled message YAML and reviewed player-facing messaging contracts."
+    inputs.files(
+        "scripts/audit_player_facing_messaging_hardening.py",
+        "docs/development/player-facing-messaging-integrity-hardening.json",
+        "src/main/resources/messages.yml",
+    )
+    inputs.dir("src/main/resources/messages")
+    inputs.dir("src/main/java")
+    commandLine(pythonCommand, "scripts/audit_player_facing_messaging_hardening.py")
 }
 
 val validateIceSmpHudPackage by tasks.registering {
@@ -495,6 +564,12 @@ tasks {
     }
 }
 
+val worldWeaverArchitectureAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Checks WorldWeaver generic frontend, secrecy and static Folia fences."
+    commandLine("python3", "-m", "unittest", "scripts.tests.test_world_weaver_architecture")
+}
+
 val regressionTest by sourceSets.creating {
     java.srcDir("src/regression/java")
     compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
@@ -518,6 +593,207 @@ val devItemRewardRegressionTest = registerRegression(
     "devItemRewardRegressionTest",
     "Runs focused DEV-item state, retry and scheduler-gate regressions.",
     "hu.taliann.icesmp.managers.DevItemRewardRegressionSuite")
+val devArtifactLifecycleRegressionTest = registerRegression(
+    "devArtifactLifecycleRegressionTest",
+    "Runs DEV artifact owner-policy, immutable-state and durable publication regressions.",
+    "hu.taliann.icesmp.dev.artifact.DevArtifactLifecycleRegressionSuite")
+val devArtifactMigrationRegressionTest = registerRegression(
+    "devArtifactMigrationRegressionTest",
+    "Runs strict DEV artifact schema-2 and lossless legacy reward migration regressions.",
+    "hu.taliann.icesmp.dev.artifact.DevArtifactMigrationRegressionSuite")
+val weaverTypeCompatibilityRegressionTest = registerRegression(
+    "weaverTypeCompatibilityRegressionTest",
+    "Runs WeaverTypeCompatibility contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverTypeCompatibilityRegressionSuite")
+val weaverDynamicCatalogRegressionTest = registerRegression(
+    "weaverDynamicCatalogRegressionTest",
+    "Runs WeaverDynamicCatalog contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverDynamicCatalogRegressionSuite")
+val weaverAreaRegressionTest = registerRegression(
+    "weaverAreaRegressionTest",
+    "Runs WeaverArea contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverAreaRegressionSuite")
+val weaverContractRegressionTest = registerRegression(
+    "weaverContractRegressionTest",
+    "Runs WeaverContract contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverContractRegressionSuite")
+val worldWeaverCompositionRegressionTest = registerRegression(
+    "worldWeaverCompositionRegressionTest",
+    "Runs practical composition and created-state quarantine regressions.",
+    "hu.taliann.icesmp.dev.weaver.provider.WorldWeaverCompositionRegressionSuite")
+val worldWeaverAuthorityRegressionTest = registerRegression(
+    "worldWeaverAuthorityRegressionTest",
+    "Runs WorldWeaverAuthority contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WorldWeaverAuthorityRegressionSuite")
+
+val weaverFoliaOwnershipRegressionTest = registerRegression(
+    "weaverFoliaOwnershipRegressionTest",
+    "Runs WeaverFoliaOwnership contract and safety regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverFoliaOwnershipRegressionSuite")
+val weaverExecutionRegressionTest = registerRegression(
+    "weaverExecutionRegressionTest",
+    "Runs Weaver continuation, authority revalidation and fail-closed execution gates.",
+    "hu.taliann.icesmp.dev.weaver.WeaverExecutionRegressionSuite")
+val weaverGUIRegressionTest = registerRegression(
+    "weaverGUIRegressionTest",
+    "Runs generic Weaver view paging, typed parameter and immutable draft regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverGUIRegressionSuite")
+val weaverRewardIntegrityRegressionTest = registerRegression(
+    "weaverRewardIntegrityRegressionTest",
+    "Runs neutral reward-policy source/channel denials and quarantine-tail regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverRewardIntegrityRegressionSuite")
+val weaverPersistenceRegressionTest = registerRegression(
+    "weaverPersistenceRegressionTest",
+    "Runs durable Weaver journal and observed-state recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverPersistenceRegressionSuite")
+val weaverCrashRecoveryRegressionTest = registerRegression(
+    "weaverCrashRecoveryRegressionTest",
+    "Runs durable Weaver journal and observed-state recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverCrashRecoveryRegressionSuite")
+val weaverProjectionRegressionTest = registerRegression(
+    "weaverProjectionRegressionTest",
+    "Runs durable projection consumer, precedence, lifecycle and capacity regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverProjectionRegressionSuite")
+val weaverInfluencePersistenceRegressionTest = registerRegression(
+    "weaverInfluencePersistenceRegressionTest",
+    "Runs durable influence, pre-mutation quarantine and atomic effect failure regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverInfluencePersistenceRegressionSuite")
+val weaverDurableExecutionRegressionTest = registerRegression(
+    "weaverDurableExecutionRegressionTest",
+    "Runs durable stage barriers, compensation, drift and started-timeout regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverDurableExecutionRegressionSuite")
+val weaverUndoRegressionTest = registerRegression(
+    "weaverUndoRegressionTest",
+    "Runs conditional Undo receipt/revision, crash atomicity and effect compensation regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverUndoRegressionSuite")
+val weaverAreaExecutionRegressionTest = registerRegression(
+    "weaverAreaExecutionRegressionTest",
+    "Runs owner-safe AREA collection, bounded fanout, child compensation and pending recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverAreaExecutionRegressionSuite")
+val weaverRevisionRegressionTest = registerRegression(
+    "weaverRevisionRegressionTest",
+    "Runs descriptor revision scope, identity fence, external drift and conditional Undo regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverRevisionRegressionSuite")
+val weaverRetentionRegressionTest = registerRegression(
+    "weaverRetentionRegressionTest",
+    "Runs protected journal retention, atomic admission, audit rotation and storage capacity regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverRetentionRegressionSuite")
+val weaverProjectionScopeRegressionTest = registerRegression(
+    "weaverProjectionScopeRegressionTest",
+    "Runs AREA projection target/revision, durable capacity reservation and crash atomicity regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverProjectionScopeRegressionSuite")
+val pveWeaverCatalogRegressionTest = registerRegression(
+    "pveWeaverCatalogRegressionTest",
+    "Runs the actual PvE adapter catalog publication, typed export and owner-snapshot isolation regressions.",
+    "hu.taliann.icesmp.dev.weaver.provider.PvEWeaverCatalogRegressionSuite")
+val mobRuntimeProjectionRegressionTest = registerRegression(
+    "mobRuntimeProjectionRegressionTest",
+    "Runs canonical/effective mob profile, rank-kit budget and ability eligibility regressions.",
+    "hu.taliann.icesmp.pve.MobRuntimeProjectionRegressionSuite")
+val pveWeaverProjectionRegressionTest = registerRegression(
+    "pveWeaverProjectionRegressionTest",
+    "Runs journal-backed PvE projection, dynamic gameplay import, conditional Undo and crash recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.provider.PvEWeaverProjectionRegressionSuite")
+val weaverCausalSourceRegressionTest = registerRegression(
+    "weaverCausalSourceRegressionTest",
+    "Checks generic canonical source capture and durable parent lineage before native creation.",
+    "hu.taliann.icesmp.dev.weaver.WeaverCausalSourceRegressionSuite")
+val weaverObservedInfluenceRegressionTest = registerRegression(
+    "weaverObservedInfluenceRegressionTest",
+    "Checks durable observed lifetimes, owner observation fences, real YAML restart and failure isolation.",
+    "hu.taliann.icesmp.dev.weaver.WeaverObservedInfluenceRegressionSuite")
+val weaverEffectPropagationRegressionTest = registerRegression(
+    "weaverEffectPropagationRegressionTest",
+    "Checks durable native effect lineage, publication fencing, crash recovery and one-use admission.",
+    "hu.taliann.icesmp.dev.weaver.WeaverEffectPropagationRegressionSuite")
+val mobRuntimeHistoryRegressionTest = registerRegression(
+    "mobRuntimeHistoryRegressionTest",
+    "Checks bounded cooldown and consumed-threshold history across registry churn.",
+    "hu.taliann.icesmp.pve.MobRuntimeHistoryRegressionSuite")
+val mobRuntimeControlRegressionTest = registerRegression(
+    "mobRuntimeControlRegressionTest",
+    "Runs native control operation correlation, uncertainty, bounded evidence and replay rejection regressions.",
+    "hu.taliann.icesmp.pve.MobRuntimeControlRegressionSuite")
+val pveWeaverRuntimeRegressionTest = registerRegression(
+    "pveWeaverRuntimeRegressionTest",
+    "Runs native PvE provider owner routing, authority, journal recovery and crash correlation regressions.",
+    "hu.taliann.icesmp.dev.weaver.provider.PvEWeaverRuntimeRegressionSuite")
+val weaverProjectionDispatchRegressionTest = registerRegression(
+    "weaverProjectionDispatchRegressionTest",
+    "Runs bounded durable projection publication dispatch, cleanup races and provider failure isolation regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverProjectionDispatchRegressionSuite")
+val weaverGameplayRewardGateRegressionTest = registerRegression(
+    "weaverGameplayRewardGateRegressionTest",
+    "Runs installed gameplay reward gateway, unclaimed world source and continuation quarantine regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverGameplayRewardGateRegressionSuite")
+val weaverProfileRewardAdmissionRegressionTest = registerRegression(
+    "weaverProfileRewardAdmissionRegressionTest",
+    "Runs real profile YAML admission, queued reward quarantine and accepted WAL/receipt recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverProfileRewardAdmissionRegressionSuite")
+val weaverStoredContentIsolationRegressionTest = registerRegression(
+    "weaverStoredContentIsolationRegressionTest",
+    "Runs removed content/provider/schema persistence, healthy writer isolation and restored consumer recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverStoredContentIsolationRegressionSuite")
+val weaverProfessionRewardRegressionTest = registerRegression(
+    "weaverProfessionRewardRegressionTest",
+    "Runs profession and weekly reward CAS admission, source drift and accepted WAL recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverProfessionRewardRegressionSuite")
+val weaverKnowledgeRewardRegressionTest = registerRegression(
+    "weaverKnowledgeRewardRegressionTest",
+    "Runs knowledge provenance, atomic Bestiary milestone admission and canonical pending payout replay regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverKnowledgeRewardRegressionSuite")
+val weaverQuestRewardRegressionTest = registerRegression(
+    "weaverQuestRewardRegressionTest",
+    "Runs quest provenance admission, durable readiness, declined progress isolation and pending entitlement recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverQuestRewardRegressionSuite")
+val questMutationQueueRegressionTest = registerRegression(
+    "questMutationQueueRegressionTest",
+    "Runs bounded native quest mutation queue, dependency failure, reentrancy, logout and shutdown contention regressions.",
+    "hu.taliann.icesmp.quest.QuestMutationQueueRegressionSuite")
+val weaverStatisticsRewardRegressionTest = registerRegression(
+    "weaverStatisticsRewardRegressionTest",
+    "Runs statistic source admission and atomic earned quest/statistics settlement, replay and crash regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverStatisticsRewardRegressionSuite")
+val weaverSeasonRewardRegressionTest = registerRegression(
+    "weaverSeasonRewardRegressionTest",
+    "Runs season activity source WAL admission, native deduplication and membership/generation projection isolation.",
+    "hu.taliann.icesmp.dev.weaver.WeaverSeasonRewardRegressionSuite")
+val serverChallengeIntegrityRegressionTest = registerRegression(
+    "serverChallengeIntegrityRegressionTest",
+    "Runs native challenge source admission, terminal lifecycle contention and owner delivery contracts.",
+    "hu.taliann.icesmp.managers.ServerChallengeIntegrityRegressionSuite")
+val territoryProtectionPolicyRegressionTest = registerRegression(
+    "territoryProtectionPolicyRegressionTest",
+    "Runs canonical territory/overlay trace, hard lifecycle precedence and unavailable-owner fail-closed matrix.",
+    "hu.taliann.icesmp.territory.TerritoryProtectionPolicyRegressionSuite")
+val territoryCanonicalMutationRegressionTest = registerRegression(
+    "territoryCanonicalMutationRegressionTest",
+    "Runs native territory atomic publication, conditional compensation, receipts and real YAML failure recovery.",
+    "hu.taliann.icesmp.territory.TerritoryCanonicalMutationRegressionSuite")
+val territoryWeaverProjectionRegressionTest = registerRegression(
+    "territoryWeaverProjectionRegressionTest",
+    "Runs native territory catalogs, generic Thread parameters, protection projections, quarantine and eight restart boundaries.",
+    "hu.taliann.icesmp.dev.weaver.provider.TerritoryWeaverProjectionRegressionSuite")
+val territoryWeaverCanonicalRegressionTest = registerRegression(
+    "territoryWeaverCanonicalRegressionTest",
+    "Runs real Territory provider transactions, I/O admission, compensating Undo, native receipt recovery and corrupt-plan conflicts.",
+    "hu.taliann.icesmp.dev.weaver.provider.TerritoryWeaverCanonicalRegressionSuite")
+val territorySubjectInspectionRegressionTest = registerRegression(
+    "territorySubjectInspectionRegressionTest",
+    "Runs detached native protection traces, local subject facets and discovery without live state capture.",
+    "hu.taliann.icesmp.dev.weaver.provider.TerritorySubjectInspectionRegressionSuite")
+val factionWeaverProjectionRegressionTest = registerRegression(
+    "factionWeaverProjectionRegressionTest",
+    "Runs canonical faction policy projection, semantic context/Thread, journal Undo and offline recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.provider.FactionWeaverProjectionRegressionSuite")
+val weaverFactionAdjustmentRegressionTest = registerRegression(
+    "weaverFactionAdjustmentRegressionTest",
+    "Runs real faction profile WAL, final authority admission, revision drift and observed recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.WeaverFactionAdjustmentRegressionSuite")
+val factionWeaverCanonicalRegressionTest = registerRegression(
+    "factionWeaverCanonicalRegressionTest",
+    "Runs canonical Faction provider, native outbox, owner routing and observed journal crash recovery regressions.",
+    "hu.taliann.icesmp.dev.weaver.provider.FactionWeaverCanonicalRegressionSuite")
 val moderationRegressionTest = registerRegression(
     "moderationRegressionTest",
     "Runs native moderation plus review concurrency and visibility regressions.",
@@ -538,6 +814,10 @@ val configStartupRegressionTest = registerRegression(
     "configStartupRegressionTest",
     "Runs packaged config, material compatibility and profession parser regressions.",
     "hu.taliann.icesmp.managers.ConfigStartupRegressionSuite")
+val commandSurfaceRegressionTest = registerRegression(
+    "commandSurfaceRegressionTest",
+    "Runs permission, help and Paper trailing-space command surface source contracts.",
+    "hu.taliann.icesmp.commands.CommandSurfaceRegressionSuite")
 val afkRegressionTest = registerRegression(
     "afkRegressionTest",
     "Runs global AFK state, display ordering and product-boundary regressions.",
@@ -637,10 +917,6 @@ val playerProfileFactionAuthorityRegressionTest = registerRegression(
     "playerProfileFactionAuthorityRegressionTest",
     "Runs faction, sinner, whisper and cross-section switch authority regressions.",
     "hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionAuthorityRegressionSuite")
-val playerProfileFactionFoodRegressionTest = registerRegression(
-    "playerProfileFactionFoodRegressionTest",
-    "Runs faction-food timestamp and faction-binding authority regressions.",
-    "hu.taliann.icesmp.playerprofile.application.PlayerProfileFactionFoodStoreRegressionSuite")
 val playerProfileFullAuthorityRegressionTest = registerRegression(
     "playerProfileFullAuthorityRegressionTest",
     "Runs final PlayerProfile operation, budget, wallet and bounty recovery regressions.",
@@ -737,6 +1013,15 @@ val factionPassiveHardeningRegressionTest = registerRegression(
     "factionPassiveHardeningRegressionTest",
     "Runs pure adapter, retaliation, Blood Moon and signature-food hardening regressions.",
     "hu.taliann.icesmp.factions.FactionPassiveHardeningRegressionSuite")
+val whisperIntegrityRegressionTest = registerRegression(
+    "whisperIntegrityRegressionTest", "Runs real profile/WAL whisper integrity and participation regressions.",
+    "hu.taliann.icesmp.playerprofile.application.PlayerProfileWhisperIntegrityRegressionSuite",
+)
+
+val factionReworkRegressionTest = registerRegression(
+    "factionReworkRegressionTest",
+    "Runs meter-free faction, crime-axis and exact-evidence Whisper regressions.",
+    "hu.taliann.icesmp.factions.FactionReworkRegressionSuite")
 val factionTreasuryRegressionTest = registerRegression(
     "factionTreasuryRegressionTest",
     "Runs faction tax origin, collection and recovery regressions.",
@@ -824,7 +1109,7 @@ val professions2EconomyRegressionTest by tasks.registering(Exec::class) {
     group = "verification"
     description = "Runs the seeded Professions 2.0 economy sanity harness."
     inputs.files("scripts/test_professions_2_economy.py", "src/main/resources/config/professions-2.yml",
-        "src/main/resources/config/profession-recipes.yml", "src/main/resources/config/professions.yml")
+        "src/main/resources/content/professions/recipes.yml", "src/main/resources/config/professions.yml")
     commandLine(pythonCommand, "scripts/test_professions_2_economy.py")
 }
 val runtimeHardeningRegressionTest = registerRegression(
@@ -963,10 +1248,65 @@ val mobRuntimeSourceRegressionTest = registerRegression(
     "mobRuntimeSourceRegressionTest",
     "Runs Folia, telegraph, bounded lifecycle and durable encounter reward source gates.",
     "hu.taliann.icesmp.pve.MobRuntimeSourceRegressionSuite")
+val gameplayBootstrapIntegrityRegressionTest = registerRegression(
+    "gameplayBootstrapIntegrityRegressionTest",
+    "Runs behavioral acquisition, projectile, dependency, advancement and facade closure regressions.",
+    "hu.taliann.icesmp.hardening.GameplayBootstrapIntegrityRegressionSuite")
+val questItemContentIntegrityRegressionTest = registerRegression(
+    "questItemContentIntegrityRegressionTest",
+    "Runs guest reward, quest preview, capstone, profession, daily, item and boss identity regressions.",
+    "hu.taliann.icesmp.quest.QuestItemContentIntegrityRegressionSuite")
+val trashCatalogRegressionTest = registerRegression(
+    "trashCatalogRegressionTest",
+    "Runs the 330-identity Trash catalog, secrecy, factory and hidden DEV authority gates.",
+    "hu.taliann.icesmp.trash.TrashCatalogRegressionSuite")
+val trashLootDistributionRegressionTest = registerRegression(
+    "trashLootDistributionRegressionTest",
+    "Runs the 30M-event Trash source/category/context/recycle Monte Carlo gate.",
+    "hu.taliann.icesmp.trash.TrashLootDistributionRegressionSuite")
+val trashHistoryRegressionTest = registerRegression(
+    "trashHistoryRegressionTest",
+    "Runs Trash Phase C history, split, lifecycle, persistence, recycle and no-gate regressions.",
+    "hu.taliann.icesmp.trash.TrashHistoryRegressionSuite")
+val trashAnomalyRegressionTest = registerRegression(
+    "trashAnomalyRegressionTest",
+    "Runs all 42 Phase D behavior, primitive, Folia, persistence and secrecy gates.",
+    "hu.taliann.icesmp.trash.TrashAnomalyRegressionSuite")
+val trashRelicRegressionTest = registerRegression(
+    "trashRelicRegressionTest",
+    "Runs all 23 Phase E behavior, primitive, Folia, persistence and secrecy gates.",
+    "hu.taliann.icesmp.trash.TrashRelicRegressionSuite")
+val trashRuleFieldRegressionTest = registerRegression(
+    "trashRuleFieldRegressionTest",
+    "Runs canonical transient rule-field geometry, hard caps, exclusive claims, conditional removal and shutdown.",
+    "hu.taliann.icesmp.trash.TrashRuleFieldRegressionSuite")
+val trashArchaeologyRegressionTest = registerRegression(
+    "trashArchaeologyRegressionTest",
+    "Runs Phase F hidden progression, Brush session, overlay, secrecy and lifecycle gates.",
+    "hu.taliann.icesmp.trash.TrashArchaeologyRegressionSuite")
+val trashNativeInspectionRegressionTest = registerRegression(
+    "trashNativeInspectionRegressionTest",
+    "Runs native history and anomaly nonblocking inspection, rollback and disk acknowledgement checks.",
+    "hu.taliann.icesmp.trash.TrashNativeInspectionRegressionSuite")
+val trashInteractionFixRegressionTest = registerRegression(
+    "trashInteractionFixRegressionTest",
+    "Runs both Brush hands through real event handlers, cancellation, authored evidence and vendor receipt recovery.",
+    "hu.taliann.icesmp.trash.TrashInteractionFixRegressionSuite")
+
+val trashProductionHardeningRegressionTest = registerRegression(
+    "trashProductionHardeningRegressionTest",
+    "Runs Phase G aggregate telemetry, hard-cap, cleanup, security and staging-evidence gates.",
+    "hu.taliann.icesmp.trash.TrashProductionHardeningRegressionSuite")
+val trashWeaverInspectionRegressionTest = registerRegression(
+    "trashWeaverInspectionRegressionTest",
+    "Runs hidden Trash provider catalogs, bounded native evidence and read-only generic discovery.",
+    "hu.taliann.icesmp.dev.weaver.provider.TrashWeaverInspectionRegressionSuite")
 
 tasks.check {
+    dependsOn(trashWeaverInspectionRegressionTest)
     dependsOn(auditIceSmpHudAssets)
     dependsOn(auditEquipmentAssets)
+    dependsOn(trashSpriteAssetAudit)
     dependsOn(validateIceSmpHudPackage)
     dependsOn(progressionBalanceRegressionTest)
     dependsOn(equipment2ReportRegressionTest)
@@ -974,14 +1314,29 @@ tasks.check {
     dependsOn(unifiedCreatureCombatAudit)
     dependsOn(authoredPveConsolidationAudit)
     dependsOn(enemyWorldBossReworkAudit)
+    dependsOn(configContentCommandSurfaceAudit)
+    dependsOn(gameplayBootstrapIntegrityAudit)
+    dependsOn(questItemContentIntegrityAudit)
+    dependsOn(playerFacingMessagingAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
         persistentStoreRegressionTest, devItemRewardRegressionTest, moderationRegressionTest,
+        devArtifactLifecycleRegressionTest, devArtifactMigrationRegressionTest,
+        weaverPersistenceRegressionTest, weaverCrashRecoveryRegressionTest,
+        territoryProtectionPolicyRegressionTest, territoryCanonicalMutationRegressionTest, territoryWeaverProjectionRegressionTest, territoryWeaverCanonicalRegressionTest, territorySubjectInspectionRegressionTest, mobRuntimeControlRegressionTest, mobRuntimeHistoryRegressionTest, pveWeaverRuntimeRegressionTest, weaverEffectPropagationRegressionTest, weaverObservedInfluenceRegressionTest, weaverCausalSourceRegressionTest,
+        weaverProjectionRegressionTest, weaverInfluencePersistenceRegressionTest, weaverDurableExecutionRegressionTest, weaverUndoRegressionTest, weaverAreaExecutionRegressionTest, weaverRevisionRegressionTest, weaverRetentionRegressionTest, weaverProjectionScopeRegressionTest, pveWeaverCatalogRegressionTest, mobRuntimeProjectionRegressionTest, pveWeaverProjectionRegressionTest, weaverProjectionDispatchRegressionTest, weaverGameplayRewardGateRegressionTest, weaverProfileRewardAdmissionRegressionTest, weaverProfessionRewardRegressionTest, weaverKnowledgeRewardRegressionTest, weaverQuestRewardRegressionTest, questMutationQueueRegressionTest, weaverStatisticsRewardRegressionTest, serverChallengeIntegrityRegressionTest, weaverSeasonRewardRegressionTest, weaverStoredContentIsolationRegressionTest, factionWeaverProjectionRegressionTest, weaverFactionAdjustmentRegressionTest, factionWeaverCanonicalRegressionTest,
+        weaverExecutionRegressionTest, weaverGUIRegressionTest, weaverRewardIntegrityRegressionTest,
+        worldWeaverArchitectureAudit,
+        weaverTypeCompatibilityRegressionTest, weaverDynamicCatalogRegressionTest, weaverAreaRegressionTest, weaverContractRegressionTest, worldWeaverAuthorityRegressionTest, worldWeaverCompositionRegressionTest, weaverFoliaOwnershipRegressionTest,
         motdRegressionTest, sitRegressionTest, crateRegressionTest,
-        configStartupRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
+        configStartupRegressionTest, commandSurfaceRegressionTest, afkRegressionTest, worldGuardBridgeRegressionTest,
         territoryCapitalRegressionTest, hudRegressionTest, platformCapabilitiesRegressionTest, pauseMenuDialogRegressionTest,
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
+        trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
+        trashAnomalyRegressionTest, trashRelicRegressionTest, trashRuleFieldRegressionTest, trashArchaeologyRegressionTest,
+        trashProductionHardeningRegressionTest, trashInteractionFixRegressionTest, trashNativeInspectionRegressionTest,
+        factionReworkRegressionTest, whisperIntegrityRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,
         onboardingDialogRegressionTest, resourcePackRegressionTest,
@@ -993,7 +1348,7 @@ tasks.check {
         classSpecLifecycleRegressionTest, playerProfileDomainRegressionTest, playerProfileSectionExtensionsRegressionTest,
         spellMasteryTransactionRegressionTest, professionProfileStateRegressionTest, playerProfileAchievementRegressionTest,
         playerProfileDailyQuestRegressionTest, playerProfileEconomyRegressionTest, playerProfileFactionAuthorityRegressionTest,
-        playerProfileFactionFoodRegressionTest, playerProfileFullAuthorityRegressionTest, playerProfileIntroRegressionTest,
+        playerProfileFullAuthorityRegressionTest, playerProfileIntroRegressionTest,
         playerProfileModerationRegressionTest, playerProfileCrateRegressionTest, playerProfileDeathEscrowRegressionTest,
         playerProfileQuestRegressionTest, playerProfileWeeklyGoalRegressionTest, playerProfileStatisticsRegressionTest,
         playerProfileTaxRegressionTest, playerProfileRepositoryEnumerationRegressionTest, playerProfileYamlRegressionTest,
@@ -1022,6 +1377,7 @@ tasks.check {
         wizardGameplayRegressionTest, wizardProfileRegressionTest,
         itemizationDomainRegressionTest, vanillaCraftingBoundaryRegressionTest,
         equipmentDomainRegressionTest, playerProfileLootDiversityRegressionTest,
-        mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest
+        mobEncounterDomainRegressionTest, mobRuntimeSourceRegressionTest,
+        gameplayBootstrapIntegrityRegressionTest, questItemContentIntegrityRegressionTest
     )
 }

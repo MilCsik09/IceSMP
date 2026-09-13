@@ -117,8 +117,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/apply_professions_2_closure.py
-          python scripts/apply_professions_2_specialization_closure.py
+          python scripts/audit_professions_2_closure.py
+          python scripts/audit_professions_2_specialization_closure.py
           git diff --exit-code
           python scripts/check_professions_2_reports.py
           python scripts/check_professions_2_runtime_closure.py

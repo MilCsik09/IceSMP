@@ -10,12 +10,14 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-CFG = ROOT / "src/main/resources/config"
+RESOURCES = ROOT / "src/main/resources"
 REPORT_DIR = ROOT / "build/reports/long-term-equipment"
 FILES = [
-    "item-templates.yml", "profession-materials.yml", "profession-recipes.yml",
-    "mob-templates.yml", "loot.yml", "professions-2.yml", "material-economy-expansion.yml",
-    "equipment-catalog-expansion.yml", "reward-discoverability-closure.yml",
+    "content/equipment/equipment.yml",
+    "content/professions/materials.yml",
+    "content/professions/recipes.yml",
+    "content/pve/enemies.yml",
+    "content/pve/loot.yml",
 ]
 RANKS = ("normal", "veteran", "elite", "champion", "boss")
 FAMILIES = {"CLOTH", "LEATHER", "MAIL", "PLATE"}
@@ -23,7 +25,7 @@ ARMOR_SLOTS = {"head", "chest", "legs", "feet"}
 
 
 def load(name: str) -> dict[str, Any]:
-    path = CFG / name
+    path = RESOURCES / name
     if not path.exists():
         return {}
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))

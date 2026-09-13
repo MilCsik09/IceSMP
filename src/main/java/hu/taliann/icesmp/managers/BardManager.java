@@ -18,7 +18,7 @@ import java.util.Map;
  *
  * <p>Bekötés: a FancyNpcs interact-hook (IceSMPCore) a {@code bard.npc-name} nevű
  * NPC-re jobb-kattkor hívja a {@link #sing}-et — a hívás a játékos saját régió-szálán
- * fut, a küldés biztonságos. FancyNpcs nélkül a rendszer egyszerűen nem elérhető
+ * fut, a küldés biztonságos. A production contract ezért FancyNpcs-t kötelezővé teszi
  * (nincs bárd-NPC). Minden kulcs élőben olvasódik (bard.*).
  */
 public final class BardManager {

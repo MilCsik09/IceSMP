@@ -35,7 +35,9 @@ public final class ItemTemplateRegistry {
     public ItemTemplateRegistry(final JavaPlugin plugin, final ConfigManager configManager) {
         this.plugin = java.util.Objects.requireNonNull(plugin, "plugin");
         this.configManager = java.util.Objects.requireNonNull(configManager, "configManager");
-        activeInstance = this;
+        synchronized (ItemTemplateRegistry.class) {
+            activeInstance = this;
+        }
     }
 
     /** Runtime read-only registry seam for owner-thread set-bonus projection. */
@@ -43,11 +45,18 @@ public final class ItemTemplateRegistry {
         return activeInstance;
     }
 
+    /** Identity-safe lifecycle teardown: a stale core may never clear a newer registry. */
+    public static void clearIfCurrent(final ItemTemplateRegistry candidate) {
+        synchronized (ItemTemplateRegistry.class) {
+            if (activeInstance == candidate) activeInstance = null;
+        }
+    }
+
     public synchronized void load() {
         final ConfigurationSection root = configManager.getConfiguration() == null ? null
                 : configManager.getConfiguration().getConfigurationSection("item-templates");
         if (root == null) {
-            throw new IllegalStateException("item-templates.yml: hiányzik az item-templates gyökér; "
+            throw new IllegalStateException("content/equipment/equipment.yml: hiányzik az item-templates gyökér; "
                     + "az előző immutable Equipment 2.0 snapshot marad aktív");
         }
         final Map<String, ItemSetDefinition> loadedSets = parseSets(

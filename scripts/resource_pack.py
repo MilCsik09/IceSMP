@@ -313,14 +313,18 @@ def _sibling_scalar(lines: list[str], index: int, key: str) -> str | None:
 
 
 def validate_config_equipment_references(root: Path, assets: dict[str, Path]) -> tuple[int, int]:
-    """Validate explicit refs and shared-policy same-id fallbacks in checked-in config."""
-    config_root = root.parent / "src" / "main" / "resources" / "config"
-    if not config_root.is_dir():
+    """Validate explicit refs and shared-policy fallbacks in operator config and authored content."""
+    resources = root.parent / "src" / "main" / "resources"
+    config_root = resources / "config"
+    content_root = resources / "content"
+    config_paths = (sorted(config_root.glob("*.yml")) if config_root.is_dir() else [])
+    config_paths += (sorted(content_root.rglob("*.yml")) if content_root.is_dir() else [])
+    if not config_paths:
         return 0, 0
 
     explicit_count = 0
     fallback_count = 0
-    for config_path in sorted(config_root.glob("*.yml")):
+    for config_path in config_paths:
         text = config_path.read_text(encoding="utf-8")
         lines = text.splitlines()
 

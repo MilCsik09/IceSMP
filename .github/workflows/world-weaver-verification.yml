@@ -1,0 +1,273 @@
+name: WorldWeaver verification
+
+on:
+  pull_request:
+    paths:
+      - "src/main/java/**"
+      - "src/regression/java/**"
+      - "docs/development/world-weaver/**"
+      - "scripts/audit_world_weaver_coverage.py"
+      - "scripts/audit_config_content_command_surface.py"
+      - "scripts/process_trash_sprite_sheets.py"
+      - "scripts/tests/test_trash_sprite_validation.py"
+      - "gradle/world-weaver-evidence.init.gradle"
+      - ".github/workflows/world-weaver-verification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: world-weaver-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pve-control-runtime:
+    name: ${{ matrix.platform }} 1.21.11 native PvE controls
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Paper
+            init: scripts/source_integrity_runtime.init.gradle
+            task: runServer
+          - platform: Folia
+            init: gradle/run-folia.init.gradle
+            task: runFolia
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install runtime asset dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+      - name: Verify native cast, cooldown, target refusal and cleanup
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.pve-control-runtime=true
+          RUNTIME_INIT: ${{ matrix.init }}
+          RUNTIME_TASK: ${{ matrix.task }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p run build
+          printf 'eula=true\n' > run/eula.txt
+          git rev-parse HEAD > build/pve-control-tested-head.txt
+          timeout 600s ./gradlew --no-daemon --console=plain \
+            --init-script "$RUNTIME_INIT" "$RUNTIME_TASK" \
+            | tee build/pve-control-runtime.log
+      - name: Require native proof and clean shutdown
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_PVE_CONTROL_RUNTIME_PROBE_PASS' build/pve-control-runtime.log
+          grep -F 'ICESMP_EVENT_SANDBOX_RUNTIME_PROBE_PASS' build/pve-control-runtime.log
+          grep -F 'ICESMP_FORK_PORT_RUNTIME_PROBE_PASS' build/pve-control-runtime.log
+          grep -F 'ICESMP_KNOWLEDGE_REWARD_RUNTIME_PROBE_PASS scope=offline_profile_currency_settlement' build/pve-control-runtime.log
+          grep -F 'ICESMP_QUEST_STATISTICS_RUNTIME_PROBE_PASS scope=offline_profile_atomic_settlement' build/pve-control-runtime.log
+          grep -F 'Disabling IceSMP' build/pve-control-runtime.log
+          ! grep -F 'ICESMP_PVE_CONTROL_RUNTIME_PROBE_FAIL' build/pve-control-runtime.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' build/pve-control-runtime.log
+      - name: Retain exact native control evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pve-control-${{ matrix.platform }}-${{ github.run_id }}
+          path: |
+            build/pve-control-runtime.log
+            build/pve-control-tested-head.txt
+          retention-days: 14
+
+  verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Existing migration audits compare against historical stack commits.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install build dependencies
+        run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0,<7.0' 'Pillow==11.3.0'
+      - name: Verify audited source inventory
+        run: python3 scripts/audit_world_weaver_coverage.py
+      - name: Verify sprite validation constraints on pinned Pillow
+        run: python3 -m unittest scripts.tests.test_trash_sprite_validation
+      - name: Repository consistency
+        run: python3 scripts/check_consistency.py
+      - name: Full build and existing regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/reports/world-weaver
+          git rev-parse HEAD > build/reports/world-weaver/tested-head.txt
+          ./gradlew build --continue --no-daemon --console=plain --stacktrace 2>&1 | tee build/reports/world-weaver/build.log
+      - name: Export resolved compile evidence for local preflight
+        if: ${{ !cancelled() }}
+        run: ./gradlew --init-script gradle/world-weaver-evidence.init.gradle worldWeaverCompileEvidence --no-daemon --console=plain
+      - name: Retain the Java 21 toolchain for reproducible offline verification
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p build/reports/world-weaver
+          tar -czf build/reports/world-weaver/java21-toolchain.tar.gz -C "$JAVA_HOME" .
+          sha256sum build/reports/world-weaver/java21-toolchain.tar.gz > build/reports/world-weaver/java21-toolchain.sha256
+      - name: Export resolved public build artifacts for offline verification
+        if: ${{ !cancelled() }}
+        shell: python
+        run: |
+          import hashlib
+          import os
+          import shutil
+          from pathlib import Path
+
+          cache = Path(os.environ.get("GRADLE_USER_HOME", str(Path.home() / ".gradle"))) / "caches/modules-2/files-2.1"
+          destination = Path("build/world-weaver-gradle-evidence")
+          for source in sorted(cache.glob("*/*/*/*/*")):
+              if not source.is_file() or source.suffix not in {".jar", ".pom", ".module"}:
+                  continue
+              group, artifact, version, digest, filename = source.relative_to(cache).parts
+              target = destination / group.replace(".", "/") / artifact / version / filename
+              if target.exists() and hashlib.sha256(target.read_bytes()).digest() != hashlib.sha256(source.read_bytes()).digest():
+                  raise RuntimeError("Conflicting resolved build artifact: " + str(target))
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(source, target)
+      - name: Retain exact-head verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-weaver-verification-${{ github.run_id }}
+          path: |
+            build/reports/world-weaver
+            build/world-weaver-compile-evidence
+            build/world-weaver-gradle-evidence
+          if-no-files-found: warn
+          retention-days: 14
+
+  paper-runtime:
+    name: Paper 1.21.11 DEV artifact lifecycle runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Checkout tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Boot isolated Paper runtime and shut down through the probe
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.dev-artifact-runtime=true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p run build
+          printf 'eula=true\n' > run/eula.txt
+          timeout 480s ./gradlew --no-daemon --console=plain \
+            --init-script scripts/source_integrity_runtime.init.gradle runServer \
+            | tee build/dev-artifact-paper-runtime.log
+
+      - name: Require Paper proof marker and clean shutdown
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS' build/dev-artifact-paper-runtime.log
+          grep -F 'ICESMP_DEV_RUNTIME_READY world_weaver_journal' build/dev-artifact-paper-runtime.log
+          grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_SHUTDOWN_PASS' build/dev-artifact-paper-runtime.log
+          ! grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_FAIL' build/dev-artifact-paper-runtime.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' build/dev-artifact-paper-runtime.log
+
+      - name: Retain exact Paper runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-artifact-paper-${{ github.run_id }}
+          path: build/dev-artifact-paper-runtime.log
+          retention-days: 14
+
+  folia-runtime:
+    name: Folia 1.21.11 DEV artifact lifecycle runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout tested head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime asset dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Boot lock-pinned Folia runtime and shut down through the probe
+        env:
+          JAVA_TOOL_OPTIONS: -Dicesmp.dev-artifact-runtime=true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p run build
+          printf 'eula=true\n' > run/eula.txt
+          timeout 600s ./gradlew --no-daemon --console=plain \
+            --init-script gradle/run-folia.init.gradle runFolia \
+            | tee build/dev-artifact-folia-runtime.log
+
+      - name: Require Folia proof marker and clean shutdown
+        if: always()
+        shell: bash
+        run: |
+          grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS' build/dev-artifact-folia-runtime.log
+          grep -F 'ICESMP_DEV_RUNTIME_READY world_weaver_journal' build/dev-artifact-folia-runtime.log
+          grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_SHUTDOWN_PASS' build/dev-artifact-folia-runtime.log
+          ! grep -F 'ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_FAIL' build/dev-artifact-folia-runtime.log
+          ! grep -E '(^|\]) (SEVERE|ERROR)' build/dev-artifact-folia-runtime.log
+
+      - name: Retain exact Folia runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-artifact-folia-${{ github.run_id }}
+          path: build/dev-artifact-folia-runtime.log
+          retention-days: 14

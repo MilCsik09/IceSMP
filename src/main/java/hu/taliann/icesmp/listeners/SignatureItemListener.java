@@ -44,7 +44,7 @@ public final class SignatureItemListener implements Listener {
     public static final String MIINUS_KARD = "miinus_haragja";
     public static final String SARKANYCSONT_IJ = "sarkanycsont_ij";
     public static final String LANGNYELV = "zhoris_langnyelve";
-    public static final String NAPFOGYATKOZAS = "napfogyatkozas";
+    public static final String NAPFOGYATKOZAS = "napfogyatkozas_fokusz";
 
     private static final String SPIRIT_STAG_COOLDOWN = "signature.spirit-stag";
 
@@ -113,11 +113,13 @@ public final class SignatureItemListener implements Listener {
     }
 
     private static boolean hasEnchant(final ItemStack item, final String id) {
+        if (hu.taliann.icesmp.itemization.ItemPrototypePolicy.direct(item)) return false;
         final org.bukkit.enchantments.Enchantment ench = enchant(id);
         return ench != null && item != null && item.containsEnchantment(ench);
     }
 
     private String idOf(final ItemStack item) {
+        if (hu.taliann.icesmp.itemization.ItemPrototypePolicy.direct(item)) return null;
         if (item == null || item.getType().isAir() || !item.hasItemMeta()) return null;
         return item.getItemMeta().getPersistentDataContainer().get(signatureKey, PersistentDataType.STRING);
     }
@@ -217,14 +219,20 @@ public final class SignatureItemListener implements Listener {
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onMeleeLifesteal(final EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player attacker)) return;
+        final double dealt = event.getFinalDamage();
+        attacker.getScheduler().run(plugin, task -> healLifesteal(attacker, dealt), null);
+    }
+
+    private void healLifesteal(final Player attacker, final double dealt) {
         final ItemStack weapon = attacker.getInventory().getItemInMainHand();
         if (!AGYAR.equals(activeId(attacker, weapon, hu.taliann.icesmp.itemization.ItemTemplate.Slot.MAIN_HAND))
                 || !hasEnchant(weapon, "verszomj")) return;
         final double ratio = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-lifesteal", 0.1D));
         final double cap = Math.max(0.0D, configManager.getDouble("signature.enchant-riders.verszomj-heal-cap", 2.0D));
-        final double heal = Math.min(cap, event.getFinalDamage() * ratio);
+        final double heal = Math.min(cap, dealt * ratio);
         final AttributeInstance maxHealth = attacker.getAttribute(Attribute.MAX_HEALTH);
-        if (heal > 0.0D && maxHealth != null) attacker.setHealth(Math.min(maxHealth.getValue(), attacker.getHealth() + heal));
+        if (heal > 0.0D && maxHealth != null) hu.taliann.icesmp.utils.SpellHealingUtil.heal(
+                attacker, heal, hu.taliann.icesmp.spells.CastModifiers.IDENTITY);
     }
 
     private boolean isNeutralCapital(final org.bukkit.Location location) {

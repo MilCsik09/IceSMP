@@ -305,7 +305,8 @@ public final class RaidManager implements PersistentStore {
         }
 
         final FactionType side = factionManager.getChosenFaction(player.getUniqueId()).orElse(null);
-        if (side != raid.attacker() && side != raid.defender()) {
+        if ((side != raid.attacker() && side != raid.defender())
+                || !factionManager.isMember(player.getUniqueId(), side)) {
             return "faction-raid-not-party";
         }
 
@@ -325,6 +326,10 @@ public final class RaidManager implements PersistentStore {
 
         participants.put(player.getUniqueId(), side);
         return null;
+    }
+
+    public synchronized void withMembershipAdmissionBarrier(final Runnable claim) {
+        java.util.Objects.requireNonNull(claim).run();
     }
 
     public long countParticipants(final FactionType side) {
@@ -435,6 +440,10 @@ public final class RaidManager implements PersistentStore {
      * @param deathLocation where the victim fell
      * @return true if the kill scored points (inside the zone / unbound raid)
      */
+    public void recordSeasonContribution(final UUID playerId, final FactionType faction) {
+        if (isParticipant(playerId)) seasonManager.recordContribution(playerId, faction, "raid");
+    }
+
     public synchronized boolean recordKill(final FactionType killerFaction, final Location deathLocation) {
         // synchronized with endRaid(): a kill is either fully counted before the raid closes
         // or ignored after, never merged into 'points' after the payout snapshot was taken.
