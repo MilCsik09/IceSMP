@@ -1,5 +1,11 @@
 # Mi változott a július 12-i szerververzió óta?
 
+Az üzenetjavítások bekerültek az egyesített tesztváltozatba: pontosabb láda- és
+világboss-visszajelzések, külön játékos- és admin-specializációnézet, valamint
+érthetőbb recept- és küldetésfeltételek. A szakmai feltétel jelzése tiszteletben
+tartja a küldetés láthatóságát és az előző küldetés teljesítését. A csomagolt
+üzenetek ellenőrzése a teljes build kötelező része; a szerveres playtest még nyitott.
+
 A tárgyinterakciók és a felvásárlás mentési hibakezelése szigorodott: bizonytalan
 mentésből nem indulhat új hatás vagy kifizetés. Javult az ideiglenes
 blokkváltozások védelme, a kontextusfüggő tárgyszöveg és az újraindítás utáni

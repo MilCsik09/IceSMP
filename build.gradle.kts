@@ -213,6 +213,19 @@ val questItemContentIntegrityAudit by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_quest_item_content_integrity.py", "--check")
 }
 
+val playerFacingMessagingAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates bundled message YAML and reviewed player-facing messaging contracts."
+    inputs.files(
+        "scripts/audit_player_facing_messaging_hardening.py",
+        "docs/development/player-facing-messaging-integrity-hardening.json",
+        "src/main/resources/messages.yml",
+    )
+    inputs.dir("src/main/resources/messages")
+    inputs.dir("src/main/java")
+    commandLine(pythonCommand, "scripts/audit_player_facing_messaging_hardening.py")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -1304,6 +1317,7 @@ tasks.check {
     dependsOn(configContentCommandSurfaceAudit)
     dependsOn(gameplayBootstrapIntegrityAudit)
     dependsOn(questItemContentIntegrityAudit)
+    dependsOn(playerFacingMessagingAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
