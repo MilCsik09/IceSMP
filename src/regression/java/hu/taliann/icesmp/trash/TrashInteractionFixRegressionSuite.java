@@ -85,6 +85,8 @@ public final class TrashInteractionFixRegressionSuite {
         catalogEvidence();
         vendorAbsenceRequiresReceipt();
         protectsSitesWithoutBlockingTheirBrush();
+        TrashAuditRepairRegressionSuite.main(args);
+        hu.taliann.icesmp.storage.PlayerInventoryCommitRegressionSuite.main(args);
         System.out.println("Trash interaction fix regression suite passed. assertions=" + assertions);
     }
 
@@ -214,6 +216,7 @@ public final class TrashInteractionFixRegressionSuite {
         Player player = proxy(Player.class, (m,a) -> switch(m) {
             case "getInventory" -> inventory;
             case "getPersistentDataContainer" -> pdc;
+            case "isOnline" -> false;
             case "saveData" -> { saves[0]++; yield null; }
             default -> null;
         });
@@ -226,8 +229,9 @@ public final class TrashInteractionFixRegressionSuite {
         catch (InvocationTargetException rejected) { check(rejected.getCause() instanceof IllegalStateException, "wrong refusal"); }
         check(saves[0] == 0, "absence fabricated removal receipt");
         persisted.put(receipt, sale.operationId().toString());
-        remove.invoke(vendor, player, sale);
-        check(saves[0] == 1, "recovery advanced without re-acknowledging durable inventory");
+        try { remove.invoke(vendor, player, sale); throw new AssertionError("memory receipt accepted without physical acknowledgement"); }
+        catch (InvocationTargetException rejected) { check(rejected.getCause() instanceof IllegalStateException, "wrong physical commit refusal"); }
+        check(saves[0] == 0, "unowned inventory reached physical save");
     }
 
     private static final class Fixture {

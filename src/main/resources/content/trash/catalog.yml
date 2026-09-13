@@ -4049,6 +4049,8 @@ items:
     item-model: icesmp:trash/fagyott_tintas_cetli
     texture: icesmp:item/trash/fagyott_tintas_cetli
     vendor-value: 2
+    contextual-text:
+    - "A harmadik őrség ne gyújtson tüzet. A túlparton még számolják a fényeket."
     lore:
     - Melegben nem olvasható.
     source-bias: COLD+FISH↑
@@ -4360,6 +4362,11 @@ items:
     item-model: icesmp:trash/suttogo_cetli
     texture: icesmp:item/trash/suttogo_cetli
     vendor-value: 2
+    contextual-text:
+    - "Nem innen fúj a szél."
+    - "Valaki mögötted lapozott."
+    - "A tinta még emlékszik."
+    - "Ez a sor tegnap nem volt itt."
     lore:
     - 'Világosban csak ennyi olvasható: „Üres.”'
     source-bias: DARK+FISH↑
@@ -4475,6 +4482,7 @@ items:
     - Soha nem marad a vesztes oldalon.
     source-bias: MOB↑
     internal:
+      losing-health-fraction: 0.25
       kind: TRASH_RELIC
       behavior: A_KARD_AMELY_MINDEN_CSATAT_MEGNYER
     lifecycle:

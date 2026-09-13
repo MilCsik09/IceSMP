@@ -1,5 +1,10 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A tárgyinterakciók és a felvásárlás mentési hibakezelése szigorodott: bizonytalan
+mentésből nem indulhat új hatás vagy kifizetés. Javult az ideiglenes
+blokkváltozások védelme, a kontextusfüggő tárgyszöveg és az újraindítás utáni
+állapot-helyreállítás. A valódi klienssel végzett kiadási átvétel továbbra is szükséges.
+
 A teljes build korábbi két sérült Trash-forráslapját új imagegen-változat váltja:
 `dev-assets/trash/source/phase-batch-001-v2.png` és `phase-batch-002-v2.png`.
 Az eredeti tárgy-ID-k és sorrend megmaradnak; 27 fázisikon újragenerált. A promptok,

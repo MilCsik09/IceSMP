@@ -28,6 +28,26 @@ public final class TemporaryBlockProtection implements Listener {
             event.setCancelled(true);
     }
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBucketEmpty(org.bukkit.event.player.PlayerBucketEmptyEvent event) {
+        if (protectedBlock.test(event.getBlock())) event.setCancelled(true);
+    }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBucketFill(org.bukkit.event.player.PlayerBucketFillEvent event) {
+        if (protectedBlock.test(event.getBlock())) event.setCancelled(true);
+    }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onFertilize(BlockFertilizeEvent event) {
+        if (event.getBlocks().stream().anyMatch(s -> protectedBlock.test(s.getBlock()))) event.setCancelled(true);
+    }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onGrow(org.bukkit.event.world.StructureGrowEvent event) {
+        if (event.getBlocks().stream().anyMatch(s -> protectedBlock.test(s.getBlock()))) event.setCancelled(true);
+    }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onSponge(SpongeAbsorbEvent event) {
+        if (event.getBlocks().stream().anyMatch(s -> protectedBlock.test(s.getBlock()))) event.setCancelled(true);
+    }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) { if (protectedBlock.test(event.getBlock())) event.setCancelled(true); }
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onFlow(BlockFromToEvent event) {

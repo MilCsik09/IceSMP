@@ -111,12 +111,12 @@ public final class TrashVendorService implements Listener {
                     currency.name(), value, DailyBudget.dayIndex(), soldToday);
             markSale(hand, sale.operationId());
             player.getInventory().setItem(slot, hand);
-            player.saveData();
+            hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
             if (!DailyBudget.tryConsumeDurablyOnOwnThread(
                     player, BUDGET_ID, dailyCap, value)) {
                 clearSaleMarker(hand, sale.operationId());
                 player.getInventory().setItem(slot, hand);
-                player.saveData();
+                hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
                 recyclePool.cancelPrepared(sale.operationId());
                 player.sendMessage(messageManager.getMessage("buyer-cap-reached",
                         "<gray>🪙 „Mára kimerült a kasszám feléd — gyere vissza holnap!”</gray>"));
@@ -160,7 +160,7 @@ public final class TrashVendorService implements Listener {
                             && current >= Math.addExact(sale.budgetBefore(), sale.value());
                     if (!unlimited && !reservationVisible) {
                         clearSaleMarker(player, sale.operationId());
-                        player.saveData();
+                        hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
                         recyclePool.cancelPrepared(sale.operationId());
                         continue;
                     }
@@ -202,10 +202,9 @@ public final class TrashVendorService implements Listener {
 
     private void removeSoldUnits(final Player player,
                                  final TrashRecyclePool.SaleTransaction sale) {
-        if (sale.operationId().toString().equals(player.getPersistentDataContainer().get(
-                removalReceipt, PersistentDataType.STRING))) {
+        if (sale.operationId().toString().equals(hu.taliann.icesmp.storage.PlayerInventoryCommit.receipt(player, removalReceipt))) {
             // Re-acknowledge an uncertain save before advancing the separate sale journal.
-            player.saveData();
+            hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
             return;
         }
         final int slot = findMarkedSlot(player, sale.operationId());
@@ -219,10 +218,9 @@ public final class TrashVendorService implements Listener {
         remainder.setAmount(sale.originalAmount() - sale.soldAmount());
         if (remainder.getAmount() > 0) clearSaleMarker(remainder, sale.operationId());
         player.getInventory().setItem(slot, remainder.getAmount() > 0 ? remainder : null);
-        player.getPersistentDataContainer().set(removalReceipt, PersistentDataType.STRING,
-                sale.operationId().toString());
+        hu.taliann.icesmp.storage.PlayerInventoryCommit.receipt(player, removalReceipt, sale.operationId().toString());
         // Vanilla inventory and this receipt share one player-data write. Payout is still pending.
-        player.saveData();
+        hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

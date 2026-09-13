@@ -11,6 +11,12 @@ final class TrashRelicPolicy {
 
     private TrashRelicPolicy() { }
 
+    static boolean losingCombat(double health, double damage, double maximumHealth, double fraction) {
+        return Double.isFinite(health) && Double.isFinite(damage) && Double.isFinite(maximumHealth)
+                && health > 0.0D && damage > 0.0D && maximumHealth > 0.0D && fraction > 0.0D
+                && health - damage <= maximumHealth * fraction;
+    }
+
     static boolean consumptionCommitted(final boolean sameStackStillInHand,
                                         final int amountBefore, final int amountAfter) {
         if (amountBefore < 1 || amountAfter < 0) return false;

@@ -173,7 +173,7 @@ public final class TrashRelicRegressionSuite {
                 "inventory projection rollback");
         require(runtime, "history.consumeInventorySlotDurably", "runtime transition path");
         require(runtime, "dropTransformed", "pre-death self-drop and transfer path");
-        require(runtime, "event.setDamage(Math.max(0.0D, player.getHealth() - 1.0D))",
+        require(runtime, "leaveOneHealth(event, player.getHealth())",
                 "survive-at-one hook");
         require(runtime, "event.setCancelled(true)", "one-shot veto path");
         require(runtime, "deathAnchorKey", "death-drop anchor marker");

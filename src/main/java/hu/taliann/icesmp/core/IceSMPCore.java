@@ -821,8 +821,17 @@ public final class IceSMPCore {
                 trashSpatialFractureStore, bloodMoonManager, claimManager,
                 territoryProtectionService, trashRuntimeTelemetry);
         mobAbilityRuntime.bindDisplacementPolicy(trashRelicRuntime::constrainDisplacement);
-        trashAmbientManager.bindItemRecovery(trashAnomalyRuntime::recoverAttachment);
+        trashAmbientManager.bindItemRecovery(item -> {
+            trashAnomalyRuntime.recoverAttachment(item);
+            trashRelicRuntime.recoverDeathAnchor(item);
+        });
         trashAnomalyRuntime.bindTooltipVisibility(trashArchaeologyTooltipBridge::hasOverlay);
+        trashAnomalyRuntime.bindHistoricalEligibility((entity, tag) -> {
+            final String id = MobScalingManager.templateIdOf(entity);
+            return id != null && mobTemplateRegistry.find(id)
+                    .filter(template -> template.entityType().equals(entity.getType().name()))
+                    .map(template -> template.sourceTags().contains(tag)).orElse(false);
+        });
         ambientEventManager.setAfkManager(afkManager);
         wildHuntManager.setAfkManager(afkManager);
         this.sitManager = new hu.taliann.icesmp.managers.SitManager(plugin, configManager);

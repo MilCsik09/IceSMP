@@ -30,16 +30,12 @@ public final class TrashArchaeologyFactEngine {
         if (archaeologyLevel < 0 || archaeologyLevel > 50 || !items.isKnownItem(item)) {
             return Optional.empty();
         }
-        final String id = items.idOf(item).orElse(null);
-        if (id == null) return Optional.empty();
-        final TrashDefinition definition = catalog.require(id);
-        final TrashHistoryStore.Snapshot snapshot;
         try {
-            snapshot = history.historyOf(item).orElse(null);
+            return history.tryInspect(item).filter(state -> state.pendingWall().isEmpty())
+                    .flatMap(state -> evaluate(state.definition(), state.history(), archaeologyLevel));
         } catch (final RuntimeException malformed) {
             return Optional.empty();
         }
-        return evaluate(definition, Optional.ofNullable(snapshot), archaeologyLevel);
     }
 
     /** Pure read of already detached native evidence; grants neither discoveries nor progression. */

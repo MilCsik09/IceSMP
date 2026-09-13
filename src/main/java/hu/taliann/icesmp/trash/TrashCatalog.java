@@ -260,7 +260,9 @@ public final class TrashCatalog {
             throw new IllegalArgumentException("a lifecycle.on-success-transform csak lower_snake_case lehet");
         }
         return new TrashDefinition(id, displayName, playerRarity, material, itemModel, texture,
-                vendorValue, lore, sourceBias, kind, behavior, successPhase);
+                vendorValue, lore, sourceBias, kind, behavior, successPhase, null,
+                section.getDouble("internal.losing-health-fraction", 0.0D),
+                section.getStringList("contextual-text"));
     }
 
     private static TrashLifecyclePhase parseLifecyclePhase(final String rawId,

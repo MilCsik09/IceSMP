@@ -6465,7 +6465,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TossableObjectRuntime.java",
       "domain": "trash",
-      "source_sha256": "bf5fa9371cee62109a72d35974cf9308b0e564a420d0064fced2ec01a0b7534e",
+      "source_sha256": "2305696247f91418ac620154c22ce8a58333d670e85113e32ea4ace4e78f8204",
       "public_methods": [
         "shutdown",
         "toss"
@@ -6508,9 +6508,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyRuntime.java",
       "domain": "trash",
-      "source_sha256": "8e825b43835f5329455c1385925224ab9bdb6f75e49ba75e098e90f8315dca69",
+      "source_sha256": "8cbb865382a9aa017680586038a3c8e3de88ef4b75e99ae9fc3627ea5b24ef87",
       "public_methods": [
+        "TrashAnomalyRuntime",
         "activationService",
+        "bindHistoricalEligibility",
+        "bindTooltipVisibility",
         "clearPlayerState",
         "onAutomationMove",
         "onAutomationPickup",
@@ -6535,6 +6538,7 @@
         "onRedstone",
         "onSpawn",
         "onUse",
+        "recoverAttachment",
         "shutdown",
         "start"
       ]
@@ -6556,7 +6560,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
       "domain": "archaeology_knowledge",
-      "source_sha256": "f347931c94365d81361d19591a75894af57f31afaa90b0caf7aee8858195b96f",
+      "source_sha256": "acd5e0d3867f83f0b17659d38352575073eb665898029580c79966ecbba59bf5",
       "public_methods": [
         "Evaluation",
         "Fact",
@@ -6603,7 +6607,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
       "domain": "trash",
-      "source_sha256": "3bda01425064dd0f8579e32136bff57502f9bd2cc40b2464c8cc6338cb417ded",
+      "source_sha256": "f2e9cfb06f7ec6fc3d8bd6d00030f7516feb4affaee890c5adb27c3fed31c0c5",
       "public_methods": [
         "find",
         "findPhase",
@@ -6628,7 +6632,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "52a2d24696c9c344af644fc9a560556ed23dff81e37d299ff04d54035f5d625e",
+      "source_sha256": "6081fa8744b60a18bb027bb65854a948b2822ec6a382aab3d4d0fc81e7bdfd47",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6636,6 +6640,7 @@
         "clearPreparedRepair",
         "completePreparedRepair",
         "completeVendorOperation",
+        "consumeInventorySlotDurably",
         "historyCount",
         "historyOf",
         "individualizeHandOnSuccess",
@@ -6649,6 +6654,7 @@
         "matchesInventory",
         "observeOwnerIfTracked",
         "operationId",
+        "prepareInventorySlotDurably",
         "prepareVendorUnits",
         "preparedRepairToken",
         "recordIfTracked",
@@ -6790,19 +6796,27 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicPolicy.java",
       "domain": "trash",
-      "source_sha256": "28b5e73fda23977c462cbe20aa6e926ce4341a6da786c187552b67f3192d7bc4",
+      "source_sha256": "3a0e385309e561cbc1a82d1dbae133b5669d48fd76a4ce0891e5891aabdc5336",
       "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "284db70740ac40bee7415d5720cc8d184e64e545ddf0b487a91c43e558b88910",
+      "source_sha256": "a1a64277c32eac83667dd51d160e6e91f3987a919a6204c6cccb5a202c2a1503",
       "public_methods": [
         "TrashRelicRuntime",
+        "abandonCommitted",
+        "admitted",
         "blocksCombatAt",
         "claimBestBucket",
         "clearPlayerState",
+        "commit",
         "constrainDisplacement",
+        "consume",
+        "onAnchorAutomation",
+        "onAnchorMerge",
+        "onAnchorPickup",
+        "onCombatOutcome",
         "onConsume",
         "onDamage",
         "onDeath",
@@ -6815,8 +6829,13 @@
         "onUse",
         "onWorldLoad",
         "onWorldUnload",
+        "prepare",
+        "recoverDeathAnchor",
+        "removeObserved",
         "ruleFields",
+        "schedule",
         "shutdown",
+        "sources",
         "start",
         "suppressesAcousticsAt"
       ]
@@ -6873,7 +6892,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashSpatialFractureStore.java",
       "domain": "trash",
-      "source_sha256": "587569d1bf21ff57dfa9a99c1fc9e6b7ac501c1b02e800c2b6beb64ef75dd579",
+      "source_sha256": "1e293665906485b6322cba3eef81c5d0841e35f4e9e8fce3e4a1579384158387",
       "public_methods": [
         "load",
         "open",
@@ -6886,7 +6905,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java",
       "domain": "trash",
-      "source_sha256": "949c85d8872193d3c4aafa0dcfe00d227a64d3b39566b0c52a4ebaa44180ad95",
+      "source_sha256": "a1b92123ef841e22ab186272aa1adab88772294b0ef54a969bd2ac8b259b9949",
       "public_methods": [
         "onJoin",
         "tryHandle"
@@ -7010,6 +7029,15 @@
         "setSoulforgeManager",
         "shutdown"
       ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/storage/PlayerInventoryCommit.java",
+      "domain": "trash",
+      "source_sha256": "9f638584cd8ceffd999c6dc1461deac59d7615ee309b564a57d41b270cd1751c",
+      "public_methods": [
+        "receipt",
+        "require"
+      ]
     }
   ],
   "supplemental_authorities": [
@@ -7085,7 +7113,8 @@
     "src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
-    "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java"
+    "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java",
+    "src/main/java/hu/taliann/icesmp/storage/PlayerInventoryCommit.java"
   ],
   "bootstrap_components": {
     "src/main/java/hu/taliann/icesmp/IceSMP.java": [

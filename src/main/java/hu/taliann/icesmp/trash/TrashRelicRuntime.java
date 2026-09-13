@@ -57,6 +57,15 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
 
     private static final int MAX_NEARBY_ENTITIES = 24;
     private static final int MAX_ANCHORED_DROPS = 64;
+    private final java.util.Map<UUID, DeathAnchor> deathAnchors = new ConcurrentHashMap<>();
+    private final NamespacedKey anchorPositionKey = new NamespacedKey("icesmp", "trash_anchor_position");
+    private final NamespacedKey anchorFlagsKey = new NamespacedKey("icesmp", "trash_anchor_flags");
+    private static final class DeathAnchor {
+        final Item item;
+        final Location position;
+        volatile io.papermc.paper.threadedregions.scheduler.ScheduledTask task;
+        DeathAnchor(Item item, Location position) { this.item = item; this.position = position; }
+    }
     private static final int MAX_TRACKED_PROJECTILES = 256;
     private static final long DEATH_ANCHOR_MILLIS = 20L * 60L * 1_000L;
     private static final Set<String> HOSTILE_EFFECTS = Set.of(
@@ -115,6 +124,16 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     }
 
     public void shutdown() {
+        for (final DeathAnchor anchor : List.copyOf(deathAnchors.values())) {
+            if (anchor.task != null) anchor.task.cancel();
+            try {
+                if (Bukkit.isOwnedByCurrentRegion(anchor.item)) clearDeathAnchor(anchor.item);
+                else anchor.item.getScheduler().run(plugin, ignored -> clearDeathAnchor(anchor.item), null);
+            } catch (final IllegalPluginAccessException stopped) {
+                // Persisted coordinates, original flags and expiry are recovered on the next start.
+            }
+        }
+        deathAnchors.clear();
         projectileTracking.close();
         for (final RuleField field : ruleFields.close()) releaseReservation(field);
         effectVetoArmed.clear();
@@ -136,8 +155,10 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         clearReservationsOnOwner(playerId);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onUse(final PlayerInteractEvent event) {
+        if (event.useItemInHand() == org.bukkit.event.Event.Result.DENY
+                || event.getClickedBlock() != null && event.useInteractedBlock() == org.bukkit.event.Event.Result.DENY) return;
         if (event.getHand() == null || event.getItem() == null || !rightClick(event.getAction())) {
             return;
         }
@@ -224,17 +245,42 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             }
         }
         final int bandageSlot = findSlot(player, TrashRelicBehavior.REGI_KOTES);
-        if (bandageSlot >= 0 && history.consumeInventorySlotDurably(player, bandageSlot)) {
-            event.setDamage(Math.max(0.0D, player.getHealth() - 1.0D));
+        if (bandageSlot >= 0 && preventable(event) && history.consumeInventorySlotDurably(player, bandageSlot)) {
+            if (player.getHealth() < 1.0D) player.setHealth(1.0D);
+            leaveOneHealth(event, player.getHealth());
             return;
         }
         if (behaviorOf(player.getInventory().getHelmet()).orElse(null)
                 == TrashRelicBehavior.A_LEGBIZTONSAGOSABB_SISAK) {
             dropTransformedHelmet(player);
         }
-        if (event instanceof EntityDamageByEntityEvent byEntity) {
-            abandonLosingSword(player, byEntity.getDamager());
+    }
+
+    @SuppressWarnings("deprecation")
+    static void leaveOneHealth(final EntityDamageEvent event, final double health) {
+        event.setDamage(Math.max(0.0D, health - 1.0D));
+        for (final EntityDamageEvent.DamageModifier modifier : EntityDamageEvent.DamageModifier.values()) {
+            if (modifier != EntityDamageEvent.DamageModifier.BASE && event.isApplicable(modifier))
+                event.setDamage(modifier, 0.0D);
         }
+    }
+
+    private static boolean preventable(final EntityDamageEvent event) {
+        return event.getCause() != EntityDamageEvent.DamageCause.VOID
+                && event.getCause() != EntityDamageEvent.DamageCause.SUICIDE
+                && !event.getDamageSource().getDamageType().getKey().getKey().equals("generic_kill");
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onCombatOutcome(final EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player) || event.getFinalDamage() <= 0.0D
+                || !(event.getDamageSource().getCausingEntity() instanceof LivingEntity opponent)
+                || opponent.getUniqueId().equals(player.getUniqueId())) return;
+        final var health = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+        if (health == null) return;
+        final double fraction = catalog.require("a_kard_amely_minden_csatat_megnyer").losingHealthFraction();
+        if (TrashRelicPolicy.losingCombat(player.getHealth(), event.getFinalDamage(), health.getValue(), fraction))
+            abandonLosingSword(player, opponent);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -340,7 +386,29 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSpawn(final ItemSpawnEvent event) {
-        recoverDeathAnchor(event.getEntity());
+        final Item item = event.getEntity();
+        if (!hasDeathAnchor(item)) return;
+        final Location position = item.getLocation();
+        item.getPersistentDataContainer().set(anchorPositionKey, PersistentDataType.LONG_ARRAY,
+                new long[] {Double.doubleToLongBits(position.getX()), Double.doubleToLongBits(position.getY()),
+                        Double.doubleToLongBits(position.getZ())});
+        item.getScheduler().run(plugin, ignored -> recoverDeathAnchor(item), null);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onAnchorPickup(org.bukkit.event.entity.EntityPickupItemEvent event) {
+        if (hasDeathAnchor(event.getItem())) clearDeathAnchor(event.getItem());
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onAnchorAutomation(org.bukkit.event.inventory.InventoryPickupItemEvent event) {
+        if (hasDeathAnchor(event.getItem())) clearDeathAnchor(event.getItem());
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onAnchorMerge(org.bukkit.event.entity.ItemMergeEvent event) {
+        if (deathAnchors.containsKey(event.getEntity().getUniqueId())
+                || deathAnchors.containsKey(event.getTarget().getUniqueId())) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -478,10 +546,12 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
                               final TrashRelicBehavior behavior) {
         if (block == null || !Bukkit.isOwnedByCurrentRegion(block.getLocation())
                 || !claims.canUse(player.getUniqueId(), block.getLocation())
-                || territoryProtection.isTerrainProtectedAt(block.getLocation())) return;
+                || territoryProtection.isTerrainProtectedAt(block.getLocation())
+                || !Boolean.FALSE.equals(hu.taliann.icesmp.integration.ProtectionBridge.queryProtected(block.getLocation()))) return;
         final Block upper = block.getRelative(0, 1, 0);
         if (!claims.canUse(player.getUniqueId(), upper.getLocation())
-                || territoryProtection.isTerrainProtectedAt(upper.getLocation())) return;
+                || territoryProtection.isTerrainProtectedAt(upper.getLocation())
+                || !Boolean.FALSE.equals(hu.taliann.icesmp.integration.ProtectionBridge.queryProtected(upper.getLocation()))) return;
         fractures.open(player.getUniqueId(), block, 200L, () -> consumeHeld(player, hand, behavior));
     }
 
@@ -564,11 +634,14 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         final var reservation = ruleFields.reserveCreation(field).orElse(null);
         if (reservation == null) return;
         try {
-            final ItemStack unit = held.clone(); unit.setAmount(1);
+            final int slot = hand == EquipmentSlot.OFF_HAND ? 40 : player.getInventory().getHeldItemSlot();
+            if (!history.prepareInventorySlotDurably(player, slot)) { ruleFields.releaseCreation(reservation); return; }
+            final ItemStack prepared = itemInHand(player, hand);
+            final ItemStack unit = prepared.clone(); unit.setAmount(1);
             final var plan = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, player.getUniqueId()).orElse(null);
             if (plan == null) { ruleFields.releaseCreation(reservation); return; }
             activation.dispatchCreation(reservation, new RuleCreationOwner(field, hand,
-                    player.getInventory().getHeldItemSlot(), held.serializeAsBytes(), plan, player.getScheduler()));
+                    player.getInventory().getHeldItemSlot(), prepared.serializeAsBytes(), plan, player.getScheduler()));
         } catch (final RuntimeException rejected) {
             ruleFields.releaseCreation(reservation); telemetry.recordBehaviorRuntimeError();
         }
@@ -631,20 +704,25 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
     }
 
     private void abandonLosingSword(final Player player, final Entity attacker) {
-        final int slot = player.getInventory().getHeldItemSlot();
-        if (behaviorOf(player.getInventory().getItem(slot)).orElse(null)
-                != TrashRelicBehavior.A_KARD_AMELY_MINDEN_CSATAT_MEGNYER) return;
-        dropTransformed(player, slot, attacker.getUniqueId());
+        final int slot = findSlot(player, TrashRelicBehavior.A_KARD_AMELY_MINDEN_CSATAT_MEGNYER);
+        if (slot < 0) return;
+        final Vector direction = Bukkit.isOwnedByCurrentRegion(attacker)
+                && attacker.getWorld().equals(player.getWorld())
+                ? attacker.getLocation().toVector().subtract(player.getLocation().toVector()).setY(0.0D)
+                : player.getLocation().getDirection().setY(0.0D);
+        dropTransformed(player, slot, attacker instanceof Player ? attacker.getUniqueId() : null, direction);
     }
 
-    private boolean dropTransformed(final Player player, final int slot, final UUID owner) {
+    private boolean dropTransformed(final Player player, final int slot, final UUID owner, final Vector direction) {
         try {
             if (!history.consumeInventorySlotDurably(player, slot)) return false;
             final ItemStack remnant = player.getInventory().getItem(slot);
             if (remnant == null || remnant.getType().isAir()) return false;
             player.getInventory().setItem(slot, null);
+            hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
             final Item dropped = player.getWorld().dropItem(player.getLocation(), remnant);
             if (owner != null) dropped.setOwner(owner);
+            if (direction.lengthSquared() > 0.001D) dropped.setVelocity(direction.normalize().multiply(0.3D).setY(0.15D));
             return true;
         } catch (final RuntimeException rejected) {
             telemetry.recordBehaviorRuntimeError();
@@ -658,6 +736,7 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             final ItemStack remnant = player.getInventory().getHelmet();
             if (remnant == null || remnant.getType().isAir()) return false;
             player.getInventory().setHelmet(null);
+            hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
             player.getWorld().dropItem(player.getLocation(), remnant);
             return true;
         } catch (final RuntimeException rejected) {
@@ -666,24 +745,68 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
         }
     }
 
-    private void recoverDeathAnchor(final Item item) {
-        if (!item.getItemStack().hasItemMeta()) return;
+    private boolean hasDeathAnchor(final Item item) {
+        final ItemStack stack = item.getItemStack();
+        return stack.hasItemMeta() && stack.getItemMeta().getPersistentDataContainer().has(deathAnchorKey);
+    }
+
+    public void recoverDeathAnchor(final Item item) {
+        if (!item.isValid() || !item.getItemStack().hasItemMeta()) return;
         final Long until = item.getItemStack().getItemMeta().getPersistentDataContainer().get(
                 deathAnchorKey, PersistentDataType.LONG);
         if (until == null) return;
-        if (until <= System.currentTimeMillis()) {
+        if (until <= System.currentTimeMillis() || until > System.currentTimeMillis() + DEATH_ANCHOR_MILLIS) {
             clearDeathAnchor(item);
             return;
         }
+        final var pdc = item.getPersistentDataContainer();
+        final long[] encodedPosition = pdc.get(anchorPositionKey, PersistentDataType.LONG_ARRAY);
+        double[] position = encodedPosition == null ? null : java.util.Arrays.stream(encodedPosition).mapToDouble(Double::longBitsToDouble).toArray();
+        if (position == null || position.length != 3 || !java.util.Arrays.stream(position).allMatch(Double::isFinite)) {
+            final Location current = item.getLocation();
+            position = new double[] {current.getX(), current.getY(), current.getZ()};
+            pdc.set(anchorPositionKey, PersistentDataType.LONG_ARRAY,
+                    java.util.Arrays.stream(position).mapToLong(Double::doubleToLongBits).toArray());
+        }
+        final DeathAnchor anchor = new DeathAnchor(item, new Location(item.getWorld(), position[0], position[1], position[2]));
+        synchronized (deathAnchors) {
+            if (deathAnchors.containsKey(item.getUniqueId())) return;
+            if (deathAnchors.size() >= 1024) { clearDeathAnchor(item); return; }
+            deathAnchors.put(item.getUniqueId(), anchor);
+        }
+        final boolean legacy = !pdc.has(anchorFlagsKey) && item.isInvulnerable() && item.isUnlimitedLifetime();
+        if (!pdc.has(anchorFlagsKey)) pdc.set(anchorFlagsKey, PersistentDataType.BYTE_ARRAY,
+                new byte[] {(byte) (item.hasGravity() ? 1 : 0), (byte) (!legacy && item.isInvulnerable() ? 1 : 0),
+                        (byte) (!legacy && item.isUnlimitedLifetime() ? 1 : 0)});
+        item.setGravity(false);
         item.setVelocity(new Vector());
         item.setInvulnerable(true);
         item.setUnlimitedLifetime(true);
-        final long ticks = Math.max(1L, (until - System.currentTimeMillis() + 49L) / 50L);
-        item.getScheduler().runDelayed(plugin, ignored -> clearDeathAnchor(item),
-                () -> { }, ticks);
+        try {
+            anchor.task = item.getScheduler().runAtFixedRate(plugin, task -> {
+                if (!item.isValid()) { task.cancel(); deathAnchors.remove(item.getUniqueId(), anchor); return; }
+                if (System.currentTimeMillis() >= until || !item.getWorld().equals(anchor.position.getWorld())) {
+                    clearDeathAnchor(item); return;
+                }
+                item.setVelocity(new Vector());
+                if (item.getLocation().distanceSquared(anchor.position) > 0.0025D) {
+                    if (!item.getWorld().isChunkLoaded(anchor.position.getBlockX() >> 4, anchor.position.getBlockZ() >> 4)) {
+                        clearDeathAnchor(item);
+                        return;
+                    }
+                    item.teleportAsync(anchor.position);
+                }
+            }, () -> deathAnchors.remove(item.getUniqueId(), anchor), 1L, 1L);
+            if (anchor.task == null) deathAnchors.remove(item.getUniqueId(), anchor);
+        } catch (final RuntimeException rejected) {
+            clearDeathAnchor(item);
+            telemetry.recordBehaviorRuntimeError();
+        }
     }
 
     private void clearDeathAnchor(final Item item) {
+        final DeathAnchor anchor = deathAnchors.remove(item.getUniqueId());
+        if (anchor != null && anchor.task != null) anchor.task.cancel();
         if (!item.isValid()) return;
         final ItemStack stack = item.getItemStack();
         if (stack.hasItemMeta()) {
@@ -693,8 +816,13 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             if (items.isKnownItem(stack)) items.refreshPresentation(stack);
             item.setItemStack(stack);
         }
-        item.setInvulnerable(false);
-        item.setUnlimitedLifetime(false);
+        final var pdc = item.getPersistentDataContainer();
+        final byte[] flags = pdc.get(anchorFlagsKey, PersistentDataType.BYTE_ARRAY);
+        item.setGravity(flags == null || flags.length != 3 || flags[0] != 0);
+        item.setInvulnerable(flags != null && flags.length == 3 && flags[1] != 0);
+        item.setUnlimitedLifetime(flags != null && flags.length == 3 && flags[2] != 0);
+        pdc.remove(anchorFlagsKey);
+        pdc.remove(anchorPositionKey);
     }
 
     private boolean transform(final Player player, final TrashRelicBehavior behavior) {

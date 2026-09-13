@@ -117,9 +117,13 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
             Material.OBSERVER, Material.PISTON, Material.STICKY_PISTON, Material.DISPENSER,
             Material.DROPPER, Material.HOPPER, Material.NOTE_BLOCK, Material.REDSTONE_LAMP,
             Material.COPPER_BULB, Material.IRON_DOOR, Material.IRON_TRAPDOOR);
-    private static final List<String> WHISPERS = List.of(
-            "Nem innen fúj a szél.", "Valaki mögötted lapozott.",
-            "A tinta még emlékszik.", "Ez a sor tegnap nem volt itt.");
+    private record NoteProjection(String text, long until) { }
+    private final Map<CompassProjection, NoteProjection> noteProjections = new ConcurrentHashMap<>();
+    private java.util.function.BiPredicate<LivingEntity, String> historicalEligibility = (entity, tag) -> false;
+
+    public void bindHistoricalEligibility(java.util.function.BiPredicate<LivingEntity, String> eligibility) {
+        historicalEligibility = java.util.Objects.requireNonNull(eligibility);
+    }
 
     private final JavaPlugin plugin;
     private final TrashCatalog catalog;
@@ -238,6 +242,13 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                     ignored -> resyncCompassProjection(player, projection), null);
         }
         compassProjections.clear();
+        for (final CompassProjection projection : Set.copyOf(noteProjections.keySet())) {
+            final Player player = Bukkit.getPlayer(projection.playerId());
+            if (player != null) player.getScheduler().run(plugin, ignored -> {
+                if (!tooltipVisible.test(player.getUniqueId(), projection.slot())) resyncCompassProjection(player, projection);
+            }, null);
+        }
+        noteProjections.clear();
         whisperCooldown.clear();
         presentationCooldown.clear();
         silentEventUntil.clear();
@@ -251,12 +262,15 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         presentationCooldown.remove(playerId);
         silentEventUntil.remove(playerId);
         compassProjections.removeIf(projection -> projection.playerId().equals(playerId));
+        noteProjections.keySet().removeIf(projection -> projection.playerId().equals(playerId));
     }
 
     public TrashAnomalyActivationService activationService() { return activation; }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onUse(final PlayerInteractEvent event) {
+        if (event.useItemInHand() == org.bukkit.event.Event.Result.DENY
+                || event.getClickedBlock() != null && event.useInteractedBlock() == org.bukkit.event.Event.Result.DENY) return;
         if (event.getHand() == null || event.getItem() == null || event.getAction() == Action.PHYSICAL) return;
         if (activation.behaviorOf(event.getItem()).isEmpty()) return;
         try {
@@ -284,7 +298,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         switch (behavior) {
             case TOROTT_IRANYTU -> projectOppositeDirection(player, hand, held);
             case FAGYOTT_TINTAS_CETLI -> {
-                if (isCold(player.getLocation())) quietActionBar(player, "A tinta lassan előkúszik a papíron.");
+                showContextualNote(player, hand, held, false);
             }
             case SZARAZ_GYUFA -> {
                 if (player.isInWaterOrRain()) quietActionBar(player, "Száraz.");
@@ -317,7 +331,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                     return TrashAnomalyActivationService.Result.DENY_ITEM;
                 }
             }
-            case SUTTOGO_CETLI -> whisperInDarkness(player);
+            case SUTTOGO_CETLI -> showContextualNote(player, hand, held, true);
             case A_KRUMPLI_AMI_NEM_AKAR_ELULTETODNI -> {
                 if (right && target != null && target.getType() == Material.FARMLAND)
                     return TrashAnomalyActivationService.Result.CANCEL;
@@ -447,6 +461,16 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     public void onContainerClick(final InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         final ItemStack current = event.getCurrentItem();
+        if (event.getAction() == org.bukkit.event.inventory.InventoryAction.COLLECT_TO_CURSOR) {
+            final Inventory top = event.getView().getTopInventory();
+            for (final ItemStack stack : top.getStorageContents()) {
+                if (behaviorOf(stack).orElse(null) == TrashAnomalyBehavior.A_PENZTAR_UTOLSO_GARASA
+                        && stack.isSimilar(event.getCursor()) && lastEligibleStack(top, stack)) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
         if (event.getRawSlot() >= 0
                 && event.getRawSlot() < event.getView().getTopInventory().getSize()
                 && behaviorOf(current).orElse(null)
@@ -563,6 +587,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     }
 
     private void tickHeldItems(final Player player) {
+        clearStaleNotes(player);
         for (final EquipmentSlot hand : List.of(EquipmentSlot.HAND, EquipmentSlot.OFF_HAND)) {
             final ItemStack stack = itemInHand(player, hand);
             final TrashAnomalyBehavior behavior = behaviorOf(stack).orElse(null);
@@ -580,11 +605,10 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                             TrashAnomalyStateStore.MemoryKey.WATCHED_TICKS, 20L);
                     quietActionBar(player, formatWatch(ticks));
                 }
-            } else if (behavior == TrashAnomalyBehavior.FAGYOTT_TINTAS_CETLI
-                    && isCold(player.getLocation())) {
-                quietActionBar(player, "A tinta lassan előkúszik a papíron.");
+            } else if (behavior == TrashAnomalyBehavior.FAGYOTT_TINTAS_CETLI) {
+                showContextualNote(player, hand, stack, false);
             } else if (behavior == TrashAnomalyBehavior.SUTTOGO_CETLI) {
-                whisperInDarkness(player);
+                showContextualNote(player, hand, stack, true);
             }
         }
     }
@@ -592,13 +616,18 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     private void startPhysics(final Item item, final TrashAnomalyBehavior behavior) {
         final UUID itemId = item.getUniqueId();
         final UUID worldId = item.getWorld().getUID();
-        final AtomicInteger count = activeByWorld.computeIfAbsent(worldId, ignored -> new AtomicInteger());
-        if (count.incrementAndGet() > MAX_ACTIVE_PHYSICS_PER_WORLD) {
-            count.decrementAndGet();
-            return;
-        }
+        final boolean[] reserved = {false};
+        activeByWorld.compute(worldId, (ignored, current) -> {
+            final AtomicInteger count = current == null ? new AtomicInteger() : current;
+            if (count.get() < MAX_ACTIVE_PHYSICS_PER_WORLD) {
+                count.incrementAndGet();
+                reserved[0] = true;
+            }
+            return count;
+        });
+        if (!reserved[0]) return;
         if (!activePhysics.add(itemId)) {
-            count.decrementAndGet();
+            releasePhysicsWorld(worldId);
             return;
         }
         physicsWorldByItem.put(itemId, worldId);
@@ -606,7 +635,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         physicsOriginY.put(itemId, item.getLocation().getY());
         final int[] age = {0};
         try {
-            item.getScheduler().runAtFixedRate(plugin, task -> {
+            final var scheduled = item.getScheduler().runAtFixedRate(plugin, task -> {
                 if (!item.isValid() || ++age[0] > 600
                         || behaviorOf(item.getItemStack()).orElse(null) != behavior) {
                     task.cancel();
@@ -615,6 +644,7 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
                 }
                 tickPhysics(item, behavior, age[0]);
             }, () -> releasePhysics(itemId), 1L, 2L);
+            if (scheduled == null) releasePhysics(itemId);
         } catch (final RuntimeException rejected) {
             telemetry.recordBehaviorRuntimeError();
             releasePhysicsAndRestore(item);
@@ -694,17 +724,18 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
     private void opposeWater(final Item item) {
         if (!item.isInWater()) return;
         final Block center = item.getLocation().getBlock();
+        if (!(center.getBlockData() instanceof Levelled centerWater) || centerWater.getLevel() >= 8) return;
         final Vector flow = new Vector();
         for (final org.bukkit.block.BlockFace face : List.of(org.bukkit.block.BlockFace.NORTH,
                 org.bukkit.block.BlockFace.SOUTH, org.bukkit.block.BlockFace.EAST,
                 org.bukkit.block.BlockFace.WEST)) {
             final Block neighbor = center.getRelative(face);
             if (!sameChunk(center, neighbor) || neighbor.getType() != Material.WATER) continue;
-            final int level = neighbor.getBlockData() instanceof Levelled water ? water.getLevel() : 0;
-            flow.add(face.getDirection().multiply(8 - Math.min(8, level)));
+            if (!(neighbor.getBlockData() instanceof Levelled water) || water.getLevel() >= 8) continue;
+            flow.add(face.getDirection().multiply(centerWater.getLevel() - water.getLevel()));
         }
         if (flow.lengthSquared() > 0.001D) {
-            item.setVelocity(flow.normalize().multiply(-0.11D).setY(item.getVelocity().getY()));
+            item.setVelocity(flow.normalize().multiply(0.11D).setY(item.getVelocity().getY()));
         }
     }
 
@@ -788,10 +819,10 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
             living.getScheduler().run(plugin, ignored -> {
                 if (!living.isValid()) return;
                 final boolean eligible = switch (behavior) {
-                    case UDVARI_GOMB -> living instanceof Monster
-                            && MobScalingManager.templateIdOf(living) != null;
-                    case SZAKADT_HADIJEL -> living instanceof Monster
-                            && authoredWarUndead(MobScalingManager.templateIdOf(living));
+                    case UDVARI_GOMB -> hu.taliann.icesmp.utils.UndeadUtil.isUndead(living)
+                            && historicalEligibility.test(living, "history:chaos_age");
+                    case SZAKADT_HADIJEL -> hu.taliann.icesmp.utils.UndeadUtil.isUndead(living)
+                            && historicalEligibility.test(living, "history:seventh_blood_war");
                     case SARKANYISTALLO_CSATJA -> living instanceof Animals
                             || living instanceof AbstractHorse;
                     default -> false;
@@ -1270,13 +1301,47 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         return false;
     }
 
-    private void whisperInDarkness(final Player player) {
-        if (player.getLocation().getBlock().getLightLevel() > 4) return;
+    private void clearStaleNotes(final Player player) {
+        for (final CompassProjection projection : Set.copyOf(noteProjections.keySet())) {
+            if (!projection.playerId().equals(player.getUniqueId())) continue;
+            final ItemStack current = player.getInventory().getItem(projection.slot());
+            final TrashAnomalyBehavior behavior = behaviorOf(current).orElse(null);
+            final NoteProjection note = noteProjections.get(projection);
+            if (note == null) continue;
+            final boolean held = projection.slot() == 40 || projection.slot() == player.getInventory().getHeldItemSlot();
+            final boolean active = behavior == TrashAnomalyBehavior.FAGYOTT_TINTAS_CETLI && isCold(player.getLocation())
+                    || behavior == TrashAnomalyBehavior.SUTTOGO_CETLI && player.getLocation().getBlock().getLightLevel() <= 4;
+            if (!held || !active || note.until() <= System.currentTimeMillis()) {
+                noteProjections.remove(projection);
+                if (!tooltipVisible.test(player.getUniqueId(), projection.slot())) resyncCompassProjection(player, projection);
+            }
+        }
+    }
+
+    private void showContextualNote(final Player player, final EquipmentSlot hand, final ItemStack held, final boolean whisper) {
+        clearStaleNotes(player);
+        final int slot = hand == EquipmentSlot.OFF_HAND ? 40 : player.getInventory().getHeldItemSlot();
+        if (tooltipVisible.test(player.getUniqueId(), slot)) return;
+        if (whisper ? player.getLocation().getBlock().getLightLevel() > 4 : !isCold(player.getLocation())) return;
+        final List<String> lines = items.idOf(held).map(catalog::require).map(TrashDefinition::contextualText).orElse(List.of());
+        if (lines.isEmpty()) return;
+        final CompassProjection projection = new CompassProjection(player.getUniqueId(), hand, slot);
         final long now = System.currentTimeMillis();
-        if (whisperCooldown.getOrDefault(player.getUniqueId(), 0L) > now
-                || ThreadLocalRandom.current().nextInt(5) != 0) return;
-        whisperCooldown.put(player.getUniqueId(), now + 30_000L);
-        quietActionBar(player, WHISPERS.get(ThreadLocalRandom.current().nextInt(WHISPERS.size())));
+        NoteProjection note = noteProjections.get(projection);
+        if (note == null || note.until() <= now) {
+            if (whisper && (whisperCooldown.getOrDefault(player.getUniqueId(), 0L) > now
+                    || ThreadLocalRandom.current().nextInt(5) != 0)) return;
+            if (whisper) whisperCooldown.put(player.getUniqueId(), now + 30_000L);
+            note = new NoteProjection(lines.get(whisper ? ThreadLocalRandom.current().nextInt(lines.size()) : 0), now + 10_000L);
+            noteProjections.put(projection, note);
+        }
+        final ItemStack shown = held.clone();
+        final var meta = shown.getItemMeta();
+        final List<Component> lore = new java.util.ArrayList<>(meta.hasLore() ? meta.lore() : List.of());
+        lore.add(Component.text(note.text(), NamedTextColor.GRAY));
+        meta.lore(lore);
+        shown.setItemMeta(meta);
+        TooltipPacketBridge_1_21_11.projectInventorySlot(player, slot, shown);
     }
 
     private void reconcileSerial(final Player player) {
@@ -1311,13 +1376,6 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         return nonEmpty == 1;
     }
 
-    private static boolean authoredWarUndead(final String templateId) {
-        if (templateId == null || templateId.isBlank()) return false;
-        final String normalized = templateId.toLowerCase(Locale.ROOT);
-        return normalized.contains("seventh") || normalized.contains("hetedik")
-                || normalized.contains("war") || normalized.contains("habor");
-    }
-
     private static TrashAnomalyBehavior opposite(final TrashAnomalyBehavior behavior) {
         return switch (behavior) {
             case BAL_ZOKNI -> TrashAnomalyBehavior.JOBB_ZOKNI;
@@ -1343,10 +1401,11 @@ public final class TrashAnomalyRuntime implements Listener, PlayerStateCleanup {
         if (!activePhysics.remove(itemId)) return;
         physicsOriginY.remove(itemId);
         final UUID worldId = physicsWorldByItem.remove(itemId);
-        final AtomicInteger counter = worldId == null ? null : activeByWorld.get(worldId);
-        if (counter != null && counter.decrementAndGet() <= 0) {
-            activeByWorld.remove(worldId, counter);
-        }
+        if (worldId != null) releasePhysicsWorld(worldId);
+    }
+
+    private void releasePhysicsWorld(final UUID worldId) {
+        activeByWorld.computeIfPresent(worldId, (ignored, counter) -> counter.decrementAndGet() <= 0 ? null : counter);
     }
 
     private static void steer(final Item item, final Location target, final double strength) {

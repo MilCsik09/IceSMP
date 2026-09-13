@@ -573,15 +573,25 @@ public final class TrashHistoryService {
         final ItemStack source = player.getInventory().getItem(slot);
         if (source == null || itemFactory.successPhaseOf(source).isEmpty()
                 || source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
+        if (!prepareInventorySlotDurably(player, slot)) return false;
+        if (!transformInventorySlotOnSuccess(player, slot)) return false;
+        hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
+        return true;
+    }
+
+    public boolean prepareInventorySlotDurably(final Player player, final int slot) {
+        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(player) || !player.isOnline()
+                || slot < 0 || slot >= player.getInventory().getSize()) return false;
+        final ItemStack source = player.getInventory().getItem(slot);
+        if (source == null || !itemFactory.isKnownItem(source)
+                || source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
         if (instanceIdOf(source).isEmpty()) {
-            final SplitResult split = splitAndRecord(source, TrashHistoryEvent.ACTIVATED, player.getUniqueId(), "");
+            final SplitResult split = splitAndRecord(source, TrashHistoryEvent.OWNER_OBSERVED, player.getUniqueId(), "");
             player.getInventory().setItem(slot, split.singleton());
             if (split.remainder() != null && !player.getInventory().addItem(split.remainder()).isEmpty())
                 throw new IllegalStateException("a lefoglalt Trash maradéka nem fér el");
-        }
-        player.saveData();
-        if (!transformInventorySlotOnSuccess(player, slot)) return false;
-        player.saveData();
+        } else if (!isValidTracked(source)) return false;
+        hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
         return true;
     }
 
@@ -774,6 +784,7 @@ public final class TrashHistoryService {
         Objects.requireNonNull(restoredInput, "restoredInput");
         if (slot < 0 || slot >= player.getInventory().getSize()
                 || restoredInput.getType().isAir() || restoredInput.getAmount() != 1) return false;
+        if (!prepareInventorySlotDurably(player, slot)) return false;
         final ItemStack source = player.getInventory().getItem(slot);
         if (source == null || itemFactory.successPhaseOf(source).isEmpty()) return false;
         if (source.getAmount() > 1 && player.getInventory().firstEmpty() < 0) return false;
