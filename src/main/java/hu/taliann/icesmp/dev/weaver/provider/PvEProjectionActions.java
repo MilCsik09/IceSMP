@@ -21,7 +21,7 @@ final class PvEProjectionActions {
     static final WeaverRevisionScope SCOPE = new WeaverRevisionScope(1, Set.of(CANONICAL_REVISION, PROJECTION_REVISION));
     private static final WeaverTypeId PROJECTION_REF = WeaverTypeId.parse("weaver:projection_ref@1");
     private static final Map<String, String> FIELDS = Map.of("pve.add_ability", PvEMobProjectionSource.ADD, "pve.remove_ability", PvEMobProjectionSource.REMOVE,
-            "pve.override_rank", PvEMobProjectionSource.RANK, "pve.override_archetype", PvEMobProjectionSource.ARCHETYPE, "pve.apply_template_projection", PvEMobProjectionSource.TEMPLATE);
+            "pve.override_rank", PvEMobProjectionSource.RANK, "pve.override_archetype", PvEMobProjectionSource.ARCHETYPE, "pve.apply_template_projection", PvEMobProjectionSource.TEMPLATE, "pve.apply_imprint", PvEMobProjectionSource.IMPRINT);
     private final PvEMobProjectionSource source;
     private final Function<SubjectRef, Map<String, WeaverValue>> snapshots;
     private final Map<String, ActionDescriptor> actions;
@@ -36,6 +36,9 @@ final class PvEProjectionActions {
         add(descriptors, "pve.override_rank", "Combat rang rávetítése", RANK, "pve.ranks", "pve.rank");
         add(descriptors, "pve.override_archetype", "Archetípus rávetítése", ARCHETYPE, "pve.archetypes", "pve.archetype");
         add(descriptors, "pve.apply_template_projection", "Combat sablon rávetítése", TEMPLATE, "pve.templates", "pve.template");
+        descriptors.put("pve.apply_imprint", new ActionDescriptor("pve.apply_imprint", FACET, Component.text("Combat lenyomat rávetítése"), RiskLevel.MUTATING,
+                Set.of(Lifetime.SESSION), Set.of(IntegrityMode.SANDBOX), Set.of(IntegrityImpact.TAINT_SUBJECT), Set.of(WeaverSubjectKind.ENTITY),
+                List.of(parameter(PvEImprintCodec.TYPE, Optional.empty(), Set.of("pve.imprint"))), AreaSupport.NONE, Optional.empty(), true, Optional.empty(), 1, SCOPE));
         descriptors.put(SEVER, new ActionDescriptor(SEVER, FACET, Component.text("Projection elvágása"), RiskLevel.MUTATING, Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX, IntegrityMode.LIVE_GM),
                 Set.of(IntegrityImpact.TAINT_SUBJECT), Set.of(WeaverSubjectKind.ENTITY), List.of(parameter(PROJECTION_REF, Optional.of(CATALOG), Set.of("pve.projection"))),
                 AreaSupport.NONE, Optional.empty(), false, Optional.of("A korábbi receipt és influence megmarad; visszaállításhoz új projection szükséges."), 1, SCOPE));
@@ -67,12 +70,13 @@ final class PvEProjectionActions {
         return List.of(new ImportDescriptor("pve.import_ability", "pve.add_ability", ABILITY, Set.of("pve.ability"), "value"),
                 new ImportDescriptor("pve.import_rank", "pve.override_rank", RANK, Set.of("pve.rank"), "value"),
                 new ImportDescriptor("pve.import_archetype", "pve.override_archetype", ARCHETYPE, Set.of("pve.archetype"), "value"),
-                new ImportDescriptor("pve.import_template", "pve.apply_template_projection", TEMPLATE, Set.of("pve.template"), "value"));
+                new ImportDescriptor("pve.import_template", "pve.apply_template_projection", TEMPLATE, Set.of("pve.template"), "value"),
+                new ImportDescriptor("pve.import_imprint", "pve.apply_imprint", PvEImprintCodec.TYPE, Set.of("pve.imprint"), "value"));
     }
     List<ProjectionConsumerDescriptor> consumers() {
         return List.of(new ProjectionConsumerDescriptor(PvEMobProjectionSource.CONSUMER, "pve", "hu.taliann.icesmp.pve.MobAbilityRuntime#effectiveProfile", FIELDS.keySet(), Set.of(WeaverSubjectKind.ENTITY),
                 Map.of(PvEMobProjectionSource.ADD, ABILITY, PvEMobProjectionSource.REMOVE, ABILITY, PvEMobProjectionSource.RANK, RANK,
-                        PvEMobProjectionSource.ARCHETYPE, ARCHETYPE, PvEMobProjectionSource.TEMPLATE, TEMPLATE),
+                        PvEMobProjectionSource.ARCHETYPE, ARCHETYPE, PvEMobProjectionSource.TEMPLATE, TEMPLATE, PvEMobProjectionSource.IMPRINT, PvEImprintCodec.TYPE),
                 Set.of("pve.loot", "pve.bestiary", "pve.quest_identity", "pve.reward_level", "pve.provenance")));
     }
     ImportValidation validateImport(final ProviderContext context, final SubjectSnapshot snapshot, final String id, final WeaverValue value) {

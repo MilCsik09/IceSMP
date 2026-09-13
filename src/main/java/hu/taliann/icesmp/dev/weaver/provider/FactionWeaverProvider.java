@@ -129,7 +129,7 @@ public final class FactionWeaverProvider implements WorldWeaverProvider, WeaverS
         final Set<String> covered = new HashSet<>(Set.of(FACET)); contribution.actions().forEach(a -> covered.add(a.id()));
         contribution.catalogs().forEach(c -> covered.add(c.id())); contribution.exports().forEach(e -> covered.add(e.id())); contribution.imports().forEach(i -> covered.add(i.id()));
         return new ProviderCoverage("faction.registered_surface", CoverageLevel.FULL_PROVIDER,
-                "Typed projection, canonical/effective inspect, Thread/sever and LIVE_GM profile transactions. WW-00 remains blocked pending scripted target controls and native evidence.", covered);
+                "Typed projection, canonical/effective inspect, Thread/sever and LIVE_GM profile transactions. This is the practical 1.0 faction slice; optional controls are not completeness gates.", covered);
     }
     @Override public Map<String, WeaverValue> captureOnOwner(SubjectRef ref) { return Map.copyOf(snapshots.apply(ref)); }
     @Override public ProviderDiscovery discover(SubjectSnapshot snapshot) {

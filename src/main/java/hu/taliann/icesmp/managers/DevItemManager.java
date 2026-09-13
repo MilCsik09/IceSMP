@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 
 /** The single identity, recovery and persistence authority for registered developer artifacts. */
 public final class DevItemManager implements PersistentStore, PlayerStateCleanup {
-    private static final boolean WORLD_WEAVER_ENABLED = false;
+    private static final boolean WORLD_WEAVER_ENABLED = true;
     private static final class Entry {
         final DevArtifactRegistration registration;
         final AtomicBoolean tickQueued = new AtomicBoolean();
@@ -439,6 +439,8 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
     }
     private void cleanForeignItems(final Player player) {
         requireOwnerThread(player);
+        hu.taliann.icesmp.itemization.ItemPrototypePolicy.quarantinePlayer(player,
+                hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER);
         for (final ItemStack item : player.getInventory().getContents()) {
             final String id = itemFactory.itemIdOf(item);
             if (id != null && (!entries.containsKey(id) || !player.getUniqueId().equals(state(id).owner()))) removeItems(player, id);

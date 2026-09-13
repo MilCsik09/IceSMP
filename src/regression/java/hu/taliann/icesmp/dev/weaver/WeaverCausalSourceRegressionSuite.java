@@ -16,9 +16,10 @@ import static hu.taliann.icesmp.dev.weaver.WeaverProjectionRegressionSuite.*;
 public final class WeaverCausalSourceRegressionSuite {
     private static int assertions;
     private static final class SourceProvider extends WeaverContractRegressionSuite.FixtureProvider implements WeaverCausalSourceProvider {
-        final Map<UUID, UUID> parents = new HashMap<>(); int reads; boolean broken; int count = 1;
+        final Map<UUID, UUID> parents = new HashMap<>(); int reads; boolean broken; int count = 1; int maximum = 16;
         SourceProvider() { super("origin", WeaverContractRegressionSuite.safe("origin"), CoverageLevel.FULL_PROVIDER, Map.of()); }
         public Set<GameplaySourceSubject.Kind> causalSourceKinds() { return Set.of(GameplaySourceSubject.Kind.MOB); }
+        public int maximumCausalSources() { return maximum; }
         public List<RewardSource> captureCausalSources(GameplaySourceSubject subject) {
             reads++; if (broken) throw new IllegalArgumentException("fixture private provenance");
             final UUID parent = parents.get(subject.id()); if (parent == null) return List.of();
@@ -46,6 +47,14 @@ public final class WeaverCausalSourceRegressionSuite {
         final int reads = provider.reads; rejects(() -> registry.captureCausalSources(subject)); check(reads == provider.reads, "quarantined source consumer called again");
         final var oversized = new SourceProvider(); oversized.parents.put(child, parent); oversized.count = 17;
         final var bounded = registry(oversized); rejects(() -> bounded.captureCausalSources(subject));
+        oversized.maximum = 32; rejects(() -> bounded.captureCausalSources(subject));
+        final var nativeBudget = new SourceProvider(); nativeBudget.maximum = 32;
+        nativeBudget.count = 32; nativeBudget.parents.put(child, parent);
+        check(registry(nativeBudget).captureCausalSources(subject).equals(List.of(new RewardSource.Entity(parent))),
+                "explicit native budget was rejected or duplicate causes escaped normalization");
+        for (int invalid : new int[] { 0, 33 }) {
+            final var badBudget = new SourceProvider(); badBudget.maximum = invalid; rejects(() -> registry(badBudget));
+        }
     }
     private static void parentBarrier() throws Exception {
         final var storage = new WeaverPersistenceRegressionSuite.Storage(); final var clock = new AtomicLong(100);
@@ -96,7 +105,10 @@ public final class WeaverCausalSourceRegressionSuite {
         final AtomicReference<GameplaySourceCaptureGate.Binding> current = new AtomicReference<>();
         current.set(GameplaySourceCaptureGate.install(value -> { current.get().close(); return List.of(); }));
         rejects(() -> GameplaySourceCaptureGate.capture(subject));
-        try (final var oversized = GameplaySourceCaptureGate.install(value -> java.util.stream.IntStream.range(0, 33).mapToObj(i -> (RewardSource) new RewardSource.Entity(UUID.randomUUID())).toList())) {
+        try (final var exact = GameplaySourceCaptureGate.install(value -> java.util.stream.IntStream.range(0, GameplaySourceCaptureGate.MAX_SOURCES).mapToObj(i -> (RewardSource) new RewardSource.Entity(UUID.randomUUID())).toList())) {
+            check(GameplaySourceCaptureGate.capture(subject).size() == GameplaySourceCaptureGate.MAX_SOURCES, "declared combined native source budget was truncated");
+        }
+        try (final var oversized = GameplaySourceCaptureGate.install(value -> java.util.stream.IntStream.range(0, GameplaySourceCaptureGate.MAX_SOURCES + 1).mapToObj(i -> (RewardSource) new RewardSource.Entity(UUID.randomUUID())).toList())) {
             rejects(() -> GameplaySourceCaptureGate.capture(subject));
         }
     }

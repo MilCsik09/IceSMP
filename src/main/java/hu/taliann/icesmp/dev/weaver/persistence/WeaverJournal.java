@@ -60,22 +60,33 @@ public final class WeaverJournal {
     public hu.taliann.icesmp.dev.weaver.integrity.WeaverInfluenceIndex influenceIndex() { return publication.influence(); }
     /** Native effects await durable target lineage. This route can only strengthen quarantine, never grant a reward. */
     public CompletionStage<GameplayEffectPermit> prepareDerivedEffect(final GameplayEffectContext context) {
+        return prepareEffect(context, Optional.empty());
+    }
+    /** Existing origins are inherited durably; the running operation remains PREPARED until its native result is observed. */
+    public CompletionStage<GameplayEffectPermit> prepareNativeEffect(
+            final hu.taliann.icesmp.dev.weaver.execution.WeaverNativeEffectAuthority authority, final GameplayEffectContext context) {
+        Objects.requireNonNull(authority).requireFor(this, context);
+        return prepareEffect(context, Optional.of(authority));
+    }
+    private CompletionStage<GameplayEffectPermit> prepareEffect(final GameplayEffectContext context,
+            final Optional<hu.taliann.icesmp.dev.weaver.execution.WeaverNativeEffectAuthority> authority) {
         Objects.requireNonNull(context);
         if (!ready()) return CompletableFuture.completedFuture(GameplayEffectPermit.denied());
         final long observedAt = effectClock.getAsLong();
-        final var captured = publication.influence().trace(context.sources(), observedAt);
+        final var captured = effectTrace(publication, context.sources(), observedAt, authority);
         if (captured.uncertain() || captured.origins().size() > 128) return CompletableFuture.completedFuture(GameplayEffectPermit.denied());
         // Clean gameplay needs no journal queue/write. The one-use permit still rechecks source and lifecycle admission.
-        if (captured.clean()) return CompletableFuture.completedFuture(effectPermit(context, Set.of(), Math.addExact(observedAt, 5000), Optional.empty()));
+        if (captured.clean()) return CompletableFuture.completedFuture(effectPermit(context, Set.of(), Math.addExact(observedAt, 5000), Optional.empty(), authority));
         final long durableUntil = existingInstantAdmission(context, captured.origins(), observedAt);
-        if (durableUntil > observedAt) return CompletableFuture.completedFuture(effectPermit(context, captured.origins(), durableUntil, Optional.empty()));
+        if (durableUntil > observedAt) return CompletableFuture.completedFuture(effectPermit(context, captured.origins(), durableUntil, Optional.empty(), authority));
         // A tick-based lingering effect can outlive a wall-clock estimate during lag/logout.
         // Monotonic targets are safe; temporary targets need an observed-lifetime consumer first.
         final boolean needsObserver = (context.durationMillis() > 0 || context.lifetime().isPresent())
                 && context.targets().stream().anyMatch(target -> !WeaverEffectReducer.propagationTarget(target).monotonic());
         return submit(true, () -> {
             final long now = effectClock.getAsLong();
-            final var current = publication.influence().trace(context.sources(), now);
+            authority.ifPresent(value -> value.requireFor(this, context));
+            final var current = effectTrace(publication, context.sources(), now, authority);
             if (current.uncertain()) return GameplayEffectPermit.denied();
             final Set<DeveloperInfluence> origins = new HashSet<>(captured.origins()); origins.addAll(current.origins());
             final Optional<WeaverValue> lifetime = needsObserver ? Optional.of(Objects.requireNonNull(lifetimeResolver.apply(context))) : Optional.empty();
@@ -84,8 +95,13 @@ public final class WeaverJournal {
             final long until = Math.addExact(Math.addExact(admissionUntil, context.durationMillis()), PlayerQuarantine.MINIMUM_TAIL_MILLIS);
             final var next = WeaverEffectReducer.propagated(state, origins, context.targets(), until, lifetime);
             if (next != state) publish(next);
-            return effectPermit(context, Set.copyOf(origins), admissionUntil, lifetime);
+            return effectPermit(context, Set.copyOf(origins), admissionUntil, lifetime, authority);
         }).exceptionally(unavailable -> GameplayEffectPermit.denied());
+    }
+    private WeaverInfluenceIndex.SourceEvidence effectTrace(final Publication current, final Collection<RewardSource> sources,
+            final long now, final Optional<hu.taliann.icesmp.dev.weaver.execution.WeaverNativeEffectAuthority> authority) {
+        return authority.isPresent() ? current.influence().traceNativeEffect(sources, now, authority.orElseThrow())
+                : current.influence().trace(sources, now);
     }
     /** Reuse only acknowledged lineage whose remaining tail covers the instant effect's actual admission time. */
     private long existingInstantAdmission(final GameplayEffectContext context, final Set<DeveloperInfluence> origins, final long now) {
@@ -102,16 +118,21 @@ public final class WeaverJournal {
         return until;
     }
     private GameplayEffectPermit effectPermit(final GameplayEffectContext context, final Set<DeveloperInfluence> admitted, final long admissionUntil,
-            final Optional<WeaverValue> observedLifetime) {
+            final Optional<WeaverValue> observedLifetime,
+            final Optional<hu.taliann.icesmp.dev.weaver.execution.WeaverNativeEffectAuthority> authority) {
         final long issued = System.nanoTime();
         return GameplayEffectPermit.guardedSources(currentSources -> {
             if (!ready() || System.nanoTime() - issued >= TimeUnit.SECONDS.toNanos(5)) return false;
+            if (authority.isPresent()) {
+                authority.orElseThrow().requireFor(this, context);
+                if (currentSources.isEmpty()) return false;
+            }
             final long now = effectClock.getAsLong(); if (now < 0 || now > admissionUntil) return false;
             final Publication current = publication;
-            final var source = current.influence().trace(context.sources(), now);
+            final var source = effectTrace(current, context.sources(), now, authority);
             if (source.uncertain() || !admitted.containsAll(source.origins())) return false;
             if (!currentSources.isEmpty()) {
-                final var fresh = current.influence().trace(currentSources, now);
+                final var fresh = effectTrace(current, currentSources, now, authority);
                 if (fresh.uncertain() || !admitted.containsAll(fresh.origins())) return false;
             }
             for (final DeveloperInfluence origin : admitted) for (final RewardSource target : context.targets()) {

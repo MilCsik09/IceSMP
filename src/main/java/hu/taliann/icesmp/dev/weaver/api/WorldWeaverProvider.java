@@ -9,6 +9,8 @@ import hu.taliann.icesmp.dev.weaver.persistence.RecoveryAssessment;
 import hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationRecord;
 
 public interface WorldWeaverProvider {
+    default void clearSession() { }
+    default java.util.concurrent.CompletionStage<Void> afterCommit(WeaverReceipt receipt) { return java.util.concurrent.CompletableFuture.completedFuture(null); }
     String id();
     int contractVersion();
     Set<WeaverSubjectKind> supportedKinds();

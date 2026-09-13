@@ -310,7 +310,8 @@ public final class FancyNpcsQuestBridge {
         }
         plugin.getLogger().severe("A koordináta és világ nem következtethető biztonságosan. "
                 + "Hozd létre vagy importáld a szükséges NPC-ket pontos belső névvel; "
-                + "a player-facing canonical NPC út addig nem áll készen.");
+                + "az érintett NPC-függő útvonalak addig nem állnak készen. "
+                + "Az IceSMP aktív marad; az NPC-ellenőrzés nem állítja le a plugint.");
     }
 
     private static String safeMessage(final ReflectiveOperationException exception) {

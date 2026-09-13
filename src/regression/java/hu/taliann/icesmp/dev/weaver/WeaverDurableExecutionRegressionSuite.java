@@ -50,6 +50,7 @@ public final class WeaverDurableExecutionRegressionSuite {
         return new ExecutionStage("fixture." + id, new EntityOwner(UUID.randomUUID()), Map.of(), apply, compensation, 5000);
     }
     public static void main(final String[] args) throws Exception {
+        WeaverNativeEffectRegressionSuite.main(args);
         try (final Fixture f = new Fixture()) {
             final AtomicInteger effects = new AtomicInteger();
             final var plan = f.plan(List.of(stage("apply", (context, payload) -> {

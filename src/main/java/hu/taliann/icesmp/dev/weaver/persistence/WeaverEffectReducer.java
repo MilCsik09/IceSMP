@@ -51,7 +51,7 @@ final class WeaverEffectReducer {
     static WeaverJournalState prepared(final WeaverJournalState state, final WeaverOperationRecord operation, final WeaverEffectIntent intent) {
         validateUndo(state, operation);
         final Set<WeaverInfluenceTarget> targets = new HashSet<>(intent.targets());
-        if (operation.request().integrityMode() == IntegrityMode.SANDBOX) targets.add(WeaverInfluenceTarget.subject(operation.subject()));
+        if (operation.request().integrityMode() == IntegrityMode.SANDBOX && !WeaverOperationScope.readOnlyInput(operation)) targets.add(WeaverInfluenceTarget.subject(operation.subject()));
         final Map<UUID, WeaverEffectIntent> intents = new HashMap<>(state.intents());
         if (!targets.isEmpty()) intents.put(operation.operationId(), new WeaverEffectIntent(targets));
         return state.replace(operation, intents, state.projections(), state.influences(), state.projectionSequence());
@@ -86,6 +86,12 @@ final class WeaverEffectReducer {
         }
         final Set<WeaverInfluenceTarget> targets = new HashSet<>(state.intents().getOrDefault(operation.operationId(), WeaverEffectIntent.none()).targets());
         effects.projections().forEach(projection -> targets.add(WeaverInfluenceTarget.subject(projection.subject())));
+        if (Boolean.TRUE.equals(operation.recoveryPayload().fields().get(WeaverOperationScope.CREATED_OUTPUT))
+                && receipt.after().containsKey(WeaverOperationScope.CREATED_ENTITY)) {
+            final var created = receipt.after().get(WeaverOperationScope.CREATED_ENTITY);
+            if (!created.type().equals(WeaverTypeId.parse("weaver:uuid@1"))) throw new WeaverDomainRejection("INVALID_CREATED_ENTITY");
+            targets.add(WeaverInfluenceTarget.exact(new hu.taliann.icesmp.integrity.RewardSource.Entity(UUID.fromString((String) created.payload().get("value")))));
+        }
         final Map<UUID, WeaverInfluenceRecord> influences = new HashMap<>(state.influences());
         final Set<WeaverInfluenceTarget> supplied = new HashSet<>();
         for (final WeaverInfluenceRecord influence : effects.influences()) {

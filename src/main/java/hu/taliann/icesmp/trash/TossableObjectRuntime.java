@@ -60,7 +60,7 @@ public final class TossableObjectRuntime {
         final int duration = behavior == TrashAnomalyBehavior.HETPARTOS_KAVICS ? 42 : 24;
         final int[] age = {0};
         try {
-            display.getScheduler().runAtFixedRate(plugin, task -> {
+            final var scheduled = display.getScheduler().runAtFixedRate(plugin, task -> {
                 if (!display.isValid() || ++age[0] > duration) {
                     task.cancel();
                     release(display.getUniqueId());
@@ -92,6 +92,10 @@ public final class TossableObjectRuntime {
                 }
                 display.setTransformation(transformation(behavior, forward, age[0], duration));
             }, () -> release(display.getUniqueId()), 1L, 1L);
+            if (scheduled == null) {
+                release(display.getUniqueId());
+                return false;
+            }
         } catch (final RuntimeException rejected) {
             release(display.getUniqueId());
             if (display.isValid()) display.remove();

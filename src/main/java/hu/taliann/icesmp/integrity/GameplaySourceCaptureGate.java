@@ -6,6 +6,8 @@ import java.util.function.Function;
 
 /** Native owner-side provenance extension; unknown/failed capture is never interpreted as a clean source. */
 public final class GameplaySourceCaptureGate {
+    /** Fits all 32 native rule fields plus other providers, leaving 16 entries for native event causes. */
+    public static final int MAX_SOURCES = 48;
     private static final AtomicReference<Binding> CAPTURE = new AtomicReference<>();
     private GameplaySourceCaptureGate() { }
     public static final class Binding implements AutoCloseable {
@@ -23,7 +25,7 @@ public final class GameplaySourceCaptureGate {
         if (binding == null) throw new IllegalStateException("Source capture unavailable");
         try {
             final var result = List.copyOf(binding.capture.apply(subject));
-            if (result.size() > 32 || CAPTURE.get() != binding) throw new IllegalStateException("Source capture unavailable");
+            if (result.size() > MAX_SOURCES || CAPTURE.get() != binding) throw new IllegalStateException("Source capture unavailable");
             return result;
         } catch (RuntimeException | LinkageError unavailable) { throw new IllegalStateException("Source capture unavailable"); }
     }

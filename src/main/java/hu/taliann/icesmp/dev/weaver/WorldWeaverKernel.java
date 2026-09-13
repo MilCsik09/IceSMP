@@ -146,6 +146,36 @@ public final class WorldWeaverKernel {
             case WeaverNavigation.SelectThread thread -> { if (!access.session().threads().select(thread.id())) throw new WeaverDomainRejection("STALE_THREAD"); threads(access); }
             case WeaverNavigation.Page page -> render(access, current.snapshot(), current.view().kind(), current.view().title(), current.view().entries(), page.index());
             case WeaverNavigation.Diagnostics ignored -> diagnostics(access);
+            case WeaverNavigation.Self ignored -> self(access);
+            case WeaverNavigation.SetMode selected -> {
+                access.session().mode(selected.mode()); draft = null; undoClaim = null; self(access);
+            }
+            case WeaverNavigation.Arm armed -> {
+                final WeaverActionDraft pending = requireDraft(armed.draftId());
+                if (current.view().kind() != WeaverViewKind.CONFIRMATION) throw new WeaverDomainRejection("CONFIRMATION_REQUIRED");
+                access.session().arming().grant(authorize(access), WeaverArming.required(pending.descriptor(), pending.integrityMode()), 30_000);
+                render(access, current.snapshot(), current.view().kind(), current.view().title(), current.view().entries(), current.view().page());
+                feedback(access, "ARMED_30_SECONDS");
+            }
+            case WeaverNavigation.AreaMembers ignored -> areaMembers(access, (AreaRef) Objects.requireNonNull(current.snapshot()).ref());
+            case WeaverNavigation.NearbyArea ignored -> {
+                final var player = access.artifact().player();
+                if (player == null) throw new WeaverDomainRejection("AUTHORITY_REJECTED");
+                final var location = player.getLocation();
+                subject(access, new AreaRef(location.getWorld().getUID(), new RadiusArea(location.getX(), location.getY(), location.getZ(), 8)));
+            }
+            case WeaverNavigation.CurrentWorld ignored -> {
+                final var player = access.artifact().player();
+                if (player == null) throw new WeaverDomainRejection("AUTHORITY_REJECTED");
+                subject(access, new WorldRef(player.getWorld().getUID()));
+            }
+            case WeaverNavigation.CatalogThread selected -> fresh(access, Objects.requireNonNull(current.snapshot()).ref(), snapshot -> {
+                final String owner = providers.owner(selected.catalogId());
+                final var discovery = providers.discover(snapshot).providers().get(owner);
+                if (discovery == null || !discovery.catalogs().contains(selected.catalogId())) throw new WeaverDomainRejection("STALE_CATALOG");
+                access.session().threads().add(providers.resolveCatalog(context(access), snapshot, selected.catalogId(), selected.stableId()));
+                threads(access);
+            });
             case WeaverNavigation.Export export -> export(access, Objects.requireNonNull(current.snapshot()).ref(), export.id());
             case WeaverNavigation.Catalog catalog -> catalog(access, Objects.requireNonNull(current.snapshot()).ref(), catalog.id(), catalog.offset());
             case WeaverNavigation.Action action -> actionPreview(access, Objects.requireNonNull(current.snapshot()).ref(), action.id());
@@ -198,6 +228,22 @@ public final class WorldWeaverKernel {
             if (draft.validate(types).valid() && execution.available(action, draft.lifetime())) confirm(access, draft); else renderAction(access, draft);
         });
     }
+    private void areaMembers(final Access access, final AreaRef area) {
+        final long view = access.session().nextView();
+        final var descriptor = new ActionDescriptor("weaver.inspect_area", "weaver.subjects", Component.text("AREA célpontok"), RiskLevel.READ_ONLY,
+                Set.of(Lifetime.ONE_SHOT), Set.of(IntegrityMode.SANDBOX, IntegrityMode.LIVE_GM), Set.of(IntegrityImpact.NONE), Set.of(WeaverSubjectKind.AREA), List.of(),
+                AreaSupport.ENTITY_FANOUT, Optional.of(new AreaLimits(0, 32, 9, 9, 2)), false, Optional.empty(), 1);
+        areas.collect(authorize(access), area, descriptor).whenComplete((collection, failure) -> access.artifact().onOwner(player -> {
+            if (!valid(access) || !sessions.matches(access.artifact().owner(), access.session().id(), view)) return;
+            if (failure != null) { feedback(access, code(failure)); return; }
+            final List<WeaverView.Entry> entries = new ArrayList<>();
+            entries.add(entry(Component.text("Célpontok: " + collection.targets().size()), List.of(Component.text("Kihagyott chunk: " + collection.skippedChunks().size()),
+                    Component.text("Kihagyott célpont: " + collection.skippedTargets().size())), "MAP", new WeaverNavigation.None()));
+            for (final SubjectSnapshot target : collection.targets()) entries.add(entry(Component.text(target.ref().kind().name()),
+                    List.of(Component.text(target.ref().stableKey())), "COMPASS", new WeaverNavigation.Subject(target.ref())));
+            render(access, null, WeaverViewKind.RECENT, Component.text("AREA · legfeljebb 32 célpont"), entries, 0);
+        }, () -> unavailable(access)));
+    }
     private void facet(final Access access, final SubjectRef ref, final String id) {
         fresh(access, ref, snapshot -> {
             final var view = WeaverFacetView.discover(providers, providers.discover(snapshot)).stream().filter(f -> f.facet().id().equals(id)).findFirst()
@@ -237,7 +283,8 @@ public final class WorldWeaverKernel {
             final ProviderContext context = context(access);
             final CatalogPage page = providers.catalogPage(context, snapshot, id, new CatalogQuery("", offset, 43));
             final List<WeaverView.Entry> entries = new ArrayList<>();
-            for (final CatalogEntry value : page.entries()) entries.add(entry(value.label(), List.of(Component.text(value.stableId())), "BOOK", new WeaverNavigation.None()));
+            for (final CatalogEntry value : page.entries()) entries.add(entry(value.label(), List.of(Component.text(value.stableId())), "BOOK", providers.imports().values().stream().anyMatch(importer -> types.compatible(value.value(), importer.acceptedType(), importer.requiredCapabilities()))
+                    ? new WeaverNavigation.CatalogThread(id, value.stableId()) : new WeaverNavigation.None()));
             if (offset > 0) entries.add(entry(Component.text("Előző"), List.of(), "ARROW", new WeaverNavigation.Catalog(id, Math.max(0, offset - 43))));
             if (page.hasNext()) entries.add(entry(Component.text("Következő"), List.of(), "ARROW", new WeaverNavigation.Catalog(id, offset + 43)));
             render(access, snapshot, WeaverViewKind.CATALOG, providers.catalogs().get(id).label(), entries, 0);
@@ -337,6 +384,9 @@ public final class WorldWeaverKernel {
             draft = confirmed;
             final List<WeaverView.Entry> entries = facts(snapshot.facts());
             current.parameters().forEach((id, value) -> entries.add(entry(Component.text(id), List.of(Component.text(value.payload().toString())), "PAPER", new WeaverNavigation.None())));
+            final var required = WeaverArming.required(current.descriptor(), current.integrityMode());
+            if (!required.isEmpty()) entries.add(entry(Component.text("Élesítés · 30 másodperc · egyszer használható"),
+                    List.of(Component.text(required.toString())), "REDSTONE_TORCH", new WeaverNavigation.Arm(confirmed.id())));
             final boolean strong = current.descriptor().risk().ordinal() >= RiskLevel.DESTRUCTIVE.ordinal();
             entries.add(entry(Component.text(strong && !finalStep ? "Feltételek elfogadása" : "Megerősítés"), List.of(Component.text(current.descriptor().risk().name()), Component.text(current.integrityMode().name())),
                     "LIME_DYE", strong && !finalStep ? new WeaverNavigation.ConfirmFinal(confirmed.id()) : new WeaverNavigation.Execute(confirmed.id())));
@@ -383,7 +433,7 @@ public final class WorldWeaverKernel {
                 authorize(access);
                 return new WeaverAuthorityToken(access.artifact().owner(), access.session().id(), System.nanoTime() + 30_000_000_000L,
                         () -> valid(access) && sessions.matches(access.artifact().owner(), access.session().id(), executionView), System::nanoTime);
-            })).whenComplete((receipt, failure) -> access.artifact().onOwner(player -> {
+            })).thenCompose(receipt -> providers.invoke(owner, context, provider -> provider.afterCommit(receipt)).thenApply(ignored -> receipt)).whenComplete((receipt, failure) -> access.artifact().onOwner(player -> {
                 if (!valid(access)) return;
                 if (failure != null) { access.session().arming().clear(); feedback(access, code(failure)); return; }
                 access.session().receipt(receipt);
@@ -410,6 +460,8 @@ public final class WorldWeaverKernel {
         entries.add(entry(Component.text(receipt.actionId()), List.of(Component.text(receipt.status().name()), Component.text(undo.status(authorize(access), receipt.operationId()).map(Enum::name).orElse("SESSION")), Component.text(receipt.risk().name()), Component.text(receipt.integrityMode().name()),
                 Component.text(receipt.beforeFingerprint()), Component.text(receipt.afterFingerprint())), "BOOK", new WeaverNavigation.None()));
         entries.addAll(facts(receipt.before())); entries.addAll(facts(receipt.after()));
+        final var created = receipt.after().get(hu.taliann.icesmp.dev.weaver.persistence.WeaverOperationScope.CREATED_ENTITY);
+        if (created != null) entries.add(entry(Component.text("Létrehozott célpont"), List.of(), "COMPASS", new WeaverNavigation.Subject(new EntityRef(UUID.fromString((String) created.payload().get("value"))))));
         if (undo.available(authorize(access), id)) entries.add(entry(Component.text("Feltételes visszavonás"), List.of(Component.text("Csak változatlan célállapot esetén.")), "RECOVERY_COMPASS", new WeaverNavigation.Undo(id)));
         render(access, null, WeaverViewKind.HISTORY, Component.text("Műveleti bizonylat"), entries, 0);
     }
@@ -438,6 +490,20 @@ public final class WorldWeaverKernel {
                 List.of(), "COMPASS", new WeaverNavigation.Subject(ref))).toList();
         render(access, null, WeaverViewKind.RECENT, Component.text("Korábbi Subjectek"), entries, 0);
     }
+    private void self(final Access access) {
+        final List<WeaverView.Entry> entries = new ArrayList<>();
+        entries.add(entry(Component.text("Világszövő · " + access.session().mode()),
+                List.of(Component.text("Session: " + access.session().id()), Component.text("Élesítés: " + access.session().arming().active(access.session().id()))), "NETHER_STAR", new WeaverNavigation.None()));
+        for (final IntegrityMode mode : IntegrityMode.values()) entries.add(entry(Component.text(mode.name()),
+                List.of(Component.text("A módváltás törli az élesítést és a függő műveletet.")), "LEVER", new WeaverNavigation.SetMode(mode)));
+        entries.add(entry(Component.text("Saját karakter"), List.of(), "PLAYER_HEAD", new WeaverNavigation.Subject(new PlayerRef(access.artifact().owner()))));
+        entries.add(entry(Component.text("Közeli AREA · 8 blokk"), List.of(Component.text("Legfeljebb 9 chunk; betöltetlen területet nem tölt be.")), "COMPASS", new WeaverNavigation.NearbyArea()));
+        entries.add(entry(Component.text("Aktuális világ"), List.of(), "GRASS_BLOCK", new WeaverNavigation.CurrentWorld()));
+        entries.add(entry(Component.text("Szálak és lenyomatok"), List.of(), "STRING", new WeaverNavigation.Threads()));
+        entries.add(entry(Component.text("Bizonylatok és recovery állapot"), List.of(), "RECOVERY_COMPASS", new WeaverNavigation.History()));
+        entries.add(entry(Component.text("Diagnosztika"), List.of(), "BOOK", new WeaverNavigation.Diagnostics()));
+        render(access, null, WeaverViewKind.DIAGNOSTICS, Component.text("Fejlesztő"), entries, 0);
+    }
     private void diagnostics(final Access access) {
         render(access, null, WeaverViewKind.DIAGNOSTICS, Component.text("Diagnosztika"), List.of(
                 entry(Component.text("Providerek: " + providers.coverage().size()), List.of(), "BOOK", new WeaverNavigation.None()),
@@ -450,6 +516,8 @@ public final class WorldWeaverKernel {
         controls.put(45, entry(Component.text("Subject"), List.of(), "COMPASS", new WeaverNavigation.Refresh()));
         controls.put(46, entry(Component.text("Szálak"), List.of(), "STRING", new WeaverNavigation.Threads()));
         controls.put(47, entry(Component.text("Korábbi"), List.of(), "CLOCK", new WeaverNavigation.Recent()));
+        if (snapshot != null && snapshot.ref() instanceof AreaRef) controls.put(51, entry(Component.text("AREA célpontok"), List.of(), "MAP", new WeaverNavigation.AreaMembers()));
+        controls.put(50, entry(Component.text("Fejlesztő"), List.of(Component.text(access.session().mode().name())), "NETHER_STAR", new WeaverNavigation.Self()));
         controls.put(49, entry(Component.text("Diagnosztika"), List.of(), "BOOK", new WeaverNavigation.Diagnostics()));
         controls.put(48, entry(Component.text("Műveletek"), List.of(), "BOOK", new WeaverNavigation.History()));
         if (page > 0) controls.put(51, entry(Component.text("Előző"), List.of(), "ARROW", new WeaverNavigation.Page(page - 1)));

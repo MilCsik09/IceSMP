@@ -42,11 +42,13 @@ public final class SubjectSnapshotFactory implements SubjectSnapshotSource {
             case PlayerRef player -> entityFacts(requirePlayer(player.playerId()), facts, now);
             case EntityRef entity -> entityFacts(requireEntity(entity.entityId()), facts, now);
             case ItemSlotRef item -> {
-                final Player player = requirePlayer(item.holderId()); slots.verify(player, item);
-                final var stack = slots.require(player, item.slot());
-                scalar(facts, "material", "text", stack.getType().getKey().toString(), now);
-                scalar(facts, "amount", "int", stack.getAmount(), now);
-                scalar(facts, "item_fingerprint", "text", item.fingerprint(), now);
+                final Player player = requirePlayer(item.holderId());
+                // Recovery observes this recorded slot after a mutation; ordinary capture still requires the exact original item.
+                if (recovery.isEmpty()) slots.verify(player, item);
+                final var stack = slots.peek(player, item.slot());
+                scalar(facts, "material", "text", stack.map(value -> value.getType().getKey().toString()).orElse("minecraft:air"), now);
+                scalar(facts, "amount", "int", stack.map(org.bukkit.inventory.ItemStack::getAmount).orElse(0), now);
+                scalar(facts, "item_fingerprint", "text", stack.map(value -> WeaverItemSlots.fingerprint(value.serializeAsBytes())).orElse("EMPTY"), now);
             }
             case BlockRef block -> {
                 final World world = regionWorld(block.worldId(), block.x() >> 4, block.z() >> 4);

@@ -148,6 +148,9 @@ public final class EquipmentProficiencyService {
                              final ItemTemplate.Slot equippedSlot,
                              final boolean includeSuppression) {
         final ItemIdentityService.Inspection inspection = identities.inspect(item);
+        if (ItemPrototypePolicy.direct(item)) {
+            return new Activity(ActivityStatus.SUPPRESSED, inspection, equippedSlot, null, null);
+        }
         if (inspection.status() == ItemIdentityService.Status.NOT_MANAGED) {
             return new Activity(ActivityStatus.NOT_MANAGED, inspection, equippedSlot, null, null);
         }

@@ -62,6 +62,7 @@ public final class ResourcePackListener implements Listener {
     private volatile ScheduledTask developmentPollTask;
     private volatile long developmentSourceStamp = Long.MIN_VALUE;
     private final Set<UUID> loadedPlayers = ConcurrentHashMap.newKeySet();
+    private final DeliveryState delivery = new DeliveryState();
 
     public ResourcePackListener(final JavaPlugin plugin) {
         this.plugin = plugin;
@@ -79,6 +80,7 @@ public final class ResourcePackListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPackStatus(final PlayerResourcePackStatusEvent event) {
+        if (delivery.closed()) return;
         plugin.getLogger().info("Resource-pack status [" + event.getPlayer().getName() + "]: "
                 + event.getStatus() + " (id=" + event.getID() + ")");
         final PackRequest current = request;
@@ -99,6 +101,7 @@ public final class ResourcePackListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(final PlayerQuitEvent event) {
         loadedPlayers.remove(event.getPlayer().getUniqueId());
+        delivery.retire(event.getPlayer().getUniqueId());
     }
 
     /** Thread-safe capability snapshot; HUD consumers never inspect a live Player off-thread. */
@@ -108,6 +111,7 @@ public final class ResourcePackListener implements Listener {
 
     /** Reloads config/metadata and updates online players only when the effective request changed. */
     public synchronized void reloadAndResend() {
+        if (delivery.closed()) return;
         final PackRequest previous = request;
         reload();
         final PackRequest current = request;
@@ -121,6 +125,7 @@ public final class ResourcePackListener implements Listener {
 
     /** Force-sends the current layer when the plugin enables with players already online. */
     public void resendCurrent() {
+        if (delivery.closed()) return;
         final PackRequest current = request;
         if (current == null) {
             return;
@@ -131,7 +136,8 @@ public final class ResourcePackListener implements Listener {
     }
 
     /** Reloads only the immutable request snapshot; invalid configuration disables delivery. */
-    public void reload() {
+    public synchronized void reload() {
+        if (delivery.closed()) return;
         if (developmentFirstPartyPackMode()) {
             plugin.getLogger().info("Fejlesztői first-party IceSMP pack aktív: a külön R2 réteg nincs kiküldve; "
                     + "az IceSMP a determinisztikusan egyesített 1.21.11-es ZIP-et szolgálja ki.");
@@ -150,9 +156,11 @@ public final class ResourcePackListener implements Listener {
     }
 
     private void applyTransition(final Player player, final PackRequest previous, final PackRequest current) {
+        if (delivery.closed() || request != current || !plugin.isEnabled()) return;
         loadedPlayers.remove(player.getUniqueId());
         if (previous != null && (current == null || !previous.id().equals(current.id()))) {
             player.removeResourcePack(previous.id());
+            delivery.removed(player.getUniqueId(), previous.id());
         }
         if (current != null) {
             send(player, current);
@@ -160,9 +168,12 @@ public final class ResourcePackListener implements Listener {
     }
 
     private void send(final Player player, final PackRequest current) {
+        if (request != current || !plugin.isEnabled()) return;
         try {
-            loadedPlayers.remove(player.getUniqueId());
-            player.addResourcePack(current.id(), current.url(), current.hash(), current.prompt(), current.required());
+            delivery.offer(player.getUniqueId(), current.id(), player::removeResourcePack, () -> {
+                loadedPlayers.remove(player.getUniqueId());
+                player.addResourcePack(current.id(), current.url(), current.hash(), current.prompt(), current.required());
+            });
         } catch (final IllegalArgumentException exception) {
             plugin.getLogger().warning("Az IceSMP resource pack nem küldhető ki: " + exception.getMessage());
         }
@@ -259,7 +270,71 @@ public final class ResourcePackListener implements Listener {
                 && first.required() == second.required();
     }
 
+    /** Stops delivery before requesting owner-local cleanup while the plugin can still schedule. */
+    public java.util.concurrent.CompletableFuture<Void> prepareClose(
+            final java.util.function.Consumer<Player> cleanupPresentation) {
+        closeDelivery();
+        final java.util.List<java.util.concurrent.CompletableFuture<Void>> pending = new java.util.ArrayList<>();
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            final UUID id = player.getUniqueId();
+            final var completion = new java.util.concurrent.CompletableFuture<Void>();
+            pending.add(completion);
+            final Runnable retired = () -> {
+                delivery.retire(id);
+                completion.complete(null);
+            };
+            try {
+                final ScheduledTask scheduled = player.getScheduler().run(plugin, task -> {
+                    try {
+                        if (!Bukkit.isOwnedByCurrentRegion(player)) {
+                            throw new IllegalStateException("resource-pack cleanup requires player ownership");
+                        }
+                        try {
+                            cleanupPresentation.accept(player);
+                        } finally {
+                            removeOwnedPacks(player);
+                        }
+                        completion.complete(null);
+                    } catch (final RuntimeException | Error failure) {
+                        completion.completeExceptionally(failure);
+                    }
+                }, retired);
+                if (scheduled == null) retired.run();
+            } catch (final RuntimeException schedulingFailure) {
+                completion.completeExceptionally(schedulingFailure);
+            }
+        }
+        return java.util.concurrent.CompletableFuture.allOf(
+                pending.toArray(java.util.concurrent.CompletableFuture[]::new));
+    }
+
+    private void removeOwnedPacks(final Player player) {
+        delivery.remove(player.getUniqueId(), player::removeResourcePack);
+        loadedPlayers.remove(player.getUniqueId());
+    }
+
     public void close() {
+        closeDelivery();
+        // External disable has already closed scheduling; only the current owner may touch a client.
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            if (!Bukkit.isOwnedByCurrentRegion(player)) continue;
+            try {
+                removeOwnedPacks(player);
+            } catch (final RuntimeException failure) {
+                plugin.getLogger().warning("IceSMP pack eltávolítási kérés sikertelen: " + failure);
+            }
+        }
+        final int outstanding = delivery.outstandingPlayers();
+        if (outstanding > 0) {
+            plugin.getLogger().warning("IceSMP pack eltávolítása " + outstanding
+                    + " kapcsolatnál nem igazolt: a plugin már nem ütemezhet owner-cleanupot. "
+                    + "A kliens HUD visszaállítása újracsatlakozással ellenőrizhető.");
+        }
+        delivery.clear();
+    }
+
+    private synchronized void closeDelivery() {
+        delivery.beginClose();
         loadedPlayers.clear();
         final ScheduledTask task = developmentPollTask;
         developmentPollTask = null;
@@ -275,6 +350,7 @@ public final class ResourcePackListener implements Listener {
     }
 
     private void refreshDevelopmentFirstPartyPack() {
+        if (delivery.closed()) return;
         final String configured = System.getProperty("icesmp.dev.packPath", "").trim();
         if (configured.isEmpty()) return;
         final Path source = Path.of(configured).toAbsolutePath().normalize();
@@ -287,12 +363,15 @@ public final class ResourcePackListener implements Listener {
             final String hashText = HexFormat.of().formatHex(hash);
             final InetAddress address = InetAddress.getLocalHost();
             final String path = "/" + hashText + ".zip";
-            ensureDevelopmentServer(address);
-            developmentPayload = new DevelopmentPayload(path, normalized);
-            request = new PackRequest(DEFAULT_PACK_ID,
-                    "http://" + address.getHostAddress() + ":8164" + path, hash,
-                    "§bIceSMP fejlesztői HUD és modellek", true);
-            developmentSourceStamp = stamp;
+            synchronized (this) {
+                if (delivery.closed()) return;
+                ensureDevelopmentServer(address);
+                developmentPayload = new DevelopmentPayload(path, normalized);
+                request = new PackRequest(DEFAULT_PACK_ID,
+                        "http://" + address.getHostAddress() + ":8164" + path, hash,
+                        "§bIceSMP fejlesztői HUD és modellek", true);
+                developmentSourceStamp = stamp;
+            }
             plugin.getLogger().info("1.21.11 composite resource pack elérhető: " + request.url()
                     + " (SHA-1 " + hashText + ")");
             for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
@@ -355,6 +434,52 @@ public final class ResourcePackListener implements Listener {
             }
         }
         return output.toByteArray();
+    }
+
+    static final class DeliveryState {
+        private final java.util.Map<UUID, Set<UUID>> offered = new java.util.HashMap<>();
+        private boolean closed;
+
+        synchronized boolean closed() { return closed; }
+
+        synchronized boolean offer(final UUID player, final UUID pack,
+                                   final java.util.function.Consumer<UUID> removePack,
+                                   final Runnable sendPack) {
+            if (closed) return false;
+            final Set<UUID> layers = offered.computeIfAbsent(player, ignored -> new java.util.HashSet<>());
+            for (final UUID previous : Set.copyOf(layers)) {
+                if (previous.equals(pack)) continue;
+                removePack.accept(previous);
+                layers.remove(previous);
+            }
+            // A throwing send may already have enqueued its packet; retain the ID for cleanup.
+            layers.add(pack);
+            sendPack.run();
+            return true;
+        }
+
+        synchronized void removed(final UUID player, final UUID pack) {
+            final Set<UUID> layers = offered.get(player);
+            if (layers == null) return;
+            layers.remove(pack);
+            if (layers.isEmpty()) offered.remove(player);
+        }
+
+        synchronized void beginClose() { closed = true; }
+
+        synchronized void remove(final UUID player, final java.util.function.Consumer<UUID> removePack) {
+            final Set<UUID> layers = offered.get(player);
+            if (layers == null) return;
+            for (final UUID pack : Set.copyOf(layers)) {
+                removePack.accept(pack);
+                layers.remove(pack);
+            }
+            offered.remove(player);
+        }
+
+        synchronized void retire(final UUID player) { offered.remove(player); }
+        synchronized int outstandingPlayers() { return offered.size(); }
+        synchronized void clear() { offered.clear(); }
     }
 
     private record PackRequest(UUID id, String url, byte[] hash, String prompt, boolean required) {

@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 
 /** Startup observes current state and settles a journal; it never calls prepare or replays a stage. */
 public final class WeaverRecoveryCoordinator {
-    public enum PendingReason { PENDING_ENTITY_LOAD, PENDING_CHUNK_LOAD, PENDING_PROFILE, UNRESOLVED_WORLD, STALE_UNRESOLVED }
+    public enum PendingReason { PENDING_ENTITY_LOAD, PENDING_CHUNK_LOAD, PENDING_PROFILE, PENDING_NATIVE_PROJECTION, UNRESOLVED_WORLD, STALE_UNRESOLVED }
     private final WeaverJournal journal;
     private final SubjectSnapshotSource snapshots;
     private final WorldWeaverProviderRegistry providers;
@@ -103,6 +103,7 @@ public final class WeaverRecoveryCoordinator {
             case "CHUNK_UNAVAILABLE" -> PendingReason.PENDING_CHUNK_LOAD;
             case "WORLD_UNAVAILABLE" -> PendingReason.UNRESOLVED_WORLD;
             case "PROFILE_UNAVAILABLE", "PROFILE_EFFECTS_PENDING" -> PendingReason.PENDING_PROFILE;
+            case "NATIVE_PROJECTION_PENDING" -> PendingReason.PENDING_NATIVE_PROJECTION;
             default -> null;
         };
         if (reason != null) {
@@ -131,11 +132,13 @@ public final class WeaverRecoveryCoordinator {
         }
         return chain;
     }
-    /** Providers signal profile readiness through neutral codes; no domain-specific dispatch. */
-    public CompletionStage<Void> profilesAvailable() {
+    /** Providers signal readiness through neutral codes; no domain-specific dispatch or mutation replay. */
+    public CompletionStage<Void> profilesAvailable() { return retryAvailable(PendingReason.PENDING_PROFILE); }
+    public CompletionStage<Void> nativeProjectionsAvailable() { return retryAvailable(PendingReason.PENDING_NATIVE_PROJECTION); }
+    private CompletionStage<Void> retryAvailable(PendingReason reason) {
         if (closed || !profiling.compareAndSet(false, true)) return CompletableFuture.completedFuture(null);
         final UUID cursor = profileCursor;
-        final var ids = pending.entrySet().stream().filter(e -> e.getValue() == PendingReason.PENDING_PROFILE)
+        final var ids = pending.entrySet().stream().filter(e -> e.getValue() == reason)
                 .map(Map.Entry::getKey).sorted(Comparator.<UUID, Boolean>comparing(id -> id.compareTo(cursor) <= 0)
                         .thenComparing(Comparator.naturalOrder())).limit(8).toList();
         CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
