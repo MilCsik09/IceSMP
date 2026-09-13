@@ -33,6 +33,13 @@ public final class TrashArchaeologyService {
         final TrashArchaeologyFactEngine.Evaluation evaluation;
         try {
             before = profiles.profile(playerId);
+            if (!facts.isCatalogued(snapshot) && !snapshot.getType().isAir()) {
+                final var observation = new TrashArchaeologyFactEngine.Fact("unclassified",
+                        TrashArchaeologyFactEngine.Category.MATERIAL, 0, 0, false, 0L,
+                        "A vizsgálat nem tárt fel biztosan azonosítható történeti nyomot.");
+                return CompletableFuture.completedFuture(new Result(true, "", 0L, List.of(observation),
+                        before, java.util.Set.of(), 0L, false));
+            }
             evaluation = facts.evaluate(snapshot.clone(), before.level()).orElse(null);
         } catch (final RuntimeException rejected) {
             return CompletableFuture.completedFuture(Result.rejected());

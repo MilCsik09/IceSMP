@@ -86,7 +86,7 @@ public final class TrashAnomalyRegressionSuite {
                 "successful merge task retirement");
         check(!runtime.contains("|| behaviorOf(event.getEntity().getItemStack()).isPresent()"),
                 "special identity alone still blocks ground merging");
-        require(runtime, "player.sendEquipmentChange(player, hand, projected)",
+        require(runtime, "TooltipPacketBridge_1_21_11.projectHand(player, hand, projected)",
                 "player-only compass needle projection");
         require(runtime, "captured.sound(), captured.volume(), captured.pitch()",
                 "exact captured eligible sound replay");
@@ -183,7 +183,7 @@ public final class TrashAnomalyRegressionSuite {
         require(runtime, "history.transformOnSuccess", "authored lifecycle transition");
         require(runtime, "event.setNewCurrent(event.getOldCurrent())",
                 "one rising-edge suppression");
-        require(runtime, "item.getPersistentDataContainer().remove(runtimeStateKey)",
+        require(runtime, "pdc.remove(runtimeStateKey)",
                 "one-shot mechanism marker consumption");
         require(runtime, "pairReservations", "pair double-consumption reservation");
         require(runtime, "rollback(rollbackLocation, consumed)",

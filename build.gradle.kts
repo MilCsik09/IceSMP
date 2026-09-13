@@ -213,6 +213,19 @@ val questItemContentIntegrityAudit by tasks.registering(Exec::class) {
     commandLine(pythonCommand, "scripts/audit_quest_item_content_integrity.py", "--check")
 }
 
+val playerFacingMessagingAudit by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Validates bundled message YAML and reviewed player-facing messaging contracts."
+    inputs.files(
+        "scripts/audit_player_facing_messaging_hardening.py",
+        "docs/development/player-facing-messaging-integrity-hardening.json",
+        "src/main/resources/messages.yml",
+    )
+    inputs.dir("src/main/resources/messages")
+    inputs.dir("src/main/java")
+    commandLine(pythonCommand, "scripts/audit_player_facing_messaging_hardening.py")
+}
+
 val validateIceSmpHudPackage by tasks.registering {
     group = "verification"
     description = "Validates the first-party HUD assets, fixed-width contract and HP-rework safety gates."
@@ -1275,6 +1288,11 @@ val trashNativeInspectionRegressionTest = registerRegression(
     "trashNativeInspectionRegressionTest",
     "Runs native history and anomaly nonblocking inspection, rollback and disk acknowledgement checks.",
     "hu.taliann.icesmp.trash.TrashNativeInspectionRegressionSuite")
+val trashInteractionFixRegressionTest = registerRegression(
+    "trashInteractionFixRegressionTest",
+    "Runs both Brush hands through real event handlers, cancellation, authored evidence and vendor receipt recovery.",
+    "hu.taliann.icesmp.trash.TrashInteractionFixRegressionSuite")
+
 val trashProductionHardeningRegressionTest = registerRegression(
     "trashProductionHardeningRegressionTest",
     "Runs Phase G aggregate telemetry, hard-cap, cleanup, security and staging-evidence gates.",
@@ -1299,6 +1317,7 @@ tasks.check {
     dependsOn(configContentCommandSurfaceAudit)
     dependsOn(gameplayBootstrapIntegrityAudit)
     dependsOn(questItemContentIntegrityAudit)
+    dependsOn(playerFacingMessagingAudit)
     dependsOn(professions2ReportRegressionTest)
     dependsOn(professions2EconomyRegressionTest)
     dependsOn(
@@ -1316,7 +1335,7 @@ tasks.check {
         runtimeBugfixRegressionTest, factionPassiveRegressionTest, factionPassiveHardeningRegressionTest,
         trashCatalogRegressionTest, trashLootDistributionRegressionTest, trashHistoryRegressionTest,
         trashAnomalyRegressionTest, trashRelicRegressionTest, trashRuleFieldRegressionTest, trashArchaeologyRegressionTest,
-        trashProductionHardeningRegressionTest, trashNativeInspectionRegressionTest,
+        trashProductionHardeningRegressionTest, trashInteractionFixRegressionTest, trashNativeInspectionRegressionTest,
         factionReworkRegressionTest, whisperIntegrityRegressionTest,
         factionTreasuryRegressionTest, relicItemRefreshRegressionTest, relicRefreshPipelineRegressionTest,
         lifecycleShutdownRegressionTest, questNpcValidationRegressionTest, questFrameworkV2RegressionTest,

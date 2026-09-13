@@ -700,6 +700,26 @@
       "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/dev/weaver/provider/PvEForkActions.java|private final Map<UUID, UUID> forkEntityByOperation = new ConcurrentHashMap<>();",
       "category": "RUNTIME",
       "reason": "Bounded operation UUID to transient entity UUID cleanup index; neither key nor value is player profile state. Native authored origin remains authoritative; session close clears the index."
+    },
+    {
+      "key": "PLAYER_YAML|src/main/java/hu/taliann/icesmp/managers/ArcheologyManager.java|<file combines YAML persistence with player-UUID-shaped data>",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Dig-site restoration journal owns world block snapshots; UUIDs identify worlds, not player progression."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/storage/PlayerInventoryCommit.java|return player.getPersistentDataContainer().get(key, PersistentDataType.STRING);",
+      "category": "DERIVED_MIRROR",
+      "reason": "Physical inventory commit/removal receipt is co-saved with vanilla inventory and verified from the actual player .dat plus fsync before external consequences. Contains only opaque transaction acknowledgement, never profile progression."
+    },
+    {
+      "key": "PLAYER_PDC|src/main/java/hu/taliann/icesmp/storage/PlayerInventoryCommit.java|player.getPersistentDataContainer().set(key, PersistentDataType.STRING, value);",
+      "category": "DERIVED_MIRROR",
+      "reason": "Physical inventory commit/removal receipt is co-saved with vanilla inventory and verified from the actual player .dat plus fsync before external consequences. Contains only opaque transaction acknowledgement, never profile progression."
+    },
+    {
+      "key": "UUID_MAP|src/main/java/hu/taliann/icesmp/trash/TrashSpatialFractureStore.java|private final Map<UUID, Fracture> conflicts = new LinkedHashMap<>();",
+      "category": "GLOBAL_AGGREGATE_REFERENCE",
+      "reason": "Bounded archive keyed by world-operation UUID retains original block snapshots after a foreign-block conflict. It is not player progression and does not occupy the active footprint cap."
     }
   ]
 }

@@ -2726,7 +2726,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/ArcheologyManager.java",
       "domain": "event.archeology",
-      "source_sha256": "8e27e6615197b7d46a3f507dc836e4a5a7be614d13c3f59325cdd8790e73300b",
+      "source_sha256": "ef39db66ff753bdcb9cc14b1d493a805a7ac7486aaad2a97bfc8da0d5c113f04",
       "public_methods": [
         "forceSpawn",
         "handleExcavated",
@@ -4288,7 +4288,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/QuestPhysicalRewardDeliveryService.java",
       "domain": "knowledge",
-      "source_sha256": "4404a04c7e68c093b66e4bd26c539d2aa921b264962df85c54a246fdca41eafc",
+      "source_sha256": "88b1e011360462c5632a64feb445458168bab5588ce86bcab1c1c2ae9d8917c0",
       "public_methods": [
         "deliver",
         "isPendingRewardItem"
@@ -6050,7 +6050,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/pve/EncounterRewardDeliveryService.java",
       "domain": "pve",
-      "source_sha256": "0a364ce722151ff948f61ad7c1893a427af37f015f3150fbf037e4dc32871105",
+      "source_sha256": "71adc7c3db40b9d8f5d6637447e18939e4f1801bcf6618f4db587bf2b125ba9a",
       "public_methods": [
         "abortPreparedEncounter",
         "activate",
@@ -6465,7 +6465,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TossableObjectRuntime.java",
       "domain": "trash",
-      "source_sha256": "bf5fa9371cee62109a72d35974cf9308b0e564a420d0064fced2ec01a0b7534e",
+      "source_sha256": "2305696247f91418ac620154c22ce8a58333d670e85113e32ea4ace4e78f8204",
       "public_methods": [
         "shutdown",
         "toss"
@@ -6474,7 +6474,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAmbientManager.java",
       "domain": "trash",
-      "source_sha256": "b930a306aacfbc5181960556532951868cc7089b22078f893031b93477e0b1c3",
+      "source_sha256": "753cee6c8ca4afd5e868fd822ec5b9b7732f44e2d1152930840e0f4806869f7b",
       "public_methods": [
         "clearPlayerState",
         "onDespawn",
@@ -6508,9 +6508,12 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAnomalyRuntime.java",
       "domain": "trash",
-      "source_sha256": "e5eedbda1df507495b06813280e52324ff9b13f44f0ef14b92e8d33e4ede82a2",
+      "source_sha256": "8cbb865382a9aa017680586038a3c8e3de88ef4b75e99ae9fc3627ea5b24ef87",
       "public_methods": [
+        "TrashAnomalyRuntime",
         "activationService",
+        "bindHistoricalEligibility",
+        "bindTooltipVisibility",
         "clearPlayerState",
         "onAutomationMove",
         "onAutomationPickup",
@@ -6535,6 +6538,7 @@
         "onRedstone",
         "onSpawn",
         "onUse",
+        "recoverAttachment",
         "shutdown",
         "start"
       ]
@@ -6556,7 +6560,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyFactEngine.java",
       "domain": "archaeology_knowledge",
-      "source_sha256": "cf938de6788b3d2bf0017af02b6de2cae8d941d7ef4fab6d08ffcc441b34c32f",
+      "source_sha256": "acd5e0d3867f83f0b17659d38352575073eb665898029580c79966ecbba59bf5",
       "public_methods": [
         "Evaluation",
         "Fact",
@@ -6588,7 +6592,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashArchaeologyService.java",
       "domain": "archaeology_knowledge",
-      "source_sha256": "27210c8c93ffc3d513748f320734d18f29351c43b926bf04f01a88c0560818bf",
+      "source_sha256": "b758e5dcf2fc4724ad0cefd467e2cbf74add3bf6dc21c9146bc704b54d2259b5",
       "public_methods": [
         "Result",
         "addInsight",
@@ -6603,7 +6607,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashCatalog.java",
       "domain": "trash",
-      "source_sha256": "5a12c55e1b1fa1ba83ba0497f44c06a251195867c64fcb07fd277e92f7f6e868",
+      "source_sha256": "f2e9cfb06f7ec6fc3d8bd6d00030f7516feb4affaee890c5adb27c3fed31c0c5",
       "public_methods": [
         "find",
         "findPhase",
@@ -6628,7 +6632,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "148a29391bab05d120675349e85dbef3573273284dd4daa33199cf45bd8258d6",
+      "source_sha256": "6081fa8744b60a18bb027bb65854a948b2822ec6a382aab3d4d0fc81e7bdfd47",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6636,6 +6640,7 @@
         "clearPreparedRepair",
         "completePreparedRepair",
         "completeVendorOperation",
+        "consumeInventorySlotDurably",
         "historyCount",
         "historyOf",
         "individualizeHandOnSuccess",
@@ -6649,6 +6654,7 @@
         "matchesInventory",
         "observeOwnerIfTracked",
         "operationId",
+        "prepareInventorySlotDurably",
         "prepareVendorUnits",
         "preparedRepairToken",
         "recordIfTracked",
@@ -6725,7 +6731,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashItemFactory.java",
       "domain": "trash",
-      "source_sha256": "6676434f06cab16d1814030494240ce60b9d0fd57141d0c72229531e3b1a4996",
+      "source_sha256": "920d94c6f19b3bf4c018f3ad235167fc87d76f0d897c861a4ac9d07721bad67c",
       "public_methods": [
         "applyPhase",
         "create",
@@ -6790,19 +6796,27 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicPolicy.java",
       "domain": "trash",
-      "source_sha256": "28b5e73fda23977c462cbe20aa6e926ce4341a6da786c187552b67f3192d7bc4",
+      "source_sha256": "3a0e385309e561cbc1a82d1dbae133b5669d48fd76a4ce0891e5891aabdc5336",
       "public_methods": []
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "9efe0cf6509b013efebfc166021c810f5c172e0dcbe329cfc9df56212a4454cc",
+      "source_sha256": "a1a64277c32eac83667dd51d160e6e91f3987a919a6204c6cccb5a202c2a1503",
       "public_methods": [
         "TrashRelicRuntime",
+        "abandonCommitted",
+        "admitted",
         "blocksCombatAt",
         "claimBestBucket",
         "clearPlayerState",
+        "commit",
         "constrainDisplacement",
+        "consume",
+        "onAnchorAutomation",
+        "onAnchorMerge",
+        "onAnchorPickup",
+        "onCombatOutcome",
         "onConsume",
         "onDamage",
         "onDeath",
@@ -6815,8 +6829,13 @@
         "onUse",
         "onWorldLoad",
         "onWorldUnload",
+        "prepare",
+        "recoverDeathAnchor",
+        "removeObserved",
         "ruleFields",
+        "schedule",
         "shutdown",
+        "sources",
         "start",
         "suppressesAcousticsAt"
       ]
@@ -6873,7 +6892,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashSpatialFractureStore.java",
       "domain": "trash",
-      "source_sha256": "61d8a2d268b87e82788366777346cae4a270a5d823a8e4c4e74e8ed6c38b68bc",
+      "source_sha256": "1e293665906485b6322cba3eef81c5d0841e35f4e9e8fce3e4a1579384158387",
       "public_methods": [
         "load",
         "open",
@@ -6886,7 +6905,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashVendorService.java",
       "domain": "trash",
-      "source_sha256": "ec9094e66e22306c63e454e71263e8528c45b949c14e79e3082ea8a9087b0141",
+      "source_sha256": "a1b92123ef841e22ab186272aa1adab88772294b0ef54a969bd2ac8b259b9949",
       "public_methods": [
         "onJoin",
         "tryHandle"
@@ -7010,6 +7029,15 @@
         "setSoulforgeManager",
         "shutdown"
       ]
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/storage/PlayerInventoryCommit.java",
+      "domain": "trash",
+      "source_sha256": "9f638584cd8ceffd999c6dc1461deac59d7615ee309b564a57d41b270cd1751c",
+      "public_methods": [
+        "receipt",
+        "require"
+      ]
     }
   ],
   "supplemental_authorities": [
@@ -7085,7 +7113,8 @@
     "src/main/java/hu/taliann/icesmp/trash/TrashLootSelector.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashRecyclePool.java",
     "src/main/java/hu/taliann/icesmp/trash/TrashRuntimeTelemetry.java",
-    "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java"
+    "src/main/java/hu/taliann/icesmp/utils/MobKillUtil.java",
+    "src/main/java/hu/taliann/icesmp/storage/PlayerInventoryCommit.java"
   ],
   "bootstrap_components": {
     "src/main/java/hu/taliann/icesmp/IceSMP.java": [
@@ -7306,6 +7335,7 @@
       "src/main/java/hu/taliann/icesmp/listeners/StatsCombatListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/StrangerListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/TalentAttributeListener.java",
+      "src/main/java/hu/taliann/icesmp/listeners/TemporaryBlockProtection.java",
       "src/main/java/hu/taliann/icesmp/listeners/TerritoryListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/TerritoryProtectionListener.java",
       "src/main/java/hu/taliann/icesmp/listeners/TheftListener.java",
@@ -8243,6 +8273,20 @@
         "developer_self"
       ],
       "rationale": "Internal WorldWeaver composition/root lifecycle. Artifact authority remains DevItemManager; gameplay domain coverage is not closed by the frontend."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/DeveloperWeaverProvider.java",
+      "domains": [
+        "developer_self"
+      ],
+      "rationale": "Practical 1.0 registered runtime consumer."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/EventWeaverProvider.java",
+      "domains": [
+        "event.gathering"
+      ],
+      "rationale": "Practical 1.0 registered runtime consumer."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/FactionWeaverProvider.java",
@@ -9472,6 +9516,15 @@
         "class"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
+    },
+    {
+      "path": "src/main/java/hu/taliann/icesmp/listeners/TemporaryBlockProtection.java",
+      "role": "DOMAIN_ADAPTER",
+      "domains": [
+        "trash",
+        "event.archeology"
+      ],
+      "rationale": "Owner-region event protection for journaled temporary footprints; delegates exact site brushing admission to ArcheologyManager and does not expose a new provider action."
     },
     {
       "path": "src/main/java/hu/taliann/icesmp/listeners/TerritoryListener.java",
@@ -11179,20 +11232,6 @@
         "configuration"
       ],
       "rationale": "Bootstrap wiring/consumer/UI adapter; publish through its owning domain, never wrap its command or synthesize its event."
-    },
-    {
-      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/DeveloperWeaverProvider.java",
-      "domains": [
-        "developer_self"
-      ],
-      "rationale": "Practical 1.0 registered runtime consumer."
-    },
-    {
-      "path": "src/main/java/hu/taliann/icesmp/dev/weaver/provider/EventWeaverProvider.java",
-      "domains": [
-        "event.gathering"
-      ],
-      "rationale": "Practical 1.0 registered runtime consumer."
     }
   ],
   "original_base": {

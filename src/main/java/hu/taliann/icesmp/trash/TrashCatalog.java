@@ -204,6 +204,8 @@ public final class TrashCatalog {
         if (!errors.isEmpty()) {
             throw new IllegalStateException("Hibás Trash catalog: " + String.join("; ", errors));
         }
+        final var evidence = TrashArchaeologyEvidence.parse(yaml.getConfigurationSection("archaeology"), parsed);
+        parsed.replaceAll((id, definition) -> definition.withArchaeology(evidence.get(id)));
         return new Parsed(Map.copyOf(parsed), Map.copyOf(parsedPhases), rarityLabel, lootTuning);
     }
 
@@ -258,7 +260,9 @@ public final class TrashCatalog {
             throw new IllegalArgumentException("a lifecycle.on-success-transform csak lower_snake_case lehet");
         }
         return new TrashDefinition(id, displayName, playerRarity, material, itemModel, texture,
-                vendorValue, lore, sourceBias, kind, behavior, successPhase);
+                vendorValue, lore, sourceBias, kind, behavior, successPhase, null,
+                section.getDouble("internal.losing-health-fraction", 0.0D),
+                section.getStringList("contextual-text"));
     }
 
     private static TrashLifecyclePhase parseLifecyclePhase(final String rawId,

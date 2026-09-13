@@ -26,13 +26,17 @@ public final class FishingWindfallListener implements Listener {
     private final MoneyPouchItemFactory pouchFactory;
     private final AfkManager afkManager;
     private final MessageManager messageManager;
+    private final java.util.function.Predicate<Player> trashLuck;
+
 
     public FishingWindfallListener(final ConfigManager configManager, final MoneyPouchItemFactory pouchFactory,
-                                   final AfkManager afkManager, final MessageManager messageManager) {
+                                   final AfkManager afkManager, final MessageManager messageManager,
+                                   final java.util.function.Predicate<Player> trashLuck) {
         this.configManager = configManager;
         this.pouchFactory = pouchFactory;
         this.afkManager = afkManager;
         this.messageManager = messageManager;
+        this.trashLuck = java.util.Objects.requireNonNull(trashLuck);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -55,7 +59,15 @@ public final class FishingWindfallListener implements Listener {
         }
         final double min = Math.max(0.01D, configManager.getDouble("fishing-windfall.min-amount", 5.0D));
         final double max = Math.max(min, configManager.getDouble("fishing-windfall.max-amount", 15.0D));
-        final long amount = Math.max(1L, Math.round(min + ThreadLocalRandom.current().nextDouble() * (max - min)));
+        final double dailyCap = configManager.getDouble("fishing-windfall.daily-cap", 150.0D);
+        final long remaining = dailyCap <= 0 ? Long.MAX_VALUE : Math.max(0L, (long) dailyCap
+                - hu.taliann.icesmp.utils.DailyBudget.spentTodayOnOwnThread(player, "windfall"));
+        final long low = Math.max(1L, Math.round(min));
+        final long high = Math.min(Math.max(low, Math.round(max)), remaining);
+        if (high < low) return;
+        // TRASH_LUCK_ELIGIBLE: only the amount of an already-won pouch, within its remaining cap.
+        final long amount = high > low && trashLuck.test(player) ? high
+                : Math.min(high, Math.max(low, Math.round(min + ThreadLocalRandom.current().nextDouble() * (max - min))));
         // Napi keret (fishing-windfall.daily-cap, 0 = korlátlan) — az auto-klikkes
         // horgász-farm féke; a PDC-számláló a játékos saját régió-szálán íródik.
         if (!hu.taliann.icesmp.utils.DailyBudget.tryConsumeOnOwnThread(player, "windfall",
