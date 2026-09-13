@@ -411,6 +411,8 @@ public final class MarketManager implements PersistentStore {
                                          final double buyOut) {
         final ItemStack held = seller.getInventory().getItemInMainHand();
         if (held.getType().isAir()) return "market-no-item";
+        if (hu.taliann.icesmp.itemization.ItemPrototypePolicy.scan(held)
+                != hu.taliann.icesmp.itemization.ItemPrototypePolicy.Scan.CLEAN) return "market-item-policy-blocked";
         final ItemIdentityService.Inspection authored = itemIdentity.inspect(held);
         if (authored.status() != ItemIdentityService.Status.NOT_MANAGED) {
             if (authored.status() != ItemIdentityService.Status.VALID) {

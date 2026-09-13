@@ -251,7 +251,7 @@ def classify_finding(finding: dict[str, object]) -> tuple[str, str]:
     entity_receivers = {
         "entity", "mob", "projectile", "arrow", "horse", "animal", "creature", "living",
         "dead", "stand", "display", "minion", "spawned", "stranger", "totem", "boss", "add",
-        "tile", "firework", "mount", "npc",
+        "tile", "firework", "mount", "npc", "brushable",
     }
 
     if kind == "PLAYER_PDC" and "getchunk().getpersistentdatacontainer" in lower_symbol:

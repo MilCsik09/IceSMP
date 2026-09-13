@@ -3451,6 +3451,7 @@ mob-templates:
     weaknesses:
     - arcane
     loot-profile: world_boss
+    boss-specific-reward: sodrott_lancszem
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -3491,6 +3492,7 @@ mob-templates:
     weaknesses:
     - frost
     loot-profile: world_boss
+    boss-specific-reward: karhozat_parazs
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -3531,6 +3533,7 @@ mob-templates:
     weaknesses:
     - fire
     loot-profile: world_boss
+    boss-specific-reward: sarkanycsont_szilank
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -3571,7 +3574,9 @@ mob-templates:
     weaknesses:
     - holy
     loot-profile: world_boss
+    boss-specific-reward: csontenyv
     source-tags:
+    - history:chaos_age
     - event:world_boss
     spawn-policy: boss
     bestiary-id: bone_king
@@ -3612,6 +3617,7 @@ mob-templates:
     weaknesses:
     - arcane
     loot-profile: world_boss
+    boss-specific-reward: elso_csend_szilankja
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -3652,6 +3658,7 @@ mob-templates:
     weaknesses:
     - fire
     loot-profile: world_boss
+    boss-specific-reward: kitin_lemez
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -3692,6 +3699,7 @@ mob-templates:
     weaknesses:
     - frost
     loot-profile: world_boss
+    boss-specific-reward: viharkvarc
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -3732,6 +3740,7 @@ mob-templates:
     weaknesses:
     - holy
     loot-profile: world_boss
+    boss-specific-reward: arnygomba
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -3773,6 +3782,7 @@ mob-templates:
     weaknesses:
     - lightning
     loot-profile: world_boss
+    boss-specific-reward: tiszta_vasesszencia
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -3813,6 +3823,7 @@ mob-templates:
     weaknesses:
     - frost
     loot-profile: world_boss
+    boss-specific-reward: aranyfust_lemez
     source-tags:
     - event:world_boss
     spawn-policy: boss
@@ -4002,6 +4013,8 @@ mob-templates:
     - holy
     loot-profile: champion
     source-tags:
+    - history:chaos_age
+    - history:seventh_blood_war
     - event:invasion
     spawn-policy: event
     bestiary-id: invasion_bone_champion

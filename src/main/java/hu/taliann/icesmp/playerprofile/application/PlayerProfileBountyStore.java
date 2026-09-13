@@ -74,7 +74,7 @@ public final class PlayerProfileBountyStore {
                     final PlayerProfileSinStore.SinState sin =
                             PlayerProfileSinStore.decode(current);
                     final long now = System.currentTimeMillis();
-                    if (sin.count() < minimumSins || now < nextEligibleAt(current)) {
+                    if (!sin.wanted() || now < nextEligibleAt(current)) {
                         return PlayerProfileService.ConditionalMutation.unchanged(Optional.empty());
                     }
                     final long sequence = Math.addExact(completedSequence(current), 1L);
@@ -85,8 +85,8 @@ public final class PlayerProfileBountyStore {
                             amountMilli, now, cooldownUntil);
                     FactionSection next = current;
                     if (clearSins) {
-                        next = PlayerProfileSinStore.withSin(current, 0,
-                                sin.sinner(), sin.darkPact(), sin.generation());
+                        next = PlayerProfileSinStore.withSin(current, 0, false,
+                                sin.exiled(), sin.darkPact(), sin.generation());
                     }
                     next = withPending(next, pending);
                     return PlayerProfileService.ConditionalMutation.changed(next,

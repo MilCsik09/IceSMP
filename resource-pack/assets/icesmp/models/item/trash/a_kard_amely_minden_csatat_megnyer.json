@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "icesmp:item/trash/a_kard_amely_minden_csatat_megnyer"
+  }
+}

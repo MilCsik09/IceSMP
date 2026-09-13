@@ -7486,7 +7486,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Főnixszövet craft
+    display-name: Főnixszövet felszerelés készítése
     category: CLOTH • Arcane
     result:
       template: fonixszovet_sisak
@@ -7508,7 +7508,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Főnixszövet craft
+    display-name: Főnixszövet felszerelés készítése
     category: CLOTH • Arcane
     result:
       template: fonixszovet_labvert
@@ -7530,7 +7530,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Főnixszövet craft
+    display-name: Főnixszövet felszerelés készítése
     category: CLOTH • Arcane
     result:
       template: fonixszovet_csizma
@@ -7552,7 +7552,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Holdlen craft
+    display-name: Holdlen felszerelés készítése
     category: CLOTH • Ritual
     result:
       template: holdlen_sisak
@@ -7574,7 +7574,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Holdlen craft
+    display-name: Holdlen felszerelés készítése
     category: CLOTH • Ritual
     result:
       template: holdlen_mellvert
@@ -7596,7 +7596,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Holdlen craft
+    display-name: Holdlen felszerelés készítése
     category: CLOTH • Ritual
     result:
       template: holdlen_labvert
@@ -7618,7 +7618,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Holdlen craft
+    display-name: Holdlen felszerelés készítése
     category: CLOTH • Ritual
     result:
       template: holdlen_csizma
@@ -7640,7 +7640,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Némakristály craft
+    display-name: Némakristály felszerelés készítése
     category: CLOTH • Arcane
     result:
       template: nemakristaly_sisak
@@ -7664,7 +7664,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Némakristály craft
+    display-name: Némakristály felszerelés készítése
     category: CLOTH • Arcane
     result:
       template: nemakristaly_mellvert
@@ -7688,7 +7688,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Némakristály craft
+    display-name: Némakristály felszerelés készítése
     category: CLOTH • Arcane
     result:
       template: nemakristaly_labvert
@@ -7712,7 +7712,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Némakristály craft
+    display-name: Némakristály felszerelés készítése
     category: CLOTH • Arcane
     result:
       template: nemakristaly_csizma
@@ -7736,7 +7736,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Alkimista Fátyol craft
+    display-name: Alkimista Fátyol felszerelés készítése
     category: CLOTH • Sanctified
     result:
       template: alkimista_fatyol_sisak
@@ -7758,7 +7758,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Alkimista Fátyol craft
+    display-name: Alkimista Fátyol felszerelés készítése
     category: CLOTH • Sanctified
     result:
       template: alkimista_fatyol_mellvert
@@ -7780,7 +7780,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Alkimista Fátyol craft
+    display-name: Alkimista Fátyol felszerelés készítése
     category: CLOTH • Sanctified
     result:
       template: alkimista_fatyol_labvert
@@ -7802,7 +7802,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Alkimista Fátyol craft
+    display-name: Alkimista Fátyol felszerelés készítése
     category: CLOTH • Sanctified
     result:
       template: alkimista_fatyol_csizma
@@ -7824,7 +7824,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Vadőrző craft
+    display-name: Vadőrző felszerelés készítése
     category: LEATHER • Predator
     result:
       template: vadorzo_sisak
@@ -7846,7 +7846,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Vadőrző craft
+    display-name: Vadőrző felszerelés készítése
     category: LEATHER • Predator
     result:
       template: vadorzo_mellvert
@@ -7868,7 +7868,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Vadőrző craft
+    display-name: Vadőrző felszerelés készítése
     category: LEATHER • Predator
     result:
       template: vadorzo_labvert
@@ -7890,7 +7890,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Vadbőr craft
+    display-name: Vadbőr felszerelés készítése
     category: LEATHER • Wildheart
     result:
       template: vadbor_sisak
@@ -7914,7 +7914,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Vadbőr craft
+    display-name: Vadbőr felszerelés készítése
     category: LEATHER • Wildheart
     result:
       template: vadbor_mellvert
@@ -7938,7 +7938,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Vadbőr craft
+    display-name: Vadbőr felszerelés készítése
     category: LEATHER • Wildheart
     result:
       template: vadbor_labvert
@@ -7962,7 +7962,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Vadbőr craft
+    display-name: Vadbőr felszerelés készítése
     category: LEATHER • Wildheart
     result:
       template: vadbor_csizma
@@ -7986,7 +7986,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Vízbőr craft
+    display-name: Vízbőr felszerelés készítése
     category: LEATHER • Demonhide
     result:
       template: vizbor_sisak
@@ -8012,7 +8012,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Vízbőr craft
+    display-name: Vízbőr felszerelés készítése
     category: LEATHER • Demonhide
     result:
       template: vizbor_mellvert
@@ -8038,7 +8038,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Vízbőr craft
+    display-name: Vízbőr felszerelés készítése
     category: LEATHER • Demonhide
     result:
       template: vizbor_labvert
@@ -8064,7 +8064,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Vízbőr craft
+    display-name: Vízbőr felszerelés készítése
     category: LEATHER • Demonhide
     result:
       template: vizbor_csizma
@@ -8090,7 +8090,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Kitinbőr craft
+    display-name: Kitinbőr felszerelés készítése
     category: LEATHER • Shadow
     result:
       template: kitinbor_sisak
@@ -8112,7 +8112,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Kitinbőr craft
+    display-name: Kitinbőr felszerelés készítése
     category: LEATHER • Shadow
     result:
       template: kitinbor_mellvert
@@ -8134,7 +8134,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Kitinbőr craft
+    display-name: Kitinbőr felszerelés készítése
     category: LEATHER • Shadow
     result:
       template: kitinbor_labvert
@@ -8156,7 +8156,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Kitinbőr craft
+    display-name: Kitinbőr felszerelés készítése
     category: LEATHER • Shadow
     result:
       template: kitinbor_csizma
@@ -8178,7 +8178,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Csontenyv craft
+    display-name: Csontenyv felszerelés készítése
     category: MAIL • Warden
     result:
       template: csontenyv_sisak
@@ -8200,7 +8200,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Csontenyv craft
+    display-name: Csontenyv felszerelés készítése
     category: MAIL • Warden
     result:
       template: csontenyv_labvert
@@ -8222,7 +8222,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Csontenyv craft
+    display-name: Csontenyv felszerelés készítése
     category: MAIL • Warden
     result:
       template: csontenyv_csizma
@@ -8244,7 +8244,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Könnyű Ötvözet craft
+    display-name: Könnyű Ötvözet felszerelés készítése
     category: MAIL • Hunter
     result:
       template: konnyu_otvozet_sisak
@@ -8266,7 +8266,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Könnyű Ötvözet craft
+    display-name: Könnyű Ötvözet felszerelés készítése
     category: MAIL • Hunter
     result:
       template: konnyu_otvozet_mellvert
@@ -8288,7 +8288,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Könnyű Ötvözet craft
+    display-name: Könnyű Ötvözet felszerelés készítése
     category: MAIL • Hunter
     result:
       template: konnyu_otvozet_labvert
@@ -8310,7 +8310,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Könnyű Ötvözet craft
+    display-name: Könnyű Ötvözet felszerelés készítése
     category: MAIL • Hunter
     result:
       template: konnyu_otvozet_csizma
@@ -8332,7 +8332,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Rúnalánc craft
+    display-name: Rúnalánc felszerelés készítése
     category: MAIL • Runic
     result:
       template: runalanc_sisak
@@ -8354,7 +8354,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Rúnalánc craft
+    display-name: Rúnalánc felszerelés készítése
     category: MAIL • Runic
     result:
       template: runalanc_mellvert
@@ -8376,7 +8376,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Rúnalánc craft
+    display-name: Rúnalánc felszerelés készítése
     category: MAIL • Runic
     result:
       template: runalanc_labvert
@@ -8398,7 +8398,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Rúnalánc craft
+    display-name: Rúnalánc felszerelés készítése
     category: MAIL • Runic
     result:
       template: runalanc_csizma
@@ -8420,7 +8420,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Viharkvarc Rúnás craft
+    display-name: Viharkvarc Rúnás felszerelés készítése
     category: MAIL • Tempest
     result:
       template: viharkvarc_runas_sisak
@@ -8444,7 +8444,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Viharkvarc Rúnás craft
+    display-name: Viharkvarc Rúnás felszerelés készítése
     category: MAIL • Tempest
     result:
       template: viharkvarc_runas_mellvert
@@ -8468,7 +8468,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Viharkvarc Rúnás craft
+    display-name: Viharkvarc Rúnás felszerelés készítése
     category: MAIL • Tempest
     result:
       template: viharkvarc_runas_labvert
@@ -8492,7 +8492,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Viharkvarc Rúnás craft
+    display-name: Viharkvarc Rúnás felszerelés készítése
     category: MAIL • Tempest
     result:
       template: viharkvarc_runas_csizma
@@ -8516,7 +8516,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Glatziendorfi craft
+    display-name: Glatziendorfi felszerelés készítése
     category: PLATE • Runeforged
     result:
       template: glatziendorfi_sisak
@@ -8538,7 +8538,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Glatziendorfi craft
+    display-name: Glatziendorfi felszerelés készítése
     category: PLATE • Runeforged
     result:
       template: glatziendorfi_labvert
@@ -8560,7 +8560,7 @@ profession-recipes:
     batchable: false
     level: 29
     learn: level
-    display-name: Glatziendorfi craft
+    display-name: Glatziendorfi felszerelés készítése
     category: PLATE • Runeforged
     result:
       template: glatziendorfi_csizma
@@ -8582,7 +8582,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Borostyán Tárna craft
+    display-name: Borostyán Tárna felszerelés készítése
     category: PLATE • Bulwark
     result:
       template: borostyan_tarna_sisak
@@ -8604,7 +8604,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Borostyán Tárna craft
+    display-name: Borostyán Tárna felszerelés készítése
     category: PLATE • Bulwark
     result:
       template: borostyan_tarna_labvert
@@ -8626,7 +8626,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Borostyán Tárna craft
+    display-name: Borostyán Tárna felszerelés készítése
     category: PLATE • Bulwark
     result:
       template: borostyan_tarna_csizma
@@ -8648,7 +8648,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Sarkfény craft
+    display-name: Sarkfény felszerelés készítése
     category: PLATE • Crusader
     result:
       template: sarkfeny_mellvert
@@ -8670,7 +8670,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Sarkfény craft
+    display-name: Sarkfény felszerelés készítése
     category: PLATE • Crusader
     result:
       template: sarkfeny_labvert
@@ -8692,7 +8692,7 @@ profession-recipes:
     batchable: false
     level: 20
     learn: level
-    display-name: Sarkfény craft
+    display-name: Sarkfény felszerelés készítése
     category: PLATE • Crusader
     result:
       template: sarkfeny_csizma
@@ -8714,7 +8714,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Rúnakovácsolt craft
+    display-name: Rúnakovácsolt felszerelés készítése
     category: PLATE • Runeforged
     result:
       template: runaforged_sisak
@@ -8736,7 +8736,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Rúnakovácsolt craft
+    display-name: Rúnakovácsolt felszerelés készítése
     category: PLATE • Runeforged
     result:
       template: runaforged_mellvert
@@ -8758,7 +8758,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Rúnakovácsolt craft
+    display-name: Rúnakovácsolt felszerelés készítése
     category: PLATE • Runeforged
     result:
       template: runaforged_labvert
@@ -8780,7 +8780,7 @@ profession-recipes:
     batchable: false
     level: 38
     learn: level
-    display-name: Rúnakovácsolt craft
+    display-name: Rúnakovácsolt felszerelés készítése
     category: PLATE • Runeforged
     result:
       template: runaforged_csizma

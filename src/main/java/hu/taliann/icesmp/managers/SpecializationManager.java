@@ -394,8 +394,8 @@ public final class SpecializationManager {
             return Optional.of("Szükséges frakció: "
                     + specialization.getRequiredFaction().getDisplayName() + '.');
         }
-        if (specialization.requiresSinner() && !sinManager.isSinner(player)) {
-            return Optional.of("Ehhez az úthoz állandó bűnös állapot szükséges.");
+        if (specialization.requiresDarkOath() && !sinManager.hasOath(player)) {
+            return Optional.of("Ehhez az úthoz letett Sötét Eskü szükséges.");
         }
         final String quest = configManager.getString(
                 "specializations." + specialization.getId() + ".required-quest", "").trim();
@@ -900,20 +900,20 @@ public final class SpecializationManager {
         final boolean factionRequired = specialization.getRequiredFaction() != null;
         final boolean factionSatisfied = !factionRequired
                 || factionManager.isMember(player.getUniqueId(), specialization.getRequiredFaction());
-        final boolean sinnerRequired = specialization.requiresSinner();
-        final boolean sinnerSatisfied = !sinnerRequired || sinManager.isSinner(player);
+        final boolean oathRequired = specialization.requiresDarkOath();
+        final boolean oathSatisfied = !oathRequired || sinManager.hasOath(player);
         final String requiredQuest = configManager.getString(
                 "specializations." + specialization.getId() + ".required-quest", "").trim();
         final boolean questRequired = !requiredQuest.isEmpty();
         final boolean questSatisfied = !questRequired || questManager.hasCompleted(player, requiredQuest);
         final GateState state = GateState.ofRequirements(factionRequired, factionSatisfied,
-                sinnerRequired, sinnerSatisfied, questRequired, questSatisfied);
+                oathRequired, oathSatisfied, questRequired, questSatisfied);
         final Map<GateState.Gate, String> ids = new EnumMap<>(GateState.Gate.class);
         if (factionRequired) {
             ids.put(GateState.Gate.FACTION,
                     "faction:" + specialization.getRequiredFaction().name().toLowerCase(Locale.ROOT));
         }
-        if (sinnerRequired) ids.put(GateState.Gate.SINNER, "sinner:permanent");
+        if (oathRequired) ids.put(GateState.Gate.OATH, "dark-oath:sworn");
         if (questRequired) ids.put(GateState.Gate.QUEST,
                 "quest:" + requiredQuest.toLowerCase(Locale.ROOT));
         return new GateSnapshot(state, ids);
@@ -951,7 +951,7 @@ public final class SpecializationManager {
     public boolean resetDarkGatedSpecialization(final Player player) {
         final SpecializationType current = getClassSpecialization(player);
         if (current == null || current.getRequiredFaction() == null
-                && !current.requiresSinner()
+                && !current.requiresDarkOath()
                 && configManager.getString("specializations." + current.getId()
                 + ".required-quest", "").isBlank()) return false;
         reconcileDarkGates(player);
@@ -1001,7 +1001,7 @@ public final class SpecializationManager {
                 : diagnostic.slots().entrySet()) {
             final SpecializationType type = entry.getValue().specializationId()
                     .map(SpecializationType::fromId).orElse(null);
-            if (type != null && (type.getRequiredFaction() != null || type.requiresSinner()
+            if (type != null && (type.getRequiredFaction() != null || type.requiresDarkOath()
                     || !configManager.getString("specializations." + type.getId()
                     + ".required-quest", "").isBlank())) {
                 snapshots.put(entry.getKey(), captureGateSnapshot(player, type));

@@ -35,12 +35,16 @@ public final class EvokerProfileRegressionSuite {
     }
 
     public static void main(final String[] args) {
+        try (final var rewardBinding = hu.taliann.icesmp.integrity.GameplayRewardGate.install(context -> hu.taliann.icesmp.integrity.RewardDecision.allow())) {
+
         evokerSecondSlotUnlocksThroughClassExperience();
         evokerLearnsAndSwitchesBothSpecs();
         unreworkedClassStaysFailClosed();
         evokerDoctrineMasteryAndCapstoneStaySlotLocal();
         System.out.println("Evoker profile regression suite passed. assertions=" + assertions);
-    }
+
+        }
+}
 
     private static void evokerSecondSlotUnlocksThroughClassExperience() {
         final Harness h = harness(ClassSpecSection.builder()
@@ -184,6 +188,13 @@ public final class EvokerProfileRegressionSuite {
     }
 
     private static final class FakeStore implements ClassSpecSectionMutationStore {
+        @Override public CompletionStage<SaveResult> saveReward(UUID id, long revision, ClassSpecSection candidate,
+                hu.taliann.icesmp.integrity.RewardContext reward) {
+            return hu.taliann.icesmp.integrity.GameplayRewardGate.evaluate(reward).allowed()
+                    ? save(id, revision, candidate)
+                    : java.util.concurrent.CompletableFuture.completedFuture(SaveResult.rewardDenied(cached(id).orElse(null)));
+        }
+
         volatile ClassSpecSection profile;
         volatile String blockReason = "";
 

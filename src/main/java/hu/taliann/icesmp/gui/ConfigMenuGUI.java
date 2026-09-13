@@ -69,12 +69,6 @@ public final class ConfigMenuGUI {
                 Entry.number("health.scale-heals-cap", "Gyógyítás-skála plafon", 0.25, 1, 5)
         )));
         categories.put("ado", new Category("ado", "Adó és gazdaság", Material.GOLD_INGOT, List.of(
-                Entry.toggle("factions.tax.enabled", "Adó bekapcsolva"),
-                Entry.number("factions.tax.rate-percent", "Adókulcs (%)", 0.5, 0, 100),
-                Entry.number("factions.tax.minimum-amount", "Fejadó (min. összeg)", 0.5, 0, 1000),
-                Entry.number("factions.tax.max-arrears", "Hátralék-plafon", 5, 0, 100000),
-                Entry.integer("factions.tax.evasion-strikes", "Adócsalás-strike küszöb", 1, 0, 50),
-                Entry.integer("factions.tax.interval-minutes", "Beszedés (perc)", 5, 1, 100000),
                 Entry.toggle("ferry.enabled", "Kompjáratok"),
                 Entry.number("ferry.default-fee", "Komp-viteldíj (alap)", 5, 0, 10000),
                 Entry.toggle("factions.council.enabled", "Vének Tanácsa (NEUTRAL)"),
@@ -166,20 +160,24 @@ public final class ConfigMenuGUI {
                 Entry.integer("factions.war-window.per-victim-cooldown-minutes", "Per-áldozat cooldown (perc)", 5, 0, 1440))));
         categories.put("suttogok", new Category("suttogok", "Suttogók", Material.ECHO_SHARD, List.of(
                 Entry.toggle("factions.whisper.enabled", "Suttogó-rendszer"),
-                Entry.number("factions.whisper.suspicion-threshold", "Leleplezés-küszöb", 5, 1, 10000),
-                Entry.number("factions.whisper.betrayal-suspicion", "Árulás-gyanú", 5, 0, 1000),
-                Entry.number("factions.whisper.accuse-suspicion", "Tanú-vád gyanú", 5, 0, 1000),
-                Entry.integer("factions.whisper.decay-minutes", "Csillapodás (perc)", 1, 1, 100000),
-                Entry.integer("factions.whisper.exposure-sins", "Leleplezés bűn-terhe", 1, 1, 20),
                 Entry.toggle("factions.whisper.expose-broadcast", "Leleplezés-broadcast"),
                 Entry.toggle("factions.whisper.night-undead-truce", "Éjszakai élőhalott-békesség"),
+                Entry.integer("factions.whisper.witness-seconds", "Bizonyíték élettartama (mp)", 10, 10, 3600),
+                Entry.number("factions.whisper.witness-radius", "Árulás tanúsugara", 1, 4, 64),
+                Entry.number("factions.whisper.rite-witness-radius", "Rítus tanúsugara", 1, 4, 64),
+                Entry.number("factions.whisper.truce-witness-radius", "Undead-béke tanúsugara", 1, 0, 64),
                 Entry.integer("cultists.whisper-loot-rolls", "Kult-loot részesedés", 1, 0, 10),
                 Entry.number("factions.whisper.blackmarket-discount-percent", "Feketepiac-kedvezmény (%)", 5, 0, 90))));
         categories.put("etelek", new Category("etelek", "Frakció-ételek", Material.COOKED_SALMON, List.of(
-                Entry.toggle("factions.food-duty.enabled", "Honvágy-kötelezettség"),
-                Entry.integer("factions.food-duty.grace-hours", "Türelmi idő (óra)", 1, 1, 100000),
-                Entry.integer("factions.food-duty.check-minutes", "Ellenőrzés (perc)", 1, 1, 100000),
-                Entry.integer("factions.food-duty.debuff-seconds", "Debuff hossza (mp)", 1, 1, 600))));
+                Entry.integer("factions.signature-food.pisztrang-buff-seconds", "Pisztráng-buff (mp)", 5, 0, 600),
+                Entry.integer("factions.signature-food.rantotta-buff-seconds", "Rántotta-buff (mp)", 5, 0, 600),
+                Entry.integer("factions.signature-food.suti-speed-seconds", "Süti Speed-buff (mp)", 5, 0, 600),
+                Entry.number("factions.signature-food.suti-launch-y", "Süti fellökés", 0.1, 0, 4),
+                Entry.integer("factions.signature-food.hamukenyer-buff-seconds", "Hamukenyér-buff (mp)", 5, 0, 600),
+                Entry.integer("factions.signature-food.porkolt-buff-seconds", "Pörkölt-buff (mp)", 5, 0, 600),
+                Entry.integer("factions.signature-food.vadlakoma-buff-seconds", "Vadlakoma-buff (mp)", 5, 0, 600),
+                Entry.integer("factions.signature-food.lepeny-buff-seconds", "Lepény-buff (mp)", 5, 0, 600),
+                Entry.integer("factions.signature-food.hamulakoma-buff-seconds", "Hamulakoma-buff (mp)", 5, 0, 600))));
         categories.put("signature", new Category("signature", "Signature-perkek", Material.DIAMOND_PICKAXE, List.of(
                 Entry.number("signature.csakany.bonus-drop-chance", "Csákány bónusz-esély", 0.05, 0, 1),
                 Entry.number("signature.horgaszbot.bonus-drop-chance", "Horgászbot bónusz-esély", 0.05, 0, 1),
@@ -230,6 +228,8 @@ public final class ConfigMenuGUI {
                 Entry.integer("memory-shards.costs.spec", "Spec-kapu ára", 1, 1, 100))));
         categories.put("liga", new Category("liga", "Szezon-liga", Material.GOLDEN_HELMET, List.of(
                 Entry.toggle("world-events.season.enabled", "Szezon-liga"),
+                Entry.integer("world-events.season.population-reference", "Aktív létszám referencia", 1, 1, 1000),
+                Entry.integer("world-events.season.minimum-contributions", "Személyes jutalom min. teljesítés", 1, 1, 512),
                 Entry.integer("world-events.season.length-days", "Szezon hossza (nap)", 5, 1, 3650),
                 Entry.integer("world-events.season-finale.top2-window-hours", "Nagydöntő-ablak (óra)", 6, 1, 720),
                 Entry.number("world-events.season-finale.top2-point-multiplier", "Nagydöntő pont-szorzó", 0.25, 1, 10),

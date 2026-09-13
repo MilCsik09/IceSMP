@@ -1,5 +1,6 @@
 # IceSMP üzenetek — currency alrendszer (a MessageManager az összes messages/*.yml-t betölti)
 messages:
+  buyer-trash-sold: '<gold>🪙 Eladva: <white>{amount}× {item}</white> — <white>{value}× veret</white> a kezedbe. <gray>(Mai keretedből maradt: {left})</gray></gold>'
   balance: '&eAktuális egyenleg - %s: &6%s'
   currency-help-header: '&6/currency &7- Elérhető parancsok:'
   currency-help-rates: '&e/currency rates &7- Aktuális árfolyamok megtekintése.'

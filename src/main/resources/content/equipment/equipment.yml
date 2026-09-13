@@ -1367,6 +1367,8 @@ item-templates:
   sarkanycsont_ij:
     schema: 2
     display-name: Sárkánycsont Íj
+    lore:
+    - A sárkánycsont erezete minden lövésnél megfeszül.
     rarity: legendary
     item-level: 39
     family: weapon
@@ -1407,6 +1409,8 @@ item-templates:
   vasmuvek_csakanya:
     schema: 2
     display-name: Vasművek Csákánya
+    lore:
+    - A Vasművek mestermunkáján minden kalapácsütés nyoma ott maradt.
     rarity: legendary
     item-level: 36
     family: tool
@@ -1425,6 +1429,8 @@ item-templates:
   bokic_horgaszbot:
     schema: 2
     display-name: Bokic Öreg Horgászbotja
+    lore:
+    - Só, nád és megszámlálhatatlan kapás koptatta simára a nyelét.
     rarity: legendary
     item-level: 35
     family: tool
@@ -1443,6 +1449,8 @@ item-templates:
   smaragdko_bankbetet:
     schema: 2
     display-name: Smaragdkő Bankbetét
+    lore:
+    - A bank pecsétje minden csiszolt lapján ugyanazt az értéket őrzi.
     rarity: epic
     item-level: 32
     family: accessory
@@ -1460,6 +1468,8 @@ item-templates:
   szellemszarvas_bubaj:
     schema: 2
     display-name: Szellemszarvas Bűbáj
+    lore:
+    - A vadon ösvényein könnyebbnek érzi tőle a lépteit a viselő.
     rarity: legendary
     item-level: 37
     family: accessory
@@ -1479,6 +1489,8 @@ item-templates:
     schema: 2
     version: 2
     display-name: Kallan Szeletelője
+    lore:
+    - Kallan nevét a markolat jeges rovásai őrzik.
     rarity: legendary
     item-level: 41
     family: weapon
@@ -1521,6 +1533,8 @@ item-templates:
   jegsarkany_kantar:
     schema: 2
     display-name: Jégsárkány Kantar
+    lore:
+    - Hideg pikkelylemezei között dér ül meg, még tűz mellett is.
     rarity: legendary
     item-level: 38
     family: accessory
@@ -1537,6 +1551,8 @@ item-templates:
   pyralingradi_tuzkopo:
     schema: 2
     display-name: Pyralingradi Tűzköpő
+    lore:
+    - Pyralingrad kovácstüzeinek szikráit idézi minden feszítése.
     rarity: legendary
     item-level: 42
     family: weapon
@@ -1559,6 +1575,8 @@ item-templates:
   verszavanna_agyara:
     schema: 2
     display-name: Vérszavanna Agyara
+    lore:
+    - A Vérszavanna vörös pora beleivódott a penge élébe.
     rarity: legendary
     item-level: 40
     family: weapon
@@ -1585,6 +1603,8 @@ item-templates:
   miinus_haragja:
     schema: 2
     display-name: Míínus Haragja
+    lore:
+    - Míínus neve súlyként nehezedik a fejsze minden csapására.
     rarity: mythic
     item-level: 48
     family: weapon
@@ -1607,6 +1627,8 @@ item-templates:
   zhoris_langnyelve:
     schema: 2
     display-name: Zhoris Lángnyelve
+    lore:
+    - Zhoris jelét a rúd belsejében futó izzás rajzolja ki.
     rarity: legendary
     item-level: 43
     family: weapon
@@ -1631,7 +1653,9 @@ item-templates:
   napfogyatkozas_fokusz:
     schema: 2
     version: 2
-    display-name: Napfogyatkozás Fókusza
+    display-name: Napfogyatkozás Íja
+    lore:
+    - Éjjel a megfeszített húr fénye olyan vékony, mint a fogyó nap pereme.
     rarity: mythic
     item-level: 46
     family: weapon

@@ -20,6 +20,7 @@ import pathlib
 import subprocess
 import sys
 import glob
+from repository_inventory.java_scanner import duplicate_method_signatures
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CFG = os.path.join(REPO, "src/main/resources/config")
@@ -190,8 +191,10 @@ for _trial_id, _spec_id in sorted(_trial_pairs.items()):
         fail(f"{_trial_id}: requires-specialization '{_spec_id}' kell")
     if int(_trial.get("requires-level", 0) or 0) < 50:
         fail(f"{_trial_id}: requires-level legalább 50 kell")
-    _objective = _trial.get("objective") or {}
-    if _objective.get("type") != "CAST_SPELLS" or not _objective.get("spells"):
+    _objectives = list((_trial.get("objectives") or {}).values()) or [_trial.get("objective") or {}]
+    _spell_objectives = [objective for objective in _objectives
+                         if objective.get("type") == "CAST_SPELLS" and objective.get("spells")]
+    if not _spell_objectives:
         fail(f"{_trial_id}: nem üres CAST_SPELLS objective kell")
 
 _service_specs = {
@@ -362,25 +365,11 @@ if os.path.exists(menus_path):
             fail(f"CommandMenus: RUN/OPEN cél '{m.group(1)}' nem regisztrált parancs")
 
 # ---------- 5b. duplikált metódus-szignatúrák (a sandbox-javac elnyeli!) ----------
-# A kulcs a legközelebbi megelőző típusdeklarációt is hordozza, különben beágyazott
-# recordok azonos nevű accessorai hamis duplikátumként buknának el.
+# Named and anonymous type bodies have independent method scopes; closing a nested body
+# returns to its actual enclosing type rather than the last preceding declaration.
 for path in glob.glob(os.path.join(JAVA, "**/*.java"), recursive=True):
-    src = read(path)
-    type_decls = [(m.start(), m.group(1))
-                  for m in re.finditer(r"\b(?:class|record|interface|enum)\s+(\w+)", src)]
-    seen = {}
-    for m in re.finditer(r"(?:public|private|protected)[\w\s<>,\[\]]*?\s(\w+)\(([^)]*)\)\s*\{", src):
-        name, params = m.group(1), m.group(2)
-        types = tuple(t.split(".")[-1] for t in re.findall(r"(?:final\s+)?([\w.<>\[\]]+)\s+\w+\s*(?:,|$)", params))
-        owner = ""
-        for pos, type_name in type_decls:
-            if pos >= m.start():
-                break
-            owner = type_name
-        key = (owner, name, types)
-        if key in seen:
-            fail(f"duplikált metódus: {os.path.basename(path)}: {owner}.{name}({', '.join(types)}) kétszer definiálva")
-        seen[key] = True
+    for owner, name, types in duplicate_method_signatures(read(path)):
+        fail(f"duplikált metódus: {os.path.basename(path)}: {owner}.{name}({', '.join(types)}) kétszer definiálva")
 
 # ---------- 6. tükör-drift ----------
 MIRROR = [
@@ -470,7 +459,7 @@ except Exception as e:
 # ezert MONITOR prioritason kell futniuk. KIVETEL: a cancel-only vedelmi handler (pl. a quest
 # fizikai jutalom-stamp zarolasa) direkt HIGH/HIGHEST prioritason cancel-el es semmit nem
 # konyvel — az ilyet a torzse azonositja: van setCancelled(true), es nincs manager-hivas.
-_PROGRESS_LISTENERS = ["QuestProgressListener", "DailyQuestListener", "ProfessionXpListener",
+_PROGRESS_LISTENERS = ["QuestProgressListener", "ProfessionXpListener",
                        "ServerChallengeListener", "GatheringBuffListener"]
 _CANCELLABLE = {"BlockBreakEvent", "BlockPlaceEvent", "CraftItemEvent", "PlayerFishEvent",
                 "EntityPickupItemEvent", "PlayerHarvestBlockEvent", "SmithItemEvent",

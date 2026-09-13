@@ -26,7 +26,7 @@ public final class CommandSurfaceRegressionSuite {
         require(source, "if (!require(sender, INSPECT_PERMISSION)) return;", "inspect execution permission");
         require(source, "if (!require(sender, CLIENT_PERMISSION)) return;", "client execution permission");
         require(source, "rootSuggestions(sender, \"\")", "empty-root filtered completion");
-        require(source, "args.length == 1 && !List.of(\"reload\", \"config\", \"inspect\", \"client\").contains(root)",
+        require(source, "args.length == 1 && !List.of(\"reload\", \"config\", \"inspect\", \"client\", \"dev\").contains(root)",
                 "Paper exact-root completion handoff");
         require(source, "final String prefix = args.length == 1 ? \"\" : args[1]", "trailing-space empty prefix");
         require(source, "configManager.operatorEditablePaths()", "set suggestions bounded to operator schema");
