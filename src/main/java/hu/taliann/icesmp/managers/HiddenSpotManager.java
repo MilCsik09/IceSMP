@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileAchievementStore;
+import hu.taliann.icesmp.integrity.*;
 import hu.taliann.icesmp.storage.PersistentStore;
 import hu.taliann.icesmp.storage.YamlStore;
 import hu.taliann.icesmp.utils.MessageManager;
@@ -34,6 +35,9 @@ public final class HiddenSpotManager implements PersistentStore {
     private final Map<String, UUID> discoveredBy = new ConcurrentHashMap<>();
     private final Map<String, String> discovererName = new ConcurrentHashMap<>();
     private volatile long nextCheckAt;
+    private record EntryReward(String name, List<String> items, int xp, boolean firstOnly, double repeatRatio) {
+        private EntryReward { items = List.copyOf(items); }
+    }
 
     public HiddenSpotManager(final JavaPlugin plugin, final ConfigManager configManager,
                              final MessageManager messageManager) {
@@ -123,35 +127,48 @@ public final class HiddenSpotManager implements PersistentStore {
     private void handleEntry(final Player player, final String spotId,
                              final ConfigurationSection spot) {
         if (achievementStore.hasVisitedHiddenSpot(player.getUniqueId(), spotId)) return;
-        achievementStore.markHiddenSpotVisited(player.getUniqueId(), spotId)
+        final UUID playerId = player.getUniqueId();
+        final RewardContext reward;
+        try { reward = BukkitRewardSources.entity(RewardChannel.DISCOVERY, player).forRecipient(playerId); }
+        catch (RuntimeException | LinkageError unavailable) { return; }
+        final EntryReward plan = new EntryReward(spot.getString("name", spotId), spot.getStringList("rewards"),
+                Math.max(0, spot.getInt("xp", 20)), configManager.getBoolean("hidden-spots.first-finder-only", false),
+                Math.max(0.0D, Math.min(1.0D, configManager.getDouble("hidden-spots.repeat-reward-ratio", 0.5D))));
+        achievementStore.markHiddenSpotVisited(playerId, spotId, reward)
                 .whenComplete((created, failure) -> {
                     if (failure != null) {
+                        Throwable cause = failure;
+                        while (cause instanceof java.util.concurrent.CompletionException && cause.getCause() != null) cause = cause.getCause();
+                        if (cause instanceof RewardEligibilityDeniedException) return;
                         plugin.getLogger().severe("PlayerProfile hidden-spot commit failed for "
-                                + player.getUniqueId() + '/' + spotId + ": "
+                                + playerId + '/' + spotId + ": "
                                 + failure.getMessage());
                         return;
                     }
                     if (!Boolean.TRUE.equals(created)) return;
-                    player.getScheduler().run(plugin,
-                            task -> deliverEntry(player, spotId, spot), null);
+                    final Player handle = Bukkit.getPlayer(playerId);
+                    if (handle != null) handle.getScheduler().run(plugin, task -> {
+                        final Player owned = Bukkit.getPlayer(playerId);
+                        if (owned != null && Bukkit.isOwnedByCurrentRegion(owned) && owned.isOnline()) deliverEntry(owned, spotId, plan);
+                    }, null);
                 });
     }
 
     private void deliverEntry(final Player player, final String spotId,
-                              final ConfigurationSection spot) {
+                              final EntryReward plan) {
         if (!player.isOnline()) {
             plugin.getLogger().warning("Hidden-spot visit committed while player went offline: "
                     + player.getUniqueId() + '/' + spotId);
             return;
         }
         AdvancementService.award(player, "hidden_spot");
-        final String name = spot.getString("name", spotId);
+        final String name = plan.name();
         final boolean first = discoveredBy.putIfAbsent(spotId,
                 player.getUniqueId()) == null;
         if (first) {
             discovererName.put(spotId, player.getName());
             save();
-            giveRewards(player, spot, 1.0D);
+            giveRewards(player, plan, 1.0D);
             player.playSound(player.getLocation(),
                     org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0F, 1.0F);
             hu.taliann.icesmp.utils.ParticleUtil.spawn(player.getWorld(),
@@ -163,15 +180,14 @@ public final class HiddenSpotManager implements PersistentStore {
                     Map.of("player", player.getName(), "name", name)));
             return;
         }
-        if (configManager.getBoolean("hidden-spots.first-finder-only", false)) {
+        if (plan.firstOnly()) {
             player.sendActionBar(messageManager.getMessage("hidden-spot-already",
                     "<gray>🧭 {name} — {finder} fedezte fel elsőként.</gray>",
                     Map.of("name", name, "finder",
                             discovererName.getOrDefault(spotId, "valaki"))));
             return;
         }
-        giveRewards(player, spot, Math.max(0.0D, Math.min(1.0D,
-                configManager.getDouble("hidden-spots.repeat-reward-ratio", 0.5D))));
+        giveRewards(player, plan, plan.repeatRatio());
         player.playSound(player.getLocation(),
                 org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8F, 1.3F);
         player.sendMessage(messageManager.getMessage("hidden-spot-found",
@@ -180,10 +196,10 @@ public final class HiddenSpotManager implements PersistentStore {
                         discovererName.getOrDefault(spotId, "valaki"))));
     }
 
-    private void giveRewards(final Player player, final ConfigurationSection spot,
+    private void giveRewards(final Player player, final EntryReward plan,
                              final double ratio) {
         if (ratio <= 0.0D) return;
-        for (final String entry : spot.getStringList("rewards")) {
+        for (final String entry : plan.items()) {
             final ItemStack stack = LootTable.parseEntry(entry);
             if (stack != null) {
                 stack.setAmount(Math.max(1,
@@ -193,8 +209,7 @@ public final class HiddenSpotManager implements PersistentStore {
                                 .dropItemNaturally(player.getLocation(), left));
             }
         }
-        final int xp = (int) Math.round(
-                Math.max(0, spot.getInt("xp", 20)) * ratio);
+        final int xp = (int) Math.round(plan.xp() * ratio);
         if (xp > 0) player.giveExp(xp);
     }
 }

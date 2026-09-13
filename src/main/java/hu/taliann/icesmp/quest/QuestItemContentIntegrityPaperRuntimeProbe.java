@@ -86,7 +86,12 @@ public final class QuestItemContentIntegrityPaperRuntimeProbe {
     }
 
     private static void verifyQuestCatalogAndGuestPreview(final QuestManager quests) {
-        check(quests.getQuestIds().size() == 195, "runtime quest denominator is not 195");
+        check(quests.getQuestIds().size() == 196, "runtime quest denominator is not 196");
+        final ConfigurationSection civilPenance = quests.getQuestSection("civil_penance");
+        check(civilPenance != null && civilPenance.getBoolean("requires-atonement")
+                        && "DARK".equals(civilPenance.getString("forbids-faction"))
+                        && civilPenance.getBoolean("rewards.cleanse-sins"),
+                "the cumulative civil atonement quest or its legal gates are missing");
         final Player guest = playerFixture();
         int rewardBearing = 0;
         int guestOwn = 0;
@@ -121,7 +126,7 @@ public final class QuestItemContentIntegrityPaperRuntimeProbe {
             if ("DAILY".equalsIgnoreCase(quest.getString("category", ""))) authoredDaily++;
             if (!quest.getString("requires-profession", "").isBlank()) professionGated++;
         }
-        check(rewardBearing == 160, "runtime reward-bearing quest count is not 160");
+        check(rewardBearing == 161, "runtime reward-bearing quest count is not 161");
         check(guestOwn == 96, "runtime guest-safe OWN matrix is not 96");
         check(capstones == 35, "runtime capstone matrix is not 35");
         check(authoredDaily == 17, "runtime authored daily count is not 17");

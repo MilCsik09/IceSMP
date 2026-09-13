@@ -29,7 +29,11 @@
       "required_evidence": [
         "exact server build and plugin commit",
         "startup and shutdown log without Trash runtime errors",
-        "stack, vendor, ambient, behavior and reload checklist"
+        "stack, vendor, ambient, behavior and reload checklist",
+        "winning sword leaves storage/main/offhand at authored low-health combat threshold; no duplicate after restart",
+        "disabled or failed playerdata save prevents item effects and vendor payout; process-crash cuts before and after verified removal",
+        "bucket/WG fracture veto and bounded foreign-block conflict closure; original snapshots retained",
+        "death anchor stays at death coordinates in moving water; loaded-chunk disable/re-enable restores and expires flags"
       ]
     },
     "folia_1_21_11": {
@@ -46,7 +50,8 @@
       "required_evidence": [
         "30-tick Brush presentation capture on Paper and Folia",
         "early release and item-swap cancellation",
-        "overlay expiry, canonical resync and text fallback"
+        "overlay expiry, canonical resync and text fallback",
+        "cold ink and dark whispers appear only in contextual item tooltip; no archaeology/compass overlay collision"
       ]
     },
     "multiplayer_discovery": {

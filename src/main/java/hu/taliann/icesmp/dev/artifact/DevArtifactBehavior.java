@@ -14,5 +14,9 @@ public interface DevArtifactBehavior {
     default void validateState(final DevArtifactState state) { loadBehaviorState(state.behaviorState()); }
     default void onConfigurationReload() {}
     default void onUnavailable() {}
+    default void bindInteractions(final java.util.function.Function<DevArtifactInteraction, ArtifactInteractionResult> handler,
+                                  final Runnable unavailable) {
+        throw new UnsupportedOperationException("Artifact behavior does not accept a frontend binding");
+    }
     void shutdown();
 }

@@ -88,7 +88,7 @@ public final class CouncilManager implements PersistentStore {
      *
      * @return üzenet-kulcs hibára, vagy null sikerre
      */
-    public String vote(final Player voter, final Player target) {
+    public synchronized String vote(final Player voter, final Player target) {
         if (!isEnabled()) {
             return "council-disabled";
         }
@@ -101,6 +101,10 @@ public final class CouncilManager implements PersistentStore {
         votes.put(voter.getUniqueId(), target.getUniqueId());
         save();
         return null;
+    }
+
+    public synchronized void withMembershipAdmissionBarrier(final Runnable claim) {
+        java.util.Objects.requireNonNull(claim).run();
     }
 
     /** A futó hét tanácsa: a legtöbb szavazatot kapott NEUTRAL játékosok (top-seats). */
@@ -195,6 +199,7 @@ public final class CouncilManager implements PersistentStore {
             YamlStore.saveAtomic(storageFile, yaml);
         } catch (final IOException exception) {
             plugin.getLogger().severe("Nem sikerült menteni a council.yml-t: " + exception.getMessage());
+            throw new java.io.UncheckedIOException("Failed to save council.yml", exception);
         }
     }
 

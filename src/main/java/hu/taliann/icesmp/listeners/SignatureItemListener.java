@@ -113,11 +113,13 @@ public final class SignatureItemListener implements Listener {
     }
 
     private static boolean hasEnchant(final ItemStack item, final String id) {
+        if (hu.taliann.icesmp.itemization.ItemPrototypePolicy.direct(item)) return false;
         final org.bukkit.enchantments.Enchantment ench = enchant(id);
         return ench != null && item != null && item.containsEnchantment(ench);
     }
 
     private String idOf(final ItemStack item) {
+        if (hu.taliann.icesmp.itemization.ItemPrototypePolicy.direct(item)) return null;
         if (item == null || item.getType().isAir() || !item.hasItemMeta()) return null;
         return item.getItemMeta().getPersistentDataContainer().get(signatureKey, PersistentDataType.STRING);
     }

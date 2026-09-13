@@ -9,7 +9,9 @@ import java.util.function.Function;
 
 public final class WorldWeaverArtifactBehavior implements DevArtifactBehavior {
     public static final String ID = "dev_world_weaver";
-    private final Function<DevArtifactInteraction, ArtifactInteractionResult> interactions;
+    private volatile Function<DevArtifactInteraction, ArtifactInteractionResult> interactions;
+    private volatile Runnable unavailable = () -> {};
+    private boolean bound;
 
     public WorldWeaverArtifactBehavior(final Function<DevArtifactInteraction, ArtifactInteractionResult> interactions) {
         this.interactions = java.util.Objects.requireNonNull(interactions);
@@ -29,17 +31,23 @@ public final class WorldWeaverArtifactBehavior implements DevArtifactBehavior {
     @Override public String artifactId() { return ID; }
     @Override public Map<String, Object> initialState() { return Map.of(); }
     @Override public void onIssued(final DevArtifactContext context) {}
-    @Override public void onRecovered(final DevArtifactContext context) {}
+    @Override public void onRecovered(final DevArtifactContext context) { unavailable.run(); }
+    @Override public synchronized void bindInteractions(final Function<DevArtifactInteraction, ArtifactInteractionResult> handler, final Runnable unavailable) {
+        if (bound) throw new IllegalStateException("Artifact frontend already bound");
+        java.util.Objects.requireNonNull(handler); java.util.Objects.requireNonNull(unavailable);
+        interactions = handler; this.unavailable = unavailable; bound = true;
+    }
     @Override public ArtifactInteractionResult onInteract(final DevArtifactInteraction interaction) {
         if (!HiddenDevAuthority.isDeveloper(interaction.context().owner()) || !interaction.context().valid()) {
             return ArtifactInteractionResult.AUTHORITY_REJECTED;
         }
         return interactions.apply(interaction);
     }
-    @Override public void tick(final DevArtifactContext context, final long nowMillis) {}
+    @Override public void tick(final DevArtifactContext context, final long nowMillis) { if (context.player() == null) unavailable.run(); }
+    @Override public void onUnavailable() { unavailable.run(); }
     @Override public Map<String, Object> saveBehaviorState() { return Map.of(); }
     @Override public void loadBehaviorState(final Map<String, Object> state) {
         if (!state.isEmpty()) throw new IllegalArgumentException("Unexpected artifact-shell state");
     }
-    @Override public void shutdown() {}
+    @Override public void shutdown() { unavailable.run(); }
 }

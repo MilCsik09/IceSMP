@@ -1,10 +1,10 @@
 package hu.taliann.icesmp.managers;
 
 import hu.taliann.icesmp.data.CurrencyType;
-import hu.taliann.icesmp.quest.QuestCurrencyResolver;
 import hu.taliann.icesmp.items.CrateKeyFactory;
 import hu.taliann.icesmp.playerprofile.application.PlayerProfileQuestStore;
 import hu.taliann.icesmp.playerprofile.application.QuestRewardDeliveryProtocol;
+import hu.taliann.icesmp.quest.QuestCurrencyResolver;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
@@ -196,7 +196,13 @@ public final class QuestPhysicalRewardDeliveryService {
                 case DELIVER -> toMint.put(component.id(), component);
             }
         }
-        if (emptyStorageSlots(player.getInventory()) < toMint.size()) {
+        final int emptySlots = emptyStorageSlots(player.getInventory());
+        if (emptySlots < toMint.size()) {
+            final int additionalSlots = toMint.size() - emptySlots;
+            player.sendMessage(net.kyori.adventure.text.Component.text(
+                    "A küldetés jutalma függőben maradt: még legalább " + additionalSlots
+                            + " üres inventoryhelyre van szükség. Szabadíts fel helyet; a rendszer a jutalmat helyreállításkor újrapróbálja.",
+                    net.kyori.adventure.text.format.NamedTextColor.YELLOW));
             throw new IllegalStateException("not enough inventory space for pending quest reward");
         }
         for (final Component component : toMint.values()) {

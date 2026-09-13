@@ -40,6 +40,7 @@ public final class ItemSalvageService {
         Objects.requireNonNull(item, "item");
         Objects.requireNonNull(tuning, "tuning");
         if (escrowed) return denied(Status.ESCROWED, item.itemId(), conservativeInputValue);
+        if (ItemPrototypePolicy.isPrototype(item)) return denied(Status.FORBIDDEN, item.itemId(), conservativeInputValue);
         if (item.states().contains(ItemState.LEGACY)) {
             return denied(Status.LEGACY_DISABLED, item.itemId(), conservativeInputValue);
         }

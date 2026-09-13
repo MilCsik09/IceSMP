@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 public final class TrashProductionRuntimeProbe {
 
     public static final String PROPERTY = "icesmp.trash-production-runtime";
+    private static final String COOPERATIVE_PROPERTY = "icesmp.trash-production-cooperative-shutdown";
+    public static final String RELOAD_PASS_MARKER = "ICESMP_COMMAND_RELOAD_RUNTIME_PASS";
+    public static final String COOPERATIVE_PASS_MARKER = "ICESMP_COOPERATIVE_DISABLE_RUNTIME_PASS";
     public static final String PASS_MARKER = "ICESMP_TRASH_PRODUCTION_RUNTIME_PROBE_PASS";
     public static final String SHUTDOWN_PASS_MARKER =
             "ICESMP_TRASH_PRODUCTION_RUNTIME_SHUTDOWN_PASS";
@@ -44,7 +47,13 @@ public final class TrashProductionRuntimeProbe {
                         "trashRuntimeTelemetry", TrashRuntimeTelemetry.class);
 
                 verifyCatalogAndFactory(catalog, items);
+                verifyAnomalyApi(plugin, catalog, items, readField(assembledCore, "trashAnomalyRuntime", TrashAnomalyRuntime.class).activationService());
+                verifyNativeInspection(plugin, catalog, items);
+                hu.taliann.icesmp.itemization.PaperSourceIntegrityRuntimeProbe.verifyPrototypeQuarantine(
+                        readField(assembledCore, "itemIdentityService", hu.taliann.icesmp.itemization.ItemIdentityService.class),
+                        readField(assembledCore, "itemTransformationPolicy", hu.taliann.icesmp.itemization.ItemTransformationPolicy.class));
                 verifyStartedAndCleanRuntime(assembledCore, telemetry);
+                verifyPackagedReload(plugin, assembledCore);
                 session.startupPassed = true;
                 plugin.getLogger().info(PASS_MARKER + " platform="
                         + Bukkit.getServer().getName() + " minecraft="
@@ -53,11 +62,25 @@ public final class TrashProductionRuntimeProbe {
                 // Never print the exception message: a malformed hidden identity must not enter logs.
                 ACTIVE.compareAndSet(session, null);
                 plugin.getLogger().severe(FAIL_MARKER + " type="
-                        + failure.getClass().getSimpleName());
+                        + failure.getClass().getSimpleName() + " code=" + failureLocation(failure));
             } finally {
-                Bukkit.shutdown();
+                if (session.startupPassed && Boolean.getBoolean(COOPERATIVE_PROPERTY)) {
+                    hu.taliann.icesmp.IceSMP.requestDisable(plugin);
+                } else {
+                    Bukkit.shutdown();
+                }
             }
         }, 1L);
+    }
+
+    /** Source locations identify failed assertions without publishing messages, identities or item contents. */
+    private static String failureLocation(final Throwable failure) {
+        return java.util.Arrays.stream(failure.getStackTrace())
+                .filter(frame -> frame.getClassName().startsWith("hu.taliann.icesmp."))
+                .filter(frame -> !frame.getMethodName().equals("check")).limit(3)
+                .map(frame -> frame.getClassName().substring(frame.getClassName().lastIndexOf('.') + 1)
+                        + "." + frame.getMethodName() + ":" + frame.getLineNumber())
+                .collect(java.util.stream.Collectors.joining(","));
     }
 
     /** Called immediately after the core's Trash shutdown hooks have returned. */
@@ -70,9 +93,11 @@ public final class TrashProductionRuntimeProbe {
             return;
         }
         try {
-            final Object anomaly = readField(assembledCore,
-                    "trashAnomalyRuntime", Object.class);
-            final Object relic = readField(assembledCore, "trashRelicRuntime", Object.class);
+            final TrashAnomalyRuntime anomaly = readField(assembledCore,
+                    "trashAnomalyRuntime", TrashAnomalyRuntime.class);
+            check(!anomaly.activationService().lifetime().getAsBoolean(), "Anomaly use API remained open after shutdown");
+            final TrashRelicRuntime relic = readField(assembledCore,
+                    "trashRelicRuntime", TrashRelicRuntime.class);
             final Object archaeology = readField(
                     assembledCore, "trashArchaeologyListener", Object.class);
             final Object tooltip = readField(
@@ -85,8 +110,9 @@ public final class TrashProductionRuntimeProbe {
                 check(sizeOf(readField(anomaly, state, Object.class)) == 0,
                         "Anomaly state survived shutdown");
             }
-            for (final String state : Set.of("fields", "effectVetoArmed", "pendingConsumes",
-                    "claimedFields", "trackedProjectiles")) {
+            verifyRuleFieldState(relic.ruleFields().snapshot(), false);
+            verifyProjectileTrackingState(relic.projectileTrackingState(), false);
+            for (final String state : Set.of("effectVetoArmed", "pendingConsumes")) {
                 check(sizeOf(readField(relic, state, Object.class)) == 0,
                         "Relic state survived shutdown");
             }
@@ -98,11 +124,41 @@ public final class TrashProductionRuntimeProbe {
                             && sizeOf(readField(ambient, "nextAttemptAt", Object.class)) == 0
                             && sizeOf(readField(ambient, "chunkCounts", Object.class)) == 0,
                     "ambient runtime state survived shutdown");
+            if (Boolean.getBoolean(COOPERATIVE_PROPERTY)) {
+                final Object commands = readField(plugin, "commands", Object.class);
+                check(readField(commands, "closed", Boolean.class), "command admission survived disable");
+                check(readField(commands, "drained", java.util.concurrent.CompletableFuture.class).isDone(),
+                        "entered command did not drain before disable");
+                check(readField(plugin, "disableRequested", java.util.concurrent.atomic.AtomicBoolean.class).get(),
+                        "cooperative disable path was not exercised");
+                final var cleanup = readField(assembledCore, "playerShutdown",
+                        java.util.concurrent.CompletableFuture.class);
+                check(cleanup.isDone() && !cleanup.isCompletedExceptionally(),
+                        "native preparation did not complete before actual disable");
+                check(hu.taliann.icesmp.playerprofile.application.PlayerProfileAuthority.installed().isEmpty(),
+                        "profile authority survived final teardown");
+                plugin.getLogger().info(COOPERATIVE_PASS_MARKER + " connectedPlayers="
+                        + Bukkit.getOnlinePlayers().size());
+            }
             plugin.getLogger().info(SHUTDOWN_PASS_MARKER);
         } catch (final Throwable failure) {
             plugin.getLogger().severe(FAIL_MARKER + " type="
                     + failure.getClass().getSimpleName());
+        } finally {
+            if (Boolean.getBoolean(COOPERATIVE_PROPERTY)) Bukkit.shutdown();
         }
+    }
+
+    private static void verifyPackagedReload(final JavaPlugin plugin, final Object core) throws Exception {
+        try (final var resource = plugin.getResource("content/progression/classes.yml")) {
+            check(resource != null && resource.read() >= 0, "packaged class authority is unavailable");
+        }
+        final var config = readField(core, "configManager", hu.taliann.icesmp.managers.ConfigManager.class);
+        final long generation = config.snapshot().generation();
+        check(Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "icesmp reload"),
+                "real operator reload command is not registered");
+        check(config.snapshot().generation() > generation, "operator reload did not publish a valid snapshot");
+        plugin.getLogger().info(RELOAD_PASS_MARKER);
     }
 
     private static void verifyCatalogAndFactory(final TrashCatalog catalog,
@@ -145,17 +201,338 @@ public final class TrashProductionRuntimeProbe {
         check(transformed == 29, "runtime lifecycle reference denominator drifted");
     }
 
+    private static void verifyNativeInspection(final JavaPlugin plugin, final TrashCatalog catalog,
+                                                final TrashItemFactory items) throws java.io.IOException {
+        // Detached stacks and isolated files never add synthetic history to the assembled gameplay store.
+        final var directory = java.nio.file.Files.createTempDirectory("trash-native-inspection-");
+        final var store = new TrashHistoryStore(directory.resolve("history.yml").toFile(),
+                directory.resolve("history.wal").toFile(), plugin.getLogger(), catalog);
+        final var history = new TrashHistoryService(plugin, catalog, items, store);
+        store.load();
+        final var definition = catalog.snapshot().values().stream().filter(value -> !value.successPhase().isBlank()).findFirst().orElseThrow();
+        final ItemStack fresh = items.create(definition.id(), 2);
+        final byte[] before = fresh.serializeAsBytes();
+        check(history.tryInspect(fresh).orElseThrow().history().isEmpty(), "fresh stack has invented history");
+        check(java.util.Arrays.equals(before, fresh.serializeAsBytes()), "inspection mutated a fresh item");
+        final ItemStack unit = items.create(definition.id(), 1);
+        history.markOrigin(unit, TrashLootSource.AMBIENT);
+        history.individualizeUnit(unit, TrashHistoryEvent.ACTIVATED, java.util.UUID.randomUUID(), "");
+        final var inspected = history.tryInspect(unit).orElseThrow();
+        check(inspected.history().isPresent() && inspected.origin().orElseThrow() == TrashHistoryEvent.CREATED_AMBIENT,
+                "native tracked inspection lost provenance");
+        final ItemStack stale = unit.clone();
+        history.recordIfTracked(unit, TrashHistoryEvent.REPAIRED, java.util.UUID.randomUUID(), "");
+        check(history.tryInspect(stale).isEmpty(), "stale native revision accepted");
+        final ItemStack duplicate = unit.clone(); duplicate.setAmount(2);
+        check(history.tryInspect(duplicate).isEmpty(), "duplicate tracked stack accepted");
+        check(history.tryInspect(items.createPhase(definition.id(), definition.successPhase(), 1)).isEmpty(),
+                "lifecycle phase without history accepted as fresh");
+        final ItemStack malformed = unit.clone();
+        final var meta = malformed.getItemMeta();
+        meta.getPersistentDataContainer().remove(new NamespacedKey(plugin, "trash_history_revision"));
+        malformed.setItemMeta(meta);
+        boolean refused = false;
+        try { history.tryInspect(malformed); } catch (IllegalStateException expected) { refused = true; }
+        check(refused, "partial authority marker accepted");
+        for (final String key : java.util.List.of("trash_instance", "trash_history_revision", "trash_origin", "trash_repair_pending")) {
+            final ItemStack invalid = items.create(definition.id(), 1);
+            final var invalidMeta = invalid.getItemMeta();
+            invalidMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, key),
+                    org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
+            invalid.setItemMeta(invalidMeta);
+            refused = false;
+            try { history.tryInspect(invalid); } catch (IllegalStateException | IllegalArgumentException expected) { refused = true; }
+            check(refused, "wrong-type native marker accepted as absent");
+        }
+        final byte[] itemBefore = unit.serializeAsBytes();
+        final byte[] walBefore = java.nio.file.Files.readAllBytes(directory.resolve("history.wal"));
+        final var current = history.tryInspect(unit).orElseThrow();
+        check(TrashArchaeologyFactEngine.evaluate(current.definition(), current.history(), 50).orElseThrow().facts()
+                        .stream().anyMatch(fact -> fact.id().equals("repaired")), "detached archaeology omitted native repair evidence");
+        check(java.util.Arrays.equals(itemBefore, unit.serializeAsBytes())
+                        && java.util.Arrays.equals(walBefore, java.nio.file.Files.readAllBytes(directory.resolve("history.wal"))),
+                "inspection or derivation wrote item/history state");
+        store.load();
+        check(history.tryInspect(unit).orElseThrow().equals(current), "real native history reload changed inspection");
+        verifyAcknowledgedWallProjection(catalog, items, store, history, directory);
+        verifyPlannedNativeUnit(plugin, catalog, items, store, history, directory);
+        verifyPlannedSuccessTransition(catalog, items, store, history);
+        verifyDeveloperMutations(plugin, catalog, items, store, history);
+    }
+
+    private static void verifyDeveloperMutations(final JavaPlugin plugin, final TrashCatalog catalog,
+            final TrashItemFactory items, final TrashHistoryStore store, final TrashHistoryService history) {
+        final var actor = hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER;
+        final var phased = catalog.snapshot().values().stream().filter(d -> !d.successPhase().isBlank()).findFirst().orElseThrow();
+        final var repairable = catalog.snapshot().values().stream().filter(d -> d.material().getMaxDurability() > 0).findFirst().orElseThrow();
+        for (final var kind : TrashDeveloperReceipt.Kind.values()) {
+            if (kind == TrashDeveloperReceipt.Kind.REVERT) continue;
+            final var definition = kind == TrashDeveloperReceipt.Kind.REPAIR ? repairable : phased;
+            final ItemStack[] before = new ItemStack[41]; before[0] = items.create(definition.id(), kind == TrashDeveloperReceipt.Kind.REPAIR ? 1 : 3);
+            history.markOrigin(before[0], TrashLootSource.AMBIENT);
+            if (kind == TrashDeveloperReceipt.Kind.REPAIR) {
+                final var damaged = (org.bukkit.inventory.meta.Damageable) before[0].getItemMeta(); damaged.setDamage(1); before[0].setItemMeta(damaged);
+            }
+            final byte[] original = before[0].serializeAsBytes();
+            final var current = new AtomicReference<ItemStack[]>(before);
+            final var operation = java.util.UUID.randomUUID();
+            check(history.tryPrepareDeveloperMutation(operation, java.util.UUID.randomUUID(), kind, 0, before).isEmpty(), "foreign developer mutation prepared");
+            final var plan = history.tryPrepareDeveloperMutation(operation, actor, kind, 0, before).orElseThrow();
+            check(java.util.Arrays.equals(original, before[0].serializeAsBytes()) && store.find(plan.instanceId()).isEmpty(), "preparation mutated source or history");
+            final var receipt = history.tryCommitDeveloperMutation(plan, () -> plan.matchesInventory(current.get()),
+                    () -> true, current::set, () -> current.set(before)).orElseThrow();
+            check(store.tryInspect(plan.instanceId()).isEmpty(), "pending native developer item escaped physical observation fence");
+            check(history.tryCommitDeveloperMutation(plan, () -> true, () -> true, current::set, () -> current.set(before)).isEmpty(), "developer operation replayed");
+            final ItemStack[] after = current.get();
+            final int output = kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY ? 1 : 0;
+            final ItemStack result = after[output];
+            check(history.instanceIdOf(result).orElseThrow().equals(plan.instanceId()), "developer result borrowed another item identity");
+            if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+                check(java.util.Arrays.equals(original, after[0].serializeAsBytes()), "sandbox copy changed original");
+                check(hu.taliann.icesmp.itemization.ItemPrototypePolicy.allowedCustody(result, actor, actor), "native sandbox copy missing owner restriction");
+                final ItemStack washed = result.clone(); final var meta = washed.getItemMeta();
+                for (String marker : java.util.List.of("dev_prototype", "dev_prototype_owner", "dev_prototype_operation")) meta.getPersistentDataContainer().remove(new NamespacedKey(plugin, marker));
+                washed.setItemMeta(meta);
+                check(hu.taliann.icesmp.itemization.ItemPrototypePolicy.direct(washed)
+                        && !hu.taliann.icesmp.itemization.ItemPrototypePolicy.allowedCustody(washed, actor, actor), "Trash native prototype origin washed by removing custody markers");
+            } else if (kind == TrashDeveloperReceipt.Kind.REPAIR) {
+                check(((org.bukkit.inventory.meta.Damageable) result.getItemMeta()).getDamage() == 0, "developer repair did not repair native durability");
+            } else check(after[1].getAmount() == 2 && history.instanceIdOf(after[1]).isEmpty(), "developer split individualized or lost remainder");
+            // Exercise stale player-save projection against the real WAL, without claiming connected playerdata proof.
+            current.set(before); store.load();
+            check(history.tryObserveDeveloperBeforeProjection(receipt, current.get()).orElseThrow(), "read-only recovery missed exact pending before state");
+            check(history.tryRestoreDeveloperProjection(receipt, current::get, current::set, () -> current.set(before)), "exact pending physical recovery refused");
+            check(java.util.Arrays.equals(after, current.get()), "native recovery did not restore exact item bytes");
+            final ItemStack[] changedAmount = current.get().clone(); changedAmount[output] = changedAmount[output].clone();
+            changedAmount[output].setAmount(changedAmount[output].getAmount() + 1);
+            check(!history.tryObserveDeveloperProjection(receipt, changedAmount).orElseThrow(), "changed amount accepted by native read-only recovery");
+            check(history.tryObserveDeveloperProjection(receipt, current.get()).orElseThrow(), "native read-only recovery missed exact pending state");
+            check(history.tryInspectDeveloperReceipt(operation).orElseThrow().orElseThrow().equals(receipt), "read-only assessment changed native observation state");
+            check(!history.tryConfirmDeveloperProjection(receipt, () -> changedAmount), "changed native amount borrowed a projection acknowledgement");
+            check(history.tryConfirmDeveloperProjection(receipt, current::get), "exact native projection was not acknowledged");
+            final var evidence = history.historyOf(current.get()[output]).orElseThrow();
+            check(evidence.events().getLast().type() == kind.event()
+                    && evidence.events().stream().noneMatch(event -> event.type() == TrashHistoryEvent.REPAIRED
+                        || event.type() == TrashHistoryEvent.TRANSFORMED || event.type() == TrashHistoryEvent.ACTIVATED), "developer action fabricated natural history");
+            if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) check(evidence.events().size() == 1
+                    && history.tryInspect(current.get()[output]).orElseThrow().origin().orElseThrow() == TrashHistoryEvent.DEV_PROTOTYPED,
+                    "sandbox copy inherited natural provenance");
+            else check(evidence.events().getFirst().type() == TrashHistoryEvent.CREATED_AMBIENT, "developer mutation erased real origin");
+            store.save(); store.load();
+            check(history.tryInspectDeveloperReceipt(operation).orElseThrow().orElseThrow().equals(receipt.withObservedProjection()), "snapshot lost developer receipt");
+            final ItemStack[] committedAfter = current.get();
+            current.set(before);
+            check(!history.tryRestoreDeveloperProjection(receipt.withObservedProjection(), current::get, current::set, () -> current.set(before)), "observed developer operation recreated a missing item");
+            current.set(committedAfter);
+            if (kind == TrashDeveloperReceipt.Kind.INDIVIDUALIZE) {
+                check(history.tryPrepareDeveloperReversal(java.util.UUID.randomUUID(), actor, receipt.withObservedProjection(), current.get()).isEmpty(),
+                        "identity allocation could be undone into an untracked batch");
+            } else {
+                final var inversePlan = history.tryPrepareDeveloperReversal(java.util.UUID.randomUUID(), actor,
+                        receipt.withObservedProjection(), current.get()).orElseThrow();
+                final var inverse = history.tryCommitDeveloperMutation(inversePlan, () -> inversePlan.matchesInventory(current.get()),
+                        () -> true, current::set, () -> current.set(committedAfter)).orElseThrow();
+                check(history.tryConfirmDeveloperProjection(inverse, current::get), "native reversal projection not acknowledged");
+                check(history.tryPrepareDeveloperReversal(java.util.UUID.randomUUID(), actor, receipt.withObservedProjection(), current.get()).isEmpty(),
+                        "original native effect could be reversed twice");
+                if (kind == TrashDeveloperReceipt.Kind.SANDBOX_COPY) {
+                    check(current.get()[1] == null && current.get()[0].equals(before[0]), "sandbox reversal changed source or retained copy");
+                } else {
+                    final var reversed = history.historyOf(current.get()[0]).orElseThrow();
+                    check(reversed.instanceId().equals(plan.instanceId()) && reversed.revision() == inverse.afterRevision()
+                            && reversed.events().getLast().type() == TrashHistoryEvent.DEV_REVERTED,
+                            "native reversal erased instance identity or developer history");
+                    check(reversed.phase().equals(receipt.beforePhase()), "native reversal did not restore authored phase");
+                    if (kind == TrashDeveloperReceipt.Kind.REPAIR) check(((org.bukkit.inventory.meta.Damageable)
+                            current.get()[0].getItemMeta()).getDamage() == 1, "native reversal did not restore original durability");
+                    else check(current.get()[0].getAmount() == 1 && current.get()[1].getAmount() == 2,
+                            "phase reversal washed the tracked unit into the original batch");
+                }
+                store.save(); store.load();
+                check(history.tryInspectDeveloperReceipt(inverse.operationId()).orElseThrow().orElseThrow().equals(inverse.withObservedProjection()),
+                        "native inverse receipt lost after restart");
+            }
+        }
+        final ItemStack[] before = new ItemStack[41]; before[0] = items.create(phased.id(), 1);
+        final var plan = history.tryPrepareDeveloperMutation(java.util.UUID.randomUUID(), actor,
+                TrashDeveloperReceipt.Kind.INDIVIDUALIZE, 0, before).orElseThrow();
+        check(history.tryCommitDeveloperMutation(plan, () -> true, () -> false,
+                ignored -> { throw new AssertionError("refused permit projected item"); }, () -> {}).isEmpty(), "final developer permit refusal ignored");
+        check(history.tryCommitDeveloperMutation(plan, () -> true, () -> true,
+                ignored -> { throw new AssertionError("spent plan replayed"); }, () -> {}).isEmpty(), "spent developer plan admitted again");
+        check(store.find(plan.instanceId()).isEmpty(), "refused final permit wrote developer history");
+        plugin.getLogger().info("ICESMP_TRASH_DEVELOPER_MUTATION_PROBE_PASS scope=detached_native_items_wal_projection");
+    }
+
+    private static void verifyPlannedNativeUnit(final JavaPlugin plugin, final TrashCatalog catalog,
+            final TrashItemFactory items, final TrashHistoryStore store, final TrashHistoryService history,
+            final java.nio.file.Path directory) throws java.io.IOException {
+        // Detached real ItemStacks exercise native identity and WAL, not connected inventory custody.
+        final String base = catalog.snapshot().keySet().iterator().next(); final var actor = java.util.UUID.randomUUID();
+        final ItemStack unit = items.create(base, 1); history.markOrigin(unit, TrashLootSource.AMBIENT);
+        final byte[] physical = unit.serializeAsBytes(), wal = java.nio.file.Files.readAllBytes(directory.resolve("history.wal"));
+        final var plan = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+        check(store.find(plan.instanceId()).isEmpty() && history.instanceIdOf(unit).isEmpty(), "planning allocated history or physical identity");
+        check(java.util.Arrays.equals(physical, unit.serializeAsBytes())
+                && java.util.Arrays.equals(wal, java.nio.file.Files.readAllBytes(directory.resolve("history.wal"))), "planning wrote native state");
+        final var output = new java.util.concurrent.atomic.AtomicReference<ItemStack>();
+        final Runnable unexpected = () -> { throw new IllegalStateException("untouched projection rolled back"); };
+        final var permit = hu.taliann.icesmp.integrity.GameplayEffectPermit.guarded(() -> true);
+        check(!history.tryIndividualizePlannedUnit(plan, unit, () -> false, permit::claim, output::set, unexpected), "initial refusal bypassed");
+        final ItemStack drifted = unit.clone(); drifted.setAmount(2);
+        check(!history.tryIndividualizePlannedUnit(plan, drifted, () -> true, permit::claim, output::set, unexpected), "physical drift bypassed");
+        final var other = new TrashHistoryService(plugin, catalog, items, store);
+        check(!other.tryIndividualizePlannedUnit(plan, unit, () -> true, permit::claim, output::set, unexpected), "foreign authority accepted plan");
+        check(history.tryIndividualizePlannedUnit(plan, unit, () -> true, permit::claim, output::set, unexpected), "native planned unit refused");
+        final ItemStack tracked = output.get(); final var nativeHistory = history.historyOf(tracked).orElseThrow();
+        check(nativeHistory.instanceId().equals(plan.instanceId()) && nativeHistory.revision() == 2
+                && nativeHistory.events().getFirst().type() == TrashHistoryEvent.CREATED_AMBIENT,
+                "planned identity or natural provenance changed at publication");
+        check(!history.tryIndividualizePlannedUnit(plan, unit, () -> true, () -> true, output::set, unexpected), "consumed plan replayed");
+        final var sameIdentity = history.tryPrepareUnit(tracked, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+        check(sameIdentity.instanceId().equals(plan.instanceId()), "tracked planning allocated another authority");
+        history.recordIfTracked(tracked, TrashHistoryEvent.REPAIRED, actor, "");
+        check(!history.tryIndividualizePlannedUnit(sameIdentity, tracked, () -> true, () -> true, output::set, unexpected), "stale planned history accepted");
+        final var refused = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+        check(!history.tryIndividualizePlannedUnit(refused, unit, () -> true, () -> false, output::set, unexpected), "denied final permit accepted");
+        check(!history.tryIndividualizePlannedUnit(refused, unit, () -> true, () -> true, output::set, unexpected), "denied final attempt rearmed");
+        check(store.find(refused.instanceId()).isEmpty(), "denied plan created a history instance");
+        final var rollback = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+        boolean failed = false;
+        try { history.tryIndividualizePlannedUnit(rollback, unit, () -> true, () -> true,
+                value -> { output.set(value); throw new IllegalStateException("injected publication failure"); }, () -> output.set(null)); }
+        catch (IllegalStateException expected) { failed = true; }
+        check(failed && output.get() == null && store.find(rollback.instanceId()).isEmpty(), "failed planned projection did not roll back atomically");
+        store.load();
+        check(store.find(plan.instanceId()).orElseThrow().revision() == 3, "planned target did not survive real WAL reload");
+    }
+
+    private static void verifyPlannedSuccessTransition(final TrashCatalog catalog, final TrashItemFactory items,
+            final TrashHistoryStore store, final TrashHistoryService history) {
+        for (String behavior : java.util.List.of("FEKETE_VIASZDUGO", "SZAKADT_FEHER_ZASZLO", "MELYNEPI_SELEJTEK")) {
+            final var definition = catalog.snapshot().values().stream().filter(d -> d.behavior().equals(behavior)).findFirst().orElseThrow();
+            final var actor = java.util.UUID.randomUUID();
+            final ItemStack unit = items.create(definition.id(), 1); history.markOrigin(unit, TrashLootSource.AMBIENT);
+            final var plan = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+            final var output = new AtomicReference<ItemStack>();
+            check(history.tryTransformPlannedUnit(plan, unit, () -> true, () -> true, output::set, () -> output.set(null)),
+                    "native planned success transition refused");
+            final var committed = history.historyOf(output.get()).orElseThrow();
+            check(committed.instanceId().equals(plan.instanceId()) && committed.phase().equals(definition.successPhase())
+                            && committed.revision() == 3 && committed.events().getFirst().type() == TrashHistoryEvent.CREATED_AMBIENT
+                            && committed.events().getLast().type() == TrashHistoryEvent.TRANSFORMED,
+                    "planned success transition lost UUID, natural origin or actual native transformation");
+            check(!history.tryTransformPlannedUnit(plan, unit, () -> true, () -> true, output::set, () -> output.set(null)),
+                    "planned success transition replayed");
+            final var rollback = history.tryPrepareUnit(unit, TrashHistoryEvent.ACTIVATED, actor).orElseThrow();
+            boolean failed = false;
+            try { history.tryTransformPlannedUnit(rollback, unit, () -> true, () -> true,
+                    item -> { output.set(item); throw new IllegalStateException("injected native success projection failure"); }, () -> output.set(null)); }
+            catch (IllegalStateException expected) { failed = true; }
+            check(failed && output.get() == null && store.find(rollback.instanceId()).isEmpty(), "planned success rollback left history or physical projection");
+            store.load();
+            check(store.find(plan.instanceId()).orElseThrow().equals(committed), "native success transition lost after real WAL reload");
+        }
+    }
+
+    private static void verifyAcknowledgedWallProjection(final TrashCatalog catalog, final TrashItemFactory items,
+            final TrashHistoryStore store, final TrashHistoryService history, final java.nio.file.Path directory)
+            throws java.io.IOException {
+        // This fixture models stale physical save data, not a connected player or projectile interception.
+        final var brick = catalog.snapshot().values().stream().filter(value -> value.behavior().equals("TEGLA")).findFirst().orElseThrow();
+        final java.util.UUID actor = java.util.UUID.randomUUID();
+        final ItemStack oldPhysical = items.create(brick.id(), 1);
+        history.individualizeUnit(oldPhysical, TrashHistoryEvent.ACTIVATED, actor, "");
+        final var before = history.tryInspect(oldPhysical).orElseThrow().history().orElseThrow();
+        final var field = new TrashRuleFieldService.RuleField(java.util.UUID.randomUUID(),
+                TrashRuleFieldService.FieldKind.PROJECTILE_WALL,
+                new TrashRuleFieldService.Point(java.util.UUID.randomUUID(), 0, 64, 0), 2.5,
+                System.currentTimeMillis() + 20_000, actor, java.util.UUID.randomUUID().toString());
+        final var receipt = store.transact(() -> {
+            final var consumed = store.transform(before.instanceId(), brick.id(), "base", brick.successPhase(), actor);
+            final var pending = new TrashHistoryStore.WallReceipt(field.id(), actor, field.center().world(),
+                    java.util.UUID.randomUUID(), before.instanceId(), consumed.revision(), brick.id(), brick.successPhase(),
+                    System.currentTimeMillis(), field, before.revision());
+            store.putWallReceipt(pending); return pending;
+        }, null);
+        store.load();
+        check(history.tryInspect(oldPhysical).isEmpty(), "stale saved unit became current without native recovery");
+        final byte[] wal = java.nio.file.Files.readAllBytes(directory.resolve("history.wal"));
+        final var physical = new java.util.concurrent.atomic.AtomicReference<>(oldPhysical.clone());
+        final java.util.function.Consumer<ItemStack> untouched = ignored -> { throw new IllegalStateException("refused projection ran"); };
+        check(!history.tryRestoreAcknowledgedWallProjection(null, actor, receipt, () -> true, untouched), "missing unit was recreated");
+        check(!history.tryRestoreAcknowledgedWallProjection(oldPhysical, java.util.UUID.randomUUID(), receipt, () -> true, untouched), "another actor's unit was projected");
+        final ItemStack duplicate = oldPhysical.clone(); duplicate.setAmount(2);
+        check(!history.tryRestoreAcknowledgedWallProjection(duplicate, actor, receipt, () -> true, untouched), "duplicate stack was individualized by recovery");
+        check(!history.tryRestoreAcknowledgedWallProjection(oldPhysical, actor, receipt, () -> false, untouched), "owner refusal was ignored");
+        final var attempts = new java.util.concurrent.atomic.AtomicInteger();
+        boolean refused = false;
+        try {
+            history.tryRestoreAcknowledgedWallProjection(oldPhysical, actor, receipt, () -> true, result -> {
+                physical.set(result);
+                if (attempts.getAndIncrement() == 0) throw new IllegalStateException("injected physical projection failure");
+            });
+        } catch (IllegalStateException expected) { refused = true; }
+        check(refused && attempts.get() == 2 && physical.get().equals(oldPhysical), "failed native item projection did not restore its exact input");
+        check(history.tryRestoreAcknowledgedWallProjection(physical.get(), actor, receipt,
+                () -> physical.get().equals(oldPhysical), physical::set), "native stale-item projection was not restored");
+        final var restored = history.tryInspect(physical.get()).orElseThrow();
+        check(restored.phase().equals(receipt.phase()) && restored.history().orElseThrow().revision() == receipt.revision()
+                && restored.pendingWall().orElseThrow().equals(receipt), "restored item and pending native receipt disagree");
+        check(!history.tryRestoreAcknowledgedWallProjection(physical.get(), actor, receipt, () -> true, untouched), "already restored unit was consumed again");
+        check(java.util.Arrays.equals(wal, java.nio.file.Files.readAllBytes(directory.resolve("history.wal"))), "physical recovery appended a fake history event");
+        // Explicit fixture acknowledgement exercises storage retention; no projectile is spawned or observed here.
+        check(store.tryConfirmWallRemoval(receipt, () -> true), "fixture completion was not acknowledged");
+        store.save(); store.load();
+        final var observed = history.tryInspectWallRecoveryReceipts(java.util.Set.of(receipt.instanceId()))
+                .orElseThrow().get(receipt.instanceId());
+        check(observed.removalObserved() && history.tryInspectPendingProjectileWalls().orElseThrow().isEmpty(),
+                "observed completion was lost or reported as pending after compaction");
+        check(history.tryConfirmProjectileWallRemoval(receipt,
+                () -> { throw new IllegalStateException("durable effect observation was replayed"); }),
+                "native retry cannot recognize its exact acknowledged completion");
+        physical.set(oldPhysical.clone());
+        check(history.tryRestoreAcknowledgedWallProjection(physical.get(), actor, observed,
+                () -> physical.get().equals(oldPhysical), physical::set), "observed completion lost stale-item recovery");
+        final var completed = history.tryInspect(physical.get()).orElseThrow();
+        check(completed.history().orElseThrow().revision() == receipt.revision() && completed.pendingWall().isEmpty(),
+                "observed recovery replayed consumption or resurrected an unobserved effect");
+        check(history.tryInspectWallRecoveryReceipts(java.util.Set.of(receipt.instanceId())).orElseThrow()
+                .get(receipt.instanceId()).equals(observed), "live ItemStack falsely retired durable recovery evidence");
+    }
+
+    private static void verifyAnomalyApi(final JavaPlugin plugin, final TrashCatalog catalog,
+            final TrashItemFactory items, final TrashAnomalyActivationService activation) {
+        for (final var definition : catalog.snapshot().values()) {
+            final var item = items.create(definition.id(), 1);
+            final var behavior = activation.behaviorOf(item);
+            check(behavior.isPresent() == (definition.internalKind() == TrashKind.ANOMALY), "shared anomaly API crossed native kind authority");
+            if (behavior.isPresent()) {
+                check(behavior.orElseThrow() == TrashAnomalyBehavior.parse(definition.behavior()), "shared anomaly API changed authored behavior");
+                final var prototype = item.clone();
+                hu.taliann.icesmp.itemization.ItemPrototypePolicy.mark(prototype,
+                        new hu.taliann.icesmp.itemization.ItemPrototypePolicy.Identity(
+                            hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER, java.util.UUID.randomUUID()));
+                check(activation.behaviorOf(prototype).isEmpty(), "shared native use API activated a prototype");
+            }
+        }
+        check(activation.lifetime().getAsBoolean(), "shared anomaly API lifecycle is unavailable");
+        plugin.getLogger().info("ICESMP_TRASH_ANOMALY_API_PROBE_PASS scope=detached_native_identity_and_lifecycle");
+    }
+
     private static void verifyStartedAndCleanRuntime(
             final Object assembledCore, final TrashRuntimeTelemetry telemetry) {
-        final Object anomaly = readField(assembledCore, "trashAnomalyRuntime", Object.class);
-        final Object relic = readField(assembledCore, "trashRelicRuntime", Object.class);
+        final TrashAnomalyRuntime anomaly = readField(assembledCore, "trashAnomalyRuntime", TrashAnomalyRuntime.class);
+        check(anomaly.activationService().lifetime().getAsBoolean(), "Anomaly use API did not start with its native runtime");
+        final TrashRelicRuntime relic = readField(assembledCore,
+                "trashRelicRuntime", TrashRelicRuntime.class);
         final Object archaeology = readField(
                 assembledCore, "trashArchaeologyListener", Object.class);
         final Object ambient = readField(assembledCore, "trashAmbientManager", Object.class);
         check(readField(anomaly, "heldTick", Object.class) != null,
                 "Anomaly runtime did not start");
-        check(sizeOf(readField(relic, "fields", Object.class)) == 0,
-                "Relic runtime started with temporary fields");
+        verifyRuleFieldState(relic.ruleFields().snapshot(), true);
+        verifyProjectileTrackingState(relic.projectileTrackingState(), true);
         check(sizeOf(readField(archaeology, "sessions", Object.class)) == 0,
                 "Archaeology runtime started with pending sessions");
         check(sizeOf(readField(ambient, "active", Object.class)) == 0,
@@ -166,6 +543,21 @@ public final class TrashProductionRuntimeProbe {
                         && snapshot.inspectionsCompleted() == 0L
                         && snapshot.inspectionsCancelled() == 0L,
                 "runtime started with non-zero operational counters");
+    }
+
+    static void verifyRuleFieldState(final TrashRuleFieldService.Snapshot snapshot,
+                                     final boolean expectedOpen) {
+        check(snapshot.open() == expectedOpen, "Rule-field lifecycle state mismatch");
+        check(snapshot.fields().isEmpty(), "Rule fields remain at lifecycle boundary");
+        check(snapshot.claimed().isEmpty(), "Rule-field claims remain at lifecycle boundary");
+        check(snapshot.preparing().isEmpty(), "Rule-field preparations remain at lifecycle boundary");
+    }
+
+    static void verifyProjectileTrackingState(final TrashRelicPolicy.TrackingSnapshot snapshot,
+                                               final boolean expectedOpen) {
+        check(snapshot.open() == expectedOpen, "Projectile tracking lifecycle state mismatch");
+        check(snapshot.active() == 0, "Projectile tracking remains at lifecycle boundary");
+        check(snapshot.maximum() == 256, "Projectile tracking cap mismatch");
     }
 
     private static int sizeOf(final Object value) {

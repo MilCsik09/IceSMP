@@ -19,7 +19,14 @@ public final class DevArtifactRuntimeProbe {
     private static final String PROPERTY = "icesmp.dev-artifact-runtime";
     private static final AtomicBoolean STARTED = new AtomicBoolean();
     private static final AtomicBoolean PASSED = new AtomicBoolean();
+    private static final Map<String, java.util.function.BooleanSupplier> ADDITIONAL = new java.util.concurrent.ConcurrentHashMap<>();
     private DevArtifactRuntimeProbe() {}
+    public static void registerReadinessCheck(final String id, final java.util.function.BooleanSupplier check) {
+        if (!Boolean.getBoolean(PROPERTY)) return;
+        if (!id.matches("[a-z0-9_]{1,48}") || ADDITIONAL.size() >= 8 || ADDITIONAL.putIfAbsent(id, java.util.Objects.requireNonNull(check)) != null) {
+            throw new IllegalArgumentException("Invalid runtime probe readiness check");
+        }
+    }
 
     public static void maybeRun(final JavaPlugin plugin, final DevItemManager manager) {
         if (!Boolean.getBoolean(PROPERTY) || !STARTED.compareAndSet(false, true)) return;
@@ -61,6 +68,10 @@ public final class DevArtifactRuntimeProbe {
                 check(reloaded.getInt("schema-version") == 2, "Bukkit YAML schema");
                 check(reloaded.getString("artifacts.csodalatos_bingulus.behavior-state.pending.item").equals(payload), "Bukkit YAML pending payload");
                 check(!authority.matches(UUID.randomUUID(), authority.owner(), authority.instanceId()), "foreign marker authority");
+                ADDITIONAL.forEach((id, check) -> {
+                    check(check.getAsBoolean(), "runtime readiness");
+                    plugin.getLogger().info("ICESMP_DEV_RUNTIME_READY " + id);
+                });
                 PASSED.set(true);
                 plugin.getLogger().info("ICESMP_DEV_ARTIFACT_RUNTIME_PROBE_PASS platform=" + Bukkit.getServer().getName());
             } catch (final Throwable failure) {

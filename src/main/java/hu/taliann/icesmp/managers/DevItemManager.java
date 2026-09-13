@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 
 /** The single identity, recovery and persistence authority for registered developer artifacts. */
 public final class DevItemManager implements PersistentStore, PlayerStateCleanup {
-    private static final boolean WORLD_WEAVER_ENABLED = false;
+    private static final boolean WORLD_WEAVER_ENABLED = true;
     private static final class Entry {
         final DevArtifactRegistration registration;
         final AtomicBoolean tickQueued = new AtomicBoolean();
@@ -82,6 +82,13 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
         entries.put(registration.definition().id(), new Entry(registration));
     }
     public DevItemFactory itemFactory() { return itemFactory; }
+    public synchronized void bindInteractions(final String artifactId,
+            final java.util.function.Function<DevArtifactInteraction, ArtifactInteractionResult> handler, final Runnable unavailable) {
+        if (ledger != null || shuttingDown) throw new IllegalStateException("Artifact frontend binding is closed");
+        final Entry entry = entries.get(artifactId);
+        if (entry == null) throw new IllegalArgumentException("Unknown registered artifact");
+        entry.behavior().bindInteractions(handler, unavailable);
+    }
     public UUID ownerUuid() { return state(DevItemFactory.BINGULUS_ID).owner(); }
     public boolean isOwner(final Player player) { return player != null && ownerUuid().equals(player.getUniqueId()); }
     public DevArtifactState state(final String id) {
@@ -432,6 +439,8 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
     }
     private void cleanForeignItems(final Player player) {
         requireOwnerThread(player);
+        hu.taliann.icesmp.itemization.ItemPrototypePolicy.quarantinePlayer(player,
+                hu.taliann.icesmp.security.HiddenDevAuthority.PRIMARY_DEVELOPER);
         for (final ItemStack item : player.getInventory().getContents()) {
             final String id = itemFactory.itemIdOf(item);
             if (id != null && (!entries.containsKey(id) || !player.getUniqueId().equals(state(id).owner()))) removeItems(player, id);

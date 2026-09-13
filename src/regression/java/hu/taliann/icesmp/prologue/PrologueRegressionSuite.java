@@ -215,8 +215,16 @@ public final class PrologueRegressionSuite {
                 "encounter orchestration lost region/entity ownership or bypasses the common spawn authority");
         check(authoredSpawns.contains("spawn location's owning region thread")
                         &&authoredSpawns.contains("mob.getScheduler().runDelayed")
-                        &&authoredSpawns.contains("add.getScheduler().run"),
+                        &&authoredSpawns.contains("handle.getScheduler().run")
+                        &&authoredSpawns.contains("final Mob add = ownedMob(id)")
+                        &&authoredSpawns.contains("!Bukkit.isOwnedByCurrentRegion(entity)")
+                        &&authoredSpawns.contains("() -> forget(id, ownerId)")
+                        &&!authoredSpawns.contains("ConcurrentHashMap<UUID, Mob>"),
                 "common authored creature mutations lost their Folia entity ownership contract");
+        String retiredCleanup=between(authoredSpawns,"private void forget(","private static String id(");
+        check(!retiredCleanup.contains("Bukkit.")&&!retiredCleanup.contains("PersistentDataContainer")
+                        &&retiredCleanup.contains("computeIfPresent"),
+                "authored summon retirement must only update the canonical UUID index");
         String runtime=source("src/main/java/hu/taliann/icesmp/prologue/PrologueRuntime.java");
         check(runtime.contains("player.getScheduler().run")&&runtime.contains("getGlobalRegionScheduler().run"),
                 "runtime player aggregation is not region scheduled");
