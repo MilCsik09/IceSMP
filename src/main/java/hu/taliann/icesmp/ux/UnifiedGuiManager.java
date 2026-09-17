@@ -74,7 +74,17 @@ public final class UnifiedGuiManager implements Listener {
     }
 
     public void shutdown() {
-        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) clear(player);
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            final GuiSession session = sessions.remove(player.getUniqueId());
+            if (session == null) continue;
+            player.getScheduler().run(plugin, task -> {
+                if (player.isOnline()
+                        && player.getOpenInventory().getTopInventory().getHolder() == session) {
+                    player.closeInventory();
+                }
+                session.close();
+            }, null);
+        }
         sessions.clear();
     }
 
@@ -83,6 +93,7 @@ public final class UnifiedGuiManager implements Listener {
         final Inventory top = event.getView().getTopInventory();
         if (!(top.getHolder() instanceof GuiSession session)) return;
         event.setCancelled(true);
+        if (sessions.get(session.playerId()) != session) return;
         if (!session.playerId().equals(event.getWhoClicked().getUniqueId())) return;
         if (event.getRawSlot() < 0 || event.getRawSlot() >= top.getSize()) return;
         final GuiComponent component = session.component(event.getRawSlot());
