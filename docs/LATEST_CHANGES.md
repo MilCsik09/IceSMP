@@ -1,5 +1,10 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A fejlesztői eszköz eltétele vagy fegyverre váltás nem zárja le többé a
+rávetítések munkamenetét. A munkamenethez kötött harci változtatások így
+megmaradnak a kézváltás után; a kilépési és jogosultsági törlés továbbra is
+érvényes. A változás buildje és szerveres ellenőrzése még hátravan.
+
 A fejlesztői rávetítések mentés utáni visszaütemezése nem keres többé
 entitást a háttérszálról a világokban. A célpont ellenőrzése a saját
 régiószálán történik; a javítás Folia-playtestje még hátravan.

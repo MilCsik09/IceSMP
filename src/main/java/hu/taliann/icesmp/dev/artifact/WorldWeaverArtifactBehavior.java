@@ -43,7 +43,11 @@ public final class WorldWeaverArtifactBehavior implements DevArtifactBehavior {
         }
         return interactions.apply(interaction);
     }
-    @Override public void tick(final DevArtifactContext context, final long nowMillis) { if (context.player() == null) unavailable.run(); }
+    @Override public void tick(final DevArtifactContext context, final long nowMillis) {
+        // The manager already verifies the online owner and unique artifact before ticking.
+        // Main-hand interaction authority must not determine SESSION projection lifetime.
+        if (!context.valid()) unavailable.run();
+    }
     @Override public void onUnavailable() { unavailable.run(); }
     @Override public Map<String, Object> saveBehaviorState() { return Map.of(); }
     @Override public void loadBehaviorState(final Map<String, Object> state) {
