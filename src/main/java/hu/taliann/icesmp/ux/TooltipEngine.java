@@ -44,8 +44,9 @@ public final class TooltipEngine {
             lines = lines == null ? List.of() : List.copyOf(lines);
         }
 
-        public static Section of(final SectionId id, final int order, final Collection<Component> lines) {
-            return new Section(id, order, lines == null ? List.of() : List.copyOf(lines));
+        public static Section of(final SectionId id, final int order,
+                                 final Collection<? extends Component> lines) {
+            return new Section(id, order, lines == null ? List.of() : new ArrayList<Component>(lines));
         }
     }
 
@@ -53,7 +54,7 @@ public final class TooltipEngine {
     }
 
     public static Section generated(final SectionId id, final int order,
-                                    final Collection<Component> lines) {
+                                    final Collection<? extends Component> lines) {
         return Section.of(id, order, lines);
     }
 
