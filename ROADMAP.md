@@ -201,6 +201,42 @@ az alábbi rések kódban visszaigazoltak, javításuk tételenként külön dö
   playtest. A friss tooltip- és inventoryjavítások még nem jelentik a teljes
   review lezárását. Ez külön ütemezett feladat, jelenleg nincs elvégezve.
 
+
+### Eventrendszer — teljes review (nyitott, 2026-09-17)
+
+- ⬜ **Eventenkénti működés:** minden világesemény és kapcsolódó boss/event
+  összevetése a tervezett működéssel és a canonical konfigurációval;
+  automatikus és kézi indítás, feltételek, ütemezés, kizárások, fázisok,
+  siker, kudarc, megszakítás és lezárás.
+- ⬜ **Spawn és részvétel:** helyszínválasztás, betöltött chunkok, terület- és
+  claimvédelem, mobok/bossok életciklusa, résztvevők és hozzájárulás követése;
+  kilépés, halál, világváltás és párhuzamos események.
+- ⬜ **Jutalom és visszajelzés:** jogosultság, loot, egyszeri jutalmazás,
+  exploitok, chat/HUD/bossbar és a megjelenített állapot valóságtartalma.
+- ⬜ **Üzemeltetés és lezárás:** reload, újraindítás, félbeszakadt mentés,
+  cleanup, Paper/Folia régióbiztonság és spawn/számítási terhelés;
+  eventenkénti reprodukálható findingek, javítások és kézi playtest.
+  A review külön feladat, jelenleg nincs elvégezve.
+
+### WorldWeaver — teljes review (nyitott, 2026-09-17)
+
+- ⬜ **Teljes design- és provider-review:** a normatív WorldWeaver design
+  összevetése minden providerrel és ténylegesen elérhető művelettel;
+  hiányzó, hibás és csak részben működő útvonalak tételes azonosítása.
+- ⬜ **Interakció és célpont:** jobb kattintás, guggolás, kézcsere,
+  entitás/játékos/blokk/terület/tárgy kiválasztása; offhand és inventory,
+  egymást követő inputesemények, téves vagy elavult célpontok és GUI-navigáció.
+- ⬜ **Végrehajtás és integráció:** inspection, preview, megerősítés,
+  apply/undo, SANDBOX/LIVE_GM, jogosultságok és fejlesztői kizárólagosság;
+  Trash Relic-, event- és egyéb providerek tényleges runtime-hatásai.
+- ⬜ **Állapot és hibabiztonság:** mentés, audit/receipt, recovery, lejárat,
+  megszakítás, kilépés és újraindítás; részleges végrehajtás, duplikáció,
+  elavult snapshot és régiók közötti Paper/Folia műveletek.
+- ⬜ **Lezárás:** providerenként és műveletenként elvárt/tényleges eredmény,
+  reprodukálható findingek, javítások, célzott regressziók és kézi playtest.
+  A korábbi célpont- és inventoryjavítások nem zárják le ezt a review-t;
+  a teljes átvizsgálás jelenleg nincs elvégezve.
+
 ## 2. Builderkapuk
 
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő
