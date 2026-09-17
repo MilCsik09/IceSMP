@@ -173,7 +173,7 @@ public final class DialogueEngine {
                     if (completion != null) completion.run();
                     advance(current, session);
                 },
-                () -> clearPlayerState(player.getUniqueId()), Math.max(1L, delay));
+                () -> { if (sessions.get(player.getUniqueId()) == session) clearPlayerState(player.getUniqueId()); }, Math.max(1L, delay));
         if (scheduled != null) session.tasks.add(scheduled);
     }
 
@@ -189,7 +189,7 @@ public final class DialogueEngine {
                     if (completion != null) completion.run();
                     finish(player, session);
                 },
-                () -> clearPlayerState(player.getUniqueId()), delay);
+                () -> { if (sessions.get(player.getUniqueId()) == session) clearPlayerState(player.getUniqueId()); }, delay);
         if (scheduled != null) session.tasks.add(scheduled);
     }
 
