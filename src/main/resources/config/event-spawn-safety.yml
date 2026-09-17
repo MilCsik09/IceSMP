@@ -116,14 +116,16 @@ world-events:
       require-sky: true
       denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
     world-boss:
-      footprint-radius-blocks: 7
-      max-height-delta-blocks: 4
-      require-sky: true
+      # Large bosses may use caves, arenas and enclosed builds. Keep only the
+      # collision/terrain checks; do not require an open sky or a seven-block pad.
+      footprint-radius-blocks: 4
+      max-height-delta-blocks: 8
+      require-sky: false
       denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
     invasion:
-      footprint-radius-blocks: 7
-      max-height-delta-blocks: 4
-      require-sky: true
+      footprint-radius-blocks: 4
+      max-height-delta-blocks: 8
+      require-sky: false
       denied-biomes: [ocean, deep_ocean, river, frozen_ocean, deep_frozen_ocean]
     invasion-wave:
       min-horizontal-distance-blocks: 0.0
