@@ -75,11 +75,6 @@ public final class DialogueEngine {
         cancel(player.getUniqueId());
         final Session session = new Session(sequence);
         sessions.put(player.getUniqueId(), session);
-        if (sequence.musicContextId() != null && music != null) {
-            // The actual track definition remains owned by the caller; this API only exposes the
-            // context boundary and does not invent a resource-pack asset.
-            player.sendActionBar(Component.text("")); 
-        }
         advance(player, session);
     }
 
