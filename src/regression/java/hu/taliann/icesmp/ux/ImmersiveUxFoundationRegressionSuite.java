@@ -20,6 +20,7 @@ public final class ImmersiveUxFoundationRegressionSuite {
         questDialogueCadenceDoesNotDoubleDelay();
         questChoicesBelongToDialogueCompletion();
         guiSessionStateAndClosedLifecycle();
+        hiddenDevHarnessStaysGuardedAndPresentationOnly();
         System.out.println("Immersive UX foundation regression suite passed. assertions=" + assertions);
     }
 
@@ -111,6 +112,35 @@ public final class ImmersiveUxFoundationRegressionSuite {
             rejected = true;
         }
         check(rejected, "closed GUI must not manufacture a replacement inventory");
+    }
+
+    private static void hiddenDevHarnessStaysGuardedAndPresentationOnly() throws Exception {
+        final Path root = Path.of("src/main/java/hu/taliann/icesmp");
+        final String listener = Files.readString(root.resolve("ux/ImmersiveUxListener.java"));
+        final String command = Files.readString(root.resolve("ux/UxDevCommand.java"));
+        final String projection = Files.readString(root.resolve("trash/TooltipDevProjection.java"));
+
+        check(listener.contains("HiddenDevAuthority.mayUseHiddenContent(event.getPlayer())")
+                        && listener.contains("onHiddenUxDevCommand")
+                        && listener.contains("\"icesmp\".equalsIgnoreCase(tokens[0])")
+                        && listener.contains("\"dev\".equalsIgnoreCase(tokens[1])")
+                        && listener.contains("\"ux\".equalsIgnoreCase(tokens[2])"),
+                "hidden UX DEV route is not strictly authority-gated and namespaced");
+        check(command.contains("HiddenDevAuthority.mayUseHiddenContent(player)"),
+                "UX DEV command lost its defense-in-depth hidden authority gate");
+        check(command.contains("dialogue.play(player")
+                        && command.contains("music.push(player")
+                        && command.contains("gui.open(player")
+                        && command.contains("TooltipEngine.render(context, renderers)")
+                        && command.contains("TooltipDevProjection.projectMainHand(player, display)"),
+                "UX DEV harness no longer exercises all four immersive foundation paths");
+        check(!command.contains("player.getInventory().setItem")
+                        && !command.contains("setItemInMainHand"),
+                "UX DEV tooltip preview started mutating canonical inventory state");
+        check(projection.contains("TooltipPacketBridge_1_21_11.projectHand")
+                        && !projection.contains("setItemInMainHand")
+                        && !projection.contains("getInventory().setItem"),
+                "DEV tooltip adapter bypassed the presentation-only packet bridge");
     }
 
     private static void check(final boolean value, final String message) {
