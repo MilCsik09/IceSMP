@@ -122,7 +122,8 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
 
     @FunctionalInterface
     public interface DialogueAdapter {
-        boolean play(Player player, String questId, String phase, String speaker, List<String> lines);
+        boolean play(Player player, String questId, String phase, String speaker,
+                     List<String> lines, Runnable onComplete);
     }
 
     private record QuestMirror(Map<String, Map<String, Long>> active,
@@ -1732,9 +1733,10 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         if (lines.isEmpty()) return;
         final String speaker = quest.getString("dialogue.speaker",
                 fallbackSpeaker == null ? "???" : fallbackSpeaker);
+        final Runnable completion = dialogueCompletion(player, questId, phase, quest);
         final DialogueAdapter adapter = dialogueAdapter;
-        if (adapter != null && adapter.play(player, questId, phase, speaker, List.copyOf(lines))) {
-            scheduleDialogueChoices(player, questId, phase, lines, quest);
+        if (adapter != null && adapter.play(player, questId, phase, speaker,
+                List.copyOf(lines), completion)) {
             return;
         }
         for (int i = 0; i < lines.size(); i++) {
@@ -1746,6 +1748,15 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             else player.getScheduler().runDelayed(plugin, task -> send.run(), null, 30L * i);
         }
         scheduleDialogueChoices(player, questId, phase, lines, quest);
+    }
+
+    private Runnable dialogueCompletion(final Player player, final String questId,
+                                        final String phase, final ConfigurationSection quest) {
+        if (!"give".equalsIgnoreCase(phase)) return null;
+        final ConfigurationSection choices = quest.getConfigurationSection("dialogue.choices");
+        if (choices == null || choices.getKeys(false).isEmpty()) return null;
+        final String sourceQuestId = normalizeQuestId(questId);
+        return () -> sendChoices(player, sourceQuestId, choices);
     }
 
     private void scheduleDialogueChoices(final Player player, final String questId, final String phase,
