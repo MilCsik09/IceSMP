@@ -2,6 +2,8 @@ package hu.taliann.icesmp.ux;
 
 import net.kyori.adventure.text.Component;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,10 +14,11 @@ import static hu.taliann.icesmp.ux.MusicDirector.Type;
 public final class ImmersiveUxFoundationRegressionSuite {
     private static int assertions;
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws Exception {
         musicPriorityTieBreakAndDisabledFallback();
         tooltipSectionReplacementPreservesAuthoredSpacing();
         questDialogueCadenceDoesNotDoubleDelay();
+        questChoicesBelongToDialogueCompletion();
         guiSessionStateAndClosedLifecycle();
         System.out.println("Immersive UX foundation regression suite passed. assertions=" + assertions);
     }
@@ -62,12 +65,33 @@ public final class ImmersiveUxFoundationRegressionSuite {
         final var finalNode = new DialogueEngine.DialogueNode(
                 "final", "", Component.text("three"), 30L, 0L, true,
                 player -> true, null, null);
+        final var finalWithChoice = new DialogueEngine.DialogueNode(
+                "final-choice", "", Component.text("choice"), 30L, 30L, true,
+                player -> true, null, null);
         check(DialogueEngine.waitAfter(first, second) == 30L,
                 "quest line cadence doubled from 30 to 60 ticks");
         check(DialogueEngine.waitAfter(second, finalNode) == 30L,
                 "subsequent quest line cadence doubled from 30 to 60 ticks");
         check(DialogueEngine.waitAfter(finalNode, null) == 0L,
                 "final zero-duration quest line must not invent trailing dialogue delay");
+        check(DialogueEngine.waitAfter(finalWithChoice, null) == 30L,
+                "choice completion tail must preserve the legacy 30-tick post-line delay");
+    }
+
+    private static void questChoicesBelongToDialogueCompletion() throws Exception {
+        final String source = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/managers/QuestManager.java"));
+        check(source.contains("List<String> lines, Runnable onComplete)"),
+                "QuestManager dialogue adapter does not expose sequence completion ownership");
+        final int adapter = source.indexOf("if (adapter != null && adapter.play(");
+        final int fallback = source.indexOf("for (int i = 0; i < lines.size(); i++)", adapter);
+        check(adapter >= 0 && fallback > adapter, "quest dialogue adapter/fallback boundary missing");
+        final String adapterPath = source.substring(adapter, fallback);
+        check(adapterPath.contains("List.copyOf(lines), completion")
+                        && !adapterPath.contains("scheduleDialogueChoices"),
+                "adapter path scheduled quest choices outside the dialogue session lifecycle");
+        check(source.contains("return () -> sendChoices(player, sourceQuestId, choices);"),
+                "quest choices are not emitted by the dialogue sequence completion callback");
     }
 
     private static void guiSessionStateAndClosedLifecycle() {
