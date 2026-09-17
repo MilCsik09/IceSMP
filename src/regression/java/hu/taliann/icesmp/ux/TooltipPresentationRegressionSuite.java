@@ -20,6 +20,7 @@ public final class TooltipPresentationRegressionSuite {
         canonicalRendererUsesSemanticPresentationSections();
         canonicalItemsRetainNativeRarityTooltipStyle();
         devReferencePreviewUsesReviewedPresentation();
+        runeMutationRefreshesVisiblePresentation();
         System.out.println("Tooltip presentation regression suite passed. assertions=" + assertions);
     }
 
@@ -97,6 +98,19 @@ public final class TooltipPresentationRegressionSuite {
                         && !dev.contains("Minta sebzés:")
                         && !dev.contains("Tesztérték:"),
                 "DEV reference preview regressed to the old neon/debug tooltip copy");
+    }
+
+    private static void runeMutationRefreshesVisiblePresentation() throws Exception {
+        final String identity = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java"));
+        final int applyRune = identity.indexOf("public RuneMutation applyRune");
+        final int duplicates = identity.indexOf("public Set<UUID> duplicateIds", applyRune);
+        check(applyRune >= 0 && duplicates > applyRune,
+                "applyRune presentation contract source range missing");
+        final String mutation = identity.substring(applyRune, duplicates);
+        check(mutation.contains("ItemTooltipRenderer.render(template, updated, templates)")
+                        && mutation.contains("refreshPresentation(item, template, updated)"),
+                "rune mutation must refresh semantic lore and native tooltip presentation");
     }
 
     private static void check(final boolean value, final String message) {
