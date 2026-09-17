@@ -2,9 +2,6 @@ package hu.taliann.icesmp.itemization;
 
 import hu.taliann.icesmp.items.ItemDataFactory;
 import hu.taliann.icesmp.items.WearablePresentation;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -198,79 +195,8 @@ public final class ItemIdentityService {
         }
         final ItemStack item = new ItemStack(material);
         final ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text(template.displayName(), color(template.rarity()))
-                .decoration(TextDecoration.ITALIC, false));
-        final ArrayList<Component> lore = new ArrayList<>();
-        lore.add(Component.text(template.rarity().displayName() + " • Tárgyszint " + instance.itemLevel(),
-                color(template.rarity())).decoration(TextDecoration.ITALIC, false));
-        if (template.isArmorFamilyEquipment()) {
-            lore.add(Component.text("Páncéltípus: " + template.armorFamily().displayName(),
-                    NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        }
-        final String stageId = instance.ascension().stageId();
-        if (template.levelRequirementAt(stageId) > 0) {
-            lore.add(Component.text("Követelmény: " + template.levelRequirementAt(stageId) + ". szint",
-                    NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        }
-        template.fixedStatsAt(stageId).forEach((id, value) -> lore.add(statLine(id, value, null)));
-        instance.rolls().forEach((id, roll) -> lore.add(statLine(id, roll.value(), roll.quality())));
-        if (!template.signatureEffectId().isBlank()) {
-            final SignatureEffectRegistry.Definition effect =
-                    SignatureEffectRegistry.require(template.signatureEffectId());
-            lore.add(Component.text("✦ " + effect.displayName(),
-                    NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
-            lore.add(Component.text(effect.tooltip(), NamedTextColor.YELLOW)
-                    .decoration(TextDecoration.ITALIC, false));
-            final int signatureTier = template.signatureTierAt(stageId);
-            if (signatureTier > 1) {
-                lore.add(Component.text("Signature fokozat: " + signatureTier,
-                        NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
-            }
-        }
-        if (template.runeSocketCountAt(stageId) > 0) {
-            final int runeCapacity = template.runeSocketCountAt(stageId);
-            lore.add(Component.text("◆ Rúnahely: " + instance.runes().size() + "/" + runeCapacity,
-                    NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
-            for (int socket = 0; socket < runeCapacity; socket++) {
-                final String rune = socket < instance.runes().size()
-                        ? displayRune(instance.runes().get(socket)) : "üres";
-                lore.add(Component.text((socket < instance.runes().size() ? "  ◆ " : "  ◇ ")
-                                + (socket + 1) + ". foglalat: " + rune,
-                        socket < instance.runes().size() ? NamedTextColor.AQUA : NamedTextColor.DARK_GRAY)
-                        .decoration(TextDecoration.ITALIC, false));
-            }
-        }
-        if (!template.setId().isBlank()) {
-            final ItemSetDefinition set = templates.requireSet(template.setId());
-            lore.add(Component.text("Szett: " + set.displayName(),
-                            NamedTextColor.DARK_GREEN)
-                    .decoration(TextDecoration.ITALIC, false));
-            set.tierStats().forEach((pieces, stats) -> stats.forEach((id, value) ->
-                    lore.add(Component.text("  " + pieces + " db: ", NamedTextColor.DARK_GRAY)
-                            .decoration(TextDecoration.ITALIC, false)
-                            .append(statLine(id, value, null)))));
-        }
-        if (!template.ascensionPath().isEmpty()) {
-            lore.add(Component.text("Felemelkedés: " + instance.ascension().stageId(), NamedTextColor.LIGHT_PURPLE)
-                    .decoration(TextDecoration.ITALIC, false));
-        }
-        lore.add(Component.text("Forrás: " + instance.origin().sourceId(), NamedTextColor.DARK_GRAY)
-                .decoration(TextDecoration.ITALIC, true));
-        if (!instance.origin().creationLocation().isBlank()) {
-            lore.add(Component.text("Készült: " + instance.origin().creationLocation(), NamedTextColor.DARK_GRAY)
-                    .decoration(TextDecoration.ITALIC, true));
-        }
-        if (instance.origin().crafterId() != null) {
-            final String crafter = instance.origin().crafterNameSnapshot().isBlank()
-                    ? instance.origin().crafterId().toString() : instance.origin().crafterNameSnapshot();
-            lore.add(Component.text("Készítette: " + crafter
-                    + (instance.origin().masterwork() ? " • Mestermű" : ""), NamedTextColor.DARK_GRAY)
-                    .decoration(TextDecoration.ITALIC, true));
-        }
-        for (final String line : template.loreAt(stageId)) {
-            lore.add(Component.text(line, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, true));
-        }
-        meta.lore(lore);
+        meta.displayName(ItemTooltipRenderer.itemName(template.displayName(), template.rarity()));
+        meta.lore(ItemTooltipRenderer.render(template, instance, templates));
         item.setItemMeta(meta);
         writeIdentity(item, template, instance);
         applyStats(item, template, instance);
@@ -543,15 +469,6 @@ public final class ItemIdentityService {
         return Math.floorMod(mixed, 10_001L) / 10_000.0D;
     }
 
-    private static String displayRune(final String runeId) {
-        final String normalized = ItemStatCatalog.normalizeId(runeId);
-        final String withoutPrefix = normalized.startsWith("runa_")
-                ? normalized.substring("runa_".length()) : normalized;
-        if (withoutPrefix.isBlank()) return normalized;
-        final String display = withoutPrefix.replace('_', ' ');
-        return Character.toUpperCase(display.charAt(0)) + display.substring(1);
-    }
-
     public List<String> runesOf(final ItemStack item) {
         if (ItemPrototypePolicy.direct(item)) return List.of();
         final Inspection inspection = inspect(item);
@@ -812,16 +729,6 @@ public final class ItemIdentityService {
         }
     }
 
-    private static Component statLine(final String statId, final double value, final Double quality) {
-        final String formatted = Math.abs(value - Math.rint(value)) < 0.000_001D
-                ? Long.toString(Math.round(value)) : String.format(Locale.ROOT, "%.2f", value);
-        final String qualityText = quality == null ? "" : " [" + Math.round(quality * 100.0D) + "%]";
-        return Component.text((value >= 0.0D ? "+" : "") + formatted + " "
-                        + ItemStatCatalog.require(statId).displayName() + qualityText,
-                value >= 0.0D ? NamedTextColor.GRAY : NamedTextColor.RED)
-                .decoration(TextDecoration.ITALIC, false);
-    }
-
     private static ItemHistoryEvent.Type initialEvent(final String rawSource) {
         final String source = rawSource == null ? "" : rawSource.toLowerCase(Locale.ROOT);
         if (source.contains("craft") || source.contains("profession")) return ItemHistoryEvent.Type.CRAFTED;
@@ -837,17 +744,6 @@ public final class ItemIdentityService {
     private static double clampQuality(final double value) {
         if (!Double.isFinite(value)) throw new IllegalArgumentException("roll quality source returned non-finite value");
         return Math.max(0.0D, Math.min(1.0D, value));
-    }
-
-    private static NamedTextColor color(final ItemRarity rarity) {
-        return switch (rarity) {
-            case COMMON -> NamedTextColor.WHITE;
-            case UNCOMMON -> NamedTextColor.GREEN;
-            case RARE -> NamedTextColor.BLUE;
-            case EPIC -> NamedTextColor.DARK_PURPLE;
-            case LEGENDARY -> NamedTextColor.GOLD;
-            case MYTHIC -> NamedTextColor.RED;
-        };
     }
 
     private static String digest(final String payload) {
