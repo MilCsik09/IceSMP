@@ -68,10 +68,15 @@ public final class TooltipPacketBridge_1_21_11
         if (meta.lore() != null) lore.addAll(Objects.requireNonNull(meta.lore()));
         lore.add(Component.empty());
         lore.add(ArchaeologyTooltipLore.HEADER);
-        final List<Component> generated = TooltipEngine.render(List.of(
-                TooltipEngine.generated(TooltipEngine.SectionId.ARCHAEOLOGY, 70,
-                        observations.stream().limit(8).map(line -> Component.text("• " + line,
-                                NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)).toList())));
+        final List<Component> generated = TooltipEngine.render(
+                new TooltipEngine.Context(player, canonicalSnapshot, java.util.Map.of(
+                        "observations", List.copyOf(observations))),
+                List.of(context -> TooltipEngine.generated(TooltipEngine.SectionId.ARCHAEOLOGY, 70,
+                        ((List<?>) context.values().getOrDefault("observations", List.of()))
+                                .stream().limit(8)
+                                .map(line -> Component.text("• " + line, NamedTextColor.GRAY)
+                                        .decoration(TextDecoration.ITALIC, false))
+                                .toList())));
         lore.addAll(generated);
         meta.lore(lore);
         display.setItemMeta(meta);
