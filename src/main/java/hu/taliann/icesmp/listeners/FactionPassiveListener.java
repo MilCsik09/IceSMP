@@ -14,6 +14,7 @@ import hu.taliann.icesmp.factions.FactionPassiveService;
 import hu.taliann.icesmp.factions.FactionPassiveSettings;
 import hu.taliann.icesmp.managers.BloodMoonManager;
 import hu.taliann.icesmp.managers.FactionManager;
+import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.managers.TerritoryManager;
 import hu.taliann.icesmp.managers.WhisperManager;
 import hu.taliann.icesmp.session.PlayerStateCleanup;
@@ -230,6 +231,9 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
         if (!(event.getEntity() instanceof Mob victim)) {
             return;
         }
+        if (MinionManager.isPetTagged(victim)) {
+            return;
+        }
         final UUID playerId = damagingPlayerId(event);
         if (playerId == null) {
             return;
@@ -269,6 +273,9 @@ public final class FactionPassiveListener implements Listener, PlayerStateCleanu
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityTarget(final EntityTargetLivingEntityEvent event) {
+        if (event.getEntity() instanceof Mob mob && MinionManager.isPetTagged(mob)) {
+            return;
+        }
         if (!(event.getTarget() instanceof Player player)) {
             return;
         }

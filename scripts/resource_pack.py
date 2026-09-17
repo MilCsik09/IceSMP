@@ -208,6 +208,39 @@ def normalize_resource_location(raw: str, *, default_namespace: str = "icesmp") 
     return value
 
 
+def validate_tooltip_styles(root: Path) -> int:
+    """Validate native 1.21.11 tooltip-style JSON and both referenced sprite textures."""
+    styles = 0
+    assets_root = root / "assets"
+    if not assets_root.is_dir():
+        return styles
+    for namespace_dir in sorted(path for path in assets_root.iterdir() if path.is_dir()):
+        style_root = namespace_dir / "tooltip_styles"
+        if not style_root.is_dir():
+            continue
+        for style_path in sorted(style_root.rglob("*.json")):
+            try:
+                definition = json.loads(style_path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exception:
+                raise PackError(f"Invalid tooltip style JSON in {style_path.relative_to(root)}: {exception}") from exception
+            if not isinstance(definition, dict):
+                raise PackError(f"Tooltip style must be an object: {style_path.relative_to(root)}")
+            for field in ("background", "frame"):
+                raw_location = definition.get(field)
+                if not isinstance(raw_location, str) or not raw_location.strip():
+                    raise PackError(f"Tooltip style {style_path.relative_to(root)} is missing {field}")
+                location = normalize_resource_location(raw_location)
+                namespace, path = location.split(":", 1)
+                texture = assets_root / namespace / "textures" / "gui" / "sprites" / f"{path}.png"
+                if not texture.is_file():
+                    raise PackError(
+                        f"Tooltip style {style_path.relative_to(root)} {field} references missing texture "
+                        f"{location}"
+                    )
+            styles += 1
+    return styles
+
+
 def equipment_assets(root: Path) -> dict[str, Path]:
     assets: dict[str, Path] = {}
     assets_root = root / "assets"
@@ -409,6 +442,7 @@ def validate_pack(root: Path) -> list[tuple[PurePosixPath, Path]]:
 
     equipment = validate_equipment_assets(root)
     explicit_refs, fallback_refs = validate_config_equipment_references(root, equipment)
+    tooltip_styles = validate_tooltip_styles(root)
     validate_hud_shader_contract(root)
 
     total_size = sum(path.stat().st_size for _, path in files)
@@ -416,7 +450,7 @@ def validate_pack(root: Path) -> list[tuple[PurePosixPath, Path]]:
         f"Validated resource pack: {len(files)} client files, {json_count} JSON/MCMeta, "
         f"{png_count} PNG, {len(equipment)} equipment assets, "
         f"{explicit_refs} explicit equipment refs, {fallback_refs} checked wearable fallbacks "
-        f"(policy {FALLBACK_MINECRAFT_VERSION}), {total_size} bytes"
+        f"(policy {FALLBACK_MINECRAFT_VERSION}), {tooltip_styles} tooltip styles, {total_size} bytes"
     )
     return files
 

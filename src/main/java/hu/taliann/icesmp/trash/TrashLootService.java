@@ -20,6 +20,32 @@ public final class TrashLootService {
     private final TrashRecyclePool recyclePool;
     private final EnumMap<TrashLootSource, LongAdder> generated = new EnumMap<>(TrashLootSource.class);
     private final LongAdder recycled = new LongAdder();
+    private static final SpawnBoost NO_BOOST = new SpawnBoost(1, 0);
+    private volatile SpawnBoost spawnBoost = NO_BOOST;
+
+    public record SpawnBoost(int multiplier, long expiresAtNanos) {
+        public long remainingSeconds() {
+            return multiplier == 1 ? 0 : Math.max(0L, (expiresAtNanos - System.nanoTime() + 999_999_999L) / 1_000_000_000L);
+        }
+    }
+
+    public SpawnBoost spawnBoost() {
+        final SpawnBoost current = spawnBoost;
+        return current.multiplier() == 1 || current.expiresAtNanos() - System.nanoTime() <= 0
+                ? NO_BOOST : current;
+    }
+
+    public void boostSpawns(final int multiplier, final int seconds) {
+        if (multiplier < 1 || multiplier > 100 || seconds < 1 || seconds > 3600)
+            throw new IllegalArgumentException("Spawn boost bounds");
+        spawnBoost = new SpawnBoost(multiplier, System.nanoTime() + seconds * 1_000_000_000L);
+    }
+
+    public void resetSpawnBoost() { spawnBoost = NO_BOOST; }
+
+    public ItemStack createFresh(final String id, final int amount, final TrashLootSource source) {
+        return history.markOrigin(itemFactory.create(id, amount), source);
+    }
 
     public TrashLootService(final TrashCatalog catalog,
                             final TrashLootSelector selector, final TrashItemFactory itemFactory,
@@ -36,7 +62,7 @@ public final class TrashLootService {
     public Optional<ItemStack> roll(final TrashLootSource source, final Set<TrashContext> contexts) {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
         final TrashLootTuning tuning = catalog.lootTuning();
-        if (random.nextDouble() >= tuning.chance(source)) return Optional.empty();
+        if (random.nextDouble() >= Math.min(1.0D, tuning.chance(source) * spawnBoost().multiplier())) return Optional.empty();
         final TrashLootSelector.Selection selection = selector.select(source, contexts, random::nextDouble);
         ItemStack result = null;
         if (random.nextDouble() < tuning.recycleSubstitutionChance()) {
@@ -44,7 +70,7 @@ public final class TrashLootService {
             if (result != null) recycled.increment();
         }
         if (result == null) {
-            result = history.markOrigin(itemFactory.create(selection.definition().id(), 1), source);
+            result = createFresh(selection.definition().id(), 1, source);
         }
         generated.get(source).increment();
         return Optional.of(result);

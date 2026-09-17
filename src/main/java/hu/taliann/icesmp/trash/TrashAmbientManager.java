@@ -80,7 +80,12 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
         final Player player = event.getPlayer();
         if (player.getGameMode() != GameMode.SURVIVAL || afkManager.isAfk(player.getUniqueId())) return;
         final long now = System.currentTimeMillis();
-        final Long due = nextAttemptAt.putIfAbsent(player.getUniqueId(), now + nextDelayMillis());
+        Long due = nextAttemptAt.putIfAbsent(player.getUniqueId(), now + nextDelayMillis());
+        if (due != null && loot.spawnBoost().multiplier() > 1) {
+            final long earlier = Math.min(due, now + Math.max(1000L,
+                    catalog.lootTuning().ambient().attemptMaxSeconds() * 1000L / loot.spawnBoost().multiplier()));
+            if (earlier < due && nextAttemptAt.replace(player.getUniqueId(), due, earlier)) due = earlier;
+        }
         if (due == null || now < due) return;
         if (!nextAttemptAt.replace(player.getUniqueId(), due, now + nextDelayMillis())) return;
 
@@ -305,7 +310,8 @@ public final class TrashAmbientManager implements Listener, PlayerStateCleanup {
 
     private long nextDelayMillis() {
         final TrashLootTuning.Ambient tuning = catalog.lootTuning().ambient();
-        return randomInclusive(tuning.attemptMinSeconds(), tuning.attemptMaxSeconds()) * 1000L;
+        return Math.max(1000L, randomInclusive(tuning.attemptMinSeconds(), tuning.attemptMaxSeconds()) * 1000L
+                / loot.spawnBoost().multiplier());
     }
 
     private static long randomInclusive(final int minimum, final int maximum) {

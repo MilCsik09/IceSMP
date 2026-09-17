@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.pve;
 
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.managers.MinionManager;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Entity;
@@ -81,7 +82,7 @@ public final class CreatureProfileService implements Listener {
         for (final Entity raw : event.getEntities()) {
             if (!(raw instanceof LivingEntity living) || raw instanceof Player) continue;
             living.getScheduler().run(plugin, task -> {
-                if (!living.isValid()) return;
+                if (!living.isValid() || MinionManager.isPetTagged(living)) return;
                 assign(living, CreatureSpawnEvent.SpawnReason.DEFAULT);
                 if (scaling.getLevel(living) == 0) {
                     scaling.applyScaling(living, CreatureSpawnEvent.SpawnReason.DEFAULT);
@@ -94,6 +95,7 @@ public final class CreatureProfileService implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onProvoked(final EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Mob creature)) return;
+        if (MinionManager.isPetTagged(creature)) return;
         final Player provoker = responsiblePlayer(event.getDamager());
         if (provoker == null) return;
         final CreatureSpeciesPolicy policy = species.profile(creature.getType());
@@ -279,8 +281,24 @@ public final class CreatureProfileService implements Listener {
                 PersistentDataType.STRING, CreatureSpeciesPolicy.RewardProfile.EXPLICIT_AUTHORED.name());
     }
 
+    /** Gives durable pets an explicit profile so every shared mob/reward layer can skip them. */
+    public static void markPet(final LivingEntity entity) {
+        if (entity == null) return;
+        final var pdc = entity.getPersistentDataContainer();
+        pdc.set(PROFILE_VERSION_KEY, PersistentDataType.INTEGER, PROFILE_VERSION);
+        pdc.set(SPAWN_SOURCE_KEY, PersistentDataType.STRING, "PET");
+        pdc.set(REWARD_KEY, PersistentDataType.STRING,
+                CreatureSpeciesPolicy.RewardProfile.VANILLA_ONLY.name());
+        pdc.set(DISPOSITION_KEY, PersistentDataType.STRING,
+                CreatureSpeciesPolicy.Disposition.NON_COMBAT.name());
+        pdc.set(REACTION_KEY, PersistentDataType.STRING,
+                CreatureSpeciesPolicy.Reaction.NONE.name());
+        pdc.set(COMBAT_STATE_KEY, PersistentDataType.STRING, "IDLE");
+    }
+
     public static boolean authoredRewardEligible(final LivingEntity entity) {
         if (entity == null) return false;
+        if (MinionManager.isPetTagged(entity)) return false;
         final CreatureSpeciesPolicy.RewardProfile profile = rewardProfile(entity);
         if (profile == CreatureSpeciesPolicy.RewardProfile.VANILLA_ONLY) return false;
         if (profile == CreatureSpeciesPolicy.RewardProfile.EXPLICIT_AUTHORED) return true;
@@ -291,6 +309,9 @@ public final class CreatureProfileService implements Listener {
     }
 
     public static CreatureSpeciesPolicy.RewardProfile rewardProfile(final LivingEntity entity) {
+        if (MinionManager.isPetTagged(entity)) {
+            return CreatureSpeciesPolicy.RewardProfile.VANILLA_ONLY;
+        }
         final String raw = value(entity, REWARD_KEY, entity instanceof Monster ? "HOSTILE" : "VANILLA_ONLY");
         try {
             return CreatureSpeciesPolicy.RewardProfile.valueOf(raw);

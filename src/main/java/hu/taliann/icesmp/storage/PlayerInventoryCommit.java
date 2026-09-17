@@ -10,6 +10,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.AccessDeniedException;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 
@@ -67,6 +68,11 @@ public final class PlayerInventoryCommit {
         // The replaced .dat name must survive a crash as well as the file contents.
         try (FileChannel directory = FileChannel.open(path.getParent(), StandardOpenOption.READ)) {
             directory.force(true);
+        } catch (final AccessDeniedException unsupported) {
+            // Windows cannot open directory channels. The verified .dat file was still forced above.
+            if (!System.getProperty("os.name", "").startsWith("Windows")) throw unsupported;
+        } catch (final UnsupportedOperationException unsupported) {
+            // Match the storage provider's lack of directory-fsync support without bypassing file verification.
         }
     }
 

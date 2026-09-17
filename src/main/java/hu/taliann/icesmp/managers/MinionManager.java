@@ -26,12 +26,16 @@ public final class MinionManager {
     private final JavaPlugin plugin;
     private final NamespacedKey minionOwnerKey;
     private final NamespacedKey minionStanceKey;
+    private final NamespacedKey petKey;
+    private final NamespacedKey petCompanionKey;
     private final Map<UUID, Set<UUID>> minionsByOwner = new ConcurrentHashMap<>();
 
     public MinionManager(final JavaPlugin plugin) {
         this.plugin = plugin;
         this.minionOwnerKey = new NamespacedKey(plugin, "minion_owner");
         this.minionStanceKey = new NamespacedKey(plugin, "minion_stance");
+        this.petKey = new NamespacedKey(plugin, "pet");
+        this.petCompanionKey = new NamespacedKey(plugin, "pet_companion_id");
     }
 
     public void tag(final Mob minion, final UUID owner) {
@@ -49,6 +53,19 @@ public final class MinionManager {
                 key -> ConcurrentHashMap.newKeySet()).add(minion.getUniqueId());
     }
 
+    /** Marks a durable Profile v2 companion in addition to its generic owner tag. */
+    public void tagPet(final Mob pet, final UUID owner, final UUID companionId) {
+        if (pet == null || owner == null) {
+            return;
+        }
+        tag(pet, owner);
+        pet.getPersistentDataContainer().set(petKey, PersistentDataType.BYTE, (byte) 1);
+        if (companionId != null) {
+            pet.getPersistentDataContainer().set(
+                    petCompanionKey, PersistentDataType.STRING, companionId.toString());
+        }
+    }
+
     public boolean isMinion(final Entity entity) {
         return getOwner(entity) != null;
     }
@@ -57,6 +74,28 @@ public final class MinionManager {
         return entity != null && entity.getPersistentDataContainer().has(
                 NamespacedKey.fromString("icesmp:minion_owner"),
                 PersistentDataType.STRING);
+    }
+
+    /** Fast, thread-local identity check for durable pets; does not inspect live ownership. */
+    public static boolean isPetTagged(final Entity entity) {
+        return entity != null && entity.getPersistentDataContainer().has(
+                NamespacedKey.fromString("icesmp:pet"), PersistentDataType.BYTE);
+    }
+
+    public static UUID petCompanionId(final Entity entity) {
+        if (entity == null) {
+            return null;
+        }
+        final String raw = entity.getPersistentDataContainer().get(
+                NamespacedKey.fromString("icesmp:pet_companion_id"), PersistentDataType.STRING);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(raw);
+        } catch (final IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     public UUID getOwner(final Entity entity) {

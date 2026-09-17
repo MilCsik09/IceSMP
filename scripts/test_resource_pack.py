@@ -143,6 +143,41 @@ class ResourcePackToolingTest(unittest.TestCase):
             with self.assertRaises(resource_pack.PackError):
                 resource_pack.validate_pack(root)
 
+    def test_tooltip_style_requires_referenced_sprites(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            style_root = root / "assets" / "icesmp" / "tooltip_styles"
+            style_root.mkdir(parents=True, exist_ok=True)
+            (style_root / "rare.json").write_text(
+                json.dumps({
+                    "background": "icesmp:tooltip/rare_background",
+                    "frame": "icesmp:tooltip/rare_frame",
+                }),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(resource_pack.PackError, "references missing texture"):
+                resource_pack.validate_pack(root)
+
+    def test_tooltip_style_with_sprites_is_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            style_root = root / "assets" / "icesmp" / "tooltip_styles"
+            texture_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            style_root.mkdir(parents=True, exist_ok=True)
+            texture_root.mkdir(parents=True, exist_ok=True)
+            (style_root / "rare.json").write_text(
+                json.dumps({
+                    "background": "icesmp:tooltip/rare_background",
+                    "frame": "icesmp:tooltip/rare_frame",
+                }),
+                encoding="utf-8",
+            )
+            (texture_root / "rare_background.png").write_bytes(MINIMAL_PNG_HEADER)
+            (texture_root / "rare_frame.png").write_bytes(MINIMAL_PNG_HEADER)
+            resource_pack.validate_pack(root)
+
     def test_generated_zip_inside_source_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "source"

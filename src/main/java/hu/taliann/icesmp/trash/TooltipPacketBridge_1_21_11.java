@@ -21,13 +21,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Version-pinned single-packet bridge for a display-only held-slot copy on Paper 1.21.11.
+ * Version-pinned player-inventory bridge for a display-only held-slot copy on Paper 1.21.11.
  * Reflection keeps NMS out of the compile/runtime linkage boundary and fails closed on drift.
  */
 public final class TooltipPacketBridge_1_21_11
         implements ArchaeologyTooltipBridge, PlayerStateCleanup {
 
-    private static final int PLAYER_INVENTORY_CONTAINER = 0;
     private static final int OFFHAND_MENU_SLOT = 45;
     private static final long OVERLAY_TICKS = 1_200L;
 
@@ -62,27 +61,38 @@ public final class TooltipPacketBridge_1_21_11
         Objects.requireNonNull(canonicalSnapshot, "canonicalSnapshot");
         if (access == null || observations == null || observations.isEmpty()) return false;
         final ItemStack display = canonicalSnapshot.clone();
-        if (items.isKnownItem(display)) items.refreshPresentation(display);
+        ArchaeologyTooltipLore.strip(display);
         final ItemMeta meta = display.getItemMeta();
         final List<Component> lore = new ArrayList<>();
         if (meta.lore() != null) lore.addAll(Objects.requireNonNull(meta.lore()));
         lore.add(Component.empty());
-        lore.add(Component.text("Régészeti megfigyelések", NamedTextColor.GOLD)
-                .decoration(TextDecoration.ITALIC, false));
+        lore.add(ArchaeologyTooltipLore.HEADER);
         observations.stream().limit(8).forEach(line -> lore.add(
                 Component.text("• " + line, NamedTextColor.GRAY)
                         .decoration(TextDecoration.ITALIC, false)));
         meta.lore(lore);
         display.setItemMeta(meta);
+        if (items.isKnownItem(display)) items.refreshPresentation(display);
+        clear(player);
         if (!sendDisplay(player, display, menuSlot)) return false;
         final Overlay overlay = new Overlay(menuSlot);
         final Overlay previous = overlays.put(player.getUniqueId(), overlay);
         if (previous != null) previous.cancel();
         try {
             final io.papermc.paper.threadedregions.scheduler.ScheduledTask expiry =
-                    player.getScheduler().runDelayed(plugin, ignored -> {
-                        if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player, overlay.menuSlot);
-                    }, () -> overlays.remove(player.getUniqueId(), overlay), OVERLAY_TICKS);
+                    player.getScheduler().runAtFixedRate(plugin, task -> {
+                        if (overlays.get(player.getUniqueId()) != overlay) { task.cancel(); return; }
+                        final ItemStack current = canonical(player, menuSlot);
+                        overlay.elapsed += 5;
+                        if (overlay.elapsed >= OVERLAY_TICKS || current == null
+                                || current.getAmount() != canonicalSnapshot.getAmount()
+                                || !current.isSimilar(canonicalSnapshot)) {
+                            clear(player);
+                            return;
+                        }
+                        // Cancelled use and vanilla container sync may replace a successfully sent copy.
+                        if (!sendDisplay(player, display, menuSlot)) clear(player);
+                    }, () -> overlays.remove(player.getUniqueId(), overlay), 1L, 5L);
             overlay.setTask(expiry);
             if (expiry == null && overlays.remove(player.getUniqueId(), overlay)) {
                 sendCanonical(player, overlay.menuSlot);
@@ -103,6 +113,19 @@ public final class TooltipPacketBridge_1_21_11
             overlay.cancel();
             sendCanonical(player, overlay.menuSlot);
         }
+    }
+
+    @Override
+    public void clearForInventoryMutation(final Player player) {
+        Objects.requireNonNull(player, "player");
+        final Overlay overlay = overlays.remove(player.getUniqueId());
+        if (overlay == null) return;
+        overlay.cancel();
+        // A slot packet inside InventoryClickEvent can restore the pre-move item on the client.
+        // The next owner tick sees committed source/destination slots and the final cursor.
+        player.getScheduler().run(plugin, ignored -> {
+            if (player.isOnline() && !player.isDead()) player.updateInventory();
+        }, null);
     }
 
     @Override
@@ -133,9 +156,15 @@ public final class TooltipPacketBridge_1_21_11
     }
 
     private void sendCanonical(final Player player, final int menuSlot) {
-        final ItemStack current = menuSlot == OFFHAND_MENU_SLOT ? player.getInventory().getItemInOffHand()
-                : player.getInventory().getItem(menuSlot - 36);
+        final ItemStack current = canonical(player, menuSlot);
         sendDisplay(player, current == null ? new ItemStack(org.bukkit.Material.AIR) : current.clone(), menuSlot);
+    }
+
+    private static ItemStack canonical(final Player player, final int menuSlot) {
+        final int slot = menuSlot == OFFHAND_MENU_SLOT ? 40 : menuSlot - 36;
+        final ItemStack item = player.getInventory().getItem(slot);
+        if (ArchaeologyTooltipLore.strip(item)) player.getInventory().setItem(slot, item);
+        return item;
     }
 
     private boolean sendDisplay(final Player player, final ItemStack display, final int menuSlot) {
@@ -155,11 +184,9 @@ public final class TooltipPacketBridge_1_21_11
         if (access == null || !player.isOnline()) return false;
         try {
             final Object handle = access.getHandle().invoke(player);
-            final Object menu = access.inventoryMenu().get(handle);
-            final int stateId = ((Number) access.getStateId().invoke(menu)).intValue();
             final Object nmsItem = access.asNmsCopy().invoke(null, display);
             final Object packet = access.packetConstructor().newInstance(
-                    PLAYER_INVENTORY_CONTAINER, stateId, menuSlot, nmsItem);
+                    menuSlot == OFFHAND_MENU_SLOT ? 40 : menuSlot - 36, nmsItem);
             final Object connection = access.connection().get(handle);
             access.send().invoke(connection, packet);
             return true;
@@ -168,8 +195,7 @@ public final class TooltipPacketBridge_1_21_11
         }
     }
 
-    private record Access(Method getHandle, Method asNmsCopy, Field inventoryMenu,
-                          Method getStateId, Field connection,
+    private record Access(Method getHandle, Method asNmsCopy, Field connection,
                           Constructor<?> packetConstructor, Method send) {
 
         private static Access probe() {
@@ -181,12 +207,10 @@ public final class TooltipPacketBridge_1_21_11
                 final Class<?> craftItem = Class.forName(
                         "org.bukkit.craftbukkit.inventory.CraftItemStack");
                 final Class<?> nmsItem = Class.forName("net.minecraft.world.item.ItemStack");
-                final Class<?> menuType = Class.forName(
-                        "net.minecraft.world.inventory.AbstractContainerMenu");
                 final Class<?> packetType = Class.forName(
                         "net.minecraft.network.protocol.Packet");
                 final Class<?> setSlot = Class.forName(
-                        "net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket");
+                        "net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket");
                 final Class<?> connectionType = Class.forName(
                         "net.minecraft.server.network.ServerGamePacketListenerImpl");
                 final Method send = java.util.Arrays.stream(connectionType.getMethods())
@@ -196,9 +220,8 @@ public final class TooltipPacketBridge_1_21_11
                         .findFirst().orElseThrow();
                 return new Access(craftPlayer.getMethod("getHandle"),
                         craftItem.getMethod("asNMSCopy", ItemStack.class),
-                        serverPlayer.getField("inventoryMenu"), menuType.getMethod("getStateId"),
                         serverPlayer.getField("connection"),
-                        setSlot.getConstructor(int.class, int.class, int.class, nmsItem), send);
+                        setSlot.getConstructor(int.class, nmsItem), send);
             } catch (final ReflectiveOperationException | RuntimeException unavailable) {
                 return null;
             }
@@ -208,6 +231,7 @@ public final class TooltipPacketBridge_1_21_11
     private static final class Overlay {
         private io.papermc.paper.threadedregions.scheduler.ScheduledTask task;
         private boolean cancelled;
+        private long elapsed;
 
         private final int menuSlot;
 

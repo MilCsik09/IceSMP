@@ -3,6 +3,7 @@ package hu.taliann.icesmp.pve;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.EventSpawnGuard;
 import hu.taliann.icesmp.managers.MobScalingManager;
+import hu.taliann.icesmp.managers.MinionManager;
 import hu.taliann.icesmp.utils.ParticleUtil;
 import hu.taliann.icesmp.integrity.*;
 import org.bukkit.Bukkit;
@@ -123,16 +124,22 @@ public final class MobAbilityRuntime implements Listener {
     public void onSpawn(final CreatureSpawnEvent event) {
         final LivingEntity entity = event.getEntity();
         // Event/authored spawners attach their template after World#spawn returns.
-        entity.getScheduler().runDelayed(plugin, task -> attach(entity), null, 1L);
+        entity.getScheduler().runDelayed(plugin, task -> {
+            if (!MinionManager.isPetTagged(entity)) attach(entity);
+        }, null, 1L);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onEntitiesLoad(final org.bukkit.event.world.EntitiesLoadEvent event) {
-        for (final var entity : event.getEntities()) if (entity instanceof Mob mob && Bukkit.isOwnedByCurrentRegion(mob)) attach(mob);
+        for (final var entity : event.getEntities()) {
+            if (entity instanceof Mob mob && Bukkit.isOwnedByCurrentRegion(mob)
+                    && !MinionManager.isPetTagged(mob)) attach(mob);
+        }
     }
 
     public void attach(final LivingEntity entity) {
         if (!(entity instanceof Mob mob)) return;
+        if (MinionManager.isPetTagged(mob)) return;
         if (!Bukkit.isOwnedByCurrentRegion(mob)) throw new IllegalStateException("Combat profile owner required");
         if (!mob.isValid() || mob.isDead()) return;
         final CanonicalMobProfile canonical = canonicalProfile(mob);
@@ -1289,8 +1296,9 @@ public final class MobAbilityRuntime implements Listener {
             GameplayEffectGate.prepare(new GameplayEffectContext(List.copyOf(causal), java.util.Set.of(identity), duration, lifetime))
                     .whenComplete((permit, failure) -> {
                         if (failure != null || permit == null) return;
-                        final Entity current = Bukkit.getEntity(id); if (current == null) return;
-                        current.getScheduler().run(plugin, owned -> {
+                        // Completion runs on the journal executor. Resolve the live entity only
+                        // after hopping back to the scheduler captured from the owner region.
+                        handle.getScheduler().run(plugin, owned -> {
                             final LivingEntity entity = ownedLiving(id, player);
                             if (entity == null) return;
                             final List<RewardSource> currentSources;

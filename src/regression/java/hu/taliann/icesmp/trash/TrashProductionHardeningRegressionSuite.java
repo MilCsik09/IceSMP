@@ -103,7 +103,7 @@ public final class TrashProductionHardeningRegressionSuite {
         int start = 0, checked = 0;
         while ((start = source.indexOf(marker, start)) >= 0) {
             final int opening = source.indexOf('{', start + marker.length());
-            check(occurrences(blockAt(source, opening), "telemetry.recordBehaviorRuntimeError()") == 1,
+            check(occurrences(blockAt(source, opening), "telemetry.recordBehaviorRuntimeError(") == 1,
                     "a Relic best-effort catch bypasses aggregate telemetry");
             checked++; start = opening + 1;
         }

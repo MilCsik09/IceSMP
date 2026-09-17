@@ -169,7 +169,7 @@ public final class TrashHistoryService {
             final TrashDeveloperReceipt.Kind kind, final int source, final ItemStack[] inventory) {
         Objects.requireNonNull(operation); Objects.requireNonNull(actor); Objects.requireNonNull(kind);
         if (kind == TrashDeveloperReceipt.Kind.REVERT || !hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actor) || inventory == null
-                || inventory.length != 41 || source < 0 || source >= inventory.length) return Optional.empty();
+                || !supportsPlayerInventory(inventory) || source < 0 || source > 40) return Optional.empty();
         final ItemStack held = inventory[source];
         if (held == null || held.getAmount() < 1) return Optional.empty();
         final var prototype = hu.taliann.icesmp.itemization.ItemPrototypePolicy.scan(held);
@@ -207,7 +207,7 @@ public final class TrashHistoryService {
         Objects.requireNonNull(operation); Objects.requireNonNull(actor); Objects.requireNonNull(original);
         if (!hu.taliann.icesmp.security.HiddenDevAuthority.isDeveloper(actor) || !actor.equals(original.actor())
                 || !original.projectionObserved() || original.kind() == TrashDeveloperReceipt.Kind.INDIVIDUALIZE
-                || original.kind() == TrashDeveloperReceipt.Kind.REVERT || inventory == null || inventory.length != 41
+                || original.kind() == TrashDeveloperReceipt.Kind.REVERT || !supportsPlayerInventory(inventory)
                 || !matchesProjection(original, inventory, true)) return Optional.empty();
         final var stored = store.tryInspectDeveloperReceipt(original.operationId());
         final var operationState = store.tryInspectDeveloperReceipt(operation);
@@ -363,8 +363,13 @@ public final class TrashHistoryService {
         }, restoreProjection);
     }
 
+    public static boolean supportsPlayerInventory(final ItemStack[] inventory) {
+        // 1.21.11 includes BODY and SADDLE; retain these slots in snapshots and rollback.
+        return inventory != null && (inventory.length == 41 || inventory.length == 43);
+    }
+
     private boolean matchesProjection(final TrashDeveloperReceipt receipt, final ItemStack[] inventory, final boolean after) {
-        if (inventory == null || inventory.length != 41) return false;
+        if (!supportsPlayerInventory(inventory)) return false;
         for (final var slot : receipt.slots()) {
             // Paper may reorder native NBT across deserialize/serialize. Compare the complete decoded item,
             // including amount and all metadata, rather than treating byte ordering as an authority revision.

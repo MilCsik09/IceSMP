@@ -540,8 +540,7 @@ public final class WorldBossManager {
         }
 
         final EventSpawnGuard guard = spawnGuard;
-        if (!finale && guard != null && (guard.isBlocked("world-boss", spawnLocation)
-                || guard.isUnsafeSurface("world-boss", approx.getWorld(), approx.getBlockX(), approx.getBlockZ()))) {
+        if (!finale && guard != null && guard.isBlocked("world-boss", spawnLocation)) {
             spawnGraceUntil = 0L;
             return;
         }

@@ -39,14 +39,13 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
         DevArtifactBehavior behavior() { return registration.behavior(); }
         DevArtifactPolicy policy() { return definition().policySource().current(); }
     }
-    private record InputStamp(long tick, DevArtifactInteraction.Kind kind, UUID entity) {}
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final DevItemFactory itemFactory;
     private final File stateFile;
     private final Map<String, Entry> entries = new LinkedHashMap<>();
     private final ArtifactSessionFence sessions = new ArtifactSessionFence();
-    private final Map<UUID, InputStamp> inputs = new ConcurrentHashMap<>();
+    private final Map<UUID, ArtifactInputStamp> inputs = new ConcurrentHashMap<>();
     private final AtomicBoolean storageWarning = new AtomicBoolean();
     private final ThreadPoolExecutor io;
     private volatile DevArtifactLedger ledger;
@@ -244,7 +243,7 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
                 try {
                     guarded(entry, () -> {
                         if (ensureItem(player, entry, false, false, null)) entry.behavior().tick(context(entry, state(entry.definition().id())), now);
-                        else entry.behavior().onUnavailable();
+                        else entry.behavior().onItemUnavailable();
                     });
                 } finally { entry.tickQueued.set(false); }
             }, () -> { entry.behavior().onUnavailable(); entry.tickQueued.set(false); }, false);
@@ -472,8 +471,10 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
             cleanForeignItems(player);
             return ArtifactInteractionResult.AUTHORITY_REJECTED;
         }
-        final InputStamp input = new InputStamp(Bukkit.getCurrentTick(), kind, entityId);
-        if (input.equals(inputs.put(player.getUniqueId(), input))) return ArtifactInteractionResult.IGNORED;
+        final ArtifactInputStamp input = new ArtifactInputStamp(player.getTicksLived(), kind, entityId, block);
+        final ArtifactInputStamp previous = inputs.get(player.getUniqueId());
+        if (previous != null && previous.suppresses(input)) return ArtifactInteractionResult.IGNORED;
+        inputs.put(player.getUniqueId(), input);
         try {
             return entry.behavior().onInteract(new DevArtifactInteraction(context(entry, state(entry.definition().id())),
                     kind, player.isSneaking(), entityId, block));

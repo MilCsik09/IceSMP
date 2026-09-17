@@ -145,6 +145,7 @@ public final class MobScalingManager {
      * @param spawnReason the spawn reason reported by the event
      */
     public void applyScaling(final LivingEntity entity, final SpawnReason spawnReason) {
+        if (MinionManager.isPetTagged(entity)) return;
         reconcileTerritoryProtection(entity);
         if (!enabled || entity == null
                 || spawnReason == SpawnReason.CUSTOM || spawnReason == SpawnReason.COMMAND) {
@@ -461,14 +462,15 @@ public final class MobScalingManager {
 
     /** Reconciles reversible DARK/doom daylight and zombification protection. */
     public void reconcileTerritoryProtection(final LivingEntity entity) {
-        if (entity != null) {
+        if (entity != null && !MinionManager.isPetTagged(entity)) {
             reconcileTerritoryProtection(entity, entity.getLocation());
         }
     }
 
     /** Location-explicit overload used by teleport/move events before the entity location mutates. */
     public void reconcileTerritoryProtection(final LivingEntity entity, final Location location) {
-        if (entity == null || location == null || location.getWorld() == null) {
+        if (entity == null || MinionManager.isPetTagged(entity)
+                || location == null || location.getWorld() == null) {
             return;
         }
         boolean noBurn = false;

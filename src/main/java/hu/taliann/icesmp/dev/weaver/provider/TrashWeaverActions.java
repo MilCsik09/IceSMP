@@ -83,8 +83,8 @@ final class TrashWeaverActions {
         return Map.copyOf(facts);
     }
     static Map<String, WeaverValue> inventoryFacts(ItemStack[] inventory) {
-        if (inventory == null || inventory.length != 41) throw new WeaverDomainRejection("PLAYER_INVENTORY_UNAVAILABLE");
-        final var contents = new ArrayList<String>(41);
+        if (!TrashHistoryService.supportsPlayerInventory(inventory)) throw new WeaverDomainRejection("PLAYER_INVENTORY_UNAVAILABLE");
+        final var contents = new ArrayList<String>(inventory.length);
         for (final var item : inventory) contents.add(item == null || item.isEmpty() ? "EMPTY" : WeaverItemSlots.fingerprint(item.serializeAsBytes()));
         return Map.of(INVENTORY, scalar(WeaverItemSlots.fingerprint(CanonicalValueBytes.encode(Map.of("slots", contents)))));
     }

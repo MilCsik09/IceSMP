@@ -179,6 +179,100 @@ az alábbi rések kódban visszaigazoltak, javításuk tételenként külön dö
   bizonyítékáig a deklarált `production_ready` érték helyesen `false`; CI nem
   helyettesítheti és nem jelölheti késznek ezt a pontot.
 
+
+### Trash Relic — teljes review (nyitott, 2026-09-17)
+
+- ⬜ **Teljes, tárgyankénti review:** minden Trash Relic összevetése a normatív
+  designnal és a canonical tartalommal; aktiválás, feltételek, hatás, egyszeri
+  felhasználás, átalakulás, eldobás és a játékosnak látható visszajelzés.
+- ⬜ **Azonos tárgykezelés:** természetes loot, DEV-addolás és átalakult tárgyak
+  azonossága, eredete és history/PDC-megőrzése; főkéz, offhand és inventory.
+- ⬜ **Régészet és tooltip:** normál/force vizsgálat, ismételt elemzés,
+  ideiglenes lore lejárata és tisztítása; kreatív módból visszaérkező adatok,
+  duplikált vagy tartósan beragadt megfigyelések kizárása.
+- ⬜ **Inventory és életciklus:** shift-kattintás, kurzoros mozgatás, húzás,
+  kézcsere, eldobás/felvétel, konténerek, halál, kilépés és újraindítás;
+  fantomtárgy, valódi duplikáció és tárgyvesztés kizárása.
+- ⬜ **Integráció és hibautak:** WorldWeaver-vizsgálat/módosítás, mentési
+  hibák, félbeszakadt műveletek és visszaállítás; Paper/Folia régióbiztonság,
+  eseménysorrend és párhuzamos játékosinterakciók.
+- ⬜ **Lezárás:** tárgyankénti elvárt/tényleges eredmény, reprodukálható
+  findingek, javítások és célzott regressziók; a végleges commiton kézi
+  playtest. A friss tooltip- és inventoryjavítások még nem jelentik a teljes
+  review lezárását. Ez külön ütemezett feladat, jelenleg nincs elvégezve.
+
+
+### Archaeology — teljes review és szintfüggő információfeltárás (nyitott, 2026-09-17)
+
+- ⬜ **Bejelentett playtesthiba:** a tesztelt story tárgy vizsgálata 50-es
+  Archaeology-szinten ugyanannyi információt mutatott, mint 0-n. Az érintett
+  tárgyazonosító és az összehasonlító kimenet rögzítendő; a kiváltó ok még
+  nincs igazolva, a finding nincs javítottnak tekintve.
+- ⬜ **Tárgyankénti szintmátrix:** minden régészetileg vizsgálható tárgy,
+  különösen a story tárgyak authored információi, szintküszöbei és tényleges
+  eredményei összevetendők a normatív designnal. Ugyanazt a tárgyállapotot
+  0-n, minden információfeloldási küszöb előtt/után és 50-en is ellenőrizni
+  kell; a magasabb szintnek a tervezett többletinformációt kell feltárnia.
+- ⬜ **Teljes adatút:** mentett játékosprofil és DEV-szintállítás, fact engine,
+  history/provenance, szűrés, rendezés, megjelenítési korlátok és esetleges
+  elavult állapot vizsgálata. A már megszerzett ismeret/ismételt vizsgálat
+  jutalmazása és a látható információ ne keveredjen össze.
+- ⬜ **Vizsgálat és visszajelzés:** normál/force elemzés, addolt/természetes
+  és átalakult tárgy, főkéz/offhand, chat és tooltip egyezése; ismételt
+  vizsgálat, szintváltás, újrabelépés és újraindítás utáni eredmények.
+- ⬜ **Lezárás:** a feloldás, fejlődés és információfeltárás teljes review-ja,
+  reprodukálható findingek, javítások, célzott regressziók és kézi playtest.
+  A Trash Relic review-val közös tooltip/inventory esetek összehangolandók;
+  ez a külön Archaeology-review jelenleg nincs elvégezve.
+
+### Eventrendszer — teljes review (nyitott, 2026-09-17)
+
+- ⬜ **Eventenkénti működés:** minden világesemény és kapcsolódó boss/event
+  összevetése a tervezett működéssel és a canonical konfigurációval;
+  automatikus és kézi indítás, feltételek, ütemezés, kizárások, fázisok,
+  siker, kudarc, megszakítás és lezárás.
+- ⬜ **Spawn és részvétel:** helyszínválasztás, betöltött chunkok, terület- és
+  claimvédelem, mobok/bossok életciklusa, résztvevők és hozzájárulás követése;
+  kilépés, halál, világváltás és párhuzamos események.
+- ⬜ **Jutalom és visszajelzés:** jogosultság, loot, egyszeri jutalmazás,
+  exploitok, chat/HUD/bossbar és a megjelenített állapot valóságtartalma.
+- ⬜ **Üzemeltetés és lezárás:** reload, újraindítás, félbeszakadt mentés,
+  cleanup, Paper/Folia régióbiztonság és spawn/számítási terhelés;
+  eventenkénti reprodukálható findingek, javítások és kézi playtest.
+  A review külön feladat, jelenleg nincs elvégezve.
+
+### WorldWeaver — teljes review (nyitott, 2026-09-17)
+
+- ⬜ **Teljes design- és provider-review:** a normatív WorldWeaver design
+  összevetése minden providerrel és ténylegesen elérhető művelettel;
+  hiányzó, hibás és csak részben működő útvonalak tételes azonosítása.
+- ⬜ **Interakció és célpont:** jobb kattintás, guggolás, kézcsere,
+  entitás/játékos/blokk/terület/tárgy kiválasztása; offhand és inventory,
+  egymást követő inputesemények, téves vagy elavult célpontok és GUI-navigáció.
+- ⬜ **Végrehajtás és integráció:** inspection, preview, megerősítés,
+  apply/undo, SANDBOX/LIVE_GM, jogosultságok és fejlesztői kizárólagosság;
+  Trash Relic-, event- és egyéb providerek tényleges runtime-hatásai.
+- ⬜ **Állapot és hibabiztonság:** mentés, audit/receipt, recovery, lejárat,
+  megszakítás, kilépés és újraindítás; részleges végrehajtás, duplikáció,
+  elavult snapshot és régiók közötti Paper/Folia műveletek.
+- ⬜ **Lezárás:** providerenként és műveletenként elvárt/tényleges eredmény,
+  reprodukálható findingek, javítások, célzott regressziók és kézi playtest.
+  A korábbi célpont- és inventoryjavítások nem zárják le ezt a review-t;
+  a teljes átvizsgálás jelenleg nincs elvégezve.
+
+
+### Inventory- és GUI-hátterek rendezése (nyitott, 2026-09-17)
+
+- ⬜ **Teljes felmérés és egységesítés:** minden inventory-alapú menü háttere,
+  kitöltőeleme, kerete és resource-pack hátterének hozzárendelése; hiányzó,
+  hibás vagy egymástól indokolatlanul eltérő megjelenések rendezése.
+- ⬜ **Elrendezés és olvashatóság:** háttér, slotok, ikonok, címek és navigáció
+  illeszkedése minden használt inventoryméretnél; a háttér ne takarja a
+  tartalmat, és a díszítőelemek ne keltsenek kattintható vezérlő benyomást.
+- ⬜ **Kliensoldali átvétel:** resource packkel és nélküle, eltérő GUI scale
+  beállításokkal, valamint menüváltás és újranyitás után végzett vizuális
+  ellenőrzés. A rendezés külön feladat, jelenleg nincs elvégezve.
+
 ## 2. Builderkapuk
 
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő

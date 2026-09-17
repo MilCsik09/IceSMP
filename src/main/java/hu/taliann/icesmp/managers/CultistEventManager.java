@@ -357,6 +357,8 @@ public final class CultistEventManager {
     }
 
     private void spawnCourier(final World world, final Location site) {
+        // The selected site is already the guard's exact standing location; do not replace its Y
+        // with a second surface lookup before spawning the single courier.
         final Mob courier = spawnCultistMob(site, "cultist_courier");
         if (courier == null) return;
         prepareCultist(courier);

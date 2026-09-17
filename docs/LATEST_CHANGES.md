@@ -1,5 +1,37 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A fejlesztői eszköz eltétele vagy fegyverre váltás nem zárja le többé a
+rávetítések munkamenetét. A munkamenethez kötött harci változtatások így
+megmaradnak a kézváltás után; a kilépési és jogosultsági törlés továbbra is
+érvényes. A változás buildje és szerveres ellenőrzése még hátravan.
+
+A WorldWeaverrel való ütés közbeni item-ellenőrzés átmeneti hibája sem
+érvényteleníti többé a rávetítéseket.
+
+A fejlesztői rávetítések mentés utáni visszaütemezése nem keres többé
+entitást a háttérszálról a világokban. A célpont ellenőrzése a saját
+régiószálán történik; a javítás Folia-playtestje még hátravan.
+
+A mellékkézben tartott ecset rövid jobb kattintáskor nem tiltja le a normál
+tárgy- és blokkhasználatot. A vizsgálat legalább fél másodperces nyomva
+tartás után indul; a főkéz aktív használatát nem szakítja meg.
+A változás kézi átvétele még hátravan.
+
+Az ideiglenes tárgyleírás törlése inventorymozgatáskor a művelet utáni
+állapotot szinkronizálja vissza, hogy ne jelenjen meg kliensoldali fantommásolat.
+A shift-kattintásos és kurzoros mozgatás szerveres ellenőrzése még hátravan.
+
+Az ideiglenes tárgymegfigyelések inventory-kezelése javult: a kliensről
+visszaérkező megjelenítési sorok nem válhatnak tartós, ismétlődő leírássá.
+A korábban beragadt sorokat belépéskor és új vizsgálatkor tisztítja a rendszer.
+A változás szerveres ellenőrzése még hátravan.
+
+A tárgyvizsgálat eredménye szöveges visszajelzést is kap, az ideiglenes
+megjelenítés pedig követi a vizsgált tárgyat. Javult a fejlesztői eszköz
+entitáskijelölése és az újabb játékos-inventoryk kezelése. A tárgyeldobás
+mentési hibakezelése részletesebb belső diagnosztikát kapott. Ezeknek a
+javításoknak a buildje és szerveres ellenőrzése még hátravan.
+
 Az üzenetjavítások bekerültek az egyesített tesztváltozatba: pontosabb láda- és
 világboss-visszajelzések, külön játékos- és admin-specializációnézet, valamint
 érthetőbb recept- és küldetésfeltételek. A szakmai feltétel jelzése tiszteletben

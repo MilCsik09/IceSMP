@@ -54,7 +54,9 @@ public final class TrashInteractionFixRegressionSuite {
                 check(f.bridge.shownHand == (brush == EquipmentSlot.HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND),
                         "tooltip was sent to the wrong canonical slot");
                 check(f.main.getAmount() == 1 && f.off.getAmount() == 1, "inspection mutated inventory");
+                check(f.messages.size() == 2, "successful packet suppressed visible observations");
                 f.hold(40);
+                check(f.messages.size() == 2, "continued hold spammed observations");
                 check(f.inspections == 1, "continued hold restarted completed inspection");
                 f.advance(9);
                 check(initial.cancelled, "released completed gesture leaked a task");
@@ -82,12 +84,44 @@ public final class TrashInteractionFixRegressionSuite {
             changed.advance(30);
             check(changed.inspections == 0 && changed.tick.cancelled, "swapped target was analysed");
         }
+        for (int mode = 0; mode < 3; mode++) {
+            Fixture forced = new Fixture(EquipmentSlot.OFF_HAND);
+            forced.bridge.result = mode == 0;
+            forced.bridge.fail = mode == 2;
+            forced.listener.forceInspection(forced.player);
+            check(forced.messages.size() == 2, "force inspection lost feedback after bridge success/failure");
+        }
+        Fixture shortClick = new Fixture(EquipmentSlot.OFF_HAND);
+        PlayerInteractEvent ordinary = shortClick.click(Action.RIGHT_CLICK_BLOCK, EquipmentSlot.HAND);
+        final Event.Result blockBefore = ordinary.useInteractedBlock(), itemBefore = ordinary.useItemInHand();
+        shortClick.listener.onInteract(ordinary);
+        check(ordinary.useInteractedBlock() == blockBefore && ordinary.useItemInHand() == itemBefore,
+                "offhand brush stole a short ordinary interaction");
+        shortClick.advance(12);
+        check(shortClick.inspections == 0 && shortClick.tick.cancelled, "short click admitted an inspection");
+        tooltipLoreDoesNotAccumulate();
         catalogEvidence();
         vendorAbsenceRequiresReceipt();
         protectsSitesWithoutBlockingTheirBrush();
         TrashAuditRepairRegressionSuite.main(args);
         hu.taliann.icesmp.storage.PlayerInventoryCommitRegressionSuite.main(args);
         System.out.println("Trash interaction fix regression suite passed. assertions=" + assertions);
+    }
+
+    private static void tooltipLoreDoesNotAccumulate() {
+        final var authored = net.kyori.adventure.text.Component.text("Eredeti leírás.");
+        final var unrelated = net.kyori.adventure.text.Component.text("Más plugin sora.");
+        final var fact = net.kyori.adventure.text.Component.text("• Megfigyelés.",
+                net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
+        final var contaminated = List.of(authored, net.kyori.adventure.text.Component.empty(),
+                ArchaeologyTooltipLore.HEADER, fact, net.kyori.adventure.text.Component.empty(),
+                ArchaeologyTooltipLore.HEADER, fact, unrelated);
+        final var clean = ArchaeologyTooltipLore.withoutObservations(contaminated);
+        check(clean.equals(List.of(authored, unrelated)), "duplicated client observations survived cleanup or authored lore was lost");
+        check(ArchaeologyTooltipLore.withoutObservations(clean).equals(clean), "cleanup was not idempotent");
+        check(ArchaeologyTooltipLore.withoutObservations(List.of(authored, fact)).equals(List.of(authored, fact)),
+                "unmarked lore was removed");
     }
 
     private static void catalogEvidence() throws Exception {
@@ -239,6 +273,7 @@ public final class TrashInteractionFixRegressionSuite {
         EquipmentSlot using;
         Tick tick;
         int inspections;
+        final List<Object> messages = new ArrayList<>();
         final UUID id = UUID.randomUUID();
         final TestBridge bridge = new TestBridge();
         final Player player;
@@ -257,8 +292,9 @@ public final class TrashInteractionFixRegressionSuite {
             });
             player = proxy(Player.class, (m,a) -> switch(m) {
                 case "getUniqueId" -> id; case "getInventory" -> inventory; case "getScheduler" -> scheduler;
-                case "isOnline" -> true; case "isDead" -> false; case "getWorld" -> world;
+                case "isOnline" -> true; case "isDead", "hasActiveItem" -> false; case "getWorld" -> world;
                 case "getLocation", "getEyeLocation" -> new Location(world, 0, 64, 0);
+                case "sendMessage" -> { messages.add(a[0]); yield null; }
                 case "startUsingItem" -> { using = (EquipmentSlot)a[0]; yield null; }
                 default -> null;
             });
@@ -297,9 +333,10 @@ public final class TrashInteractionFixRegressionSuite {
     }
     private static final class TestBridge implements ArchaeologyTooltipBridge {
         EquipmentSlot shownHand;
+        boolean result = true, fail;
         public boolean available() { return true; }
         public boolean show(Player p, ItemStack i, List<String> facts) { throw new AssertionError("hand was discarded"); }
-        public boolean show(Player p, EquipmentSlot hand, ItemStack i, List<String> facts) { shownHand = hand; return true; }
+        public boolean show(Player p, EquipmentSlot hand, ItemStack i, List<String> facts) { shownHand = hand; if (fail) throw new IllegalStateException("packet refused"); return result; }
         public void clear(Player p) { }
         public void clearPlayerState(UUID id) { }
         public void shutdown() { }

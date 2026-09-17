@@ -235,8 +235,10 @@ public final class InvasionManager {
 
         final int bossBonus = Math.max(0, configManager.getInt(
                 "world-events.invasion.mini-boss-level-bonus", 6));
-        final Mob champion = spawnAt(topOf(world, center.getBlockX(),
-                center.getBlockZ()), level + bossBonus, "invasion",
+        // The guard already returned the exact Folia-owned safe standing location. Recomputing
+        // Y from WORLD_SURFACE here can move the champion onto a different column (for example
+        // a canopy or an ungenerated/new-world surface) and invalidate the successful search.
+        final Mob champion = spawnAt(center.clone(), level + bossBonus, "invasion",
                 "champion", horde.championTemplate);
         if (champion != null) {
             champion.setCustomNameVisible(true);
@@ -260,10 +262,23 @@ public final class InvasionManager {
             return null;
         }
         final EventSpawnGuard guard = spawnGuard;
-        if (guard != null && (guard.isBlocked(eventKey, spot)
-                || guard.isUnsafeSurface(eventKey, spot.getWorld(),
-                spot.getBlockX(), spot.getBlockZ()))) {
-            return null;
+        if (guard != null) {
+            final EventSpawnGuard.BlockReason reason = guard.blockReason(eventKey, spot);
+            if (reason != EventSpawnGuard.BlockReason.NONE) {
+                plugin.getLogger().warning("Invasion spawn rejected: event=" + eventKey
+                        + ", role=" + role + ", reason=" + reason + ", location="
+                        + spot.getWorld().getName() + ":" + spot.getBlockX() + ","
+                        + spot.getBlockY() + "," + spot.getBlockZ());
+                return null;
+            }
+            if (!"champion".equals(role) && guard.isUnsafeSurface(eventKey, spot.getWorld(),
+                    spot.getBlockX(), spot.getBlockZ())) {
+                plugin.getLogger().warning("Invasion spawn rejected: event=" + eventKey
+                        + ", role=" + role + ", reason=UNSAFE_SURFACE, location="
+                        + spot.getWorld().getName() + ":" + spot.getBlockX() + ","
+                        + spot.getBlockY() + "," + spot.getBlockZ());
+                return null;
+            }
         }
         final hu.taliann.icesmp.pve.AuthoredCreatureSpawnService spawns =
                 hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.current();
@@ -275,7 +290,17 @@ public final class InvasionManager {
                 templateId, level,
                 hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.GENERIC,
                 true, 1.0D, 1.0D, lifespanTicks);
-        final Mob mob = spawns.spawn(spot, request);
+        final Mob mob;
+        try {
+            mob = spawns.spawn(spot, request);
+        } catch (final RuntimeException failure) {
+            plugin.getLogger().warning("Invasion mob spawn failed: event=" + eventKey
+                    + ", role=" + role + ", template=" + templateId + ", location="
+                    + spot.getWorld().getName() + ":" + spot.getBlockX() + ","
+                    + spot.getBlockY() + "," + spot.getBlockZ() + " ("
+                    + failure.getMessage() + ")");
+            return null;
+        }
         if (mob == null) return null;
         // Local registration is intentionally idempotent and keeps the event liveness contract
         // auditable without reaching through the common spawn service implementation.

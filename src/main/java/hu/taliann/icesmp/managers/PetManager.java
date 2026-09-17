@@ -782,6 +782,7 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
      * from an EntityDeathEvent for minion-tagged mobs.
      */
     public void handlePetDeath(final LivingEntity dead) {
+        if (!MinionManager.isPetTagged(dead)) return;
         final UUID ownerId=minionManager.getOwner(dead);if(ownerId==null)return;final UUID deadId=dead.getUniqueId();attackReady.remove(deadId);
         final Player owner=Bukkit.getPlayer(ownerId);if(owner==null)return;
         final UUID sessionToken=currentSessionToken(owner).orElse(null);if(sessionToken==null)return;
@@ -855,18 +856,17 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
     /** Resolves only the one live durable companion, never a temporary spell minion. */
     public Optional<PetKillAttribution> activePetAttribution(final Entity entity) {
         if (entity == null) return Optional.empty();
-        final UUID ownerId = minionManager.getOwner(entity);
-        if (ownerId == null) return Optional.empty();
         final UUID entityId = entity.getUniqueId();
-        final java.util.concurrent.atomic.AtomicReference<PetKillAttribution> attribution =
-                new java.util.concurrent.atomic.AtomicReference<>();
-        activePetCompanionIds.compute(ownerId, (id, companionId) -> {
-            if (companionId != null && entityId.equals(activePetEntities.get(id))) {
-                attribution.set(new PetKillAttribution(id, companionId));
+        // The death event is owned by the victim's region, while the pet may be elsewhere.
+        // Resolve by immutable runtime UUID maps instead of reading the pet's foreign PDC.
+        for (final Map.Entry<UUID, UUID> active : activePetEntities.entrySet()) {
+            if (!entityId.equals(active.getValue())) continue;
+            final UUID companionId = activePetCompanionIds.get(active.getKey());
+            if (companionId != null) {
+                return Optional.of(new PetKillAttribution(active.getKey(), companionId));
             }
-            return companionId;
-        });
-        return Optional.ofNullable(attribution.get());
+        }
+        return Optional.empty();
     }
 
     public Optional<UUID> activePetOwnerId(final Entity entity) {
@@ -924,6 +924,54 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
 
     /** Awards companion XP for the owner; levels up (rebuffing the active pet) on threshold. */
     public void addXp(final Player player, final int amount) { }
+
+    /** Rebuilds the live pet projection from the durable Profile v2 companion state. */
+    public void reconcileProfile(final Player player) {
+        if (player == null) {
+            return;
+        }
+        final ActiveCompanionRef active = activeCompanionRef(player).orElse(null);
+        if (active == null) {
+            retirePetActivation(player.getUniqueId(), null);
+            return;
+        }
+        final long resummonAt = resummonAt(active.companion());
+        if (resummonAt > System.currentTimeMillis()) {
+            retirePetActivation(player.getUniqueId(), active.companion().companionId());
+            return;
+        }
+        final UUID ownerId = player.getUniqueId();
+        final UUID currentCompanionId = activePetCompanionIds.get(ownerId);
+        final UUID currentEntityId = activePetEntities.get(ownerId);
+        if (active.companion().companionId().equals(currentCompanionId) && currentEntityId != null) {
+            final Entity current = Bukkit.getEntity(currentEntityId);
+            if (current instanceof Mob pet) {
+                final PetRuntimeSnapshot snapshot = runtimeSnapshot(player);
+                pet.getScheduler().run(plugin, task -> {
+                    if (pet.isValid() && !pet.isDead()
+                            && currentEntityId.equals(activePetEntities.get(ownerId))) {
+                        minionManager.tagPet(pet, ownerId, active.companion().companionId());
+                        hu.taliann.icesmp.pve.CreatureProfileService.markPet(pet);
+                        applyBuffs(pet, snapshot.buffLevel(), false);
+                        updateName(pet, snapshot.name(), snapshot.level());
+                    }
+                }, null);
+                return;
+            }
+            retirePetActivation(ownerId, active.companion().companionId());
+        }
+        beginPetActivation(player, active.companion().companionId());
+        try {
+            spawnAndAdopt(player, expectedEntityType(player, active.companion()));
+        } catch (final PetSpawnException failure) {
+            retirePetActivation(ownerId, active.companion().companionId());
+            plugin.getLogger().fine("Companion projection deferred for " + ownerId + ": " + failure.messageKey());
+        } catch (final Throwable failure) {
+            retirePetActivation(ownerId, active.companion().companionId());
+            plugin.getLogger().warning("Companion projection rebuild failed for " + ownerId
+                    + ": " + failure.getMessage());
+        }
+    }
 
     /**
      * Owner-side gate of the combat-target flow: the owner has a usable Profile v2 pet spec
@@ -1213,7 +1261,8 @@ public final class PetManager implements hu.taliann.icesmp.session.PlayerStateCl
             }
         }
         updateName(mob, snapshot.name(), snapshot.level());
-        minionManager.tag(mob, snapshot.ownerId());
+        minionManager.tagPet(mob, snapshot.ownerId(), snapshot.companionId());
+        hu.taliann.icesmp.pve.CreatureProfileService.markPet(mob);
         final java.util.concurrent.atomic.AtomicBoolean activated =
                 new java.util.concurrent.atomic.AtomicBoolean(false);
         activePetCompanionIds.compute(snapshot.ownerId(), (ownerId, expectedId) -> {

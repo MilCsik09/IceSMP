@@ -11,7 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
-public final class FoliaWeaverOwnerRouter implements WeaverOwnerRouter {
+public final class FoliaWeaverOwnerRouter implements WeaverOwnerRouter, org.bukkit.event.Listener {
     private final JavaPlugin plugin;
     private final ThreadPoolExecutor io = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
             new ArrayBlockingQueue<>(128), runnable -> new Thread(runnable, "IceSMP-Weaver-IO"), new ThreadPoolExecutor.AbortPolicy());
@@ -19,9 +19,12 @@ public final class FoliaWeaverOwnerRouter implements WeaverOwnerRouter {
             runnable -> new Thread(runnable, "IceSMP-Weaver-deadline"));
     private final Set<OwnerTaskAdmission<?>> pending = ConcurrentHashMap.newKeySet();
     private final Semaphore permits = new Semaphore(128);
+    private record EntityLocator(Entity entity, io.papermc.paper.threadedregions.scheduler.EntityScheduler scheduler) { }
+    private final ConcurrentMap<UUID, EntityLocator> entities = new ConcurrentHashMap<>();
     private volatile boolean closed;
     public FoliaWeaverOwnerRouter(final JavaPlugin plugin) {
         this.plugin = java.util.Objects.requireNonNull(plugin); deadlines.setRemoveOnCancelPolicy(true);
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
     @Override public <T> CompletionStage<T> submit(final ExecutionOwner owner, final UUID actor, final Duration timeout,
                                                    final Supplier<CompletionStage<T>> task) {
@@ -62,17 +65,41 @@ public final class FoliaWeaverOwnerRouter implements WeaverOwnerRouter {
         if (closed) admission.shutdown();
         return admission.result();
     }
+    /** Only immutable identity and a scheduling handle cross the event owner's boundary. */
+    public void observe(final Entity entity) {
+        if (closed || entity instanceof org.bukkit.entity.Player) return;
+        final UUID id = entity.getUniqueId();
+        entities.compute(id, (ignored, existing) -> existing != null && existing.entity() == entity
+                ? existing : new EntityLocator(entity, entity.getScheduler()));
+        if (closed) entities.clear();
+    }
+    @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    public void onAdded(final com.destroystokyo.paper.event.entity.EntityAddToWorldEvent event) { observe(event.getEntity()); }
+    @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    public void onLoaded(final org.bukkit.event.world.EntitiesLoadEvent event) { event.getEntities().forEach(this::observe); }
+    @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    public void onSelected(final org.bukkit.event.player.PlayerInteractEntityEvent event) { observe(event.getRightClicked()); }
+    @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    public void onSelectedAt(final org.bukkit.event.player.PlayerInteractAtEntityEvent event) { observe(event.getRightClicked()); }
+    @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
+    public void onRemoved(final com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent event) {
+        final Entity entity = event.getEntity();
+        entities.computeIfPresent(entity.getUniqueId(), (ignored, locator) -> locator.entity() == entity ? null : locator);
+    }
     private void entity(final UUID id, final Runnable task, final Runnable unavailable) {
-        final Entity locator = Bukkit.getEntity(id);
+        // Player lookup uses the online-player index; Bukkit.getEntity scans world entities and is not an async locator.
+        final org.bukkit.entity.Player player = Bukkit.getPlayer(id);
+        final EntityLocator locator = player == null ? entities.get(id) : new EntityLocator(player, player.getScheduler());
         if (locator == null) { unavailable.run(); return; }
-        final var scheduled = locator.getScheduler().run(plugin, ignored -> {
-            final Entity target = Bukkit.getEntity(id);
-            if (target == null || !Bukkit.isOwnedByCurrentRegion(target) || !target.isValid()) unavailable.run();
+        final var scheduled = locator.scheduler().run(plugin, ignored -> {
+            final Entity target = locator.entity();
+            final boolean current = player == null ? entities.get(id) == locator : Bukkit.getPlayer(id) == player;
+            if (!current || !Bukkit.isOwnedByCurrentRegion(target) || !target.isValid()) unavailable.run();
             else task.run();
         }, unavailable);
         if (scheduled == null) unavailable.run();
     }
     @Override public void close() {
-        closed = true; pending.forEach(OwnerTaskAdmission::shutdown); deadlines.shutdownNow(); io.shutdown();
+        closed = true; org.bukkit.event.HandlerList.unregisterAll(this); entities.clear(); pending.forEach(OwnerTaskAdmission::shutdown); deadlines.shutdownNow(); io.shutdown();
     }
 }
