@@ -290,16 +290,16 @@ public final class TooltipPacketBridge_1_21_11
                 : 36 + inventorySlot);
     }
 
-    static boolean projectInventorySlot(
+    static void projectInventorySlot(
             final Player player,
             final int slot,
             final ItemStack display
     ) {
         if (slot != 40 && (slot < 0 || slot > 8)) {
-            return false;
+            return;
         }
 
-        return sendInventoryProjection(
+        sendInventoryProjection(
                 player,
                 display,
                 slot == 40

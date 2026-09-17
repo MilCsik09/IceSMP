@@ -44,7 +44,6 @@ public final class DialogueEngine {
     }
 
     private static final class Session {
-        private final String sequenceId;
         private final List<DialogueNode> nodes;
         private int index;
         private boolean canSkip;
@@ -53,7 +52,6 @@ public final class DialogueEngine {
         private final List<ScheduledTask> tasks = new ArrayList<>();
 
         private Session(final DialogueSequence sequence) {
-            sequenceId = sequence.id();
             nodes = sequence.nodes();
             musicContextId = sequence.musicContext() == null ? null : sequence.musicContext().id();
             onComplete = sequence.onComplete();
