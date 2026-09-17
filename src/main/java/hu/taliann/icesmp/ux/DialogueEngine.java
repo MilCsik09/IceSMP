@@ -112,7 +112,6 @@ public final class DialogueEngine {
     public void cancel(final UUID playerId) {
         final Session session = sessions.remove(playerId);
         if (session == null) return;
-        final Player player = Bukkit.getPlayer(playerId);
         if (session.musicContextId != null && music != null) removeMusic(playerId, session.musicContextId);
         for (final ScheduledTask task : List.copyOf(session.tasks)) task.cancel();
         session.tasks.clear();
