@@ -19,6 +19,7 @@ public final class TooltipPresentationRegressionSuite {
         resourcePackDefinesEverySemanticGlyph();
         canonicalRendererUsesSemanticPresentationSections();
         canonicalItemsRetainNativeRarityTooltipStyle();
+        devReferencePreviewUsesReviewedPresentation();
         System.out.println("Tooltip presentation regression suite passed. assertions=" + assertions);
     }
 
@@ -74,6 +75,27 @@ public final class TooltipPresentationRegressionSuite {
                 "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java"));
         check(identity.contains("ItemDataFactory.applyTooltipStyleForRarity(item, template.rarity().id())"),
                 "canonical item presentation must retain rarity-backed native tooltip_style");
+    }
+
+    private static void devReferencePreviewUsesReviewedPresentation() throws Exception {
+        final String dev = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/ux/UxDevCommand.java"));
+        check(dev.contains("Fagyott Őrségpenge")
+                        && dev.contains("TooltipPresentation.sectionHeading")
+                        && dev.contains("TooltipPresentation.Glyph.STATS")
+                        && dev.contains("TooltipPresentation.Glyph.REQUIREMENTS")
+                        && dev.contains("TooltipPresentation.Glyph.EFFECT")
+                        && dev.contains("TooltipPresentation.Glyph.SOCKETS")
+                        && dev.contains("TooltipPresentation.Glyph.ARCHAEOLOGY")
+                        && dev.contains("TooltipPresentation.Glyph.STORY"),
+                "DEV reference preview must exercise the reviewed semantic presentation hierarchy");
+        check(dev.contains("ItemDataFactory.applyTooltipStyleForRarity(display, \"legendas\")")
+                        && dev.contains("ItemDataFactory.applyRarity(display"),
+                "DEV reference preview must exercise the legendary native tooltip frame");
+        check(!dev.contains("Presentation-only DEV projection")
+                        && !dev.contains("Minta sebzés:")
+                        && !dev.contains("Tesztérték:"),
+                "DEV reference preview regressed to the old neon/debug tooltip copy");
     }
 
     private static void check(final boolean value, final String message) {
