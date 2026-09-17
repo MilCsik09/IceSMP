@@ -27,8 +27,14 @@ public final class TooltipEngine {
 
     public record Context(Player player, ItemStack canonicalItem, Map<String, Object> values) {
         public Context {
+            canonicalItem = canonicalItem == null ? null : canonicalItem.clone();
             values = values == null ? Map.of() : Map.copyOf(values);
         }
+    }
+
+    @FunctionalInterface
+    public interface SectionRenderer {
+        Section render(Context context);
     }
 
     public record Section(SectionId id, int order, List<Component> lines) {
@@ -72,6 +78,18 @@ public final class TooltipEngine {
             }
         }
         return List.copyOf(result);
+    }
+
+    public static List<Component> render(final Context context,
+                                         final Collection<SectionRenderer> renderers) {
+        if (context == null || renderers == null || renderers.isEmpty()) return List.of();
+        final List<Section> sections = new ArrayList<>();
+        for (final SectionRenderer renderer : renderers) {
+            if (renderer == null) continue;
+            final Section section = renderer.render(context);
+            if (section != null) sections.add(section);
+        }
+        return render(sections);
     }
 
     public static List<Component> replace(final Collection<Section> sections,
