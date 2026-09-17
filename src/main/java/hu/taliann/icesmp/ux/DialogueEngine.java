@@ -24,12 +24,13 @@ import java.util.function.Predicate;
 public final class DialogueEngine {
 
     public record DialogueNode(String id, String speaker, Component text, long delayTicks,
-                               boolean skippable, Predicate<Player> condition,
+                               long durationTicks, boolean skippable, Predicate<Player> condition,
                                Runnable onEnter, Runnable onComplete) {
         public DialogueNode {
             if (id == null || id.isBlank()) throw new IllegalArgumentException("node id required");
             text = text == null ? Component.empty() : text;
-            if (delayTicks < 0L) throw new IllegalArgumentException("delay must be non-negative");
+            if (delayTicks < 0L || durationTicks < 0L)
+                throw new IllegalArgumentException("dialogue timing must be non-negative");
             condition = condition == null ? player -> true : condition;
         }
     }
@@ -94,7 +95,7 @@ public final class DialogueEngine {
         for (int i = 0; i < lines.size(); i++) {
             final int index = i;
             nodes.add(new DialogueNode(questId + ":" + phase + ":" + i, speaker,
-                    Component.text(lines.get(i)), i == 0 ? 0L : 30L, true,
+                    Component.text(lines.get(i)), i == 0 ? 0L : 30L, 30L, true,
                     ignored -> true, null, null));
         }
         play(player, new DialogueSequence(questId + ":" + phase, nodes, null, null));
@@ -150,15 +151,18 @@ public final class DialogueEngine {
                 .append(Component.text(": ", NamedTextColor.DARK_GRAY))
                 .append(node.text());
         player.sendMessage(line);
-        if (node.onComplete() != null) node.onComplete().run();
+        final long nextDelay = session.index < session.nodes.size()
+                ? session.nodes.get(session.index).delayTicks() : 0L;
+        final long wait = node.durationTicks() + nextDelay;
         if (session.index < session.nodes.size()) {
-            scheduleNext(player, session, session.nodes.get(session.index).delayTicks());
+            scheduleNext(player, session, wait, node.onComplete());
         } else {
-            finish(player, session);
+            scheduleFinish(player, session, wait, node.onComplete());
         }
     }
 
-    private void scheduleNext(final Player player, final Session session, final long delay) {
+    private void scheduleNext(final Player player, final Session session, final long delay,
+                              final Runnable completion) {
         final ScheduledTask scheduled = player.getScheduler().runDelayed(plugin,
                 task -> {
                     final Player current = Bukkit.getPlayer(player.getUniqueId());
@@ -166,9 +170,26 @@ public final class DialogueEngine {
                         clearPlayerState(player.getUniqueId());
                         return;
                     }
+                    if (completion != null) completion.run();
                     advance(current, session);
                 },
                 () -> clearPlayerState(player.getUniqueId()), Math.max(1L, delay));
+        if (scheduled != null) session.tasks.add(scheduled);
+    }
+
+    private void scheduleFinish(final Player player, final Session session, final long delay,
+                                final Runnable completion) {
+        if (delay <= 0L) {
+            if (completion != null) completion.run();
+            finish(player, session);
+            return;
+        }
+        final ScheduledTask scheduled = player.getScheduler().runDelayed(plugin,
+                task -> {
+                    if (completion != null) completion.run();
+                    finish(player, session);
+                },
+                () -> clearPlayerState(player.getUniqueId()), delay);
         if (scheduled != null) session.tasks.add(scheduled);
     }
 
