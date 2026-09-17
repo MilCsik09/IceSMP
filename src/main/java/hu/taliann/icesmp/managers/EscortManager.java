@@ -224,9 +224,10 @@ public final class EscortManager {
             schedule.release();
             return;
         }
-        final Location start = spawnGuard.resolveSafeStandingLocation("escort", world,
-                requestedStart.getBlockX(), requestedStart.getBlockZ());
-        if (start == null || spawnGuard.isBlocked("escort", start)) {
+        // The placement guard already returned the exact Folia-owned standing location. Re-solving
+        // the column here can select a different surface in a newly generated or changing world.
+        final Location start = requestedStart.clone();
+        if (spawnGuard.isBlocked("escort", start)) {
             schedule.release();
             return;
         }

@@ -6,6 +6,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -35,9 +36,33 @@ public final class PetCombatListener implements Listener {
         this.petManager = petManager;
     }
 
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void suppressPetRewardsBeforeListeners(final EntityDeathEvent event) {
+        if (isOwnedCompanion(event)) {
+            suppressRewards(event);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void suppressPetRewardsAfterListeners(final EntityDeathEvent event) {
+        if (isOwnedCompanion(event)) {
+            suppressRewards(event);
+        }
+    }
+
     @EventHandler
     public void onEntityDeath(final EntityDeathEvent event) {
         petManager.handlePetDeath(event.getEntity());
+    }
+
+    private boolean isOwnedCompanion(final EntityDeathEvent event) {
+        return event.getEntity() instanceof LivingEntity
+                && hu.taliann.icesmp.managers.MinionManager.isMinionTagged(event.getEntity());
+    }
+
+    private void suppressRewards(final EntityDeathEvent event) {
+        event.getDrops().clear();
+        event.setDroppedExp(0);
     }
 
     @EventHandler(ignoreCancelled = true)
