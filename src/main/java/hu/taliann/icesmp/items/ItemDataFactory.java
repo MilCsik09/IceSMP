@@ -123,6 +123,28 @@ public final class ItemDataFactory {
     }
 
     /**
+     * Applies the 1.21.11 resource-pack tooltip style for the server's authored rarity ladder.
+     * Unknown ids deliberately keep the vanilla tooltip so a content typo cannot break the item
+     * client-side. The style component must be written after ItemMeta, like all data components.
+     */
+    public static void applyTooltipStyleForRarity(final ItemStack item, final String rarityId) {
+        if (item == null || rarityId == null) return;
+        final String normalized = rarityId.trim().toLowerCase(Locale.ROOT).replace('-', '_');
+        switch (normalized) {
+            case "ocska", "kozonseges", "nem_mindennapi", "ritka", "epikus", "legendas",
+                    "mitikus", "ereklye" -> applyTooltipStyle(item, "icesmp:tooltip/" + normalized);
+            default -> { }
+        }
+    }
+
+    /** Applies one namespaced Minecraft 1.21.11 tooltip-style resource. */
+    public static void applyTooltipStyle(final ItemStack item, final String styleId) {
+        if (item == null || styleId == null || styleId.isBlank()) return;
+        item.setData(DataComponentTypes.TOOLTIP_STYLE,
+                Key.key(styleId.contains(":") ? styleId : "icesmp:" + styleId));
+    }
+
+    /**
      * A 6 fokú saját létra leképezése a vanília 4 fokra. Ismeretlen id → COMMON (fail-safe:
      * a craft nem törhet el egy elgépelt raritás-id-től).
      */

@@ -215,6 +215,7 @@ public final class ItemIdentityService {
                 template.itemModelAt(stageId), template.equipmentAssetAt(stageId));
         ItemDataFactory.hideAttributeTooltip(item);
         ItemDataFactory.applyRarity(item, ItemDataFactory.vanillaRarityOf(template.rarity().id()));
+        ItemDataFactory.applyTooltipStyleForRarity(item, template.rarity().id());
         if (!ItemPrototypePolicy.direct(item)) applySignatureEnchantProjection(item, template);
     }
 

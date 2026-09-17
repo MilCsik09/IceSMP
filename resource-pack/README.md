@@ -4,6 +4,17 @@ Minden inventory-item 64×64-es, részletes 2D ikont használ. A 3D geometria ki
 világban megjelenített nagy tárgynál kapcsol be; a fegyverek, eszközök és felszerelések az
 ellenőrzött, részletes 2D változatot tartják meg.
 
+## Item tooltip style
+
+A Minecraft 1.21.11 natív `tooltip_style` komponense a szerver saját rarity-létrája szerint
+választja ki a tooltip hátterét és keretét. A style-definíciók az
+`assets/icesmp/tooltip_styles/` alatt, a hozzájuk tartozó pixel-art sprite-ok pedig az
+`assets/icesmp/textures/gui/sprites/tooltip/` alatt vannak. Az alap PNG-ket a
+`scripts/generate_item_tooltip_assets.py` generálja determinisztikusan.
+
+Ez a réteg a vanilla tooltip elrendezését tartja meg, csak a vizuális hátteret/keretet cseréli;
+a nagy, szabadon pozicionált RPG-panel továbbra is külön kliens-renderer feladata lenne.
+
 ## Custom wearable / armor presentation
 
 A viselhető tárgyaknál **két külön render-identitás** létezik:

@@ -175,6 +175,7 @@ public final class ItemRarityService {
         hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(rolled);
         hu.taliann.icesmp.items.ItemDataFactory.applyRarity(rolled,
                 hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rarity.id()));
+        hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyleForRarity(rolled, rarity.id());
         return rolled;
     }
 
