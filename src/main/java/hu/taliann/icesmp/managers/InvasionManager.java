@@ -271,7 +271,7 @@ public final class InvasionManager {
                         + spot.getBlockY() + "," + spot.getBlockZ());
                 return null;
             }
-            if (guard.isUnsafeSurface(eventKey, spot.getWorld(),
+            if (!"champion".equals(role) && guard.isUnsafeSurface(eventKey, spot.getWorld(),
                     spot.getBlockX(), spot.getBlockZ())) {
                 plugin.getLogger().warning("Invasion spawn rejected: event=" + eventKey
                         + ", role=" + role + ", reason=UNSAFE_SURFACE, location="

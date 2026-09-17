@@ -125,7 +125,6 @@ public final class EventSpawnGuard {
     private final Map<String, Reservation> reservations = new ConcurrentHashMap<>();
     private final ConcurrentLinkedDeque<RecentLocation> recentLocations = new ConcurrentLinkedDeque<>();
     private final Map<String, Long> diagnosticLogAt = new ConcurrentHashMap<>();
-    private final Map<String, Long> searchBackoffUntil = new ConcurrentHashMap<>();
     private final Set<String> pendingArrivals = ConcurrentHashMap.newKeySet();
     private final Map<String, SearchDiagnostic> diagnostics = new ConcurrentHashMap<>();
     private final AtomicInteger activeSearches = new AtomicInteger();
@@ -657,12 +656,18 @@ public final class EventSpawnGuard {
         final int maxChunkX = (column.getBlockX() + radius) >> 4;
         final int minChunkZ = (column.getBlockZ() - radius) >> 4;
         final int maxChunkZ = (column.getBlockZ() + radius) >> 4;
+        final List<String> candidateChunkKeys = new ArrayList<>();
+        final Runnable discardCandidateChunks = () -> context.chunks.removeAll(candidateChunkKeys);
 
         for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                context.chunks.add(world.getUID() + ":" + chunkX + ":" + chunkZ);
+                final String chunkKey = world.getUID() + ":" + chunkX + ":" + chunkZ;
+                if (context.chunks.add(chunkKey)) {
+                    candidateChunkKeys.add(chunkKey);
+                }
                 if (context.chunks.size() > context.maxChunks) {
                     context.reject(BlockReason.SEARCH_BUDGET);
+                    discardCandidateChunks.run();
                     runContinuation(onUnavailable);
                     return;
                 }
@@ -675,6 +680,7 @@ public final class EventSpawnGuard {
             for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
                 for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
                     if (!world.isChunkLoaded(chunkX, chunkZ)) {
+                        discardCandidateChunks.run();
                         runContinuation(onUnavailable);
                         return;
                     }
@@ -711,6 +717,7 @@ public final class EventSpawnGuard {
         CompletableFuture.allOf(loads.toArray(CompletableFuture<?>[]::new))
                 .whenComplete((ignored, failure) -> {
                     if (failure != null || !plugin.isEnabled() || context.timedOut()) {
+                        discardCandidateChunks.run();
                         runContinuation(onUnavailable);
                         return;
                     }
@@ -719,10 +726,12 @@ public final class EventSpawnGuard {
                         try {
                             chunk = load.join();
                         } catch (final RuntimeException unavailable) {
+                            discardCandidateChunks.run();
                             runContinuation(onUnavailable);
                             return;
                         }
                         if (chunk == null || !world.isChunkLoaded(chunk)) {
+                            discardCandidateChunks.run();
                             runContinuation(onUnavailable);
                             return;
                         }
@@ -783,10 +792,13 @@ public final class EventSpawnGuard {
                     pendingArrivals.remove(context.eventKey);
                     return;
                 }
-                final BlockReason surface = surfaceReason(context.eventKey, world,
-                        location.getBlockX(), location.getBlockZ());
-                final BlockReason reason = surface == BlockReason.NONE
-                        ? blockReason(context.eventKey, location, false) : surface;
+                // The candidate was already checked with its complete footprint on the
+                // owning region. Re-reading every neighbouring column here is unsafe on Folia:
+                // the delayed task owns the selected column, not necessarily every footprint
+                // chunk after region scheduling/chunk tickets have moved. Revalidate only the
+                // selected chunk and the non-terrain policy before handing the exact location
+                // to the event manager.
+                final BlockReason reason = arrivalReason(context.eventKey, location);
                 if (reason != BlockReason.NONE) {
                     releaseFamilyReservation(context.eventKey);
                     pendingArrivals.remove(context.eventKey);
@@ -832,9 +844,6 @@ public final class EventSpawnGuard {
     private void recordArrivalFailure(final SearchContext context, final BlockReason reason,
                                       final Location location) {
         context.reject(reason);
-        final long backoffMillis = Math.max(0L, configManager.getLong(
-                "world-events.placement.search-backoff-seconds", 30L)) * 1_000L;
-        searchBackoffUntil.put(context.eventKey, System.currentTimeMillis() + backoffMillis);
         diagnostics.put(context.eventKey, new SearchDiagnostic(context.eventKey, false,
                 context.attempts.get(), context.chunks.size(),
                 context.terrainExpansionChunks.size(),
@@ -842,6 +851,20 @@ public final class EventSpawnGuard {
                 "arrival-revalidation-" + reason + "@" + location.getWorld().getName()
                         + ":" + location.getBlockX() + "," + location.getBlockZ(),
                 Map.copyOf(context.reasons)));
+    }
+
+    private BlockReason arrivalReason(final String eventKey, final Location location) {
+        final World world = location == null ? null : location.getWorld();
+        if (world == null) {
+            return BlockReason.INVALID_WORLD;
+        }
+        final int chunkX = location.getBlockX() >> 4;
+        final int chunkZ = location.getBlockZ() >> 4;
+        if (!world.isChunkLoaded(chunkX, chunkZ)
+                || !Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)) {
+            return BlockReason.UNLOADED_CHUNK;
+        }
+        return blockReason(eventKey, location, false);
     }
 
     private void showArrivalSigns(final String eventKey, final Location location) {
@@ -924,9 +947,7 @@ public final class EventSpawnGuard {
     private SearchContext beginSearch(final String eventKey, final boolean debugOnly,
                                       final Runnable onFailure) {
         final String key = normalizeEventKey(eventKey);
-        final long now = System.currentTimeMillis();
-        if (!debugOnly && (searchBackoffUntil.getOrDefault(key, 0L) > now
-                || pendingArrivals.contains(key))) {
+        if (!debugOnly && pendingArrivals.contains(key)) {
             onFailure.run();
             return null;
         }
@@ -997,11 +1018,6 @@ public final class EventSpawnGuard {
         }
         activeSearches.decrementAndGet();
         releaseFamilyReservation(context.eventKey);
-        if (!context.debugOnly) {
-            final long backoffMillis = Math.max(0L, configManager.getLong(
-                    "world-events.placement.search-backoff-seconds", 30L)) * 1_000L;
-            searchBackoffUntil.put(context.eventKey, System.currentTimeMillis() + backoffMillis);
-        }
         final String detail = origin == null || origin.getWorld() == null ? "unknown"
                 : origin.getWorld().getName() + ":" + origin.getBlockX() + "," + origin.getBlockZ();
         diagnostics.put(context.eventKey, new SearchDiagnostic(context.eventKey, false,
@@ -1223,7 +1239,6 @@ public final class EventSpawnGuard {
     public void clearReservations() {
         reservations.clear();
         recentLocations.clear();
-        searchBackoffUntil.clear();
         pendingArrivals.clear();
         diagnostics.clear();
         players.clear();

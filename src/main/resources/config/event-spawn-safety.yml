@@ -41,7 +41,6 @@ world-events:
       max-radius-blocks: 768.0
       # Older deployed files may still override the outer search timeout to 5 seconds.
       minimum-timeout-millis: 15000
-    search-backoff-seconds: 30
     route-attempts: 8
     arrival:
       enabled: true

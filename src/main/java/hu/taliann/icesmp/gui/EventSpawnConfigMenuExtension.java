@@ -126,8 +126,6 @@ public final class EventSpawnConfigMenuExtension {
                 ConfigMenuGUI.Entry.integer(
                         "world-events.placement.terrain-expansion.minimum-timeout-millis", "Mentőkeresés minimum timeout", 500, 1000, 30000),
                 ConfigMenuGUI.Entry.integer(
-                        "world-events.placement.search-backoff-seconds", "Sikertelen keresés pihenője", 5, 0, 3600),
-                ConfigMenuGUI.Entry.integer(
                         "world-events.placement.route-attempts", "Útvonal-irány próbák", 1, 1, 32),
                 ConfigMenuGUI.Entry.toggle(
                         "world-events.placement.arrival.enabled", "Érkezési előjel"),
