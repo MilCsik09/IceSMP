@@ -35,7 +35,7 @@ public final class DialogueEngine {
     }
 
     public record DialogueSequence(String id, List<DialogueNode> nodes,
-                                   String musicContextId, Runnable onComplete) {
+                                   MusicDirector.MusicContext musicContext, Runnable onComplete) {
         public DialogueSequence {
             if (id == null || id.isBlank()) throw new IllegalArgumentException("sequence id required");
             nodes = nodes == null ? List.of() : List.copyOf(nodes);
@@ -47,11 +47,13 @@ public final class DialogueEngine {
         private final List<DialogueNode> nodes;
         private int index;
         private boolean canSkip;
+        private final String musicContextId;
         private final List<ScheduledTask> tasks = new ArrayList<>();
 
         private Session(final DialogueSequence sequence) {
             sequenceId = sequence.id();
             nodes = sequence.nodes();
+            musicContextId = sequence.musicContext() == null ? null : sequence.musicContext().id();
         }
     }
 
@@ -75,6 +77,7 @@ public final class DialogueEngine {
         cancel(player.getUniqueId());
         final Session session = new Session(sequence);
         sessions.put(player.getUniqueId(), session);
+        if (sequence.musicContext() != null && music != null) music.push(player, sequence.musicContext());
         advance(player, session);
     }
 
@@ -106,6 +109,9 @@ public final class DialogueEngine {
     public void cancel(final UUID playerId) {
         final Session session = sessions.remove(playerId);
         if (session == null) return;
+        final Player player = Bukkit.getPlayer(playerId);
+        if (player != null && session.musicContextId != null && music != null)
+            music.remove(player, session.musicContextId);
         for (final ScheduledTask task : List.copyOf(session.tasks)) task.cancel();
         session.tasks.clear();
     }
@@ -166,6 +172,7 @@ public final class DialogueEngine {
 
     private void finish(final Player player, final Session session) {
         if (!sessions.remove(player.getUniqueId(), session)) return;
+        if (session.musicContextId != null && music != null) music.remove(player, session.musicContextId);
         for (final ScheduledTask task : List.copyOf(session.tasks)) task.cancel();
         session.tasks.clear();
     }
