@@ -1,5 +1,9 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A fejlesztői rávetítések mentés utáni visszaütemezése nem keres többé
+entitást a háttérszálról a világokban. A célpont ellenőrzése a saját
+régiószálán történik; a javítás Folia-playtestje még hátravan.
+
 A mellékkézben tartott ecset rövid jobb kattintáskor nem tiltja le a normál
 tárgy- és blokkhasználatot. A vizsgálat legalább fél másodperces nyomva
 tartás után indul; a főkéz aktív használatát nem szakítja meg.

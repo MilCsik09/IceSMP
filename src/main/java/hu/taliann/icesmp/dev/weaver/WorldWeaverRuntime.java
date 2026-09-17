@@ -47,7 +47,7 @@ public final class WorldWeaverRuntime {
                 new hu.taliann.icesmp.dev.weaver.projection.JournalProjectionSource(journal, providers::projectionConsumers), router, providers);
         for (final var factory : java.util.List.copyOf(providerFactories)) providers.register(factory.apply(services));
         projectionDispatcher = new hu.taliann.icesmp.dev.weaver.projection.WeaverProjectionDispatcher(providers::reconcileProjections);
-        final var areas = new hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine(router, new hu.taliann.icesmp.dev.weaver.area.FoliaWeaverAreaAccess(snapshots));
+        final var areas = new hu.taliann.icesmp.dev.weaver.area.WeaverAreaEngine(router, new hu.taliann.icesmp.dev.weaver.area.FoliaWeaverAreaAccess(snapshots, router::observe));
         recovery = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryCoordinator(journal, snapshots, providers, types, areas);
         recoveryListener = new hu.taliann.icesmp.dev.weaver.execution.WeaverRecoveryListener(recovery);
         kernel = new WorldWeaverKernel(artifacts, providers, types, snapshots, slots,

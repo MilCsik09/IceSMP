@@ -9,7 +9,12 @@ import java.util.*;
 
 public final class FoliaWeaverAreaAccess implements WeaverAreaAccess {
     private final SubjectSnapshotFactory snapshots;
-    public FoliaWeaverAreaAccess(final SubjectSnapshotFactory snapshots) { this.snapshots = Objects.requireNonNull(snapshots); }
+    private final java.util.function.Consumer<org.bukkit.entity.Entity> observe;
+    public FoliaWeaverAreaAccess(final SubjectSnapshotFactory snapshots) { this(snapshots, ignored -> { }); }
+    public FoliaWeaverAreaAccess(final SubjectSnapshotFactory snapshots,
+                                final java.util.function.Consumer<org.bukkit.entity.Entity> observe) {
+        this.snapshots = Objects.requireNonNull(snapshots); this.observe = Objects.requireNonNull(observe);
+    }
     @Override public ChunkSelection collectOnOwner(final AreaRef area, final RegionOwner owner, final AreaSupport support, final int limit) {
         final var world = Bukkit.getWorld(owner.worldId());
         if (world == null || !Bukkit.isOwnedByCurrentRegion(world, owner.chunkX(), owner.chunkZ())) throw new WeaverDomainRejection("OWNER_UNAVAILABLE");
@@ -26,6 +31,7 @@ public final class FoliaWeaverAreaAccess implements WeaverAreaAccess {
                 if (!entity.isValid() || entity.isDead()) continue;
                 final var location = entity.getLocation();
                 if (!location.getWorld().getUID().equals(area.worldId()) || !area.shape().contains(location.getBlockX(), location.getBlockY(), location.getBlockZ())) continue;
+                observe.accept(entity);
                 targets.add(entity instanceof Player ? new PlayerRef(entity.getUniqueId()) : new EntityRef(entity.getUniqueId()));
                 if (targets.size() > limit) throw new WeaverDomainRejection("AREA_TARGET_CAP");
             }

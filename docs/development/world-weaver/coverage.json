@@ -1482,7 +1482,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/WorldWeaverRuntime.java",
       "domain": "developer_self",
-      "source_sha256": "ce82bd85b12fbe23e1237af183679b043e94ffca92bec01ed604fc223fb47e7a",
+      "source_sha256": "7c6158bb07f71a2fe9fd30874107fc2e975dda58cf553ba2ebe8ecb3b881bfc2",
       "public_methods": [
         "WorldWeaverRuntime",
         "captureCausalSources",
@@ -1566,7 +1566,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/dev/weaver/area/FoliaWeaverAreaAccess.java",
       "domain": "developer_self",
-      "source_sha256": "7553eb96f87cb1705fe7165f275ead424c6ccc63a970fcb25f1bfd677990fcbe",
+      "source_sha256": "cfc2de943b29c87e3e1fab6efe25c5bdc47576c07f28602ca393d7955e13e226",
       "public_methods": [
         "FoliaWeaverAreaAccess",
         "collectOnOwner",
