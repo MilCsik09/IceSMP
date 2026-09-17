@@ -118,6 +118,12 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     private volatile ProfessionManager professionManagerRef;
     private volatile boolean warnedMissingCrateKeyFactory;
     private volatile boolean npcBridgeActive;
+    private volatile DialogueAdapter dialogueAdapter;
+
+    @FunctionalInterface
+    public interface DialogueAdapter {
+        boolean play(Player player, String questId, String phase, String speaker, List<String> lines);
+    }
 
     private record QuestMirror(Map<String, Map<String, Long>> active,
                                Set<String> completed,
@@ -600,6 +606,7 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
     }
 
     public void setNpcBridgeActive(final boolean active) { npcBridgeActive = active; }
+    public void setDialogueAdapter(final DialogueAdapter adapter) { dialogueAdapter = adapter; }
     public boolean isNpcBridgeActive() { return npcBridgeActive; }
 
     public void playGiveDialogue(final Player player, final String questId) {
@@ -1725,6 +1732,11 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
         if (lines.isEmpty()) return;
         final String speaker = quest.getString("dialogue.speaker",
                 fallbackSpeaker == null ? "???" : fallbackSpeaker);
+        final DialogueAdapter adapter = dialogueAdapter;
+        if (adapter != null && adapter.play(player, questId, phase, speaker, List.copyOf(lines))) {
+            scheduleDialogueChoices(player, questId, phase, lines, quest);
+            return;
+        }
         for (int i = 0; i < lines.size(); i++) {
             final String line = lines.get(i);
             final Runnable send = () -> player.sendMessage(messageManager.getMessage(
@@ -1733,13 +1745,17 @@ public final class QuestManager implements PersistentStore, PlayerStateCleanup {
             if (i == 0) send.run();
             else player.getScheduler().runDelayed(plugin, task -> send.run(), null, 30L * i);
         }
-        if ("give".equalsIgnoreCase(phase)) {
-            final ConfigurationSection choices = quest.getConfigurationSection("dialogue.choices");
-            if (choices != null && !choices.getKeys(false).isEmpty())
-                player.getScheduler().runDelayed(plugin,
-                        task -> sendChoices(player, normalizeQuestId(questId), choices),
-                        null, 30L * Math.max(1, lines.size()));
-        }
+        scheduleDialogueChoices(player, questId, phase, lines, quest);
+    }
+
+    private void scheduleDialogueChoices(final Player player, final String questId, final String phase,
+                                         final List<String> lines, final ConfigurationSection quest) {
+        if (!"give".equalsIgnoreCase(phase)) return;
+        final ConfigurationSection choices = quest.getConfigurationSection("dialogue.choices");
+        if (choices != null && !choices.getKeys(false).isEmpty())
+            player.getScheduler().runDelayed(plugin,
+                    task -> sendChoices(player, normalizeQuestId(questId), choices),
+                    null, 30L * Math.max(1, lines.size()));
     }
 
     /**
