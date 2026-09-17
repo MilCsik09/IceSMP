@@ -89,7 +89,8 @@ public final class TooltipPresentationRegressionSuite {
                         && dev.contains("TooltipPresentation.Glyph.ARCHAEOLOGY")
                         && dev.contains("TooltipPresentation.Glyph.STORY"),
                 "DEV reference preview must exercise the reviewed semantic presentation hierarchy");
-        check(dev.contains("ItemDataFactory.applyTooltipStyleForRarity(display, \"legendas\")")
+        check(dev.contains("ItemDataFactory.hideAttributeTooltip(display)")
+                        && dev.contains("ItemDataFactory.applyTooltipStyleForRarity(display, \"legendas\")")
                         && dev.contains("ItemDataFactory.applyRarity(display"),
                 "DEV reference preview must exercise the legendary native tooltip frame");
         check(!dev.contains("Presentation-only DEV projection")
