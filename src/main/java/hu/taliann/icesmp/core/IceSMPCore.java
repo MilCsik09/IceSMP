@@ -370,6 +370,10 @@ public final class IceSMPCore {
             new java.util.concurrent.CompletableFuture<>();
     private final StatsManager statsManager;
     private final AchievementManager achievementManager;
+    private final hu.taliann.icesmp.ux.DialogueEngine dialogueEngine;
+    private final hu.taliann.icesmp.ux.MusicDirector musicDirector;
+    private final hu.taliann.icesmp.ux.UnifiedGuiManager unifiedGuiManager;
+    private final hu.taliann.icesmp.ux.ImmersiveUxListener immersiveUxListener;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask questNpcMarkerTask;
     private io.papermc.paper.threadedregions.scheduler.ScheduledTask questNpcValidationTask;
     private hu.taliann.icesmp.integration.FancyNpcsQuestBridge npcQuestBridge;
@@ -566,6 +570,13 @@ public final class IceSMPCore {
         this.donationChestManager = new DonationChestManager(plugin, configManager);
         this.questManager = new QuestManager(plugin, configManager, messageManager, jobManager,
                 currencyManager, factionManager, sinManager, seasonManager);
+        this.musicDirector = new hu.taliann.icesmp.ux.MusicDirector(plugin);
+        this.dialogueEngine = new hu.taliann.icesmp.ux.DialogueEngine(plugin, messageManager);
+        this.dialogueEngine.setMusicDirector(musicDirector);
+        this.questManager.setDialogueAdapter(dialogueEngine::playQuestLines);
+        this.unifiedGuiManager = new hu.taliann.icesmp.ux.UnifiedGuiManager(plugin);
+        this.immersiveUxListener = new hu.taliann.icesmp.ux.ImmersiveUxListener(
+                dialogueEngine, musicDirector, unifiedGuiManager);
         this.communityGoalManager = new CommunityGoalManager(plugin, configManager, factionManager,
                 factionTreasuryManager, messageManager, seasonManager);
         seasonManager.setSeasonTransitionCoordinator(communityGoalManager::commitSeasonTransition);
@@ -1477,6 +1488,7 @@ public final class IceSMPCore {
             questNpcValidationTask.cancel();
             questNpcValidationTask = null;
         }
+        shutdownStep("immersiveUx", immersiveUxListener::shutdown);
         shutdownStep("raidManager", raidManager::shutdown);
         if (economyEventTask != null) {
             economyEventTask.cancel();
@@ -2129,6 +2141,8 @@ public final class IceSMPCore {
      */
     private void registerListeners() {
         final PluginManager pluginManager = plugin.getServer().getPluginManager();
+        pluginManager.registerEvents(unifiedGuiManager, plugin);
+        pluginManager.registerEvents(immersiveUxListener, plugin);
         pluginManager.registerEvents(new CurrencyCraftListener(currencyManager), plugin);
         pluginManager.registerEvents(new CurrencyItemRefreshListener(plugin, currencyManager), plugin);
         pluginManager.registerEvents(new CharacterGUIListener(plugin, characterMenuContext), plugin);
