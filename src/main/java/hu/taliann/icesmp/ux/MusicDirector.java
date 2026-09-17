@@ -110,11 +110,10 @@ public final class MusicDirector {
         final State next = new State(candidate.contexts(), selectedId);
         final State previous = states.put(player.getUniqueId(), next);
         final String previousId = previous == null ? null : previous.activeId();
-        if (Objects.equals(previousId, selectedId)) return;
-        if (previous != null && previousId != null) {
-            final MusicContext old = previous.contexts().get(previousId);
-            if (old != null) player.stopSound(old.sound());
-        }
+        final MusicContext previousActive = previous == null || previousId == null
+                ? null : previous.contexts().get(previousId);
+        if (Objects.equals(previousActive, selected)) return;
+        if (previousActive != null) player.stopSound(previousActive.sound());
         if (selected != null && enabled.test(player.getUniqueId(), selected)) {
             final double multiplier = Math.max(0.0D, Math.min(1.0D, volume.applyAsDouble(player.getUniqueId())));
             player.playSound(player.getLocation(), selected.sound(),
