@@ -73,7 +73,7 @@ public final class MusicDirector {
             final State before = activeContexts.getOrDefault(id, new State(Map.of(), null));
             final Map<String, MusicContext> next = new LinkedHashMap<>(before.contexts());
             next.put(context.id(), context);
-            transitionOwned(player, new State(Map.copyOf(next), before.activeId()));
+            transitionOwned(player, new State(Map.copyOf(next), before.activeId()), false);
         });
     }
 
@@ -84,7 +84,7 @@ public final class MusicDirector {
             if (before == null) return;
             final Map<String, MusicContext> next = new LinkedHashMap<>(before.contexts());
             next.remove(contextId);
-            transitionOwned(player, new State(Map.copyOf(next), before.activeId()));
+            transitionOwned(player, new State(Map.copyOf(next), before.activeId()), false);
         });
     }
 
@@ -93,11 +93,12 @@ public final class MusicDirector {
         runOwned(player, () -> clearOwned(player));
     }
 
+    /** Re-evaluates enablement and reapplies volume even when the winning context id is unchanged. */
     public void refresh(final Player player) {
         if (player == null) return;
         runOwned(player, () -> {
             final State current = activeContexts.get(player.getUniqueId());
-            if (current != null) transitionOwned(player, current);
+            if (current != null) transitionOwned(player, current, true);
         });
     }
 
@@ -147,7 +148,7 @@ public final class MusicDirector {
         }
     }
 
-    private void transitionOwned(final Player player, final State candidate) {
+    private void transitionOwned(final Player player, final State candidate, final boolean forceReplay) {
         final UUID playerId = player.getUniqueId();
         final MusicContext selected = select(new ArrayList<>(candidate.contexts().values()),
                 context -> enabled.test(playerId, context));
@@ -157,7 +158,7 @@ public final class MusicDirector {
         final String previousId = previous == null ? null : previous.activeId();
         final MusicContext previousActive = previous == null || previousId == null
                 ? null : previous.contexts().get(previousId);
-        if (Objects.equals(previousActive, selected)) return;
+        if (!forceReplay && Objects.equals(previousActive, selected)) return;
         if (previousActive != null) player.stopSound(previousActive.sound());
         if (selected != null) playOwned(player, selected);
     }
