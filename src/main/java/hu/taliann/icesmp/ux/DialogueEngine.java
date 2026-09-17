@@ -80,24 +80,32 @@ public final class DialogueEngine {
         runOwned(player, () -> playOwned(player, sequence));
     }
 
-    /**
-     * QuestManager adapter: keeps authored quest definitions authoritative while moving only
-     * timing, replacement and cleanup into this runtime. The established quest cadence is one
-     * line every 30 ticks; duration is zero because the following node's delay owns that gap.
-     */
     public boolean playQuestLines(final Player player, final String questId, final String phase,
                                   final String speaker, final List<String> lines) {
+        return playQuestLines(player, questId, phase, speaker, lines, null);
+    }
+
+    /**
+     * QuestManager adapter: keeps authored quest definitions authoritative while moving timing,
+     * replacement and completion ownership into this runtime. The established quest cadence is
+     * one line every 30 ticks. When a completion callback is supplied (for example quest choices),
+     * the final line retains the legacy 30-tick tail before the callback executes.
+     */
+    public boolean playQuestLines(final Player player, final String questId, final String phase,
+                                  final String speaker, final List<String> lines,
+                                  final Runnable onComplete) {
         if (player == null || lines == null || lines.isEmpty()) return false;
         final List<DialogueNode> nodes = new ArrayList<>();
         for (int i = 0; i < lines.size(); i++) {
             final Component line = messages.getMessage("quest.dialogue-line",
                     "<gold>{speaker}:</gold> <white>{line}</white>",
                     Map.of("speaker", speaker, "line", lines.get(i)));
+            final boolean last = i == lines.size() - 1;
             nodes.add(new DialogueNode(questId + ":" + phase + ":" + i, "",
-                    line, i == 0 ? 0L : 30L, 0L, true,
+                    line, i == 0 ? 0L : 30L, last && onComplete != null ? 30L : 0L, true,
                     ignored -> true, null, null));
         }
-        play(player, new DialogueSequence(questId + ":" + phase, nodes, null, null));
+        play(player, new DialogueSequence(questId + ":" + phase, nodes, null, onComplete));
         return true;
     }
 
