@@ -179,6 +179,28 @@ az alábbi rések kódban visszaigazoltak, javításuk tételenként külön dö
   bizonyítékáig a deklarált `production_ready` érték helyesen `false`; CI nem
   helyettesítheti és nem jelölheti késznek ezt a pontot.
 
+
+### Trash Relic — teljes review (nyitott, 2026-09-17)
+
+- ⬜ **Teljes, tárgyankénti review:** minden Trash Relic összevetése a normatív
+  designnal és a canonical tartalommal; aktiválás, feltételek, hatás, egyszeri
+  felhasználás, átalakulás, eldobás és a játékosnak látható visszajelzés.
+- ⬜ **Azonos tárgykezelés:** természetes loot, DEV-addolás és átalakult tárgyak
+  azonossága, eredete és history/PDC-megőrzése; főkéz, offhand és inventory.
+- ⬜ **Régészet és tooltip:** normál/force vizsgálat, ismételt elemzés,
+  ideiglenes lore lejárata és tisztítása; kreatív módból visszaérkező adatok,
+  duplikált vagy tartósan beragadt megfigyelések kizárása.
+- ⬜ **Inventory és életciklus:** shift-kattintás, kurzoros mozgatás, húzás,
+  kézcsere, eldobás/felvétel, konténerek, halál, kilépés és újraindítás;
+  fantomtárgy, valódi duplikáció és tárgyvesztés kizárása.
+- ⬜ **Integráció és hibautak:** WorldWeaver-vizsgálat/módosítás, mentési
+  hibák, félbeszakadt műveletek és visszaállítás; Paper/Folia régióbiztonság,
+  eseménysorrend és párhuzamos játékosinterakciók.
+- ⬜ **Lezárás:** tárgyankénti elvárt/tényleges eredmény, reprodukálható
+  findingek, javítások és célzott regressziók; a végleges commiton kézi
+  playtest. A friss tooltip- és inventoryjavítások még nem jelentik a teljes
+  review lezárását. Ez külön ütemezett feladat, jelenleg nincs elvégezve.
+
 ## 2. Builderkapuk
 
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő
