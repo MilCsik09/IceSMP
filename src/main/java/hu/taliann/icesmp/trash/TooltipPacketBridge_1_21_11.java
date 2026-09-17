@@ -36,7 +36,10 @@ public final class TooltipPacketBridge_1_21_11
     private final ConcurrentMap<UUID, Overlay> overlays = new ConcurrentHashMap<>();
     private final Access access;
 
-    public TooltipPacketBridge_1_21_11(final JavaPlugin plugin, final TrashItemFactory items) {
+    public TooltipPacketBridge_1_21_11(
+            final JavaPlugin plugin,
+            final TrashItemFactory items
+    ) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.items = Objects.requireNonNull(items, "items");
         this.access = Access.probe();
@@ -48,70 +51,168 @@ public final class TooltipPacketBridge_1_21_11
     }
 
     @Override
-    public boolean show(final Player player, final ItemStack canonicalSnapshot,
-                        final List<String> observations) {
-        return show(player, org.bukkit.inventory.EquipmentSlot.OFF_HAND, canonicalSnapshot, observations);
+    public boolean show(
+            final Player player,
+            final ItemStack canonicalSnapshot,
+            final List<String> observations
+    ) {
+        return show(
+                player,
+                org.bukkit.inventory.EquipmentSlot.OFF_HAND,
+                canonicalSnapshot,
+                observations
+        );
     }
 
     @Override
-    public boolean show(final Player player, final org.bukkit.inventory.EquipmentSlot inspectedHand,
-                        final ItemStack canonicalSnapshot, final List<String> observations) {
+    public boolean show(
+            final Player player,
+            final org.bukkit.inventory.EquipmentSlot inspectedHand,
+            final ItemStack canonicalSnapshot,
+            final List<String> observations
+    ) {
         Objects.requireNonNull(player, "player");
-        final int menuSlot = inspectedHand == org.bukkit.inventory.EquipmentSlot.OFF_HAND
-                ? OFFHAND_MENU_SLOT : 36 + player.getInventory().getHeldItemSlot();
         Objects.requireNonNull(canonicalSnapshot, "canonicalSnapshot");
-        if (access == null || observations == null || observations.isEmpty()) return false;
+
+        final int menuSlot =
+                inspectedHand == org.bukkit.inventory.EquipmentSlot.OFF_HAND
+                        ? OFFHAND_MENU_SLOT
+                        : 36 + player.getInventory().getHeldItemSlot();
+
+        if (access == null || observations == null || observations.isEmpty()) {
+            return false;
+        }
+
+        /*
+         * IMPORTANT:
+         * Work on a clone only. The archaeology observation is presentation-only and must
+         * never become part of the canonical ItemStack stored in the player's inventory.
+         */
         final ItemStack display = canonicalSnapshot.clone();
+
         ArchaeologyTooltipLore.strip(display);
+
         final ItemMeta meta = display.getItemMeta();
         final List<Component> lore = new ArrayList<>();
-        if (meta.lore() != null) lore.addAll(Objects.requireNonNull(meta.lore()));
+
+        if (meta.lore() != null) {
+            lore.addAll(Objects.requireNonNull(meta.lore()));
+        }
+
         lore.add(Component.empty());
         lore.add(ArchaeologyTooltipLore.HEADER);
-        final List<Component> generated = TooltipEngine.render(List.of(
-                TooltipEngine.generated(TooltipEngine.SectionId.ARCHAEOLOGY, 70,
-                        observations.stream().limit(8).map(line -> Component.text("• " + line,
-                                NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)).toList())));
+
+        /*
+         * Explicit <Component> mapping is intentional.
+         *
+         * Component.text(...).decoration(...) resolves to TextComponent, therefore Java would
+         * otherwise infer List<TextComponent>. TooltipEngine.generated() currently accepts
+         * Collection<Component>, and Java generic collections are invariant.
+         */
+        final List<Component> observationLines = observations.stream()
+                .limit(8)
+                .<Component>map(line ->
+                        Component.text("• " + line, NamedTextColor.GRAY)
+                                .decoration(TextDecoration.ITALIC, false)
+                )
+                .toList();
+
+        final List<Component> generated = TooltipEngine.render(
+                List.of(
+                        TooltipEngine.generated(
+                                TooltipEngine.SectionId.ARCHAEOLOGY,
+                                70,
+                                observationLines
+                        )
+                )
+        );
+
         lore.addAll(generated);
+
         meta.lore(lore);
         display.setItemMeta(meta);
-        if (items.isKnownItem(display)) items.refreshPresentation(display);
+
+        /*
+         * Refresh only the temporary display clone.
+         * The canonical inventory item remains untouched.
+         */
+        if (items.isKnownItem(display)) {
+            items.refreshPresentation(display);
+        }
+
         clear(player);
-        if (!sendDisplay(player, display, menuSlot)) return false;
+
+        if (!sendDisplay(player, display, menuSlot)) {
+            return false;
+        }
+
         final Overlay overlay = new Overlay(menuSlot);
         final Overlay previous = overlays.put(player.getUniqueId(), overlay);
-        if (previous != null) previous.cancel();
+
+        if (previous != null) {
+            previous.cancel();
+        }
+
         try {
             final io.papermc.paper.threadedregions.scheduler.ScheduledTask expiry =
-                    player.getScheduler().runAtFixedRate(plugin, task -> {
-                        if (overlays.get(player.getUniqueId()) != overlay) { task.cancel(); return; }
-                        final ItemStack current = canonical(player, menuSlot);
-                        overlay.elapsed += 5;
-                        if (overlay.elapsed >= OVERLAY_TICKS || current == null
-                                || current.getAmount() != canonicalSnapshot.getAmount()
-                                || !current.isSimilar(canonicalSnapshot)) {
-                            clear(player);
-                            return;
-                        }
-                        // Cancelled use and vanilla container sync may replace a successfully sent copy.
-                        if (!sendDisplay(player, display, menuSlot)) clear(player);
-                    }, () -> overlays.remove(player.getUniqueId(), overlay), 1L, 5L);
+                    player.getScheduler().runAtFixedRate(
+                            plugin,
+                            task -> {
+                                if (overlays.get(player.getUniqueId()) != overlay) {
+                                    task.cancel();
+                                    return;
+                                }
+
+                                final ItemStack current = canonical(player, menuSlot);
+
+                                overlay.elapsed += 5;
+
+                                if (overlay.elapsed >= OVERLAY_TICKS
+                                        || current == null
+                                        || current.getAmount() != canonicalSnapshot.getAmount()
+                                        || !current.isSimilar(canonicalSnapshot)) {
+
+                                    clear(player);
+                                    return;
+                                }
+
+                                /*
+                                 * Cancelled use and vanilla container sync may replace a
+                                 * successfully sent display-only copy, therefore refresh it
+                                 * periodically while the canonical item still matches.
+                                 */
+                                if (!sendDisplay(player, display, menuSlot)) {
+                                    clear(player);
+                                }
+                            },
+                            () -> overlays.remove(player.getUniqueId(), overlay),
+                            1L,
+                            5L
+                    );
+
             overlay.setTask(expiry);
+
             if (expiry == null && overlays.remove(player.getUniqueId(), overlay)) {
                 sendCanonical(player, overlay.menuSlot);
                 return false;
             }
         } catch (final RuntimeException rejected) {
-            if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player, overlay.menuSlot);
+            if (overlays.remove(player.getUniqueId(), overlay)) {
+                sendCanonical(player, overlay.menuSlot);
+            }
+
             return false;
         }
+
         return true;
     }
 
     @Override
     public void clear(final Player player) {
         Objects.requireNonNull(player, "player");
+
         final Overlay overlay = overlays.remove(player.getUniqueId());
+
         if (overlay != null) {
             overlay.cancel();
             sendCanonical(player, overlay.menuSlot);
@@ -121,110 +222,262 @@ public final class TooltipPacketBridge_1_21_11
     @Override
     public void clearForInventoryMutation(final Player player) {
         Objects.requireNonNull(player, "player");
+
         final Overlay overlay = overlays.remove(player.getUniqueId());
-        if (overlay == null) return;
+
+        if (overlay == null) {
+            return;
+        }
+
         overlay.cancel();
-        // A slot packet inside InventoryClickEvent can restore the pre-move item on the client.
-        // The next owner tick sees committed source/destination slots and the final cursor.
-        player.getScheduler().run(plugin, ignored -> {
-            if (player.isOnline() && !player.isDead()) player.updateInventory();
-        }, null);
+
+        /*
+         * Sending a slot packet from inside InventoryClickEvent can restore the pre-move item
+         * client-side. Run the canonical inventory resync on the player's next owning tick,
+         * after the inventory mutation has committed.
+         */
+        player.getScheduler().run(
+                plugin,
+                ignored -> {
+                    if (player.isOnline() && !player.isDead()) {
+                        player.updateInventory();
+                    }
+                },
+                null
+        );
     }
 
     @Override
     public void clearPlayerState(final UUID playerId) {
         final Overlay overlay = overlays.remove(playerId);
-        if (overlay != null) overlay.cancel();
+
+        if (overlay != null) {
+            overlay.cancel();
+        }
     }
 
     @Override
     public void shutdown() {
         for (final Player player : Bukkit.getOnlinePlayers()) {
             final Overlay overlay = overlays.remove(player.getUniqueId());
-            if (overlay == null) continue;
+
+            if (overlay == null) {
+                continue;
+            }
+
             overlay.cancel();
-            player.getScheduler().run(plugin, ignored -> sendCanonical(player, overlay.menuSlot), null);
+
+            player.getScheduler().run(
+                    plugin,
+                    ignored -> sendCanonical(player, overlay.menuSlot),
+                    null
+            );
         }
+
         overlays.clear();
     }
 
-    public boolean hasOverlay(final UUID playerId, final int inventorySlot) {
+    public boolean hasOverlay(
+            final UUID playerId,
+            final int inventorySlot
+    ) {
         final Overlay overlay = overlays.get(playerId);
-        return overlay != null && overlay.menuSlot == (inventorySlot == 40 ? OFFHAND_MENU_SLOT : 36 + inventorySlot);
+
+        return overlay != null
+                && overlay.menuSlot
+                == (inventorySlot == 40
+                ? OFFHAND_MENU_SLOT
+                : 36 + inventorySlot);
     }
 
-    static boolean projectInventorySlot(final Player player, final int slot, final ItemStack display) {
-        if (slot != 40 && (slot < 0 || slot > 8)) return false;
-        return sendInventoryProjection(player, display, slot == 40 ? OFFHAND_MENU_SLOT : 36 + slot);
+    static boolean projectInventorySlot(
+            final Player player,
+            final int slot,
+            final ItemStack display
+    ) {
+        if (slot != 40 && (slot < 0 || slot > 8)) {
+            return false;
+        }
+
+        return sendInventoryProjection(
+                player,
+                display,
+                slot == 40
+                        ? OFFHAND_MENU_SLOT
+                        : 36 + slot
+        );
     }
 
-    private void sendCanonical(final Player player, final int menuSlot) {
+    private void sendCanonical(
+            final Player player,
+            final int menuSlot
+    ) {
         final ItemStack current = canonical(player, menuSlot);
-        sendDisplay(player, current == null ? new ItemStack(org.bukkit.Material.AIR) : current.clone(), menuSlot);
+
+        sendDisplay(
+                player,
+                current == null
+                        ? new ItemStack(org.bukkit.Material.AIR)
+                        : current.clone(),
+                menuSlot
+        );
     }
 
-    private static ItemStack canonical(final Player player, final int menuSlot) {
-        final int slot = menuSlot == OFFHAND_MENU_SLOT ? 40 : menuSlot - 36;
+    private static ItemStack canonical(
+            final Player player,
+            final int menuSlot
+    ) {
+        final int slot =
+                menuSlot == OFFHAND_MENU_SLOT
+                        ? 40
+                        : menuSlot - 36;
+
         final ItemStack item = player.getInventory().getItem(slot);
-        if (ArchaeologyTooltipLore.strip(item)) player.getInventory().setItem(slot, item);
+
+        /*
+         * Safety cleanup for stale generated archaeology presentation that may have
+         * accidentally returned from the client/inventory flow.
+         */
+        if (ArchaeologyTooltipLore.strip(item)) {
+            player.getInventory().setItem(slot, item);
+        }
+
         return item;
     }
 
-    private boolean sendDisplay(final Player player, final ItemStack display, final int menuSlot) {
+    private boolean sendDisplay(
+            final Player player,
+            final ItemStack display,
+            final int menuSlot
+    ) {
         return sendInventoryProjection(player, display, menuSlot);
     }
 
-    static boolean projectHand(final Player player, final org.bukkit.inventory.EquipmentSlot hand,
-                               final ItemStack display) {
-        return sendInventoryProjection(player, display, hand == org.bukkit.inventory.EquipmentSlot.OFF_HAND
-                ? OFFHAND_MENU_SLOT : 36 + player.getInventory().getHeldItemSlot());
+    static boolean projectHand(
+            final Player player,
+            final org.bukkit.inventory.EquipmentSlot hand,
+            final ItemStack display
+    ) {
+        return sendInventoryProjection(
+                player,
+                display,
+                hand == org.bukkit.inventory.EquipmentSlot.OFF_HAND
+                        ? OFFHAND_MENU_SLOT
+                        : 36 + player.getInventory().getHeldItemSlot()
+        );
     }
 
-    private static final class ProjectionAccess { private static final Access VALUE = Access.probe(); }
+    private static final class ProjectionAccess {
+        private static final Access VALUE = Access.probe();
+    }
 
-    private static boolean sendInventoryProjection(final Player player, final ItemStack display, final int menuSlot) {
+    private static boolean sendInventoryProjection(
+            final Player player,
+            final ItemStack display,
+            final int menuSlot
+    ) {
         final Access access = ProjectionAccess.VALUE;
-        if (access == null || !player.isOnline()) return false;
+
+        if (access == null || !player.isOnline()) {
+            return false;
+        }
+
         try {
-            final Object handle = access.getHandle().invoke(player);
-            final Object nmsItem = access.asNmsCopy().invoke(null, display);
-            final Object packet = access.packetConstructor().newInstance(
-                    menuSlot == OFFHAND_MENU_SLOT ? 40 : menuSlot - 36, nmsItem);
-            final Object connection = access.connection().get(handle);
+            final Object handle =
+                    access.getHandle().invoke(player);
+
+            final Object nmsItem =
+                    access.asNmsCopy().invoke(null, display);
+
+            final Object packet =
+                    access.packetConstructor().newInstance(
+                            menuSlot == OFFHAND_MENU_SLOT
+                                    ? 40
+                                    : menuSlot - 36,
+                            nmsItem
+                    );
+
+            final Object connection =
+                    access.connection().get(handle);
+
             access.send().invoke(connection, packet);
+
             return true;
         } catch (final ReflectiveOperationException | RuntimeException rejected) {
             return false;
         }
     }
 
-    private record Access(Method getHandle, Method asNmsCopy, Field connection,
-                          Constructor<?> packetConstructor, Method send) {
+    private record Access(
+            Method getHandle,
+            Method asNmsCopy,
+            Field connection,
+            Constructor<?> packetConstructor,
+            Method send
+    ) {
 
         private static Access probe() {
             try {
-                final Class<?> craftPlayer = Class.forName(
-                        "org.bukkit.craftbukkit.entity.CraftPlayer");
-                final Class<?> serverPlayer = Class.forName(
-                        "net.minecraft.server.level.ServerPlayer");
-                final Class<?> craftItem = Class.forName(
-                        "org.bukkit.craftbukkit.inventory.CraftItemStack");
-                final Class<?> nmsItem = Class.forName("net.minecraft.world.item.ItemStack");
-                final Class<?> packetType = Class.forName(
-                        "net.minecraft.network.protocol.Packet");
-                final Class<?> setSlot = Class.forName(
-                        "net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket");
-                final Class<?> connectionType = Class.forName(
-                        "net.minecraft.server.network.ServerGamePacketListenerImpl");
-                final Method send = java.util.Arrays.stream(connectionType.getMethods())
-                        .filter(method -> method.getName().equals("send")
-                                && method.getParameterCount() == 1
-                                && packetType.isAssignableFrom(method.getParameterTypes()[0]))
-                        .findFirst().orElseThrow();
-                return new Access(craftPlayer.getMethod("getHandle"),
-                        craftItem.getMethod("asNMSCopy", ItemStack.class),
+                final Class<?> craftPlayer =
+                        Class.forName(
+                                "org.bukkit.craftbukkit.entity.CraftPlayer"
+                        );
+
+                final Class<?> serverPlayer =
+                        Class.forName(
+                                "net.minecraft.server.level.ServerPlayer"
+                        );
+
+                final Class<?> craftItem =
+                        Class.forName(
+                                "org.bukkit.craftbukkit.inventory.CraftItemStack"
+                        );
+
+                final Class<?> nmsItem =
+                        Class.forName(
+                                "net.minecraft.world.item.ItemStack"
+                        );
+
+                final Class<?> packetType =
+                        Class.forName(
+                                "net.minecraft.network.protocol.Packet"
+                        );
+
+                final Class<?> setSlot =
+                        Class.forName(
+                                "net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket"
+                        );
+
+                final Class<?> connectionType =
+                        Class.forName(
+                                "net.minecraft.server.network.ServerGamePacketListenerImpl"
+                        );
+
+                final Method send =
+                        java.util.Arrays.stream(connectionType.getMethods())
+                                .filter(method ->
+                                        method.getName().equals("send")
+                                                && method.getParameterCount() == 1
+                                                && packetType.isAssignableFrom(
+                                                method.getParameterTypes()[0]
+                                        )
+                                )
+                                .findFirst()
+                                .orElseThrow();
+
+                return new Access(
+                        craftPlayer.getMethod("getHandle"),
+                        craftItem.getMethod(
+                                "asNMSCopy",
+                                ItemStack.class
+                        ),
                         serverPlayer.getField("connection"),
-                        setSlot.getConstructor(int.class, nmsItem), send);
+                        setSlot.getConstructor(
+                                int.class,
+                                nmsItem
+                        ),
+                        send
+                );
             } catch (final ReflectiveOperationException | RuntimeException unavailable) {
                 return null;
             }
@@ -232,24 +485,35 @@ public final class TooltipPacketBridge_1_21_11
     }
 
     private static final class Overlay {
+
         private io.papermc.paper.threadedregions.scheduler.ScheduledTask task;
         private boolean cancelled;
         private long elapsed;
 
         private final int menuSlot;
 
-        private Overlay(final int menuSlot) { this.menuSlot = menuSlot; }
+        private Overlay(final int menuSlot) {
+            this.menuSlot = menuSlot;
+        }
 
         private synchronized void setTask(
-                final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled) {
-            if (cancelled && scheduled != null) scheduled.cancel();
-            else task = scheduled;
+                final io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled
+        ) {
+            if (cancelled && scheduled != null) {
+                scheduled.cancel();
+            } else {
+                task = scheduled;
+            }
         }
 
         private synchronized void cancel() {
             cancelled = true;
+
             final io.papermc.paper.threadedregions.scheduler.ScheduledTask current = task;
-            if (current != null) current.cancel();
+
+            if (current != null) {
+                current.cancel();
+            }
         }
     }
 }

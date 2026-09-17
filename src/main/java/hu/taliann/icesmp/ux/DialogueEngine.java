@@ -1,6 +1,6 @@
 package hu.taliann.icesmp.ux;
 
-import hu.taliann.icesmp.managers.MessageManager;
+import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
