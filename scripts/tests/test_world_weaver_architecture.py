@@ -1,6 +1,7 @@
 """Static release fences complement, but do not replace, live Folia/client evidence."""
 from pathlib import Path
 import re
+import runpy
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -37,6 +38,13 @@ class WorldWeaverArchitectureTest(unittest.TestCase):
                        'if (providerId.equals("pve")) { specialGui(); }']:
             self.assertTrue(violations(source, frontend=True), source)
         self.assertTrue(violations("import hu.taliann.icesmp.dev.weaver.gui.WorldWeaverGUI;", provider=True))
+
+    def test_presentation_only_ux_is_not_promoted_to_worldweaver_authority(self):
+        audit = runpy.run_path(str(ROOT / "scripts/audit_world_weaver_coverage.py"))
+        include = audit["is_world_weaver_inventory_path"]
+        self.assertFalse(include("src/main/java/hu/taliann/icesmp/ux/UnifiedGuiManager.java"))
+        self.assertFalse(include("src/main/java/hu/taliann/icesmp/ux/MusicDirector.java"))
+        self.assertTrue(include("src/main/java/hu/taliann/icesmp/managers/QuestManager.java"))
 
     def test_no_public_feature_or_permission_documentation(self):
         paths = [ROOT / "README.md"] + [ROOT / "docs" / name for name in

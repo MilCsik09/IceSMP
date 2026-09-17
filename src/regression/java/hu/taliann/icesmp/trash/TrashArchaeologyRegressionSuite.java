@@ -161,18 +161,19 @@ public final class TrashArchaeologyRegressionSuite {
 
     private static void preservesCanonicalPlayerOnlyOverlay() throws Exception {
         final String bridge = Files.readString(BRIDGE);
-        require(bridge, "ClientboundContainerSetSlotPacket", "single packet bridge");
+        require(bridge, "ClientboundSetPlayerInventoryPacket", "single player-inventory packet bridge");
         require(bridge, "OFFHAND_MENU_SLOT = 45", "offhand display slot");
         require(bridge, "OVERLAY_TICKS = 1_200L", "60 second overlay expiry");
         require(bridge, "canonicalSnapshot.clone()", "display-only clone");
         require(bridge, "sendCanonical(player, overlay.menuSlot)", "canonical resync");
         require(bridge, "if (access == null", "runtime probe fail-closed boundary");
-        require(bridge, "if (previous != null) previous.cancel()",
+        require(bridge, "if (previous != null)",
                 "single overlay-expiry task per player");
+        require(bridge, "previous.cancel()", "previous overlay cancellation");
         require(bridge, "overlay.cancel()", "overlay expiry teardown");
-        check(bridge.indexOf("items.refreshPresentation(display)")
-                        < bridge.indexOf("meta.lore(lore)"),
-                "presentation refresh erased the temporary observation block");
+        check(bridge.indexOf("meta.lore(lore)")
+                        < bridge.indexOf("items.refreshPresentation(display)"),
+                "data-component refresh no longer follows the temporary lore ItemMeta write");
         check(!bridge.contains("setItemInOffHand") && !bridge.contains("setItem(45"),
                 "overlay mutated server-authoritative inventory state");
     }

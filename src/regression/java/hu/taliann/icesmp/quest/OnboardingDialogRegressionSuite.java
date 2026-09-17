@@ -1,5 +1,7 @@
 package hu.taliann.icesmp.quest;
 
+import hu.taliann.icesmp.ux.ImmersiveUxFoundationRegressionSuite;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ public final class OnboardingDialogRegressionSuite {
         theCurrentCopyIsStableAndSaysWhatItMustSay();
         packagedConfigAndFallbackAgree();
         firstJoinAndAutoQuestSourceContracts();
+        ImmersiveUxFoundationRegressionSuite.main(args);
         System.out.println("Onboarding dialog regression suite passed. assertions=" + assertions);
     }
 

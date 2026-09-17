@@ -1675,3 +1675,20 @@ implementáció gazdáját nevezi meg; a játékosút a fenti tematikus fejezete
 | `feature.warrior-gameplay` | A warrior kaszt eseményei és saját játékszabályai. | `WarriorGameplayService` |
 | `feature.wearable-presentation` | Technikai felelősség: wearable presentation. | `WearablePresentation` |
 | `feature.wizard-gameplay` | A wizard kaszt eseményei és saját játékszabályai. | `WizardGameplayService` |
+
+
+### Immersive UX foundation
+
+<!-- icesmp-doc-id: feature.immersive-ux.foundation -->
+
+> **Implementáció elkészült, staging-ellenőrzés szükséges** · A futó JAR-hoz képest: **Új foundation-réteg**
+
+Közös, Folia-biztos presentation foundation a semantic tooltip-szakaszokhoz, játékosonként izolált dialógusokhoz, prioritásos zenei contextusokhoz és session-owned inventory GUI komponensekhez.
+
+- **Így találkozol vele:** quest-dialogue útvonalak, archaeology observation tooltip, valamint az új runtime extension API-k.
+- **Kinek szól:** Játékos, Admin, Fejlesztő, Tesztelő.
+- **Mitől mozdul meg:** quest dialogue, item presentation, explicit dialogue/music API vagy egy erre migrált GUI.
+- **Fontos határ:** a canonical item state és quest-definíció továbbra is a meglévő itemization/config rendszerben él; az új réteg nem ír presentation-only adatot PDC-be.
+- **Staging gate:** két párhuzamos dialogue session, quit/death/world-change cleanup, GUI inventory-exploit mátrix, resource-pack sound event és tooltip visual QA még kézi ellenőrzést igényel.
+
+<!-- icesmp-ux-foundation-doc -->

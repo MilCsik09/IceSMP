@@ -2720,3 +2720,10 @@ Minecraft klienssel külön kell bizonyítani; a build csak asset-, renderer- é
 - **Ábrázolás:** türkiz szívkagyló ezüst foglalatban, gyöngyház-erezet, halvány kék derengés
 - **Színvilág:** prizmarin-türkiz, gyöngyház, ezüst; akcent: halvány kék fény
 - **Hangulat / lore:** Halász-recept eredménye (Ritkaság kategória, 44. szint).
+
+
+## Semantic UX mapping
+
+The TooltipEngine and UnifiedGuiManager expose presentation seams, not new gameplay identifiers. Use semantic mappings for tooltip sections, GUI navigation and resource-pack music events. Do not place raw Unicode magic glyphs, uncontrolled CustomModelData values or sound-file paths in gameplay logic. The vanilla tooltip and GUI fallback must remain usable without the pack.
+
+<!-- icesmp-ux-foundation-doc -->

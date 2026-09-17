@@ -136,3 +136,17 @@ A `public_base_url` alapértéke `https://assets.icesmp.taliann.dev`. Teljes pub
 a domaint a Cloudflare R2 `icesmp` bucket **Settings → Custom Domains** részében aktívként kell
 hozzárendelni. A `r2-preflight` mód akkor is használható a kulcsok és az S3-hozzáférés külön
 tesztelésére, ha a publikus custom domain még nem aktív.
+
+
+## Immersive presentation tokens
+
+The plugin-side UX foundation refers to semantic presentation values rather than hard-coded glyphs or model data. Resource-pack authors may map:
+
+- tooltip section accents and dividers to font/PUA glyphs;
+- rarity backgrounds/frames to the existing native `tooltip_style` layer;
+- music identifiers to custom `sounds.json` events;
+- GUI backgrounds, navigation icons and borders to centralized semantic assets.
+
+Vanilla/client fallback remains valid when a mapping is absent. A resource-pack asset is not considered part of the runtime contract until the pack validator and visual staging check both pass.
+
+<!-- icesmp-ux-foundation-doc -->

@@ -15,21 +15,38 @@ MANIFEST = Path("docs/development/world-weaver/coverage.json")
 SUFFIX = re.compile(r"(?:Manager|Service|Registry|Runtime|Coordinator|Authority|Catalog|Policy|Store)$")
 LEVELS = {"FULL_PROVIDER", "INSPECT_ONLY_BY_DESIGN", "NO_RUNTIME_SURFACE", "OPTIONAL_FUTURE"}
 ENTRYPOINTS = ("IceSMP.java", "IceSMPBootstrap.java", "core/IceSMPCore.java", "prologue/PrologueRuntime.java")
+# The UX package is deliberately presentation-only. It may project canonical state, but it owns
+# no gameplay authority that WorldWeaver may inspect or mutate. Keep it outside both the suffix-
+# based authority inventory and bootstrap coverage instead of classifying presentation managers as
+# gameplay owners merely because their names end in Manager.
+PRESENTATION_ONLY_PREFIXES = ("src/main/java/hu/taliann/icesmp/ux/",)
+
+
+def is_world_weaver_inventory_path(path: str) -> bool:
+    return not any(path.startswith(prefix) for prefix in PRESENTATION_ONLY_PREFIXES)
 
 
 def inventory(root: Path) -> tuple[dict[str, str], dict[str, list[str]]]:
     sources = sorted((root / SOURCE).rglob("*.java"))
     by_name = {p.stem: p.relative_to(root).as_posix() for p in sources}
-    authorities = {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-                   for p in sources if SUFFIX.search(p.stem)}
+    authorities = {}
+    for path in sources:
+        relative = path.relative_to(root).as_posix()
+        if SUFFIX.search(path.stem) and is_world_weaver_inventory_path(relative):
+            authorities[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
     bootstrap = {}
     for entry in ENTRYPOINTS:
         path = SOURCE / entry
         text = (root / path).read_text(encoding="utf-8")
         names = re.findall(r"\bnew\s+([\w.]+)\s*\(", text)
         names += re.findall(r"\bprivate\s+(?:final|volatile)\s+([\w.]+)\s+\w+\s*;", text)
-        bootstrap[path.as_posix()] = sorted({by_name[n.split(".")[-1]] for n in names
-                                            if n.split(".")[-1] in by_name})
+        resolved = {
+            by_name[n.split(".")[-1]] for n in names
+            if n.split(".")[-1] in by_name
+        }
+        bootstrap[path.as_posix()] = sorted(
+            candidate for candidate in resolved if is_world_weaver_inventory_path(candidate)
+        )
     return authorities, bootstrap
 
 
