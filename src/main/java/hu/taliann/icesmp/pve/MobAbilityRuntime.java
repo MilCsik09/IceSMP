@@ -1289,8 +1289,9 @@ public final class MobAbilityRuntime implements Listener {
             GameplayEffectGate.prepare(new GameplayEffectContext(List.copyOf(causal), java.util.Set.of(identity), duration, lifetime))
                     .whenComplete((permit, failure) -> {
                         if (failure != null || permit == null) return;
-                        final Entity current = Bukkit.getEntity(id); if (current == null) return;
-                        current.getScheduler().run(plugin, owned -> {
+                        // Completion runs on the journal executor. Resolve the live entity only
+                        // after hopping back to the scheduler captured from the owner region.
+                        handle.getScheduler().run(plugin, owned -> {
                             final LivingEntity entity = ownedLiving(id, player);
                             if (entity == null) return;
                             final List<RewardSource> currentSources;
