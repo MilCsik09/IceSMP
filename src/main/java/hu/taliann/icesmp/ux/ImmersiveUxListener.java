@@ -3,7 +3,7 @@ package hu.taliann.icesmp.ux;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -29,18 +29,17 @@ public final class ImmersiveUxListener implements Listener {
     public void onKick(final PlayerKickEvent event) { clear(event.getPlayer().getUniqueId(), event.getPlayer()); }
 
     @EventHandler
-    public void onDeath(final PlayerDeathEvent event) { dialogue.cancel(event.getEntity().getUniqueId()); }
+    public void onDeath(final PlayerDeathEvent event) { clear(event.getEntity().getUniqueId(), event.getEntity()); }
 
     @EventHandler
     public void onWorldChange(final PlayerChangedWorldEvent event) {
-        dialogue.cancel(event.getPlayer().getUniqueId());
-        music.clear(event.getPlayer());
+        clear(event.getPlayer().getUniqueId(), event.getPlayer());
     }
 
     private void clear(final java.util.UUID id, final org.bukkit.entity.Player player) {
         dialogue.clearPlayerState(id);
         music.clear(player);
-        gui.clearPlayerState(id);
+        gui.clear(player);
     }
 
     public void shutdown() {
