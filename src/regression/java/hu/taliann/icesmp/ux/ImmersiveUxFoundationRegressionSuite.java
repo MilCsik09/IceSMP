@@ -21,6 +21,7 @@ public final class ImmersiveUxFoundationRegressionSuite {
         questChoicesBelongToDialogueCompletion();
         guiSessionStateAndClosedLifecycle();
         hiddenDevHarnessStaysGuardedAndPresentationOnly();
+        TooltipPresentationRegressionSuite.main(args);
         System.out.println("Immersive UX foundation regression suite passed. assertions=" + assertions);
     }
 
