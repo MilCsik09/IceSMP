@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -25,7 +26,7 @@ public final class GuiSession implements InventoryHolder {
 
     public UUID playerId() { return playerId; }
     public String guiId() { return guiId; }
-    public Map<String, Object> state() { return state; }
+    public Map<String, Object> state() { return Collections.unmodifiableMap(state); }
     public int currentPage() { return currentPage; }
     public void currentPage(final int page) { currentPage = Math.max(0, page); }
     public Inventory inventory() { return inventory; }
