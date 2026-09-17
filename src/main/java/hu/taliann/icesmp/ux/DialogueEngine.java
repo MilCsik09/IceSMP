@@ -1,6 +1,6 @@
 package hu.taliann.icesmp.ux;
 
-import hu.taliann.icesmp.managers.MessageManager;
+import hu.taliann.icesmp.utils.MessageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -10,7 +10,6 @@ import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,9 +92,11 @@ public final class DialogueEngine {
         if (player == null || lines == null || lines.isEmpty()) return false;
         final List<DialogueNode> nodes = new ArrayList<>();
         for (int i = 0; i < lines.size(); i++) {
-            final int index = i;
-            nodes.add(new DialogueNode(questId + ":" + phase + ":" + i, speaker,
-                    Component.text(lines.get(i)), i == 0 ? 0L : 30L, 30L, true,
+            final Component line = messages.getMessage("quest.dialogue-line",
+                    "<gold>{speaker}:</gold> <white>{line}</white>",
+                    Map.of("speaker", speaker, "line", lines.get(i)));
+            nodes.add(new DialogueNode(questId + ":" + phase + ":" + i, "",
+                    line, i == 0 ? 0L : 30L, 30L, true,
                     ignored -> true, null, null));
         }
         play(player, new DialogueSequence(questId + ":" + phase, nodes, null, null));
@@ -113,8 +114,7 @@ public final class DialogueEngine {
         final Session session = sessions.remove(playerId);
         if (session == null) return;
         final Player player = Bukkit.getPlayer(playerId);
-        if (player != null && session.musicContextId != null && music != null)
-            music.remove(player, session.musicContextId);
+        if (session.musicContextId != null && music != null) removeMusic(playerId, session.musicContextId);
         for (final ScheduledTask task : List.copyOf(session.tasks)) task.cancel();
         session.tasks.clear();
     }
@@ -130,6 +130,21 @@ public final class DialogueEngine {
     public void shutdown() {
         for (final UUID id : List.copyOf(sessions.keySet())) cancel(id);
         sessions.clear();
+    }
+
+    private void removeMusic(final UUID playerId, final String contextId) {
+        final MusicDirector director = music;
+        if (director == null) return;
+        final Player player = Bukkit.getPlayer(playerId);
+        if (player == null) {
+            director.clearPlayerState(playerId);
+            return;
+        }
+        final Runnable remove = () -> director.remove(player, contextId);
+        if (Bukkit.isOwnedByCurrentRegion(player)) remove.run();
+        else player.getScheduler().run(plugin, task -> {
+            if (player.isOnline()) remove.run();
+        }, null);
     }
 
     private void advance(final Player player, final Session session) {
@@ -195,7 +210,7 @@ public final class DialogueEngine {
 
     private void finish(final Player player, final Session session) {
         if (!sessions.remove(player.getUniqueId(), session)) return;
-        if (session.musicContextId != null && music != null) music.remove(player, session.musicContextId);
+        if (session.musicContextId != null && music != null) removeMusic(player.getUniqueId(), session.musicContextId);
         if (session.onComplete != null) session.onComplete.run();
         for (final ScheduledTask task : List.copyOf(session.tasks)) task.cancel();
         session.tasks.clear();
