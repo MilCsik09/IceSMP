@@ -202,7 +202,9 @@ public final class MobKillUtil {
                 && rewardOwner == hu.taliann.icesmp.pve.AuthoredCreatureSpawnService.RewardOwner.NONE) {
             return null;
         }
-        if (excludeMinions(configManager) && MinionManager.isMinionTagged(victim)) {
+        // Durable pets never generate kill rewards, regardless of the minion config toggle.
+        if (MinionManager.isPetTagged(victim)
+                || (excludeMinions(configManager) && MinionManager.isMinionTagged(victim))) {
             return null;
         }
         if (kind != RewardKind.TRACKING) {
@@ -231,7 +233,8 @@ public final class MobKillUtil {
 
     /** Tracking snapshot without leaking a live killer Player across region threads. */
     public static KillContext eligibleTrackingKill(final LivingEntity victim) {
-        if (victim == null || !Bukkit.isOwnedByCurrentRegion(victim) || MinionManager.isMinionTagged(victim)) {
+        if (victim == null || !Bukkit.isOwnedByCurrentRegion(victim)
+                || MinionManager.isPetTagged(victim) || MinionManager.isMinionTagged(victim)) {
             return null;
         }
         final Player killer = victim.getKiller();

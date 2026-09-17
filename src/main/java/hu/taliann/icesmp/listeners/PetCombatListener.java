@@ -57,7 +57,7 @@ public final class PetCombatListener implements Listener {
 
     private boolean isOwnedCompanion(final EntityDeathEvent event) {
         return event.getEntity() instanceof LivingEntity
-                && hu.taliann.icesmp.managers.MinionManager.isMinionTagged(event.getEntity());
+                && hu.taliann.icesmp.managers.MinionManager.isPetTagged(event.getEntity());
     }
 
     private void suppressRewards(final EntityDeathEvent event) {

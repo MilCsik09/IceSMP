@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.integrity;
 
+import hu.taliann.icesmp.managers.MinionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import java.util.*;
@@ -54,6 +55,7 @@ public final class BukkitRewardSources {
         sources.addAll(causal(cause));
     }
     public static boolean deathAllowed(final RewardChannel channel, final org.bukkit.entity.LivingEntity victim) {
+        if (MinionManager.isPetTagged(victim)) return false;
         try { return GameplayRewardGate.evaluateSources(death(channel, victim)).allowed(); }
         catch (final RuntimeException | LinkageError unavailable) { return false; }
     }
