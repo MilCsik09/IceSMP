@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 public final class TrashArchaeologyListener implements Listener, PlayerStateCleanup {
 
     static final int INSPECTION_TICKS = 30;
+    private static final int OFFHAND_HOLD_TICKS = 10;
     private static final int PRESENTATION_CADENCE = 5;
 
     private final JavaPlugin plugin;
@@ -73,15 +74,27 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
         final EquipmentSlot inspectedHand = otherHand(brushHand);
         final ItemStack inspected = held(player, inspectedHand);
         if (inspected.getType().isAir()) return;
-        // Predicted no-op air clicks arrive cancelled. Inspecting owned inventory never uses the block.
-        event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
-        event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
         final Session active = sessions.get(player.getUniqueId());
         if (active != null) {
             if (!stillValid(player, active)) { retire(player, active, true); return; }
             active.idleTicks = 0;
+            if (!active.activated && active.elapsed >= OFFHAND_HOLD_TICKS) {
+                if (player.hasActiveItem() && player.getActiveItemHand() != brushHand) {
+                    retire(player, active, false);
+                    return;
+                }
+                activate(player, active);
+            }
+            if (!active.activated) return;
+            event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+            event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
             if (!active.completing && active.elapsed >= INSPECTION_TICKS) beginCompletion(player, active);
             return;
+        }
+        // An offhand brush must not steal the first click from blocks or the main-hand item.
+        if (brushHand == EquipmentSlot.HAND) {
+            event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+            event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
         }
         start(player, inspected, brushHand);
     }
@@ -127,7 +140,9 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
     @EventHandler(priority = EventPriority.MONITOR)
     public void onStopUsing(final PlayerStopUsingItemEvent event) {
         final Session session = sessions.get(event.getPlayer().getUniqueId());
-        if (session != null && session.completing) return;
+        // Native brushing can stop immediately when no brushable block is targeted.
+        // Pending holds therefore expire from missing input pulses, not this native stop event.
+        if (session != null && (!session.activated || session.completing || session.starting)) return;
         cancelSession(event.getPlayer(), false);
     }
 
@@ -183,6 +198,7 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
             tooltip.clear(target);
             final Session session = new Session(inspected.clone(),
                     target.getInventory().getHeldItemSlot(), otherHand(inspectedHand));
+            session.activated = true;
             session.completing = true;
             sessions.put(target.getUniqueId(), session);
             telemetry.recordInspectionStarted();
@@ -192,14 +208,11 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
 
     private void start(final Player player, final ItemStack inspected, final EquipmentSlot brushHand) {
         cancelSession(player, true);
-        tooltip.clear(player);
         final Session session = new Session(inspected.clone(),
                 player.getInventory().getHeldItemSlot(), brushHand);
         sessions.put(player.getUniqueId(), session);
         try {
-            // Native Brush ticks ray-trace the world and can release in air or excavate a block.
-            // Cancelled interactions resync native use; a held button repeats its input every four ticks.
-            player.clearActiveItem();
+            if (brushHand == EquipmentSlot.HAND) activate(player, session);
             final ScheduledTask task = player.getScheduler().runAtFixedRate(plugin, scheduled -> {
                 if (sessions.get(player.getUniqueId()) != session) {
                     scheduled.cancel();
@@ -209,32 +222,51 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
                     retire(player, session, true);
                     return;
                 }
+                if (!session.activated && player.hasActiveItem()) {
+                    if (player.getActiveItemHand() != session.brushHand) {
+                        retire(player, session, false);
+                        return;
+                    }
+                    session.idleTicks = 0;
+                    if (session.elapsed >= OFFHAND_HOLD_TICKS) activate(player, session);
+                }
                 if (++session.idleTicks > 8 && (!session.completing || session.finished)) {
                     retire(player, session, true);
                     return;
                 }
                 if (session.elapsed < INSPECTION_TICKS) session.elapsed++;
-                if (!session.completing && session.elapsed % PRESENTATION_CADENCE == 0)
+                if (session.activated && !session.completing && session.elapsed % PRESENTATION_CADENCE == 0)
                     presentBrush(player, session.brushHand);
                 // Completion requires a fresh held-button pulse after the minimum duration.
             }, () -> {
-                if (sessions.remove(player.getUniqueId(), session)) {
+                if (sessions.remove(player.getUniqueId(), session) && session.activated) {
                     telemetry.recordInspectionCancelled();
                 }
             }, 1L, 1L);
             session.task = task;
             if (task == null || sessions.get(player.getUniqueId()) != session) {
-                if (sessions.remove(player.getUniqueId(), session)) {
+                if (sessions.remove(player.getUniqueId(), session) && session.activated) {
                     telemetry.recordInspectionCancelled();
                 }
                 if (task != null) task.cancel();
-            } else {
-                telemetry.recordInspectionStarted();
             }
         } catch (final RuntimeException rejected) {
             sessions.remove(player.getUniqueId(), session);
-            player.clearActiveItem();
+            if (session.activated) player.clearActiveItem();
             telemetry.recordBehaviorRuntimeError();
+        }
+    }
+
+    private void activate(final Player player, final Session session) {
+        if (session.activated) return;
+        session.activated = true;
+        session.starting = true;
+        try {
+            tooltip.clear(player);
+            player.clearActiveItem();
+            telemetry.recordInspectionStarted();
+        } finally {
+            session.starting = false;
         }
     }
 
@@ -330,19 +362,19 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
     private void cancelSession(final Player player, final boolean clearActiveItem) {
         final Session session = sessions.remove(player.getUniqueId());
         if (session == null) return;
-        if (!session.completing) telemetry.recordInspectionCancelled();
+        if (session.activated && !session.completing) telemetry.recordInspectionCancelled();
         final ScheduledTask task = session.task;
         if (task != null) task.cancel();
-        if (clearActiveItem) player.clearActiveItem();
+        if (clearActiveItem && session.activated) player.clearActiveItem();
     }
 
     private void retire(final Player player, final Session session,
                         final boolean clearActiveItem) {
         if (!sessions.remove(player.getUniqueId(), session)) return;
-        if (!session.completing) telemetry.recordInspectionCancelled();
+        if (session.activated && !session.completing) telemetry.recordInspectionCancelled();
         final ScheduledTask task = session.task;
         if (task != null) task.cancel();
-        if (clearActiveItem) player.clearActiveItem();
+        if (clearActiveItem && session.activated) player.clearActiveItem();
     }
 
     @Override
@@ -373,6 +405,8 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
         private int elapsed;
         private int idleTicks;
         private boolean finished;
+        private boolean activated;
+        private boolean starting;
 
         private Session(final ItemStack snapshot, final int heldSlot, final EquipmentSlot brushHand) {
             this.brushHand = brushHand;

@@ -1,5 +1,10 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A mellékkézben tartott ecset rövid jobb kattintáskor nem tiltja le a normál
+tárgy- és blokkhasználatot. A vizsgálat legalább fél másodperces nyomva
+tartás után indul; a főkéz aktív használatát nem szakítja meg.
+A változás kézi átvétele még hátravan.
+
 Az ideiglenes tárgyleírás törlése inventorymozgatáskor a művelet utáni
 állapotot szinkronizálja vissza, hogy ne jelenjen meg kliensoldali fantommásolat.
 A shift-kattintásos és kurzoros mozgatás szerveres ellenőrzése még hátravan.

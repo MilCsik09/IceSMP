@@ -91,6 +91,14 @@ public final class TrashInteractionFixRegressionSuite {
             forced.listener.forceInspection(forced.player);
             check(forced.messages.size() == 2, "force inspection lost feedback after bridge success/failure");
         }
+        Fixture shortClick = new Fixture(EquipmentSlot.OFF_HAND);
+        PlayerInteractEvent ordinary = shortClick.click(Action.RIGHT_CLICK_BLOCK, EquipmentSlot.HAND);
+        final Event.Result blockBefore = ordinary.useInteractedBlock(), itemBefore = ordinary.useItemInHand();
+        shortClick.listener.onInteract(ordinary);
+        check(ordinary.useInteractedBlock() == blockBefore && ordinary.useItemInHand() == itemBefore,
+                "offhand brush stole a short ordinary interaction");
+        shortClick.advance(12);
+        check(shortClick.inspections == 0 && shortClick.tick.cancelled, "short click admitted an inspection");
         tooltipLoreDoesNotAccumulate();
         catalogEvidence();
         vendorAbsenceRequiresReceipt();
@@ -284,7 +292,7 @@ public final class TrashInteractionFixRegressionSuite {
             });
             player = proxy(Player.class, (m,a) -> switch(m) {
                 case "getUniqueId" -> id; case "getInventory" -> inventory; case "getScheduler" -> scheduler;
-                case "isOnline" -> true; case "isDead" -> false; case "getWorld" -> world;
+                case "isOnline" -> true; case "isDead", "hasActiveItem" -> false; case "getWorld" -> world;
                 case "getLocation", "getEyeLocation" -> new Location(world, 0, 64, 0);
                 case "sendMessage" -> { messages.add(a[0]); yield null; }
                 case "startUsingItem" -> { using = (EquipmentSlot)a[0]; yield null; }
