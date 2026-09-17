@@ -237,6 +237,19 @@ az alábbi rések kódban visszaigazoltak, javításuk tételenként külön dö
   A korábbi célpont- és inventoryjavítások nem zárják le ezt a review-t;
   a teljes átvizsgálás jelenleg nincs elvégezve.
 
+
+### Inventory- és GUI-hátterek rendezése (nyitott, 2026-09-17)
+
+- ⬜ **Teljes felmérés és egységesítés:** minden inventory-alapú menü háttere,
+  kitöltőeleme, kerete és resource-pack hátterének hozzárendelése; hiányzó,
+  hibás vagy egymástól indokolatlanul eltérő megjelenések rendezése.
+- ⬜ **Elrendezés és olvashatóság:** háttér, slotok, ikonok, címek és navigáció
+  illeszkedése minden használt inventoryméretnél; a háttér ne takarja a
+  tartalmat, és a díszítőelemek ne keltsenek kattintható vezérlő benyomást.
+- ⬜ **Kliensoldali átvétel:** resource packkel és nélküle, eltérő GUI scale
+  beállításokkal, valamint menüváltás és újranyitás után végzett vizuális
+  ellenőrzés. A rendezés külön feladat, jelenleg nincs elvégezve.
+
 ## 2. Builderkapuk
 
 A kód és a csomagolt config önmagában nem építi meg a szezont. A következő
