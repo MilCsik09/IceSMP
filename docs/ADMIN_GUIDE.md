@@ -2498,6 +2498,6 @@ A foundation acceptance ellenőrzésekor különítsd el a következő állapoto
 - **Live-tested:** nincs állítva. Ellenőrizendő a kétjátékos dialogue izoláció, cancel/skip/quit, Folia region-hop, minden inventory-click/drag útvonal és session replacement.
 - **Resource-pack visually validated:** nincs állítva. Ellenőrizendő a tooltip observation, custom sound event, GUI scale és pack nélküli fallback.
 
-A managed GUI-k minden top-inventory interakciót szerveroldalon tiltják, majd csak a session saját komponensének engedélyezett callbackjét hívják. A meglévő GUI-k fokozatos migrációja a komponens seam-en történik; a nem migrált menük saját jelenlegi holder/listener életciklusát tartják meg.
+A managed GUI-k minden top-inventory interakciót szerveroldalon tiltják, majd csak a session saját komponensének engedélyezett callbackjét hívják. A meglévő GUI-k fokozatos migrációja a komponens seam-en történik; a nem migrált menük saját jelenlegi holder/listener életciklusát tartják meg. A konkrét migrációs inventory jelenleg: a `src/main/java/hu/taliann/icesmp/gui/` alatti specializált GUI-k a `GuiUtil` kivételével még a saját holder/listener párjukat használják; ebben a PR-ban nem állítjuk késznek ezek teljes átállítását.
 
 <!-- icesmp-ux-foundation-doc -->
