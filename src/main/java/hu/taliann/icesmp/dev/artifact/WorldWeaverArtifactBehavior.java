@@ -49,6 +49,7 @@ public final class WorldWeaverArtifactBehavior implements DevArtifactBehavior {
         if (!context.valid()) unavailable.run();
     }
     @Override public void onUnavailable() { unavailable.run(); }
+    @Override public void onItemUnavailable() { }
     @Override public Map<String, Object> saveBehaviorState() { return Map.of(); }
     @Override public void loadBehaviorState(final Map<String, Object> state) {
         if (!state.isEmpty()) throw new IllegalArgumentException("Unexpected artifact-shell state");

@@ -5,6 +5,9 @@ rávetítések munkamenetét. A munkamenethez kötött harci változtatások íg
 megmaradnak a kézváltás után; a kilépési és jogosultsági törlés továbbra is
 érvényes. A változás buildje és szerveres ellenőrzése még hátravan.
 
+A WorldWeaverrel való ütés közbeni item-ellenőrzés átmeneti hibája sem
+érvényteleníti többé a rávetítéseket.
+
 A fejlesztői rávetítések mentés utáni visszaütemezése nem keres többé
 entitást a háttérszálról a világokban. A célpont ellenőrzése a saját
 régiószálán történik; a javítás Folia-playtestje még hátravan.

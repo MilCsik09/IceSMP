@@ -243,7 +243,7 @@ public final class DevItemManager implements PersistentStore, PlayerStateCleanup
                 try {
                     guarded(entry, () -> {
                         if (ensureItem(player, entry, false, false, null)) entry.behavior().tick(context(entry, state(entry.definition().id())), now);
-                        else entry.behavior().onUnavailable();
+                        else entry.behavior().onItemUnavailable();
                     });
                 } finally { entry.tickQueued.set(false); }
             }, () -> { entry.behavior().onUnavailable(); entry.tickQueued.set(false); }, false);
