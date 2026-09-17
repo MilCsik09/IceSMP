@@ -48,12 +48,14 @@ public final class DialogueEngine {
         private int index;
         private boolean canSkip;
         private final String musicContextId;
+        private final Runnable onComplete;
         private final List<ScheduledTask> tasks = new ArrayList<>();
 
         private Session(final DialogueSequence sequence) {
             sequenceId = sequence.id();
             nodes = sequence.nodes();
             musicContextId = sequence.musicContext() == null ? null : sequence.musicContext().id();
+            onComplete = sequence.onComplete();
         }
     }
 
@@ -173,6 +175,7 @@ public final class DialogueEngine {
     private void finish(final Player player, final Session session) {
         if (!sessions.remove(player.getUniqueId(), session)) return;
         if (session.musicContextId != null && music != null) music.remove(player, session.musicContextId);
+        if (session.onComplete != null) session.onComplete.run();
         for (final ScheduledTask task : List.copyOf(session.tasks)) task.cancel();
         session.tasks.clear();
     }
