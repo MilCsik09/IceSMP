@@ -340,6 +340,7 @@ public final class UxDevCommand {
         display.setItemMeta(meta);
 
         // DEV preview only: force the reviewed legendary frame on the client-side clone.
+        ItemDataFactory.hideAttributeTooltip(display);
         ItemDataFactory.applyRarity(display, ItemDataFactory.vanillaRarityOf("legendas"));
         ItemDataFactory.applyTooltipStyleForRarity(display, "legendas");
 
