@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.trash;
 
 import hu.taliann.icesmp.session.PlayerStateCleanup;
+import hu.taliann.icesmp.ux.TooltipEngine;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -67,9 +68,11 @@ public final class TooltipPacketBridge_1_21_11
         if (meta.lore() != null) lore.addAll(Objects.requireNonNull(meta.lore()));
         lore.add(Component.empty());
         lore.add(ArchaeologyTooltipLore.HEADER);
-        observations.stream().limit(8).forEach(line -> lore.add(
-                Component.text("• " + line, NamedTextColor.GRAY)
-                        .decoration(TextDecoration.ITALIC, false)));
+        final List<Component> generated = TooltipEngine.render(List.of(
+                TooltipEngine.generated(TooltipEngine.SectionId.ARCHAEOLOGY, 70,
+                        observations.stream().limit(8).map(line -> Component.text("• " + line,
+                                NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)).toList())));
+        lore.addAll(generated);
         meta.lore(lore);
         display.setItemMeta(meta);
         if (items.isKnownItem(display)) items.refreshPresentation(display);
