@@ -250,6 +250,7 @@ public final class BukkitClassSpecRuntimeAdapter implements ClassSpecRuntimePort
             assassin.reconcileProfile(player);
             warlock.reconcileProfile(player);
             wizard.reconcileProfile(player);
+            pets.reconcileProfile(player);
             catalyst.getSelectedSpellId(player);
             catalyst.refreshSoulbond(player);
         });
