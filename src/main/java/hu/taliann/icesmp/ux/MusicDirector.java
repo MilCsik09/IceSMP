@@ -87,7 +87,15 @@ public final class MusicDirector {
     }
 
     public void shutdown() {
-        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) clear(player);
+        for (final Player player : List.copyOf(Bukkit.getOnlinePlayers())) {
+            final State state = states.remove(player.getUniqueId());
+            if (state == null || state.activeId() == null) continue;
+            final MusicContext active = state.contexts().get(state.activeId());
+            if (active == null) continue;
+            player.getScheduler().run(plugin, task -> {
+                if (player.isOnline()) player.stopSound(active.sound());
+            }, null);
+        }
         states.clear();
     }
 
