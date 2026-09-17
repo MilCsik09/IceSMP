@@ -202,6 +202,29 @@ az alábbi rések kódban visszaigazoltak, javításuk tételenként külön dö
   review lezárását. Ez külön ütemezett feladat, jelenleg nincs elvégezve.
 
 
+### Archaeology — teljes review és szintfüggő információfeltárás (nyitott, 2026-09-17)
+
+- ⬜ **Bejelentett playtesthiba:** a tesztelt story tárgy vizsgálata 50-es
+  Archaeology-szinten ugyanannyi információt mutatott, mint 0-n. Az érintett
+  tárgyazonosító és az összehasonlító kimenet rögzítendő; a kiváltó ok még
+  nincs igazolva, a finding nincs javítottnak tekintve.
+- ⬜ **Tárgyankénti szintmátrix:** minden régészetileg vizsgálható tárgy,
+  különösen a story tárgyak authored információi, szintküszöbei és tényleges
+  eredményei összevetendők a normatív designnal. Ugyanazt a tárgyállapotot
+  0-n, minden információfeloldási küszöb előtt/után és 50-en is ellenőrizni
+  kell; a magasabb szintnek a tervezett többletinformációt kell feltárnia.
+- ⬜ **Teljes adatút:** mentett játékosprofil és DEV-szintállítás, fact engine,
+  history/provenance, szűrés, rendezés, megjelenítési korlátok és esetleges
+  elavult állapot vizsgálata. A már megszerzett ismeret/ismételt vizsgálat
+  jutalmazása és a látható információ ne keveredjen össze.
+- ⬜ **Vizsgálat és visszajelzés:** normál/force elemzés, addolt/természetes
+  és átalakult tárgy, főkéz/offhand, chat és tooltip egyezése; ismételt
+  vizsgálat, szintváltás, újrabelépés és újraindítás utáni eredmények.
+- ⬜ **Lezárás:** a feloldás, fejlődés és információfeltárás teljes review-ja,
+  reprodukálható findingek, javítások, célzott regressziók és kézi playtest.
+  A Trash Relic review-val közös tooltip/inventory esetek összehangolandók;
+  ez a külön Archaeology-review jelenleg nincs elvégezve.
+
 ### Eventrendszer — teljes review (nyitott, 2026-09-17)
 
 - ⬜ **Eventenkénti működés:** minden világesemény és kapcsolódó boss/event
