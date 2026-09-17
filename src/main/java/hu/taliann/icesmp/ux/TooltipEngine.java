@@ -46,7 +46,8 @@ public final class TooltipEngine {
 
         public static Section of(final SectionId id, final int order,
                                  final Collection<? extends Component> lines) {
-            return new Section(id, order, lines == null ? List.of() : new ArrayList<Component>(lines));
+            return new Section(id, order,
+                    lines == null ? List.of() : new ArrayList<Component>(lines));
         }
     }
 
@@ -59,8 +60,11 @@ public final class TooltipEngine {
     }
 
     /**
-     * Deterministically orders sections, replaces duplicate section identities and removes
-     * repeated component lines while preserving authored component values.
+     * Deterministically orders sections and replaces duplicate section identities.
+     *
+     * <p>Line values are deliberately <strong>not</strong> deduplicated. Repeated components,
+     * especially {@link Component#empty()} spacer lines, are authored presentation and must
+     * survive rendering unchanged.</p>
      */
     public static List<Component> render(final Collection<Section> sections) {
         if (sections == null || sections.isEmpty()) return List.of();
@@ -75,7 +79,7 @@ public final class TooltipEngine {
         final List<Component> result = new ArrayList<>();
         for (final Section section : ordered) {
             for (final Component line : section.lines()) {
-                if (line != null && !result.contains(line)) result.add(line);
+                if (line != null) result.add(line);
             }
         }
         return List.copyOf(result);
@@ -93,8 +97,9 @@ public final class TooltipEngine {
         return render(sections);
     }
 
-    public static List<Component> replace(final Collection<Section> sections,
-                                          final Section replacement) {
+    public static List<Section> replaceSection(final Collection<Section> sections,
+                                               final Section replacement) {
+        Objects.requireNonNull(replacement, "replacement");
         final List<Section> retained = new ArrayList<>();
         if (sections != null) {
             for (final Section section : sections) {
@@ -102,6 +107,13 @@ public final class TooltipEngine {
             }
         }
         retained.add(replacement);
-        return render(retained);
+        retained.sort(Comparator.comparingInt(Section::order)
+                .thenComparing(section -> section.id().name()));
+        return List.copyOf(retained);
+    }
+
+    public static List<Component> replace(final Collection<Section> sections,
+                                          final Section replacement) {
+        return render(replaceSection(sections, replacement));
     }
 }
