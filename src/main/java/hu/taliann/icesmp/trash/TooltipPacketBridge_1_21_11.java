@@ -116,6 +116,19 @@ public final class TooltipPacketBridge_1_21_11
     }
 
     @Override
+    public void clearForInventoryMutation(final Player player) {
+        Objects.requireNonNull(player, "player");
+        final Overlay overlay = overlays.remove(player.getUniqueId());
+        if (overlay == null) return;
+        overlay.cancel();
+        // A slot packet inside InventoryClickEvent can restore the pre-move item on the client.
+        // The next owner tick sees committed source/destination slots and the final cursor.
+        player.getScheduler().run(plugin, ignored -> {
+            if (player.isOnline() && !player.isDead()) player.updateInventory();
+        }, null);
+    }
+
+    @Override
     public void clearPlayerState(final UUID playerId) {
         final Overlay overlay = overlays.remove(playerId);
         if (overlay != null) overlay.cancel();

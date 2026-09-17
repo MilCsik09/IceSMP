@@ -1,5 +1,9 @@
 # Mi változott a július 12-i szerververzió óta?
 
+Az ideiglenes tárgyleírás törlése inventorymozgatáskor a művelet utáni
+állapotot szinkronizálja vissza, hogy ne jelenjen meg kliensoldali fantommásolat.
+A shift-kattintásos és kurzoros mozgatás szerveres ellenőrzése még hátravan.
+
 Az ideiglenes tárgymegfigyelések inventory-kezelése javult: a kliensről
 visszaérkező megjelenítési sorok nem válhatnak tartós, ismétlődő leírássá.
 A korábban beragadt sorokat belépéskor és új vizsgálatkor tisztítja a rendszer.

@@ -134,7 +134,7 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
     @EventHandler(priority = EventPriority.LOWEST)
     public void onInventoryClick(final InventoryClickEvent event) {
         if (event.getWhoClicked() instanceof Player player) {
-            tooltip.clear(player);
+            tooltip.clearForInventoryMutation(player);
             cancelSession(player, true);
         }
     }
@@ -142,32 +142,32 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
     @EventHandler(priority = EventPriority.LOWEST)
     public void onInventoryDrag(final InventoryDragEvent event) {
         if (event.getWhoClicked() instanceof Player player) {
-            tooltip.clear(player);
+            tooltip.clearForInventoryMutation(player);
             cancelSession(player, true);
         }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onHeldChange(final PlayerItemHeldEvent event) {
-        tooltip.clear(event.getPlayer());
+        tooltip.clearForInventoryMutation(event.getPlayer());
         cancelSession(event.getPlayer(), true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onSwapHands(final PlayerSwapHandItemsEvent event) {
-        tooltip.clear(event.getPlayer());
+        tooltip.clearForInventoryMutation(event.getPlayer());
         cancelSession(event.getPlayer(), true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onDrop(final PlayerDropItemEvent event) {
-        tooltip.clear(event.getPlayer());
+        tooltip.clearForInventoryMutation(event.getPlayer());
         cancelSession(event.getPlayer(), true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onDeath(final PlayerDeathEvent event) {
-        tooltip.clear(event.getEntity());
+        tooltip.clearForInventoryMutation(event.getEntity());
         cancelSession(event.getEntity(), true);
     }
 

@@ -20,6 +20,9 @@ public interface ArchaeologyTooltipBridge {
 
     void clear(Player player);
 
+    /** Retire the display before mutation, but restore client state after the inventory transaction. */
+    default void clearForInventoryMutation(Player player) { clear(player); }
+
     void clearPlayerState(java.util.UUID playerId);
 
     void shutdown();
