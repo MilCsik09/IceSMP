@@ -91,12 +91,29 @@ public final class TrashInteractionFixRegressionSuite {
             forced.listener.forceInspection(forced.player);
             check(forced.messages.size() == 2, "force inspection lost feedback after bridge success/failure");
         }
+        tooltipLoreDoesNotAccumulate();
         catalogEvidence();
         vendorAbsenceRequiresReceipt();
         protectsSitesWithoutBlockingTheirBrush();
         TrashAuditRepairRegressionSuite.main(args);
         hu.taliann.icesmp.storage.PlayerInventoryCommitRegressionSuite.main(args);
         System.out.println("Trash interaction fix regression suite passed. assertions=" + assertions);
+    }
+
+    private static void tooltipLoreDoesNotAccumulate() {
+        final var authored = net.kyori.adventure.text.Component.text("Eredeti leírás.");
+        final var unrelated = net.kyori.adventure.text.Component.text("Más plugin sora.");
+        final var fact = net.kyori.adventure.text.Component.text("• Megfigyelés.",
+                net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
+        final var contaminated = List.of(authored, net.kyori.adventure.text.Component.empty(),
+                ArchaeologyTooltipLore.HEADER, fact, net.kyori.adventure.text.Component.empty(),
+                ArchaeologyTooltipLore.HEADER, fact, unrelated);
+        final var clean = ArchaeologyTooltipLore.withoutObservations(contaminated);
+        check(clean.equals(List.of(authored, unrelated)), "duplicated client observations survived cleanup or authored lore was lost");
+        check(ArchaeologyTooltipLore.withoutObservations(clean).equals(clean), "cleanup was not idempotent");
+        check(ArchaeologyTooltipLore.withoutObservations(List.of(authored, fact)).equals(List.of(authored, fact)),
+                "unmarked lore was removed");
     }
 
     private static void catalogEvidence() throws Exception {

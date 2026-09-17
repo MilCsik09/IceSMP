@@ -15,6 +15,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCreativeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -95,8 +97,31 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
     }
 
     private static ItemStack held(final Player player, final EquipmentSlot hand) {
-        return hand == EquipmentSlot.HAND ? player.getInventory().getItemInMainHand()
+        final ItemStack item = hand == EquipmentSlot.HAND ? player.getInventory().getItemInMainHand()
                 : player.getInventory().getItemInOffHand();
+        if (ArchaeologyTooltipLore.strip(item)) player.getInventory().setItem(hand, item);
+        return item;
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onCreativeInventory(final InventoryCreativeEvent event) {
+        final ItemStack incoming = event.getCursor();
+        if (ArchaeologyTooltipLore.strip(incoming)) event.setCursor(incoming);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoin(final PlayerJoinEvent event) {
+        final Player player = event.getPlayer();
+        player.getScheduler().run(plugin, ignored -> cleanInventory(player), null);
+    }
+
+    private static void cleanInventory(final Player player) {
+        for (int slot = 0; slot < player.getInventory().getSize(); slot++) {
+            final ItemStack item = player.getInventory().getItem(slot);
+            if (ArchaeologyTooltipLore.strip(item)) player.getInventory().setItem(slot, item);
+        }
+        final ItemStack cursor = player.getItemOnCursor();
+        if (ArchaeologyTooltipLore.strip(cursor)) player.setItemOnCursor(cursor);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -267,11 +292,18 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
                                 .decoration(TextDecoration.BOLD, true)
                                 .decoration(TextDecoration.ITALIC, false));
                     }
-                    final ItemStack current = held(player, otherHand(session.brushHand));
-                    if (current.getAmount() != session.snapshot.getAmount()
-                            || !current.isSimilar(session.snapshot)) return;
                     final List<String> observations = result.visibleFacts().stream()
                             .map(TrashArchaeologyFactEngine.Fact::text).toList();
+                    // The completed observation belongs to this snapshot even if its live slot changed.
+                    player.sendMessage(Component.text("Régészeti megfigyelések", NamedTextColor.GOLD));
+                    observations.forEach(line -> player.sendMessage(
+                            Component.text("• " + line, NamedTextColor.GRAY)));
+                    final ItemStack current = held(player, otherHand(session.brushHand));
+                    if (current.getAmount() != session.snapshot.getAmount()
+                            || !current.isSimilar(session.snapshot)) {
+                        telemetry.recordTooltipTextFallback();
+                        return;
+                    }
                     boolean displayed = false;
                     try {
                         displayed = tooltip.show(player, otherHand(session.brushHand), session.snapshot, observations);
@@ -281,10 +313,6 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
                     if (!displayed) {
                         telemetry.recordTooltipTextFallback();
                     }
-                    // A sent packet is not a client acknowledgement; vanilla slot sync may overwrite it.
-                    player.sendMessage(Component.text("Régészeti megfigyelések", NamedTextColor.GOLD));
-                    observations.forEach(line -> player.sendMessage(
-                            Component.text("• " + line, NamedTextColor.GRAY)));
                 }, () -> {
                     if (sessions.remove(playerId, session)) {
                         telemetry.recordInspectionCancelled();

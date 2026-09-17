@@ -6474,7 +6474,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashAmbientManager.java",
       "domain": "trash",
-      "source_sha256": "753cee6c8ca4afd5e868fd822ec5b9b7732f44e2d1152930840e0f4806869f7b",
+      "source_sha256": "ed6a5e46cbfff9e4b44eeb83f816ba08371c01358c51b9d022bb5ba2847c59a7",
       "public_methods": [
         "clearPlayerState",
         "onDespawn",
@@ -6758,7 +6758,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashLootService.java",
       "domain": "trash",
-      "source_sha256": "5b37fcd143f202600607453685b3977abb5d87b853f1dbbfd40453c17b8064b8",
+      "source_sha256": "df02a1676a0a294436d38af31a5f335f086dd01696c595bc9f64244ffe634b3b",
       "public_methods": [
         "Telemetry",
         "roll",

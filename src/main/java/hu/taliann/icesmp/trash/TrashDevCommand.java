@@ -60,6 +60,7 @@ public final class TrashDevCommand {
             sendUsage(sender);
             return;
         }
+        if (args.length >= 2 && "boost".equalsIgnoreCase(args[1])) { boost(sender, args); return; }
         if (args.length >= 2 && "catalog".equalsIgnoreCase(args[1])) {
             final TrashLootService.Telemetry telemetry = lootService.telemetry();
             sender.sendMessage(Component.text("Trash catalog: " + catalog.snapshot().size()
@@ -124,7 +125,7 @@ public final class TrashDevCommand {
         }
         if (!"trash".equalsIgnoreCase(args[0])) return List.of();
         if (args.length == 2) {
-            return matching(List.of("catalog", "telemetry", "inspect", "give", "pool",
+            return matching(List.of("catalog", "telemetry", "boost", "inspect", "give", "pool",
                     "history", "state"), args[1]);
         }
         if (args.length == 3 && ("inspect".equalsIgnoreCase(args[1])
@@ -133,6 +134,10 @@ public final class TrashDevCommand {
             return catalog.snapshot().keySet().stream().filter(id -> id.startsWith(prefix))
                     .sorted().limit(MAX_SUGGESTIONS).toList();
         }
+        if (args.length == 3 && "boost".equalsIgnoreCase(args[1]))
+            return matching(List.of("off", "5", "10", "25", "100"), args[2]);
+        if (args.length == 4 && "boost".equalsIgnoreCase(args[1]))
+            return matching(List.of("60", "300", "600"), args[3]);
         if (args.length == 3 && "state".equalsIgnoreCase(args[1])) {
             return matching(List.of("transform"), args[2]);
         }
@@ -248,6 +253,19 @@ public final class TrashDevCommand {
         }
     }
 
+    private void boost(final CommandSender sender, final String[] args) {
+        try {
+            if (args.length == 3 && "off".equalsIgnoreCase(args[2])) lootService.resetSpawnBoost();
+            else if (args.length == 4) lootService.boostSpawns(integerArgument(args, 2, 1, 100), integerArgument(args, 3, 1, 3600));
+            else if (args.length != 2) throw new IllegalArgumentException("arguments");
+            final var boost = lootService.spawnBoost();
+            sender.sendMessage(Component.text("Trash DEV spawn boost: " + boost.multiplier() + "×; hátralévő idő: "
+                    + boost.remainingSeconds() + " s. Globális loot-esély (max. 100%) és rövidebb ambient várakozás; a védelmek és létszámkorlátok érvényesek.", NamedTextColor.GRAY));
+        } catch (final IllegalArgumentException invalid) {
+            sender.sendMessage(Component.text("Használat: /icesmp dev trash boost [off|1..100 1..3600] (másodperc)", NamedTextColor.RED));
+        }
+    }
+
     private void give(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(Component.text("A give route játékos feladót igényel.", NamedTextColor.RED));
@@ -270,7 +288,7 @@ public final class TrashDevCommand {
             sender.sendMessage(Component.text("A darabszám 1..64 lehet.", NamedTextColor.RED));
             return;
         }
-        final org.bukkit.inventory.ItemStack item = itemFactory.create(args[2], amount);
+        final org.bukkit.inventory.ItemStack item = lootService.createFresh(args[2], amount, TrashLootSource.AMBIENT);
         player.getInventory().addItem(item).values().forEach(overflow ->
                 player.getWorld().dropItemNaturally(player.getLocation(), overflow));
         sender.sendMessage(Component.text("Trash identity kiadva: " + args[2] + " ×" + amount,
@@ -373,7 +391,7 @@ public final class TrashDevCommand {
     }
 
     private static void sendUsage(final CommandSender sender) {
-        sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|telemetry|inspect [id]|give <id> [amount]|pool|history|state [transform]>",
+        sender.sendMessage(Component.text("Használat: /icesmp dev trash <catalog|telemetry|boost [off|szorzó másodperc]|inspect [id]|give <id> [amount]|pool|history|state [transform]>",
                 NamedTextColor.RED));
         sendArchaeologyUsage(sender);
     }

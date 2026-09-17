@@ -1,5 +1,10 @@
 # Mi változott a július 12-i szerververzió óta?
 
+Az ideiglenes tárgymegfigyelések inventory-kezelése javult: a kliensről
+visszaérkező megjelenítési sorok nem válhatnak tartós, ismétlődő leírássá.
+A korábban beragadt sorokat belépéskor és új vizsgálatkor tisztítja a rendszer.
+A változás szerveres ellenőrzése még hátravan.
+
 A tárgyvizsgálat eredménye szöveges visszajelzést is kap, az ideiglenes
 megjelenítés pedig követi a vizsgált tárgyat. Javult a fejlesztői eszköz
 entitáskijelölése és az újabb játékos-inventoryk kezelése. A tárgyeldobás
