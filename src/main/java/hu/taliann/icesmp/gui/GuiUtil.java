@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.gui;
 
 import hu.taliann.icesmp.crates.CrateSoundResolver;
+import hu.taliann.icesmp.ux.TooltipEngine;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -115,7 +116,8 @@ public final class GuiUtil {
                         .colorIfAbsent(NamedTextColor.GRAY)
                         .decoration(TextDecoration.ITALIC, false));
             }
-            meta.lore(lore);
+            meta.lore(TooltipEngine.render(List.of(
+                    TooltipEngine.Section.of(TooltipEngine.SectionId.CUSTOM, 100, lore))));
             meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
             item.setItemMeta(meta);
         }
@@ -149,7 +151,8 @@ public final class GuiUtil {
         final ItemStack itemStack = new ItemStack(material);
         final ItemMeta meta = itemStack.getItemMeta();
         meta.displayName(name);
-        meta.lore(lore);
+        meta.lore(TooltipEngine.render(List.of(
+                TooltipEngine.Section.of(TooltipEngine.SectionId.CUSTOM, 100, lore))));
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
         if (glow) {
             meta.addEnchant(Enchantment.UNBREAKING, 1, true);
