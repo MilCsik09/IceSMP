@@ -2486,3 +2486,18 @@ van; `gate open/close --force` és `reset --force` csak tudatos teszt/override.
 
 Az `escort.force-use-player-anchor: false` a meglévő Escort-fallbackot teszi
 látható alapbeállítássá; nem kényszeríti a konvojt a játékosra.
+
+
+## Immersive UX acceptance
+
+A foundation acceptance ellenőrzésekor különítsd el a következő állapotokat:
+
+- **Code-complete:** a TooltipEngine, DialogueEngine, MusicDirector és UnifiedGuiManager forrása be van kötve a core lifecycle-ba; a quest-dialogue és archaeology presentation seam használja az új réteget.
+- **Automated-tested:** az `ImmersiveUxFoundationRegressionSuite` célzott priority/tie-break és semantic section replacement teszteket tartalmaz; futtatás csak külön build/CI lépés után állítható késznek.
+- **Build-validated:** Gradle build és consistency gate még külön futtatandó.
+- **Live-tested:** nincs állítva. Ellenőrizendő a kétjátékos dialogue izoláció, cancel/skip/quit, Folia region-hop, minden inventory-click/drag útvonal és session replacement.
+- **Resource-pack visually validated:** nincs állítva. Ellenőrizendő a tooltip observation, custom sound event, GUI scale és pack nélküli fallback.
+
+A managed GUI-k minden top-inventory interakciót szerveroldalon tiltják, majd csak a session saját komponensének engedélyezett callbackjét hívják. A meglévő GUI-k fokozatos migrációja a komponens seam-en történik; a nem migrált menük saját jelenlegi holder/listener életciklusát tartják meg.
+
+<!-- icesmp-ux-foundation-doc -->
