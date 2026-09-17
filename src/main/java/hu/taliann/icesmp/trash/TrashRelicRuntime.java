@@ -718,14 +718,21 @@ public final class TrashRelicRuntime implements Listener, PlayerStateCleanup {
             if (!history.consumeInventorySlotDurably(player, slot)) return false;
             final ItemStack remnant = player.getInventory().getItem(slot);
             if (remnant == null || remnant.getType().isAir()) return false;
+            final ItemStack retained = remnant.clone();
             player.getInventory().setItem(slot, null);
-            hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
+            try {
+                hu.taliann.icesmp.storage.PlayerInventoryCommit.require(player);
+            } catch (final RuntimeException failure) {
+                // The history transition is committed; preserve its spent remnant if removal fails.
+                player.getInventory().setItem(slot, retained);
+                throw failure;
+            }
             final Item dropped = player.getWorld().dropItem(player.getLocation(), remnant);
             if (owner != null) dropped.setOwner(owner);
             if (direction.lengthSquared() > 0.001D) dropped.setVelocity(direction.normalize().multiply(0.3D).setY(0.15D));
             return true;
         } catch (final RuntimeException rejected) {
-            telemetry.recordBehaviorRuntimeError();
+            telemetry.recordBehaviorRuntimeError("sword_drop", rejected);
             return false;
         }
     }

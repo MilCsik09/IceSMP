@@ -3244,7 +3244,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/DevItemManager.java",
       "domain": "developer_self",
-      "source_sha256": "ed9394fed2b93d3d9d1520f70f2761f166833b284cb5fb7475e0a617288c8720",
+      "source_sha256": "0acf97737c988f2744658ba1f1308e4f1b4f3bfc19d70564eaa63283c2e320cd",
       "public_methods": [
         "DevItemManager",
         "Diagnostics",
@@ -6632,7 +6632,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashHistoryService.java",
       "domain": "trash",
-      "source_sha256": "6081fa8744b60a18bb027bb65854a948b2822ec6a382aab3d4d0fc81e7bdfd47",
+      "source_sha256": "ae6831db8670984bcda11ccd558a941a15af2a47a12ecf2dfedba3ce02854d67",
       "public_methods": [
         "ItemInspection",
         "SplitResult",
@@ -6802,7 +6802,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/trash/TrashRelicRuntime.java",
       "domain": "trash",
-      "source_sha256": "a1a64277c32eac83667dd51d160e6e91f3987a919a6204c6cccb5a202c2a1503",
+      "source_sha256": "cf2fdf6de48909d1f41848fae4996e8a461f29bfe04ba42e91c7b1fda3d4d27b",
       "public_methods": [
         "TrashRelicRuntime",
         "abandonCommitted",

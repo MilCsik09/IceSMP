@@ -54,7 +54,9 @@ public final class TrashInteractionFixRegressionSuite {
                 check(f.bridge.shownHand == (brush == EquipmentSlot.HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND),
                         "tooltip was sent to the wrong canonical slot");
                 check(f.main.getAmount() == 1 && f.off.getAmount() == 1, "inspection mutated inventory");
+                check(f.messages.size() == 2, "successful packet suppressed visible observations");
                 f.hold(40);
+                check(f.messages.size() == 2, "continued hold spammed observations");
                 check(f.inspections == 1, "continued hold restarted completed inspection");
                 f.advance(9);
                 check(initial.cancelled, "released completed gesture leaked a task");
@@ -81,6 +83,13 @@ public final class TrashInteractionFixRegressionSuite {
             else changed.main = new TestItem(Material.PAPER, 1);
             changed.advance(30);
             check(changed.inspections == 0 && changed.tick.cancelled, "swapped target was analysed");
+        }
+        for (int mode = 0; mode < 3; mode++) {
+            Fixture forced = new Fixture(EquipmentSlot.OFF_HAND);
+            forced.bridge.result = mode == 0;
+            forced.bridge.fail = mode == 2;
+            forced.listener.forceInspection(forced.player);
+            check(forced.messages.size() == 2, "force inspection lost feedback after bridge success/failure");
         }
         catalogEvidence();
         vendorAbsenceRequiresReceipt();
@@ -239,6 +248,7 @@ public final class TrashInteractionFixRegressionSuite {
         EquipmentSlot using;
         Tick tick;
         int inspections;
+        final List<Object> messages = new ArrayList<>();
         final UUID id = UUID.randomUUID();
         final TestBridge bridge = new TestBridge();
         final Player player;
@@ -259,6 +269,7 @@ public final class TrashInteractionFixRegressionSuite {
                 case "getUniqueId" -> id; case "getInventory" -> inventory; case "getScheduler" -> scheduler;
                 case "isOnline" -> true; case "isDead" -> false; case "getWorld" -> world;
                 case "getLocation", "getEyeLocation" -> new Location(world, 0, 64, 0);
+                case "sendMessage" -> { messages.add(a[0]); yield null; }
                 case "startUsingItem" -> { using = (EquipmentSlot)a[0]; yield null; }
                 default -> null;
             });
@@ -297,9 +308,10 @@ public final class TrashInteractionFixRegressionSuite {
     }
     private static final class TestBridge implements ArchaeologyTooltipBridge {
         EquipmentSlot shownHand;
+        boolean result = true, fail;
         public boolean available() { return true; }
         public boolean show(Player p, ItemStack i, List<String> facts) { throw new AssertionError("hand was discarded"); }
-        public boolean show(Player p, EquipmentSlot hand, ItemStack i, List<String> facts) { shownHand = hand; return true; }
+        public boolean show(Player p, EquipmentSlot hand, ItemStack i, List<String> facts) { shownHand = hand; if (fail) throw new IllegalStateException("packet refused"); return result; }
         public void clear(Player p) { }
         public void clearPlayerState(UUID id) { }
         public void shutdown() { }

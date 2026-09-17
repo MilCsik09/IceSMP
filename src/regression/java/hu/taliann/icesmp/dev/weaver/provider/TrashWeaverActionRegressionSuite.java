@@ -70,6 +70,12 @@ public final class TrashWeaverActionRegressionSuite {
         rejects(() -> index(WeaverSlot.named(WeaverSlot.Kind.CURSOR), 7)); rejects(() -> index(BEFORE.slot(), 9));
         rejects(() -> inventoryFacts(new org.bukkit.inventory.ItemStack[40]));
         check(inventoryFacts(new org.bukkit.inventory.ItemStack[41]).get(INVENTORY).payload().get("value").toString().length() == 64, "unbounded inventory digest");
+        check(inventoryFacts(new org.bukkit.inventory.ItemStack[43]).get(INVENTORY).payload().get("value").toString().length() == 64,
+                "Paper 1.21.11 BODY/SADDLE inventory rejected");
+        rejects(() -> inventoryFacts(new org.bukkit.inventory.ItemStack[42]));
+        rejects(() -> inventoryFacts(new org.bukkit.inventory.ItemStack[44]));
+        check(!inventoryFacts(new org.bukkit.inventory.ItemStack[41]).equals(inventoryFacts(new org.bukkit.inventory.ItemStack[43])),
+                "additional slots were silently truncated");
         System.out.println("Trash WW action contracts passed. assertions=" + assertions);
     }
     private static WeaverOperationRecord operation(UUID id, String action, Map<String, Object> payload, Optional<WeaverUndoClaim> claim) {

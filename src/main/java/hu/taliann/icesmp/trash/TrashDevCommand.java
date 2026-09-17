@@ -75,7 +75,8 @@ public final class TrashDevCommand {
                     + snapshot.inspectionsCompleted() + "/" + snapshot.inspectionsStarted()
                     + ", cancelled=" + snapshot.inspectionsCancelled() + ", unlocks="
                     + snapshot.archaeologyUnlocks() + ", text-fallbacks="
-                    + snapshot.tooltipTextFallbacks(), NamedTextColor.DARK_GRAY));
+                    + snapshot.tooltipTextFallbacks() + ", last-error="
+                    + runtimeTelemetry.lastFailure(), NamedTextColor.DARK_GRAY));
             return;
         }
         if (args.length >= 2 && "inspect".equalsIgnoreCase(args[1])) {

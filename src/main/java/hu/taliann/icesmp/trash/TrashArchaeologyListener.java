@@ -272,13 +272,19 @@ public final class TrashArchaeologyListener implements Listener, PlayerStateClea
                             || !current.isSimilar(session.snapshot)) return;
                     final List<String> observations = result.visibleFacts().stream()
                             .map(TrashArchaeologyFactEngine.Fact::text).toList();
-                    if (!tooltip.show(player, otherHand(session.brushHand), session.snapshot, observations)) {
-                        telemetry.recordTooltipTextFallback();
-                        player.sendMessage(Component.text("Régészeti megfigyelések",
-                                NamedTextColor.GOLD));
-                        observations.forEach(line -> player.sendMessage(
-                                Component.text("• " + line, NamedTextColor.GRAY)));
+                    boolean displayed = false;
+                    try {
+                        displayed = tooltip.show(player, otherHand(session.brushHand), session.snapshot, observations);
+                    } catch (final RuntimeException rejected) {
+                        telemetry.recordBehaviorRuntimeError();
                     }
+                    if (!displayed) {
+                        telemetry.recordTooltipTextFallback();
+                    }
+                    // A sent packet is not a client acknowledgement; vanilla slot sync may overwrite it.
+                    player.sendMessage(Component.text("Régészeti megfigyelések", NamedTextColor.GOLD));
+                    observations.forEach(line -> player.sendMessage(
+                            Component.text("• " + line, NamedTextColor.GRAY)));
                 }, () -> {
                     if (sessions.remove(playerId, session)) {
                         telemetry.recordInspectionCancelled();

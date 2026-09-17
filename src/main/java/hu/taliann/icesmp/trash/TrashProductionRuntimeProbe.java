@@ -268,7 +268,7 @@ public final class TrashProductionRuntimeProbe {
         for (final var kind : TrashDeveloperReceipt.Kind.values()) {
             if (kind == TrashDeveloperReceipt.Kind.REVERT) continue;
             final var definition = kind == TrashDeveloperReceipt.Kind.REPAIR ? repairable : phased;
-            final ItemStack[] before = new ItemStack[41]; before[0] = items.create(definition.id(), kind == TrashDeveloperReceipt.Kind.REPAIR ? 1 : 3);
+            final ItemStack[] before = new ItemStack[43]; before[0] = items.create(definition.id(), kind == TrashDeveloperReceipt.Kind.REPAIR ? 1 : 3);
             history.markOrigin(before[0], TrashLootSource.AMBIENT);
             if (kind == TrashDeveloperReceipt.Kind.REPAIR) {
                 final var damaged = (org.bukkit.inventory.meta.Damageable) before[0].getItemMeta(); damaged.setDamage(1); before[0].setItemMeta(damaged);
@@ -353,7 +353,7 @@ public final class TrashProductionRuntimeProbe {
                         "native inverse receipt lost after restart");
             }
         }
-        final ItemStack[] before = new ItemStack[41]; before[0] = items.create(phased.id(), 1);
+        final ItemStack[] before = new ItemStack[43]; before[0] = items.create(phased.id(), 1);
         final var plan = history.tryPrepareDeveloperMutation(java.util.UUID.randomUUID(), actor,
                 TrashDeveloperReceipt.Kind.INDIVIDUALIZE, 0, before).orElseThrow();
         check(history.tryCommitDeveloperMutation(plan, () -> true, () -> false,

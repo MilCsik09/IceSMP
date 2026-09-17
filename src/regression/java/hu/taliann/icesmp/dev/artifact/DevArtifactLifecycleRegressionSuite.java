@@ -14,6 +14,7 @@ public final class DevArtifactLifecycleRegressionSuite {
     private static final UUID INSTANCE = new UUID(2, 2);
 
     public static void main(final String[] args) {
+        entityGesturePrecedesFallback();
         fixedOwnerIgnoresConfiguration();
         unissuedAndForgedMarkersAreRejected();
         snapshotsCannotBeChangedByCaller();
@@ -28,6 +29,23 @@ public final class DevArtifactLifecycleRegressionSuite {
         retiredSessionsNeverAuthorizeLaterLogins();
         concurrentCloseCannotOvertakeAcceptedSubmission();
         System.out.println("DEV artifact lifecycle regression suite passed.");
+    }
+
+    private static void entityGesturePrecedesFallback() {
+        final UUID target = UUID.randomUUID();
+        final var entity = new ArtifactInputStamp(10, DevArtifactInteraction.Kind.RIGHT_CLICK_ENTITY, target, null);
+        for (int tick = 10; tick <= 12; tick++) {
+            check(entity.suppresses(new ArtifactInputStamp(tick, DevArtifactInteraction.Kind.RIGHT_CLICK_AIR, null, null)),
+                    "generic use replaced an entity selection");
+            check(entity.suppresses(new ArtifactInputStamp(tick, DevArtifactInteraction.Kind.RIGHT_CLICK_BLOCK, null,
+                    new DevArtifactInteraction.BlockPosition(OWNER, 1, 2, 3))), "block fallback replaced an entity");
+            check(entity.suppresses(new ArtifactInputStamp(tick, DevArtifactInteraction.Kind.RIGHT_CLICK_ENTITY, target, null)),
+                    "paired at-entity event restarted the capture");
+        }
+        check(!entity.suppresses(new ArtifactInputStamp(13, DevArtifactInteraction.Kind.RIGHT_CLICK_AIR, null, null)), "later gesture blocked");
+        check(!entity.suppresses(new ArtifactInputStamp(10, DevArtifactInteraction.Kind.RIGHT_CLICK_ENTITY, OWNER, null)), "different entity blocked");
+        check(!entity.suppresses(new ArtifactInputStamp(10, DevArtifactInteraction.Kind.SWAP_HAND, null, null)), "thread shortcut blocked");
+        check(!new ArtifactInputStamp(10, DevArtifactInteraction.Kind.RIGHT_CLICK_AIR, null, null).suppresses(entity), "entity did not override air");
     }
 
     private static DevArtifactState initial() {

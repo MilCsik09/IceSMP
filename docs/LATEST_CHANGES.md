@@ -1,5 +1,11 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A tárgyvizsgálat eredménye szöveges visszajelzést is kap, az ideiglenes
+megjelenítés pedig követi a vizsgált tárgyat. Javult a fejlesztői eszköz
+entitáskijelölése és az újabb játékos-inventoryk kezelése. A tárgyeldobás
+mentési hibakezelése részletesebb belső diagnosztikát kapott. Ezeknek a
+javításoknak a buildje és szerveres ellenőrzése még hátravan.
+
 Az üzenetjavítások bekerültek az egyesített tesztváltozatba: pontosabb láda- és
 világboss-visszajelzések, külön játékos- és admin-specializációnézet, valamint
 érthetőbb recept- és küldetésfeltételek. A szakmai feltétel jelzése tiszteletben

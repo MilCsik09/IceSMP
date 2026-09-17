@@ -80,9 +80,19 @@ public final class TooltipPacketBridge_1_21_11
         if (previous != null) previous.cancel();
         try {
             final io.papermc.paper.threadedregions.scheduler.ScheduledTask expiry =
-                    player.getScheduler().runDelayed(plugin, ignored -> {
-                        if (overlays.remove(player.getUniqueId(), overlay)) sendCanonical(player, overlay.menuSlot);
-                    }, () -> overlays.remove(player.getUniqueId(), overlay), OVERLAY_TICKS);
+                    player.getScheduler().runAtFixedRate(plugin, task -> {
+                        if (overlays.get(player.getUniqueId()) != overlay) { task.cancel(); return; }
+                        final ItemStack current = canonical(player, menuSlot);
+                        overlay.elapsed += 5;
+                        if (overlay.elapsed >= OVERLAY_TICKS || current == null
+                                || current.getAmount() != canonicalSnapshot.getAmount()
+                                || !current.isSimilar(canonicalSnapshot)) {
+                            clear(player);
+                            return;
+                        }
+                        // Cancelled use and vanilla container sync may replace a successfully sent copy.
+                        if (!sendDisplay(player, display, menuSlot)) clear(player);
+                    }, () -> overlays.remove(player.getUniqueId(), overlay), 1L, 5L);
             overlay.setTask(expiry);
             if (expiry == null && overlays.remove(player.getUniqueId(), overlay)) {
                 sendCanonical(player, overlay.menuSlot);
@@ -133,9 +143,13 @@ public final class TooltipPacketBridge_1_21_11
     }
 
     private void sendCanonical(final Player player, final int menuSlot) {
-        final ItemStack current = menuSlot == OFFHAND_MENU_SLOT ? player.getInventory().getItemInOffHand()
-                : player.getInventory().getItem(menuSlot - 36);
+        final ItemStack current = canonical(player, menuSlot);
         sendDisplay(player, current == null ? new ItemStack(org.bukkit.Material.AIR) : current.clone(), menuSlot);
+    }
+
+    private static ItemStack canonical(final Player player, final int menuSlot) {
+        return menuSlot == OFFHAND_MENU_SLOT ? player.getInventory().getItemInOffHand()
+                : player.getInventory().getItem(menuSlot - 36);
     }
 
     private boolean sendDisplay(final Player player, final ItemStack display, final int menuSlot) {
@@ -208,6 +222,7 @@ public final class TooltipPacketBridge_1_21_11
     private static final class Overlay {
         private io.papermc.paper.threadedregions.scheduler.ScheduledTask task;
         private boolean cancelled;
+        private long elapsed;
 
         private final int menuSlot;
 
