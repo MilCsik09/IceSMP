@@ -679,6 +679,22 @@ hanem inert/suppressed állapotban marad. A pontos szint elérésekor, belépés
 profilfrissítéskor ugyanaz a példány újra aktiválható. A normál vanilla survival gearre
 ez a kapu nem vonatkozik.
 
+### Hogyan olvasd az IceSMP tárgytooltipokat?
+
+A resource pack mellett **minden tárgy** ugyanazt az IceSMP tooltip-alapformát használja. Egy
+vanilla tárgy semleges keretet kap; a saját felszerelések kerete a rarityt követi. A különleges
+tárgyaknál a felső badge mondja meg, milyen szerepű itemet tartasz:
+
+- **TERVRAJZ:** megmutatja a feloldott receptet, szakmát és szükséges szakmaszintet;
+- **SZAKMAI ALAPANYAG / SZAKMAI TÁRGY:** forrás, feldolgozó szakma, felhasználás vagy crafted szerep;
+- **FIZIKAI VALUTA:** kézben hordozott pénz; a bankban fizethető be, a keret a frakcióvalutát követi;
+- **TALÁLT ERSZÉNY:** jobb kattal bontható; a benne lévő valuta és mennyiség addig szándékosan rejtett;
+- **RELIKVIA:** rövid rendeltetés és a tárgy saját történeti leírása;
+- **FEJLESZTŐI EREKLYE:** tulajdonoshoz kötött belső artifact, például a Csodálatos Bingulus vagy a Világszövő.
+
+A tooltip leírása tájékoztató presentation. Ha egy tárgy szintet, szakmát, ownershipot vagy más
+feltételt ír ki, a tényleges szabályt továbbra is a megfelelő gameplay rendszer ellenőrzi.
+
 Két fő szakmai helyed van:
 
 - **egy gyűjtögető szakma:** Bányász, Gyógynövényész vagy Favágó;
