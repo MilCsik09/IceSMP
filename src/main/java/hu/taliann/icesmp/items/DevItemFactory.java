@@ -72,6 +72,7 @@ public final class DevItemFactory {
         if (!model.isBlank()) {
             ItemDataFactory.applyItemModel(item, model);
         }
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:developer");
         return item;
     }
 
