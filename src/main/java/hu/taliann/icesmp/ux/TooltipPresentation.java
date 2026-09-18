@@ -35,7 +35,12 @@ public final class TooltipPresentation {
         CURRENCY('\uE10C'),
         POUCH('\uE10D'),
         RELIC('\uE10E'),
-        DEVELOPER('\uE10F');
+        DEVELOPER('\uE10F'),
+        QUEST('\uE110'),
+        TOKEN('\uE111'),
+        KEY('\uE112'),
+        UPGRADE('\uE113'),
+        UTILITY('\uE114');
 
         private final char character;
 
