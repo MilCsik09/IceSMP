@@ -47,10 +47,11 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> blueprint(final ProfessionRecipeCatalog.Recipe recipe) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                badge("TERVRAJZ", NamedTextColor.AQUA)
-                        .append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
-                        .append(recipe.profession().getDisplayName()
-                                .decoration(TextDecoration.ITALIC, false))));
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                        badge("TERVRAJZ", NamedTextColor.AQUA)
+                                .append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
+                                .append(recipe.profession().getDisplayName()
+                                        .decoration(TextDecoration.ITALIC, false)))));
         add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
                 TooltipPresentation.sectionHeading(
                         TooltipPresentation.Glyph.EFFECT, "Feloldás", NamedTextColor.AQUA),
@@ -79,7 +80,8 @@ public final class SpecialItemTooltipRenderer {
             type = type.append(TooltipPresentation.line(
                     "  •  " + humanize(profession), NamedTextColor.GRAY));
         }
-        add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(type));
+        add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE, type)));
 
         if (material != null) {
             final List<Component> usage = new ArrayList<>();
@@ -125,10 +127,11 @@ public final class SpecialItemTooltipRenderer {
         };
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                badge("FIZIKAI VALUTA", accent)
-                        .append(TooltipPresentation.line(
-                                "  •  " + currency.toFactionType().getDisplayName(),
-                                NamedTextColor.GRAY))));
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                        badge("FIZIKAI VALUTA", accent)
+                                .append(TooltipPresentation.line(
+                                        "  •  " + currency.toFactionType().getDisplayName(),
+                                        NamedTextColor.GRAY)))));
         add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
                 TooltipPresentation.sectionHeading(
                         TooltipPresentation.Glyph.EFFECT, "Használat", accent),
@@ -147,7 +150,8 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> moneyPouch() {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                badge("TALÁLT ERSZÉNY", NamedTextColor.GOLD)));
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                        badge("TALÁLT ERSZÉNY", NamedTextColor.GOLD))));
         add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
                 TooltipPresentation.sectionHeading(
                         TooltipPresentation.Glyph.EFFECT, "Tartalom",
@@ -166,10 +170,11 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> relic(final RelicDefinition definition) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                badge("RELIKVIÁ", NamedTextColor.LIGHT_PURPLE)
-                        .append(TooltipPresentation.line(
-                                "  •  " + humanize(definition.id()),
-                                NamedTextColor.GRAY))));
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                        badge("RELIKVIÁ", NamedTextColor.LIGHT_PURPLE)
+                                .append(TooltipPresentation.line(
+                                        "  •  " + humanize(definition.id()),
+                                        NamedTextColor.GRAY)))));
         if (definition.description() != null && !definition.description().isBlank()) {
             add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
                     TooltipPresentation.sectionHeading(
@@ -186,7 +191,8 @@ public final class SpecialItemTooltipRenderer {
                                                     final DevArtifactPresentation presentation) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                badge("FEJLESZTŐI EREKLYE", NamedTextColor.LIGHT_PURPLE)));
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                        badge("FEJLESZTŐI EREKLYE", NamedTextColor.LIGHT_PURPLE))));
 
         final List<Component> role = new ArrayList<>();
         role.add(TooltipPresentation.sectionHeading(
