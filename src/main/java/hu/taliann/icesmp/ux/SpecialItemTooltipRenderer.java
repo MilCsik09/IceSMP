@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.ux;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.dev.artifact.DevArtifactDefinition;
 import hu.taliann.icesmp.dev.artifact.DevArtifactPresentation;
 import hu.taliann.icesmp.dev.artifact.WorldWeaverArtifactBehavior;
@@ -12,6 +13,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.ArrayList;
@@ -40,6 +42,8 @@ public final class SpecialItemTooltipRenderer {
 
     private static final LegacyComponentSerializer LEGACY =
             LegacyComponentSerializer.legacyAmpersand();
+    private static final PlainTextComponentSerializer PLAIN =
+            PlainTextComponentSerializer.plainText();
 
     private SpecialItemTooltipRenderer() {
     }
@@ -78,7 +82,7 @@ public final class SpecialItemTooltipRenderer {
         Component type = badge("SZAKMAI ALAPANYAG", NamedTextColor.GOLD);
         if (!profession.isBlank()) {
             type = type.append(TooltipPresentation.line(
-                    "  •  " + humanize(profession), NamedTextColor.GRAY));
+                    "  •  " + professionName(profession), NamedTextColor.GRAY));
         }
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
                 TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE, type)));
@@ -95,7 +99,7 @@ public final class SpecialItemTooltipRenderer {
                         NamedTextColor.GRAY));
             }
             if (!profession.isBlank()) {
-                usage.add(labelled("Feldolgozza", humanize(profession),
+                usage.add(labelled("Feldolgozza", professionName(profession),
                         NamedTextColor.YELLOW));
             }
             final List<String> sinks = material.getStringList("sink-types");
@@ -123,7 +127,7 @@ public final class SpecialItemTooltipRenderer {
             case RED -> NamedTextColor.RED;
             case BLUE -> NamedTextColor.AQUA;
             case NEUTRAL -> NamedTextColor.LIGHT_PURPLE;
-            case DARK -> NamedTextColor.DARK_GRAY;
+            case DARK -> NamedTextColor.GRAY;
         };
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
@@ -171,10 +175,7 @@ public final class SpecialItemTooltipRenderer {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
                 TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
-                        badge("RELIKVIÁ", NamedTextColor.LIGHT_PURPLE)
-                                .append(TooltipPresentation.line(
-                                        "  •  " + humanize(definition.id()),
-                                        NamedTextColor.GRAY)))));
+                        badge("RELIKVIÁ", NamedTextColor.LIGHT_PURPLE))));
         if (definition.description() != null && !definition.description().isBlank()) {
             add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
                     TooltipPresentation.sectionHeading(
@@ -281,10 +282,15 @@ public final class SpecialItemTooltipRenderer {
             case "mining" -> "Bányászat • " + detail;
             case "hunting" -> "Vadászat • " + detail;
             case "herbalist" -> "Gyógynövény • " + detail;
-            case "profession" -> "Szakma • " + detail;
+            case "profession" -> "Szakma • " + professionName(normalized.substring(separator + 1));
             case "catalog" -> "Katalógus • " + detail;
             default -> humanize(scope) + " • " + detail;
         };
+    }
+
+    private static String professionName(final String raw) {
+        final ProfessionType profession = ProfessionType.fromId(raw);
+        return profession == null ? humanize(raw) : PLAIN.serialize(profession.getDisplayName());
     }
 
     private static String humanize(final String raw) {
