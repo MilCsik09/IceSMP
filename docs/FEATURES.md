@@ -1710,6 +1710,7 @@ tárgyak pedig saját category-profilt és rövid használati magyarázatot kapn
 - **Küldetési / haladási tárgy:** authored rendeltetés és használati hint, külön quest/token profillal.
 - **Ládakulcs:** cél-láda, nyitási instrukció és legfontosabb jutalomesélyek.
 - **Fejlesztés / utility:** rúnák és speciális használati tárgyak nem keverednek többé a szakmai alapanyagokkal.
+- **Társ-kellék / Ostromeszköz / Lélekkapocs:** a capture-idéző tárgyak, az Ostromágyú és a személyes class artifact is saját, funkciót magyarázó profilt kap.
 - **Belső fejlesztői artifact:** a debug/probe itemektől elkülönített, production-minőségű presentation profilt kap; részletei nem részei a nyilvános feature-katalógusnak.
 - **Fontos határ:** a profile renderer csak presentationt épít; PDC identity, ownership, recept, valuta, relic és DEV-artifact authority nem költözik át a tooltip-rétegbe.
 
