@@ -37,7 +37,8 @@ public final class BlueprintItemFactory {
         }
         final ItemStack item = new ItemStack(Material.KNOWLEDGE_BOOK);
         final ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text("Tervrajz: " + recipe.displayName(), NamedTextColor.AQUA)
+        meta.displayName(Component.text(recipe.displayName(), NamedTextColor.AQUA)
+                .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false));
         meta.lore(SpecialItemTooltipRenderer.blueprint(recipe));
         meta.getPersistentDataContainer().set(recipeKey, PersistentDataType.STRING, recipe.id());
