@@ -139,6 +139,7 @@ public final class RelicItemFactory {
     private void applyVisuals(final ItemMeta meta, final RelicDefinition definition) {
         final Component displayName = serializer
                 .deserialize(TextUtil.color(definition.displayColor() + definition.displayName()))
+                .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false);
         meta.displayName(displayName);
 
