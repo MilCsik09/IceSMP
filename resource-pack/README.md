@@ -34,7 +34,8 @@ A saját itemek gazdagabb section/lore presentationje ettől külön, a Tooltip 
 
 A special-purpose itemek category-accentet kapnak ugyanazon a geometrián:
 `blueprint` kék/cyan, `profession` arany, a négy fizikai valuta frakciószínű,
-`money_pouch` arany, `developer` lila. A relikviák az `ereklye` türkiz accentet
+`money_pouch` arany, `developer` lila, `quest` arany, `token` lila, `key` világos,
+`upgrade` türkiz és `utility` szürke. A relikviák az `ereklye` türkiz accentet
 használják. Ezek a style ID-k ugyanúgy közvetlen sprite-párokra oldódnak
 (`icesmp:<style>` → `icesmp:tooltip/<style>_background|frame`).
 
