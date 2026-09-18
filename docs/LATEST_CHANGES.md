@@ -4,14 +4,14 @@ A tárgytooltip-rendszer külön profilokat kapott a tervrajzokhoz, szakmai alap
 craftolt profession tárgyakhoz, fizikai valutákhoz, erszényekhez, relikviákhoz és developer
 artifactokhoz. A közös IceSMP háttér megmarad; a keret rarity- vagy család-accentet követ, a
 tooltip pedig röviden leírja, mi a tárgy, mire használható és milyen feltétel tartozik hozzá.
-A Csodálatos Bingulus és a Világszövő külön Developer Artifact-profilt kapott.
+A belső fejlesztői artifactok külön, a normál debug/probe tárgyaktól elkülönített profilt kaptak.
 
 A fejlesztői eszköz eltétele vagy fegyverre váltás nem zárja le többé a
 rávetítések munkamenetét. A munkamenethez kötött harci változtatások így
 megmaradnak a kézváltás után; a kilépési és jogosultsági törlés továbbra is
 érvényes. A változás buildje és szerveres ellenőrzése még hátravan.
 
-A WorldWeaverrel való ütés közbeni item-ellenőrzés átmeneti hibája sem
+A rejtett fejlesztői artifacttal való ütés közbeni item-ellenőrzés átmeneti hibája sem
 érvényteleníti többé a rávetítéseket.
 
 A fejlesztői rávetítések mentés utáni visszaütemezése nem keres többé
