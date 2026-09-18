@@ -131,6 +131,9 @@ public final class RelicItemFactory {
      */
     private static void applyPresentation(final ItemStack itemStack, final String relicId) {
         WearablePresentation.applyWearablePresentation(itemStack, "icesmp:relic_" + relicId, null);
+        // Relics use the shared IceSMP chrome with the authored Ereklye accent. Keep this after
+        // every ItemMeta round-trip for the same reason ITEM_MODEL must be restored here.
+        ItemDataFactory.applyTooltipStyleForRarity(itemStack, "ereklye");
     }
 
     private void applyVisuals(final ItemMeta meta, final RelicDefinition definition) {
