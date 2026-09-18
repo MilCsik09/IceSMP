@@ -2517,6 +2517,9 @@ A special-item profile átvételekor valódi factory-itemeket használj, ne kéz
 - **Rúna:** `/iceitem unique runa_elek 1` → FEJLESZTÉS profil, upgrade-accent és meglévő mechanikai lore.
 - **Utility:** `/iceitem unique ures_kupa 1` → SEGÉDESZKÖZ profil.
 - **Ládakulcs:** `/crate give <játékos> <láda-id> 1` → LÁDAKULCS, cél-láda, nyitás és legfeljebb három jutalomesély.
+- **Társ-kellék:** a megfelelő spec mellett `/pet item` → TÁRSKÖTŐ/IDÉZŐ/TÁRSFELSZERELÉS profil és capture-accent.
+- **Lélekkapocs:** a normál `/profile` igénylési útvonal → LÉLEKKAPOCS, aktuális forma/spec és catalyst-accent.
+- **Ostromágyú:** a meglévő craft/raid útvonal → OSTROMESZKÖZ, csak-ostrom feltétel és siege-accent.
 - **Bingulus:** `/iceitem dev csodalatos_bingulus 1` csak a kijelölt tulajdonosnak → FEJLESZTŐI EREKLYE, passzív jutalomgenerátor és auto-restore jelzés.
 - **Rejtett developer artifact:** csak a belső development acceptance szerint ellenőrizhető; a nyilvános/admin dokumentáció nem publikálja a használati surface-ét.
 
