@@ -253,7 +253,7 @@ class ResourcePackToolingTest(unittest.TestCase):
             frame.write_bytes(TOOLTIP_PNG_HEADER)
             self.add_tooltip_scaling_metadata(background, frame=False)
             self.add_tooltip_scaling_metadata(frame, frame=True)
-            with self.assertRaisesRegex(resource_pack.PackError, "Rarity tooltip style"):
+            with self.assertRaisesRegex(resource_pack.PackError, "Tooltip style"):
                 resource_pack.validate_pack(root)
 
     def test_complete_rarity_tooltip_family_is_valid(self) -> None:
@@ -278,6 +278,52 @@ class ResourcePackToolingTest(unittest.TestCase):
                 self.add_tooltip_scaling_metadata(background, frame=False)
                 self.add_tooltip_scaling_metadata(frame, frame=True)
             resource_pack.validate_pack(root)
+
+    def test_complete_profile_tooltip_family_is_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            global_root = root / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "tooltip"
+            global_root.mkdir(parents=True, exist_ok=True)
+            global_background = global_root / "background.png"
+            global_frame = global_root / "frame.png"
+            global_background.write_bytes(TOOLTIP_PNG_HEADER)
+            global_frame.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(global_background, frame=False)
+            self.add_tooltip_scaling_metadata(global_frame, frame=True)
+
+            style_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            style_root.mkdir(parents=True, exist_ok=True)
+            for style in resource_pack.TOOLTIP_RARITY_STYLES + resource_pack.TOOLTIP_PROFILE_STYLES:
+                background = style_root / f"{style}_background.png"
+                frame = style_root / f"{style}_frame.png"
+                background.write_bytes(TOOLTIP_PNG_HEADER)
+                frame.write_bytes(TOOLTIP_PNG_HEADER)
+                self.add_tooltip_scaling_metadata(background, frame=False)
+                self.add_tooltip_scaling_metadata(frame, frame=True)
+            resource_pack.validate_pack(root)
+
+    def test_profile_tooltip_family_must_be_complete(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            style_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            style_root.mkdir(parents=True, exist_ok=True)
+            for style in resource_pack.TOOLTIP_RARITY_STYLES:
+                background = style_root / f"{style}_background.png"
+                frame = style_root / f"{style}_frame.png"
+                background.write_bytes(TOOLTIP_PNG_HEADER)
+                frame.write_bytes(TOOLTIP_PNG_HEADER)
+                self.add_tooltip_scaling_metadata(background, frame=False)
+                self.add_tooltip_scaling_metadata(frame, frame=True)
+            background = style_root / "blueprint_background.png"
+            frame = style_root / "blueprint_frame.png"
+            background.write_bytes(TOOLTIP_PNG_HEADER)
+            frame.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            self.add_tooltip_scaling_metadata(frame, frame=True)
+            with self.assertRaisesRegex(resource_pack.PackError, "Tooltip profile style profession"):
+                resource_pack.validate_pack(root)
 
     def test_generated_zip_inside_source_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

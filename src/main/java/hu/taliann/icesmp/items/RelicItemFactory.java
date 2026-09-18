@@ -2,6 +2,7 @@ package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.relics.RelicDefinition;
 import hu.taliann.icesmp.utils.TextUtil;
+import hu.taliann.icesmp.ux.ItemTooltipProfiles;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -55,7 +56,7 @@ public final class RelicItemFactory {
         if (meta == null) {
             return itemStack;
         }
-        applyVisuals(meta, definition);
+        applyVisuals(meta, definition, owner);
 
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(relicTypeKey, PersistentDataType.STRING, definition.id());
@@ -117,8 +118,9 @@ public final class RelicItemFactory {
         if (itemStack == null || definition == null || !itemStack.hasItemMeta()) {
             return;
         }
+        final UUID owner = getOwner(itemStack);
         final ItemMeta meta = itemStack.getItemMeta();
-        applyVisuals(meta, definition);
+        applyVisuals(meta, definition, owner);
         itemStack.setItemMeta(meta);
         applyPresentation(itemStack, definition.id());
     }
@@ -130,20 +132,17 @@ public final class RelicItemFactory {
      */
     private static void applyPresentation(final ItemStack itemStack, final String relicId) {
         WearablePresentation.applyWearablePresentation(itemStack, "icesmp:relic_" + relicId, null);
+        ItemDataFactory.applyTooltipStyle(itemStack,
+                ItemTooltipProfiles.styleId(ItemTooltipProfiles.Profile.RELIC));
     }
 
-    private void applyVisuals(final ItemMeta meta, final RelicDefinition definition) {
+    private void applyVisuals(final ItemMeta meta, final RelicDefinition definition, final UUID owner) {
         final Component displayName = serializer
                 .deserialize(TextUtil.color(definition.displayColor() + definition.displayName()))
                 .decoration(TextDecoration.ITALIC, false);
         meta.displayName(displayName);
 
-        final List<String> loreLines = definition.lore() == null ? List.of() : definition.lore();
-        final List<Component> lore = loreLines.stream()
-                .<Component>map(line -> serializer.deserialize(TextUtil.color(line))
-                        .decoration(TextDecoration.ITALIC, false))
-                .toList();
-        meta.lore(lore.isEmpty() ? null : lore);
+        meta.lore(ItemTooltipProfiles.relic(definition, owner));
 
         if (METELYTEPO_ID.equalsIgnoreCase(definition.id())) {
             applyMetelytepoMeta(meta, definition);

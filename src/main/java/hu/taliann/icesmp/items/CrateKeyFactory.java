@@ -5,6 +5,7 @@ import hu.taliann.icesmp.crates.CrateRecoveryLedger;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.managers.CrateManager;
 import hu.taliann.icesmp.utils.TextUtil;
+import hu.taliann.icesmp.ux.ItemTooltipProfiles;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -95,28 +96,29 @@ public final class CrateKeyFactory {
             return itemStack;
         }
         meta.displayName(SERIALIZER.deserialize(TextUtil.color(keyName)).decoration(TextDecoration.ITALIC, false));
-        final List<Component> lore = new ArrayList<>();
-        lore.add(SERIALIZER.deserialize(TextUtil.color(crateName + " &8— kulcs"))
-                .decoration(TextDecoration.ITALIC, false));
-        lore.add(SERIALIZER.deserialize(TextUtil.color("&7Jobb katt a ládán: &fkinyitás"))
-                .decoration(TextDecoration.ITALIC, false));
+        final List<Component> rewardOdds = new ArrayList<>();
         final int shown = Math.min(3, odds.size());
         for (int index = 0; index < shown; index++) {
             final CrateManager.RewardOdds reward = odds.get(index);
-            lore.add(SERIALIZER.deserialize(TextUtil.color("&8◆ &7" + reward.description()
+            rewardOdds.add(SERIALIZER.deserialize(TextUtil.color("&8◆ &7" + reward.description()
                             + " &8— &e" + CrateFormatting.decimal(reward.percent()) + "%"))
                     .decoration(TextDecoration.ITALIC, false));
         }
         if (odds.size() > shown) {
-            lore.add(SERIALIZER.deserialize(TextUtil.color("&8…és további " + (odds.size() - shown) + " jutalom"))
+            rewardOdds.add(SERIALIZER.deserialize(TextUtil.color(
+                            "&8…és további " + (odds.size() - shown) + " jutalom"))
                     .decoration(TextDecoration.ITALIC, false));
         }
-        meta.lore(lore);
+        final String plainCrateName = crateName == null ? ""
+                : crateName.replaceAll("[&§][0-9a-fk-orA-FK-OR]", "");
+        meta.lore(ItemTooltipProfiles.crateKey(plainCrateName, rewardOdds));
         meta.getPersistentDataContainer().set(crateKeyIdKey, PersistentDataType.STRING, crateId);
         itemStack.setItemMeta(meta);
         if (itemModel != null && !itemModel.isBlank()) {
             ItemDataFactory.applyItemModel(itemStack, itemModel);
         }
+        ItemDataFactory.applyTooltipStyle(itemStack,
+                ItemTooltipProfiles.styleId(ItemTooltipProfiles.Profile.KEY));
         return itemStack;
     }
 

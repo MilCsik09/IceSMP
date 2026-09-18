@@ -20,7 +20,11 @@ public final class WorldWeaverArtifactBehavior implements DevArtifactBehavior {
     public static DevArtifactDefinition definition(final BooleanSupplier enabled) {
         return new DevArtifactDefinition(ID, new FixedArtifactOwner(HiddenDevAuthority.PRIMARY_DEVELOPER),
                 () -> new DevArtifactPresentation("ECHO_SHARD", "&5&lVilágszövő",
-                        List.of("&8A világ szálai a kezedben."), Map.of(
+                        List.of(
+                                "&8A világ szálai a kezedben.",
+                                "&7A WorldWeaver futásidejű szövési felületének",
+                                "&7tulajdonoshoz kötött fejlesztői artifactja."
+                        ), Map.of(
                         DevArtifactPresentation.ModelState.IDLE, "icesmp:dev_world_weaver_idle",
                         DevArtifactPresentation.ModelState.SUBJECT_LOCKED, "icesmp:dev_world_weaver_subject",
                         DevArtifactPresentation.ModelState.THREAD_HELD, "icesmp:dev_world_weaver_thread",

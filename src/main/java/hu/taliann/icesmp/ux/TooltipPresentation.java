@@ -29,7 +29,13 @@ public final class TooltipPresentation {
         ASCENSION('\uE106'),
         ORIGIN('\uE107'),
         STORY('\uE108'),
-        ARCHAEOLOGY('\uE109');
+        ARCHAEOLOGY('\uE109'),
+        BLUEPRINT('\uE10A'),
+        PROFESSION('\uE10B'),
+        CURRENCY('\uE10C'),
+        RELIC('\uE10D'),
+        DEVELOPER('\uE10E'),
+        KEY('\uE10F');
 
         private final char character;
 
