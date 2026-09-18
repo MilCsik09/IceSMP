@@ -34,6 +34,7 @@ relics:
     metelytepo:
       display-name: "Mételytépő"
       display-color: "&5"
+      description: "Ősi harci relikvia: bányászatra és bűnös vagy élőholt célpontok levadászására."
       # A material itt dokumentáció: a tényleges értéket a kód adja (RelicManager.registerRelic).
       # A megjelenés ITEM_MODEL-lel megy (icesmp:relic_<id>) — a RelicItemFactory állítja.
       material: "GOLDEN_AXE"
@@ -56,6 +57,7 @@ relics:
     phoenix_wing:
       display-name: "Főnix-szárny"
       display-color: "&c"
+      description: "Perinfernicitas szárnyrelikviája: tűzvédelem és lángoló zuhanás."
       lore:
         - "&7Perinfernicitas lángoló ereklyéje,"
         - "&7Soleil főnixeinek tollából szőve."
@@ -64,6 +66,7 @@ relics:
     frost_wing:
       display-name: "Zúzmara-szárny"
       display-color: "&b"
+      description: "Cryghaliris szárnyrelikviája: fagyvédelem és felszálláskori fagyasztás."
       lore:
         - "&7Cryghaliris jeges ereklyéje, Kallan"
         - "&7jégsárkányainak leheletével átitatva."
@@ -72,6 +75,7 @@ relics:
     wander_wind:
       display-name: "Vándorszél"
       display-color: "&f"
+      description: "Ryanora és Caldestera szárnyrelikviája: biztonságos zuhanás és szélgyorsítás."
       lore:
         - "&7Ryanora & Caldestera szabad szele,"
         - "&7Arkynn békés örökségének fuvallata."
@@ -80,6 +84,7 @@ relics:
     eleftheria_konnye:
       display-name: "Eleftheria Könnye"
       display-color: "&5"
+      description: "Világ-egyedi lore-relikvia, aktív harci képesség nélkül."
       lore:
         - "&7Megkövült, éjfekete csepp; a Néma Királynő"
         - "&7első suttogása hozta létre, magába zárva"
@@ -87,6 +92,7 @@ relics:
     sarkany_tojas:
       display-name: "Sárkánytojás-töredék"
       display-color: "&d"
+      description: "Sárkányidéző kasztrelikvia: fizikai birtokláskor növeli az Eszencia-kapacitást."
       material: "DRAGON_EGG"
       item-model: "icesmp:relic_sarkany_tojas"
       lore:
@@ -96,6 +102,7 @@ relics:
     bone_wing:
       display-name: "Csontszárny"
       display-color: "&8"
+      description: "A Kitaszítottak szárnyrelikviája: Wither-védelem és éjszakai árnyékforma."
       lore:
         - "&7A Káoszkor csontból szőtt szárnya, a"
         - "&7Néma Királynő élőhalottainak maradványa."
