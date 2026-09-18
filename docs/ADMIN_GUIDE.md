@@ -2513,7 +2513,7 @@ A special-item profile átvételekor valódi factory-itemeket használj, ne kéz
 - **Erszény:** `/iceitem erszeny 25 1` → TALÁLT ERSZÉNY; a konkrét valuta/összeg ne szivárogjon ki bontás előtt.
 - **Relikvia:** `/iceitem relikvia metelytepo 1` → RELIKVIA, rövid authored Rendeltetés, lore és Ereklye-accent.
 - **Bingulus:** `/iceitem dev csodalatos_bingulus 1` csak a kijelölt tulajdonosnak → FEJLESZTŐI EREKLYE, passzív jutalomgenerátor és auto-restore jelzés.
-- **Világszövő:** a normál owner-bound artifact issuance útvonalon → FEJLESZTŐI EREKLYE, SANDBOX/LIVE_GM integritás és aktuális artifact-state.
+- **Rejtett developer artifact:** csak a belső development acceptance szerint ellenőrizhető; a nyilvános/admin dokumentáció nem publikálja a használati surface-ét.
 
 Vizuális gate: egyik special profilnál sem jelenhet meg magenta missing-texture blokk, a custom
 glyphoknak be kell töltődniük, a readable szövegnek resource-pack glyph nélkül is értelmezhetőnek
