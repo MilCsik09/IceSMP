@@ -58,6 +58,22 @@ class ResourcePackToolingTest(unittest.TestCase):
             texture_path.parent.mkdir(parents=True, exist_ok=True)
             texture_path.write_bytes(MINIMAL_PNG_HEADER)
 
+    def add_tooltip_scaling_metadata(self, texture: Path, *, frame: bool) -> None:
+        border = 10 if frame else 9
+        scaling = {
+            "gui": {
+                "scaling": {
+                    "type": "nine_slice",
+                    "width": 100,
+                    "height": 100,
+                    "border": border,
+                    **({"stretch_inner": True} if frame else {}),
+                }
+            }
+        }
+        texture.with_suffix(texture.suffix + ".mcmeta").write_text(
+            json.dumps(scaling), encoding="utf-8")
+
     def write_config(self, pack_root: Path, name: str, content: str) -> None:
         config_root = pack_root.parent / "src" / "main" / "resources" / "config"
         config_root.mkdir(parents=True, exist_ok=True)
@@ -174,9 +190,66 @@ class ResourcePackToolingTest(unittest.TestCase):
                 }),
                 encoding="utf-8",
             )
-            (texture_root / "rare_background.png").write_bytes(MINIMAL_PNG_HEADER)
-            (texture_root / "rare_frame.png").write_bytes(MINIMAL_PNG_HEADER)
+            background = texture_root / "rare_background.png"
+            frame = texture_root / "rare_frame.png"
+            background.write_bytes(MINIMAL_PNG_HEADER)
+            frame.write_bytes(MINIMAL_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            self.add_tooltip_scaling_metadata(frame, frame=True)
             resource_pack.validate_pack(root)
+
+    def test_tooltip_style_without_nine_slice_metadata_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            style_root = root / "assets" / "icesmp" / "tooltip_styles"
+            texture_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            style_root.mkdir(parents=True, exist_ok=True)
+            texture_root.mkdir(parents=True, exist_ok=True)
+            (style_root / "rare.json").write_text(
+                json.dumps({
+                    "background": "icesmp:tooltip/rare_background",
+                    "frame": "icesmp:tooltip/rare_frame",
+                }),
+                encoding="utf-8",
+            )
+            background = texture_root / "rare_background.png"
+            frame = texture_root / "rare_frame.png"
+            background.write_bytes(MINIMAL_PNG_HEADER)
+            frame.write_bytes(MINIMAL_PNG_HEADER)
+            with self.assertRaisesRegex(resource_pack.PackError, "missing nine-slice metadata"):
+                resource_pack.validate_pack(root)
+
+    def test_tooltip_frame_requires_stretched_nine_slice_inner(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            style_root = root / "assets" / "icesmp" / "tooltip_styles"
+            texture_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            style_root.mkdir(parents=True, exist_ok=True)
+            texture_root.mkdir(parents=True, exist_ok=True)
+            (style_root / "rare.json").write_text(
+                json.dumps({
+                    "background": "icesmp:tooltip/rare_background",
+                    "frame": "icesmp:tooltip/rare_frame",
+                }),
+                encoding="utf-8",
+            )
+            background = texture_root / "rare_background.png"
+            frame = texture_root / "rare_frame.png"
+            background.write_bytes(MINIMAL_PNG_HEADER)
+            frame.write_bytes(MINIMAL_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            frame.with_suffix(".png.mcmeta").write_text(
+                json.dumps({
+                    "gui": {"scaling": {
+                        "type": "nine_slice", "width": 100, "height": 100, "border": 10
+                    }}
+                }),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(resource_pack.PackError, "stretch_inner=true"):
+                resource_pack.validate_pack(root)
 
     def test_generated_zip_inside_source_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

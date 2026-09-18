@@ -23,10 +23,42 @@ RARITIES = {
     "ereklye": (255, 85, 85),
 }
 
+# Match Minecraft's native tooltip sprite scaling contract. Without these sidecar
+# files the 16x16 source texture is stretched over the entire tooltip, producing
+# giant quadrant/colour blocks instead of a stable frame.
+BACKGROUND_SCALING = {
+    "gui": {
+        "scaling": {
+            "type": "nine_slice",
+            "width": 100,
+            "height": 100,
+            "border": 9,
+        }
+    }
+}
+FRAME_SCALING = {
+    "gui": {
+        "scaling": {
+            "type": "nine_slice",
+            "width": 100,
+            "height": 100,
+            "border": 10,
+            "stretch_inner": True,
+        }
+    }
+}
+
 
 def write_png(image: Image.Image, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, format="PNG", optimize=True)
+
+
+def write_scaling_metadata(path: Path, definition: dict[str, object]) -> None:
+    path.with_suffix(path.suffix + ".mcmeta").write_text(
+        json.dumps(definition, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def background(color: tuple[int, int, int]) -> Image.Image:
@@ -55,8 +87,12 @@ def frame(color: tuple[int, int, int]) -> Image.Image:
 
 def main() -> None:
     for rarity, color in RARITIES.items():
-        write_png(background(color), TEXTURE_ROOT / f"{rarity}_background.png")
-        write_png(frame(color), TEXTURE_ROOT / f"{rarity}_frame.png")
+        background_path = TEXTURE_ROOT / f"{rarity}_background.png"
+        frame_path = TEXTURE_ROOT / f"{rarity}_frame.png"
+        write_png(background(color), background_path)
+        write_png(frame(color), frame_path)
+        write_scaling_metadata(background_path, BACKGROUND_SCALING)
+        write_scaling_metadata(frame_path, FRAME_SCALING)
         (STYLE_ROOT / f"{rarity}.json").parent.mkdir(parents=True, exist_ok=True)
         (STYLE_ROOT / f"{rarity}.json").write_text(
             json.dumps(

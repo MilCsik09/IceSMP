@@ -208,6 +208,42 @@ def normalize_resource_location(raw: str, *, default_namespace: str = "icesmp") 
     return value
 
 
+def validate_tooltip_sprite_scaling(texture: Path, field: str, root: Path) -> None:
+    """Require GUI nine-slice metadata so tooltip sprites cannot stretch as one giant quad."""
+    metadata = texture.with_suffix(texture.suffix + ".mcmeta")
+    if not metadata.is_file():
+        raise PackError(
+            f"Tooltip {field} sprite {texture.relative_to(root)} is missing nine-slice metadata "
+            f"{metadata.name}"
+        )
+    try:
+        definition = json.loads(metadata.read_text(encoding="utf-8"))
+        scaling = definition["gui"]["scaling"]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as exception:
+        raise PackError(
+            f"Invalid tooltip sprite metadata in {metadata.relative_to(root)}: {exception}"
+        ) from exception
+    if not isinstance(scaling, dict) or scaling.get("type") != "nine_slice":
+        raise PackError(
+            f"Tooltip sprite metadata {metadata.relative_to(root)} must use gui.scaling.type=nine_slice"
+        )
+    width = scaling.get("width")
+    height = scaling.get("height")
+    border = scaling.get("border")
+    if not isinstance(width, int) or not isinstance(height, int) or width <= 0 or height <= 0:
+        raise PackError(
+            f"Tooltip sprite metadata {metadata.relative_to(root)} needs positive integer width/height"
+        )
+    if not isinstance(border, int) or border <= 0 or border * 2 >= min(width, height):
+        raise PackError(
+            f"Tooltip sprite metadata {metadata.relative_to(root)} has invalid nine-slice border"
+        )
+    if field == "frame" and scaling.get("stretch_inner") is not True:
+        raise PackError(
+            f"Tooltip frame metadata {metadata.relative_to(root)} must set stretch_inner=true"
+        )
+
+
 def validate_tooltip_styles(root: Path) -> int:
     """Validate native 1.21.11 tooltip-style JSON and both referenced sprite textures."""
     styles = 0
@@ -237,6 +273,7 @@ def validate_tooltip_styles(root: Path) -> int:
                         f"Tooltip style {style_path.relative_to(root)} {field} references missing texture "
                         f"{location}"
                     )
+                validate_tooltip_sprite_scaling(texture, field, root)
             styles += 1
     return styles
 

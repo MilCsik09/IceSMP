@@ -9,8 +9,11 @@ ellenőrzött, részletes 2D változatot tartják meg.
 A Minecraft 1.21.11 natív `tooltip_style` komponense a szerver saját rarity-létrája szerint
 választja ki a tooltip hátterét és keretét. A style-definíciók az
 `assets/icesmp/tooltip_styles/` alatt, a hozzájuk tartozó pixel-art sprite-ok pedig az
-`assets/icesmp/textures/gui/sprites/tooltip/` alatt vannak. Az alap PNG-ket a
-`scripts/generate_item_tooltip_assets.py` generálja determinisztikusan.
+`assets/icesmp/textures/gui/sprites/tooltip/` alatt vannak. Az alap PNG-ket és a hozzájuk tartozó vanilla-kompatibilis nine-slice `.png.mcmeta`
+scaling metadata-t a `scripts/generate_item_tooltip_assets.py` generálja determinisztikusan.
+A metadata kötelező: nélküle a kliens a 16×16 sprite-ot egyetlen képként nyújtja a teljes
+tooltip méretére, ami nagy színes/magenta blokkokat eredményez. A pack validator ezért minden
+tooltip background/frame mellett megköveteli és ellenőrzi a nine-slice leírást.
 
 Ez a réteg a vanilla tooltip elrendezését tartja meg, csak a vizuális hátteret/keretet cseréli;
 a nagy, szabadon pozicionált RPG-panel továbbra is külön kliens-renderer feladata lenne.
