@@ -1,38 +1,30 @@
 #!/usr/bin/env python3
-"""Generate deterministic Minecraft 1.21.11 tooltip-style assets for IceSMP."""
+"""Generate deterministic global Minecraft 1.21.11 tooltip chrome for IceSMP."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-STYLE_ROOT = ROOT / "resource-pack" / "assets" / "icesmp" / "tooltip_styles"
-TEXTURE_ROOT = ROOT / "resource-pack" / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+TEXTURE_ROOT = (
+    ROOT / "resource-pack" / "assets" / "minecraft" / "textures"
+    / "gui" / "sprites" / "tooltip"
+)
 
-RARITIES = {
-    "ocska": (92, 92, 92),
-    "kozonseges": (238, 238, 238),
-    "nem_mindennapi": (85, 255, 85),
-    "ritka": (85, 170, 255),
-    "epikus": (190, 85, 255),
-    "legendas": (255, 170, 0),
-    "mitikus": (255, 85, 85),
-    "ereklye": (255, 85, 85),
-}
+SIZE = 100
+BACKGROUND_BORDER = 9
+FRAME_BORDER = 10
 
-# Match Minecraft's native tooltip sprite scaling contract. Without these sidecar
-# files the 16x16 source texture is stretched over the entire tooltip, producing
-# giant quadrant/colour blocks instead of a stable frame.
 BACKGROUND_SCALING = {
     "gui": {
         "scaling": {
             "type": "nine_slice",
-            "width": 100,
-            "height": 100,
-            "border": 9,
+            "width": SIZE,
+            "height": SIZE,
+            "border": BACKGROUND_BORDER,
         }
     }
 }
@@ -40,9 +32,9 @@ FRAME_SCALING = {
     "gui": {
         "scaling": {
             "type": "nine_slice",
-            "width": 100,
-            "height": 100,
-            "border": 10,
+            "width": SIZE,
+            "height": SIZE,
+            "border": FRAME_BORDER,
             "stretch_inner": True,
         }
     }
@@ -61,50 +53,48 @@ def write_scaling_metadata(path: Path, definition: dict[str, object]) -> None:
     )
 
 
-def background(color: tuple[int, int, int]) -> Image.Image:
-    image = Image.new("RGBA", (16, 16))
+def background() -> Image.Image:
+    image = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     pixels = image.load()
-    for y in range(16):
-        for x in range(16):
-            distance = min(x, y, 15 - x, 15 - y)
-            shade = 19 + min(11, distance * 2)
-            tint = tuple(channel // 32 for channel in color)
-            pixels[x, y] = (min(48, shade + tint[0]), min(48, shade + tint[1]),
-                            min(48, shade + tint[2]), 238)
+    for y in range(SIZE):
+        for x in range(SIZE):
+            distance = min(x, y, SIZE - 1 - x, SIZE - 1 - y)
+            if distance == 0:
+                pixels[x, y] = (0, 0, 0, 0)
+            elif distance <= 2:
+                pixels[x, y] = (28, 12, 38, 235)
+            else:
+                shade = 10 + min(8, distance // 10)
+                pixels[x, y] = (shade + 4, shade, shade + 8, 246)
     return image
 
 
-def frame(color: tuple[int, int, int]) -> Image.Image:
-    image = Image.new("RGBA", (16, 16))
-    draw = ImageDraw.Draw(image)
-    dark = tuple(max(0, channel // 3) for channel in color)
-    draw.rectangle((0, 0, 15, 15), outline=(*dark, 255), width=2)
-    draw.rectangle((2, 2, 13, 13), outline=(*color, 255), width=1)
-    for point in ((2, 2), (13, 2), (2, 13), (13, 13)):
-        draw.point(point, fill=(255, 255, 255, 255))
+def frame() -> Image.Image:
+    image = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    pixels = image.load()
+    for y in range(SIZE):
+        for x in range(SIZE):
+            distance = min(x, y, SIZE - 1 - x, SIZE - 1 - y)
+            if distance <= 1:
+                pixels[x, y] = (55, 20, 75, 255)
+            elif distance == 2:
+                pixels[x, y] = (125, 50, 160, 255)
+            elif distance == 3:
+                pixels[x, y] = (85, 35, 115, 180)
+            elif distance == 4:
+                pixels[x, y] = (65, 30, 90, 80)
+    for x, y in ((2, 2), (SIZE - 3, 2), (2, SIZE - 3), (SIZE - 3, SIZE - 3)):
+        pixels[x, y] = (185, 95, 225, 255)
     return image
 
 
 def main() -> None:
-    for rarity, color in RARITIES.items():
-        background_path = TEXTURE_ROOT / f"{rarity}_background.png"
-        frame_path = TEXTURE_ROOT / f"{rarity}_frame.png"
-        write_png(background(color), background_path)
-        write_png(frame(color), frame_path)
-        write_scaling_metadata(background_path, BACKGROUND_SCALING)
-        write_scaling_metadata(frame_path, FRAME_SCALING)
-        (STYLE_ROOT / f"{rarity}.json").parent.mkdir(parents=True, exist_ok=True)
-        (STYLE_ROOT / f"{rarity}.json").write_text(
-            json.dumps(
-                {
-                    "background": f"icesmp:tooltip/{rarity}_background",
-                    "frame": f"icesmp:tooltip/{rarity}_frame",
-                },
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
+    background_path = TEXTURE_ROOT / "background.png"
+    frame_path = TEXTURE_ROOT / "frame.png"
+    write_png(background(), background_path)
+    write_png(frame(), frame_path)
+    write_scaling_metadata(background_path, BACKGROUND_SCALING)
+    write_scaling_metadata(frame_path, FRAME_SCALING)
 
 
 if __name__ == "__main__":

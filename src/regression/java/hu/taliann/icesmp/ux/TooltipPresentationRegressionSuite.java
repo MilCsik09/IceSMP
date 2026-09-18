@@ -18,7 +18,7 @@ public final class TooltipPresentationRegressionSuite {
         customGlyphFontDoesNotLeakIntoReadableText();
         resourcePackDefinesEverySemanticGlyph();
         canonicalRendererUsesSemanticPresentationSections();
-        canonicalItemsRetainNativeRarityTooltipStyle();
+        canonicalItemsUseGlobalTooltipChrome();
         devReferencePreviewUsesReviewedPresentation();
         runeMutationRefreshesVisiblePresentation();
         System.out.println("Tooltip presentation regression suite passed. assertions=" + assertions);
@@ -71,11 +71,25 @@ public final class TooltipPresentationRegressionSuite {
                 "presentation pass regressed to the old divider-heavy tooltip layout");
     }
 
-    private static void canonicalItemsRetainNativeRarityTooltipStyle() throws Exception {
+    private static void canonicalItemsUseGlobalTooltipChrome() throws Exception {
         final String identity = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java"));
+        final String data = Files.readString(Path.of(
+                "src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java"));
         check(identity.contains("ItemDataFactory.applyTooltipStyleForRarity(item, template.rarity().id())"),
-                "canonical item presentation must retain rarity-backed native tooltip_style");
+                "canonical item refresh must pass through the shared tooltip chrome reset");
+        check(data.contains("item.resetData(DataComponentTypes.TOOLTIP_STYLE)")
+                        && !data.contains("\"icesmp:tooltip/\" + normalized"),
+                "rarity presentation must not select a separate tooltip background");
+        final String backgroundMeta = Files.readString(Path.of(
+                "resource-pack/assets/minecraft/textures/gui/sprites/tooltip/background.png.mcmeta"));
+        final String frameMeta = Files.readString(Path.of(
+                "resource-pack/assets/minecraft/textures/gui/sprites/tooltip/frame.png.mcmeta"));
+        check(backgroundMeta.contains("\"type\": \"nine_slice\"")
+                        && backgroundMeta.contains("\"border\": 9")
+                        && frameMeta.contains("\"border\": 10")
+                        && frameMeta.contains("\"stretch_inner\": true"),
+                "global vanilla tooltip sprites lost the reviewed IceSMP nine-slice contract");
     }
 
     private static void devReferencePreviewUsesReviewedPresentation() throws Exception {
@@ -93,7 +107,7 @@ public final class TooltipPresentationRegressionSuite {
         check(dev.contains("ItemDataFactory.hideAttributeTooltip(display)")
                         && dev.contains("ItemDataFactory.applyTooltipStyleForRarity(display, \"legendas\")")
                         && dev.contains("ItemDataFactory.applyRarity(display"),
-                "DEV reference preview must exercise the legendary native tooltip frame");
+                "DEV reference preview must exercise the shared global tooltip chrome reset");
         check(!dev.contains("Presentation-only DEV projection")
                         && !dev.contains("Minta sebzés:")
                         && !dev.contains("Tesztérték:"),

@@ -123,18 +123,16 @@ public final class ItemDataFactory {
     }
 
     /**
-     * Applies the 1.21.11 resource-pack tooltip style for the server's authored rarity ladder.
-     * Unknown ids deliberately keep the vanilla tooltip so a content typo cannot break the item
-     * client-side. The style component must be written after ItemMeta, like all data components.
+     * Keeps every item on the same IceSMP tooltip chrome.
+     *
+     * <p>The resource pack owns the global vanilla sprites
+     * {@code minecraft:tooltip/background} and {@code minecraft:tooltip/frame}, so even untouched
+     * vanilla stacks use the IceSMP frame. Canonical/custom items must therefore clear any old
+     * per-stack TOOLTIP_STYLE component instead of selecting a rarity-specific background.</p>
      */
     public static void applyTooltipStyleForRarity(final ItemStack item, final String rarityId) {
-        if (item == null || rarityId == null) return;
-        final String normalized = rarityId.trim().toLowerCase(Locale.ROOT).replace('-', '_');
-        switch (normalized) {
-            case "ocska", "kozonseges", "nem_mindennapi", "ritka", "epikus", "legendas",
-                    "mitikus", "ereklye" -> applyTooltipStyle(item, "icesmp:tooltip/" + normalized);
-            default -> { }
-        }
+        if (item == null) return;
+        item.resetData(DataComponentTypes.TOOLTIP_STYLE);
     }
 
     /** Applies one namespaced Minecraft 1.21.11 tooltip-style resource. */

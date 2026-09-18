@@ -56,6 +56,12 @@ MERGE_OWNED_FILES = frozenset(
         "assets/minecraft/shaders/core/rendertype_text.fsh",
         "assets/minecraft/textures/gui/sprites/boss_bar/white_background.png",
         "assets/minecraft/textures/gui/sprites/boss_bar/white_progress.png",
+        # Global IceSMP tooltip chrome. These exact vanilla sprites intentionally replace
+        # the external base pack so every tooltip, including untouched vanilla items, matches.
+        "assets/minecraft/textures/gui/sprites/tooltip/background.png",
+        "assets/minecraft/textures/gui/sprites/tooltip/background.png.mcmeta",
+        "assets/minecraft/textures/gui/sprites/tooltip/frame.png",
+        "assets/minecraft/textures/gui/sprites/tooltip/frame.png.mcmeta",
         # Exact regular-survival replacement surface. Keeping this allow-list explicit makes
         # an accidental hardcore/vehicle/other vanilla HUD override a merge failure.
         *(
@@ -209,7 +215,7 @@ def normalize_resource_location(raw: str, *, default_namespace: str = "icesmp") 
 
 
 def validate_tooltip_sprite_scaling(texture: Path, field: str, root: Path) -> None:
-    """Require GUI nine-slice metadata so tooltip sprites cannot stretch as one giant quad."""
+    """Validate the native GUI nine-slice contract for one tooltip sprite."""
     metadata = texture.with_suffix(texture.suffix + ".mcmeta")
     if not metadata.is_file():
         raise PackError(
@@ -234,6 +240,14 @@ def validate_tooltip_sprite_scaling(texture: Path, field: str, root: Path) -> No
         raise PackError(
             f"Tooltip sprite metadata {metadata.relative_to(root)} needs positive integer width/height"
         )
+    with texture.open("rb") as handle:
+        header = handle.read(24)
+    texture_width, texture_height = struct.unpack(">II", header[16:24])
+    if (width, height) != (texture_width, texture_height):
+        raise PackError(
+            f"Tooltip sprite metadata {metadata.relative_to(root)} logical size "
+            f"{width}x{height} must match PNG dimensions {texture_width}x{texture_height}"
+        )
     if not isinstance(border, int) or border <= 0 or border * 2 >= min(width, height):
         raise PackError(
             f"Tooltip sprite metadata {metadata.relative_to(root)} has invalid nine-slice border"
@@ -245,38 +259,20 @@ def validate_tooltip_sprite_scaling(texture: Path, field: str, root: Path) -> No
 
 
 def validate_tooltip_styles(root: Path) -> int:
-    """Validate native 1.21.11 tooltip-style JSON and both referenced sprite textures."""
-    styles = 0
-    assets_root = root / "assets"
-    if not assets_root.is_dir():
-        return styles
-    for namespace_dir in sorted(path for path in assets_root.iterdir() if path.is_dir()):
-        style_root = namespace_dir / "tooltip_styles"
-        if not style_root.is_dir():
-            continue
-        for style_path in sorted(style_root.rglob("*.json")):
-            try:
-                definition = json.loads(style_path.read_text(encoding="utf-8"))
-            except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exception:
-                raise PackError(f"Invalid tooltip style JSON in {style_path.relative_to(root)}: {exception}") from exception
-            if not isinstance(definition, dict):
-                raise PackError(f"Tooltip style must be an object: {style_path.relative_to(root)}")
-            for field in ("background", "frame"):
-                raw_location = definition.get(field)
-                if not isinstance(raw_location, str) or not raw_location.strip():
-                    raise PackError(f"Tooltip style {style_path.relative_to(root)} is missing {field}")
-                location = normalize_resource_location(raw_location)
-                namespace, path = location.split(":", 1)
-                texture = assets_root / namespace / "textures" / "gui" / "sprites" / f"{path}.png"
-                if not texture.is_file():
-                    raise PackError(
-                        f"Tooltip style {style_path.relative_to(root)} {field} references missing texture "
-                        f"{location}"
-                    )
-                validate_tooltip_sprite_scaling(texture, field, root)
-            styles += 1
-    return styles
-
+    """Validate the global IceSMP replacement for vanilla tooltip background + frame."""
+    tooltip_root = root / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "tooltip"
+    background = tooltip_root / "background.png"
+    frame = tooltip_root / "frame.png"
+    present = background.is_file() or frame.is_file()
+    if not present:
+        return 0
+    if not background.is_file():
+        raise PackError("Global IceSMP tooltip chrome is missing background.png")
+    if not frame.is_file():
+        raise PackError("Global IceSMP tooltip chrome is missing frame.png")
+    validate_tooltip_sprite_scaling(background, "background", root)
+    validate_tooltip_sprite_scaling(frame, "frame", root)
+    return 1
 
 def equipment_assets(root: Path) -> dict[str, Path]:
     assets: dict[str, Path] = {}
