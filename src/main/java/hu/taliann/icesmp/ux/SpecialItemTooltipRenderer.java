@@ -199,12 +199,12 @@ public final class SpecialItemTooltipRenderer {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
                 TooltipPresentation.withIcon(TooltipPresentation.Glyph.RELIC,
-                        badge("RELIKVIA", NamedTextColor.LIGHT_PURPLE))));
+                        badge("RELIKVIA", NamedTextColor.AQUA))));
         if (definition.description() != null && !definition.description().isBlank()) {
             final List<Component> purpose = new ArrayList<>();
             purpose.add(TooltipPresentation.sectionHeading(
                     TooltipPresentation.Glyph.EFFECT, "Rendeltetés",
-                    NamedTextColor.LIGHT_PURPLE));
+                    NamedTextColor.AQUA));
             for (final String line : wrap(definition.description(), 42)) {
                 purpose.add(TooltipPresentation.line(line, NamedTextColor.GRAY));
             }
