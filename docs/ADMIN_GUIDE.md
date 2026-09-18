@@ -2512,6 +2512,11 @@ A special-item profile átvételekor valódi factory-itemeket használj, ne kéz
 - **Fizikai valuta:** fővárosban `/bank withdraw neutral 1` → FIZIKAI VALUTA, Menedék/Creutzér szerep és frakciószínű accent.
 - **Erszény:** `/iceitem erszeny 25 1` → TALÁLT ERSZÉNY; a konkrét valuta/összeg ne szivárogjon ki bontás előtt.
 - **Relikvia:** `/iceitem relikvia metelytepo 1` → RELIKVIA, rövid authored Rendeltetés, lore és Ereklye-accent.
+- **Küldetési item:** `/iceitem unique suttogas_meghivo 1` → KÜLDETÉSI TÁRGY + authored rendeltetés/használat.
+- **Haladási token:** `/iceitem unique emlekszilank 1` → HALADÁSI TÁRGY + beváltási hint.
+- **Rúna:** `/iceitem unique runa_elek 1` → FEJLESZTÉS profil, upgrade-accent és meglévő mechanikai lore.
+- **Utility:** `/iceitem unique ures_kupa 1` → SEGÉDESZKÖZ profil.
+- **Ládakulcs:** `/crate give <játékos> <láda-id> 1` → LÁDAKULCS, cél-láda, nyitás és legfeljebb három jutalomesély.
 - **Bingulus:** `/iceitem dev csodalatos_bingulus 1` csak a kijelölt tulajdonosnak → FEJLESZTŐI EREKLYE, passzív jutalomgenerátor és auto-restore jelzés.
 - **Rejtett developer artifact:** csak a belső development acceptance szerint ellenőrizhető; a nyilvános/admin dokumentáció nem publikálja a használati surface-ét.
 
