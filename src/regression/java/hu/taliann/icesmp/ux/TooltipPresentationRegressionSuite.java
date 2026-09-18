@@ -49,7 +49,9 @@ public final class TooltipPresentationRegressionSuite {
                 "tooltip font must map semantic glyphs to deterministic bitmap providers");
         for (final TooltipPresentation.Glyph glyph : TooltipPresentation.Glyph.values()) {
             final String hex = Integer.toHexString(glyph.character()).toLowerCase(Locale.ROOT);
-            check(font.toLowerCase(Locale.ROOT).contains(hex),
+            final String escaped = String.format(Locale.ROOT, "\\u%04x", (int) glyph.character());
+            check(font.indexOf(glyph.character()) >= 0
+                            || font.toLowerCase(Locale.ROOT).contains(escaped),
                     "resource-pack tooltip font is missing glyph U+" + hex.toUpperCase(Locale.ROOT));
         }
     }
