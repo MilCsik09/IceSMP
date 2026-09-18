@@ -43,6 +43,7 @@ TOOLTIP_SPECIAL_STYLES = (
     "blueprint", "profession", "currency_red", "currency_blue",
     "currency_neutral", "currency_dark", "money_pouch", "developer",
     "quest", "token", "key", "upgrade", "utility",
+    "capture", "siege", "catalyst",
 )
 
 FALLBACK_POLICY_PATH = (
