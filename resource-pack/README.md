@@ -6,30 +6,31 @@ ellenőrzött, részletes 2D változatot tartják meg.
 
 ## Item tooltip style
 
-Az IceSMP **minden** item tooltipjére ugyanazt a vizuális keretet használja — nem csak a saját
-itemekre, hanem a teljesen vanilla stackekre is. Ezt nem itemenkénti rarity-`tooltip_style`
-komponenssel oldjuk meg, hanem a resource pack globálisan felülírja a vanilla sprite-okat:
+Az IceSMP **minden** item tooltipjén ugyanazt a vizuális rendszert használja. Egy sima vanilla
+dirt/kard is a resource pack által globálisan felülírt IceSMP háttér + semleges keret chrome-ot
+kapja:
 
 - `assets/minecraft/textures/gui/sprites/tooltip/background.png`
 - `assets/minecraft/textures/gui/sprites/tooltip/frame.png`
-- és a két kötelező `.png.mcmeta` nine-slice scaling fájlt.
 
-Így egy sima dirt, vanilla kard és egy IceSMP legendary item ugyanazt az IceSMP háttér/keret
-chrome-ot kapja. A rarity a saját itemeknél továbbra is név-, szín-, ikon- és semantic-lore
-hierarchiában jelenhet meg, de nem választ másik tooltip hátteret.
+A saját, ismert rarityvel rendelkező IceSMP itemek **nem más layoutot** kapnak. Ugyanazt a sötét
+hátteret és nine-slice geometriát használják, csak a keret/accent követi a rarityt:
+Ócska szürke, Közönséges világos, Nem mindennapi zöld, Ritka kék, Epikus lila,
+Legendás arany, Mitikus vörös, Ereklye türkiz.
 
-A `minecraft:tooltip_style` komponens `namespace:path` érték esetén a kliens közvetlenül a
-`namespace:tooltip/path_background` és `namespace:tooltip/path_frame` sprite-okat keresi; nincs
-külön tooltip-style JSON registry. A korábbi rarity-specifikus pseudo-registryt ezért eltávolítottuk.
+A natív `minecraft:tooltip_style` komponens helyes használata `icesmp:<rarity>`. Minecraft ebből
+közvetlenül az `icesmp:tooltip/<rarity>_background` és
+`icesmp:tooltip/<rarity>_frame` sprite-okat oldja fel. A korábbi
+`icesmp:tooltip/<rarity>` component-ID hibás volt, mert dupla `tooltip/tooltip/` feloldáshoz és
+missing-texture/magenta panelhez vezetett.
 
-A globális PNG-k 100×100-as nine-slice források. A metadata mérete megegyezik a tényleges PNG
-méretével; a háttér border 9, a frame border 10 és `stretch_inner=true`. A
-`scripts/generate_item_tooltip_assets.py` ezeket determinisztikusan generálja, a
-`scripts/resource_pack.py` pedig build előtt ellenőrzi a párt, a méreteket és a metadata contractot.
+A globális és rarity sprite-ok 100×100-as nine-slice források. A háttér border 9, a frame border
+10 és `stretch_inner=true`. A metadata mérete kötelezően egyezik a PNG méretével.
+A `scripts/generate_item_tooltip_assets.py` determinisztikusan generálja a teljes családot, a
+`scripts/resource_pack.py` pedig build előtt ellenőrzi, hogy minden rarity-pár megvan.
 
-Ez a réteg a vanilla tooltip elrendezését tartja meg, csak a vizuális hátteret/keretet cseréli.
 A saját itemek gazdagabb section/lore presentationje ettől külön, a Tooltip Engine-en keresztül
-épül rá.
+épül rá; a keret színezése nem változtat gameplay state-et.
 
 ## Custom wearable / armor presentation
 

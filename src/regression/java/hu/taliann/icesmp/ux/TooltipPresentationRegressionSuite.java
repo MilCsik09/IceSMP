@@ -18,7 +18,7 @@ public final class TooltipPresentationRegressionSuite {
         customGlyphFontDoesNotLeakIntoReadableText();
         resourcePackDefinesEverySemanticGlyph();
         canonicalRendererUsesSemanticPresentationSections();
-        canonicalItemsUseGlobalTooltipChrome();
+        canonicalItemsUseSharedChromeWithRarityAccent();
         devReferencePreviewUsesReviewedPresentation();
         runeMutationRefreshesVisiblePresentation();
         System.out.println("Tooltip presentation regression suite passed. assertions=" + assertions);
@@ -71,25 +71,24 @@ public final class TooltipPresentationRegressionSuite {
                 "presentation pass regressed to the old divider-heavy tooltip layout");
     }
 
-    private static void canonicalItemsUseGlobalTooltipChrome() throws Exception {
+    private static void canonicalItemsUseSharedChromeWithRarityAccent() throws Exception {
         final String identity = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/itemization/ItemIdentityService.java"));
         final String data = Files.readString(Path.of(
                 "src/main/java/hu/taliann/icesmp/items/ItemDataFactory.java"));
         check(identity.contains("ItemDataFactory.applyTooltipStyleForRarity(item, template.rarity().id())"),
-                "canonical item refresh must pass through the shared tooltip chrome reset");
-        check(data.contains("item.resetData(DataComponentTypes.TOOLTIP_STYLE)")
-                        && !data.contains("\"icesmp:tooltip/\" + normalized"),
-                "rarity presentation must not select a separate tooltip background");
+                "canonical item refresh must retain shared tooltip presentation");
+        check(data.contains("applyTooltipStyle(item, \"icesmp:\" + normalized)")
+                        && !data.contains("applyTooltipStyle(item, \"icesmp:tooltip/\""),
+                "rarity tooltip style must use namespace:path without duplicated tooltip/");
         final String backgroundMeta = Files.readString(Path.of(
                 "resource-pack/assets/minecraft/textures/gui/sprites/tooltip/background.png.mcmeta"));
-        final String frameMeta = Files.readString(Path.of(
-                "resource-pack/assets/minecraft/textures/gui/sprites/tooltip/frame.png.mcmeta"));
-        check(backgroundMeta.contains("\"type\": \"nine_slice\"")
-                        && backgroundMeta.contains("\"border\": 9")
-                        && frameMeta.contains("\"border\": 10")
-                        && frameMeta.contains("\"stretch_inner\": true"),
-                "global vanilla tooltip sprites lost the reviewed IceSMP nine-slice contract");
+        final String legendaryFrameMeta = Files.readString(Path.of(
+                "resource-pack/assets/icesmp/textures/gui/sprites/tooltip/legendas_frame.png.mcmeta"));
+        check(backgroundMeta.contains("\"border\": 9")
+                        && legendaryFrameMeta.contains("\"border\": 10")
+                        && legendaryFrameMeta.contains("\"stretch_inner\": true"),
+                "shared/global and legendary rarity tooltip sprites lost nine-slice contract");
     }
 
     private static void devReferencePreviewUsesReviewedPresentation() throws Exception {
@@ -104,10 +103,13 @@ public final class TooltipPresentationRegressionSuite {
                         && dev.contains("TooltipPresentation.Glyph.ARCHAEOLOGY")
                         && dev.contains("TooltipPresentation.Glyph.STORY"),
                 "DEV reference preview must exercise the reviewed semantic presentation hierarchy");
+        check(dev.contains("final ItemStack display = new ItemStack(Material.NETHERITE_SWORD)")
+                        && !dev.contains("final ItemStack display = source.clone()"),
+                "DEV packet preview must use a fresh stack so stale tooltip styles cannot leak");
         check(dev.contains("ItemDataFactory.hideAttributeTooltip(display)")
                         && dev.contains("ItemDataFactory.applyTooltipStyleForRarity(display, \"legendas\")")
                         && dev.contains("ItemDataFactory.applyRarity(display"),
-                "DEV reference preview must exercise the shared global tooltip chrome reset");
+                "DEV reference preview must exercise the legendary rarity accent");
         check(!dev.contains("Presentation-only DEV projection")
                         && !dev.contains("Minta sebzés:")
                         && !dev.contains("Tesztérték:"),

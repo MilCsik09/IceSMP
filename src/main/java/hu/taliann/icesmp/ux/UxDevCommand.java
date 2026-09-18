@@ -333,7 +333,9 @@ public final class UxDevCommand {
         final ItemStack canonical = player.getInventory().getItemInMainHand();
         final ItemStack source = canonical == null || canonical.getType().isAir()
                 ? new ItemStack(Material.NETHERITE_SWORD) : canonical.clone();
-        final ItemStack display = source.clone();
+        // Fresh presentation stack: never inherit a stale TOOLTIP_STYLE/data-component payload
+        // from the canonical held item. The canonical clone is context-only for the renderer.
+        final ItemStack display = new ItemStack(Material.NETHERITE_SWORD);
         final ItemMeta meta = display.getItemMeta();
         meta.displayName(referenceItemName());
         meta.lore(referenceTooltipLines(player, source));
@@ -379,6 +381,7 @@ public final class UxDevCommand {
         meta.displayName(referenceItemName());
         meta.lore(referenceTooltipLines(player, contextItem));
         display.setItemMeta(meta);
+        ItemDataFactory.hideAttributeTooltip(display);
         ItemDataFactory.applyRarity(display, ItemDataFactory.vanillaRarityOf("legendas"));
         ItemDataFactory.applyTooltipStyleForRarity(display, "legendas");
         return display;
