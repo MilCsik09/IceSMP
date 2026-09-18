@@ -21,7 +21,7 @@ public final class SpecialItemTooltipRegressionSuite {
     private static void profileRendererCoversSpecialFamilies() throws Exception {
         final String source = read("src/main/java/hu/taliann/icesmp/ux/SpecialItemTooltipRenderer.java");
         for (final String profile : new String[]{
-                "BLUEPRINT", "PROFESSION_MATERIAL", "CURRENCY", "MONEY_POUCH",
+                "BLUEPRINT", "PROFESSION_MATERIAL", "PROFESSION_RESULT", "CURRENCY", "MONEY_POUCH",
                 "RELIC", "DEVELOPER_ARTIFACT", "DEBUG_PROBE", "QUEST", "TOKEN"}) {
             check(source.contains(profile), "missing special tooltip profile " + profile);
         }
@@ -37,6 +37,9 @@ public final class SpecialItemTooltipRegressionSuite {
         check(read("src/main/java/hu/taliann/icesmp/items/UniqueMaterialFactory.java")
                         .contains("SpecialItemTooltipRenderer.professionMaterial(section)"),
                 "profession materials bypass the shared tooltip profile");
+        check(read("src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java")
+                        .contains("SpecialItemTooltipRenderer.professionResult(recipe)"),
+                "non-canonical profession results bypass the shared tooltip profile");
         check(read("src/main/java/hu/taliann/icesmp/items/CurrencyItemFactory.java")
                         .contains("SpecialItemTooltipRenderer.currency(currencyType)"),
                 "physical currency bypasses the shared tooltip profile");
@@ -74,6 +77,10 @@ public final class SpecialItemTooltipRegressionSuite {
                         && source.contains("Feldolgozza")
                         && source.contains("Felhasználás"),
                 "profession material tooltip lost source/process/sink explanation");
+        check(source.contains("SZAKMAI TÁRGY")
+                        && source.contains("Kategória")
+                        && source.contains("Típus"),
+                "profession crafted output tooltip lost its role/category presentation");
         check(source.contains("a nálad lévő veretek befizethetők")
                         && source.contains("kézben hordozható fizikai pénz"),
                 "currency tooltip lost physical/bank semantics");
