@@ -40,7 +40,10 @@ public final class TooltipPresentation {
         TOKEN('\uE111'),
         KEY('\uE112'),
         UPGRADE('\uE113'),
-        UTILITY('\uE114');
+        UTILITY('\uE114'),
+        COMPANION('\uE115'),
+        SIEGE('\uE116'),
+        CATALYST('\uE117');
 
         private final char character;
 
