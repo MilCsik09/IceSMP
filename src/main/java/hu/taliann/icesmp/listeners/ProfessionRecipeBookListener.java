@@ -504,9 +504,11 @@ public final class ProfessionRecipeBookListener implements Listener {
                     result, rolledTooltipRarity);
         } else if (!rarityId.isBlank()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyleForRarity(result, rarityId);
-        } else {
+        } else if (recipe.uniqueResult() == null) {
             hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyle(result, "icesmp:profession");
         }
+        // Unique results already received their authored QUEST/TOKEN/UPGRADE/UTILITY/PROFESSION
+        // style from UniqueMaterialFactory.applyPresentation; do not flatten it here.
         return result;
     }
 
