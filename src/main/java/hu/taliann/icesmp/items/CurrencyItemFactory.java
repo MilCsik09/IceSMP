@@ -80,6 +80,8 @@ public final class CurrencyItemFactory {
         itemStack.setItemMeta(meta);
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack,
                 "icesmp:currency_" + currencyType.name().toLowerCase(java.util.Locale.ROOT));
+        ItemDataFactory.applyTooltipStyle(itemStack,
+                "icesmp:currency_" + currencyType.name().toLowerCase(java.util.Locale.ROOT));
     }
 
     private String resolveDisplayName(final CurrencyType currencyType) {
