@@ -1692,3 +1692,21 @@ Közös, Folia-biztos presentation foundation a semantic tooltip-szakaszokhoz, j
 - **Staging gate:** két párhuzamos dialogue session, quit/death/world-change cleanup, GUI inventory-exploit mátrix, resource-pack sound event és tooltip visual QA még kézi ellenőrzést igényel.
 
 <!-- icesmp-ux-foundation-doc -->
+
+### Tárgy-tooltip presentation profilok
+
+<!-- icesmp-doc-id: feature.immersive-ux.item-tooltips -->
+
+> **Implementáció elkészült, vizuális staging-átvétel szükséges**
+
+Az IceSMP tárgytooltipjai közös sötét háttérre és nine-slice keretre épülnek. A vanilla tárgyak is
+megkapják az alap IceSMP chrome-ot; a canonical felszerelés rarity-accentet, a special-purpose
+tárgyak pedig saját category-profilt és rövid használati magyarázatot kapnak.
+
+- **Blueprint:** recept, szakma, szakmaszint és jobb kattos feloldás.
+- **Profession item:** szakmai szerep, forrás/feldolgozó/felhasználás; a nem-canonical crafted outputok is profilt kapnak.
+- **Fizikai valuta / erszény:** banki szerep, frakció/valuta vagy a bontásig rejtett tartalom.
+- **Relikvia:** rövid authored rendeltetés + meglévő lore, Ereklye-accenttel.
+- **Developer Artifact:** a Csodálatos Bingulus és a Világszövő külön, production-minőségű artifact-profilt kap; nem debug-probe kinézetet.
+- **Fontos határ:** a profile renderer csak presentationt épít; PDC identity, ownership, recept, valuta, relic és DEV-artifact authority nem költözik át a tooltip-rétegbe.
+
