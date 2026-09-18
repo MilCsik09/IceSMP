@@ -31,6 +31,7 @@ public final class SpecialItemTooltipRenderer {
     public enum Profile {
         BLUEPRINT,
         PROFESSION_MATERIAL,
+        PROFESSION_RESULT,
         CURRENCY,
         MONEY_POUCH,
         RELIC,
@@ -71,6 +72,29 @@ public final class SpecialItemTooltipRenderer {
                 TooltipPresentation.withIcon(TooltipPresentation.Glyph.STORY,
                         TooltipPresentation.line("Jobb katt • megtanulod a receptet.",
                                 NamedTextColor.GRAY))));
+        addAuthoredLore(sections, recipe.lore(), 80);
+        return TooltipEngine.render(sections);
+    }
+
+    public static List<Component> professionResult(final ProfessionRecipeCatalog.Recipe recipe) {
+        final List<TooltipEngine.Section> sections = new ArrayList<>();
+        add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                        badge("SZAKMAI TÁRGY", NamedTextColor.GOLD)
+                                .append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
+                                .append(recipe.profession().getDisplayName()
+                                        .decoration(TextDecoration.ITALIC, false)))));
+        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
+                TooltipPresentation.sectionHeading(
+                        TooltipPresentation.Glyph.EFFECT, "Szerep", NamedTextColor.GOLD),
+                labelled("Kategória", recipe.category(), NamedTextColor.WHITE),
+                labelled("Típus", humanize(recipe.kind()), NamedTextColor.GRAY)));
+        add(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, List.of(
+                TooltipPresentation.sectionHeading(
+                        TooltipPresentation.Glyph.REQUIREMENTS, "Követelmény",
+                        NamedTextColor.GOLD),
+                labelled("Szakmaszint", Integer.toString(recipe.level()),
+                        NamedTextColor.YELLOW)));
         addAuthoredLore(sections, recipe.lore(), 80);
         return TooltipEngine.render(sections);
     }
