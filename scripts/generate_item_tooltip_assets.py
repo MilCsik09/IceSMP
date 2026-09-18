@@ -25,6 +25,11 @@ SPECIAL_STYLES = {
     "currency_dark": RARITIES["ocska"],
     "money_pouch": RARITIES["legendas"],
     "developer": RARITIES["epikus"],
+    "quest": RARITIES["legendas"],
+    "token": RARITIES["epikus"],
+    "key": RARITIES["kozonseges"],
+    "upgrade": RARITIES["ereklye"],
+    "utility": RARITIES["ocska"],
 }
 BACKGROUND_SCALING = {"gui":{"scaling":{"type":"nine_slice","width":100,"height":100,"border":9}}}
 FRAME_SCALING = {"gui":{"scaling":{"type":"nine_slice","width":100,"height":100,"border":10,"stretch_inner":True}}}
