@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.items;
 
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
@@ -10,7 +11,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.List;
 
 /**
  * The capture items used to tame a companion: the Beast Master's taming leash (any non-hostile animal) and the Necromancer's
@@ -90,14 +90,18 @@ public final class CaptureItemFactory {
                              final String name, final String lore, final String spec) {
         final ItemStack item = new ItemStack(material, Math.max(1, amount));
         final ItemMeta meta = item.getItemMeta();
-        meta.displayName(MINI.deserialize(name).decoration(TextDecoration.ITALIC, false));
-        meta.lore(List.of(
+        meta.displayName(MINI.deserialize(name)
+                .decoration(TextDecoration.BOLD, true)
+                .decoration(TextDecoration.ITALIC, false));
+        meta.lore(SpecialItemTooltipRenderer.companionItem(
+                tag,
                 MINI.deserialize(lore).decoration(TextDecoration.ITALIC, false),
                 MINI.deserialize(spec).decoration(TextDecoration.ITALIC, false)));
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         meta.getPersistentDataContainer().set(captureKey, PersistentDataType.STRING, tag);
         item.setItemMeta(meta);
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, "icesmp:capture_" + tag);
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:capture");
         return item;
     }
 }
