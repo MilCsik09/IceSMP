@@ -170,8 +170,9 @@ public final class SpecialItemTooltipRegressionSuite {
                 "currency category accent no longer follows the physical currency family");
         check(pouch.contains("applyTooltipStyle(stack, \"icesmp:money_pouch\")"),
                 "money pouch category accent is missing");
-        check(profession.contains("applyTooltipStyle(item, \"icesmp:profession\")"),
-                "profession material category accent is missing");
+        check(profession.contains("SpecialItemTooltipRenderer.styleId(")
+                        && profession.contains("SpecialItemTooltipRenderer.profileOf(section)"),
+                "unique item category accent must follow the authored tooltip profile");
         check(dev.contains("applyTooltipStyle(item, \"icesmp:developer\")"),
                 "developer artifact category accent is missing");
         check(recipes.contains("rolledTooltipRarity")
