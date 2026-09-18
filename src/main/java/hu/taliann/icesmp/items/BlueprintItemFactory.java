@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
+import hu.taliann.icesmp.ux.ItemTooltipProfiles;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -38,15 +39,12 @@ public final class BlueprintItemFactory {
         final ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text("Tervrajz: " + recipe.displayName(), NamedTextColor.AQUA)
                 .decoration(TextDecoration.ITALIC, false));
-        meta.lore(List.of(
-                Component.text("Szakma: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                        .append(recipe.profession().getDisplayName()),
-                Component.text("Jobb katt: megtanulod a receptet.", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
-                Component.text("(Elkészítéséhez " + recipe.level() + ". szakmaszint is kell.)", NamedTextColor.DARK_GRAY)
-                        .decoration(TextDecoration.ITALIC, false)));
+        meta.lore(ItemTooltipProfiles.blueprint(recipe));
         meta.getPersistentDataContainer().set(recipeKey, PersistentDataType.STRING, recipe.id());
         item.setItemMeta(meta);
-        hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, "icesmp:blueprint");
+        ItemDataFactory.applyItemModel(item, "icesmp:blueprint");
+        ItemDataFactory.applyTooltipStyle(item,
+                ItemTooltipProfiles.styleId(ItemTooltipProfiles.Profile.BLUEPRINT));
         return item;
     }
 

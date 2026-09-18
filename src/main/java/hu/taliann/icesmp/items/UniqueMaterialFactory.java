@@ -2,6 +2,7 @@ package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.utils.ConfigMaterialResolver;
+import hu.taliann.icesmp.ux.ItemTooltipProfiles;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -59,15 +60,7 @@ public final class UniqueMaterialFactory {
         final ItemMeta meta = item.getItemMeta();
         meta.displayName(legacy(section.getString("display-name", uniqueId))
                 .colorIfAbsent(NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
-        final List<Component> lore = new ArrayList<>();
-        for (final String line : section.getStringList("lore")) {
-            lore.add(legacy(line).colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        }
-        for (final String hint : managedSourceHints(section)) {
-            lore.add(Component.text(hint, NamedTextColor.DARK_GRAY)
-                    .decoration(TextDecoration.ITALIC, false));
-        }
-        meta.lore(lore);
+        meta.lore(ItemTooltipProfiles.professionMaterial(section, managedSourceHints(section)));
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
         if (!applyPresentation(item, uniqueId)) {
@@ -94,6 +87,8 @@ public final class UniqueMaterialFactory {
                     + equipmentAsset + "' cannot be applied (" + presentation.equipmentStatus() + ")");
             return false;
         }
+        ItemDataFactory.applyTooltipStyle(item,
+                ItemTooltipProfiles.styleId(ItemTooltipProfiles.Profile.PROFESSION));
         return true;
     }
 

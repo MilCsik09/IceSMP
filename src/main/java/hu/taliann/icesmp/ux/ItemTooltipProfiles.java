@@ -35,7 +35,7 @@ public final class ItemTooltipProfiles {
         BLUEPRINT("blueprint", "TERVRAJZ", TooltipPresentation.Glyph.BLUEPRINT, NamedTextColor.AQUA),
         PROFESSION("profession", "SZAKMAI TÁRGY", TooltipPresentation.Glyph.PROFESSION, NamedTextColor.GOLD),
         CURRENCY("currency", "VALUTA", TooltipPresentation.Glyph.CURRENCY, NamedTextColor.GOLD),
-        RELIC("relic", "RELIKVia", TooltipPresentation.Glyph.RELIC, NamedTextColor.LIGHT_PURPLE),
+        RELIC("relic", "RELIKVIA", TooltipPresentation.Glyph.RELIC, NamedTextColor.LIGHT_PURPLE),
         DEVELOPER_ARTIFACT("developer_artifact", "FEJLESZTŐI EREKLYE",
                 TooltipPresentation.Glyph.DEVELOPER, TextColor.color(255, 85, 220)),
         KEY("key", "KULCS", TooltipPresentation.Glyph.KEY, NamedTextColor.YELLOW);
