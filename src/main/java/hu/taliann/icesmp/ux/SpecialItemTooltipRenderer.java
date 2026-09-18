@@ -244,7 +244,7 @@ public final class SpecialItemTooltipRenderer {
         for (final String raw : lore) {
             if (raw == null || raw.isBlank()) continue;
             story.add(LEGACY.deserialize(raw)
-                    .decoration(TextDecoration.ITALIC, true));
+                    .decoration(TextDecoration.ITALIC, false));
         }
         add(sections, TooltipEngine.SectionId.STORY, order, true, story);
     }
