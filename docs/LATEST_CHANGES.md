@@ -1,3 +1,9 @@
+A tárgytooltip-rendszer külön profilokat kapott a tervrajzokhoz, szakmai alapanyagokhoz és
+craftolt profession tárgyakhoz, fizikai valutákhoz, erszényekhez, relikviákhoz és developer
+artifactokhoz. A közös IceSMP háttér megmarad; a keret rarity- vagy család-accentet követ, a
+tooltip pedig röviden leírja, mi a tárgy, mire használható és milyen feltétel tartozik hozzá.
+A Csodálatos Bingulus és a Világszövő külön Developer Artifact-profilt kapott.
+
 # Mi változott a július 12-i szerververzió óta?
 
 A fejlesztői eszköz eltétele vagy fegyverre váltás nem zárja le többé a
