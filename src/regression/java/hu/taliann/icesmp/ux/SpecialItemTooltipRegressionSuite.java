@@ -40,7 +40,7 @@ public final class SpecialItemTooltipRegressionSuite {
                         .contains("SpecialItemTooltipRenderer.professionMaterial(section)"),
                 "profession materials bypass the shared tooltip profile");
         check(read("src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java")
-                        .contains("SpecialItemTooltipRenderer.professionResult(recipe)"),
+                        .contains("SpecialItemTooltipRenderer.professionResult(recipe, potionSpecs)"),
                 "non-canonical profession results bypass the shared tooltip profile");
         check(read("src/main/java/hu/taliann/icesmp/items/CurrencyItemFactory.java")
                         .contains("SpecialItemTooltipRenderer.currency(currencyType)"),
@@ -83,6 +83,15 @@ public final class SpecialItemTooltipRegressionSuite {
                         && source.contains("Kategória")
                         && source.contains("Típus"),
                 "profession crafted output tooltip lost its role/category presentation");
+        check(source.contains("professionPotionEffects")
+                        && source.contains("Hatás")
+                        && source.contains("formatDuration"),
+                "profession potion output lost semantic potion effect presentation");
+        final String recipeBuilder = read(
+                "src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java");
+        check(recipeBuilder.contains("HIDE_ADDITIONAL_TOOLTIP")
+                        && recipeBuilder.contains("professionResult(recipe, potionSpecs)"),
+                "custom profession potions must hide duplicate vanilla effects and render recipe effects");
         check(source.contains("a nálad lévő veretek befizethetők")
                         && source.contains("kézben hordozható fizikai pénz"),
                 "currency tooltip lost physical/bank semantics");
