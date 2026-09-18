@@ -58,7 +58,9 @@ public final class UniqueMaterialFactory {
         final ItemStack item = new ItemStack(icon, Math.max(1, amount));
         final ItemMeta meta = item.getItemMeta();
         meta.displayName(legacy(section.getString("display-name", uniqueId))
-                .colorIfAbsent(NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
+                .colorIfAbsent(NamedTextColor.AQUA)
+                .decoration(TextDecoration.BOLD, true)
+                .decoration(TextDecoration.ITALIC, false));
         meta.lore(SpecialItemTooltipRenderer.professionMaterial(section));
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
