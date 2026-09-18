@@ -363,7 +363,9 @@ public final class ProfessionRecipeBookListener implements Listener {
             final ItemMeta meta = result.getItemMeta();
             if (meta != null) {
                 meta.displayName(LEGACY.deserialize(recipe.displayName())
-                        .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                        .colorIfAbsent(NamedTextColor.YELLOW)
+                        .decoration(TextDecoration.BOLD, true)
+                        .decoration(TextDecoration.ITALIC, false));
                 meta.lore(hu.taliann.icesmp.ux.SpecialItemTooltipRenderer.professionResult(recipe, potionSpecs));
                 if (!potionSpecs.isEmpty()) meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
                 result.setItemMeta(meta);
