@@ -1,11 +1,13 @@
 package hu.taliann.icesmp.ux;
 
+import hu.taliann.icesmp.crates.CrateFormatting;
 import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.dev.artifact.DevArtifactDefinition;
 import hu.taliann.icesmp.dev.artifact.DevArtifactPresentation;
 import hu.taliann.icesmp.dev.artifact.WorldWeaverArtifactBehavior;
 import hu.taliann.icesmp.items.DevItemFactory;
+import hu.taliann.icesmp.managers.CrateManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.relics.RelicDefinition;
 import net.kyori.adventure.text.Component;
@@ -38,7 +40,10 @@ public final class SpecialItemTooltipRenderer {
         DEVELOPER_ARTIFACT,
         DEBUG_PROBE,
         QUEST,
-        TOKEN
+        TOKEN,
+        KEY,
+        UPGRADE,
+        UTILITY
     }
 
     private static final LegacyComponentSerializer LEGACY =
@@ -47,6 +52,48 @@ public final class SpecialItemTooltipRenderer {
             PlainTextComponentSerializer.plainText();
 
     private SpecialItemTooltipRenderer() {
+    }
+
+    public static Profile profileOf(final ConfigurationSection material) {
+        if (material == null) return Profile.PROFESSION_MATERIAL;
+        final String raw = material.getString("tooltip-profile", "PROFESSION_MATERIAL");
+        if (raw == null || raw.isBlank()) return Profile.PROFESSION_MATERIAL;
+        try {
+            return Profile.valueOf(raw.trim().toUpperCase(Locale.ROOT).replace('-', '_'));
+        } catch (final IllegalArgumentException ignored) {
+            return Profile.PROFESSION_MATERIAL;
+        }
+    }
+
+    public static String styleId(final Profile profile) {
+        if (profile == null) return "icesmp:profession";
+        return switch (profile) {
+            case QUEST -> "icesmp:quest";
+            case TOKEN -> "icesmp:token";
+            case KEY -> "icesmp:key";
+            case UPGRADE -> "icesmp:upgrade";
+            case UTILITY -> "icesmp:utility";
+            case DEVELOPER_ARTIFACT, DEBUG_PROBE -> "icesmp:developer";
+            case RELIC -> "icesmp:ereklye";
+            case BLUEPRINT -> "icesmp:blueprint";
+            case CURRENCY -> "icesmp:currency_neutral";
+            case MONEY_POUCH -> "icesmp:money_pouch";
+            case PROFESSION_MATERIAL, PROFESSION_RESULT -> "icesmp:profession";
+        };
+    }
+
+    public static List<Component> uniqueItem(final ConfigurationSection material) {
+        return switch (profileOf(material)) {
+            case QUEST -> genericUnique(material, Profile.QUEST,
+                    TooltipPresentation.Glyph.QUEST, "KÜLDETÉSI TÁRGY", NamedTextColor.GOLD);
+            case TOKEN -> genericUnique(material, Profile.TOKEN,
+                    TooltipPresentation.Glyph.TOKEN, "HALADÁSI TÁRGY", NamedTextColor.LIGHT_PURPLE);
+            case UPGRADE -> genericUnique(material, Profile.UPGRADE,
+                    TooltipPresentation.Glyph.UPGRADE, "FEJLESZTÉS", NamedTextColor.AQUA);
+            case UTILITY -> genericUnique(material, Profile.UTILITY,
+                    TooltipPresentation.Glyph.UTILITY, "SEGÉDESZKÖZ", NamedTextColor.GRAY);
+            default -> professionMaterial(material);
+        };
     }
 
     public static List<Component> blueprint(final ProfessionRecipeCatalog.Recipe recipe) {
@@ -147,6 +194,47 @@ public final class SpecialItemTooltipRenderer {
                 add(sections, TooltipEngine.SectionId.EFFECTS, 30, true, usage);
             }
             addAuthoredLore(sections, material.getStringList("lore"), 80);
+        }
+        return TooltipEngine.render(sections);
+    }
+
+    public static List<Component> crateKey(final String crateName,
+                                               final List<CrateManager.RewardOdds> odds) {
+        final List<TooltipEngine.Section> sections = new ArrayList<>();
+        add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.KEY,
+                        badge("LÁDAKULCS", NamedTextColor.YELLOW))));
+        final List<Component> use = new ArrayList<>();
+        use.add(TooltipPresentation.sectionHeading(
+                TooltipPresentation.Glyph.EFFECT, "Használat", NamedTextColor.YELLOW));
+        if (crateName != null && !crateName.isBlank()) {
+            use.add(TooltipPresentation.line("Láda  ", NamedTextColor.DARK_GRAY)
+                    .append(LEGACY.deserialize(crateName)
+                            .decoration(TextDecoration.ITALIC, false)));
+        }
+        use.add(TooltipPresentation.line(
+                "Jobb katt a megfelelő ládán • kinyitás", NamedTextColor.GRAY));
+        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, use);
+
+        if (odds != null && !odds.isEmpty()) {
+            final List<Component> rewards = new ArrayList<>();
+            rewards.add(TooltipPresentation.sectionHeading(
+                    TooltipPresentation.Glyph.STATS, "Jutalomesélyek", NamedTextColor.YELLOW));
+            final int shown = Math.min(3, odds.size());
+            for (int index = 0; index < shown; index++) {
+                final CrateManager.RewardOdds reward = odds.get(index);
+                rewards.add(TooltipPresentation.line("◆  " + reward.description(),
+                                NamedTextColor.GRAY)
+                        .append(TooltipPresentation.line(
+                                "  " + CrateFormatting.decimal(reward.percent()) + "%",
+                                NamedTextColor.YELLOW)));
+            }
+            if (odds.size() > shown) {
+                rewards.add(TooltipPresentation.line(
+                        "…és további " + (odds.size() - shown) + " jutalom",
+                        NamedTextColor.DARK_GRAY));
+            }
+            add(sections, TooltipEngine.SectionId.CUSTOM, 30, true, rewards);
         }
         return TooltipEngine.render(sections);
     }
@@ -268,6 +356,37 @@ public final class SpecialItemTooltipRenderer {
                         NamedTextColor.GRAY)));
 
         addAuthoredLore(sections, presentation.lore(), 80);
+        return TooltipEngine.render(sections);
+    }
+
+    private static List<Component> genericUnique(final ConfigurationSection material,
+                                                       final Profile profile,
+                                                       final TooltipPresentation.Glyph glyph,
+                                                       final String badge,
+                                                       final NamedTextColor accent) {
+        final List<TooltipEngine.Section> sections = new ArrayList<>();
+        add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
+                TooltipPresentation.withIcon(glyph, badge(badge, accent))));
+
+        if (material != null) {
+            final String description = material.getString("tooltip-description", "").trim();
+            final String use = material.getString("tooltip-use", "").trim();
+            final List<Component> purpose = new ArrayList<>();
+            if (!description.isBlank() || !use.isBlank()) {
+                purpose.add(TooltipPresentation.sectionHeading(
+                        TooltipPresentation.Glyph.EFFECT, "Rendeltetés", accent));
+                if (!description.isBlank()) {
+                    for (final String line : wrap(description, 42)) {
+                        purpose.add(TooltipPresentation.line(line, NamedTextColor.GRAY));
+                    }
+                }
+                if (!use.isBlank()) {
+                    purpose.add(labelled("Használat", use, NamedTextColor.WHITE));
+                }
+                add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, purpose);
+            }
+            addAuthoredLore(sections, material.getStringList("lore"), 80);
+        }
         return TooltipEngine.render(sections);
     }
 
