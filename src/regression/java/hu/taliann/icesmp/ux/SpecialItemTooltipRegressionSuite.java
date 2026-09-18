@@ -16,6 +16,7 @@ public final class SpecialItemTooltipRegressionSuite {
         developerArtifactsStayDistinctFromDebugProbes();
         playerFacingDescriptionsRemainConcrete();
         relicDescriptionsAreAuthoredContent();
+        authoredUniqueProfilesStayExplicit();
         familyAccentsStayWired();
         System.out.println("Special item tooltip regression suite passed. assertions=" + assertions);
     }
@@ -24,7 +25,8 @@ public final class SpecialItemTooltipRegressionSuite {
         final String source = read("src/main/java/hu/taliann/icesmp/ux/SpecialItemTooltipRenderer.java");
         for (final String profile : new String[]{
                 "BLUEPRINT", "PROFESSION_MATERIAL", "PROFESSION_RESULT", "CURRENCY", "MONEY_POUCH",
-                "RELIC", "DEVELOPER_ARTIFACT", "DEBUG_PROBE", "QUEST", "TOKEN"}) {
+                "RELIC", "DEVELOPER_ARTIFACT", "DEBUG_PROBE", "QUEST", "TOKEN",
+                "KEY", "UPGRADE", "UTILITY"}) {
             check(source.contains(profile), "missing special tooltip profile " + profile);
         }
         check(source.contains("TooltipEngine.render(sections)")
@@ -36,9 +38,11 @@ public final class SpecialItemTooltipRegressionSuite {
         check(read("src/main/java/hu/taliann/icesmp/items/BlueprintItemFactory.java")
                         .contains("SpecialItemTooltipRenderer.blueprint(recipe)"),
                 "blueprints bypass the shared tooltip profile");
-        check(read("src/main/java/hu/taliann/icesmp/items/UniqueMaterialFactory.java")
-                        .contains("SpecialItemTooltipRenderer.professionMaterial(section)"),
-                "profession materials bypass the shared tooltip profile");
+        final String uniqueFactory = read(
+                "src/main/java/hu/taliann/icesmp/items/UniqueMaterialFactory.java");
+        check(uniqueFactory.contains("SpecialItemTooltipRenderer.uniqueItem(section)")
+                        && uniqueFactory.contains("SpecialItemTooltipRenderer.profileOf(section)"),
+                "unique items bypass authored special-item profile selection");
         check(read("src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java")
                         .contains("SpecialItemTooltipRenderer.professionResult(recipe, potionSpecs)"),
                 "non-canonical profession results bypass the shared tooltip profile");
@@ -48,6 +52,9 @@ public final class SpecialItemTooltipRegressionSuite {
         check(read("src/main/java/hu/taliann/icesmp/items/MoneyPouchItemFactory.java")
                         .contains("SpecialItemTooltipRenderer.moneyPouch()"),
                 "money pouches bypass the shared tooltip profile");
+        check(read("src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java")
+                        .contains("SpecialItemTooltipRenderer.crateKey(crateName, odds)"),
+                "crate keys bypass the shared tooltip profile");
         check(read("src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java")
                         .contains("SpecialItemTooltipRenderer.relic(definition)"),
                 "relics bypass the shared tooltip profile");
@@ -98,6 +105,12 @@ public final class SpecialItemTooltipRegressionSuite {
         check(source.contains("ismeretlen, amíg ki nem bontod")
                         && source.contains("Jobb katt • bontsd ki az erszényt."),
                 "money pouch tooltip leaked its hidden payload or lost the interaction hint");
+        check(source.contains("KÜLDETÉSI TÁRGY")
+                        && source.contains("HALADÁSI TÁRGY")
+                        && source.contains("FEJLESZTÉS")
+                        && source.contains("SEGÉDESZKÖZ")
+                        && source.contains("LÁDAKULCS"),
+                "quest/token/upgrade/utility/key tooltip profiles lost their category vocabulary");
     }
 
     private static void relicDescriptionsAreAuthoredContent() throws Exception {
@@ -125,6 +138,24 @@ public final class SpecialItemTooltipRegressionSuite {
         }
     }
 
+    private static void authoredUniqueProfilesStayExplicit() throws Exception {
+        final String content = read("src/main/resources/content/professions/materials.yml");
+        check(content.contains("suttogas_meghivo:")
+                        && content.contains("tooltip-profile: QUEST")
+                        && content.contains("tooltip-description: \"Titkos meghívó"),
+                "Suttogás invitation must be an authored quest-item profile");
+        check(content.contains("emlekszilank:")
+                        && content.contains("tooltip-profile: TOKEN")
+                        && content.contains("Beváltás: /emlek"),
+                "memory fragment must be an authored progression-token profile");
+        check(content.contains("ures_kupa:")
+                        && content.contains("tooltip-profile: UTILITY"),
+                "reusable tavern cup must be an authored utility profile");
+        final int runeProfiles = content.split("tooltip-profile: UPGRADE", -1).length - 1;
+        check(runeProfiles >= 10,
+                "all authored rune items must use the upgrade tooltip profile");
+    }
+
     private static void familyAccentsStayWired() throws Exception {
         final String blueprint = read("src/main/java/hu/taliann/icesmp/items/BlueprintItemFactory.java");
         final String currency = read("src/main/java/hu/taliann/icesmp/items/CurrencyItemFactory.java");
@@ -148,9 +179,13 @@ public final class SpecialItemTooltipRegressionSuite {
                 "profession results must preserve rarity accent when rolled and use profession accent otherwise");
         check(relic.contains("applyTooltipStyleForRarity(itemStack, \"ereklye\")"),
                 "relic refresh must restore the Ereklye tooltip accent");
+        check(read("src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java")
+                        .contains("applyTooltipStyle(itemStack, \"icesmp:key\")"),
+                "crate key tooltip style is not restored after item-model presentation");
         for (final String style : new String[]{
                 "blueprint", "profession", "currency_red", "currency_blue",
-                "currency_neutral", "currency_dark", "money_pouch", "developer"}) {
+                "currency_neutral", "currency_dark", "money_pouch", "developer",
+                "quest", "token", "key", "upgrade", "utility"}) {
             check(Files.isRegularFile(Path.of(
                             "resource-pack/assets/icesmp/textures/gui/sprites/tooltip/"
                                     + style + "_background.png"))
