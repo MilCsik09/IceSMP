@@ -356,12 +356,16 @@ public final class ProfessionRecipeBookListener implements Listener {
                 : new ItemStack(recipe.result(), recipe.resultAmount());
         if (result == null) return null;
 
+        final List<String> potionSpecs = configManager.getConfiguration()
+                .getStringList("profession-recipes." + recipe.id() + ".result.potion-effects");
+
         if (recipe.uniqueResult() == null) {
             final ItemMeta meta = result.getItemMeta();
             if (meta != null) {
                 meta.displayName(LEGACY.deserialize(recipe.displayName())
                         .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                meta.lore(hu.taliann.icesmp.ux.SpecialItemTooltipRenderer.professionResult(recipe));
+                meta.lore(hu.taliann.icesmp.ux.SpecialItemTooltipRenderer.professionResult(recipe, potionSpecs));
+                if (!potionSpecs.isEmpty()) meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
                 result.setItemMeta(meta);
             }
         }
