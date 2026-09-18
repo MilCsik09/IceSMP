@@ -183,6 +183,7 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
         String displayName = defaultName;
         String displayColor = toLegacyColorCode(defaultColor, "&f");
         List<String> lore = List.copyOf(defaultLore);
+        String description = "";
 
         if (relicSection != null) {
             final String configuredName = relicSection.getString("display-name");
@@ -193,6 +194,11 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
             final String configuredColor = relicSection.getString("display-color");
             if (configuredColor != null && !configuredColor.isBlank()) {
                 displayColor = toLegacyColorCode(configuredColor, displayColor);
+            }
+
+            final String configuredDescription = relicSection.getString("description", "");
+            if (configuredDescription != null && !configuredDescription.isBlank()) {
+                description = configuredDescription.trim();
             }
 
             if (relicSection.isList("lore")) {
@@ -221,7 +227,8 @@ public final class RelicManager implements PlayerStateCleanup, PersistentStore {
                 displayName,
                 displayColor,
                 lore,
-                hardcodedMaterial
+                hardcodedMaterial,
+                description
         ));
         triggerConfigs.put(id.toLowerCase(Locale.ROOT), relicTriggers);
 
