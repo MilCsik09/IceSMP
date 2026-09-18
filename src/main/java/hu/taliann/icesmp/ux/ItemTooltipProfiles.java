@@ -244,11 +244,11 @@ public final class ItemTooltipProfiles {
                             NamedTextColor.LIGHT_PURPLE));
             case "dev_world_weaver" -> List.of(
                     TooltipPresentation.line(
-                            "WorldWeaver-sessionök és runtime providerek fejlesztői vezérlésére.",
+                            "WorldWeaver-sessionök és futásidejű providerek fejlesztői vezérlésére.",
                             NamedTextColor.LIGHT_PURPLE));
             default -> List.of();
         };
-        return compose(Profile.DEVELOPER_ARTIFACT, "DEV ARTIFACT", facts, usage,
+        return compose(Profile.DEVELOPER_ARTIFACT, "", facts, usage,
                 legacyLines(presentation.lore()));
     }
 

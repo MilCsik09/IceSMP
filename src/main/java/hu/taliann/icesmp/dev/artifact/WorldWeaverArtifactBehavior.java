@@ -22,8 +22,8 @@ public final class WorldWeaverArtifactBehavior implements DevArtifactBehavior {
                 () -> new DevArtifactPresentation("ECHO_SHARD", "&5&lVilágszövő",
                         List.of(
                                 "&8A világ szálai a kezedben.",
-                                "&7A developer-only WorldWeaver runtime",
-                                "&7szövési felületének fizikai artifactja."
+                                "&7A WorldWeaver futásidejű szövési felületének",
+                                "&7tulajdonoshoz kötött fejlesztői artifactja."
                         ), Map.of(
                         DevArtifactPresentation.ModelState.IDLE, "icesmp:dev_world_weaver_idle",
                         DevArtifactPresentation.ModelState.SUBJECT_LOCKED, "icesmp:dev_world_weaver_subject",

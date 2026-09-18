@@ -21,6 +21,7 @@ public final class TooltipPresentationRegressionSuite {
         canonicalItemsUseSharedChromeWithRarityAccent();
         devReferencePreviewUsesReviewedPresentation();
         runeMutationRefreshesVisiblePresentation();
+        SpecialItemTooltipRegressionSuite.main(args);
         System.out.println("Tooltip presentation regression suite passed. assertions=" + assertions);
     }
 
