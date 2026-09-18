@@ -52,7 +52,7 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> blueprint(final ProfessionRecipeCatalog.Recipe recipe) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.BLUEPRINT,
                         badge("TERVRAJZ", NamedTextColor.AQUA)
                                 .append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
                                 .append(recipe.profession().getDisplayName()
@@ -79,7 +79,7 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> professionResult(final ProfessionRecipeCatalog.Recipe recipe) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.PROFESSION,
                         badge("SZAKMAI TÁRGY", NamedTextColor.GOLD)
                                 .append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
                                 .append(recipe.profession().getDisplayName()
@@ -109,7 +109,7 @@ public final class SpecialItemTooltipRenderer {
                     "  •  " + professionName(profession), NamedTextColor.GRAY));
         }
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE, type)));
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.PROFESSION, type)));
 
         if (material != null) {
             final List<Component> usage = new ArrayList<>();
@@ -155,7 +155,7 @@ public final class SpecialItemTooltipRenderer {
         };
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.CURRENCY,
                         badge("FIZIKAI VALUTA", accent)
                                 .append(TooltipPresentation.line(
                                         "  •  " + currency.toFactionType().getDisplayName(),
@@ -178,7 +178,7 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> moneyPouch() {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.POUCH,
                         badge("TALÁLT ERSZÉNY", NamedTextColor.GOLD))));
         add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
                 TooltipPresentation.sectionHeading(
@@ -198,15 +198,17 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> relic(final RelicDefinition definition) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
-                        badge("RELIKVIÁ", NamedTextColor.LIGHT_PURPLE))));
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.RELIC,
+                        badge("RELIKVIA", NamedTextColor.LIGHT_PURPLE))));
         if (definition.description() != null && !definition.description().isBlank()) {
-            add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
-                    TooltipPresentation.sectionHeading(
-                            TooltipPresentation.Glyph.EFFECT, "Rendeltetés",
-                            NamedTextColor.LIGHT_PURPLE),
-                    TooltipPresentation.line(definition.description(),
-                            NamedTextColor.GRAY)));
+            final List<Component> purpose = new ArrayList<>();
+            purpose.add(TooltipPresentation.sectionHeading(
+                    TooltipPresentation.Glyph.EFFECT, "Rendeltetés",
+                    NamedTextColor.LIGHT_PURPLE));
+            for (final String line : wrap(definition.description(), 42)) {
+                purpose.add(TooltipPresentation.line(line, NamedTextColor.GRAY));
+            }
+            add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, purpose);
         }
         addAuthoredLore(sections, definition.lore(), 80);
         return TooltipEngine.render(sections);
@@ -216,7 +218,7 @@ public final class SpecialItemTooltipRenderer {
                                                     final DevArtifactPresentation presentation) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.DEVELOPER,
                         badge("FEJLESZTŐI EREKLYE", NamedTextColor.LIGHT_PURPLE))));
 
         final List<Component> role = new ArrayList<>();
@@ -228,15 +230,17 @@ public final class SpecialItemTooltipRenderer {
                             NamedTextColor.GOLD)
                     .decoration(TextDecoration.BOLD, true));
             role.add(TooltipPresentation.line(
-                    "Aktív állapotban időszakosan jutalmat készít elő a tulajdonosnak.",
-                    NamedTextColor.GRAY));
+                    "Aktív állapotban időszakosan jutalmat", NamedTextColor.GRAY));
+            role.add(TooltipPresentation.line(
+                    "készít elő a tulajdonosnak.", NamedTextColor.GRAY));
         } else if (WorldWeaverArtifactBehavior.ID.equals(definition.id())) {
             role.add(TooltipPresentation.line("Világformáló eszköz",
                             NamedTextColor.LIGHT_PURPLE)
                     .decoration(TextDecoration.BOLD, true));
             role.add(TooltipPresentation.line(
-                    "Világállapotok és runtime műveletek kontrollált kezelésére.",
-                    NamedTextColor.GRAY));
+                    "Világállapotok és runtime műveletek", NamedTextColor.GRAY));
+            role.add(TooltipPresentation.line(
+                    "kontrollált kezelésére.", NamedTextColor.GRAY));
         } else {
             role.add(TooltipPresentation.line(
                     "Belső fejlesztői rendszerhez tartozó, tulajdonoshoz kötött artifact.",
@@ -310,6 +314,22 @@ public final class SpecialItemTooltipRenderer {
             case "catalog" -> "Katalógus • " + detail;
             default -> humanize(scope) + " • " + detail;
         };
+    }
+
+    private static List<String> wrap(final String raw, final int width) {
+        if (raw == null || raw.isBlank()) return List.of();
+        final ArrayList<String> lines = new ArrayList<>();
+        final StringBuilder current = new StringBuilder();
+        for (final String word : raw.trim().split("\\s+")) {
+            if (current.length() > 0 && current.length() + 1 + word.length() > width) {
+                lines.add(current.toString());
+                current.setLength(0);
+            }
+            if (current.length() > 0) current.append(' ');
+            current.append(word);
+        }
+        if (current.length() > 0) lines.add(current.toString());
+        return List.copyOf(lines);
     }
 
     private static String professionName(final String raw) {
