@@ -98,13 +98,19 @@ public final class SpecialItemTooltipRegressionSuite {
         check(manager.contains("getString(\"description\", \"\")")
                         && definition.contains("String description"),
                 "relic tooltip summary must flow from authored relic definition data");
-        for (final String id : new String[]{
+        final String[] relicIds = {
                 "metelytepo", "phoenix_wing", "frost_wing", "wander_wind",
-                "eleftheria_konnye", "sarkany_tojas", "bone_wing"}) {
+                "eleftheria_konnye", "sarkany_tojas", "bone_wing"};
+        for (final String id : relicIds) {
             final int start = content.indexOf("    " + id + ":");
-            final int next = start < 0 ? -1 : content.indexOf("\n    ", start + 5);
-            final String block = start < 0 ? "" : content.substring(
-                    start, next < 0 ? content.length() : next);
+            int next = content.length();
+            if (start >= 0) {
+                for (final String other : relicIds) {
+                    final int candidate = content.indexOf("    " + other + ":", start + 1);
+                    if (candidate > start && candidate < next) next = candidate;
+                }
+            }
+            final String block = start < 0 ? "" : content.substring(start, next);
             check(block.contains("description:"),
                     "relic content is missing concise tooltip description: " + id);
         }
