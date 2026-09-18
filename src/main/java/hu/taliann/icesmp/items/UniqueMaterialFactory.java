@@ -86,6 +86,7 @@ public final class UniqueMaterialFactory {
                     + equipmentAsset + "' cannot be applied (" + presentation.equipmentStatus() + ")");
             return false;
         }
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:profession");
         return true;
     }
 
