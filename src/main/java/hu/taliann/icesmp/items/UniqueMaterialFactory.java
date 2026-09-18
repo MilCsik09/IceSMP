@@ -61,7 +61,7 @@ public final class UniqueMaterialFactory {
                 .colorIfAbsent(NamedTextColor.AQUA)
                 .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false));
-        meta.lore(SpecialItemTooltipRenderer.professionMaterial(section));
+        meta.lore(SpecialItemTooltipRenderer.uniqueItem(section));
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, uniqueId.toLowerCase(Locale.ROOT));
         item.setItemMeta(meta);
         if (!applyPresentation(item, uniqueId)) {
@@ -88,7 +88,8 @@ public final class UniqueMaterialFactory {
                     + equipmentAsset + "' cannot be applied (" + presentation.equipmentStatus() + ")");
             return false;
         }
-        ItemDataFactory.applyTooltipStyle(item, "icesmp:profession");
+        ItemDataFactory.applyTooltipStyle(item,
+                SpecialItemTooltipRenderer.styleId(SpecialItemTooltipRenderer.profileOf(section)));
         return true;
     }
 
