@@ -405,8 +405,6 @@ public final class ProfessionRecipeBookListener implements Listener {
             }
         }
 
-        final List<String> potionSpecs = configManager.getConfiguration()
-                .getStringList("profession-recipes." + recipe.id() + ".result.potion-effects");
         if (!potionSpecs.isEmpty()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyPotionEffects(result, potionSpecs,
                     configManager.getString("profession-recipes." + recipe.id() + ".result.potion-color", ""));
