@@ -176,8 +176,9 @@ public final class SpecialItemTooltipRegressionSuite {
         check(dev.contains("applyTooltipStyle(item, \"icesmp:developer\")"),
                 "developer artifact category accent is missing");
         check(recipes.contains("rolledTooltipRarity")
+                        && recipes.contains("recipe.uniqueResult() == null")
                         && recipes.contains("applyTooltipStyle(result, \"icesmp:profession\")"),
-                "profession results must preserve rarity accent when rolled and use profession accent otherwise");
+                "profession results must preserve rarity/category accent and avoid flattening authored unique profiles");
         check(relic.contains("applyTooltipStyleForRarity(itemStack, \"ereklye\")"),
                 "relic refresh must restore the Ereklye tooltip accent");
         check(read("src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java")
