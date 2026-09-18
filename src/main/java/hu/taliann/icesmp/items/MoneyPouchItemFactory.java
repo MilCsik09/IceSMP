@@ -48,7 +48,7 @@ public final class MoneyPouchItemFactory {
         if (meta == null) {
             return stack;
         }
-        meta.displayName(Component.text("💰 Kopott erszény", NamedTextColor.GOLD)
+        meta.displayName(Component.text("Kopott erszény", NamedTextColor.GOLD)
                 .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false));
         meta.lore(SpecialItemTooltipRenderer.moneyPouch());
