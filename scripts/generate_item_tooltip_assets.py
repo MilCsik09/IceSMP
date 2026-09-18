@@ -30,6 +30,9 @@ SPECIAL_STYLES = {
     "key": RARITIES["kozonseges"],
     "upgrade": RARITIES["ereklye"],
     "utility": RARITIES["ocska"],
+    "capture": RARITIES["nem_mindennapi"],
+    "siege": RARITIES["mitikus"],
+    "catalyst": RARITIES["epikus"],
 }
 BACKGROUND_SCALING = {"gui":{"scaling":{"type":"nine_slice","width":100,"height":100,"border":9}}}
 FRAME_SCALING = {"gui":{"scaling":{"type":"nine_slice","width":100,"height":100,"border":10,"stretch_inner":True}}}
