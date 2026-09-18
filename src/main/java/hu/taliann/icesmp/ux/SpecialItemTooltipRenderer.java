@@ -62,6 +62,10 @@ public final class SpecialItemTooltipRenderer {
                         TooltipPresentation.Glyph.EFFECT, "Feloldás", NamedTextColor.AQUA),
                 labelled("Recept", recipe.displayName(), NamedTextColor.WHITE),
                 labelled("Kategória", recipe.category(), NamedTextColor.GRAY)));
+        final List<Component> potion = professionPotionEffects(potionEffects);
+        if (!potion.isEmpty()) {
+            add(sections, TooltipEngine.SectionId.PRIMARY_STATS, 25, true, potion);
+        }
         add(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, List.of(
                 TooltipPresentation.sectionHeading(
                         TooltipPresentation.Glyph.REQUIREMENTS, "Követelmény",
@@ -76,7 +80,8 @@ public final class SpecialItemTooltipRenderer {
         return TooltipEngine.render(sections);
     }
 
-    public static List<Component> professionResult(final ProfessionRecipeCatalog.Recipe recipe) {
+    public static List<Component> professionResult(final ProfessionRecipeCatalog.Recipe recipe,
+                                                   final List<String> potionEffects) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
                 TooltipPresentation.withIcon(TooltipPresentation.Glyph.PROFESSION,
@@ -264,6 +269,74 @@ public final class SpecialItemTooltipRenderer {
 
         addAuthoredLore(sections, presentation.lore(), 80);
         return TooltipEngine.render(sections);
+    }
+
+    private static List<Component> professionPotionEffects(final List<String> specs) {
+        if (specs == null || specs.isEmpty()) return List.of();
+        final List<Component> lines = new ArrayList<>();
+        lines.add(TooltipPresentation.sectionHeading(
+                TooltipPresentation.Glyph.EFFECT, "Hatás", NamedTextColor.AQUA));
+        for (final String raw : specs) {
+            if (raw == null || raw.isBlank()) continue;
+            final String[] parts = raw.trim().split(":");
+            final String effect = potionEffectName(parts[0]);
+            int seconds = 30;
+            int amplifier = 0;
+            try {
+                if (parts.length > 1) seconds = Math.max(1, Integer.parseInt(parts[1].trim()));
+                if (parts.length > 2) amplifier = Math.max(0, Integer.parseInt(parts[2].trim()));
+            } catch (final NumberFormatException ignored) {
+                // Presentation follows the same safe defaults as ItemDataFactory.
+            }
+            Component line = TooltipPresentation.line("✦  " + effect, NamedTextColor.AQUA);
+            if (amplifier > 0) {
+                line = line.append(TooltipPresentation.line(
+                        " " + roman(amplifier + 1), NamedTextColor.WHITE));
+            }
+            if (!parts[0].equalsIgnoreCase("INSTANT_HEALTH")
+                    && !parts[0].equalsIgnoreCase("INSTANT_DAMAGE")) {
+                line = line.append(TooltipPresentation.line(
+                        "  •  " + formatDuration(seconds), NamedTextColor.GRAY));
+            }
+            lines.add(line);
+        }
+        return List.copyOf(lines);
+    }
+
+    private static String potionEffectName(final String raw) {
+        if (raw == null) return "Hatás";
+        return switch (raw.trim().toUpperCase(Locale.ROOT)) {
+            case "REGENERATION" -> "Regeneráció";
+            case "INSTANT_HEALTH" -> "Azonnali gyógyítás";
+            case "INSTANT_DAMAGE" -> "Azonnali sebzés";
+            case "STRENGTH" -> "Erő";
+            case "SPEED" -> "Sebesség";
+            case "FIRE_RESISTANCE" -> "Tűzállóság";
+            case "NIGHT_VISION" -> "Éjjellátás";
+            case "INVISIBILITY" -> "Láthatatlanság";
+            case "RESISTANCE" -> "Ellenállás";
+            case "HASTE" -> "Sietség";
+            case "JUMP_BOOST" -> "Ugrás";
+            case "WATER_BREATHING" -> "Víz alatti légzés";
+            default -> humanize(raw);
+        };
+    }
+
+    private static String formatDuration(final int seconds) {
+        final int minutes = seconds / 60;
+        final int remainder = seconds % 60;
+        return minutes > 0 ? String.format(Locale.ROOT, "%d:%02d", minutes, remainder)
+                : seconds + " mp";
+    }
+
+    private static String roman(final int value) {
+        return switch (value) {
+            case 2 -> "II";
+            case 3 -> "III";
+            case 4 -> "IV";
+            case 5 -> "V";
+            default -> Integer.toString(value);
+        };
     }
 
     private static Component badge(final String label, final TextColor color) {
