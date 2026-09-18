@@ -2501,3 +2501,21 @@ A foundation acceptance ellenőrzésekor különítsd el a következő állapoto
 A managed GUI-k minden top-inventory interakciót szerveroldalon tiltják, majd csak a session saját komponensének engedélyezett callbackjét hívják. A meglévő GUI-k fokozatos migrációja a komponens seam-en történik; a nem migrált menük saját jelenlegi holder/listener életciklusát tartják meg. A konkrét migrációs inventory jelenleg: a `src/main/java/hu/taliann/icesmp/gui/` alatti specializált GUI-k a `GuiUtil` kivételével még a saját holder/listener párjukat használják; ebben a PR-ban nem állítjuk késznek ezek teljes átállítását.
 
 <!-- icesmp-ux-foundation-doc -->
+
+### Special-item tooltip acceptance
+
+A special-item profile átvételekor valódi factory-itemeket használj, ne kézzel szerkesztett lore-t.
+
+- **Blueprint:** `/iceitem tervrajz netherit_csakany 1` → TERVRAJZ badge, Bányász, recept, 48-as szakmaszint és jobb kattos tanulás.
+- **Profession material:** `/iceitem unique vad_esszencia 1` → SZAKMAI ALAPANYAG + authored lore; economy-managed itemnél source/process/sink sorok.
+- **Profession result:** `/iceitem recept netherit_csakany 1` vagy egy potion/utility recipe → SZAKMAI TÁRGY profil; rollolt gear esetén a rarity frame maradjon elsődleges.
+- **Fizikai valuta:** fővárosban `/bank withdraw neutral 1` → FIZIKAI VALUTA, Menedék/Creutzér szerep és frakciószínű accent.
+- **Erszény:** `/iceitem erszeny 25 1` → TALÁLT ERSZÉNY; a konkrét valuta/összeg ne szivárogjon ki bontás előtt.
+- **Relikvia:** `/iceitem relikvia metelytepo 1` → RELIKVIA, rövid authored Rendeltetés, lore és Ereklye-accent.
+- **Bingulus:** `/iceitem dev csodalatos_bingulus 1` csak a kijelölt tulajdonosnak → FEJLESZTŐI EREKLYE, passzív jutalomgenerátor és auto-restore jelzés.
+- **Világszövő:** a normál owner-bound artifact issuance útvonalon → FEJLESZTŐI EREKLYE, SANDBOX/LIVE_GM integritás és aktuális artifact-state.
+
+Vizuális gate: egyik special profilnál sem jelenhet meg magenta missing-texture blokk, a custom
+glyphoknak be kell töltődniük, a readable szövegnek resource-pack glyph nélkül is értelmezhetőnek
+kell maradnia, és minden ItemMeta refresh után meg kell maradnia a category/rarity frame-nek.
+
