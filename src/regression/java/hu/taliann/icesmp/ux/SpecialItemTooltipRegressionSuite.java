@@ -15,6 +15,7 @@ public final class SpecialItemTooltipRegressionSuite {
         factoriesUseSharedProfiles();
         developerArtifactsStayDistinctFromDebugProbes();
         playerFacingDescriptionsRemainConcrete();
+        relicDescriptionsAreAuthoredContent();
         System.out.println("Special item tooltip regression suite passed. assertions=" + assertions);
     }
 
@@ -87,6 +88,25 @@ public final class SpecialItemTooltipRegressionSuite {
         check(source.contains("ismeretlen, amíg ki nem bontod")
                         && source.contains("Jobb katt • bontsd ki az erszényt."),
                 "money pouch tooltip leaked its hidden payload or lost the interaction hint");
+    }
+
+    private static void relicDescriptionsAreAuthoredContent() throws Exception {
+        final String manager = read("src/main/java/hu/taliann/icesmp/managers/RelicManager.java");
+        final String definition = read("src/main/java/hu/taliann/icesmp/relics/SimpleRelicDefinition.java");
+        final String content = read("src/main/resources/content/equipment/relics.yml");
+        check(manager.contains("getString(\"description\", \"\")")
+                        && definition.contains("String description"),
+                "relic tooltip summary must flow from authored relic definition data");
+        for (final String id : new String[]{
+                "metelytepo", "phoenix_wing", "frost_wing", "wander_wind",
+                "eleftheria_konnye", "sarkany_tojas", "bone_wing"}) {
+            final int start = content.indexOf("    " + id + ":");
+            final int next = start < 0 ? -1 : content.indexOf("\n    ", start + 5);
+            final String block = start < 0 ? "" : content.substring(
+                    start, next < 0 ? content.length() : next);
+            check(block.contains("description:"),
+                    "relic content is missing concise tooltip description: " + id);
+        }
     }
 
     private static String read(final String path) throws Exception {
