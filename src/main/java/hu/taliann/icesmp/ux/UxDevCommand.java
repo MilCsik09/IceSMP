@@ -420,7 +420,7 @@ public final class UxDevCommand {
                         Component.empty(),
                         TooltipPresentation.sectionHeading(
                                 TooltipPresentation.Glyph.REQUIREMENTS, "Követelmények",
-                                NamedTextColor.YELLOW),
+                                NamedTextColor.GOLD),
                         TooltipPresentation.line("✓  Harci szint", NamedTextColor.GREEN)
                                 .append(TooltipPresentation.line("  30", NamedTextColor.YELLOW)),
                         TooltipPresentation.line("✓  Kaszt", NamedTextColor.GREEN)
@@ -436,7 +436,7 @@ public final class UxDevCommand {
                 ignored -> TooltipEngine.generated(TooltipEngine.SectionId.SOCKETS, 50, List.of(
                         Component.empty(),
                         TooltipPresentation.sectionHeading(
-                                TooltipPresentation.Glyph.SOCKETS, "Rúnák  1/2", NamedTextColor.AQUA),
+                                TooltipPresentation.Glyph.SOCKETS, "Rúnák  1/2", NamedTextColor.GOLD),
                         TooltipPresentation.line("◆  Jégrúna", NamedTextColor.AQUA),
                         TooltipPresentation.line("◇  Üres foglalat", NamedTextColor.DARK_GRAY))),
                 ignored -> TooltipEngine.generated(TooltipEngine.SectionId.ARCHAEOLOGY, 70, List.of(
@@ -450,7 +450,7 @@ public final class UxDevCommand {
                 ignored -> TooltipEngine.generated(TooltipEngine.SectionId.STORY, 80, List.of(
                         Component.empty(),
                         TooltipPresentation.sectionHeading(
-                                TooltipPresentation.Glyph.STORY, "Történet", NamedTextColor.DARK_PURPLE),
+                                TooltipPresentation.Glyph.STORY, "Történet", NamedTextColor.GOLD),
                         TooltipPresentation.line(
                                         "„A jég nem felejt. Csak kivárja,",
                                         NamedTextColor.GRAY)

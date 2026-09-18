@@ -67,6 +67,11 @@ public final class TooltipPresentationRegressionSuite {
         check(renderer.contains("TooltipPresentation.sectionHeading")
                         && renderer.contains("TooltipPresentation.withIcon"),
                 "canonical renderer bypassed the resource-pack-backed presentation tokens");
+        check(renderer.contains("final NamedTextColor accent = color(template.rarity())")
+                        && renderer.contains("\"Harcértékek\", accent")
+                        && renderer.contains("\"Követelmények\", accent")
+                        && renderer.contains("\"Egyedi hatás\", accent"),
+                "semantic section hierarchy no longer follows the item rarity accent");
         check(!renderer.contains("private static final String DIVIDER"),
                 "presentation pass regressed to the old divider-heavy tooltip layout");
     }

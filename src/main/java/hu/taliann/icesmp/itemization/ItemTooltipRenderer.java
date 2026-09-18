@@ -31,6 +31,7 @@ public final class ItemTooltipRenderer {
     public static List<Component> render(final ItemTemplate template, final ItemInstance instance,
                                          final ItemTemplateRegistry templates) {
         final String stageId = instance.ascension().stageId();
+        final NamedTextColor accent = color(template.rarity());
         final List<TooltipEngine.Section> sections = new ArrayList<>();
 
         addSection(sections, TooltipEngine.SectionId.HEADER, 0, false, List.of(
@@ -53,7 +54,7 @@ public final class ItemTooltipRenderer {
         if (hasStats) {
             final List<Component> stats = new ArrayList<>();
             stats.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.STATS, "Harcértékek", NamedTextColor.GOLD));
+                    TooltipPresentation.Glyph.STATS, "Harcértékek", accent));
             if (template.baseDamage() > 0.0D) {
                 stats.add(statLine("attack_damage", template.baseDamage(), null));
             }
@@ -77,7 +78,7 @@ public final class ItemTooltipRenderer {
         if (!requirements.isEmpty()) {
             requirements.add(0, TooltipPresentation.sectionHeading(
                     TooltipPresentation.Glyph.REQUIREMENTS,
-                    "Követelmények", NamedTextColor.YELLOW));
+                    "Követelmények", accent));
             addSection(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, requirements);
         }
 
@@ -86,8 +87,8 @@ public final class ItemTooltipRenderer {
                     SignatureEffectRegistry.require(template.signatureEffectId());
             final List<Component> effects = new ArrayList<>();
             effects.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.EFFECT, "Egyedi hatás", NamedTextColor.GOLD));
-            effects.add(line(effect.displayName(), NamedTextColor.GOLD)
+                    TooltipPresentation.Glyph.EFFECT, "Egyedi hatás", accent));
+            effects.add(line(effect.displayName(), accent)
                     .decoration(TextDecoration.BOLD, true));
             effects.add(line(effect.tooltip(), NamedTextColor.YELLOW));
             final int signatureTier = template.signatureTierAt(stageId);
@@ -103,12 +104,12 @@ public final class ItemTooltipRenderer {
             sockets.add(TooltipPresentation.sectionHeading(
                     TooltipPresentation.Glyph.SOCKETS,
                     "Rúnák  " + instance.runes().size() + "/" + socketCapacity,
-                    NamedTextColor.AQUA));
+                    accent));
             for (int socket = 0; socket < socketCapacity; socket++) {
                 final boolean filled = socket < instance.runes().size();
                 final String rune = filled ? displayRune(instance.runes().get(socket)) : "Üres foglalat";
                 sockets.add(line(filled ? "◆  " + rune : "◇  " + rune,
-                        filled ? NamedTextColor.AQUA : NamedTextColor.DARK_GRAY));
+                        filled ? accent : NamedTextColor.DARK_GRAY));
             }
             addSection(sections, TooltipEngine.SectionId.SOCKETS, 50, true, sockets);
         }
@@ -118,7 +119,7 @@ public final class ItemTooltipRenderer {
             final ItemSetDefinition set = templates.requireSet(template.setId());
             equipment.add(TooltipPresentation.sectionHeading(
                     TooltipPresentation.Glyph.EQUIPMENT,
-                    "Szett  •  " + set.displayName(), NamedTextColor.DARK_GREEN));
+                    "Szett  •  " + set.displayName(), accent));
             set.tierStats().forEach((pieces, stats) -> stats.forEach((id, value) ->
                     equipment.add(line("  " + pieces + " db  ", NamedTextColor.DARK_GRAY)
                             .append(statLine(id, value, null)))));
@@ -127,7 +128,7 @@ public final class ItemTooltipRenderer {
             if (!equipment.isEmpty()) equipment.add(Component.empty());
             equipment.add(TooltipPresentation.sectionHeading(
                     TooltipPresentation.Glyph.ASCENSION,
-                    "Felemelkedés", NamedTextColor.LIGHT_PURPLE));
+                    "Felemelkedés", accent));
             equipment.add(line(readableId(instance.ascension().stageId()),
                     NamedTextColor.LIGHT_PURPLE));
         }
@@ -137,7 +138,7 @@ public final class ItemTooltipRenderer {
         if (!authoredLore.isEmpty()) {
             final List<Component> story = new ArrayList<>();
             story.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.STORY, "Történet", NamedTextColor.DARK_PURPLE));
+                    TooltipPresentation.Glyph.STORY, "Történet", accent));
             authoredLore.forEach(text -> story.add(line(text, NamedTextColor.GRAY)
                     .decoration(TextDecoration.ITALIC, true)));
             addSection(sections, TooltipEngine.SectionId.STORY, 80, true, story);
