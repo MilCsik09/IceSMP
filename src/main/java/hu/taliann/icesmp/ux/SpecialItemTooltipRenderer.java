@@ -2,6 +2,7 @@ package hu.taliann.icesmp.ux;
 
 import hu.taliann.icesmp.crates.CrateFormatting;
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.data.JobType;
 import hu.taliann.icesmp.data.ProfessionType;
 import hu.taliann.icesmp.dev.artifact.DevArtifactDefinition;
 import hu.taliann.icesmp.dev.artifact.DevArtifactPresentation;
@@ -43,7 +44,10 @@ public final class SpecialItemTooltipRenderer {
         TOKEN,
         KEY,
         UPGRADE,
-        UTILITY
+        UTILITY,
+        CAPTURE,
+        SIEGE,
+        CATALYST
     }
 
     private static final LegacyComponentSerializer LEGACY =
@@ -73,6 +77,9 @@ public final class SpecialItemTooltipRenderer {
             case KEY -> "icesmp:key";
             case UPGRADE -> "icesmp:upgrade";
             case UTILITY -> "icesmp:utility";
+            case CAPTURE -> "icesmp:capture";
+            case SIEGE -> "icesmp:siege";
+            case CATALYST -> "icesmp:catalyst";
             case DEVELOPER_ARTIFACT, DEBUG_PROBE -> "icesmp:developer";
             case RELIC -> "icesmp:ereklye";
             case BLUEPRINT -> "icesmp:blueprint";
@@ -195,6 +202,73 @@ public final class SpecialItemTooltipRenderer {
             }
             addAuthoredLore(sections, material.getStringList("lore"), 80);
         }
+        return TooltipEngine.render(sections);
+    }
+
+    public static List<Component> companionItem(final String tag,
+                                                    final Component description,
+                                                    final Component restriction) {
+        final String normalized = tag == null ? "" : tag.trim().toLowerCase(Locale.ROOT);
+        final String type = switch (normalized) {
+            case "pet_armor" -> "TÁRSFELSZERELÉS";
+            case "heart", "seal" -> "IDÉZŐ KELLÉK";
+            default -> "TÁRSKÖTŐ ESZKÖZ";
+        };
+        final List<TooltipEngine.Section> sections = new ArrayList<>();
+        add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.COMPANION,
+                        badge(type, NamedTextColor.GREEN))));
+        final List<Component> use = new ArrayList<>();
+        use.add(TooltipPresentation.sectionHeading(
+                TooltipPresentation.Glyph.EFFECT, "Rendeltetés", NamedTextColor.GREEN));
+        if (description != null) {
+            use.add(description.decoration(TextDecoration.ITALIC, false));
+        }
+        if (restriction != null) {
+            use.add(restriction.decoration(TextDecoration.ITALIC, false));
+        }
+        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, use);
+        return TooltipEngine.render(sections);
+    }
+
+    public static List<Component> siegeWeapon() {
+        final List<TooltipEngine.Section> sections = new ArrayList<>();
+        add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.SIEGE,
+                        badge("OSTROMESZKÖZ", NamedTextColor.RED))));
+        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
+                TooltipPresentation.sectionHeading(
+                        TooltipPresentation.Glyph.EFFECT, "Harci szerep", NamedTextColor.RED),
+                labelled("Aktív", "csak ostrom alatt", NamedTextColor.YELLOW),
+                labelled("Használat", "jobb katt • pusztító lövés a célpontra",
+                        NamedTextColor.WHITE)));
+        add(sections, TooltipEngine.SectionId.FLAVOR, 80, true, List.of(
+                TooltipPresentation.line(
+                                "„A Hetedik Vérháború öröksége — csak háborúban szólal meg.”",
+                                NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, true)));
+        return TooltipEngine.render(sections);
+    }
+
+    public static List<Component> catalystHeader(final JobType jobType,
+                                                  final String evolution,
+                                                  final String activeSpec) {
+        final List<TooltipEngine.Section> sections = new ArrayList<>();
+        Component type = badge("LÉLEKKAPOCS", NamedTextColor.LIGHT_PURPLE);
+        if (jobType != null) {
+            type = type.append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
+                    .append(jobType.getDisplayName().decoration(TextDecoration.ITALIC, false));
+        }
+        add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
+                TooltipPresentation.withIcon(TooltipPresentation.Glyph.CATALYST, type)));
+        final List<Component> state = new ArrayList<>();
+        state.add(TooltipPresentation.sectionHeading(
+                TooltipPresentation.Glyph.EFFECT, "Állapot", NamedTextColor.LIGHT_PURPLE));
+        state.add(labelled("Forma", evolution == null || evolution.isBlank()
+                ? "kezdeti" : evolution, NamedTextColor.WHITE));
+        state.add(labelled("Aktív út", activeSpec == null || activeSpec.isBlank()
+                ? "még nincs specializáció" : activeSpec, NamedTextColor.GRAY));
+        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, state);
         return TooltipEngine.render(sections);
     }
 
