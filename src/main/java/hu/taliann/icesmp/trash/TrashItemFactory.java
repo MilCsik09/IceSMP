@@ -79,9 +79,11 @@ public final class TrashItemFactory {
         final ItemStack item = new ItemStack(material, amount);
         final ItemMeta meta = item.getItemMeta();
         meta.setMaxStackSize(BASE_STACK_SIZE);
-        meta.displayName(colored(rarity.legacyColor(), displayName));
+        meta.displayName(colored(rarity.legacyColor(), displayName)
+                .decoration(TextDecoration.BOLD, true));
         final List<Component> lore = new ArrayList<>();
-        lore.add(colored(rarity.legacyColor(), rarity.label()));
+        lore.add(colored(rarity.legacyColor(), rarity.label())
+                .decoration(TextDecoration.BOLD, true));
         if (!authoredLore.isEmpty()) {
             lore.add(Component.empty());
             authoredLore.forEach(line -> lore.add(Component.text(line, NamedTextColor.GRAY)
@@ -96,6 +98,7 @@ public final class TrashItemFactory {
         // Data components must remain last; a subsequent ItemMeta round-trip would erase them.
         ItemDataFactory.applyItemModel(item, itemModel);
         ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+        ItemDataFactory.applyTooltipStyleForRarity(item, rarity.id());
         if ("a_legbiztonsagosabb_sisak".equals(baseId) && BASE_PHASE.equals(phase)) {
             item.setData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE,
                     io.papermc.paper.datacomponent.item.Equippable.equippable(org.bukkit.inventory.EquipmentSlot.HEAD)
@@ -170,9 +173,11 @@ public final class TrashItemFactory {
         final ItemMeta meta = item.getItemMeta();
         previousMeta.getPersistentDataContainer().copyTo(meta.getPersistentDataContainer(), true);
         meta.setMaxStackSize(BASE_STACK_SIZE);
-        meta.displayName(colored(rarity.legacyColor(), definition.displayName()));
+        meta.displayName(colored(rarity.legacyColor(), definition.displayName())
+                .decoration(TextDecoration.BOLD, true));
         final List<Component> lore = new ArrayList<>();
-        lore.add(colored(rarity.legacyColor(), rarity.label()));
+        lore.add(colored(rarity.legacyColor(), rarity.label())
+                .decoration(TextDecoration.BOLD, true));
         if (!definition.lore().isEmpty()) {
             lore.add(Component.empty());
             definition.lore().forEach(line -> lore.add(Component.text(line, NamedTextColor.GRAY)
@@ -184,6 +189,7 @@ public final class TrashItemFactory {
         item.setItemMeta(meta);
         ItemDataFactory.applyItemModel(item, definition.itemModel());
         ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+        ItemDataFactory.applyTooltipStyleForRarity(item, rarity.id());
         if ("a_legbiztonsagosabb_sisak".equals(id)) {
             item.resetData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE);
         }
@@ -208,6 +214,7 @@ public final class TrashItemFactory {
         final RarityPresentationService.Presentation rarity = rarityPresentations.require(playerRarity);
         ItemDataFactory.applyItemModel(item, itemModel);
         ItemDataFactory.applyRarity(item, rarity.vanillaRarity());
+        ItemDataFactory.applyTooltipStyleForRarity(item, rarity.id());
         if ("a_legbiztonsagosabb_sisak".equals(id) && BASE_PHASE.equals(phase)) {
             item.setData(io.papermc.paper.datacomponent.DataComponentTypes.EQUIPPABLE,
                     io.papermc.paper.datacomponent.item.Equippable.equippable(org.bukkit.inventory.EquipmentSlot.HEAD)

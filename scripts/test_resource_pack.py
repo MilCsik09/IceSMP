@@ -19,11 +19,17 @@ resource_pack = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(resource_pack)
 
 # The validator intentionally checks the PNG signature/IHDR/dimensions without image libraries.
-MINIMAL_PNG_HEADER = (
-    b"\x89PNG\r\n\x1a\n"
-    b"\x00\x00\x00\x0dIHDR"
-    b"\x00\x00\x00\x01\x00\x00\x00\x01"
-)
+def png_header(width: int = 1, height: int = 1) -> bytes:
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\x0dIHDR"
+        + width.to_bytes(4, "big")
+        + height.to_bytes(4, "big")
+    )
+
+
+MINIMAL_PNG_HEADER = png_header()
+TOOLTIP_PNG_HEADER = png_header(100, 100)
 
 
 class ResourcePackToolingTest(unittest.TestCase):
@@ -57,6 +63,22 @@ class ResourcePackToolingTest(unittest.TestCase):
             )
             texture_path.parent.mkdir(parents=True, exist_ok=True)
             texture_path.write_bytes(MINIMAL_PNG_HEADER)
+
+    def add_tooltip_scaling_metadata(self, texture: Path, *, frame: bool) -> None:
+        border = 10 if frame else 9
+        scaling = {
+            "gui": {
+                "scaling": {
+                    "type": "nine_slice",
+                    "width": 100,
+                    "height": 100,
+                    "border": border,
+                    **({"stretch_inner": True} if frame else {}),
+                }
+            }
+        }
+        texture.with_suffix(texture.suffix + ".mcmeta").write_text(
+            json.dumps(scaling), encoding="utf-8")
 
     def write_config(self, pack_root: Path, name: str, content: str) -> None:
         config_root = pack_root.parent / "src" / "main" / "resources" / "config"
@@ -143,39 +165,118 @@ class ResourcePackToolingTest(unittest.TestCase):
             with self.assertRaises(resource_pack.PackError):
                 resource_pack.validate_pack(root)
 
-    def test_tooltip_style_requires_referenced_sprites(self) -> None:
+    def test_global_tooltip_requires_both_sprites(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "resource-pack"
             self.make_pack(root)
-            style_root = root / "assets" / "icesmp" / "tooltip_styles"
-            style_root.mkdir(parents=True, exist_ok=True)
-            (style_root / "rare.json").write_text(
-                json.dumps({
-                    "background": "icesmp:tooltip/rare_background",
-                    "frame": "icesmp:tooltip/rare_frame",
-                }),
-                encoding="utf-8",
+            tooltip_root = (
+                root / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "tooltip"
             )
-            with self.assertRaisesRegex(resource_pack.PackError, "references missing texture"):
+            tooltip_root.mkdir(parents=True, exist_ok=True)
+            background = tooltip_root / "background.png"
+            background.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            with self.assertRaisesRegex(resource_pack.PackError, "missing frame.png"):
                 resource_pack.validate_pack(root)
 
-    def test_tooltip_style_with_sprites_is_valid(self) -> None:
+    def test_global_tooltip_with_nine_slice_sprites_is_valid(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "resource-pack"
             self.make_pack(root)
-            style_root = root / "assets" / "icesmp" / "tooltip_styles"
-            texture_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
-            style_root.mkdir(parents=True, exist_ok=True)
-            texture_root.mkdir(parents=True, exist_ok=True)
-            (style_root / "rare.json").write_text(
+            tooltip_root = (
+                root / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "tooltip"
+            )
+            tooltip_root.mkdir(parents=True, exist_ok=True)
+            background = tooltip_root / "background.png"
+            frame = tooltip_root / "frame.png"
+            background.write_bytes(TOOLTIP_PNG_HEADER)
+            frame.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            self.add_tooltip_scaling_metadata(frame, frame=True)
+            resource_pack.validate_pack(root)
+
+    def test_global_tooltip_without_nine_slice_metadata_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            tooltip_root = (
+                root / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "tooltip"
+            )
+            tooltip_root.mkdir(parents=True, exist_ok=True)
+            (tooltip_root / "background.png").write_bytes(TOOLTIP_PNG_HEADER)
+            (tooltip_root / "frame.png").write_bytes(TOOLTIP_PNG_HEADER)
+            with self.assertRaisesRegex(resource_pack.PackError, "missing nine-slice metadata"):
+                resource_pack.validate_pack(root)
+
+    def test_global_tooltip_frame_requires_stretched_nine_slice_inner(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            tooltip_root = (
+                root / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "tooltip"
+            )
+            tooltip_root.mkdir(parents=True, exist_ok=True)
+            background = tooltip_root / "background.png"
+            frame = tooltip_root / "frame.png"
+            background.write_bytes(TOOLTIP_PNG_HEADER)
+            frame.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            frame.with_suffix(".png.mcmeta").write_text(
                 json.dumps({
-                    "background": "icesmp:tooltip/rare_background",
-                    "frame": "icesmp:tooltip/rare_frame",
+                    "gui": {"scaling": {
+                        "type": "nine_slice", "width": 100, "height": 100, "border": 10
+                    }}
                 }),
                 encoding="utf-8",
             )
-            (texture_root / "rare_background.png").write_bytes(MINIMAL_PNG_HEADER)
-            (texture_root / "rare_frame.png").write_bytes(MINIMAL_PNG_HEADER)
+            with self.assertRaisesRegex(resource_pack.PackError, "stretch_inner=true"):
+                resource_pack.validate_pack(root)
+
+    def test_global_tooltip_override_is_an_explicit_merge_owner(self) -> None:
+        expected = {
+            "assets/minecraft/textures/gui/sprites/tooltip/background.png",
+            "assets/minecraft/textures/gui/sprites/tooltip/background.png.mcmeta",
+            "assets/minecraft/textures/gui/sprites/tooltip/frame.png",
+            "assets/minecraft/textures/gui/sprites/tooltip/frame.png.mcmeta",
+        }
+        self.assertTrue(expected.issubset(resource_pack.MERGE_OWNED_FILES))
+
+    def test_rarity_tooltip_family_requires_every_style(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            rarity_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            rarity_root.mkdir(parents=True, exist_ok=True)
+            background = rarity_root / "legendas_background.png"
+            frame = rarity_root / "legendas_frame.png"
+            background.write_bytes(TOOLTIP_PNG_HEADER)
+            frame.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            self.add_tooltip_scaling_metadata(frame, frame=True)
+            with self.assertRaisesRegex(resource_pack.PackError, "Rarity tooltip style"):
+                resource_pack.validate_pack(root)
+
+    def test_complete_rarity_tooltip_family_is_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            global_root = root / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "tooltip"
+            global_root.mkdir(parents=True, exist_ok=True)
+            global_background = global_root / "background.png"
+            global_frame = global_root / "frame.png"
+            global_background.write_bytes(TOOLTIP_PNG_HEADER)
+            global_frame.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(global_background, frame=False)
+            self.add_tooltip_scaling_metadata(global_frame, frame=True)
+            rarity_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            rarity_root.mkdir(parents=True, exist_ok=True)
+            for rarity in resource_pack.TOOLTIP_RARITY_STYLES:
+                background = rarity_root / f"{rarity}_background.png"
+                frame = rarity_root / f"{rarity}_frame.png"
+                background.write_bytes(TOOLTIP_PNG_HEADER)
+                frame.write_bytes(TOOLTIP_PNG_HEADER)
+                self.add_tooltip_scaling_metadata(background, frame=False)
+                self.add_tooltip_scaling_metadata(frame, frame=True)
             resource_pack.validate_pack(root)
 
     def test_generated_zip_inside_source_is_rejected(self) -> None:

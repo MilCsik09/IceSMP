@@ -516,8 +516,12 @@ public final class ItemIdentityService {
         final ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().set(legacyRuneKey, PersistentDataType.STRING,
                 updated.runes().get(0));
+        meta.displayName(ItemTooltipRenderer.itemName(template.displayName(), template.rarity()));
+        meta.lore(ItemTooltipRenderer.render(template, updated, templates));
         item.setItemMeta(meta);
         applyStats(item, template, updated);
+        // ItemMeta writes above may clear data-component presentation; restore it last.
+        refreshPresentation(item, template, updated);
         return new RuneMutation(RuneMutationStatus.APPLIED, updated, template);
     }
 

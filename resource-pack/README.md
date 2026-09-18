@@ -6,14 +6,31 @@ ellenőrzött, részletes 2D változatot tartják meg.
 
 ## Item tooltip style
 
-A Minecraft 1.21.11 natív `tooltip_style` komponense a szerver saját rarity-létrája szerint
-választja ki a tooltip hátterét és keretét. A style-definíciók az
-`assets/icesmp/tooltip_styles/` alatt, a hozzájuk tartozó pixel-art sprite-ok pedig az
-`assets/icesmp/textures/gui/sprites/tooltip/` alatt vannak. Az alap PNG-ket a
-`scripts/generate_item_tooltip_assets.py` generálja determinisztikusan.
+Az IceSMP **minden** item tooltipjén ugyanazt a vizuális rendszert használja. Egy sima vanilla
+dirt/kard is a resource pack által globálisan felülírt IceSMP háttér + semleges keret chrome-ot
+kapja:
 
-Ez a réteg a vanilla tooltip elrendezését tartja meg, csak a vizuális hátteret/keretet cseréli;
-a nagy, szabadon pozicionált RPG-panel továbbra is külön kliens-renderer feladata lenne.
+- `assets/minecraft/textures/gui/sprites/tooltip/background.png`
+- `assets/minecraft/textures/gui/sprites/tooltip/frame.png`
+
+A saját, ismert rarityvel rendelkező IceSMP itemek **nem más layoutot** kapnak. Ugyanazt a sötét
+hátteret és nine-slice geometriát használják, csak a keret/accent követi a rarityt:
+Ócska szürke, Közönséges világos, Nem mindennapi zöld, Ritka kék, Epikus lila,
+Legendás arany, Mitikus vörös, Ereklye türkiz.
+
+A natív `minecraft:tooltip_style` komponens helyes használata `icesmp:<rarity>`. Minecraft ebből
+közvetlenül az `icesmp:tooltip/<rarity>_background` és
+`icesmp:tooltip/<rarity>_frame` sprite-okat oldja fel. A korábbi
+`icesmp:tooltip/<rarity>` component-ID hibás volt, mert dupla `tooltip/tooltip/` feloldáshoz és
+missing-texture/magenta panelhez vezetett.
+
+A globális és rarity sprite-ok 100×100-as nine-slice források. A háttér border 9, a frame border
+10 és `stretch_inner=true`. A metadata mérete kötelezően egyezik a PNG méretével.
+A `scripts/generate_item_tooltip_assets.py` determinisztikusan generálja a teljes családot, a
+`scripts/resource_pack.py` pedig build előtt ellenőrzi, hogy minden rarity-pár megvan.
+
+A saját itemek gazdagabb section/lore presentationje ettől külön, a Tooltip Engine-en keresztül
+épül rá; a keret színezése nem változtat gameplay state-et.
 
 ## Custom wearable / armor presentation
 

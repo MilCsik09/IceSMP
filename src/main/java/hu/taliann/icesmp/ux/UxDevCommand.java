@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.ux;
 
+import hu.taliann.icesmp.items.ItemDataFactory;
 import hu.taliann.icesmp.security.HiddenDevAuthority;
 import hu.taliann.icesmp.trash.TooltipDevProjection;
 import net.kyori.adventure.text.Component;
@@ -330,16 +331,20 @@ public final class UxDevCommand {
 
     private void showTooltipPreviewOwned(final Player player) {
         final ItemStack canonical = player.getInventory().getItemInMainHand();
-        final boolean synthetic = canonical == null || canonical.getType().isAir();
-        final ItemStack source = synthetic ? new ItemStack(Material.NETHER_STAR) : canonical.clone();
-        final ItemStack display = source.clone();
+        final ItemStack source = canonical == null || canonical.getType().isAir()
+                ? new ItemStack(Material.NETHERITE_SWORD) : canonical.clone();
+        // Fresh presentation stack: never inherit a stale TOOLTIP_STYLE/data-component payload
+        // from the canonical held item. The canonical clone is context-only for the renderer.
+        final ItemStack display = new ItemStack(Material.NETHERITE_SWORD);
         final ItemMeta meta = display.getItemMeta();
-        if (synthetic) {
-            meta.displayName(Component.text("UX Tooltip Preview", NamedTextColor.LIGHT_PURPLE)
-                    .decoration(TextDecoration.ITALIC, false));
-        }
-        meta.lore(tooltipLines(player, source));
+        meta.displayName(referenceItemName());
+        meta.lore(referenceTooltipLines(player, source));
         display.setItemMeta(meta);
+
+        // DEV preview only: force the reviewed legendary frame on the client-side clone.
+        ItemDataFactory.hideAttributeTooltip(display);
+        ItemDataFactory.applyRarity(display, ItemDataFactory.vanillaRarityOf("legendas"));
+        ItemDataFactory.applyTooltipStyleForRarity(display, "legendas");
 
         if (!TooltipDevProjection.projectMainHand(player, display)) {
             player.sendMessage(Component.text(
@@ -352,8 +357,9 @@ public final class UxDevCommand {
         final long generation = generations.incrementAndGet();
         tooltipPreviews.put(playerId, generation);
         player.sendMessage(Component.text(
-                "UX DEV tooltip preview aktív 10 másodpercig a kijelölt hotbar sloton. "
-                        + "A szerver inventoryja nem változott.", NamedTextColor.GOLD));
+                "IceSMP reference tooltip aktív 10 másodpercig. "
+                        + "Csak kliensoldali prezentáció; a valódi item nem változott.",
+                NamedTextColor.GOLD));
         player.getScheduler().runDelayed(plugin, task -> {
             if (tooltipPreviews.remove(playerId, generation) && player.isOnline()) {
                 player.updateInventory();
@@ -369,43 +375,97 @@ public final class UxDevCommand {
     private ItemStack tooltipPreviewItem(final Player player) {
         final ItemStack held = player.getInventory().getItemInMainHand();
         final ItemStack contextItem = held == null || held.getType().isAir()
-                ? new ItemStack(Material.NETHER_STAR) : held.clone();
-        final ItemStack display = new ItemStack(Material.PAPER);
+                ? new ItemStack(Material.NETHERITE_SWORD) : held.clone();
+        final ItemStack display = new ItemStack(Material.NETHERITE_SWORD);
         final ItemMeta meta = display.getItemMeta();
-        meta.displayName(Component.text("Tooltip Engine live preview", NamedTextColor.LIGHT_PURPLE)
-                .decoration(TextDecoration.ITALIC, false));
-        meta.lore(tooltipLines(player, contextItem));
+        meta.displayName(referenceItemName());
+        meta.lore(referenceTooltipLines(player, contextItem));
         display.setItemMeta(meta);
+        ItemDataFactory.hideAttributeTooltip(display);
+        ItemDataFactory.applyRarity(display, ItemDataFactory.vanillaRarityOf("legendas"));
+        ItemDataFactory.applyTooltipStyleForRarity(display, "legendas");
         return display;
     }
 
-    private List<Component> tooltipLines(final Player player, final ItemStack canonical) {
+    private static Component referenceItemName() {
+        return Component.text("Fagyott Őrségpenge", NamedTextColor.GOLD)
+                .decoration(TextDecoration.BOLD, true)
+                .decoration(TextDecoration.ITALIC, false);
+    }
+
+    private List<Component> referenceTooltipLines(final Player player, final ItemStack canonical) {
         final TooltipEngine.Context context = new TooltipEngine.Context(
-                player, canonical, Map.of("dev-preview", true));
+                player, canonical, Map.of("dev-reference-preview", true));
         final List<TooltipEngine.SectionRenderer> renderers = List.of(
                 ignored -> TooltipEngine.generated(TooltipEngine.SectionId.HEADER, 0, List.of(
-                        Component.text("ICE SMP • UX TOOLTIP", NamedTextColor.LIGHT_PURPLE),
-                        Component.empty(),
-                        Component.empty())),
+                        TooltipPresentation.line("LEGENDÁS", NamedTextColor.GOLD)
+                                .decoration(TextDecoration.BOLD, true)
+                                .append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
+                                .append(TooltipPresentation.line("Tárgyszint 42", NamedTextColor.GRAY)))),
                 ignored -> TooltipEngine.generated(TooltipEngine.SectionId.TYPE, 10, List.of(
-                        Component.text("Típus: " + canonical.getType().name(), NamedTextColor.GRAY),
-                        Component.text("Presentation-only DEV projection", NamedTextColor.DARK_GRAY))),
+                        TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
+                                TooltipPresentation.line("Kétkezes fegyver  •  Közelharc",
+                                        NamedTextColor.GRAY)))),
                 ignored -> TooltipEngine.generated(TooltipEngine.SectionId.PRIMARY_STATS, 20, List.of(
-                        Component.text("⚔ Minta sebzés: 42–58", NamedTextColor.AQUA),
-                        Component.text("✦ Tesztérték: +12%", NamedTextColor.GREEN))),
-                ignored -> TooltipEngine.generated(TooltipEngine.SectionId.REQUIREMENTS, 40, List.of(
-                        Component.text("✓ Hidden DEV authority", NamedTextColor.GREEN),
-                        Component.text("✓ Canonical item érintetlen", NamedTextColor.GREEN))),
+                        Component.empty(),
+                        TooltipPresentation.sectionHeading(
+                                TooltipPresentation.Glyph.STATS, "Harcértékek", NamedTextColor.GOLD),
+                        TooltipPresentation.line("⚔  Sebzés", NamedTextColor.GRAY)
+                                .append(TooltipPresentation.line("  42–58", NamedTextColor.WHITE)),
+                        TooltipPresentation.line("↯  Támadási sebesség", NamedTextColor.GRAY)
+                                .append(TooltipPresentation.line("  Gyors", NamedTextColor.GOLD)),
+                        TooltipPresentation.line("✦  Képességerő", NamedTextColor.GRAY)
+                                .append(TooltipPresentation.line("  +12", NamedTextColor.LIGHT_PURPLE)))),
+                ignored -> TooltipEngine.generated(TooltipEngine.SectionId.REQUIREMENTS, 30, List.of(
+                        Component.empty(),
+                        TooltipPresentation.sectionHeading(
+                                TooltipPresentation.Glyph.REQUIREMENTS, "Követelmények",
+                                NamedTextColor.GOLD),
+                        TooltipPresentation.line("✓  Harci szint", NamedTextColor.GREEN)
+                                .append(TooltipPresentation.line("  30", NamedTextColor.YELLOW)),
+                        TooltipPresentation.line("✓  Kaszt", NamedTextColor.GREEN)
+                                .append(TooltipPresentation.line("  Warrior", NamedTextColor.YELLOW)))),
+                ignored -> TooltipEngine.generated(TooltipEngine.SectionId.EFFECTS, 40, List.of(
+                        Component.empty(),
+                        TooltipPresentation.sectionHeading(
+                                TooltipPresentation.Glyph.EFFECT, "Egyedi hatás", NamedTextColor.GOLD),
+                        TooltipPresentation.line("Fagyharapás", NamedTextColor.AQUA)
+                                .decoration(TextDecoration.BOLD, true),
+                        TooltipPresentation.line("Minden harmadik találat lelassítja", NamedTextColor.GRAY),
+                        TooltipPresentation.line("a célpontot rövid időre.", NamedTextColor.GRAY))),
+                ignored -> TooltipEngine.generated(TooltipEngine.SectionId.SOCKETS, 50, List.of(
+                        Component.empty(),
+                        TooltipPresentation.sectionHeading(
+                                TooltipPresentation.Glyph.SOCKETS, "Rúnák  1/2", NamedTextColor.GOLD),
+                        TooltipPresentation.line("◆  Jégrúna", NamedTextColor.AQUA),
+                        TooltipPresentation.line("◇  Üres foglalat", NamedTextColor.DARK_GRAY))),
                 ignored -> TooltipEngine.generated(TooltipEngine.SectionId.ARCHAEOLOGY, 70, List.of(
-                        Component.text("⌕ Megfigyelés: a semantic section él.", NamedTextColor.GRAY))),
-                ignored -> TooltipEngine.generated(TooltipEngine.SectionId.FLAVOR, 90, List.of(
-                        Component.text("„Ha ezt látod, a renderer tényleg a kliensig jutott.”",
-                                        NamedTextColor.DARK_PURPLE)
-                                .decoration(TextDecoration.ITALIC, true))));
-        return TooltipEngine.render(context, renderers).stream()
-                .map(line -> line.decoration(TextDecoration.ITALIC,
-                        line.decoration(TextDecoration.ITALIC)))
-                .toList();
+                        Component.empty(),
+                        TooltipPresentation.sectionHeading(
+                                TooltipPresentation.Glyph.ARCHAEOLOGY, "Régészeti jel",
+                                NamedTextColor.GOLD),
+                        TooltipPresentation.line(
+                                "A markolaton régi északi őrjelzés fut végig.",
+                                NamedTextColor.GRAY))),
+                ignored -> TooltipEngine.generated(TooltipEngine.SectionId.STORY, 80, List.of(
+                        Component.empty(),
+                        TooltipPresentation.sectionHeading(
+                                TooltipPresentation.Glyph.STORY, "Történet", NamedTextColor.GOLD),
+                        TooltipPresentation.line(
+                                        "„A jég nem felejt. Csak kivárja,",
+                                        NamedTextColor.GRAY)
+                                .decoration(TextDecoration.ITALIC, true),
+                        TooltipPresentation.line(
+                                        "míg újra kézbe veszik.”",
+                                        NamedTextColor.GRAY)
+                                .decoration(TextDecoration.ITALIC, true))),
+                ignored -> TooltipEngine.generated(TooltipEngine.SectionId.PROVENANCE, 90, List.of(
+                        Component.empty(),
+                        TooltipPresentation.withIcon(TooltipPresentation.Glyph.ORIGIN,
+                                TooltipPresentation.line("Eredet  •  Thanaopolis őrsége",
+                                        NamedTextColor.DARK_GRAY))))
+        );
+        return TooltipEngine.render(context, renderers);
     }
 
     private void clearAllOwned(final Player player, final boolean closeGui) {

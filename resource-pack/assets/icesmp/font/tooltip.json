@@ -1,0 +1,74 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/name_tag.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue100"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/iron_sword.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue101"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/experience_bottle.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue102"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/nether_star.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue103"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/amethyst_shard.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue104"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/diamond_chestplate.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue105"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/firework_star.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue106"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/paper.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue107"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/book.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue108"]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/brush.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["\ue109"]
+    }
+  ]
+}
