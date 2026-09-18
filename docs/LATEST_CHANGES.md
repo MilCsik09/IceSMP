@@ -1,8 +1,9 @@
 # Mi változott a július 12-i szerververzió óta?
 
 A tárgytooltip-rendszer külön profilokat kapott a tervrajzokhoz, szakmai alapanyagokhoz és
-craftolt profession tárgyakhoz, fizikai valutákhoz, erszényekhez, relikviákhoz és developer
-artifactokhoz. A közös IceSMP háttér megmarad; a keret rarity- vagy család-accentet követ, a
+craftolt profession tárgyakhoz, fizikai valutákhoz, erszényekhez, relikviákhoz,
+küldetési/progression tárgyakhoz, ládakulcsokhoz, rúnákhoz és utility itemekhez, valamint a belső
+fejlesztői artifactokhoz. A közös IceSMP háttér megmarad; a keret rarity- vagy család-accentet követ, a
 tooltip pedig röviden leírja, mi a tárgy, mire használható és milyen feltétel tartozik hozzá.
 A belső fejlesztői artifactok külön, a normál debug/probe tárgyaktól elkülönített profilt kaptak.
 
