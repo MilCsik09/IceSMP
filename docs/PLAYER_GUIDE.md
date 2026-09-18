@@ -694,6 +694,9 @@ tárgyaknál a felső badge mondja meg, milyen szerepű itemet tartasz:
 - **HALADÁSI TÁRGY:** beváltható vagy progressionhöz kötött token/szilánk;
 - **FEJLESZTÉS:** rúna vagy más fejlesztőkomponens; a leírás megmondja, mire tehető és mit ad;
 - **SEGÉDESZKÖZ:** újrahasználható vagy speciális utility item, amely nem szakmai alapanyag;
+- **TÁRSKÖTŐ ESZKÖZ / IDÉZŐ KELLÉK / TÁRSFELSZERELÉS:** megmondja, milyen társhoz és milyen interakcióhoz használható;
+- **OSTROMESZKÖZ:** háborús tárgy; külön jelzi az aktiválási feltételt és az interakciót;
+- **LÉLEKKAPOCS:** személyes class artifact; a forma, aktív specializáció, fejlődési jelek és vezérlés együtt látszik;
 - **RELIKVIA:** rövid rendeltetés és a tárgy saját történeti leírása;
 
 A tooltip leírása tájékoztató presentation. Ha egy tárgy szintet, szakmát, ownershipot vagy más
