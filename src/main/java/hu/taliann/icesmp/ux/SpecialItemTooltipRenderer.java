@@ -215,7 +215,8 @@ public final class SpecialItemTooltipRenderer {
     }
 
     public static List<Component> developerArtifact(final DevArtifactDefinition definition,
-                                                    final DevArtifactPresentation presentation) {
+                                                    final DevArtifactPresentation presentation,
+                                                    final DevArtifactPresentation.ModelState state) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
                 TooltipPresentation.withIcon(TooltipPresentation.Glyph.DEVELOPER,
@@ -233,6 +234,10 @@ public final class SpecialItemTooltipRenderer {
                     "Aktív állapotban időszakosan jutalmat", NamedTextColor.GRAY));
             role.add(TooltipPresentation.line(
                     "készít elő a tulajdonosnak.", NamedTextColor.GRAY));
+            role.add(labelled("Működés", "passzív", NamedTextColor.GRAY));
+            if (definition.policySource().current().autoRestore()) {
+                role.add(labelled("Helyreállítás", "automatikus", NamedTextColor.GREEN));
+            }
         } else if (WorldWeaverArtifactBehavior.ID.equals(definition.id())) {
             role.add(TooltipPresentation.line("Világformáló eszköz",
                             NamedTextColor.LIGHT_PURPLE)
@@ -241,6 +246,8 @@ public final class SpecialItemTooltipRenderer {
                     "Világállapotok és runtime műveletek", NamedTextColor.GRAY));
             role.add(TooltipPresentation.line(
                     "kontrollált kezelésére.", NamedTextColor.GRAY));
+            role.add(labelled("Integritás", "SANDBOX / LIVE_GM", NamedTextColor.LIGHT_PURPLE));
+            role.add(labelled("Állapot", artifactState(state), NamedTextColor.GRAY));
         } else {
             role.add(TooltipPresentation.line(
                     "Belső fejlesztői rendszerhez tartozó, tulajdonoshoz kötött artifact.",
@@ -313,6 +320,16 @@ public final class SpecialItemTooltipRenderer {
             case "profession" -> "Szakma • " + professionName(normalized.substring(separator + 1));
             case "catalog" -> "Katalógus • " + detail;
             default -> humanize(scope) + " • " + detail;
+        };
+    }
+
+    private static String artifactState(final DevArtifactPresentation.ModelState state) {
+        if (state == null) return "nyugalmi";
+        return switch (state) {
+            case IDLE -> "nyugalmi";
+            case SUBJECT_LOCKED -> "célpont rögzítve";
+            case THREAD_HELD -> "szál megtartva";
+            case CANON_ARMED -> "kanonikus művelet élesítve";
         };
     }
 
