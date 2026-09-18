@@ -689,6 +689,11 @@ tárgyaknál a felső badge mondja meg, milyen szerepű itemet tartasz:
 - **SZAKMAI ALAPANYAG / SZAKMAI TÁRGY:** forrás, feldolgozó szakma, felhasználás vagy crafted szerep;
 - **FIZIKAI VALUTA:** kézben hordozott pénz; a bankban fizethető be, a keret a frakcióvalutát követi;
 - **TALÁLT ERSZÉNY:** jobb kattal bontható; a benne lévő valuta és mennyiség addig szándékosan rejtett;
+- **LÁDAKULCS:** megmutatja, melyik ládához tartozik, hogyan használható és a fő jutalomesélyeket;
+- **KÜLDETÉSI TÁRGY:** story/progression tárgy, amely röviden jelzi a rendeltetését és használatát;
+- **HALADÁSI TÁRGY:** beváltható vagy progressionhöz kötött token/szilánk;
+- **FEJLESZTÉS:** rúna vagy más fejlesztőkomponens; a leírás megmondja, mire tehető és mit ad;
+- **SEGÉDESZKÖZ:** újrahasználható vagy speciális utility item, amely nem szakmai alapanyag;
 - **RELIKVIA:** rövid rendeltetés és a tárgy saját történeti leírása;
 
 A tooltip leírása tájékoztató presentation. Ha egy tárgy szintet, szakmát, ownershipot vagy más
