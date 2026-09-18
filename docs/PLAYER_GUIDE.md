@@ -690,7 +690,6 @@ tárgyaknál a felső badge mondja meg, milyen szerepű itemet tartasz:
 - **FIZIKAI VALUTA:** kézben hordozott pénz; a bankban fizethető be, a keret a frakcióvalutát követi;
 - **TALÁLT ERSZÉNY:** jobb kattal bontható; a benne lévő valuta és mennyiség addig szándékosan rejtett;
 - **RELIKVIA:** rövid rendeltetés és a tárgy saját történeti leírása;
-- **FEJLESZTŐI EREKLYE:** tulajdonoshoz kötött belső artifact, például a Csodálatos Bingulus vagy a Világszövő.
 
 A tooltip leírása tájékoztató presentation. Ha egy tárgy szintet, szakmát, ownershipot vagy más
 feltételt ír ki, a tényleges szabályt továbbra is a megfelelő gameplay rendszer ellenőrzi.
