@@ -57,7 +57,7 @@ public final class DevItemFactory {
         meta.displayName(LEGACY.deserialize(presentation.displayName())
                 .decoration(TextDecoration.ITALIC, false));
 
-        meta.lore(SpecialItemTooltipRenderer.developerArtifact(definition, presentation));
+        meta.lore(SpecialItemTooltipRenderer.developerArtifact(definition, presentation, state));
         // Native max_stack_size prevents even temporary stacking; the manager still enforces one
         // authoritative instance as the server-side anti-duplication boundary.
         meta.setMaxStackSize(1);
