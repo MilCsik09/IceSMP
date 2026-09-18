@@ -44,6 +44,7 @@ public final class BlueprintItemFactory {
         meta.getPersistentDataContainer().set(recipeKey, PersistentDataType.STRING, recipe.id());
         item.setItemMeta(meta);
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(item, "icesmp:blueprint");
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:blueprint");
         return item;
     }
 
