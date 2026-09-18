@@ -9,6 +9,7 @@ import hu.taliann.icesmp.managers.ProfessionManager;
 import hu.taliann.icesmp.managers.ProfessionRecipeCatalog;
 import hu.taliann.icesmp.pve.EquippedCombatPowerService;
 import hu.taliann.icesmp.utils.MessageManager;
+import hu.taliann.icesmp.ux.ItemTooltipProfiles;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -361,13 +362,10 @@ public final class ProfessionRecipeBookListener implements Listener {
             if (meta != null) {
                 meta.displayName(LEGACY.deserialize(recipe.displayName())
                         .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                if (recipe.lore() != null && !recipe.lore().isEmpty()) {
-                    final List<Component> loreLines = new ArrayList<>();
-                    for (final String line : recipe.lore()) {
-                        loreLines.add(LEGACY.deserialize(line)
-                                .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                    }
-                    meta.lore(loreLines);
+                if ((recipe.lore() != null && !recipe.lore().isEmpty())
+                        || recipe.signature() != null
+                        || ItemTooltipProfiles.professionProfile(recipe) == ItemTooltipProfiles.Profile.KEY) {
+                    meta.lore(ItemTooltipProfiles.professionResult(recipe));
                 }
                 result.setItemMeta(meta);
             }
@@ -442,10 +440,10 @@ public final class ProfessionRecipeBookListener implements Listener {
                 .getStringList("profession-recipes." + recipe.id() + ".result.attributes");
         if (hu.taliann.icesmp.items.ItemDataFactory.applyAttributeModifiers(result, attrSpecs)) {
             hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(result);
-            final String rolledRarity = affixService.rarityIdOf(result);
-            if (rolledRarity != null) {
+            final String currentRolledRarity = affixService.rarityIdOf(result);
+            if (currentRolledRarity != null) {
                 hu.taliann.icesmp.items.ItemDataFactory.applyRarity(result,
-                        hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(rolledRarity));
+                        hu.taliann.icesmp.items.ItemDataFactory.vanillaRarityOf(currentRolledRarity));
             }
         }
         if (recipe.signature() != null) {
@@ -500,6 +498,25 @@ public final class ProfessionRecipeBookListener implements Listener {
             hu.taliann.icesmp.items.ItemDataFactory.applyUseCooldownGroup(result,
                     cooldownSection.getString("group", recipe.id()),
                     (float) cooldownSection.getDouble("seconds", 1.0D));
+        }
+
+        // Presentation is applied last: ItemMeta/attribute mutation above may clear direct data
+        // components. Gameplay rarity wins over the category profile; otherwise named/special
+        // profession outputs receive PROFESSION or KEY chrome.
+        final String rolledRarity = affixService.rarityIdOf(result);
+        final String finalRarity = !rarityId.isBlank() ? rarityId : rolledRarity;
+        if (finalRarity != null && !finalRarity.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyleForRarity(result, finalRarity);
+        } else {
+            final boolean profileEligible = recipe.uniqueResult() != null
+                    || recipe.signature() != null
+                    || (recipe.lore() != null && !recipe.lore().isEmpty())
+                    || !itemModel.isBlank()
+                    || ItemTooltipProfiles.professionProfile(recipe) == ItemTooltipProfiles.Profile.KEY;
+            if (profileEligible) {
+                hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyle(result,
+                        ItemTooltipProfiles.styleId(ItemTooltipProfiles.professionProfile(recipe)));
+            }
         }
         return result;
     }
