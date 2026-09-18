@@ -32,6 +32,11 @@ A `scripts/generate_item_tooltip_assets.py` determinisztikusan generálja a telj
 A saját itemek gazdagabb section/lore presentationje ettől külön, a Tooltip Engine-en keresztül
 épül rá; a keret színezése nem változtat gameplay state-et.
 
+A nem-felszerelés jellegű saját itemek külön **presentation profile**-t kapnak ugyanebben a
+geometriában: `blueprint`, `profession`, `currency`, `relic`,
+`developer_artifact` és `key`. Ezek nem gameplay-rarityk; a keret/accent csak azt segíti,
+hogy a játékos első pillantásra felismerje a tárgy szerepét.
+
 ## Custom wearable / armor presentation
 
 A viselhető tárgyaknál **két külön render-identitás** létezik:

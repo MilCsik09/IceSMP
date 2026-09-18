@@ -39,6 +39,9 @@ TOOLTIP_RARITY_STYLES = (
     "ocska", "kozonseges", "nem_mindennapi", "ritka",
     "epikus", "legendas", "mitikus", "ereklye",
 )
+TOOLTIP_PROFILE_STYLES = (
+    "blueprint", "profession", "currency", "relic", "developer_artifact", "key",
+)
 
 FALLBACK_POLICY_PATH = (
     Path(__file__).resolve().parents[1]
@@ -281,16 +284,16 @@ def validate_tooltip_styles(root: Path) -> int:
 
     rarity_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
     if rarity_root.is_dir():
-        for rarity in TOOLTIP_RARITY_STYLES:
-            rarity_background = rarity_root / f"{rarity}_background.png"
-            rarity_frame = rarity_root / f"{rarity}_frame.png"
-            if not rarity_background.is_file() or not rarity_frame.is_file():
+        for style in TOOLTIP_RARITY_STYLES + TOOLTIP_PROFILE_STYLES:
+            style_background = rarity_root / f"{style}_background.png"
+            style_frame = rarity_root / f"{style}_frame.png"
+            if not style_background.is_file() or not style_frame.is_file():
                 raise PackError(
-                    f"Rarity tooltip style {rarity} requires both "
-                    f"{rarity}_background.png and {rarity}_frame.png"
+                    f"Tooltip style {style} requires both "
+                    f"{style}_background.png and {style}_frame.png"
                 )
-            validate_tooltip_sprite_scaling(rarity_background, "background", root)
-            validate_tooltip_sprite_scaling(rarity_frame, "frame", root)
+            validate_tooltip_sprite_scaling(style_background, "background", root)
+            validate_tooltip_sprite_scaling(style_frame, "frame", root)
             styles += 1
     return styles
 

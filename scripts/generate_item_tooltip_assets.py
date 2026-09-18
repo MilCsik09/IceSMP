@@ -16,6 +16,14 @@ RARITIES = {
     "epikus": (180, 85, 255), "legendas": (255, 170, 0),
     "mitikus": (255, 80, 80), "ereklye": (70, 220, 210),
 }
+PROFILES = {
+    "blueprint": (75, 145, 255),
+    "profession": (210, 145, 60),
+    "currency": (255, 205, 70),
+    "relic": (180, 85, 255),
+    "developer_artifact": (255, 85, 220),
+    "key": (235, 190, 70),
+}
 BACKGROUND_SCALING = {"gui":{"scaling":{"type":"nine_slice","width":100,"height":100,"border":9}}}
 FRAME_SCALING = {"gui":{"scaling":{"type":"nine_slice","width":100,"height":100,"border":10,"stretch_inner":True}}}
 
@@ -59,5 +67,6 @@ def pair(root: Path, prefix: str, color: tuple[int,int,int]) -> None:
 def main() -> None:
     pair(GLOBAL_ROOT, "", (125,50,160))
     for rarity,color in RARITIES.items(): pair(RARITY_ROOT, rarity, color)
+    for profile,color in PROFILES.items(): pair(RARITY_ROOT, profile, color)
 
 if __name__ == "__main__": main()
