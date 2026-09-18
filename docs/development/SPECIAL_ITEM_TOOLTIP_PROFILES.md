@@ -14,6 +14,11 @@ The shared tooltip presentation system covers:
 - physical currencies
 - money pouches
 - relics
+- quest items
+- progression tokens
+- crate keys
+- upgrades / runes
+- utility items
 - developer artifacts
 
 The presentation layer owns only readable item explanation and visual hierarchy. Identity, PDC,
@@ -100,6 +105,27 @@ Use real factory/runtime paths rather than hand-edited lore.
   - authored Rendeltetés
   - existing lore
   - Ereklye teal frame
+- Quest item: `/iceitem unique suttogas_meghivo 1`
+  - KÜLDETÉSI TÁRGY
+  - authored purpose/use
+  - quest gold frame
+- Progression token: `/iceitem unique emlekszilank 1`
+  - HALADÁSI TÁRGY
+  - redeem/use hint
+  - token purple frame
+- Upgrade/rune: `/iceitem unique runa_elek 1`
+  - FEJLESZTÉS
+  - authored mechanical lore
+  - upgrade teal frame
+- Utility: `/iceitem unique ures_kupa 1`
+  - SEGÉDESZKÖZ
+  - reusable-purpose hint
+  - utility gray frame
+- Crate key: `/crate give <player> <crate-id> 1`
+  - LÁDAKULCS
+  - target crate and interaction
+  - top three reward odds when available
+  - key light/silver frame
 
 ### Hidden developer artifacts
 
