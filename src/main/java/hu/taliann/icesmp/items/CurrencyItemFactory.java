@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.utils.TextUtil;
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -71,7 +72,7 @@ public final class CurrencyItemFactory {
             return;
         }
         meta.displayName(serializer.deserialize(resolveDisplayName(currencyType)));
-        meta.lore(List.of());
+        meta.lore(SpecialItemTooltipRenderer.currency(currencyType));
 
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(currencyTypeKey, PersistentDataType.STRING, currencyType.name());

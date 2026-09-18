@@ -2,6 +2,7 @@ package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.relics.RelicDefinition;
 import hu.taliann.icesmp.utils.TextUtil;
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -138,12 +139,7 @@ public final class RelicItemFactory {
                 .decoration(TextDecoration.ITALIC, false);
         meta.displayName(displayName);
 
-        final List<String> loreLines = definition.lore() == null ? List.of() : definition.lore();
-        final List<Component> lore = loreLines.stream()
-                .<Component>map(line -> serializer.deserialize(TextUtil.color(line))
-                        .decoration(TextDecoration.ITALIC, false))
-                .toList();
-        meta.lore(lore.isEmpty() ? null : lore);
+        meta.lore(SpecialItemTooltipRenderer.relic(definition));
 
         if (METELYTEPO_ID.equalsIgnoreCase(definition.id())) {
             applyMetelytepoMeta(meta, definition);
