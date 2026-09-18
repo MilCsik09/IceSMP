@@ -26,7 +26,7 @@ public final class SpecialItemTooltipRegressionSuite {
         for (final String profile : new String[]{
                 "BLUEPRINT", "PROFESSION_MATERIAL", "PROFESSION_RESULT", "CURRENCY", "MONEY_POUCH",
                 "RELIC", "DEVELOPER_ARTIFACT", "DEBUG_PROBE", "QUEST", "TOKEN",
-                "KEY", "UPGRADE", "UTILITY"}) {
+                "KEY", "UPGRADE", "UTILITY", "CAPTURE", "SIEGE", "CATALYST"}) {
             check(source.contains(profile), "missing special tooltip profile " + profile);
         }
         check(source.contains("TooltipEngine.render(sections)")
@@ -55,6 +55,15 @@ public final class SpecialItemTooltipRegressionSuite {
         check(read("src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java")
                         .contains("SpecialItemTooltipRenderer.crateKey(crateName, odds)"),
                 "crate keys bypass the shared tooltip profile");
+        check(read("src/main/java/hu/taliann/icesmp/items/CaptureItemFactory.java")
+                        .contains("SpecialItemTooltipRenderer.companionItem("),
+                "companion capture/summon items bypass the shared tooltip profile");
+        check(read("src/main/java/hu/taliann/icesmp/items/SiegeWeaponFactory.java")
+                        .contains("SpecialItemTooltipRenderer.siegeWeapon()"),
+                "siege weapon bypasses the shared tooltip profile");
+        check(read("src/main/java/hu/taliann/icesmp/items/CatalystItemFactory.java")
+                        .contains("SpecialItemTooltipRenderer.catalystHeader("),
+                "personal catalyst bypasses the shared tooltip header");
         check(read("src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java")
                         .contains("SpecialItemTooltipRenderer.relic(definition)"),
                 "relics bypass the shared tooltip profile");
@@ -109,7 +118,10 @@ public final class SpecialItemTooltipRegressionSuite {
                         && source.contains("HALADÁSI TÁRGY")
                         && source.contains("FEJLESZTÉS")
                         && source.contains("SEGÉDESZKÖZ")
-                        && source.contains("LÁDAKULCS"),
+                        && source.contains("LÁDAKULCS")
+                        && source.contains("TÁRSKÖTŐ ESZKÖZ")
+                        && source.contains("OSTROMESZKÖZ")
+                        && source.contains("LÉLEKKAPOCS"),
                 "quest/token/upgrade/utility/key tooltip profiles lost their category vocabulary");
     }
 
@@ -187,7 +199,8 @@ public final class SpecialItemTooltipRegressionSuite {
         for (final String style : new String[]{
                 "blueprint", "profession", "currency_red", "currency_blue",
                 "currency_neutral", "currency_dark", "money_pouch", "developer",
-                "quest", "token", "key", "upgrade", "utility"}) {
+                "quest", "token", "key", "upgrade", "utility",
+                "capture", "siege", "catalyst"}) {
             check(Files.isRegularFile(Path.of(
                             "resource-pack/assets/icesmp/textures/gui/sprites/tooltip/"
                                     + style + "_background.png"))
