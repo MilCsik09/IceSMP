@@ -494,6 +494,15 @@ public final class ProfessionRecipeBookListener implements Listener {
                     cooldownSection.getString("group", recipe.id()),
                     (float) cooldownSection.getDouble("seconds", 1.0D));
         }
+        final String rolledTooltipRarity = affixService.rarityIdOf(result);
+        if (rolledTooltipRarity != null && !rolledTooltipRarity.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyleForRarity(
+                    result, rolledTooltipRarity);
+        } else if (!rarityId.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyleForRarity(result, rarityId);
+        } else {
+            hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyle(result, "icesmp:profession");
+        }
         return result;
     }
 
