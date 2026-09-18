@@ -56,6 +56,7 @@ public final class MoneyPouchItemFactory {
         pdc.set(currencyKey, PersistentDataType.STRING, currency.name());
         stack.setItemMeta(meta);
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(stack, "icesmp:money_pouch");
+        ItemDataFactory.applyTooltipStyle(stack, "icesmp:money_pouch");
         return stack;
     }
 
