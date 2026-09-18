@@ -55,6 +55,7 @@ public final class DevItemFactory {
         final ItemMeta meta = item.getItemMeta();
 
         meta.displayName(LEGACY.deserialize(presentation.displayName())
+                .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false));
 
         meta.lore(SpecialItemTooltipRenderer.developerArtifact(definition, presentation, state));
