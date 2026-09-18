@@ -62,10 +62,6 @@ public final class SpecialItemTooltipRenderer {
                         TooltipPresentation.Glyph.EFFECT, "Feloldás", NamedTextColor.AQUA),
                 labelled("Recept", recipe.displayName(), NamedTextColor.WHITE),
                 labelled("Kategória", recipe.category(), NamedTextColor.GRAY)));
-        final List<Component> potion = professionPotionEffects(potionEffects);
-        if (!potion.isEmpty()) {
-            add(sections, TooltipEngine.SectionId.PRIMARY_STATS, 25, true, potion);
-        }
         add(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, List.of(
                 TooltipPresentation.sectionHeading(
                         TooltipPresentation.Glyph.REQUIREMENTS, "Követelmény",
@@ -94,6 +90,10 @@ public final class SpecialItemTooltipRenderer {
                         TooltipPresentation.Glyph.EFFECT, "Szerep", NamedTextColor.GOLD),
                 labelled("Kategória", recipe.category(), NamedTextColor.WHITE),
                 labelled("Típus", humanize(recipe.kind()), NamedTextColor.GRAY)));
+        final List<Component> potion = professionPotionEffects(potionEffects);
+        if (!potion.isEmpty()) {
+            add(sections, TooltipEngine.SectionId.PRIMARY_STATS, 25, true, potion);
+        }
         add(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, List.of(
                 TooltipPresentation.sectionHeading(
                         TooltipPresentation.Glyph.REQUIREMENTS, "Követelmény",
