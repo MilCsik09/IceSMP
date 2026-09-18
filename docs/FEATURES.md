@@ -1707,6 +1707,6 @@ tárgyak pedig saját category-profilt és rövid használati magyarázatot kapn
 - **Profession item:** szakmai szerep, forrás/feldolgozó/felhasználás; a nem-canonical crafted outputok is profilt kapnak.
 - **Fizikai valuta / erszény:** banki szerep, frakció/valuta vagy a bontásig rejtett tartalom.
 - **Relikvia:** rövid authored rendeltetés + meglévő lore, Ereklye-accenttel.
-- **Developer Artifact:** a Csodálatos Bingulus és a Világszövő külön, production-minőségű artifact-profilt kap; nem debug-probe kinézetet.
+- **Belső fejlesztői artifact:** a debug/probe itemektől elkülönített, production-minőségű presentation profilt kap; részletei nem részei a nyilvános feature-katalógusnak.
 - **Fontos határ:** a profile renderer csak presentationt épít; PDC identity, ownership, recept, valuta, relic és DEV-artifact authority nem költözik át a tooltip-rétegbe.
 
