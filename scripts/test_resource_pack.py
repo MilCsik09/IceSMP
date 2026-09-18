@@ -316,7 +316,13 @@ class ResourcePackToolingTest(unittest.TestCase):
                 frame.write_bytes(TOOLTIP_PNG_HEADER)
                 self.add_tooltip_scaling_metadata(background, frame=False)
                 self.add_tooltip_scaling_metadata(frame, frame=True)
-            with self.assertRaisesRegex(resource_pack.PackError, "Tooltip style blueprint"):
+            background = style_root / "blueprint_background.png"
+            frame = style_root / "blueprint_frame.png"
+            background.write_bytes(TOOLTIP_PNG_HEADER)
+            frame.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            self.add_tooltip_scaling_metadata(frame, frame=True)
+            with self.assertRaisesRegex(resource_pack.PackError, "Tooltip profile style profession"):
                 resource_pack.validate_pack(root)
 
     def test_generated_zip_inside_source_is_rejected(self) -> None:

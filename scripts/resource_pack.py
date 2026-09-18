@@ -284,17 +284,28 @@ def validate_tooltip_styles(root: Path) -> int:
 
     rarity_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
     if rarity_root.is_dir():
-        for style in TOOLTIP_RARITY_STYLES + TOOLTIP_PROFILE_STYLES:
-            style_background = rarity_root / f"{style}_background.png"
-            style_frame = rarity_root / f"{style}_frame.png"
-            if not style_background.is_file() or not style_frame.is_file():
-                raise PackError(
-                    f"Tooltip style {style} requires both "
-                    f"{style}_background.png and {style}_frame.png"
-                )
-            validate_tooltip_sprite_scaling(style_background, "background", root)
-            validate_tooltip_sprite_scaling(style_frame, "frame", root)
-            styles += 1
+        for family_name, family in (
+            ("rarity", TOOLTIP_RARITY_STYLES),
+            ("profile", TOOLTIP_PROFILE_STYLES),
+        ):
+            family_present = any(
+                (rarity_root / f"{style}_background.png").is_file()
+                or (rarity_root / f"{style}_frame.png").is_file()
+                for style in family
+            )
+            if not family_present:
+                continue
+            for style in family:
+                style_background = rarity_root / f"{style}_background.png"
+                style_frame = rarity_root / f"{style}_frame.png"
+                if not style_background.is_file() or not style_frame.is_file():
+                    raise PackError(
+                        f"Tooltip {family_name} style {style} requires both "
+                        f"{style}_background.png and {style}_frame.png"
+                    )
+                validate_tooltip_sprite_scaling(style_background, "background", root)
+                validate_tooltip_sprite_scaling(style_frame, "frame", root)
+                styles += 1
     return styles
 
 def equipment_assets(root: Path) -> dict[str, Path]:
