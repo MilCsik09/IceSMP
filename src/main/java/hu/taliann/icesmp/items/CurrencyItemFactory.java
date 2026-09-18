@@ -71,7 +71,9 @@ public final class CurrencyItemFactory {
         if (meta == null) {
             return;
         }
-        meta.displayName(serializer.deserialize(resolveDisplayName(currencyType)));
+        meta.displayName(serializer.deserialize(resolveDisplayName(currencyType))
+                .decoration(net.kyori.adventure.text.format.TextDecoration.BOLD, true)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
         meta.lore(SpecialItemTooltipRenderer.currency(currencyType));
 
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
