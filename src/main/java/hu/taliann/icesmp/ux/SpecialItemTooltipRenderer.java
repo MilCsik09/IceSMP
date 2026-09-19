@@ -322,39 +322,26 @@ public final class SpecialItemTooltipRenderer {
         };
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.CURRENCY,
-                        badge("FIZIKAI VALUTA", accent)
-                                .append(TooltipPresentation.line(
-                                        "  •  " + currency.toFactionType().getDisplayName(),
-                                        NamedTextColor.GRAY)))));
-        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
-                TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.EFFECT, "Használat", accent),
-                labelled("Bank", "a nálad lévő veretek befizethetők",
-                        NamedTextColor.GRAY),
-                labelled("Forgalom", "kézben hordozható fizikai pénz",
-                        NamedTextColor.GRAY)));
-        add(sections, TooltipEngine.SectionId.FLAVOR, 80, true, List.of(
-                TooltipPresentation.line(
-                                "„Értéke csak addig biztos, amíg elfogadják.”",
-                                NamedTextColor.DARK_GRAY)
-                        .decoration(TextDecoration.ITALIC, true)));
+                TooltipPresentation.classification(
+                        "VALUTA", currencyIssuer(currency), accent)));
+
+        final List<Component> flavor = new ArrayList<>();
+        for (final String line : wrap(currencyLore(currency), 42)) {
+            flavor.add(TooltipPresentation.line(line, NamedTextColor.DARK_GRAY)
+                    .decoration(TextDecoration.ITALIC, true));
+        }
+        add(sections, TooltipEngine.SectionId.FLAVOR, 80, true, flavor);
         return TooltipEngine.render(sections);
     }
 
     public static List<Component> moneyPouch() {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.POUCH,
-                        badge("TALÁLT ERSZÉNY", NamedTextColor.GOLD))));
+                TooltipPresentation.classification(
+                        "ERSZÉNY", "", NamedTextColor.GOLD)));
         add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
-                TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.EFFECT, "Tartalom",
-                        NamedTextColor.GOLD),
-                labelled("Valuta", "ismeretlen, amíg ki nem bontod",
-                        NamedTextColor.GRAY),
-                TooltipPresentation.line("Jobb katt • bontsd ki az erszényt.",
-                        NamedTextColor.YELLOW)));
+                labelled("Tartalom", "ismeretlen", NamedTextColor.GRAY),
+                labelled("Jobb katt", "kinyitás", NamedTextColor.YELLOW)));
         add(sections, TooltipEngine.SectionId.FLAVOR, 80, true, List.of(
                 TooltipPresentation.line("„Valaki elvesztette. Most a tiéd.”",
                                 NamedTextColor.DARK_GRAY)
@@ -529,6 +516,22 @@ public final class SpecialItemTooltipRenderer {
             case 4 -> "IV";
             case 5 -> "V";
             default -> Integer.toString(value);
+        };
+    }
+
+    private static String currencyIssuer(final CurrencyType currency) {
+        return switch (currency) {
+            case RED, BLUE, NEUTRAL -> currency.toFactionType().getFullName();
+            case DARK -> "Thanaopolis";
+        };
+    }
+
+    private static String currencyLore(final CurrencyType currency) {
+        return switch (currency) {
+            case RED -> "Vörösrézből vert érme; érintésre mindig enyhén meleg.";
+            case BLUE -> "Tiszta jégből és ezüstből vert, hidegen csillanó veret.";
+            case NEUTRAL -> "Caldestera Bankárszövetségének messze földön elfogadott pénze.";
+            case DARK -> "Thanaopolis felől áramló veret, a Csontszámvevő pénze.";
         };
     }
 
