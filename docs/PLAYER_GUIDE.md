@@ -682,22 +682,24 @@ ez a kapu nem vonatkozik.
 ### Hogyan olvasd az IceSMP tárgytooltipokat?
 
 A resource pack mellett **minden tárgy** ugyanazt az IceSMP tooltip-alapformát használja. Egy
-vanilla tárgy semleges keretet kap; a saját felszerelések kerete a rarityt követi. A különleges
-tárgyaknál a felső badge mondja meg, milyen szerepű itemet tartasz:
+vanilla tárgy semleges keretet kap; a saját felszerelések kerete a rarityt követi. A saját item
+neve marad a főcím, alatta egy kompakt kategória-sor következik; a mechanikai adatok rövid
+label/value sorok, a lore pedig másodlagos, rövid és tördelve jelenik meg. A canonical gear
+azonos statjának fix és rollolt része egyetlen összesített sor.
 
-- **TERVRAJZ:** megmutatja a feloldott receptet, szakmát és szükséges szakmaszintet;
+- **TERVRAJZ • szakma:** feloldott recept, kategória, szükséges szakmaszint és jobb kattos tanulás;
 - **SZAKMAI ALAPANYAG / SZAKMAI TÁRGY:** forrás, feldolgozó szakma, felhasználás vagy crafted szerep;
-- **FIZIKAI VALUTA:** kézben hordozott pénz; a bankban fizethető be, a keret a frakcióvalutát követi;
-- **TALÁLT ERSZÉNY:** jobb kattal bontható; a benne lévő valuta és mennyiség addig szándékosan rejtett;
-- **LÁDAKULCS:** megmutatja, melyik ládához tartozik, hogyan használható és a fő jutalomesélyeket;
-- **KÜLDETÉSI TÁRGY:** story/progression tárgy, amely röviden jelzi a rendeltetését és használatát;
+- **VALUTA • kanonikus kibocsátó:** a fizikai pénz rövid világépítő lore-ral; egy item eleve egy egység, ezért nincs külön értéksor;
+- **ERSZÉNY:** jobb kattal bontható; a benne lévő valuta és mennyiség addig szándékosan rejtett;
+- **LÁDAKULCS • cél-láda:** nyitási interakció és a fő jutalomesélyek;
+- **KÜLDETÉSI TÁRGY:** story/progression tárgy, rövid rendeltetéssel és használattal;
 - **HALADÁSI TÁRGY:** beváltható vagy progressionhöz kötött token/szilánk;
 - **FEJLESZTÉS:** rúna vagy más fejlesztőkomponens; a leírás megmondja, mire tehető és mit ad;
 - **SEGÉDESZKÖZ:** újrahasználható vagy speciális utility item, amely nem szakmai alapanyag;
-- **TÁRSKÖTŐ ESZKÖZ / IDÉZŐ KELLÉK / TÁRSFELSZERELÉS:** megmondja, milyen társhoz és milyen interakcióhoz használható;
-- **OSTROMESZKÖZ:** háborús tárgy; külön jelzi az aktiválási feltételt és az interakciót;
-- **LÉLEKKAPOCS:** személyes class artifact; a forma, aktív specializáció, fejlődési jelek és vezérlés együtt látszik;
-- **RELIKVIA:** rövid rendeltetés és a tárgy saját történeti leírása;
+- **TÁRSKÖTŐ ESZKÖZ / IDÉZŐ KELLÉK / TÁRSFELSZERELÉS:** a társ és az interakció rövid leírása;
+- **OSTROMESZKÖZ:** háborús tárgy, kompakt aktiválási feltétellel és interakcióval;
+- **LÉLEKKAPOCS • kaszt:** aktuális forma és aktív specializáció;
+- **RELIKVIA:** rövid rendeltetés, rövid lore és ahol szükséges külön használati blokk;
 
 A tooltip leírása tájékoztató presentation. Ha egy tárgy szintet, szakmát, ownershipot vagy más
 feltételt ír ki, a tényleges szabályt továbbra is a megfelelő gameplay rendszer ellenőrzi.
