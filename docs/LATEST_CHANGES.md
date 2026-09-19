@@ -3,8 +3,13 @@
 A tárgytooltip-rendszer külön profilokat kapott a tervrajzokhoz, szakmai alapanyagokhoz és
 craftolt profession tárgyakhoz, fizikai valutákhoz, erszényekhez, relikviákhoz,
 küldetési/progression tárgyakhoz, ládakulcsokhoz, rúnákhoz és utility itemekhez, valamint a belső
-fejlesztői artifactokhoz. A közös IceSMP háttér megmarad; a keret rarity- vagy család-accentet követ, a
-tooltip pedig röviden leírja, mi a tárgy, mire használható és milyen feltétel tartozik hozzá.
+fejlesztői artifactokhoz. A közös IceSMP háttér megmarad; a keret rarity- vagy család-accentet követ.
+A live visual review után a tartalom kompaktabb stat-card formára váltott: az itemnév marad a főcím,
+alatta egy rövid classification sor és tömör mechanikai sorok jelennek meg, a lore pedig rövid,
+másodlagos blokk. A canonical gear fix és rollolt azonos statjai összevonódnak; a currency tooltip
+`VALUTA • <kanonikus kibocsátó>` formát használ külön értéksor nélkül; az archaeology megfigyelés
+tördelt és a kliensoldali inspection copy nem mutatja a vanilla attribute blokkot. A production
+semantic jelölések nem függnek private-use font glyphoktól, így nem válhatnak tofu négyzetté.
 A belső fejlesztői artifactok külön, a normál debug/probe tárgyaktól elkülönített profilt kaptak.
 
 A fejlesztői eszköz eltétele vagy fegyverre váltás nem zárja le többé a
