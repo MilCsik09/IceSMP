@@ -108,12 +108,14 @@ public final class SpecialItemTooltipRegressionSuite {
         check(recipeBuilder.contains("HIDE_ADDITIONAL_TOOLTIP")
                         && recipeBuilder.contains("professionResult(recipe, potionSpecs)"),
                 "custom profession potions must hide duplicate vanilla effects and render recipe effects");
-        check(source.contains("a nálad lévő veretek befizethetők")
-                        && source.contains("kézben hordozható fizikai pénz"),
-                "currency tooltip lost physical/bank semantics");
-        check(source.contains("ismeretlen, amíg ki nem bontod")
-                        && source.contains("Jobb katt • bontsd ki az erszényt."),
-                "money pouch tooltip leaked its hidden payload or lost the interaction hint");
+        check(source.contains("currencyIssuer(currency)")
+                        && source.contains("case DARK -> \"Thanaopolis\"")
+                        && source.contains("\"VALUTA\"")
+                        && !source.contains("a nálad lévő veretek befizethetők"),
+                "currency tooltip must stay compact and use canonical issuer naming");
+        check(source.contains("labelled(\"Tartalom\", \"ismeretlen\"")
+                        && source.contains("labelled(\"Jobb katt\", \"kinyitás\""),
+                "money pouch tooltip leaked its hidden payload or lost the compact interaction hint");
         check(source.contains("KÜLDETÉSI TÁRGY")
                         && source.contains("HALADÁSI TÁRGY")
                         && source.contains("FEJLESZTÉS")
