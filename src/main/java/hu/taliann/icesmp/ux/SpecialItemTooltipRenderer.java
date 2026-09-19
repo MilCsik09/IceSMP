@@ -352,19 +352,16 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> relic(final RelicDefinition definition) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.RELIC,
-                        badge("RELIKVIA", NamedTextColor.AQUA))));
+                TooltipPresentation.classification(
+                        "RELIKVIA", "", NamedTextColor.AQUA)));
         if (definition.description() != null && !definition.description().isBlank()) {
             final List<Component> purpose = new ArrayList<>();
-            purpose.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.EFFECT, "Rendeltetés",
-                    NamedTextColor.AQUA));
             for (final String line : wrap(definition.description(), 42)) {
                 purpose.add(TooltipPresentation.line(line, NamedTextColor.GRAY));
             }
             add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, purpose);
         }
-        addAuthoredLore(sections, definition.lore(), 80);
+        addCompactRelicLore(sections, definition.lore());
         return TooltipEngine.render(sections);
     }
 
@@ -544,6 +541,46 @@ public final class SpecialItemTooltipRenderer {
                                       final TextColor valueColor) {
         return TooltipPresentation.line(label + "  ", NamedTextColor.DARK_GRAY)
                 .append(TooltipPresentation.line(value, valueColor));
+    }
+
+    private static void addCompactRelicLore(final List<TooltipEngine.Section> sections,
+                                            final List<String> lore) {
+        if (lore == null || lore.isEmpty()) return;
+        final List<String> flavor = new ArrayList<>();
+        final List<String> usage = new ArrayList<>();
+        boolean usageBlock = false;
+        for (final String raw : lore) {
+            if (raw == null || raw.isBlank()) continue;
+            final String plain = PLAIN.serialize(LEGACY.deserialize(raw)).trim();
+            if (plain.isBlank()) continue;
+            if ("Használat".equalsIgnoreCase(plain)) {
+                usageBlock = true;
+                continue;
+            }
+            (usageBlock ? usage : flavor).add(plain);
+        }
+
+        final List<Component> story = new ArrayList<>();
+        final int flavorLines = Math.min(3, flavor.size());
+        for (int index = 0; index < flavorLines; index++) {
+            for (final String line : wrap(flavor.get(index), 44)) {
+                story.add(TooltipPresentation.line(line, NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, true));
+            }
+        }
+        add(sections, TooltipEngine.SectionId.STORY, 80, true, story);
+
+        if (!usage.isEmpty()) {
+            final List<Component> mechanics = new ArrayList<>();
+            mechanics.add(TooltipPresentation.classification(
+                    "HASZNÁLAT", "", NamedTextColor.AQUA));
+            for (final String raw : usage) {
+                for (final String line : wrap(raw, 46)) {
+                    mechanics.add(TooltipPresentation.line(line, NamedTextColor.GRAY));
+                }
+            }
+            add(sections, TooltipEngine.SectionId.CUSTOM, 70, true, mechanics);
+        }
     }
 
     private static void addAuthoredLore(final List<TooltipEngine.Section> sections,
