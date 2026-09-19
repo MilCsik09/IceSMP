@@ -2616,7 +2616,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java",
       "domain": "crate",
-      "source_sha256": "7d38f95cbdcef857ad39ce5eef4a774c11ca94969e1cb31526e508187f124cdf",
+      "source_sha256": "b6d58e811f5a14351404da38d52355b6d5a019febd7cc5f1faf11f3e5232b326",
       "public_methods": [
         "bind",
         "createKey",
@@ -2629,7 +2629,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java",
       "domain": "developer_self",
-      "source_sha256": "f576f65a68c3256917830f23fbbe3162f09771f466a38831fa82a9461d73b2a5",
+      "source_sha256": "4855defd6c71308d4230bee61aef1d189cf40b3be45999302fb26bf66f26b760",
       "public_methods": [
         "create",
         "createBingulus",
@@ -2643,7 +2643,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/items/MoneyPouchItemFactory.java",
       "domain": "economy",
-      "source_sha256": "e1d0f3371e8f21e0e2d1d54ed0114cb2cf8bb1af0df458f0653c29e26d6bdecf",
+      "source_sha256": "d1507ac587b412404780609fdf9e51c1434b124d0f900fef60f968243e1c6410",
       "public_methods": [
         "create",
         "createRandom",
