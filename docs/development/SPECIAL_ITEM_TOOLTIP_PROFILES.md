@@ -4,6 +4,32 @@ This document is intentionally **development-only**. Do not mirror hidden develo
 names or interaction surfaces into README, FEATURES, PLAYER_GUIDE, BUILDER_GUIDE,
 ADMIN_GUIDE, LATEST_CHANGES or RESOURCE_PACK_CMD.
 
+## Live visual language
+
+The post-screenshot production target is a compact MMORPG stat-card rather than a sectioned
+mini-document:
+
+- the Minecraft item display name remains the dominant header;
+- the first lore row is a compact classification such as `VALUTA • CRYGHALIRIS` or
+  `TERVRAJZ • Bányász`;
+- mechanics follow as short label/value rows without redundant section headings;
+- fixed + rolled values of the same canonical stat render as one combined row;
+- authored lore remains important, but is secondary, wrapped and usually limited to a few lines;
+- explanatory prose that repeats obvious mechanics is removed;
+- production readability must not depend on private-use font glyphs;
+- long archaeology observations are wrapped and their temporary display clone hides the vanilla
+  attribute block;
+- frame/accent geometry remains unchanged until the compact layout is accepted live.
+
+Currency classification uses canonical issuer/world names:
+- RED → `Perinfernicitas`
+- BLUE → `Cryghaliris`
+- NEUTRAL → `Ryanora & Caldestera`
+- DARK → `Thanaopolis`
+
+A physical currency item is one unit by definition, therefore no redundant worth/value row is
+shown.
+
 ## Scope
 
 The shared tooltip presentation system covers:
