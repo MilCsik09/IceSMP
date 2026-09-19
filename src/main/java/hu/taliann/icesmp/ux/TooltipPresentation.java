@@ -61,8 +61,39 @@ public final class TooltipPresentation {
 
     public static Component icon(final Glyph glyph) {
         Objects.requireNonNull(glyph, "glyph");
-        return Component.text(String.valueOf(glyph.character()), NamedTextColor.WHITE)
-                .font(FONT)
+        /*
+         * The first live acceptance pass proved that client/resource-pack font failures turn the
+         * private-use code points into tofu squares. Keep semantic icons decorative, but render
+         * them through glyphs that the vanilla client font already knows. The private font stays
+         * available for a later art pass without being required for readable production tooltips.
+         */
+        final String symbol = switch (glyph) {
+            case TYPE -> "◆";
+            case STATS -> "✦";
+            case REQUIREMENTS -> "◇";
+            case EFFECT -> "✦";
+            case SOCKETS -> "◇";
+            case EQUIPMENT -> "◆";
+            case ASCENSION -> "↑";
+            case ORIGIN -> "•";
+            case STORY -> "◆";
+            case ARCHAEOLOGY -> "◇";
+            case BLUEPRINT -> "◆";
+            case PROFESSION -> "◆";
+            case CURRENCY -> "◆";
+            case POUCH -> "◆";
+            case RELIC -> "◆";
+            case DEVELOPER -> "◆";
+            case QUEST -> "◆";
+            case TOKEN -> "◆";
+            case KEY -> "◆";
+            case UPGRADE -> "◆";
+            case UTILITY -> "◆";
+            case COMPANION -> "◆";
+            case SIEGE -> "◆";
+            case CATALYST -> "◆";
+        };
+        return Component.text(symbol, NamedTextColor.WHITE)
                 .decoration(TextDecoration.ITALIC, false);
     }
 
@@ -81,6 +112,23 @@ public final class TooltipPresentation {
         return withIcon(glyph, Component.text(label.toUpperCase(Locale.ROOT), color)
                 .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false));
+    }
+
+    public static Component classification(final String label, final String detail,
+                                           final TextColor color) {
+        Objects.requireNonNull(label, "label");
+        Objects.requireNonNull(color, "color");
+        Component result = Component.text(label.toUpperCase(Locale.ROOT), color)
+                .decoration(TextDecoration.BOLD, true)
+                .decoration(TextDecoration.ITALIC, false);
+        if (detail != null && !detail.isBlank()) {
+            result = result
+                    .append(Component.text("  •  ", NamedTextColor.DARK_GRAY)
+                            .decoration(TextDecoration.ITALIC, false))
+                    .append(Component.text(detail, NamedTextColor.GRAY)
+                            .decoration(TextDecoration.ITALIC, false));
+        }
+        return result;
     }
 
     public static Component line(final String text, final TextColor color) {
