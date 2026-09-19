@@ -19,6 +19,9 @@ The shared tooltip presentation system covers:
 - crate keys
 - upgrades / runes
 - utility items
+- companion / capture / summon items
+- siege weapons
+- class catalyst artifacts
 - developer artifacts
 
 The presentation layer owns only readable item explanation and visual hierarchy. Identity, PDC,
@@ -126,6 +129,21 @@ Use real factory/runtime paths rather than hand-edited lore.
   - target crate and interaction
   - top three reward odds when available
   - key light/silver frame
+- Companion item: use the normal `/pet item` path with an eligible specialization
+  - TÁRSFELSZERELÉS / IDÉZŐ KELLÉK / TÁRSKÖTŐ ESZKÖZ according to the item tag
+  - purpose/restriction copy from the existing companion item authority
+  - capture green frame
+- Siege weapon: use the existing craft/raid acquisition path
+  - OSTROMESZKÖZ
+  - explicit only-during-siege condition
+  - right-click combat use
+  - siege red frame
+- Catalyst / class artifact: use the normal `/profile` claim path
+  - LÉLEKKAPOCS
+  - current class
+  - current form/evolution
+  - active specialization, or the explicit no-specialization state
+  - catalyst purple frame
 
 ### Hidden developer artifacts
 
