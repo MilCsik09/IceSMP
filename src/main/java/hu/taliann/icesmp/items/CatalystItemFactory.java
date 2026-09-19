@@ -269,6 +269,8 @@ public final class CatalystItemFactory {
         item.setItemMeta(meta);
         ItemDataFactory.applyItemModel(item, "icesmp:catalyst_" + jobType.getId());
         ItemDataFactory.applyUseCooldownGroup(item, "catalyst", 0.5F);
+        // ItemMeta writes may clear data-component presentation; restore the family accent last.
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:catalyst");
     }
 
     public Component getDisplayName(final JobType jobType) {
