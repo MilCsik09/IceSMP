@@ -165,6 +165,10 @@ public final class TrashArchaeologyRegressionSuite {
         require(bridge, "OFFHAND_MENU_SLOT = 45", "offhand display slot");
         require(bridge, "OVERLAY_TICKS = 1_200L", "60 second overlay expiry");
         require(bridge, "canonicalSnapshot.clone()", "display-only clone");
+        require(bridge, "ArchaeologyTooltipLore.observations(observations)",
+                "wrapped archaeology observation presentation");
+        require(bridge, "ItemDataFactory.hideAttributeTooltip(display)",
+                "temporary overlay hides duplicate vanilla attribute block");
         require(bridge, "sendCanonical(player, overlay.menuSlot)", "canonical resync");
         require(bridge, "if (access == null", "runtime probe fail-closed boundary");
         require(bridge, "if (previous != null)",
@@ -174,6 +178,9 @@ public final class TrashArchaeologyRegressionSuite {
         check(bridge.indexOf("meta.lore(lore)")
                         < bridge.indexOf("items.refreshPresentation(display)"),
                 "data-component refresh no longer follows the temporary lore ItemMeta write");
+        check(bridge.indexOf("canonicalSnapshot.clone()")
+                        < bridge.indexOf("ItemDataFactory.hideAttributeTooltip(display)"),
+                "attribute hiding must remain display-clone-only");
         check(!bridge.contains("setItemInOffHand") && !bridge.contains("setItem(45"),
                 "overlay mutated server-authoritative inventory state");
     }
