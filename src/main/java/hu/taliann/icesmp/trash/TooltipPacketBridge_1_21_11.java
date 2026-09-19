@@ -102,20 +102,8 @@ public final class TooltipPacketBridge_1_21_11
         lore.add(Component.empty());
         lore.add(ArchaeologyTooltipLore.HEADER);
 
-        /*
-         * Explicit <Component> mapping is intentional.
-         *
-         * Component.text(...).decoration(...) resolves to TextComponent, therefore Java would
-         * otherwise infer List<TextComponent>. TooltipEngine.generated() currently accepts
-         * Collection<Component>, and Java generic collections are invariant.
-         */
-        final List<Component> observationLines = observations.stream()
-                .limit(8)
-                .<Component>map(line ->
-                        Component.text("• " + line, NamedTextColor.GRAY)
-                                .decoration(TextDecoration.ITALIC, false)
-                )
-                .toList();
+        final List<Component> observationLines =
+                ArchaeologyTooltipLore.observations(observations);
 
         final List<Component> generated = TooltipEngine.render(
                 List.of(
@@ -131,6 +119,7 @@ public final class TooltipPacketBridge_1_21_11
 
         meta.lore(lore);
         display.setItemMeta(meta);
+        hu.taliann.icesmp.items.ItemDataFactory.hideAttributeTooltip(display);
 
         /*
          * Refresh only the temporary display clone.

@@ -15,27 +15,26 @@ public final class TooltipPresentationRegressionSuite {
     }
 
     public static void main(final String[] args) throws Exception {
-        customGlyphFontDoesNotLeakIntoReadableText();
+        semanticIconsUseClientSafeFallback();
         resourcePackDefinesEverySemanticGlyph();
         canonicalRendererUsesSemanticPresentationSections();
         canonicalItemsUseSharedChromeWithRarityAccent();
         devReferencePreviewUsesReviewedPresentation();
         runeMutationRefreshesVisiblePresentation();
+        SpecialItemTooltipRegressionSuite.main(args);
         System.out.println("Tooltip presentation regression suite passed. assertions=" + assertions);
     }
 
-    private static void customGlyphFontDoesNotLeakIntoReadableText() {
+    private static void semanticIconsUseClientSafeFallback() {
         final Component icon = TooltipPresentation.icon(TooltipPresentation.Glyph.STATS);
         final Component heading = TooltipPresentation.sectionHeading(
                 TooltipPresentation.Glyph.STATS, "Harcértékek", NamedTextColor.GOLD);
-        check(TooltipPresentation.FONT.equals(icon.style().font()),
-                "semantic icon must use the IceSMP tooltip font");
-        check(heading.style().font() == null,
-                "readable heading root must keep the client default font");
-        check(heading.children().stream()
-                        .filter(child -> TooltipPresentation.FONT.equals(child.style().font()))
-                        .count() == 1L,
-                "only the decorative icon may carry the private-use glyph font");
+        check(icon.style().font() == null,
+                "production semantic icons must render through the client-safe default font");
+        check(heading.style().font() == null
+                        && heading.children().stream()
+                        .noneMatch(child -> TooltipPresentation.FONT.equals(child.style().font())),
+                "production tooltip rows must not depend on private-use font glyphs");
     }
 
     private static void resourcePackDefinesEverySemanticGlyph() throws Exception {
@@ -48,7 +47,9 @@ public final class TooltipPresentationRegressionSuite {
                 "tooltip font must map semantic glyphs to deterministic bitmap providers");
         for (final TooltipPresentation.Glyph glyph : TooltipPresentation.Glyph.values()) {
             final String hex = Integer.toHexString(glyph.character()).toLowerCase(Locale.ROOT);
-            check(font.toLowerCase(Locale.ROOT).contains(hex),
+            final String escaped = String.format(Locale.ROOT, "\\u%04x", (int) glyph.character());
+            check(font.indexOf(glyph.character()) >= 0
+                            || font.toLowerCase(Locale.ROOT).contains(escaped),
                     "resource-pack tooltip font is missing glyph U+" + hex.toUpperCase(Locale.ROOT));
         }
     }
@@ -64,14 +65,14 @@ public final class TooltipPresentationRegressionSuite {
                         && renderer.contains("TooltipEngine.SectionId.SOCKETS")
                         && renderer.contains("TooltipEngine.SectionId.PROVENANCE"),
                 "canonical renderer lost one of the reviewed semantic presentation sections");
-        check(renderer.contains("TooltipPresentation.sectionHeading")
-                        && renderer.contains("TooltipPresentation.withIcon"),
-                "canonical renderer bypassed the resource-pack-backed presentation tokens");
+        check(renderer.contains("TooltipPresentation.classification")
+                        && renderer.contains("final LinkedHashMap<String, Double> totalStats")
+                        && renderer.contains("totalStats.merge(id, roll.value(), Double::sum)"),
+                "canonical renderer must use compact classification and merged stat rows");
         check(renderer.contains("final NamedTextColor accent = color(template.rarity())")
-                        && renderer.contains("\"Harcértékek\", accent")
-                        && renderer.contains("\"Követelmények\", accent")
-                        && renderer.contains("\"Egyedi hatás\", accent"),
-                "semantic section hierarchy no longer follows the item rarity accent");
+                        && renderer.contains("template.rarity().displayName(), typeLine, accent")
+                        && renderer.contains("statAmount(definition.id(), value)"),
+                "compact canonical hierarchy no longer follows rarity/stat presentation");
         check(!renderer.contains("private static final String DIVIDER"),
                 "presentation pass regressed to the old divider-heavy tooltip layout");
     }

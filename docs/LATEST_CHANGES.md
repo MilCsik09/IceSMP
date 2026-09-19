@@ -1,11 +1,23 @@
 # Mi változott a július 12-i szerververzió óta?
 
+A tárgytooltip-rendszer külön profilokat kapott a tervrajzokhoz, szakmai alapanyagokhoz és
+craftolt profession tárgyakhoz, fizikai valutákhoz, erszényekhez, relikviákhoz,
+küldetési/progression tárgyakhoz, ládakulcsokhoz, rúnákhoz és utility itemekhez, valamint a belső
+fejlesztői artifactokhoz. A közös IceSMP háttér megmarad; a keret rarity- vagy család-accentet követ.
+A live visual review után a tartalom kompaktabb stat-card formára váltott: az itemnév marad a főcím,
+alatta egy rövid classification sor és tömör mechanikai sorok jelennek meg, a lore pedig rövid,
+másodlagos blokk. A canonical gear fix és rollolt azonos statjai összevonódnak; a currency tooltip
+`VALUTA • <kanonikus kibocsátó>` formát használ külön értéksor nélkül; az archaeology megfigyelés
+tördelt és a kliensoldali inspection copy nem mutatja a vanilla attribute blokkot. A production
+semantic jelölések nem függnek private-use font glyphoktól, így nem válhatnak tofu négyzetté.
+A belső fejlesztői artifactok külön, a normál debug/probe tárgyaktól elkülönített profilt kaptak.
+
 A fejlesztői eszköz eltétele vagy fegyverre váltás nem zárja le többé a
 rávetítések munkamenetét. A munkamenethez kötött harci változtatások így
 megmaradnak a kézváltás után; a kilépési és jogosultsági törlés továbbra is
 érvényes. A változás buildje és szerveres ellenőrzése még hátravan.
 
-A WorldWeaverrel való ütés közbeni item-ellenőrzés átmeneti hibája sem
+A rejtett fejlesztői artifacttal való ütés közbeni item-ellenőrzés átmeneti hibája sem
 érvényteleníti többé a rávetítéseket.
 
 A fejlesztői rávetítések mentés utáni visszaütemezése nem keres többé

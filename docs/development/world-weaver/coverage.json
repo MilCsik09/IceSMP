@@ -2616,7 +2616,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java",
       "domain": "crate",
-      "source_sha256": "7d38f95cbdcef857ad39ce5eef4a774c11ca94969e1cb31526e508187f124cdf",
+      "source_sha256": "b6d58e811f5a14351404da38d52355b6d5a019febd7cc5f1faf11f3e5232b326",
       "public_methods": [
         "bind",
         "createKey",
@@ -2629,7 +2629,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/items/DevItemFactory.java",
       "domain": "developer_self",
-      "source_sha256": "e667e0a4cfdc50695ddb3bccaa76b5f759ab6f6e90658c525ebe7ee221f929b6",
+      "source_sha256": "4855defd6c71308d4230bee61aef1d189cf40b3be45999302fb26bf66f26b760",
       "public_methods": [
         "create",
         "createBingulus",
@@ -2643,7 +2643,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/items/MoneyPouchItemFactory.java",
       "domain": "economy",
-      "source_sha256": "b862576b4a1ab852d3211e1061a2694279b754c08b1e0b325d9f53aa4b10beed",
+      "source_sha256": "d1507ac587b412404780609fdf9e51c1434b124d0f900fef60f968243e1c6410",
       "public_methods": [
         "create",
         "createRandom",
@@ -4338,7 +4338,7 @@
     {
       "path": "src/main/java/hu/taliann/icesmp/managers/RelicManager.java",
       "domain": "relics",
-      "source_sha256": "803d620f5639ba135d2b35b50d73b3951944aa052754e36b60aaa93c4f9fcbd8",
+      "source_sha256": "3d74c3c71890a38e9c3d53d38e93cac6c5a8c7281060b1e4013151818788d43b",
       "public_methods": [
         "canUse",
         "cleanup",

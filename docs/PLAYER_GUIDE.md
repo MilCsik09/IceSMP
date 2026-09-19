@@ -679,6 +679,31 @@ hanem inert/suppressed állapotban marad. A pontos szint elérésekor, belépés
 profilfrissítéskor ugyanaz a példány újra aktiválható. A normál vanilla survival gearre
 ez a kapu nem vonatkozik.
 
+### Hogyan olvasd az IceSMP tárgytooltipokat?
+
+A resource pack mellett **minden tárgy** ugyanazt az IceSMP tooltip-alapformát használja. Egy
+vanilla tárgy semleges keretet kap; a saját felszerelések kerete a rarityt követi. A saját item
+neve marad a főcím, alatta egy kompakt kategória-sor következik; a mechanikai adatok rövid
+label/value sorok, a lore pedig másodlagos, rövid és tördelve jelenik meg. A canonical gear
+azonos statjának fix és rollolt része egyetlen összesített sor.
+
+- **TERVRAJZ • szakma:** feloldott recept, kategória, szükséges szakmaszint és jobb kattos tanulás;
+- **SZAKMAI ALAPANYAG / SZAKMAI TÁRGY:** forrás, feldolgozó szakma, felhasználás vagy crafted szerep;
+- **VALUTA • kanonikus kibocsátó:** a fizikai pénz rövid világépítő lore-ral; egy item eleve egy egység, ezért nincs külön értéksor;
+- **ERSZÉNY:** jobb kattal bontható; a benne lévő valuta és mennyiség addig szándékosan rejtett;
+- **LÁDAKULCS • cél-láda:** nyitási interakció és a fő jutalomesélyek;
+- **KÜLDETÉSI TÁRGY:** story/progression tárgy, rövid rendeltetéssel és használattal;
+- **HALADÁSI TÁRGY:** beváltható vagy progressionhöz kötött token/szilánk;
+- **FEJLESZTÉS:** rúna vagy más fejlesztőkomponens; a leírás megmondja, mire tehető és mit ad;
+- **SEGÉDESZKÖZ:** újrahasználható vagy speciális utility item, amely nem szakmai alapanyag;
+- **TÁRSKÖTŐ ESZKÖZ / IDÉZŐ KELLÉK / TÁRSFELSZERELÉS:** a társ és az interakció rövid leírása;
+- **OSTROMESZKÖZ:** háborús tárgy, kompakt aktiválási feltétellel és interakcióval;
+- **LÉLEKKAPOCS • kaszt:** aktuális forma és aktív specializáció;
+- **RELIKVIA:** rövid rendeltetés, rövid lore és ahol szükséges külön használati blokk;
+
+A tooltip leírása tájékoztató presentation. Ha egy tárgy szintet, szakmát, ownershipot vagy más
+feltételt ír ki, a tényleges szabályt továbbra is a megfelelő gameplay rendszer ellenőrzi.
+
 Két fő szakmai helyed van:
 
 - **egy gyűjtögető szakma:** Bányász, Gyógynövényész vagy Favágó;

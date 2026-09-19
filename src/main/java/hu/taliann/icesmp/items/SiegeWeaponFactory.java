@@ -1,5 +1,6 @@
 package hu.taliann.icesmp.items;
 
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
@@ -11,7 +12,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.List;
 
 /**
  * Factory for the siege cannon: a craftable, PDC-tagged item that only works
@@ -36,16 +36,14 @@ public final class SiegeWeaponFactory {
     public ItemStack create(final int amount) {
         final ItemStack itemStack = new ItemStack(Material.TNT_MINECART, Math.max(1, amount));
         final ItemMeta meta = itemStack.getItemMeta();
-        meta.displayName(MINI_MESSAGE.deserialize("<red><bold>Ostromágyú</bold></red>").decoration(TextDecoration.ITALIC, false));
-        meta.lore(List.of(
-                MINI_MESSAGE.deserialize("<dark_gray>A Hetedik Vérháború öröksége — csak háborúban szólal meg.</dark_gray>").decoration(TextDecoration.ITALIC, false),
-                MINI_MESSAGE.deserialize("<gray>Csak ostrom alatt működik.</gray>").decoration(TextDecoration.ITALIC, false),
-                MINI_MESSAGE.deserialize("<gray>Jobb katt: <white>pusztító lövés a célpontra</white></gray>").decoration(TextDecoration.ITALIC, false)
-        ));
+        meta.displayName(MINI_MESSAGE.deserialize("<red><bold>Ostromágyú</bold></red>")
+                .decoration(TextDecoration.ITALIC, false));
+        meta.lore(SpecialItemTooltipRenderer.siegeWeapon());
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP, ItemFlag.HIDE_ATTRIBUTES);
         meta.getPersistentDataContainer().set(siegeKey, PersistentDataType.BOOLEAN, true);
         itemStack.setItemMeta(meta);
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack, "icesmp:siege_ram");
+        ItemDataFactory.applyTooltipStyle(itemStack, "icesmp:siege");
         return itemStack;
     }
 

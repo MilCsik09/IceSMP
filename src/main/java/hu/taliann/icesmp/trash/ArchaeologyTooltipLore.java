@@ -15,10 +15,8 @@ final class ArchaeologyTooltipLore {
     private static final Component LEGACY_HEADER = Component.text("Régészeti megfigyelések", NamedTextColor.GOLD)
             .decoration(TextDecoration.ITALIC, false);
 
-    static final Component HEADER = TooltipPresentation.sectionHeading(
-            TooltipPresentation.Glyph.ARCHAEOLOGY,
-            "Régészeti megfigyelések",
-            NamedTextColor.GOLD);
+    static final Component HEADER = TooltipPresentation.classification(
+            "Régészeti megfigyelések", "", NamedTextColor.GOLD);
 
     private ArchaeologyTooltipLore() { }
 
@@ -47,9 +45,40 @@ final class ArchaeologyTooltipLore {
         return HEADER.equals(line) || LEGACY_HEADER.equals(line);
     }
 
+    static List<Component> observations(final List<String> observations) {
+        if (observations == null || observations.isEmpty()) return List.of();
+        final ArrayList<Component> result = new ArrayList<>();
+        observations.stream().limit(8).forEach(raw -> {
+            final List<String> wrapped = wrap(raw, 46);
+            for (int index = 0; index < wrapped.size(); index++) {
+                result.add(Component.text((index == 0 ? "• " : "  ") + wrapped.get(index),
+                                NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+        });
+        return List.copyOf(result);
+    }
+
     private static boolean observation(final Component line) {
+        final String plain = PlainTextComponentSerializer.plainText().serialize(line);
         return NamedTextColor.GRAY.equals(line.color())
                 && line.decoration(TextDecoration.ITALIC) == TextDecoration.State.FALSE
-                && PlainTextComponentSerializer.plainText().serialize(line).startsWith("• ");
+                && (plain.startsWith("• ") || plain.startsWith("  "));
+    }
+
+    private static List<String> wrap(final String raw, final int width) {
+        if (raw == null || raw.isBlank()) return List.of();
+        final ArrayList<String> lines = new ArrayList<>();
+        final StringBuilder current = new StringBuilder();
+        for (final String word : raw.trim().split("\\s+")) {
+            if (current.length() > 0 && current.length() + 1 + word.length() > width) {
+                lines.add(current.toString());
+                current.setLength(0);
+            }
+            if (current.length() > 0) current.append(' ');
+            current.append(word);
+        }
+        if (current.length() > 0) lines.add(current.toString());
+        return List.copyOf(lines);
     }
 }

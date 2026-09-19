@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.data.JobType;
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -129,6 +130,7 @@ public final class CatalystItemFactory {
         item.setItemMeta(meta);
         ItemDataFactory.applyItemModel(item, "icesmp:catalyst_" + jobType.getId());
         ItemDataFactory.applyUseCooldownGroup(item, "catalyst", 0.5F);
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:catalyst");
         refreshPresentation(item, ownerId, jobType, "", 1, 0, Map.of());
         return item;
     }
@@ -144,6 +146,8 @@ public final class CatalystItemFactory {
         if (meta != null) {
             meta.displayName(MINI_MESSAGE.deserialize(theme.displayName())
                     .decoration(TextDecoration.ITALIC, false));
+            meta.lore(SpecialItemTooltipRenderer.catalystHeader(
+                    jobType, "kezdeti", ""));
             meta.getPersistentDataContainer().set(
                     isCatalystKey, PersistentDataType.BOOLEAN, true);
             item.setItemMeta(meta);
@@ -151,6 +155,7 @@ public final class CatalystItemFactory {
         ItemDataFactory.applyItemModel(item,
                 "icesmp:catalyst_" + (jobType == null ? "wizard" : jobType.getId()));
         ItemDataFactory.applyUseCooldownGroup(item, "catalyst", 0.5F);
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:catalyst");
         return item;
     }
 
@@ -209,14 +214,9 @@ public final class CatalystItemFactory {
         meta.displayName(MINI_MESSAGE.deserialize(resolveTheme(jobType).displayName())
                 .decoration(TextDecoration.ITALIC, false));
 
-        final List<Component> lore = new ArrayList<>();
-        lore.add(line("<dark_gray>Lélekkapocs — személyes kaszt-varázskönyv</dark_gray>"));
-        lore.add(line("<gray>Állapot: <white>" + evolution + "</white></gray>"));
-        if (!spec.isBlank()) {
-            lore.add(line("<gray>Aktív út: <white>" + specDisplay(spec) + "</white></gray>"));
-        } else {
-            lore.add(line("<gray>Aktív út: <dark_gray>még nincs specializáció</dark_gray></gray>"));
-        }
+        final List<Component> lore = new ArrayList<>(
+                SpecialItemTooltipRenderer.catalystHeader(
+                        jobType, evolution, spec.isBlank() ? "" : specDisplay(spec)));
         if (classLevel >= 30 && !spec.isBlank()) {
             if (jobType == JobType.WARRIOR) {
                 addWarriorEvolutionLore(lore, spec, doctrineChoices == null ? Map.of() : doctrineChoices);
@@ -269,6 +269,8 @@ public final class CatalystItemFactory {
         item.setItemMeta(meta);
         ItemDataFactory.applyItemModel(item, "icesmp:catalyst_" + jobType.getId());
         ItemDataFactory.applyUseCooldownGroup(item, "catalyst", 0.5F);
+        // ItemMeta writes may clear data-component presentation; restore the family accent last.
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:catalyst");
     }
 
     public Component getDisplayName(final JobType jobType) {

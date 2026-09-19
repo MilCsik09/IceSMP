@@ -134,8 +134,8 @@ jobs:
       - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Validate first-party IceSMP HUD
-        run: ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest auditIceSmpHudAssets --no-daemon --console=plain
+      - name: Validate first-party IceSMP HUD and tooltip presentation
+        run: ./gradlew validateIceSmpHudPackage iceSmpHudRegressionTest onboardingDialogRegressionTest auditIceSmpHudAssets --no-daemon --console=plain
 
       - name: Fetch and verify immutable external base pack
         shell: bash

@@ -3,6 +3,9 @@ profession-materials:
     material: ECHO_SHARD
     display-name: '&5Suttogás'
     item-model: icesmp:suttogas_meghivo
+    tooltip-profile: QUEST
+    tooltip-description: "Titkos meghívó a Sötét Rítus felfedezéséhez."
+    tooltip-use: "Éjjel, sculkon, egyedül • SHIFT + jobb katt"
     lore:
     - '&7Egy hang, amit csak te hallasz. Hívás,'
     - '&7amelynek hátat is fordíthatsz.'
@@ -14,6 +17,9 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&dOpálos Emlékszilánk'
     item-model: icesmp:emlekszilank
+    tooltip-profile: TOKEN
+    tooltip-description: "Egy Felső elveszett emlékének hordozója."
+    tooltip-use: "Beváltás: /emlek"
     lore:
     - '&7Egy Felső elveszett emlékének kristálya —'
     - '&7romok mélyén, erős szörnyeknél rejtőzik.'
@@ -133,6 +139,9 @@ profession-materials:
     material: GLASS_BOTTLE
     display-name: '&7Üres Kupa'
     item-model: icesmp:ures_kupa
+    tooltip-profile: UTILITY
+    tooltip-description: "A kocsmaitalok újratölthető edénye."
+    tooltip-use: "Ital után visszamarad; a csapos újratölti."
     lore:
     - '&7Kiürült kocsma-kupa. A csapos örül,'
     - '&7ha visszakapja — új italt tölt bele.'
@@ -622,6 +631,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&bÉl Rúnája'
     item-model: icesmp:runa_elek
+    tooltip-profile: UPGRADE
     lore:
     - '&7A Mélység Népének első kovács-jele.'
     - '&7Fegyverre helyezve: +közelharci sebzés.'
@@ -630,6 +640,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&bZápor Rúnája'
     item-model: icesmp:runa_zapor
+    tooltip-profile: UPGRADE
     lore:
     - '&7Nyílzáport suttog a húrba.'
     - '&7Íjra/számszeríjra: +lövedék-sebzés.'
@@ -638,6 +649,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&bBástya Rúnája'
     item-model: icesmp:runa_bastya
+    tooltip-profile: UPGRADE
     lore:
     - '&7Caldestera falainak emléke.'
     - '&7Mellvértre: -kapott sebzés.'
@@ -646,6 +658,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&cLáng Rúnája'
     item-model: icesmp:runa_lang
+    tooltip-profile: UPGRADE
     lore:
     - '&7Soleil főnixeinek szikrája.'
     - '&7Fegyverre: találatkor eséllyel meggyújt.'
@@ -654,6 +667,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&bFagy Rúnája'
     item-model: icesmp:runa_fagy
+    tooltip-profile: UPGRADE
     lore:
     - '&7Kallan jégsárkányainak lehelete.'
     - '&7Fegyverre: találatkor eséllyel lelassít.'
@@ -662,6 +676,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&6Mohóság Rúnája'
     item-model: icesmp:runa_moho
+    tooltip-profile: UPGRADE
     lore:
     - '&7A Bankárszövetség titkos vésete.'
     - '&7Fegyverre: a szörnyek gyakrabban ejtenek erszényt.'
@@ -670,6 +685,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&dVisszhang Rúnája'
     item-model: icesmp:runa_visszhang
+    tooltip-profile: UPGRADE
     lore:
     - '&7Caldestera elveszett rúna-tudása —'
     - '&7csak a Varázsló olvassa hangosan.'
@@ -679,6 +695,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&7Súly Rúnája'
     item-model: icesmp:runa_elek
+    tooltip-profile: UPGRADE
     lore:
     - '&7A nagytestű ellenfelek páncélját keresi.'
     - '&7Fegyverre: több sebzés nagy életerejű célpontra.'
@@ -686,6 +703,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&aOltalom Rúnája'
     item-model: icesmp:runa_bastya
+    tooltip-profile: UPGRADE
     lore:
     - '&7A végveszélyben erősödő védőjel.'
     - '&7Mellvértre: alacsony életerőn extra csillapítás.'
@@ -693,6 +711,7 @@ profession-materials:
     material: AMETHYST_SHARD
     display-name: '&2Vadász Rúnája'
     item-model: icesmp:runa_zapor
+    tooltip-profile: UPGRADE
     lore:
     - '&7A vad nyomát a lövedékbe vési.'
     - '&7Íjra: több sebzés nem játékos ellenfelekre.'

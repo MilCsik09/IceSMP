@@ -32,6 +32,14 @@ A `scripts/generate_item_tooltip_assets.py` determinisztikusan generálja a telj
 A saját itemek gazdagabb section/lore presentationje ettől külön, a Tooltip Engine-en keresztül
 épül rá; a keret színezése nem változtat gameplay state-et.
 
+A special-purpose itemek category-accentet kapnak ugyanazon a geometrián:
+`blueprint` kék/cyan, `profession` arany, a négy fizikai valuta frakciószínű,
+`money_pouch` arany, `developer` lila, `quest` arany, `token` lila, `key` világos,
+`upgrade` türkiz, `utility` szürke, `capture` zöld, `siege` vörös és `catalyst` lila.
+A relikviák az `ereklye` türkiz accentet
+használják. Ezek a style ID-k ugyanúgy közvetlen sprite-párokra oldódnak
+(`icesmp:<style>` → `icesmp:tooltip/<style>_background|frame`).
+
 ## Custom wearable / armor presentation
 
 A viselhető tárgyaknál **két külön render-identitás** létezik:
@@ -157,9 +165,15 @@ tesztelésére, ha a publikus custom domain még nem aktív.
 
 ## Immersive presentation tokens
 
-The plugin-side UX foundation refers to semantic presentation values rather than hard-coded glyphs or model data. Resource-pack authors may map:
+The plugin-side UX foundation uses semantic presentation values rather than gameplay-owned model data.
+The first live tooltip acceptance pass showed that private-use glyphs can degrade into tofu squares
+when the custom font path is unavailable, therefore **production tooltip readability uses
+client-safe default-font symbols**. The retained private tooltip font is optional art/staging
+material only until a later visual pass proves it across the real client pack.
 
-- tooltip section accents and dividers to font/PUA glyphs;
+Resource-pack authors may map:
+
+- optional decorative tooltip accents/icons to reviewed font assets, without making readable copy depend on them;
 - rarity backgrounds/frames to the existing native `tooltip_style` layer;
 - music identifiers to custom `sounds.json` events;
 - GUI backgrounds, navigation icons and borders to centralized semantic assets.

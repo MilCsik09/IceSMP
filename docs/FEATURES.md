@@ -1692,3 +1692,26 @@ Közös, Folia-biztos presentation foundation a semantic tooltip-szakaszokhoz, j
 - **Staging gate:** két párhuzamos dialogue session, quit/death/world-change cleanup, GUI inventory-exploit mátrix, resource-pack sound event és tooltip visual QA még kézi ellenőrzést igényel.
 
 <!-- icesmp-ux-foundation-doc -->
+
+### Tárgy-tooltip presentation profilok
+
+<!-- icesmp-doc-id: feature.immersive-ux.item-tooltips -->
+
+> **Implementáció elkészült, vizuális staging-átvétel szükséges**
+
+Az IceSMP tárgytooltipjai közös sötét háttérre és nine-slice keretre épülnek. A vanilla tárgyak is
+megkapják az alap IceSMP chrome-ot; a canonical felszerelés rarity-accentet, a special-purpose
+tárgyak pedig kompakt kategória-sort, rövid mechanikai sorokat és másodlagos authored lore-t kapnak.
+A canonical gear azonos statjainak fix és rollolt része egy sorban jelenik meg, nem duplikáltan.
+
+- **Blueprint:** TERVRAJZ + szakma, recept, szakmaszint és jobb kattos feloldás.
+- **Profession item:** kompakt szakmai kategória, forrás/feldolgozó/felhasználás; a nem-canonical crafted outputok is profilt kapnak.
+- **Fizikai valuta / erszény:** `VALUTA • <kanonikus kibocsátó>` vagy `ERSZÉNY`; a valuta rövid lore-t kap, az erszény tartalma bontásig rejtett marad.
+- **Relikvia:** rövid authored rendeltetés + tömör lore, szükség esetén külön használati sorokkal, Ereklye-accenttel.
+- **Küldetési / haladási tárgy:** authored rendeltetés és használati hint, külön quest/token profillal.
+- **Ládakulcs:** cél-láda, nyitási instrukció és legfontosabb jutalomesélyek.
+- **Fejlesztés / utility:** rúnák és speciális használati tárgyak nem keverednek többé a szakmai alapanyagokkal.
+- **Társ-kellék / Ostromeszköz / Lélekkapocs:** a capture-idéző tárgyak, az Ostromágyú és a személyes class artifact is saját, funkciót magyarázó profilt kap.
+- **Belső fejlesztői artifact:** a debug/probe itemektől elkülönített, production-minőségű presentation profilt kap; részletei nem részei a nyilvános feature-katalógusnak.
+- **Fontos határ:** a profile renderer csak presentationt épít; PDC identity, ownership, recept, valuta, relic és DEV-artifact authority nem költözik át a tooltip-rétegbe.
+

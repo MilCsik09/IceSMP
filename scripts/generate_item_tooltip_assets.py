@@ -16,6 +16,24 @@ RARITIES = {
     "epikus": (180, 85, 255), "legendas": (255, 170, 0),
     "mitikus": (255, 80, 80), "ereklye": (70, 220, 210),
 }
+SPECIAL_STYLES = {
+    "blueprint": RARITIES["ritka"],
+    "profession": RARITIES["legendas"],
+    "currency_red": RARITIES["mitikus"],
+    "currency_blue": RARITIES["ritka"],
+    "currency_neutral": RARITIES["epikus"],
+    "currency_dark": RARITIES["ocska"],
+    "money_pouch": RARITIES["legendas"],
+    "developer": RARITIES["epikus"],
+    "quest": RARITIES["legendas"],
+    "token": RARITIES["epikus"],
+    "key": RARITIES["kozonseges"],
+    "upgrade": RARITIES["ereklye"],
+    "utility": RARITIES["ocska"],
+    "capture": RARITIES["nem_mindennapi"],
+    "siege": RARITIES["mitikus"],
+    "catalyst": RARITIES["epikus"],
+}
 BACKGROUND_SCALING = {"gui":{"scaling":{"type":"nine_slice","width":100,"height":100,"border":9}}}
 FRAME_SCALING = {"gui":{"scaling":{"type":"nine_slice","width":100,"height":100,"border":10,"stretch_inner":True}}}
 
@@ -59,5 +77,6 @@ def pair(root: Path, prefix: str, color: tuple[int,int,int]) -> None:
 def main() -> None:
     pair(GLOBAL_ROOT, "", (125,50,160))
     for rarity,color in RARITIES.items(): pair(RARITY_ROOT, rarity, color)
+    for style,color in SPECIAL_STYLES.items(): pair(RARITY_ROOT, style, color)
 
 if __name__ == "__main__": main()

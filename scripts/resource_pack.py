@@ -39,6 +39,12 @@ TOOLTIP_RARITY_STYLES = (
     "ocska", "kozonseges", "nem_mindennapi", "ritka",
     "epikus", "legendas", "mitikus", "ereklye",
 )
+TOOLTIP_SPECIAL_STYLES = (
+    "blueprint", "profession", "currency_red", "currency_blue",
+    "currency_neutral", "currency_dark", "money_pouch", "developer",
+    "quest", "token", "key", "upgrade", "utility",
+    "capture", "siege", "catalyst",
+)
 
 FALLBACK_POLICY_PATH = (
     Path(__file__).resolve().parents[1]
@@ -264,7 +270,7 @@ def validate_tooltip_sprite_scaling(texture: Path, field: str, root: Path) -> No
 
 
 def validate_tooltip_styles(root: Path) -> int:
-    """Validate global IceSMP chrome plus the complete rarity-accent sprite family."""
+    """Validate global IceSMP chrome plus rarity and special-family accent sprite sets."""
     global_root = root / "assets" / "minecraft" / "textures" / "gui" / "sprites" / "tooltip"
     background = global_root / "background.png"
     frame = global_root / "frame.png"
@@ -279,19 +285,34 @@ def validate_tooltip_styles(root: Path) -> int:
         validate_tooltip_sprite_scaling(frame, "frame", root)
         styles += 1
 
-    rarity_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
-    if rarity_root.is_dir():
-        for rarity in TOOLTIP_RARITY_STYLES:
-            rarity_background = rarity_root / f"{rarity}_background.png"
-            rarity_frame = rarity_root / f"{rarity}_frame.png"
-            if not rarity_background.is_file() or not rarity_frame.is_file():
+    tooltip_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+    if not tooltip_root.is_dir():
+        return styles
+
+    def validate_family(names: tuple[str, ...], label: str) -> int:
+        any_present = any(
+            (tooltip_root / f"{name}_background.png").is_file()
+            or (tooltip_root / f"{name}_frame.png").is_file()
+            for name in names
+        )
+        if not any_present:
+            return 0
+        count = 0
+        for name in names:
+            style_background = tooltip_root / f"{name}_background.png"
+            style_frame = tooltip_root / f"{name}_frame.png"
+            if not style_background.is_file() or not style_frame.is_file():
                 raise PackError(
-                    f"Rarity tooltip style {rarity} requires both "
-                    f"{rarity}_background.png and {rarity}_frame.png"
+                    f"{label} tooltip style {name} requires both "
+                    f"{name}_background.png and {name}_frame.png"
                 )
-            validate_tooltip_sprite_scaling(rarity_background, "background", root)
-            validate_tooltip_sprite_scaling(rarity_frame, "frame", root)
-            styles += 1
+            validate_tooltip_sprite_scaling(style_background, "background", root)
+            validate_tooltip_sprite_scaling(style_frame, "frame", root)
+            count += 1
+        return count
+
+    styles += validate_family(TOOLTIP_RARITY_STYLES, "Rarity")
+    styles += validate_family(TOOLTIP_SPECIAL_STYLES, "Special")
     return styles
 
 def equipment_assets(root: Path) -> dict[str, Path]:

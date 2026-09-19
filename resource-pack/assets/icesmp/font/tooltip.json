@@ -5,70 +5,216 @@
       "file": "minecraft:item/name_tag.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue100"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/iron_sword.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue101"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/experience_bottle.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue102"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/nether_star.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue103"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/amethyst_shard.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue104"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/diamond_chestplate.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue105"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/firework_star.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue106"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/paper.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue107"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/book.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue108"]
+      "chars": [
+        ""
+      ]
     },
     {
       "type": "bitmap",
       "file": "minecraft:item/brush.png",
       "ascent": 7,
       "height": 8,
-      "chars": ["\ue109"]
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/knowledge_book.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/iron_pickaxe.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/gold_nugget.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/leather.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/echo_shard.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/nether_star.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/writable_book.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/emerald.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/tripwire_hook.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/diamond.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/compass.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/lead.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/tnt_minecart.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/enchanted_book.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        ""
+      ]
     }
   ]
 }

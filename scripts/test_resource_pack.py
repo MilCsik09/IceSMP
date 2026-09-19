@@ -279,6 +279,36 @@ class ResourcePackToolingTest(unittest.TestCase):
                 self.add_tooltip_scaling_metadata(frame, frame=True)
             resource_pack.validate_pack(root)
 
+    def test_special_tooltip_family_requires_every_style(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            tooltip_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            tooltip_root.mkdir(parents=True, exist_ok=True)
+            background = tooltip_root / "blueprint_background.png"
+            frame = tooltip_root / "blueprint_frame.png"
+            background.write_bytes(TOOLTIP_PNG_HEADER)
+            frame.write_bytes(TOOLTIP_PNG_HEADER)
+            self.add_tooltip_scaling_metadata(background, frame=False)
+            self.add_tooltip_scaling_metadata(frame, frame=True)
+            with self.assertRaisesRegex(resource_pack.PackError, "Special tooltip style"):
+                resource_pack.validate_pack(root)
+
+    def test_complete_special_tooltip_family_is_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "resource-pack"
+            self.make_pack(root)
+            tooltip_root = root / "assets" / "icesmp" / "textures" / "gui" / "sprites" / "tooltip"
+            tooltip_root.mkdir(parents=True, exist_ok=True)
+            for style in resource_pack.TOOLTIP_SPECIAL_STYLES:
+                background = tooltip_root / f"{style}_background.png"
+                frame = tooltip_root / f"{style}_frame.png"
+                background.write_bytes(TOOLTIP_PNG_HEADER)
+                frame.write_bytes(TOOLTIP_PNG_HEADER)
+                self.add_tooltip_scaling_metadata(background, frame=False)
+                self.add_tooltip_scaling_metadata(frame, frame=True)
+            resource_pack.validate_pack(root)
+
     def test_generated_zip_inside_source_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "source"

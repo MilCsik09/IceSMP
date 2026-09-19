@@ -1,6 +1,7 @@
 package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.data.CurrencyType;
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -47,20 +48,16 @@ public final class MoneyPouchItemFactory {
         if (meta == null) {
             return stack;
         }
-        meta.displayName(Component.text("💰 Kopott erszény", NamedTextColor.GOLD)
+        meta.displayName(Component.text("Kopott erszény", NamedTextColor.GOLD)
+                .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false));
-        meta.lore(List.of(
-                Component.text("Valami csörög odabent...", NamedTextColor.YELLOW)
-                        .decoration(TextDecoration.ITALIC, false),
-                Component.text("Jobb-katt: bontsd ki az erszényt.", NamedTextColor.GRAY)
-                        .decoration(TextDecoration.ITALIC, false),
-                Component.text("„Valaki elvesztette. Most a tiéd.”", NamedTextColor.DARK_GRAY)
-                        .decoration(TextDecoration.ITALIC, true)));
+        meta.lore(SpecialItemTooltipRenderer.moneyPouch());
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(valueKey, PersistentDataType.LONG, rounded);
         pdc.set(currencyKey, PersistentDataType.STRING, currency.name());
         stack.setItemMeta(meta);
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(stack, "icesmp:money_pouch");
+        ItemDataFactory.applyTooltipStyle(stack, "icesmp:money_pouch");
         return stack;
     }
 

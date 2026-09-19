@@ -4,6 +4,7 @@ import hu.taliann.icesmp.data.CurrencyType;
 import hu.taliann.icesmp.data.FactionType;
 import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.utils.TextUtil;
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -70,14 +71,18 @@ public final class CurrencyItemFactory {
         if (meta == null) {
             return;
         }
-        meta.displayName(serializer.deserialize(resolveDisplayName(currencyType)));
-        meta.lore(List.of());
+        meta.displayName(serializer.deserialize(resolveDisplayName(currencyType))
+                .decoration(net.kyori.adventure.text.format.TextDecoration.BOLD, true)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+        meta.lore(SpecialItemTooltipRenderer.currency(currencyType));
 
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(currencyTypeKey, PersistentDataType.STRING, currencyType.name());
 
         itemStack.setItemMeta(meta);
         hu.taliann.icesmp.items.ItemDataFactory.applyItemModel(itemStack,
+                "icesmp:currency_" + currencyType.name().toLowerCase(java.util.Locale.ROOT));
+        ItemDataFactory.applyTooltipStyle(itemStack,
                 "icesmp:currency_" + currencyType.name().toLowerCase(java.util.Locale.ROOT));
     }
 

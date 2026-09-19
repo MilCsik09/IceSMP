@@ -356,19 +356,18 @@ public final class ProfessionRecipeBookListener implements Listener {
                 : new ItemStack(recipe.result(), recipe.resultAmount());
         if (result == null) return null;
 
+        final List<String> potionSpecs = configManager.getConfiguration()
+                .getStringList("profession-recipes." + recipe.id() + ".result.potion-effects");
+
         if (recipe.uniqueResult() == null) {
             final ItemMeta meta = result.getItemMeta();
             if (meta != null) {
                 meta.displayName(LEGACY.deserialize(recipe.displayName())
-                        .colorIfAbsent(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                if (recipe.lore() != null && !recipe.lore().isEmpty()) {
-                    final List<Component> loreLines = new ArrayList<>();
-                    for (final String line : recipe.lore()) {
-                        loreLines.add(LEGACY.deserialize(line)
-                                .colorIfAbsent(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                    }
-                    meta.lore(loreLines);
-                }
+                        .colorIfAbsent(NamedTextColor.YELLOW)
+                        .decoration(TextDecoration.BOLD, true)
+                        .decoration(TextDecoration.ITALIC, false));
+                meta.lore(hu.taliann.icesmp.ux.SpecialItemTooltipRenderer.professionResult(recipe, potionSpecs));
+                if (!potionSpecs.isEmpty()) meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
                 result.setItemMeta(meta);
             }
         }
@@ -408,8 +407,6 @@ public final class ProfessionRecipeBookListener implements Listener {
             }
         }
 
-        final List<String> potionSpecs = configManager.getConfiguration()
-                .getStringList("profession-recipes." + recipe.id() + ".result.potion-effects");
         if (!potionSpecs.isEmpty()) {
             hu.taliann.icesmp.items.ItemDataFactory.applyPotionEffects(result, potionSpecs,
                     configManager.getString("profession-recipes." + recipe.id() + ".result.potion-color", ""));
@@ -501,6 +498,17 @@ public final class ProfessionRecipeBookListener implements Listener {
                     cooldownSection.getString("group", recipe.id()),
                     (float) cooldownSection.getDouble("seconds", 1.0D));
         }
+        final String rolledTooltipRarity = affixService.rarityIdOf(result);
+        if (rolledTooltipRarity != null && !rolledTooltipRarity.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyleForRarity(
+                    result, rolledTooltipRarity);
+        } else if (!rarityId.isBlank()) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyleForRarity(result, rarityId);
+        } else if (recipe.uniqueResult() == null) {
+            hu.taliann.icesmp.items.ItemDataFactory.applyTooltipStyle(result, "icesmp:profession");
+        }
+        // Unique results already received their authored QUEST/TOKEN/UPGRADE/UTILITY/PROFESSION
+        // style from UniqueMaterialFactory.applyPresentation; do not flatten it here.
         return result;
     }
 

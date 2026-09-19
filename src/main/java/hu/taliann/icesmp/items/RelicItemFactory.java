@@ -2,6 +2,7 @@ package hu.taliann.icesmp.items;
 
 import hu.taliann.icesmp.relics.RelicDefinition;
 import hu.taliann.icesmp.utils.TextUtil;
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -130,20 +131,19 @@ public final class RelicItemFactory {
      */
     private static void applyPresentation(final ItemStack itemStack, final String relicId) {
         WearablePresentation.applyWearablePresentation(itemStack, "icesmp:relic_" + relicId, null);
+        // Relics use the shared IceSMP chrome with the authored Ereklye accent. Keep this after
+        // every ItemMeta round-trip for the same reason ITEM_MODEL must be restored here.
+        ItemDataFactory.applyTooltipStyleForRarity(itemStack, "ereklye");
     }
 
     private void applyVisuals(final ItemMeta meta, final RelicDefinition definition) {
         final Component displayName = serializer
                 .deserialize(TextUtil.color(definition.displayColor() + definition.displayName()))
+                .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false);
         meta.displayName(displayName);
 
-        final List<String> loreLines = definition.lore() == null ? List.of() : definition.lore();
-        final List<Component> lore = loreLines.stream()
-                .<Component>map(line -> serializer.deserialize(TextUtil.color(line))
-                        .decoration(TextDecoration.ITALIC, false))
-                .toList();
-        meta.lore(lore.isEmpty() ? null : lore);
+        meta.lore(SpecialItemTooltipRenderer.relic(definition));
 
         if (METELYTEPO_ID.equalsIgnoreCase(definition.id())) {
             applyMetelytepoMeta(meta, definition);

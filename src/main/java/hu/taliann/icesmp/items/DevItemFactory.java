@@ -4,6 +4,7 @@ import hu.taliann.icesmp.managers.ConfigManager;
 import hu.taliann.icesmp.dev.artifact.BingulusRewardBehavior;
 import hu.taliann.icesmp.dev.artifact.DevArtifactDefinition;
 import hu.taliann.icesmp.dev.artifact.DevArtifactPresentation;
+import hu.taliann.icesmp.ux.SpecialItemTooltipRenderer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -54,13 +55,10 @@ public final class DevItemFactory {
         final ItemMeta meta = item.getItemMeta();
 
         meta.displayName(LEGACY.deserialize(presentation.displayName())
+                .decoration(TextDecoration.BOLD, true)
                 .decoration(TextDecoration.ITALIC, false));
 
-        final List<Component> lore = new ArrayList<>();
-        for (final String line : presentation.lore()) {
-            lore.add(LEGACY.deserialize(line).decoration(TextDecoration.ITALIC, false));
-        }
-        meta.lore(lore.isEmpty() ? null : lore);
+        meta.lore(SpecialItemTooltipRenderer.developerArtifact(definition, presentation, state));
         // Native max_stack_size prevents even temporary stacking; the manager still enforces one
         // authoritative instance as the server-side anti-duplication boundary.
         meta.setMaxStackSize(1);
@@ -75,6 +73,7 @@ public final class DevItemFactory {
         if (!model.isBlank()) {
             ItemDataFactory.applyItemModel(item, model);
         }
+        ItemDataFactory.applyTooltipStyle(item, "icesmp:developer");
         return item;
     }
 
