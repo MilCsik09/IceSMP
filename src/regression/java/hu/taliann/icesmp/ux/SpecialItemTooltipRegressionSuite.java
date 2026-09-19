@@ -176,6 +176,7 @@ public final class SpecialItemTooltipRegressionSuite {
         final String dev = read("src/main/java/hu/taliann/icesmp/items/DevItemFactory.java");
         final String recipes = read("src/main/java/hu/taliann/icesmp/listeners/ProfessionRecipeBookListener.java");
         final String relic = read("src/main/java/hu/taliann/icesmp/items/RelicItemFactory.java");
+        final String catalyst = read("src/main/java/hu/taliann/icesmp/items/CatalystItemFactory.java");
         check(blueprint.contains("applyTooltipStyle(item, \"icesmp:blueprint\")"),
                 "blueprint category accent is not applied after item presentation");
         check(currency.contains("\"icesmp:currency_\""),
@@ -196,6 +197,17 @@ public final class SpecialItemTooltipRegressionSuite {
         check(read("src/main/java/hu/taliann/icesmp/items/CrateKeyFactory.java")
                         .contains("applyTooltipStyle(itemStack, \"icesmp:key\")"),
                 "crate key tooltip style is not restored after item-model presentation");
+        final int catalystRefresh = catalyst.indexOf("public void refreshPresentation");
+        final int catalystNextMethod = catalyst.indexOf(
+                "public Component getDisplayName", catalystRefresh);
+        check(catalystRefresh >= 0 && catalystNextMethod > catalystRefresh,
+                "catalyst refresh presentation source range is missing");
+        final String catalystRefreshSource =
+                catalyst.substring(catalystRefresh, catalystNextMethod);
+        check(catalystRefreshSource.lastIndexOf("item.setItemMeta(meta)")
+                        < catalystRefreshSource.lastIndexOf(
+                        "ItemDataFactory.applyTooltipStyle(item, \"icesmp:catalyst\")"),
+                "catalyst refresh must restore tooltip style after its ItemMeta round-trip");
         for (final String style : new String[]{
                 "blueprint", "profession", "currency_red", "currency_blue",
                 "currency_neutral", "currency_dark", "money_pouch", "developer",
