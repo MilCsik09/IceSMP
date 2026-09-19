@@ -88,9 +88,10 @@ public final class SpecialItemTooltipRegressionSuite {
 
     private static void playerFacingDescriptionsRemainConcrete() throws Exception {
         final String source = read("src/main/java/hu/taliann/icesmp/ux/SpecialItemTooltipRenderer.java");
-        check(source.contains("Jobb katt • megtanulod a receptet.")
-                        && source.contains("Szakmaszint"),
-                "blueprint tooltip lost usage or requirement copy");
+        check(source.contains("labelled(\"Jobb katt\", \"recept megtanulása\"")
+                        && source.contains("Szakmaszint")
+                        && source.contains("TooltipPresentation.classification("),
+                "blueprint tooltip lost compact usage or requirement copy");
         check(source.contains("Forrás")
                         && source.contains("Feldolgozza")
                         && source.contains("Felhasználás"),
@@ -100,7 +101,7 @@ public final class SpecialItemTooltipRegressionSuite {
                         && source.contains("Típus"),
                 "profession crafted output tooltip lost its role/category presentation");
         check(source.contains("professionPotionEffects")
-                        && source.contains("Hatás")
+                        && source.contains("\"HATÁS\"")
                         && source.contains("formatDuration"),
                 "profession potion output lost semantic potion effect presentation");
         final String recipeBuilder = read(
