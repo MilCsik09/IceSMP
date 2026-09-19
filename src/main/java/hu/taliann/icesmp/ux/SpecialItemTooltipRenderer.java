@@ -106,26 +106,14 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> blueprint(final ProfessionRecipeCatalog.Recipe recipe) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.BLUEPRINT,
-                        badge("TERVRAJZ", NamedTextColor.AQUA)
-                                .append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
-                                .append(recipe.profession().getDisplayName()
-                                        .decoration(TextDecoration.ITALIC, false)))));
+                TooltipPresentation.classification(
+                        "TERVRAJZ", PLAIN.serialize(recipe.profession().getDisplayName()),
+                        NamedTextColor.AQUA)));
         add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
-                TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.EFFECT, "Feloldás", NamedTextColor.AQUA),
                 labelled("Recept", recipe.displayName(), NamedTextColor.WHITE),
-                labelled("Kategória", recipe.category(), NamedTextColor.GRAY)));
-        add(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, List.of(
-                TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.REQUIREMENTS, "Követelmény",
-                        NamedTextColor.AQUA),
-                labelled("Szakmaszint", Integer.toString(recipe.level()),
-                        NamedTextColor.YELLOW)));
-        add(sections, TooltipEngine.SectionId.CUSTOM, 40, true, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.STORY,
-                        TooltipPresentation.line("Jobb katt • megtanulod a receptet.",
-                                NamedTextColor.GRAY))));
+                labelled("Kategória", recipe.category(), NamedTextColor.GRAY),
+                labelled("Szakmaszint", Integer.toString(recipe.level()), NamedTextColor.YELLOW),
+                labelled("Jobb katt", "recept megtanulása", NamedTextColor.GRAY)));
         addAuthoredLore(sections, recipe.lore(), 80);
         return TooltipEngine.render(sections);
     }
@@ -134,26 +122,17 @@ public final class SpecialItemTooltipRenderer {
                                                    final List<String> potionEffects) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.PROFESSION,
-                        badge("SZAKMAI TÁRGY", NamedTextColor.GOLD)
-                                .append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
-                                .append(recipe.profession().getDisplayName()
-                                        .decoration(TextDecoration.ITALIC, false)))));
+                TooltipPresentation.classification(
+                        "SZAKMAI TÁRGY", PLAIN.serialize(recipe.profession().getDisplayName()),
+                        NamedTextColor.GOLD)));
         add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
-                TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.EFFECT, "Szerep", NamedTextColor.GOLD),
                 labelled("Kategória", recipe.category(), NamedTextColor.WHITE),
-                labelled("Típus", humanize(recipe.kind()), NamedTextColor.GRAY)));
+                labelled("Típus", humanize(recipe.kind()), NamedTextColor.GRAY),
+                labelled("Szakmaszint", Integer.toString(recipe.level()), NamedTextColor.YELLOW)));
         final List<Component> potion = professionPotionEffects(potionEffects);
         if (!potion.isEmpty()) {
             add(sections, TooltipEngine.SectionId.PRIMARY_STATS, 25, true, potion);
         }
-        add(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, List.of(
-                TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.REQUIREMENTS, "Követelmény",
-                        NamedTextColor.GOLD),
-                labelled("Szakmaszint", Integer.toString(recipe.level()),
-                        NamedTextColor.YELLOW)));
         addAuthoredLore(sections, recipe.lore(), 80);
         return TooltipEngine.render(sections);
     }
@@ -162,13 +141,11 @@ public final class SpecialItemTooltipRenderer {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         final String profession = material == null
                 ? "" : material.getString("primary-profession", "").trim();
-        Component type = badge("SZAKMAI ALAPANYAG", NamedTextColor.GOLD);
-        if (!profession.isBlank()) {
-            type = type.append(TooltipPresentation.line(
-                    "  •  " + professionName(profession), NamedTextColor.GRAY));
-        }
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.PROFESSION, type)));
+                TooltipPresentation.classification(
+                        "SZAKMAI ALAPANYAG",
+                        profession.isBlank() ? "" : professionName(profession),
+                        NamedTextColor.GOLD)));
 
         if (material != null) {
             final List<Component> usage = new ArrayList<>();
@@ -188,26 +165,21 @@ public final class SpecialItemTooltipRenderer {
             final List<String> sinks = material.getStringList("sink-types");
             if (!sinks.isEmpty()) {
                 usage.add(labelled("Felhasználás",
-                        sinks.stream().limit(3)
+                        sinks.stream().limit(2)
                                 .map(SpecialItemTooltipRenderer::humanizeTag)
                                 .reduce((left, right) -> left + ", " + right)
                                 .orElse("Craft"),
                         NamedTextColor.WHITE));
             }
-            if (!usage.isEmpty()) {
-                usage.add(0, TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.EFFECT, "Szakmai szerep",
-                        NamedTextColor.GOLD));
-                add(sections, TooltipEngine.SectionId.EFFECTS, 30, true, usage);
-            }
+            add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, usage);
             addAuthoredLore(sections, material.getStringList("lore"), 80);
         }
         return TooltipEngine.render(sections);
     }
 
     public static List<Component> companionItem(final String tag,
-                                                    final Component description,
-                                                    final Component restriction) {
+                                                final Component description,
+                                                final Component restriction) {
         final String normalized = tag == null ? "" : tag.trim().toLowerCase(Locale.ROOT);
         final String type = switch (normalized) {
             case "pet_armor" -> "TÁRSFELSZERELÉS";
@@ -216,11 +188,8 @@ public final class SpecialItemTooltipRenderer {
         };
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.COMPANION,
-                        badge(type, NamedTextColor.GREEN))));
+                TooltipPresentation.classification(type, "", NamedTextColor.GREEN)));
         final List<Component> use = new ArrayList<>();
-        use.add(TooltipPresentation.sectionHeading(
-                TooltipPresentation.Glyph.EFFECT, "Rendeltetés", NamedTextColor.GREEN));
         if (description != null) {
             use.add(description.decoration(TextDecoration.ITALIC, false));
         }
@@ -234,14 +203,11 @@ public final class SpecialItemTooltipRenderer {
     public static List<Component> siegeWeapon() {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.SIEGE,
-                        badge("OSTROMESZKÖZ", NamedTextColor.RED))));
+                TooltipPresentation.classification(
+                        "OSTROMESZKÖZ", "", NamedTextColor.RED)));
         add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
-                TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.EFFECT, "Harci szerep", NamedTextColor.RED),
                 labelled("Aktív", "csak ostrom alatt", NamedTextColor.YELLOW),
-                labelled("Használat", "jobb katt • pusztító lövés a célpontra",
-                        NamedTextColor.WHITE)));
+                labelled("Jobb katt", "pusztító lövés a célpontra", NamedTextColor.WHITE)));
         add(sections, TooltipEngine.SectionId.FLAVOR, 80, true, List.of(
                 TooltipPresentation.line(
                                 "„A Hetedik Vérháború öröksége — csak háborúban szólal meg.”",
@@ -254,46 +220,33 @@ public final class SpecialItemTooltipRenderer {
                                                   final String evolution,
                                                   final String activeSpec) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
-        Component type = badge("LÉLEKKAPOCS", NamedTextColor.LIGHT_PURPLE);
-        if (jobType != null) {
-            type = type.append(TooltipPresentation.line("  •  ", NamedTextColor.DARK_GRAY))
-                    .append(jobType.getDisplayName().decoration(TextDecoration.ITALIC, false));
-        }
+        final String className = jobType == null ? "" : PLAIN.serialize(jobType.getDisplayName());
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.CATALYST, type)));
-        final List<Component> state = new ArrayList<>();
-        state.add(TooltipPresentation.sectionHeading(
-                TooltipPresentation.Glyph.EFFECT, "Állapot", NamedTextColor.LIGHT_PURPLE));
-        state.add(labelled("Forma", evolution == null || evolution.isBlank()
-                ? "kezdeti" : evolution, NamedTextColor.WHITE));
-        state.add(labelled("Aktív út", activeSpec == null || activeSpec.isBlank()
-                ? "még nincs specializáció" : activeSpec, NamedTextColor.GRAY));
-        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, state);
+                TooltipPresentation.classification(
+                        "LÉLEKKAPOCS", className, NamedTextColor.LIGHT_PURPLE)));
+        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
+                labelled("Forma", evolution == null || evolution.isBlank()
+                        ? "kezdeti" : evolution, NamedTextColor.WHITE),
+                labelled("Aktív út", activeSpec == null || activeSpec.isBlank()
+                        ? "még nincs specializáció" : activeSpec, NamedTextColor.GRAY)));
         return TooltipEngine.render(sections);
     }
 
     public static List<Component> crateKey(final String crateName,
-                                               final List<CrateManager.RewardOdds> odds) {
+                                            final List<CrateManager.RewardOdds> odds) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
+        final String plainCrate = crateName == null || crateName.isBlank()
+                ? "" : PLAIN.serialize(LEGACY.deserialize(crateName));
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.KEY,
-                        badge("LÁDAKULCS", NamedTextColor.YELLOW))));
-        final List<Component> use = new ArrayList<>();
-        use.add(TooltipPresentation.sectionHeading(
-                TooltipPresentation.Glyph.EFFECT, "Használat", NamedTextColor.YELLOW));
-        if (crateName != null && !crateName.isBlank()) {
-            use.add(TooltipPresentation.line("Láda  ", NamedTextColor.DARK_GRAY)
-                    .append(LEGACY.deserialize(crateName)
-                            .decoration(TextDecoration.ITALIC, false)));
-        }
-        use.add(TooltipPresentation.line(
-                "Jobb katt a megfelelő ládán • kinyitás", NamedTextColor.GRAY));
-        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, use);
+                TooltipPresentation.classification(
+                        "LÁDAKULCS", plainCrate, NamedTextColor.YELLOW)));
+        add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, List.of(
+                labelled("Jobb katt", "megfelelő láda kinyitása", NamedTextColor.GRAY)));
 
         if (odds != null && !odds.isEmpty()) {
             final List<Component> rewards = new ArrayList<>();
-            rewards.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.STATS, "Jutalomesélyek", NamedTextColor.YELLOW));
+            rewards.add(TooltipPresentation.classification(
+                    "JUTALOMESÉLYEK", "", NamedTextColor.YELLOW));
             final int shown = Math.min(3, odds.size());
             for (int index = 0; index < shown; index++) {
                 final CrateManager.RewardOdds reward = odds.get(index);
@@ -418,31 +371,27 @@ public final class SpecialItemTooltipRenderer {
     }
 
     private static List<Component> genericUnique(final ConfigurationSection material,
-                                                       final Profile profile,
-                                                       final TooltipPresentation.Glyph glyph,
-                                                       final String badge,
-                                                       final NamedTextColor accent) {
+                                                  final Profile profile,
+                                                  final TooltipPresentation.Glyph glyph,
+                                                  final String badge,
+                                                  final NamedTextColor accent) {
         final List<TooltipEngine.Section> sections = new ArrayList<>();
         add(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(glyph, badge(badge, accent))));
+                TooltipPresentation.classification(badge, "", accent)));
 
         if (material != null) {
             final String description = material.getString("tooltip-description", "").trim();
             final String use = material.getString("tooltip-use", "").trim();
             final List<Component> purpose = new ArrayList<>();
-            if (!description.isBlank() || !use.isBlank()) {
-                purpose.add(TooltipPresentation.sectionHeading(
-                        TooltipPresentation.Glyph.EFFECT, "Rendeltetés", accent));
-                if (!description.isBlank()) {
-                    for (final String line : wrap(description, 42)) {
-                        purpose.add(TooltipPresentation.line(line, NamedTextColor.GRAY));
-                    }
+            if (!description.isBlank()) {
+                for (final String line : wrap(description, 42)) {
+                    purpose.add(TooltipPresentation.line(line, NamedTextColor.GRAY));
                 }
-                if (!use.isBlank()) {
-                    purpose.add(labelled("Használat", use, NamedTextColor.WHITE));
-                }
-                add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, purpose);
             }
+            if (!use.isBlank()) {
+                purpose.add(labelled("Használat", use, NamedTextColor.WHITE));
+            }
+            add(sections, TooltipEngine.SectionId.EFFECTS, 20, true, purpose);
             addAuthoredLore(sections, material.getStringList("lore"), 80);
         }
         return TooltipEngine.render(sections);
@@ -451,8 +400,8 @@ public final class SpecialItemTooltipRenderer {
     private static List<Component> professionPotionEffects(final List<String> specs) {
         if (specs == null || specs.isEmpty()) return List.of();
         final List<Component> lines = new ArrayList<>();
-        lines.add(TooltipPresentation.sectionHeading(
-                TooltipPresentation.Glyph.EFFECT, "Hatás", NamedTextColor.AQUA));
+        lines.add(TooltipPresentation.classification(
+                "HATÁS", "", NamedTextColor.AQUA));
         for (final String raw : specs) {
             if (raw == null || raw.isBlank()) continue;
             final String[] parts = raw.trim().split(":");
@@ -587,12 +536,17 @@ public final class SpecialItemTooltipRenderer {
                                         final List<String> lore, final int order) {
         if (lore == null || lore.isEmpty()) return;
         final List<Component> story = new ArrayList<>();
-        story.add(TooltipPresentation.sectionHeading(
-                TooltipPresentation.Glyph.STORY, "Leírás", NamedTextColor.GRAY));
+        int shown = 0;
         for (final String raw : lore) {
             if (raw == null || raw.isBlank()) continue;
-            story.add(LEGACY.deserialize(raw)
-                    .decoration(TextDecoration.ITALIC, false));
+            final String plain = PLAIN.serialize(LEGACY.deserialize(raw)).trim();
+            if (plain.isBlank()) continue;
+            for (final String line : wrap(plain, 44)) {
+                story.add(TooltipPresentation.line(line, NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, true));
+            }
+            shown++;
+            if (shown >= 3) break;
         }
         add(sections, TooltipEngine.SectionId.STORY, order, true, story);
     }
