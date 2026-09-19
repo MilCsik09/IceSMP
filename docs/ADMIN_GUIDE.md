@@ -2509,9 +2509,9 @@ A special-item profile átvételekor valódi factory-itemeket használj, ne kéz
 - **Blueprint:** `/iceitem tervrajz netherit_csakany 1` → TERVRAJZ badge, Bányász, recept, 48-as szakmaszint és jobb kattos tanulás.
 - **Profession material:** `/iceitem unique vad_esszencia 1` → SZAKMAI ALAPANYAG + authored lore; economy-managed itemnél source/process/sink sorok.
 - **Profession result:** `/iceitem recept netherit_csakany 1` vagy egy potion/utility recipe → SZAKMAI TÁRGY profil; rollolt gear esetén a rarity frame maradjon elsődleges.
-- **Fizikai valuta:** fővárosban `/bank withdraw neutral 1` → FIZIKAI VALUTA, Menedék/Creutzér szerep és frakciószínű accent.
-- **Erszény:** `/iceitem erszeny 25 1` → TALÁLT ERSZÉNY; a konkrét valuta/összeg ne szivárogjon ki bontás előtt.
-- **Relikvia:** `/iceitem relikvia metelytepo 1` → RELIKVIA, rövid authored Rendeltetés, lore és Ereklye-accent.
+- **Fizikai valuta:** fővárosban `/bank withdraw neutral 1` → `VALUTA • Ryanora & Caldestera`, rövid lore és frakciószínű accent; nincs redundáns érték/bank/forgalom magyarázó blokk.
+- **Erszény:** `/iceitem erszeny 25 1` → `ERSZÉNY`; a konkrét valuta/összeg ne szivárogjon ki bontás előtt, a nyitás egy rövid interakciós sor.
+- **Relikvia:** `/iceitem relikvia metelytepo 1` → RELIKVIA, rövid authored rendeltetés + rövid lore; a valódi kezelési mechanika külön kompakt használati blokkban marad.
 - **Küldetési item:** `/iceitem unique suttogas_meghivo 1` → KÜLDETÉSI TÁRGY + authored rendeltetés/használat.
 - **Haladási token:** `/iceitem unique emlekszilank 1` → HALADÁSI TÁRGY + beváltási hint.
 - **Rúna:** `/iceitem unique runa_elek 1` → FEJLESZTÉS profil, upgrade-accent és meglévő mechanikai lore.
@@ -2523,7 +2523,10 @@ A special-item profile átvételekor valódi factory-itemeket használj, ne kéz
 - **Bingulus:** `/iceitem dev csodalatos_bingulus 1` csak a kijelölt tulajdonosnak → FEJLESZTŐI EREKLYE, passzív jutalomgenerátor és auto-restore jelzés.
 - **Rejtett developer artifact:** csak a belső development acceptance szerint ellenőrizhető; a nyilvános/admin dokumentáció nem publikálja a használati surface-ét.
 
-Vizuális gate: egyik special profilnál sem jelenhet meg magenta missing-texture blokk, a custom
-glyphoknak be kell töltődniük, a readable szövegnek resource-pack glyph nélkül is értelmezhetőnek
-kell maradnia, és minden ItemMeta refresh után meg kell maradnia a category/rarity frame-nek.
+Vizuális gate: egyik special profilnál sem jelenhet meg magenta missing-texture blokk vagy tofu
+négyzet. A production tooltip olvashatósága nem függhet private-use font glyphoktól; a safe
+szimbólumoknak pack-hiba esetén is érthetőnek kell maradniuk. A canonical gear azonos statja ne
+jelenjen meg fix+roll duplikációként, az archaeology megfigyelés ne nyújtsa képernyőszélesre a
+tooltipet és ne mutassa mellette a vanilla attribute blokkot. Minden ItemMeta refresh után
+meg kell maradnia a category/rarity frame-nek.
 
