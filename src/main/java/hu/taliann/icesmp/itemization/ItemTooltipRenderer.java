@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -34,36 +35,29 @@ public final class ItemTooltipRenderer {
         final NamedTextColor accent = color(template.rarity());
         final List<TooltipEngine.Section> sections = new ArrayList<>();
 
-        addSection(sections, TooltipEngine.SectionId.HEADER, 0, false, List.of(
-                line(template.rarity().displayName().toUpperCase(Locale.ROOT), color(template.rarity()))
-                        .decoration(TextDecoration.BOLD, true)
-                        .append(line("  •  ", NamedTextColor.DARK_GRAY))
-                        .append(line("Tárgyszint " + instance.itemLevel(), NamedTextColor.GRAY))));
-
         String typeLine = family(template.family()) + "  •  " + slot(template.slot());
         if (template.isArmorFamilyEquipment()) {
             typeLine += "  •  " + template.armorFamily().displayName();
         }
-        addSection(sections, TooltipEngine.SectionId.TYPE, 10, false, List.of(
-                TooltipPresentation.withIcon(TooltipPresentation.Glyph.TYPE,
-                        line(typeLine, NamedTextColor.GRAY))));
+        typeLine += "  •  Tárgyszint " + instance.itemLevel();
+        addSection(sections, TooltipEngine.SectionId.HEADER, 0, false, List.of(
+                TooltipPresentation.classification(
+                        template.rarity().displayName(), typeLine, accent)));
 
-        final Map<String, Double> fixedStats = template.fixedStatsAt(stageId);
-        final boolean hasStats = template.baseDamage() > 0.0D || template.baseArmor() > 0.0D
-                || !fixedStats.isEmpty() || !instance.rolls().isEmpty();
-        if (hasStats) {
+        final LinkedHashMap<String, Double> totalStats = new LinkedHashMap<>();
+        if (template.baseDamage() > 0.0D) {
+            totalStats.merge("attack_damage", template.baseDamage(), Double::sum);
+        }
+        if (template.baseArmor() > 0.0D) {
+            totalStats.merge("armor", template.baseArmor(), Double::sum);
+        }
+        template.fixedStatsAt(stageId).forEach(
+                (id, value) -> totalStats.merge(id, value, Double::sum));
+        instance.rolls().forEach(
+                (id, roll) -> totalStats.merge(id, roll.value(), Double::sum));
+        if (!totalStats.isEmpty()) {
             final List<Component> stats = new ArrayList<>();
-            stats.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.STATS, "Harcértékek", accent));
-            if (template.baseDamage() > 0.0D) {
-                stats.add(statLine("attack_damage", template.baseDamage(), null));
-            }
-            if (template.baseArmor() > 0.0D) {
-                stats.add(statLine("armor", template.baseArmor(), null));
-            }
-            fixedStats.forEach((id, value) -> stats.add(statLine(id, value, null)));
-            instance.rolls().forEach((id, roll) ->
-                    stats.add(statLine(id, roll.value(), roll.quality())));
+            totalStats.forEach((id, value) -> stats.add(statLine(id, value)));
             addSection(sections, TooltipEngine.SectionId.PRIMARY_STATS, 20, true, stats);
         }
 
@@ -75,25 +69,21 @@ public final class ItemTooltipRenderer {
         addRestriction(requirements, "Kaszt", template.classRestrictions());
         addRestriction(requirements, "Specializáció", template.specializationRestrictions());
         addRestriction(requirements, "Szakma", template.professionRestrictions());
-        if (!requirements.isEmpty()) {
-            requirements.add(0, TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.REQUIREMENTS,
-                    "Követelmények", accent));
-            addSection(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, requirements);
-        }
+        addSection(sections, TooltipEngine.SectionId.REQUIREMENTS, 30, true, requirements);
 
         if (!template.signatureEffectId().isBlank()) {
             final SignatureEffectRegistry.Definition effect =
                     SignatureEffectRegistry.require(template.signatureEffectId());
             final List<Component> effects = new ArrayList<>();
-            effects.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.EFFECT, "Egyedi hatás", accent));
-            effects.add(line(effect.displayName(), accent)
-                    .decoration(TextDecoration.BOLD, true));
-            effects.add(line(effect.tooltip(), NamedTextColor.YELLOW));
+            effects.add(TooltipPresentation.withIcon(
+                    TooltipPresentation.Glyph.EFFECT,
+                    line(effect.displayName(), accent).decoration(TextDecoration.BOLD, true)));
+            for (final String wrapped : wrap(effect.tooltip(), 46)) {
+                effects.add(line(wrapped, NamedTextColor.YELLOW));
+            }
             final int signatureTier = template.signatureTierAt(stageId);
             if (signatureTier > 1) {
-                effects.add(line("Fokozat  •  " + signatureTier, NamedTextColor.GOLD));
+                effects.add(line("Fokozat  " + signatureTier, NamedTextColor.GOLD));
             }
             addSection(sections, TooltipEngine.SectionId.EFFECTS, 40, true, effects);
         }
@@ -101,10 +91,8 @@ public final class ItemTooltipRenderer {
         final int socketCapacity = template.runeSocketCountAt(stageId);
         if (socketCapacity > 0) {
             final List<Component> sockets = new ArrayList<>();
-            sockets.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.SOCKETS,
-                    "Rúnák  " + instance.runes().size() + "/" + socketCapacity,
-                    accent));
+            sockets.add(TooltipPresentation.classification(
+                    "Rúnák " + instance.runes().size() + "/" + socketCapacity, "", accent));
             for (int socket = 0; socket < socketCapacity; socket++) {
                 final boolean filled = socket < instance.runes().size();
                 final String rune = filled ? displayRune(instance.runes().get(socket)) : "Üres foglalat";
@@ -117,19 +105,15 @@ public final class ItemTooltipRenderer {
         final List<Component> equipment = new ArrayList<>();
         if (!template.setId().isBlank()) {
             final ItemSetDefinition set = templates.requireSet(template.setId());
-            equipment.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.EQUIPMENT,
-                    "Szett  •  " + set.displayName(), accent));
+            equipment.add(TooltipPresentation.classification(
+                    "Szett", set.displayName(), accent));
             set.tierStats().forEach((pieces, stats) -> stats.forEach((id, value) ->
-                    equipment.add(line("  " + pieces + " db  ", NamedTextColor.DARK_GRAY)
-                            .append(statLine(id, value, null)))));
+                    equipment.add(line(pieces + " db  ", NamedTextColor.DARK_GRAY)
+                            .append(statLine(id, value)))));
         }
         if (!template.ascensionPath().isEmpty()) {
-            if (!equipment.isEmpty()) equipment.add(Component.empty());
-            equipment.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.ASCENSION,
-                    "Felemelkedés", accent));
-            equipment.add(line(readableId(instance.ascension().stageId()),
+            equipment.add(TooltipPresentation.classification(
+                    "Felemelkedés", readableId(instance.ascension().stageId()),
                     NamedTextColor.LIGHT_PURPLE));
         }
         addSection(sections, TooltipEngine.SectionId.EQUIPMENT, 60, true, equipment);
@@ -137,28 +121,25 @@ public final class ItemTooltipRenderer {
         final List<String> authoredLore = template.loreAt(stageId);
         if (!authoredLore.isEmpty()) {
             final List<Component> story = new ArrayList<>();
-            story.add(TooltipPresentation.sectionHeading(
-                    TooltipPresentation.Glyph.STORY, "Történet", accent));
-            authoredLore.forEach(text -> story.add(line(text, NamedTextColor.GRAY)
-                    .decoration(TextDecoration.ITALIC, true)));
+            authoredLore.forEach(text -> wrap(text, 46).forEach(wrapped ->
+                    story.add(line(wrapped, NamedTextColor.GRAY)
+                            .decoration(TextDecoration.ITALIC, true))));
             addSection(sections, TooltipEngine.SectionId.STORY, 80, true, story);
         }
 
         final List<Component> provenance = new ArrayList<>();
-        provenance.add(TooltipPresentation.sectionHeading(
-                TooltipPresentation.Glyph.ORIGIN, "Eredet", NamedTextColor.DARK_GRAY));
-        provenance.add(line("Forrás  •  " + instance.origin().sourceId(), NamedTextColor.DARK_GRAY)
-                .decoration(TextDecoration.ITALIC, true));
-        if (!instance.origin().creationLocation().isBlank()) {
-            provenance.add(line("Hely  •  " + instance.origin().creationLocation(), NamedTextColor.DARK_GRAY)
-                    .decoration(TextDecoration.ITALIC, true));
-        }
         if (instance.origin().crafterId() != null) {
             final String crafter = instance.origin().crafterNameSnapshot().isBlank()
                     ? instance.origin().crafterId().toString() : instance.origin().crafterNameSnapshot();
             provenance.add(line("Készítette  •  " + crafter
-                    + (instance.origin().masterwork() ? "  •  Mestermű" : ""), NamedTextColor.DARK_GRAY)
-                    .decoration(TextDecoration.ITALIC, true));
+                    + (instance.origin().masterwork() ? "  •  Mestermű" : ""),
+                    NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, true));
+        } else if (!instance.origin().creationLocation().isBlank()) {
+            provenance.add(line("Eredet  •  " + instance.origin().creationLocation(),
+                    NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, true));
+        } else if (!instance.origin().sourceId().isBlank()) {
+            provenance.add(line("Eredet  •  " + readableId(instance.origin().sourceId()),
+                    NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, true));
         }
         addSection(sections, TooltipEngine.SectionId.PROVENANCE, 90, true, provenance);
 
@@ -188,20 +169,21 @@ public final class ItemTooltipRenderer {
                 .append(line(value, NamedTextColor.YELLOW));
     }
 
-    private static Component statLine(final String statId, final double value, final Double quality) {
-        final String formatted = Math.abs(value - Math.rint(value)) < 0.000_001D
-                ? Long.toString(Math.round(value)) : String.format(Locale.ROOT, "%.2f", value);
-        final String amount = (value >= 0.0D ? "+" : "") + formatted;
+    private static Component statLine(final String statId, final double value) {
         final ItemStatCatalog.Definition definition = ItemStatCatalog.require(statId);
-        Component result = line(statIcon(definition.id()) + "  ", statAccent(definition.id()))
+        return line(statIcon(definition.id()) + "  ", statAccent(definition.id()))
                 .append(line(definition.displayName(), NamedTextColor.GRAY))
-                .append(line("  " + amount,
+                .append(line("  " + statAmount(definition.id(), value),
                         value >= 0.0D ? NamedTextColor.WHITE : NamedTextColor.RED));
-        if (quality != null) {
-            result = result.append(line("  •  " + Math.round(quality * 100.0D) + "%",
-                    NamedTextColor.DARK_GRAY));
-        }
-        return result;
+    }
+
+    private static String statAmount(final String statId, final double value) {
+        final double shown = "movement_speed".equals(statId) ? value * 1000.0D : value;
+        String formatted = String.format(Locale.ROOT, "%.2f", Math.abs(shown));
+        if (formatted.endsWith(".00")) formatted = formatted.substring(0, formatted.length() - 3);
+        else if (formatted.endsWith("0")) formatted = formatted.substring(0, formatted.length() - 1);
+        return (value >= 0.0D ? "+" : "-") + formatted
+                + ("movement_speed".equals(statId) ? "%" : "");
     }
 
     private static Component line(final String text, final NamedTextColor color) {
@@ -250,8 +232,8 @@ public final class ItemTooltipRenderer {
         return switch (slot) {
             case HEAD -> "Fej";
             case CHEST -> "Mellkas";
-            case LEGS -> "Láb";
-            case FEET -> "Lábfej";
+            case LEGS -> "Nadrág";
+            case FEET -> "Lábbeli";
             case MAIN_HAND -> "Főkéz";
             case OFF_HAND -> "Offhand";
             case TWO_HAND -> "Kétkezes";
@@ -277,6 +259,22 @@ public final class ItemTooltipRenderer {
             case LEGENDARY -> NamedTextColor.GOLD;
             case MYTHIC -> NamedTextColor.RED;
         };
+    }
+
+    private static List<String> wrap(final String raw, final int width) {
+        if (raw == null || raw.isBlank()) return List.of();
+        final ArrayList<String> lines = new ArrayList<>();
+        final StringBuilder current = new StringBuilder();
+        for (final String word : raw.trim().split("\\s+")) {
+            if (current.length() > 0 && current.length() + 1 + word.length() > width) {
+                lines.add(current.toString());
+                current.setLength(0);
+            }
+            if (current.length() > 0) current.append(' ');
+            current.append(word);
+        }
+        if (current.length() > 0) lines.add(current.toString());
+        return List.copyOf(lines);
     }
 
     private static String displayRune(final String rune) {
